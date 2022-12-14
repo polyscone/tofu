@@ -1,0 +1,13 @@
+# Generic patterns
+*.a
+*.dll
+*.exe
+*.out
+*.pprof
+*.so
+*~
+._*
+.DS_Store
+
+# Application patterns
+.tofu

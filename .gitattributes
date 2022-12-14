@@ -1,0 +1,16 @@
+# text=auto will set auto normalisation for line endings on all files that git considers to be text
+# eol=lf will ensure EOL stays as LF (no conversion to CRLF) on checkout
+#
+# text=auto eol=lf on the same line did not function as expected and was fixed in git version 2.10
+# In versions of git where this did not function as expected "* text=auto" had to be set on its own line and
+# the "eol=lf" attributes had to be set per pattern on their own lines too, for example:
+# * text=auto
+# *.c text eol=lf
+#
+# To avoid having to use separate lines for each pattern this repository requires the use of a git client
+# that is version 2.10 or later
+* text=auto eol=lf
+
+# If git mistakes any files for text that should actually be treated as binary the pattern for the file can be
+# added here and set explicitly as a binary file using the "binary" macro, for example:
+# *.jpeg binary
