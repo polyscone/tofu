@@ -22,14 +22,14 @@ func TestIssuePassport(t *testing.T) {
 	handler := account.NewIssuePassportHandler(broker, users)
 
 	// Seed the repo
-	verifiedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
-	unverifiedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
+	activatedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
+	unactivatedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
 
 	password := errors.Must(domain.NewPassword("password"))
-	if err := verifiedUser.ActivateAndSetPassword(password); err != nil {
+	if err := activatedUser.ActivateAndSetPassword(password); err != nil {
 		t.Fatal(err)
 	}
-	if err := users.Save(ctx, verifiedUser); err != nil {
+	if err := users.Save(ctx, activatedUser); err != nil {
 		t.Fatal(err)
 	}
 
@@ -45,12 +45,12 @@ func TestIssuePassport(t *testing.T) {
 			isAwaitingMFA bool
 			isLoggedIn    bool
 		}{
-			{"verified user id", verifiedUser.ID.String(), false, false},
-			{"verified user id awaiting MFA", verifiedUser.ID.String(), true, false},
-			{"verified user id logged in", verifiedUser.ID.String(), false, true},
-			{"unverified user id", unverifiedUser.ID.String(), false, false},
-			{"unverified user id awaiting MFA", unverifiedUser.ID.String(), true, false},
-			{"unverified user id logged in", unverifiedUser.ID.String(), false, true},
+			{"activated user id", activatedUser.ID.String(), false, false},
+			{"activated user id awaiting MFA", activatedUser.ID.String(), true, false},
+			{"activated user id logged in", activatedUser.ID.String(), false, true},
+			{"unactivated user id", unactivatedUser.ID.String(), false, false},
+			{"unactivated user id awaiting MFA", unactivatedUser.ID.String(), true, false},
+			{"unactivated user id logged in", unactivatedUser.ID.String(), false, true},
 		}
 		for _, tc := range tt {
 			tc := tc
@@ -94,8 +94,8 @@ func TestIssuePassport(t *testing.T) {
 		}{
 			{"empty user id", "", false, false},
 			{"nil user id", uuid.Nil.String(), false, false},
-			{"verified user id conflicting states", verifiedUser.ID.String(), true, true},
-			{"unverified user id conflicting states", unverifiedUser.ID.String(), true, true},
+			{"activated user id conflicting states", activatedUser.ID.String(), true, true},
+			{"unactivated user id conflicting states", unactivatedUser.ID.String(), true, true},
 		}
 		for _, tc := range tt {
 			tc := tc

@@ -4,7 +4,7 @@ CREATE TABLE account__users (
   hashed_password  TEXT NOT NULL,
   totp_key         TEXT NOT NULL,
   totp_verified_at DATETIME,
-  verified_at      DATETIME,
+  activated_at     DATETIME,
   created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX idx_account__users_email ON account__users (email);

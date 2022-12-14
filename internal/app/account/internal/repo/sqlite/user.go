@@ -41,14 +41,14 @@ func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (
 	var hashedPassword []byte
 	var totpKey []byte
 	var totpVerifiedAt sql.NullTime
-	var verifiedAt sql.NullTime
+	var activatedAt sql.NullTime
 
 	stmt := fmt.Sprintf(`
-		SELECT u.id, u.email, u.hashed_password, u.totp_key, u.totp_verified_at, u.verified_at
+		SELECT u.id, u.email, u.hashed_password, u.totp_key, u.totp_verified_at, u.activated_at
 		FROM account__users AS u
 		WHERE %v;
 	`, where)
-	err = tx.QueryRow(ctx, stmt, args).Scan(&id, &email, &hashedPassword, &totpKey, &totpVerifiedAt, &verifiedAt)
+	err = tx.QueryRow(ctx, stmt, args).Scan(&id, &email, &hashedPassword, &totpKey, &totpVerifiedAt, &activatedAt)
 	if err != nil {
 		return domain.User{}, errors.Tracef(err)
 	}
@@ -65,7 +65,7 @@ func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (
 	res.TOTPKey = totpKey
 	res.TOTPVerifiedAt = totpVerifiedAt.Time
 	res.Roles = roles
-	res.ActivatedAt = verifiedAt.Time
+	res.ActivatedAt = activatedAt.Time
 
 	return res, errors.Tracef(tx.Commit())
 }
@@ -126,7 +126,7 @@ func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
 			hashed_password = :hashed_password,
 			totp_key = :totp_key,
 			totp_verified_at = :totp_verified_at,
-			verified_at = :verified_at
+			activated_at = :activated_at
 		WHERE id = :id;
 	`, sqlite.Args{
 		"id":               u.ID,
@@ -134,7 +134,7 @@ func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
 		"hashed_password":  u.HashedPassword,
 		"totp_key":         u.TOTPKey,
 		"totp_verified_at": sqlite.NewNullTime(u.TOTPVerifiedAt.UTC()),
-		"verified_at":      sqlite.NewNullTime(u.ActivatedAt.UTC()),
+		"activated_at":     sqlite.NewNullTime(u.ActivatedAt.UTC()),
 	}
 	_, err := r.db.Exec(ctx, stmt, args)
 

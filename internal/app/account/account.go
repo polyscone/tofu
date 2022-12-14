@@ -13,7 +13,7 @@ var NewSQLiteUserRepo = sqlite.NewUserRepo
 
 type (
 	Registered                = domain.Registered
-	Verified                  = domain.Activated
+	Activated                 = domain.Activated
 	AuthenticatedWithPassword = domain.AuthenticatedWithPassword
 	AuthenticatedWithTOTP     = domain.AuthenticatedWithTOTP
 	ChangedPassword           = domain.ChangedPassword

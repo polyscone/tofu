@@ -27,60 +27,60 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 	handler := account.NewAuthenticateWithTOTPHandler(broker, users)
 
 	// Seed the repo
-	verifiedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
-	verifiedNoTOTPUser := errors.Must(repotest.AddUser(t, users, ctx, "jim@bloggs.com"))
-	unverifiedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
-	unverifiedTOTPUser := errors.Must(repotest.AddUser(t, users, ctx, "foo@bar.com"))
+	activatedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
+	activeNoTOTPUser := errors.Must(repotest.AddUser(t, users, ctx, "jim@bloggs.com"))
+	unactivatedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
+	unactivatedTOTPUser := errors.Must(repotest.AddUser(t, users, ctx, "foo@bar.com"))
 
 	password := errors.Must(domain.NewPassword("password"))
-	if err := verifiedUser.ActivateAndSetPassword(password); err != nil {
+	if err := activatedUser.ActivateAndSetPassword(password); err != nil {
 		t.Fatal(err)
 	}
 	totpKey := domain.NewTOTPKey([]byte("12345678901234567890"))
-	verifiedUser.ChangeTOTPKey(totpKey)
-	if err := verifiedUser.VerifyTOTPKey(); err != nil {
+	activatedUser.ChangeTOTPKey(totpKey)
+	if err := activatedUser.VerifyTOTPKey(); err != nil {
 		t.Fatal(err)
 	}
-	if err := users.Save(ctx, verifiedUser); err != nil {
+	if err := users.Save(ctx, activatedUser); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := verifiedNoTOTPUser.ActivateAndSetPassword(password); err != nil {
+	if err := activeNoTOTPUser.ActivateAndSetPassword(password); err != nil {
 		t.Fatal(err)
 	}
-	if err := users.Save(ctx, verifiedNoTOTPUser); err != nil {
+	if err := users.Save(ctx, activeNoTOTPUser); err != nil {
 		t.Fatal(err)
 	}
 
 	totpKey = domain.NewTOTPKey([]byte("12345678901234567891"))
-	unverifiedUser.ChangeTOTPKey(totpKey)
-	if err := users.Save(ctx, unverifiedUser); err != nil {
+	unactivatedUser.ChangeTOTPKey(totpKey)
+	if err := users.Save(ctx, unactivatedUser); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := unverifiedTOTPUser.ActivateAndSetPassword(password); err != nil {
+	if err := unactivatedTOTPUser.ActivateAndSetPassword(password); err != nil {
 		t.Fatal(err)
 	}
 	totpKey = domain.NewTOTPKey([]byte("12345678901234567892"))
-	unverifiedTOTPUser.ChangeTOTPKey(totpKey)
-	if err := users.Save(ctx, unverifiedTOTPUser); err != nil {
+	unactivatedTOTPUser.ChangeTOTPKey(totpKey)
+	if err := users.Save(ctx, unactivatedTOTPUser); err != nil {
 		t.Fatal(err)
 	}
 
-	verifiedUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
-		Email:    verifiedUser.Email.String(),
+	activatedUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
+		Email:    activatedUser.Email.String(),
 		Password: password.String(),
 	}))
-	verifiedNoTOTPUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
-		Email:    verifiedNoTOTPUser.Email.String(),
+	activatedNoTOTPUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
+		Email:    activeNoTOTPUser.Email.String(),
 		Password: password.String(),
 	}))
-	unverifiedUserPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
-		UserID:        unverifiedUser.ID.String(),
+	unactivatedUserPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
+		UserID:        unactivatedUser.ID.String(),
 		IsAwaitingMFA: true,
 	}))
-	unverifiedTOTPUserPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
-		UserID:        unverifiedTOTPUser.ID.String(),
+	unactivatedTOTPUserPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
+		UserID:        unactivatedTOTPUser.ID.String(),
 		IsAwaitingMFA: true,
 	}))
 
@@ -91,14 +91,14 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		wantEvents = append(wantEvents, account.AuthenticatedWithTOTP{
-			Email: verifiedUser.Email.String(),
+			Email: activatedUser.Email.String(),
 		})
 
 		tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
-		totp := errors.Must(tb.Generate(verifiedUser.TOTPKey, time.Now()))
+		totp := errors.Must(tb.Generate(activatedUser.TOTPKey, time.Now()))
 
 		_, err := handler(ctx, account.AuthenticateWithTOTP{
-			Passport: verifiedUserPassport,
+			Passport: activatedUserPassport,
 			TOTP:     totp,
 		})
 		if err != nil {
@@ -120,13 +120,13 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 			totpKey  []byte
 			want     error
 		}{
-			{"empty passport correct TOTP", account.EmptyPassport, verifiedUser.TOTPKey, app.ErrBadRequest},
+			{"empty passport correct TOTP", account.EmptyPassport, activatedUser.TOTPKey, app.ErrBadRequest},
 			{"empty passport incorrect TOTP", account.EmptyPassport, nil, app.ErrBadRequest},
-			{"verified user passport incorrect TOTP", verifiedUserPassport, nil, app.ErrBadRequest},
-			{"verified user passport unverified correct TOTP", unverifiedTOTPUserPassport, unverifiedTOTPUser.TOTPKey, app.ErrBadRequest},
-			{"verified user passport without TOTP setup", verifiedNoTOTPUserPassport, nil, app.ErrBadRequest},
-			{"unverified user passport incorrect TOTP", unverifiedUserPassport, nil, app.ErrBadRequest},
-			{"unverified user passport correct TOTP", unverifiedUserPassport, unverifiedUser.TOTPKey, app.ErrBadRequest},
+			{"activated user passport incorrect TOTP", activatedUserPassport, nil, app.ErrBadRequest},
+			{"activated user passport unverified correct TOTP", unactivatedTOTPUserPassport, unactivatedTOTPUser.TOTPKey, app.ErrBadRequest},
+			{"activated user passport without TOTP setup", activatedNoTOTPUserPassport, nil, app.ErrBadRequest},
+			{"unactivated user passport incorrect TOTP", unactivatedUserPassport, nil, app.ErrBadRequest},
+			{"unactivated user passport correct TOTP", unactivatedUserPassport, unactivatedUser.TOTPKey, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			tc := tc
@@ -163,7 +163,7 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 
 		execute := func(totp domain.TOTP) error {
 			_, err := handler(ctx, account.AuthenticateWithTOTP{
-				Passport: verifiedUserPassport,
+				Passport: activatedUserPassport,
 				TOTP:     totp.String(),
 			})
 

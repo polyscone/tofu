@@ -92,7 +92,7 @@ func (u *User) Register(email text.Email) {
 
 func (u *User) ActivateAndSetPassword(password Password) error {
 	if !u.ActivatedAt.IsZero() {
-		return errors.Tracef("already verified")
+		return errors.Tracef("already activated")
 	}
 
 	if err := u.setPassword(password); err != nil {
@@ -141,7 +141,7 @@ func (u *User) setPassword(newPassword Password) error {
 
 func (u *User) ChangePassword(newPassword Password) error {
 	if u.ActivatedAt.IsZero() {
-		return errors.Tracef("cannot change password until verified")
+		return errors.Tracef("cannot change password until activated")
 	}
 
 	if err := u.setPassword(newPassword); err != nil {
@@ -179,7 +179,7 @@ func (u *User) AuthenticateWithPassword(password Password) error {
 		return errors.Tracef(app.ErrBadRequest, "already authenticated")
 	}
 	if u.ActivatedAt.IsZero() {
-		return errors.Tracef(app.ErrBadRequest, "account is not verified")
+		return errors.Tracef(app.ErrBadRequest, "account is not activated")
 	}
 
 	ok, _, err := argon2.Validate(password, u.HashedPassword, nil)
@@ -223,7 +223,7 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 	}
 
 	if u.ActivatedAt.IsZero() {
-		return errors.Tracef(app.ErrBadRequest, "account is not verified")
+		return errors.Tracef(app.ErrBadRequest, "account is not activated")
 	}
 
 	tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))

@@ -24,49 +24,49 @@ func TestChangePassword(t *testing.T) {
 	handler := account.NewChangePasswordHandler(broker, users)
 
 	// Seed the repo
-	verifiedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
-	unverifiedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
+	activatedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
+	unactivatedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
 
 	password := errors.Must(domain.NewPassword("password"))
-	if err := verifiedUser.ActivateAndSetPassword(password); err != nil {
+	if err := activatedUser.ActivateAndSetPassword(password); err != nil {
 		t.Fatal(err)
 	}
-	if err := users.Save(ctx, verifiedUser); err != nil {
+	if err := users.Save(ctx, activatedUser); err != nil {
 		t.Fatal(err)
 	}
 
-	verifiedUserLoggedOutPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
-		UserID: verifiedUser.ID.String(),
+	activatedUserLoggedOutPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
+		UserID: activatedUser.ID.String(),
 	}))
-	verifiedUserLoggedInPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
-		UserID:     verifiedUser.ID.String(),
+	activatedUserLoggedInPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
+		UserID:     activatedUser.ID.String(),
 		IsLoggedIn: true,
 	}))
-	unverifiedUserPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
-		UserID: unverifiedUser.ID.String(),
+	unactivatedUserPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
+		UserID: unactivatedUser.ID.String(),
 	}))
 
-	t.Run("success with verified logged in user", func(t *testing.T) {
+	t.Run("success with activated logged in user", func(t *testing.T) {
 		var wantEvents []event.Event
 		var gotEvents []event.Event
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		wantEvents = append(wantEvents, account.ChangedPassword{
-			Email: verifiedUser.Email.String(),
+			Email: activatedUser.Email.String(),
 		})
 
 		newPassword := errors.Must(domain.NewPassword("password123"))
 		err := handler(ctx, account.ChangePassword{
-			Guard:       verifiedUserLoggedInPassport,
-			UserID:      verifiedUserLoggedInPassport.UserID(),
+			Guard:       activatedUserLoggedInPassport,
+			UserID:      activatedUserLoggedInPassport.UserID(),
 			NewPassword: newPassword.String(),
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		user := errors.Must(users.FindByID(ctx, verifiedUser.ID))
+		user := errors.Must(users.FindByID(ctx, activatedUser.ID))
 
 		if err := user.AuthenticateWithPassword(newPassword); err != nil {
 			t.Errorf("want to be able to authenticate with new password; got %q", err)
@@ -88,9 +88,9 @@ func TestChangePassword(t *testing.T) {
 			want        error
 		}{
 			{"empty passport", account.EmptyPassport, "password123", app.ErrUnauthorized},
-			{"empty password", verifiedUserLoggedInPassport, "", app.ErrInvalidInput},
-			{"unverified user", unverifiedUserPassport, "password123", app.ErrUnauthorized},
-			{"verified logged out user", verifiedUserLoggedOutPassport, "password123", app.ErrUnauthorized},
+			{"empty password", activatedUserLoggedInPassport, "", app.ErrInvalidInput},
+			{"unactivated user", unactivatedUserPassport, "password123", app.ErrUnauthorized},
+			{"active logged out user", activatedUserLoggedOutPassport, "password123", app.ErrUnauthorized},
 		}
 		for _, tc := range tt {
 			tc := tc
@@ -122,13 +122,13 @@ func TestChangePassword(t *testing.T) {
 
 		execute := func(newPassword domain.Password) error {
 			err := handler(ctx, account.ChangePassword{
-				Guard:       verifiedUserLoggedInPassport,
-				UserID:      verifiedUserLoggedInPassport.UserID(),
+				Guard:       activatedUserLoggedInPassport,
+				UserID:      activatedUserLoggedInPassport.UserID(),
 				NewPassword: newPassword.String(),
 			})
 			if err == nil {
 				wantEvents = append(wantEvents, account.ChangedPassword{
-					Email: verifiedUser.Email.String(),
+					Email: activatedUser.Email.String(),
 				})
 			}
 

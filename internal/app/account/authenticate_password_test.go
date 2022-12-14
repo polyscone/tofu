@@ -24,14 +24,14 @@ func TestAuthenticateWithPassword(t *testing.T) {
 	handler := account.NewAuthenticateWithPasswordHandler(broker, users)
 
 	// Seed the repo
-	verifiedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
+	activatedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
 	errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
 
 	password := errors.Must(domain.NewPassword("password"))
-	if err := verifiedUser.ActivateAndSetPassword(password); err != nil {
+	if err := activatedUser.ActivateAndSetPassword(password); err != nil {
 		t.Fatal(err)
 	}
-	if err := users.Save(ctx, verifiedUser); err != nil {
+	if err := users.Save(ctx, activatedUser); err != nil {
 		t.Fatal(err)
 	}
 
@@ -42,7 +42,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		wantEvents = append(wantEvents, account.AuthenticatedWithPassword{
-			Email:         verifiedUser.Email.String(),
+			Email:         activatedUser.Email.String(),
 			IsAwaitingMFA: false,
 		})
 
@@ -76,7 +76,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 			{"non-existent email", "foo@bar.com", "password", nil},
 			{"short password", "joe@bloggs.com", "0123456", app.ErrInvalidInput},
 			{"incorrect password", "joe@bloggs.com", "0123456789", app.ErrBadRequest},
-			{"unverified user", "jane@doe.com", "password", app.ErrBadRequest},
+			{"unactivated user", "jane@doe.com", "password", app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			tc := tc

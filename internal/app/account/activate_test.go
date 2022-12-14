@@ -24,7 +24,7 @@ func TestActivate(t *testing.T) {
 	handler := account.NewActivateHandler(broker, users)
 
 	// Seed the repo
-	unverifiedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
+	unactivatedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
 	errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
 
 	t.Run("success with existing user", func(t *testing.T) {
@@ -33,22 +33,22 @@ func TestActivate(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		wantEvents = append(wantEvents, account.Verified{
-			Email: unverifiedUser.Email.String(),
+		wantEvents = append(wantEvents, account.Activated{
+			Email: unactivatedUser.Email.String(),
 		})
 
 		err := handler(ctx, account.Activate{
-			Email:    unverifiedUser.Email.String(),
+			Email:    unactivatedUser.Email.String(),
 			Password: "password",
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		user := errors.Must(users.FindByEmail(ctx, unverifiedUser.Email))
+		user := errors.Must(users.FindByEmail(ctx, unactivatedUser.Email))
 
 		if user.ActivatedAt.IsZero() {
-			t.Error("want non-zero verified at; got zero")
+			t.Error("want non-zero activated at; got zero")
 		}
 
 		testutil.CheckEvents(t, wantEvents, gotEvents)
@@ -61,7 +61,7 @@ func TestActivate(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		err := handler(ctx, account.Activate{
-			Email:    unverifiedUser.Email.String(),
+			Email:    unactivatedUser.Email.String(),
 			Password: "password",
 		})
 		if err == nil {
