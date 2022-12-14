@@ -1,0 +1,220 @@
+@layer reset, layout, universal, component, utility;
+
+:root {
+  --scale-ratio: 1.25; /* Major-Third  */
+  --scale-300: calc(var(--scale-400) / var(--scale-ratio));
+  --scale-400: 1rem;
+  --scale-500: calc(var(--scale-400) * var(--scale-ratio));
+  --scale-600: calc(var(--scale-500) * var(--scale-ratio));
+  --scale-700: calc(var(--scale-600) * var(--scale-ratio));
+  --scale-800: calc(var(--scale-700) * var(--scale-ratio));
+  --scale-900: calc(var(--scale-800) * var(--scale-ratio));
+
+  --measure: 60ch;
+
+  --fs-300: var(--scale-300);
+  --fs-400: var(--scale-400);
+  --fs-500: var(--scale-500);
+  --fs-600: var(--scale-600);
+  --fs-700: var(--scale-700);
+  --fs-800: var(--scale-800);
+  --fs-900: var(--scale-900);
+
+  --ff-primary:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Helvetica,
+    Arial,
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji";
+
+  --clr-neutral-100: hsl(200 96% 90%);
+  --clr-neutral-900: hsl(200 96% 10%);
+
+  --clr-primary-400: hsl(171 52% 52%);
+
+  --clr-accent-400: hsl(198 76% 31%);
+
+  --clr-focus-100: hsl(59 100% 90%);
+
+  --clr-valid-400: hsl(126 100% 50%);
+
+  --clr-invalid-100: hsl(0 100% 90%);
+  --clr-invalid-400: hsl(0 100% 50%);
+}
+
+@layer reset {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html:focus-within {
+    scroll-behavior: smooth;
+  }
+
+  html, body {
+    block-size: 100%;
+  }
+
+  body {
+    margin: 0;
+    line-height: 1.3;
+    text-rendering: optimizeSpeed;
+  }
+
+  h1, h2, h3, h4, p, figure, blockquote, dl, dd {
+    margin: 0;
+  }
+
+  img, picture {
+    display: block;
+    max-inline-size: 100%;
+  }
+
+  button, input, select, textarea {
+    font: inherit;
+  }
+}
+
+@layer layout {
+  .flow {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  .flow > * {
+    margin-block: 0;
+  }
+
+  .flow[data-gap="flush"] > * {
+    --flow-gap: 0;
+  }
+
+  .flow > * + * {
+    margin-block-start: var(--flow-gap, 1rem);
+  }
+
+  .center {
+    box-sizing: content-box;
+    display: flex;
+    flex-direction: column;
+    margin-inline: auto;
+    max-inline-size: var(--center-max-size, var(--measure));
+    padding-inline: 1rem;
+  }
+
+  .center[data-sizing="intrinsic"] {
+    align-items: center;
+  }
+
+  .bag {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bag-gap, 1rem);
+  }
+
+  .split {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--split-gap, 1rem);
+  }
+
+  .split > :first-child {
+    flex-grow: 1;
+    flex-basis: var(--split-size, clamp(8rem, 100%, 20%));
+  }
+
+  .split > :last-child {
+    flex-grow: 9999;
+    flex-basis: 0;
+    min-inline-size: var(--split-break-size, 70%);
+  }
+
+  .split[data-direction="reverse"] > :first-child {
+    order: 2;
+  }
+}
+
+@layer universal {
+  html {
+    font-family: var(--ff-primary);
+    font-size: 0.875rem;
+  }
+
+  body {
+    background: var(--background-primary-400);
+    color: var(--clr-neutral-900);
+  }
+
+  h1, h2, h3, h4, h5, h6, p, li {
+    max-inline-size: var(--measure);
+  }
+
+  h1 { font-size: var(--fs-900); }
+  h2 { font-size: var(--fs-800); }
+  h3 { font-size: var(--fs-700); }
+  h4 { font-size: var(--fs-600); }
+  h5 { font-size: var(--fs-500); }
+  h6 { font-size: var(--fs-500); }
+  p { font-size: var(--fs-400); }
+
+  hr {
+    inline-size: 100%;
+    border: none;
+    border-block: 1px solid var(--clr-neutral-100);
+  }
+
+  form {
+    --flow-gap: 0.5rem;
+  }
+
+  button, input {
+    min-height: 1.5rem;
+  }
+
+  button, input, textarea {
+    border: 1px solid rgb(0 0 0 / 30%);
+    padding-block: 0.3rem;
+    padding-inline: 0.6rem;
+  }
+
+  :focus-visible:is(input, textarea) {
+    outline-style: solid;
+    outline-width: 0.1rem;
+  }
+
+  :is(input, textarea):invalid,
+  [data-invalid] :is(input, textarea):invalid {
+    background: var(--clr-invalid-100);
+    outline-color: var(--clr-invalid-400);
+  }
+
+  :is(input, textarea):invalid:focus {
+    background: var(--clr-focus-100);
+  }
+
+  :is(input, textarea):valid:focus {
+    outline-color: var(--clr-valid-400);
+  }
+
+  :is(input, textarea):placeholder-shown {
+    background: white;
+  }
+
+  label:has(+ [required])::after {
+    content: "*";
+    color: red;
+    margin-inline-start: 0.2em;
+  }
+}
+
+@layer component {}
+
+@layer utility {
+  .push-inline-end {
+    margin-inline-start: auto;
+  }
+}
