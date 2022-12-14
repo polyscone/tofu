@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"text/template"
 
 	"github.com/polyscone/tofu/internal/pkg/command"
@@ -25,11 +26,12 @@ var tmplFuncs = template.FuncMap{
 }
 
 type App struct {
-	dev       bool
-	bus       command.Bus
-	sessions  *session.Manager
-	files     fs.FS
-	templates map[string]*template.Template
+	dev         bool
+	bus         command.Bus
+	sessions    *session.Manager
+	files       fs.FS
+	templatesMu sync.RWMutex
+	templates   map[string]*template.Template
 }
 
 func New(bus command.Bus, sessions *session.Manager) *App {
@@ -80,10 +82,19 @@ func (app *App) ErrorHandler(w http.ResponseWriter, r *http.Request, err error) 
 }
 
 func (app *App) view(view string) *template.Template {
+	app.templatesMu.RLock()
+
 	// Return the cached template only when we're not in a dev environment
 	if tmpl := app.templates[view]; tmpl != nil && !app.dev {
+		app.templatesMu.RUnlock()
+
 		return tmpl
 	}
+
+	app.templatesMu.RUnlock()
+
+	app.templatesMu.Lock()
+	defer app.templatesMu.Unlock()
 
 	key := strings.TrimSuffix(filepath.Base(view), ".go.html")
 
