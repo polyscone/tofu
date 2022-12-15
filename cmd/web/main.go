@@ -14,11 +14,11 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/compose"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
-	"github.com/polyscone/tofu/internal/web"
 )
 
 // Build information is set at compile time using the `-X` ldflags.

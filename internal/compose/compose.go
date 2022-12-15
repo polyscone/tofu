@@ -3,11 +3,11 @@ package compose
 import (
 	"context"
 
-	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
+	"github.com/polyscone/tofu/internal/port/account"
 )
 
 func Local(ctx context.Context, db *sqlite.DB) (command.Bus, event.Broker, error) {
