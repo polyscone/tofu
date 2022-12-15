@@ -44,12 +44,14 @@ func (api *API) Routes() http.Handler {
 	mux.Prefix("/api/v1", func(mux *router.ServeMux) {
 		mux.Get("/csrf", api.csrfGet)
 
-		mux.Post("/account/register", api.accountRegisterPost)
-		mux.Post("/account/activate", api.accountActivatePost)
-		mux.Post("/account/login/password", api.accountLoginWithPasswordPost)
-		mux.Post("/account/login/totp", api.accountLoginWithTOTPPost)
-		mux.Post("/account/logout", api.accountLogoutPost)
-		mux.Put("/account/password", api.accountChangePasswordPut)
+		mux.Prefix("/account", func(mux *router.ServeMux) {
+			mux.Post("/register", api.accountRegisterPost)
+			mux.Post("/activate", api.accountActivatePost)
+			mux.Post("/login/password", api.accountLoginWithPasswordPost)
+			mux.Post("/login/totp", api.accountLoginWithTOTPPost)
+			mux.Post("/logout", api.accountLogoutPost)
+			mux.Put("/password", api.accountChangePasswordPut)
+		})
 	})
 
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
