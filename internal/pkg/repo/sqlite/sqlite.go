@@ -75,19 +75,31 @@ func Open(ctx context.Context, kind Kind, filename string) (*DB, error) {
 		dsn = filename
 
 	case KindMemory:
-		// Due to the way Go handles connections in the standard library, in-memory SQLite
-		// databases have some problems with the wrong connection being used in some cases
+		// Because Go implements a connection pool it means that when the
+		// standard library opens a new connection any in-memory tables etc.
+		// will look like they've been lost
 		//
-		// To get around this problem we need to make sure the cache option for SQLite is
-		// set to shared, so that even if a different connection is used in the standard
-		// library's connection pool the same cache will still be used for that in-memory database
+		// To get around this it is possible to use a DSN like:
 		//
-		// This will prevent errors like the database thinking a table doesn't exist when it does etc.
+		//     file::memory:?cache=shared
 		//
-		// The cache is only shared between in-memory databases that have the same name, so we
-		// can still use different in-memory databases by setting the file name to something
-		// unique when required
-		dsn = "file:" + filename + ":memory?mode=memory&cache=shared"
+		// References:
+		// - https://www.sqlite.org/sharedcache.html#shared_cache_and_in_memory_databases
+		// - https://www.sqlite.org/inmemorydb.html#sharedmemdb
+		//
+		// Using file::memory: with a shared cache would allow each connection
+		// in the connection pool to connect to the same in-memory database
+		// and share a cache, rather than having their own private one each
+		//
+		// To allow for many different in-memory connections we can further
+		// expand this to take a file name with a mode parameter:
+		//
+		//     file:<name>?cache=shared&mode=memory
+		//
+		// All of this together prevents different connections to the same
+		// in-memory database from seeing different states, and still allows
+		// for unique in-memory databases when required
+		dsn = "file:" + filename + "?cache=shared&mode=memory"
 
 	default:
 		panic(fmt.Sprintf("unknown sqlite connection kind %q", kind))
