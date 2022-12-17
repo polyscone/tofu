@@ -1,9 +1,16 @@
 package api
 
 import (
+	"bytes"
 	"encoding/base32"
+	"encoding/base64"
+	"image/jpeg"
 	"net/http"
+	"strconv"
 
+	"github.com/boombuler/barcode"
+	"github.com/boombuler/barcode/qr"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/port/account"
 )
@@ -22,8 +29,36 @@ func (api *API) accountSetupTOTPPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	keyBase32 := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(res.Key)
+	issuer := app.Name
+	accountName := passport.Email()
+	qrcode, err := qr.Encode(
+		"otpauth://totp/"+
+			issuer+":"+accountName+
+			"?secret="+keyBase32+
+			"&issuer="+issuer+
+			"&algorithm="+res.Algorithm+
+			"&digits="+strconv.Itoa(res.Digits)+
+			"&period="+strconv.Itoa(res.Period),
+		qr.M,
+		qr.Auto,
+	)
 
+	qrcode, err = barcode.Scale(qrcode, 200, 200)
+	if writeError(w, r, errors.Tracef(err)) {
+		return
+	}
+
+	var buf bytes.Buffer
+	err = jpeg.Encode(&buf, qrcode, nil)
+	if writeError(w, r, errors.Tracef(err)) {
+		return
+	}
+
+	qrcodeBase64 := "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+
+	// TODO: Add an array of recovery codes to the response
 	writeJSON(w, r, map[string]any{
-		"key": keyBase32,
+		"keyBase32":    keyBase32,
+		"qrcodeBase64": qrcodeBase64,
 	})
 }
