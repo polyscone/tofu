@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web"
-	"github.com/polyscone/tofu/internal/compose"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
@@ -156,7 +156,7 @@ func main() {
 		}
 	}()
 
-	bus, broker, err := compose.Local(ctx, db)
+	bus, broker, err := app.Compose(ctx, db)
 	if err != nil {
 		logger.PrintError(err)
 

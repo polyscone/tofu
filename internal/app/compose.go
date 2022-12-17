@@ -1,4 +1,4 @@
-package compose
+package app
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func Local(ctx context.Context, db *sqlite.DB) (command.Bus, event.Broker, error) {
+func Compose(ctx context.Context, db *sqlite.DB) (command.Bus, event.Broker, error) {
 	bus := command.NewMemoryBus()
 	broker := event.NewMemoryBroker()
 
