@@ -41,7 +41,7 @@ func (cmd ChangePassword) Validate(ctx context.Context) error {
 func (cmd ChangePassword) data(ctx context.Context) (changePasswordData, error) {
 	var data changePasswordData
 	if !cmd.Guard.CanChangePassword(uuid.ParseV4OrNil(cmd.UserID)) {
-		return data, errors.Tracef(port.ErrUnauthorized, "insufficient permissions")
+		return data, errors.Tracef(port.ErrUnauthorised)
 	}
 
 	var err error

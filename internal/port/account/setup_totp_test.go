@@ -82,7 +82,7 @@ func TestSetupTOTP(t *testing.T) {
 			passport account.Passport
 			want     error
 		}{
-			{"empty passport", account.EmptyPassport, port.ErrUnauthorized},
+			{"empty passport", account.EmptyPassport, port.ErrUnauthorised},
 			{"TOTP already setup and verified", verifiedTOTPUserPassport, port.ErrBadRequest},
 		}
 		for _, tc := range tt {

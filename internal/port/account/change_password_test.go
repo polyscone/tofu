@@ -79,10 +79,10 @@ func TestChangePassword(t *testing.T) {
 			newPassword string
 			want        error
 		}{
-			{"empty passport", account.EmptyPassport, "password123", port.ErrUnauthorized},
+			{"empty passport", account.EmptyPassport, "password123", port.ErrUnauthorised},
 			{"empty password", activatedUserLoggedInPassport, "", port.ErrInvalidInput},
-			{"unactivated user", unactivatedUserPassport, "password123", port.ErrUnauthorized},
-			{"active logged out user", activatedUserLoggedOutPassport, "password123", port.ErrUnauthorized},
+			{"unactivated user", unactivatedUserPassport, "password123", port.ErrUnauthorised},
+			{"active logged out user", activatedUserLoggedOutPassport, "password123", port.ErrUnauthorised},
 		}
 		for _, tc := range tt {
 			tc := tc

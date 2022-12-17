@@ -107,7 +107,7 @@ func writeError(w http.ResponseWriter, r *http.Request, err error) bool {
 
 		switch {
 		case errors.Is(err, port.ErrInvalidInput),
-			errors.Is(err, port.ErrUnauthorized),
+			errors.Is(err, port.ErrUnauthorised),
 			errors.Is(err, csrf.ErrEmptyToken),
 			errors.Is(err, csrf.ErrInvalidToken):
 

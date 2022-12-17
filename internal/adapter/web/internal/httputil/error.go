@@ -26,7 +26,7 @@ func ErrorStatus(err error) int {
 	case errors.Is(err, ErrNotFound):
 		return http.StatusNotFound
 
-	case errors.Is(err, port.ErrUnauthorized):
+	case errors.Is(err, port.ErrUnauthorised):
 		return http.StatusUnauthorized
 
 	case errors.Is(err, ErrMethodNotAllowed):

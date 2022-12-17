@@ -38,7 +38,7 @@ func (cmd SetupTOTP) Validate(ctx context.Context) error {
 func (cmd SetupTOTP) data(ctx context.Context) (setupTOTPData, error) {
 	var data setupTOTPData
 	if !cmd.Guard.CanSetupTOTP(uuid.ParseV4OrNil(cmd.UserID)) {
-		return data, errors.Tracef(port.ErrUnauthorized, "insufficient permissions")
+		return data, errors.Tracef(port.ErrUnauthorised)
 	}
 
 	var err error
