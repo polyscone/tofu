@@ -115,6 +115,9 @@ func Open(ctx context.Context, kind Kind, filename string) (*DB, error) {
 	}
 	databases.mu.RUnlock()
 
+	databases.mu.Lock()
+	defer databases.mu.Unlock()
+
 	_db, err := sql.Open(driver, dsn)
 	if err != nil {
 		return nil, errors.Tracef(err)
@@ -125,9 +128,6 @@ func Open(ctx context.Context, kind Kind, filename string) (*DB, error) {
 	if err := db.Ping(ctx); err != nil {
 		return nil, errors.Tracef(err)
 	}
-
-	databases.mu.Lock()
-	defer databases.mu.Unlock()
 
 	databases.data[dsn] = db
 
