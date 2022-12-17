@@ -32,7 +32,7 @@ func NewTimeBased(digits int, alg Alg, baseTime time.Time, timeStep time.Duratio
 
 	hmacBased, err := NewHMACBased(digits, alg)
 	if err != nil {
-		return otp, err
+		return otp, errors.Tracef(err)
 	}
 
 	otp.hmacBased = hmacBased
@@ -55,7 +55,7 @@ func (otp TimeBased) Generate(key []byte, t time.Time) (string, error) {
 	count := uint64(math.Floor(float64(t.Unix()-otp.baseTime.Unix()) / otp.timeStep.Seconds()))
 	totp, err := otp.hmacBased.Generate(key, count)
 	if err != nil {
-		return "", err
+		return "", errors.Tracef(err)
 	}
 
 	return totp, nil
@@ -100,7 +100,7 @@ func (otp TimeBased) Verify(key []byte, t time.Time, delaySteps int, userPasswor
 		step := otp.timeStep * time.Duration(i)
 		password, err := otp.Generate(key, t.Add(-step))
 		if err != nil {
-			return false, err
+			return false, errors.Tracef(err)
 		}
 
 		if subtle.ConstantTimeCompare([]byte(password), []byte(userPassword)) == 1 {
@@ -119,7 +119,7 @@ func (otp TimeBased) Verify(key []byte, t time.Time, delaySteps int, userPasswor
 		step := otp.timeStep * time.Duration(i)
 		password, err := otp.Generate(key, t.Add(step))
 		if err != nil {
-			return false, err
+			return false, errors.Tracef(err)
 		}
 
 		if subtle.ConstantTimeCompare([]byte(password), []byte(userPassword)) == 1 {

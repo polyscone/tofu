@@ -29,7 +29,7 @@ type ChangePassword struct {
 func (cmd ChangePassword) Execute(ctx context.Context, bus command.Bus) error {
 	_, err := bus.Dispatch(ctx, cmd)
 
-	return err
+	return errors.Tracef(err)
 }
 
 func (cmd ChangePassword) Validate(ctx context.Context) error {

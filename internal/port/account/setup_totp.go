@@ -30,7 +30,7 @@ type SetupTOTP struct {
 func (cmd SetupTOTP) Execute(ctx context.Context, bus command.Bus) (setupTOTPResponse, error) {
 	res, err := bus.Dispatch(ctx, cmd)
 
-	return res.(setupTOTPResponse), err
+	return res.(setupTOTPResponse), errors.Tracef(err)
 }
 
 func (cmd SetupTOTP) Validate(ctx context.Context) error {

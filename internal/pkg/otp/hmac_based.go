@@ -52,7 +52,7 @@ func (otp HMACBased) Generate(key []byte, count uint64) (string, error) {
 
 	h := hmac.New(otp.newHash, key)
 	if err := binary.Write(h, binary.BigEndian, count); err != nil {
-		return "", err
+		return "", errors.Tracef(err)
 	}
 
 	hs := h.Sum(nil)

@@ -25,7 +25,7 @@ type Register struct {
 func (cmd Register) Execute(ctx context.Context, bus command.Bus) error {
 	_, err := bus.Dispatch(ctx, cmd)
 
-	return err
+	return errors.Tracef(err)
 }
 
 func (cmd Register) Validate(ctx context.Context) error {
