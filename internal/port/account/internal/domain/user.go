@@ -155,19 +155,26 @@ func (u *User) ChangePassword(newPassword Password) error {
 	return nil
 }
 
-func (u *User) SetupTOTP() (TOTPKey, error) {
+func (u *User) SetupTOTP() (TOTPParams, error) {
 	if u.hasVerifiedTOTP() {
-		return nil, errors.Tracef(port.ErrBadRequest, "TOTP already setup and verified")
+		return TOTPParams{}, errors.Tracef(port.ErrBadRequest, "TOTP already setup and verified")
 	}
 
 	key, err := otp.NewKey(nil, otp.SHA1)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return TOTPParams{}, errors.Tracef(err)
 	}
 
 	u.TOTPKey = NewTOTPKey(key)
 
-	return u.TOTPKey, nil
+	params := TOTPParams{
+		Key:       u.TOTPKey,
+		Algorithm: "SHA1",
+		Digits:    6,
+		Period:    30,
+	}
+
+	return params, nil
 }
 
 func (u *User) VerifyTOTP() {

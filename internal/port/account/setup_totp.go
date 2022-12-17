@@ -19,7 +19,10 @@ type setupTOTPRequest struct {
 }
 
 type setupTOTPResponse struct {
-	Key []byte
+	Key       []byte
+	Algorithm string
+	Digits    int
+	Period    int
 }
 
 type SetupTOTP struct {
@@ -69,7 +72,7 @@ func NewSetupTOTPHandler(broker event.Broker, users UserRepo) SetupTOTPHandler {
 			return setupTOTPResponse{}, errors.Tracef(err)
 		}
 
-		key, err := user.SetupTOTP()
+		params, err := user.SetupTOTP()
 		if err != nil {
 			return setupTOTPResponse{}, errors.Tracef(err)
 		}
@@ -80,7 +83,12 @@ func NewSetupTOTPHandler(broker event.Broker, users UserRepo) SetupTOTPHandler {
 
 		broker.Flush(&user.Events)
 
-		res := setupTOTPResponse{Key: key}
+		res := setupTOTPResponse{
+			Key:       params.Key,
+			Algorithm: params.Algorithm,
+			Digits:    params.Digits,
+			Period:    params.Period,
+		}
 
 		return res, nil
 	}
