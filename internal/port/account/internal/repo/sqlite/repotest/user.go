@@ -82,3 +82,24 @@ func AddUser(t *testing.T, users account.UserRepo, ctx context.Context, _email s
 
 	return users.FindByID(ctx, user.ID)
 }
+
+func AddActivatedUser(t *testing.T, users account.UserRepo, ctx context.Context, _email, _password string) (domain.User, error) {
+	user, err := AddUser(t, users, ctx, _email)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	password, err := domain.NewPassword(_password)
+	if err != nil {
+		return domain.User{}, err
+	}
+
+	if err := user.ActivateAndSetPassword(password); err != nil {
+		return domain.User{}, err
+	}
+	if err := users.Save(ctx, user); err != nil {
+		return domain.User{}, err
+	}
+
+	return users.FindByID(ctx, user.ID)
+}

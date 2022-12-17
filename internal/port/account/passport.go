@@ -23,3 +23,7 @@ func (p Passport) IsLoggedIn() bool    { return p.user.AuthStatus() == domain.Au
 func (p Passport) CanChangePassword(userID uuid.V4) bool {
 	return p.IsLoggedIn() && p.user.ID == userID
 }
+
+func (p Passport) CanSetupTOTP(userID uuid.V4) bool {
+	return p.IsLoggedIn() && p.user.ID == userID
+}
