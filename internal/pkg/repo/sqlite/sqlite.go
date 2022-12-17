@@ -118,12 +118,15 @@ func Open(ctx context.Context, kind Kind, filename string) (*DB, error) {
 	databases.mu.Lock()
 	defer databases.mu.Unlock()
 
-	_db, err := sql.Open(driver, dsn)
-	if err != nil {
-		return nil, errors.Tracef(err)
-	}
+	db, ok := databases.data[dsn]
+	if !ok {
+		_db, err := sql.Open(driver, dsn)
+		if err != nil {
+			return nil, errors.Tracef(err)
+		}
 
-	db := &DB{db: _db}
+		db = &DB{db: _db}
+	}
 
 	if err := db.Ping(ctx); err != nil {
 		return nil, errors.Tracef(err)
