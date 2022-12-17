@@ -431,11 +431,12 @@ func asRepoError(err error) error {
 
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
-		err = repo.ErrNotFound
+		return repo.ErrNotFound
 
 	case strings.Contains(msg, "unique constraint failed"):
-		err = repo.ErrConflict
-	}
+		return repo.ErrConflict
 
-	return err
+	default:
+		return err
+	}
 }
