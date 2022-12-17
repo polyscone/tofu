@@ -78,7 +78,7 @@ func NewUser(id uuid.V4) User {
 	}
 }
 
-func (u *User) HasVerifiedTOTP() bool {
+func (u *User) hasVerifiedTOTP() bool {
 	return !u.TOTPVerifiedAt.IsZero() && len(u.TOTPKey) != 0
 }
 
@@ -156,7 +156,7 @@ func (u *User) ChangePassword(newPassword Password) error {
 }
 
 func (u *User) SetupTOTP() error {
-	if u.HasVerifiedTOTP() {
+	if u.hasVerifiedTOTP() {
 		return errors.Tracef(port.ErrBadRequest, "TOTP already setup and verified")
 	}
 
@@ -205,7 +205,7 @@ func (u *User) AuthenticateWithPassword(password Password) error {
 		return errors.Tracef(port.ErrBadRequest, "could not validate password")
 	}
 
-	if u.HasVerifiedTOTP() {
+	if u.hasVerifiedTOTP() {
 		u.SetAuthStatus(AwaitingMFA)
 	} else {
 		u.SetAuthStatus(Authenticated)
@@ -220,7 +220,7 @@ func (u *User) AuthenticateWithPassword(password Password) error {
 }
 
 func (u *User) AuthenticateWithTOTP(totp TOTP) error {
-	if !u.HasVerifiedTOTP() {
+	if !u.hasVerifiedTOTP() {
 		return errors.Tracef(port.ErrBadRequest, "account does not have MFA")
 	}
 
