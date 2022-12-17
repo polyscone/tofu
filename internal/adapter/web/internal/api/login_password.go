@@ -40,11 +40,10 @@ func (api *API) accountLoginWithPasswordPost(w http.ResponseWriter, r *http.Requ
 	api.sessions.Set(ctx, sess.UserID, passport.UserID())
 	api.sessions.Set(ctx, sess.IsAwaitingMFA, passport.IsAwaitingMFA())
 
-	encoded := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
-	data := map[string]any{
-		"csrfToken":     encoded,
-		"isAwaitingMFA": passport.IsAwaitingMFA(),
-	}
+	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 
-	writeJSON(w, r, data)
+	writeJSON(w, r, map[string]any{
+		"csrfToken":     csrfTokenBase64,
+		"isAwaitingMFA": passport.IsAwaitingMFA(),
+	})
 }

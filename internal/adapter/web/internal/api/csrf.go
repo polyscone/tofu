@@ -9,8 +9,9 @@ import (
 
 func (api *API) csrfGet(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	encoded := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
-	data := map[string]string{"csrfToken": encoded}
+	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 
-	writeJSON(w, r, data)
+	writeJSON(w, r, map[string]string{
+		"csrfToken": csrfTokenBase64,
+	})
 }

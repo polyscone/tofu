@@ -41,8 +41,9 @@ func (api *API) accountLoginWithTOTPPost(w http.ResponseWriter, r *http.Request)
 
 	api.sessions.Delete(ctx, sess.IsAwaitingMFA)
 
-	encoded := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
-	data := map[string]any{"csrfToken": encoded}
+	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 
-	writeJSON(w, r, data)
+	writeJSON(w, r, map[string]any{
+		"csrfToken": csrfTokenBase64,
+	})
 }
