@@ -59,30 +59,28 @@ type SetupTOTPHandler func(ctx context.Context, cmd SetupTOTP) (SetupTOTPRespons
 
 func NewSetupTOTPHandler(broker event.Broker, users UserRepo) SetupTOTPHandler {
 	return func(ctx context.Context, cmd SetupTOTP) (SetupTOTPResponse, error) {
-		var res SetupTOTPResponse
-
 		req, err := cmd.request(ctx)
 		if err != nil {
-			return res, errors.Tracef(err)
+			return SetupTOTPResponse{}, errors.Tracef(err)
 		}
 
 		user, err := users.FindByID(ctx, req.userID)
 		if err != nil {
-			return res, errors.Tracef(err)
+			return SetupTOTPResponse{}, errors.Tracef(err)
 		}
 
 		key, err := user.SetupTOTP()
 		if err != nil {
-			return res, errors.Tracef(err)
+			return SetupTOTPResponse{}, errors.Tracef(err)
 		}
 
 		if err := users.Save(ctx, user); err != nil {
-			return res, errors.Tracef(err)
+			return SetupTOTPResponse{}, errors.Tracef(err)
 		}
 
 		broker.Flush(&user.Events)
 
-		res = SetupTOTPResponse{Key: key}
+		res := SetupTOTPResponse{Key: key}
 
 		return res, nil
 	}
