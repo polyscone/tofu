@@ -11,7 +11,7 @@ func (api *API) csrfGet(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 
-	writeJSON(w, r, map[string]string{
+	writeJSON(w, r, map[string]any{
 		"csrfToken": csrfTokenBase64,
 	})
 }
