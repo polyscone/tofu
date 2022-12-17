@@ -31,7 +31,7 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 	activatedNoTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jim@bloggs.com", password))
 	unverifiedTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "foo@bar.com", password))
 
-	if err := activatedUser.SetupTOTP(); err != nil {
+	if _, err := activatedUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
 	activatedUser.VerifyTOTPKey()
@@ -39,7 +39,7 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := unverifiedTOTPUser.SetupTOTP(); err != nil {
+	if _, err := unverifiedTOTPUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
 	if err := users.Save(ctx, unverifiedTOTPUser); err != nil {

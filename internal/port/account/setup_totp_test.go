@@ -1,6 +1,7 @@
 package account_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 	"time"
@@ -29,7 +30,7 @@ func TestSetupTOTP(t *testing.T) {
 	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
 	verifiedTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jane@doe.com", password))
 
-	if err := verifiedTOTPUser.SetupTOTP(); err != nil {
+	if _, err := verifiedTOTPUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
 	verifiedTOTPUser.VerifyTOTP()
@@ -60,12 +61,17 @@ func TestSetupTOTP(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		err := handler(ctx, account.SetupTOTP{
+		res, err := handler(ctx, account.SetupTOTP{
 			Guard:  activatedUserPassport,
 			UserID: activatedUserPassport.UserID(),
 		})
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		user := errors.Must(users.FindByID(ctx, activatedUser.ID))
+		if want, got := res.Key, user.TOTPKey; !bytes.Equal(want, got) {
+			t.Errorf("want %q; got %q", want, got)
 		}
 
 		testutil.CheckEvents(t, wantEvents, gotEvents)
@@ -89,7 +95,7 @@ func TestSetupTOTP(t *testing.T) {
 			tc := tc
 
 			t.Run(tc.name, func(t *testing.T) {
-				err := handler(ctx, account.SetupTOTP{
+				_, err := handler(ctx, account.SetupTOTP{
 					Guard:  tc.passport,
 					UserID: tc.passport.UserID(),
 				})

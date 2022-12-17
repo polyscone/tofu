@@ -27,6 +27,7 @@ func Local(ctx context.Context, db *sqlite.DB) (command.Bus, event.Broker, error
 		bus.Register(account.NewChangePasswordHandler(broker, users))
 		bus.Register(account.NewIssuePassportHandler(broker, users))
 		bus.Register(account.NewRegisterHandler(broker, users))
+		bus.Register(account.NewSetupTOTPHandler(broker, users))
 	}
 
 	return bus, broker, nil

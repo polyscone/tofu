@@ -47,6 +47,7 @@ func (api *API) Routes() http.Handler {
 		mux.Prefix("/account", func(mux *router.ServeMux) {
 			mux.Post("/register", api.accountRegisterPost)
 			mux.Post("/activate", api.accountActivatePost)
+			mux.Post("/totp", api.accountSetupTOTPPost)
 			mux.Post("/login/password", api.accountLoginWithPasswordPost)
 			mux.Post("/login/totp", api.accountLoginWithTOTPPost)
 			mux.Post("/logout", api.accountLogoutPost)
