@@ -15,7 +15,7 @@ type ChangePasswordGuard interface {
 	CanChangePassword(userID uuid.V4) bool
 }
 
-type changePasswordData struct {
+type changePasswordRequest struct {
 	userID      uuid.V4
 	newPassword domain.Password
 }
@@ -33,45 +33,45 @@ func (cmd ChangePassword) Execute(ctx context.Context, bus command.Bus) error {
 }
 
 func (cmd ChangePassword) Validate(ctx context.Context) error {
-	_, err := cmd.data(ctx)
+	_, err := cmd.request(ctx)
 
 	return errors.Tracef(err)
 }
 
-func (cmd ChangePassword) data(ctx context.Context) (changePasswordData, error) {
-	var data changePasswordData
+func (cmd ChangePassword) request(ctx context.Context) (changePasswordRequest, error) {
+	var req changePasswordRequest
 	if !cmd.Guard.CanChangePassword(uuid.ParseV4OrNil(cmd.UserID)) {
-		return data, errors.Tracef(port.ErrUnauthorised)
+		return req, errors.Tracef(port.ErrUnauthorised)
 	}
 
 	var err error
 	var errs errors.Map
 
-	if data.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
+	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("user id", err)
 	}
-	if data.newPassword, err = domain.NewPassword(cmd.NewPassword); err != nil {
+	if req.newPassword, err = domain.NewPassword(cmd.NewPassword); err != nil {
 		errs.Set("new password", err)
 	}
 
-	return data, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrInvalidInput)
 }
 
 type ChangePasswordHandler func(ctx context.Context, cmd ChangePassword) error
 
 func NewChangePasswordHandler(broker event.Broker, users UserRepo) ChangePasswordHandler {
 	return func(ctx context.Context, cmd ChangePassword) error {
-		data, err := cmd.data(ctx)
+		req, err := cmd.request(ctx)
 		if err != nil {
 			return errors.Tracef(err)
 		}
 
-		user, err := users.FindByID(ctx, data.userID)
+		user, err := users.FindByID(ctx, req.userID)
 		if err != nil {
 			return errors.Tracef(err)
 		}
 
-		if err := user.ChangePassword(data.newPassword); err != nil {
+		if err := user.ChangePassword(req.newPassword); err != nil {
 			return errors.Tracef(err)
 		}
 

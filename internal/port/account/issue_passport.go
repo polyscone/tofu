@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 )
 
-type findUserByIDData struct {
+type findUserByIDRequest struct {
 	userID        uuid.V4
 	isAwaitingMFA bool
 	isLoggedIn    bool
@@ -30,50 +30,50 @@ func (cmd IssuePassport) Execute(ctx context.Context, bus command.Bus) (Passport
 }
 
 func (cmd IssuePassport) Validate(ctx context.Context) error {
-	_, err := cmd.data(ctx)
+	_, err := cmd.request(ctx)
 
 	return errors.Tracef(err)
 }
 
-func (cmd IssuePassport) data(ctx context.Context) (findUserByIDData, error) {
-	var data findUserByIDData
+func (cmd IssuePassport) request(ctx context.Context) (findUserByIDRequest, error) {
+	var req findUserByIDRequest
 	var err error
 	var errs errors.Map
 
-	if data.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
+	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("user id", err)
 	}
 
-	data.isAwaitingMFA = cmd.IsAwaitingMFA
-	data.isLoggedIn = cmd.IsLoggedIn
+	req.isAwaitingMFA = cmd.IsAwaitingMFA
+	req.isLoggedIn = cmd.IsLoggedIn
 
-	if data.isAwaitingMFA && data.isLoggedIn {
+	if req.isAwaitingMFA && req.isLoggedIn {
 		errs.Set("is awaiting MFA", errors.Tracef("cannot be both logged in an awaiting MFA"))
 		errs.Set("is logged in", errors.Tracef("cannot be both logged in an awaiting MFA"))
 	}
 
-	return data, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrInvalidInput)
 }
 
 type IssuePassportHandler func(ctx context.Context, cmd IssuePassport) (Passport, error)
 
 func NewIssuePassportHandler(broker event.Broker, users UserRepo) IssuePassportHandler {
 	return func(ctx context.Context, cmd IssuePassport) (Passport, error) {
-		data, err := cmd.data(ctx)
+		req, err := cmd.request(ctx)
 		if err != nil {
 			return EmptyPassport, errors.Tracef(err)
 		}
 
-		user, err := users.FindByID(ctx, data.userID)
+		user, err := users.FindByID(ctx, req.userID)
 		if err != nil {
 			return EmptyPassport, errors.Tracef(err)
 		}
 
 		switch {
-		case data.isAwaitingMFA:
+		case req.isAwaitingMFA:
 			user.SetAuthStatus(domain.AwaitingMFA)
 
-		case data.isLoggedIn:
+		case req.isLoggedIn:
 			user.SetAuthStatus(domain.Authenticated)
 		}
 

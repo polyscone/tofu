@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 )
 
-type activateData struct {
+type activateRequest struct {
 	email    text.Email
 	password domain.Password
 }
@@ -28,41 +28,41 @@ func (cmd Activate) Execute(ctx context.Context, bus command.Bus) error {
 }
 
 func (cmd Activate) Validate(ctx context.Context) error {
-	_, err := cmd.data(ctx)
+	_, err := cmd.request(ctx)
 
 	return errors.Tracef(err)
 }
 
-func (cmd Activate) data(ctx context.Context) (activateData, error) {
-	var data activateData
+func (cmd Activate) request(ctx context.Context) (activateRequest, error) {
+	var req activateRequest
 	var err error
 	var errs errors.Map
 
-	if data.email, err = text.NewEmail(cmd.Email); err != nil {
+	if req.email, err = text.NewEmail(cmd.Email); err != nil {
 		errs.Set("email", err)
 	}
-	if data.password, err = domain.NewPassword(cmd.Password); err != nil {
+	if req.password, err = domain.NewPassword(cmd.Password); err != nil {
 		errs.Set("password", err)
 	}
 
-	return data, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrInvalidInput)
 }
 
 type ActivateHandler func(ctx context.Context, cmd Activate) error
 
 func NewActivateHandler(broker event.Broker, users UserRepo) ActivateHandler {
 	return func(ctx context.Context, cmd Activate) error {
-		data, err := cmd.data(ctx)
+		req, err := cmd.request(ctx)
 		if err != nil {
 			return errors.Tracef(err)
 		}
 
-		user, err := users.FindByEmail(ctx, data.email)
+		user, err := users.FindByEmail(ctx, req.email)
 		if err != nil {
 			return errors.Tracef(err)
 		}
 
-		if err := user.ActivateAndSetPassword(data.password); err != nil {
+		if err := user.ActivateAndSetPassword(req.password); err != nil {
 			return errors.Tracef(err)
 		}
 

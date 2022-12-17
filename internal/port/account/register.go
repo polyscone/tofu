@@ -12,7 +12,7 @@ import (
 	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 )
 
-type registerData struct {
+type registerRequest struct {
 	userID uuid.V4
 	email  text.Email
 }
@@ -29,38 +29,38 @@ func (cmd Register) Execute(ctx context.Context, bus command.Bus) error {
 }
 
 func (cmd Register) Validate(ctx context.Context) error {
-	_, err := cmd.data(ctx)
+	_, err := cmd.request(ctx)
 
 	return errors.Tracef(err)
 }
 
-func (cmd Register) data(ctx context.Context) (registerData, error) {
-	var data registerData
+func (cmd Register) request(ctx context.Context) (registerRequest, error) {
+	var req registerRequest
 	var err error
 	var errs errors.Map
 
-	if data.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
+	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("id", err)
 	}
-	if data.email, err = text.NewEmail(cmd.Email); err != nil {
+	if req.email, err = text.NewEmail(cmd.Email); err != nil {
 		errs.Set("email", err)
 	}
 
-	return data, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrInvalidInput)
 }
 
 type RegisterHandler func(ctx context.Context, cmd Register) error
 
 func NewRegisterHandler(broker event.Broker, users UserRepo) RegisterHandler {
 	return func(ctx context.Context, cmd Register) error {
-		data, err := cmd.data(ctx)
+		req, err := cmd.request(ctx)
 		if err != nil {
 			return errors.Tracef(err)
 		}
 
-		user := domain.NewUser(data.userID)
+		user := domain.NewUser(req.userID)
 
-		user.Register(data.email)
+		user.Register(req.email)
 
 		if err := users.Add(ctx, user); err != nil {
 			return errors.Tracef(err)
