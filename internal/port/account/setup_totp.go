@@ -18,7 +18,7 @@ type setupTOTPRequest struct {
 	userID uuid.V4
 }
 
-type SetupTOTPResponse struct {
+type setupTOTPResponse struct {
 	Key []byte
 }
 
@@ -27,10 +27,10 @@ type SetupTOTP struct {
 	UserID string
 }
 
-func (cmd SetupTOTP) Execute(ctx context.Context, bus command.Bus) (SetupTOTPResponse, error) {
+func (cmd SetupTOTP) Execute(ctx context.Context, bus command.Bus) (setupTOTPResponse, error) {
 	res, err := bus.Dispatch(ctx, cmd)
 
-	return res.(SetupTOTPResponse), err
+	return res.(setupTOTPResponse), err
 }
 
 func (cmd SetupTOTP) Validate(ctx context.Context) error {
@@ -55,32 +55,32 @@ func (cmd SetupTOTP) request(ctx context.Context) (setupTOTPRequest, error) {
 	return req, errs.Tracef(port.ErrInvalidInput)
 }
 
-type SetupTOTPHandler func(ctx context.Context, cmd SetupTOTP) (SetupTOTPResponse, error)
+type SetupTOTPHandler func(ctx context.Context, cmd SetupTOTP) (setupTOTPResponse, error)
 
 func NewSetupTOTPHandler(broker event.Broker, users UserRepo) SetupTOTPHandler {
-	return func(ctx context.Context, cmd SetupTOTP) (SetupTOTPResponse, error) {
+	return func(ctx context.Context, cmd SetupTOTP) (setupTOTPResponse, error) {
 		req, err := cmd.request(ctx)
 		if err != nil {
-			return SetupTOTPResponse{}, errors.Tracef(err)
+			return setupTOTPResponse{}, errors.Tracef(err)
 		}
 
 		user, err := users.FindByID(ctx, req.userID)
 		if err != nil {
-			return SetupTOTPResponse{}, errors.Tracef(err)
+			return setupTOTPResponse{}, errors.Tracef(err)
 		}
 
 		key, err := user.SetupTOTP()
 		if err != nil {
-			return SetupTOTPResponse{}, errors.Tracef(err)
+			return setupTOTPResponse{}, errors.Tracef(err)
 		}
 
 		if err := users.Save(ctx, user); err != nil {
-			return SetupTOTPResponse{}, errors.Tracef(err)
+			return setupTOTPResponse{}, errors.Tracef(err)
 		}
 
 		broker.Flush(&user.Events)
 
-		res := SetupTOTPResponse{Key: key}
+		res := setupTOTPResponse{Key: key}
 
 		return res, nil
 	}
