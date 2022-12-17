@@ -39,7 +39,7 @@ func (api *API) accountLoginWithTOTPPost(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	api.sessions.Delete(ctx, sess.IsAwaitingMFA)
+	api.sessions.Delete(ctx, sess.IsAwaitingTOTP)
 
 	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 

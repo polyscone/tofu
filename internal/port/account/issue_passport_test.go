@@ -31,16 +31,16 @@ func TestIssuePassport(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		tt := []struct {
-			name          string
-			userID        string
-			isAwaitingMFA bool
-			isLoggedIn    bool
+			name           string
+			userID         string
+			isAwaitingTOTP bool
+			isLoggedIn     bool
 		}{
 			{"activated user id", activatedUser.ID.String(), false, false},
-			{"activated user id awaiting MFA", activatedUser.ID.String(), true, false},
+			{"activated user id awaiting TOTP", activatedUser.ID.String(), true, false},
 			{"activated user id logged in", activatedUser.ID.String(), false, true},
 			{"unactivated user id", unactivatedUser.ID.String(), false, false},
-			{"unactivated user id awaiting MFA", unactivatedUser.ID.String(), true, false},
+			{"unactivated user id awaiting TOTP", unactivatedUser.ID.String(), true, false},
 			{"unactivated user id logged in", unactivatedUser.ID.String(), false, true},
 		}
 		for _, tc := range tt {
@@ -48,9 +48,9 @@ func TestIssuePassport(t *testing.T) {
 
 			t.Run(tc.name, func(t *testing.T) {
 				passport, err := handler(ctx, account.IssuePassport{
-					UserID:        tc.userID,
-					IsAwaitingMFA: tc.isAwaitingMFA,
-					IsLoggedIn:    tc.isLoggedIn,
+					UserID:         tc.userID,
+					IsAwaitingTOTP: tc.isAwaitingTOTP,
+					IsLoggedIn:     tc.isLoggedIn,
 				})
 				if err != nil {
 					t.Fatalf("want <nil>; got %q", err)
@@ -59,8 +59,8 @@ func TestIssuePassport(t *testing.T) {
 				if want, got := tc.userID, passport.UserID(); want != got {
 					t.Errorf("want user id %q; got %q", want, got)
 				}
-				if want, got := tc.isAwaitingMFA, passport.IsAwaitingMFA(); want != got {
-					t.Errorf("want awaiting MFA %v; got %v", want, got)
+				if want, got := tc.isAwaitingTOTP, passport.IsAwaitingTOTP(); want != got {
+					t.Errorf("want awaiting TOTP %v; got %v", want, got)
 				}
 				if want, got := tc.isLoggedIn, passport.IsLoggedIn(); want != got {
 					t.Errorf("want logged in %v; got %v", want, got)
@@ -78,10 +78,10 @@ func TestIssuePassport(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		tt := []struct {
-			name          string
-			userID        string
-			isAwaitingMFA bool
-			isLoggedIn    bool
+			name           string
+			userID         string
+			isAwaitingTOTP bool
+			isLoggedIn     bool
 		}{
 			{"empty user id", "", false, false},
 			{"nil user id", uuid.Nil.String(), false, false},
@@ -93,9 +93,9 @@ func TestIssuePassport(t *testing.T) {
 
 			t.Run(tc.name, func(t *testing.T) {
 				_, err := handler(ctx, account.IssuePassport{
-					UserID:        tc.userID,
-					IsAwaitingMFA: tc.isAwaitingMFA,
-					IsLoggedIn:    tc.isLoggedIn,
+					UserID:         tc.userID,
+					IsAwaitingTOTP: tc.isAwaitingTOTP,
+					IsLoggedIn:     tc.isLoggedIn,
 				})
 				if err == nil {
 					t.Error("want error; got <nil>")

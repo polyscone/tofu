@@ -17,7 +17,7 @@ import (
 const (
 	authStatusStart AuthStatus = iota
 	Unauthenticated
-	AwaitingMFA
+	AwaitingTOTP
 	Authenticated
 	authStatusEnd
 )
@@ -43,8 +43,8 @@ type Activated struct {
 }
 
 type AuthenticatedWithPassword struct {
-	Email         string
-	IsAwaitingMFA bool
+	Email          string
+	IsAwaitingTOTP bool
 }
 
 type AuthenticatedWithTOTP struct {
@@ -205,14 +205,14 @@ func (u *User) AuthenticateWithPassword(password Password) error {
 	}
 
 	if u.hasVerifiedTOTP() {
-		u.SetAuthStatus(AwaitingMFA)
+		u.SetAuthStatus(AwaitingTOTP)
 	} else {
 		u.SetAuthStatus(Authenticated)
 	}
 
 	u.Events.Enqueue(AuthenticatedWithPassword{
-		Email:         u.Email.String(),
-		IsAwaitingMFA: u.AuthStatus() == AwaitingMFA,
+		Email:          u.Email.String(),
+		IsAwaitingTOTP: u.AuthStatus() == AwaitingTOTP,
 	})
 
 	return nil
@@ -220,7 +220,7 @@ func (u *User) AuthenticateWithPassword(password Password) error {
 
 func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 	if !u.hasVerifiedTOTP() {
-		return errors.Tracef(port.ErrBadRequest, "account does not have MFA")
+		return errors.Tracef(port.ErrBadRequest, "account does not have TOTP")
 	}
 
 	switch status := u.AuthStatus(); status {
@@ -231,8 +231,8 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 		return errors.Tracef(port.ErrBadRequest, "already authenticated")
 
 	default:
-		if status != AwaitingMFA {
-			return errors.Tracef(port.ErrBadRequest, "account is not awaiting MFA")
+		if status != AwaitingTOTP {
+			return errors.Tracef(port.ErrBadRequest, "account is not awaiting TOTP")
 		}
 	}
 

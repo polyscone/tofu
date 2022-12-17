@@ -72,11 +72,11 @@ func (api *API) ErrorHandler(w http.ResponseWriter, r *http.Request, err error) 
 
 func (api *API) passport(ctx context.Context) account.Passport {
 	userID := api.sessions.GetString(ctx, sess.UserID)
-	isAwaitingMFA := api.sessions.GetBool(ctx, sess.IsAwaitingMFA)
+	isAwaitingTOTP := api.sessions.GetBool(ctx, sess.IsAwaitingTOTP)
 	cmd := account.IssuePassport{
-		UserID:        userID,
-		IsAwaitingMFA: isAwaitingMFA,
-		IsLoggedIn:    !isAwaitingMFA,
+		UserID:         userID,
+		IsAwaitingTOTP: isAwaitingTOTP,
+		IsLoggedIn:     !isAwaitingTOTP,
 	}
 	passport, err := cmd.Execute(ctx, api.bus)
 	if err != nil {

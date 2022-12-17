@@ -34,8 +34,8 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		wantEvents = append(wantEvents, account.AuthenticatedWithPassword{
-			Email:         activatedUser.Email.String(),
-			IsAwaitingMFA: false,
+			Email:          activatedUser.Email.String(),
+			IsAwaitingTOTP: false,
 		})
 
 		_, err := handler(ctx, account.AuthenticateWithPassword{

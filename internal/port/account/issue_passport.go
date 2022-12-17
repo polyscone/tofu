@@ -12,15 +12,15 @@ import (
 )
 
 type findUserByIDRequest struct {
-	userID        uuid.V4
-	isAwaitingMFA bool
-	isLoggedIn    bool
+	userID         uuid.V4
+	isAwaitingTOTP bool
+	isLoggedIn     bool
 }
 
 type IssuePassport struct {
-	UserID        string
-	IsAwaitingMFA bool
-	IsLoggedIn    bool
+	UserID         string
+	IsAwaitingTOTP bool
+	IsLoggedIn     bool
 }
 
 func (cmd IssuePassport) Execute(ctx context.Context, bus command.Bus) (Passport, error) {
@@ -44,12 +44,12 @@ func (cmd IssuePassport) request(ctx context.Context) (findUserByIDRequest, erro
 		errs.Set("user id", err)
 	}
 
-	req.isAwaitingMFA = cmd.IsAwaitingMFA
+	req.isAwaitingTOTP = cmd.IsAwaitingTOTP
 	req.isLoggedIn = cmd.IsLoggedIn
 
-	if req.isAwaitingMFA && req.isLoggedIn {
-		errs.Set("is awaiting MFA", errors.Tracef("cannot be both logged in an awaiting MFA"))
-		errs.Set("is logged in", errors.Tracef("cannot be both logged in an awaiting MFA"))
+	if req.isAwaitingTOTP && req.isLoggedIn {
+		errs.Set("is awaiting TOTP", errors.Tracef("cannot be both logged in an awaiting TOTP"))
+		errs.Set("is logged in", errors.Tracef("cannot be both logged in an awaiting TOTP"))
 	}
 
 	return req, errs.Tracef(port.ErrInvalidInput)
@@ -70,8 +70,8 @@ func NewIssuePassportHandler(broker event.Broker, users UserRepo) IssuePassportH
 		}
 
 		switch {
-		case req.isAwaitingMFA:
-			user.SetAuthStatus(domain.AwaitingMFA)
+		case req.isAwaitingTOTP:
+			user.SetAuthStatus(domain.AwaitingTOTP)
 
 		case req.isLoggedIn:
 			user.SetAuthStatus(domain.Authenticated)
