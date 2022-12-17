@@ -22,66 +22,41 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
-	issuePassportHandler := account.NewIssuePassportHandler(broker, users)
 	authenticateWithPasswordHandler := account.NewAuthenticateWithPasswordHandler(broker, users)
 	handler := account.NewAuthenticateWithTOTPHandler(broker, users)
 
 	// Seed the repo
-	activatedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
-	activeNoTOTPUser := errors.Must(repotest.AddUser(t, users, ctx, "jim@bloggs.com"))
-	unactivatedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
-	unactivatedTOTPUser := errors.Must(repotest.AddUser(t, users, ctx, "foo@bar.com"))
+	password := "password"
+	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
+	activatedNoTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jim@bloggs.com", password))
+	unverifiedTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "foo@bar.com", password))
 
-	password := errors.Must(domain.NewPassword("password"))
-	if err := activatedUser.ActivateAndSetPassword(password); err != nil {
+	if err := activatedUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
-	totpKey := domain.NewTOTPKey([]byte("12345678901234567890"))
-	activatedUser.ChangeTOTPKey(totpKey)
-	if err := activatedUser.VerifyTOTPKey(); err != nil {
-		t.Fatal(err)
-	}
+	activatedUser.VerifyTOTPKey()
 	if err := users.Save(ctx, activatedUser); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := activeNoTOTPUser.ActivateAndSetPassword(password); err != nil {
+	if err := unverifiedTOTPUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
-	if err := users.Save(ctx, activeNoTOTPUser); err != nil {
-		t.Fatal(err)
-	}
-
-	totpKey = domain.NewTOTPKey([]byte("12345678901234567891"))
-	unactivatedUser.ChangeTOTPKey(totpKey)
-	if err := users.Save(ctx, unactivatedUser); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := unactivatedTOTPUser.ActivateAndSetPassword(password); err != nil {
-		t.Fatal(err)
-	}
-	totpKey = domain.NewTOTPKey([]byte("12345678901234567892"))
-	unactivatedTOTPUser.ChangeTOTPKey(totpKey)
-	if err := users.Save(ctx, unactivatedTOTPUser); err != nil {
+	if err := users.Save(ctx, unverifiedTOTPUser); err != nil {
 		t.Fatal(err)
 	}
 
 	activatedUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
 		Email:    activatedUser.Email.String(),
-		Password: password.String(),
+		Password: password,
 	}))
 	activatedNoTOTPUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
-		Email:    activeNoTOTPUser.Email.String(),
-		Password: password.String(),
+		Email:    activatedNoTOTPUser.Email.String(),
+		Password: password,
 	}))
-	unactivatedUserPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
-		UserID:        unactivatedUser.ID.String(),
-		IsAwaitingMFA: true,
-	}))
-	unactivatedTOTPUserPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
-		UserID:        unactivatedTOTPUser.ID.String(),
-		IsAwaitingMFA: true,
+	unverifiedTOTPUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
+		Email:    unverifiedTOTPUser.Email.String(),
+		Password: password,
 	}))
 
 	t.Run("success for valid passport from password authentication and correct totp", func(t *testing.T) {
@@ -123,10 +98,8 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 			{"empty passport correct TOTP", account.EmptyPassport, activatedUser.TOTPKey, port.ErrBadRequest},
 			{"empty passport incorrect TOTP", account.EmptyPassport, nil, port.ErrBadRequest},
 			{"activated user passport incorrect TOTP", activatedUserPassport, nil, port.ErrBadRequest},
-			{"activated user passport unverified correct TOTP", unactivatedTOTPUserPassport, unactivatedTOTPUser.TOTPKey, port.ErrBadRequest},
+			{"activated user passport unverified correct TOTP", unverifiedTOTPUserPassport, unverifiedTOTPUser.TOTPKey, port.ErrBadRequest},
 			{"activated user passport without TOTP setup", activatedNoTOTPUserPassport, nil, port.ErrBadRequest},
-			{"unactivated user passport incorrect TOTP", unactivatedUserPassport, nil, port.ErrBadRequest},
-			{"unactivated user passport correct TOTP", unactivatedUserPassport, unactivatedUser.TOTPKey, port.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			tc := tc

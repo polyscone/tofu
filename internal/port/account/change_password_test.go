@@ -24,16 +24,8 @@ func TestChangePassword(t *testing.T) {
 	handler := account.NewChangePasswordHandler(broker, users)
 
 	// Seed the repo
-	activatedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
+	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", "password"))
 	unactivatedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
-
-	password := errors.Must(domain.NewPassword("password"))
-	if err := activatedUser.ActivateAndSetPassword(password); err != nil {
-		t.Fatal(err)
-	}
-	if err := users.Save(ctx, activatedUser); err != nil {
-		t.Fatal(err)
-	}
 
 	activatedUserLoggedOutPassport := errors.Must(issuePassportHandler(ctx, account.IssuePassport{
 		UserID: activatedUser.ID.String(),
