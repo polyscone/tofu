@@ -16,6 +16,7 @@ func newPassport(user domain.User) Passport {
 }
 
 func (p Passport) UserID() string { return p.user.ID.String() }
+func (p Passport) Email() string  { return p.user.Email.String() }
 
 func (p Passport) IsAwaitingTOTP() bool { return p.user.AuthStatus() == domain.AwaitingTOTP }
 func (p Passport) IsLoggedIn() bool     { return p.user.AuthStatus() == domain.Authenticated }
