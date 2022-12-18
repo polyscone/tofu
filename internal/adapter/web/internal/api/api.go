@@ -8,9 +8,9 @@ import (
 	"strings"
 
 	"github.com/polyscone/tofu/internal/adapter/web/internal/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/internal/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/token"
-	"github.com/polyscone/tofu/internal/app/passport"
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
