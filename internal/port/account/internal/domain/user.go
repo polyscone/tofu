@@ -60,7 +60,7 @@ type User struct {
 
 	ID             uuid.V4
 	Email          text.Email
-	HashedPassword HashedPassword
+	HashedPassword []byte
 	TOTPKey        TOTPKey
 	TOTPVerifiedAt time.Time
 	Roles          []Role
@@ -71,10 +71,8 @@ type User struct {
 
 func NewUser(id uuid.V4) User {
 	return User{
-		ID:             id,
-		HashedPassword: NewHashedPassword(nil),
-		TOTPKey:        NewTOTPKey(nil),
-		authStatus:     Unauthenticated,
+		ID:         id,
+		authStatus: Unauthenticated,
 	}
 }
 
@@ -134,7 +132,7 @@ func (u *User) setPassword(newPassword Password) error {
 		return errors.Tracef(err)
 	}
 
-	u.HashedPassword = NewHashedPassword(hashedPassword)
+	u.HashedPassword = hashedPassword
 
 	return nil
 }
@@ -160,12 +158,12 @@ func (u *User) SetupTOTP() (TOTPParams, error) {
 		return TOTPParams{}, errors.Tracef(port.ErrBadRequest, "TOTP already setup and verified")
 	}
 
-	key, err := otp.NewKey(nil, otp.SHA1)
+	key, err := NewTOTPKey(otp.SHA1)
 	if err != nil {
 		return TOTPParams{}, errors.Tracef(err)
 	}
 
-	u.TOTPKey = NewTOTPKey(key)
+	u.TOTPKey = key
 
 	params := TOTPParams{
 		Key:       u.TOTPKey,
