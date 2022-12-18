@@ -4,25 +4,30 @@ import (
 	"bytes"
 	"context"
 	"testing"
-	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
-	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
+	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
 	"github.com/polyscone/tofu/internal/port/account/internal/repo/sqlite/repotest"
 )
+
+type setupTOTPGuard struct {
+	canSetupTOTP bool
+}
+
+func (g setupTOTPGuard) CanSetupTOTP(userID uuid.V4) bool {
+	return g.canSetupTOTP
+}
 
 func TestSetupTOTP(t *testing.T) {
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
-	authenticateWithPasswordHandler := account.NewAuthenticateWithPasswordHandler(broker, users)
-	authenticateWithTOTPHandler := account.NewAuthenticateWithTOTPHandler(broker, users)
 	handler := account.NewSetupTOTPHandler(broker, users)
 
 	// Seed the repo
@@ -38,23 +43,6 @@ func TestSetupTOTP(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	activatedUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
-		Email:    activatedUser.Email.String(),
-		Password: password,
-	}))
-	verifiedTOTPUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
-		Email:    verifiedTOTPUser.Email.String(),
-		Password: password,
-	}))
-
-	tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
-	totp := errors.Must(tb.Generate(verifiedTOTPUser.TOTPKey, time.Now()))
-
-	verifiedTOTPUserPassport = errors.Must(authenticateWithTOTPHandler(ctx, account.AuthenticateWithTOTP{
-		Passport: verifiedTOTPUserPassport,
-		TOTP:     totp,
-	}))
-
 	t.Run("success with activated logged in user", func(t *testing.T) {
 		var wantEvents []event.Event
 		var gotEvents []event.Event
@@ -62,8 +50,8 @@ func TestSetupTOTP(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		res, err := handler(ctx, account.SetupTOTP{
-			Guard:  activatedUserPassport,
-			UserID: activatedUserPassport.UserID(),
+			Guard:  setupTOTPGuard{canSetupTOTP: true},
+			UserID: activatedUser.ID.String(),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -84,20 +72,21 @@ func TestSetupTOTP(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		tt := []struct {
-			name     string
-			passport account.Passport
-			want     error
+			name   string
+			guard  account.SetupTOTPGuard
+			userID string
+			want   error
 		}{
-			{"empty passport", account.EmptyPassport, port.ErrUnauthorised},
-			{"TOTP already setup and verified", verifiedTOTPUserPassport, port.ErrBadRequest},
+			{"unauthorised", setupTOTPGuard{canSetupTOTP: false}, activatedUser.ID.String(), port.ErrUnauthorised},
+			{"TOTP already setup and verified", setupTOTPGuard{canSetupTOTP: true}, verifiedTOTPUser.ID.String(), port.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			tc := tc
 
 			t.Run(tc.name, func(t *testing.T) {
 				_, err := handler(ctx, account.SetupTOTP{
-					Guard:  tc.passport,
-					UserID: tc.passport.UserID(),
+					Guard:  tc.guard,
+					UserID: tc.userID,
 				})
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):

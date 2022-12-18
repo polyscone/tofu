@@ -22,7 +22,7 @@ func (api *API) accountLoginWithPasswordPost(w http.ResponseWriter, r *http.Requ
 	ctx := r.Context()
 
 	cmd := account.AuthenticateWithPassword(input)
-	passport, err := cmd.Execute(ctx, api.bus)
+	res, err := cmd.Execute(ctx, api.bus)
 	if writeError(w, r, errors.Tracef(err)) {
 		return
 	}
@@ -37,13 +37,14 @@ func (api *API) accountLoginWithPasswordPost(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	api.sessions.Set(ctx, sess.UserID, passport.UserID())
-	api.sessions.Set(ctx, sess.IsAwaitingTOTP, passport.IsAwaitingTOTP())
+	api.sessions.Set(ctx, sess.UserID, res.UserID)
+	api.sessions.Set(ctx, sess.Email, input.Email)
+	api.sessions.Set(ctx, sess.IsAwaitingTOTP, res.IsAwaitingTOTP)
 
 	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 
 	writeJSON(w, r, map[string]any{
 		"csrfToken":      csrfTokenBase64,
-		"isAwaitingTOTP": passport.IsAwaitingTOTP(),
+		"isAwaitingTOTP": res.IsAwaitingTOTP,
 	})
 }

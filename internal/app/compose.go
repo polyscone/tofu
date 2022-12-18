@@ -25,7 +25,7 @@ func Compose(ctx context.Context, db *sqlite.DB) (command.Bus, event.Broker, err
 		bus.Register(account.NewAuthenticateWithPasswordHandler(broker, users))
 		bus.Register(account.NewAuthenticateWithTOTPHandler(broker, users))
 		bus.Register(account.NewChangePasswordHandler(broker, users))
-		bus.Register(account.NewIssuePassportHandler(broker, users))
+		bus.Register(account.NewFindAuthInfoHandler(broker, users))
 		bus.Register(account.NewRegisterHandler(broker, users))
 		bus.Register(account.NewSetupTOTPHandler(broker, users))
 	}

@@ -3,6 +3,7 @@ package api
 import (
 	"net/http"
 
+	"github.com/polyscone/tofu/internal/adapter/web/internal/sess"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/port/account"
 )
@@ -20,7 +21,7 @@ func (api *API) accountChangePasswordPut(w http.ResponseWriter, r *http.Request)
 
 	cmd := account.ChangePassword{
 		Guard:       passport,
-		UserID:      passport.UserID(),
+		UserID:      api.sessions.GetString(ctx, sess.UserID),
 		NewPassword: input.NewPassword,
 	}
 	err := cmd.Execute(ctx, api.bus)

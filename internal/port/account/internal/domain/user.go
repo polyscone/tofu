@@ -76,7 +76,7 @@ func NewUser(id uuid.V4) User {
 	}
 }
 
-func (u *User) hasVerifiedTOTP() bool {
+func (u *User) HasVerifiedTOTP() bool {
 	return !u.TOTPVerifiedAt.IsZero() && len(u.TOTPKey) != 0
 }
 
@@ -154,7 +154,7 @@ func (u *User) ChangePassword(newPassword Password) error {
 }
 
 func (u *User) SetupTOTP() (TOTPParams, error) {
-	if u.hasVerifiedTOTP() {
+	if u.HasVerifiedTOTP() {
 		return TOTPParams{}, errors.Tracef(port.ErrBadRequest, "TOTP already setup and verified")
 	}
 
@@ -194,9 +194,6 @@ func (u *User) AuthStatus() AuthStatus {
 }
 
 func (u *User) AuthenticateWithPassword(password Password) error {
-	if u.AuthStatus() == Authenticated {
-		return errors.Tracef(port.ErrBadRequest, "already authenticated")
-	}
 	if u.ActivatedAt.IsZero() {
 		return errors.Tracef(port.ErrBadRequest, "account is not activated")
 	}
@@ -209,36 +206,17 @@ func (u *User) AuthenticateWithPassword(password Password) error {
 		return errors.Tracef(port.ErrBadRequest, "could not validate password")
 	}
 
-	if u.hasVerifiedTOTP() {
-		u.SetAuthStatus(AwaitingTOTP)
-	} else {
-		u.SetAuthStatus(Authenticated)
-	}
-
 	u.Events.Enqueue(AuthenticatedWithPassword{
 		Email:          u.Email.String(),
-		IsAwaitingTOTP: u.AuthStatus() == AwaitingTOTP,
+		IsAwaitingTOTP: u.HasVerifiedTOTP(),
 	})
 
 	return nil
 }
 
 func (u *User) AuthenticateWithTOTP(totp TOTP) error {
-	if !u.hasVerifiedTOTP() {
+	if !u.HasVerifiedTOTP() {
 		return errors.Tracef(port.ErrBadRequest, "account does not have TOTP")
-	}
-
-	switch status := u.AuthStatus(); status {
-	case Unauthenticated:
-		return errors.Tracef(port.ErrBadRequest, "TOTP cannot be used until authenticated with password")
-
-	case Authenticated:
-		return errors.Tracef(port.ErrBadRequest, "already authenticated")
-
-	default:
-		if status != AwaitingTOTP {
-			return errors.Tracef(port.ErrBadRequest, "account is not awaiting TOTP")
-		}
 	}
 
 	if u.ActivatedAt.IsZero() {
@@ -253,8 +231,6 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 	if !ok {
 		return errors.Tracef(port.ErrBadRequest, "could not validate TOTP")
 	}
-
-	u.SetAuthStatus(Authenticated)
 
 	u.Events.Enqueue(AuthenticatedWithTOTP{
 		Email: u.Email.String(),

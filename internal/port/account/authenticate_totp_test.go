@@ -22,7 +22,6 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
-	authenticateWithPasswordHandler := account.NewAuthenticateWithPasswordHandler(broker, users)
 	handler := account.NewAuthenticateWithTOTPHandler(broker, users)
 
 	// Seed the repo
@@ -46,20 +45,7 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	activatedUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
-		Email:    activatedUser.Email.String(),
-		Password: password,
-	}))
-	activatedNoTOTPUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
-		Email:    activatedNoTOTPUser.Email.String(),
-		Password: password,
-	}))
-	unverifiedTOTPUserPassport := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
-		Email:    unverifiedTOTPUser.Email.String(),
-		Password: password,
-	}))
-
-	t.Run("success for valid passport from password authentication and correct totp", func(t *testing.T) {
+	t.Run("success for valid user id and correct totp", func(t *testing.T) {
 		var wantEvents []event.Event
 		var gotEvents []event.Event
 		broker.Clear()
@@ -72,9 +58,9 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 		tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
 		totp := errors.Must(tb.Generate(activatedUser.TOTPKey, time.Now()))
 
-		_, err := handler(ctx, account.AuthenticateWithTOTP{
-			Passport: activatedUserPassport,
-			TOTP:     totp,
+		err := handler(ctx, account.AuthenticateWithTOTP{
+			UserID: activatedUser.ID.String(),
+			TOTP:   totp,
 		})
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
@@ -90,16 +76,16 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		tt := []struct {
-			name     string
-			passport account.Passport
-			totpKey  []byte
-			want     error
+			name    string
+			userID  string
+			totpKey []byte
+			want    error
 		}{
-			{"empty passport correct TOTP", account.EmptyPassport, activatedUser.TOTPKey, port.ErrBadRequest},
-			{"empty passport incorrect TOTP", account.EmptyPassport, nil, port.ErrBadRequest},
-			{"activated user passport incorrect TOTP", activatedUserPassport, nil, port.ErrBadRequest},
-			{"activated user passport unverified correct TOTP", unverifiedTOTPUserPassport, unverifiedTOTPUser.TOTPKey, port.ErrBadRequest},
-			{"activated user passport without TOTP setup", activatedNoTOTPUserPassport, nil, port.ErrBadRequest},
+			{"empty user id correct TOTP", "", activatedUser.TOTPKey, port.ErrInvalidInput},
+			{"empty user id incorrect TOTP", "", nil, port.ErrInvalidInput},
+			{"activated user user id incorrect TOTP", activatedUser.ID.String(), nil, port.ErrBadRequest},
+			{"activated user user id unverified correct TOTP", unverifiedTOTPUser.ID.String(), unverifiedTOTPUser.TOTPKey, port.ErrBadRequest},
+			{"activated user user id without TOTP setup", activatedNoTOTPUser.ID.String(), nil, port.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			tc := tc
@@ -111,9 +97,9 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 					totp = errors.Must(tb.Generate(tc.totpKey, time.Now()))
 				}
 
-				_, err := handler(ctx, account.AuthenticateWithTOTP{
-					Passport: tc.passport,
-					TOTP:     totp,
+				err := handler(ctx, account.AuthenticateWithTOTP{
+					UserID: tc.userID,
+					TOTP:   totp,
 				})
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
@@ -135,9 +121,9 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		execute := func(totp domain.TOTP) error {
-			_, err := handler(ctx, account.AuthenticateWithTOTP{
-				Passport: activatedUserPassport,
-				TOTP:     totp.String(),
+			err := handler(ctx, account.AuthenticateWithTOTP{
+				UserID: activatedUser.ID.String(),
+				TOTP:   totp.String(),
 			})
 
 			return err

@@ -6,24 +6,25 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
+	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 )
 
 type authenticateWithTOTPRequest struct {
-	user domain.User
-	totp domain.TOTP
+	userID uuid.V4
+	totp   domain.TOTP
 }
 
 type AuthenticateWithTOTP struct {
-	Passport Passport
-	TOTP     string
+	UserID string
+	TOTP   string
 }
 
-func (cmd AuthenticateWithTOTP) Execute(ctx context.Context, bus command.Bus) (Passport, error) {
-	res, err := bus.Dispatch(ctx, cmd)
+func (cmd AuthenticateWithTOTP) Execute(ctx context.Context, bus command.Bus) error {
+	_, err := bus.Dispatch(ctx, cmd)
 
-	return res.(Passport), errors.Tracef(err)
+	return errors.Tracef(err)
 }
 
 func (cmd AuthenticateWithTOTP) Validate(ctx context.Context) error {
@@ -37,8 +38,9 @@ func (cmd AuthenticateWithTOTP) request(ctx context.Context) (authenticateWithTO
 	var err error
 	var errs errors.Map
 
-	req.user = cmd.Passport.user
-
+	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
+		errs.Set("user id", err)
+	}
 	if req.totp, err = domain.NewTOTP(cmd.TOTP); err != nil {
 		errs.Set("totp", err)
 	}
@@ -46,21 +48,26 @@ func (cmd AuthenticateWithTOTP) request(ctx context.Context) (authenticateWithTO
 	return req, errs.Tracef(port.ErrInvalidInput)
 }
 
-type AuthenticateWithTOTPHandler func(ctx context.Context, cmd AuthenticateWithTOTP) (Passport, error)
+type AuthenticateWithTOTPHandler func(ctx context.Context, cmd AuthenticateWithTOTP) error
 
 func NewAuthenticateWithTOTPHandler(broker event.Broker, users UserRepo) AuthenticateWithTOTPHandler {
-	return func(ctx context.Context, cmd AuthenticateWithTOTP) (Passport, error) {
+	return func(ctx context.Context, cmd AuthenticateWithTOTP) error {
 		req, err := cmd.request(ctx)
 		if err != nil {
-			return EmptyPassport, errors.Tracef(err)
+			return errors.Tracef(err)
 		}
 
-		if err := req.user.AuthenticateWithTOTP(req.totp); err != nil {
-			return EmptyPassport, errors.Tracef(err)
+		user, err := users.FindByID(ctx, req.userID)
+		if err != nil {
+			return errors.Tracef(err)
 		}
 
-		broker.Flush(&req.user.Events)
+		if err := user.AuthenticateWithTOTP(req.totp); err != nil {
+			return errors.Tracef(err)
+		}
 
-		return newPassport(req.user), nil
+		broker.Flush(&user.Events)
+
+		return nil
 	}
 }

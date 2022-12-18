@@ -21,10 +21,10 @@ func (api *API) accountLoginWithTOTPPost(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 
 	cmd := account.AuthenticateWithTOTP{
-		Passport: api.passport(ctx),
-		TOTP:     input.TOTP,
+		UserID: api.sessions.GetString(ctx, sess.UserID),
+		TOTP:   input.TOTP,
 	}
-	_, err := cmd.Execute(ctx, api.bus)
+	err := cmd.Execute(ctx, api.bus)
 	if writeError(w, r, errors.Tracef(err)) {
 		return
 	}

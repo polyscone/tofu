@@ -10,6 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/internal/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/token"
+	"github.com/polyscone/tofu/internal/app/passport"
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
@@ -70,20 +71,17 @@ func (api *API) ErrorHandler(w http.ResponseWriter, r *http.Request, err error) 
 	writeError(w, r, errors.Tracef(err))
 }
 
-func (api *API) passport(ctx context.Context) account.Passport {
+func (api *API) passport(ctx context.Context) passport.Passport {
 	userID := api.sessions.GetString(ctx, sess.UserID)
-	isAwaitingTOTP := api.sessions.GetBool(ctx, sess.IsAwaitingTOTP)
-	cmd := account.IssuePassport{
-		UserID:         userID,
-		IsAwaitingTOTP: isAwaitingTOTP,
-		IsLoggedIn:     !isAwaitingTOTP,
+	cmd := account.FindAuthInfo{
+		UserID: userID,
 	}
-	passport, err := cmd.Execute(ctx, api.bus)
+	info, err := cmd.Execute(ctx, api.bus)
 	if err != nil {
-		return account.EmptyPassport
+		return passport.Empty
 	}
 
-	return passport
+	return passport.New(info.Claims, info.Roles, info.Permissions)
 }
 
 func writeError(w http.ResponseWriter, r *http.Request, err error) bool {

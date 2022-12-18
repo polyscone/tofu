@@ -16,15 +16,20 @@ type authenticateWithPasswordRequest struct {
 	password domain.Password
 }
 
+type authenticateWithPasswordResponse struct {
+	UserID         string
+	IsAwaitingTOTP bool
+}
+
 type AuthenticateWithPassword struct {
 	Email    string
 	Password string
 }
 
-func (cmd AuthenticateWithPassword) Execute(ctx context.Context, bus command.Bus) (Passport, error) {
+func (cmd AuthenticateWithPassword) Execute(ctx context.Context, bus command.Bus) (authenticateWithPasswordResponse, error) {
 	res, err := bus.Dispatch(ctx, cmd)
 
-	return res.(Passport), errors.Tracef(err)
+	return res.(authenticateWithPasswordResponse), errors.Tracef(err)
 }
 
 func (cmd AuthenticateWithPassword) Validate(ctx context.Context) error {
@@ -48,26 +53,31 @@ func (cmd AuthenticateWithPassword) request(ctx context.Context) (authenticateWi
 	return req, errs.Tracef(port.ErrInvalidInput)
 }
 
-type AuthenticateWithPasswordHandler func(ctx context.Context, cmd AuthenticateWithPassword) (Passport, error)
+type AuthenticateWithPasswordHandler func(ctx context.Context, cmd AuthenticateWithPassword) (authenticateWithPasswordResponse, error)
 
 func NewAuthenticateWithPasswordHandler(broker event.Broker, users UserRepo) AuthenticateWithPasswordHandler {
-	return func(ctx context.Context, cmd AuthenticateWithPassword) (Passport, error) {
+	return func(ctx context.Context, cmd AuthenticateWithPassword) (authenticateWithPasswordResponse, error) {
 		req, err := cmd.request(ctx)
 		if err != nil {
-			return EmptyPassport, errors.Tracef(err)
+			return authenticateWithPasswordResponse{}, errors.Tracef(err)
 		}
 
 		user, err := users.FindByEmail(ctx, req.email)
 		if err != nil {
-			return EmptyPassport, errors.Tracef(err)
+			return authenticateWithPasswordResponse{}, errors.Tracef(err)
 		}
 
 		if err := user.AuthenticateWithPassword(req.password); err != nil {
-			return EmptyPassport, errors.Tracef(err)
+			return authenticateWithPasswordResponse{}, errors.Tracef(err)
 		}
 
 		broker.Flush(&user.Events)
 
-		return newPassport(user), nil
+		res := authenticateWithPasswordResponse{
+			UserID:         user.ID.String(),
+			IsAwaitingTOTP: user.HasVerifiedTOTP(),
+		}
+
+		return res, nil
 	}
 }
