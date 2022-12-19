@@ -18,10 +18,9 @@ import (
 
 func (api *API) accountSetupTOTPPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	passport := api.passport(ctx)
 
 	cmd := account.SetupTOTP{
-		Guard:  passport,
+		Guard:  api.passport(ctx),
 		UserID: api.sessions.GetString(ctx, sesskey.UserID),
 	}
 	res, err := cmd.Execute(ctx, api.bus)

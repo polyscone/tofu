@@ -17,10 +17,9 @@ func (api *API) accountChangePasswordPut(w http.ResponseWriter, r *http.Request)
 	}
 
 	ctx := r.Context()
-	passport := api.passport(ctx)
 
 	cmd := account.ChangePassword{
-		Guard:       passport,
+		Guard:       api.passport(ctx),
 		UserID:      api.sessions.GetString(ctx, sesskey.UserID),
 		NewPassword: input.NewPassword,
 	}
