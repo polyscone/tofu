@@ -11,12 +11,17 @@ import (
 	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 )
 
+type VerifyTOTPGuard interface {
+	CanVerifyTOTP(userID uuid.V4) bool
+}
+
 type verifyTOTPRequest struct {
 	userID uuid.V4
 	totp   domain.TOTP
 }
 
 type VerifyTOTP struct {
+	Guard  VerifyTOTPGuard
 	UserID string
 	TOTP   string
 }
@@ -35,6 +40,10 @@ func (cmd VerifyTOTP) Validate(ctx context.Context) error {
 
 func (cmd VerifyTOTP) request(ctx context.Context) (verifyTOTPRequest, error) {
 	var req verifyTOTPRequest
+	if !cmd.Guard.CanVerifyTOTP(uuid.ParseV4OrNil(cmd.UserID)) {
+		return req, errors.Tracef(port.ErrUnauthorised)
+	}
+
 	var err error
 	var errs errors.Map
 

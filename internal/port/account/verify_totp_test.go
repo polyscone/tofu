@@ -11,13 +11,25 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
+	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
 	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 	"github.com/polyscone/tofu/internal/port/account/internal/repo/sqlite/repotest"
 )
 
+type verifyTOTPGuard struct {
+	canVerifyTOTP bool
+}
+
+func (g verifyTOTPGuard) CanVerifyTOTP(userID uuid.V4) bool {
+	return g.canVerifyTOTP
+}
+
 func TestVerifyTOTP(t *testing.T) {
+	validGuard := verifyTOTPGuard{canVerifyTOTP: true}
+	invalidGuard := verifyTOTPGuard{canVerifyTOTP: false}
+
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
@@ -54,6 +66,7 @@ func TestVerifyTOTP(t *testing.T) {
 		totp := errors.Must(tb.Generate(setupTOTPUser.TOTPKey, time.Now()))
 
 		err := handler(ctx, account.VerifyTOTP{
+			Guard:  validGuard,
 			UserID: setupTOTPUser.ID.String(),
 			TOTP:   totp,
 		})
@@ -72,14 +85,16 @@ func TestVerifyTOTP(t *testing.T) {
 
 		tt := []struct {
 			name    string
+			guard   account.VerifyTOTPGuard
 			userID  string
 			totpKey []byte
 			want    error
 		}{
-			{"empty user id correct TOTP", "", setupTOTPUser.TOTPKey, port.ErrInvalidInput},
-			{"empty user id incorrect TOTP", "", nil, port.ErrInvalidInput},
-			{"no TOTP user id correct TOTP", activatedUser.ID.String(), setupTOTPUser.TOTPKey, port.ErrBadRequest},
-			{"already verified TOTP", verifiedTOTPUser.ID.String(), verifiedTOTPUser.TOTPKey, port.ErrBadRequest},
+			{"unauthorised", invalidGuard, "", nil, port.ErrUnauthorised},
+			{"empty user id correct TOTP", validGuard, "", setupTOTPUser.TOTPKey, port.ErrInvalidInput},
+			{"empty user id incorrect TOTP", validGuard, "", nil, port.ErrInvalidInput},
+			{"no TOTP user id correct TOTP", validGuard, activatedUser.ID.String(), setupTOTPUser.TOTPKey, port.ErrBadRequest},
+			{"already verified TOTP", validGuard, verifiedTOTPUser.ID.String(), verifiedTOTPUser.TOTPKey, port.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			tc := tc
@@ -92,6 +107,7 @@ func TestVerifyTOTP(t *testing.T) {
 				}
 
 				err := handler(ctx, account.VerifyTOTP{
+					Guard:  tc.guard,
 					UserID: tc.userID,
 					TOTP:   totp,
 				})
@@ -116,6 +132,7 @@ func TestVerifyTOTP(t *testing.T) {
 
 		execute := func(totp domain.TOTP) error {
 			err := handler(ctx, account.VerifyTOTP{
+				Guard:  validGuard,
 				UserID: activatedUser.ID.String(),
 				TOTP:   totp.String(),
 			})
