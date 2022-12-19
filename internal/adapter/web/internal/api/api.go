@@ -72,6 +72,10 @@ func (api *API) ErrorHandler(w http.ResponseWriter, r *http.Request, err error) 
 }
 
 func (api *API) passport(ctx context.Context) passport.Passport {
+	if api.sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+		return passport.Empty
+	}
+
 	userID := api.sessions.GetString(ctx, sess.UserID)
 	cmd := account.FindAuthInfo{
 		UserID: userID,
