@@ -10,8 +10,10 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
+	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
+	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 	"github.com/polyscone/tofu/internal/port/account/internal/repo/sqlite/repotest"
 )
 
@@ -103,6 +105,40 @@ func TestVerifyTOTP(t *testing.T) {
 				}
 			})
 		}
+
+		testutil.CheckEvents(t, wantEvents, gotEvents)
+	})
+
+	t.Run("properties", func(t *testing.T) {
+		var wantEvents []event.Event
+		var gotEvents []event.Event
+		broker.Clear()
+		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
+
+		execute := func(totp domain.TOTP) error {
+			err := handler(ctx, account.VerifyTOTP{
+				UserID: activatedUser.ID.String(),
+				TOTP:   totp.String(),
+			})
+
+			return err
+		}
+
+		t.Run("valid inputs", func(t *testing.T) {
+			quick.Check(t, func(totp domain.TOTP) bool {
+				err := execute(totp)
+
+				return !errors.Is(err, port.ErrInvalidInput)
+			})
+		})
+
+		t.Run("invalid totp input", func(t *testing.T) {
+			quick.Check(t, func(totp quick.Invalid[domain.TOTP]) bool {
+				err := execute(totp.Unwrap())
+
+				return errors.Is(err, port.ErrInvalidInput)
+			})
+		})
 
 		testutil.CheckEvents(t, wantEvents, gotEvents)
 	})
