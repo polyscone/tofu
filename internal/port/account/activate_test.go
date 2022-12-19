@@ -23,9 +23,7 @@ func TestActivate(t *testing.T) {
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
 	handler := account.NewActivateHandler(broker, users)
 
-	// Seed the repo
-	unactivatedUser := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
-	errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
+	user := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
 
 	t.Run("success with existing user", func(t *testing.T) {
 		var wantEvents []event.Event
@@ -34,18 +32,18 @@ func TestActivate(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		wantEvents = append(wantEvents, account.Activated{
-			Email: unactivatedUser.Email.String(),
+			Email: user.Email.String(),
 		})
 
 		err := handler(ctx, account.Activate{
-			Email:    unactivatedUser.Email.String(),
+			Email:    user.Email.String(),
 			Password: "password",
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		user := errors.Must(users.FindByEmail(ctx, unactivatedUser.Email))
+		user := errors.Must(users.FindByEmail(ctx, user.Email))
 
 		if user.ActivatedAt.IsZero() {
 			t.Error("want non-zero activated at; got zero")
@@ -61,7 +59,7 @@ func TestActivate(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		err := handler(ctx, account.Activate{
-			Email:    unactivatedUser.Email.String(),
+			Email:    user.Email.String(),
 			Password: "password",
 		})
 		if err == nil {

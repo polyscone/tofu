@@ -31,9 +31,8 @@ func TestChangePassword(t *testing.T) {
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
 	handler := account.NewChangePasswordHandler(broker, users)
 
-	// Seed the repo
 	password := "password"
-	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
+	user := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
 
 	t.Run("success with activated logged in user", func(t *testing.T) {
 		var wantEvents []event.Event
@@ -42,20 +41,20 @@ func TestChangePassword(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		wantEvents = append(wantEvents, account.ChangedPassword{
-			Email: activatedUser.Email.String(),
+			Email: user.Email.String(),
 		})
 
 		newPassword := errors.Must(domain.NewPassword("password123"))
 		err := handler(ctx, account.ChangePassword{
 			Guard:       changePasswordGuard{canChangePassword: true},
-			UserID:      activatedUser.ID.String(),
+			UserID:      user.ID.String(),
 			NewPassword: newPassword.String(),
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		user := errors.Must(users.FindByID(ctx, activatedUser.ID))
+		user := errors.Must(users.FindByID(ctx, user.ID))
 
 		if err := user.AuthenticateWithPassword(newPassword); err != nil {
 			t.Errorf("want to be able to authenticate with new password; got %q", err)
@@ -77,8 +76,8 @@ func TestChangePassword(t *testing.T) {
 			newPassword string
 			want        error
 		}{
-			{"unauthorised", changePasswordGuard{canChangePassword: false}, activatedUser.ID.String(), "password123", port.ErrUnauthorised},
-			{"empty password", changePasswordGuard{canChangePassword: true}, activatedUser.ID.String(), "", port.ErrInvalidInput},
+			{"unauthorised", changePasswordGuard{canChangePassword: false}, user.ID.String(), "password123", port.ErrUnauthorised},
+			{"empty password", changePasswordGuard{canChangePassword: true}, user.ID.String(), "", port.ErrInvalidInput},
 		}
 		for _, tc := range tt {
 			tc := tc
@@ -111,12 +110,12 @@ func TestChangePassword(t *testing.T) {
 		execute := func(newPassword domain.Password) error {
 			err := handler(ctx, account.ChangePassword{
 				Guard:       changePasswordGuard{canChangePassword: true},
-				UserID:      activatedUser.ID.String(),
+				UserID:      user.ID.String(),
 				NewPassword: newPassword.String(),
 			})
 			if err == nil {
 				wantEvents = append(wantEvents, account.ChangedPassword{
-					Email: activatedUser.Email.String(),
+					Email: user.Email.String(),
 				})
 			}
 

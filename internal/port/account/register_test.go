@@ -13,7 +13,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/internal/repo/sqlite/repotest"
 )
 
 func TestRegister(t *testing.T) {
@@ -22,9 +21,6 @@ func TestRegister(t *testing.T) {
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
 	handler := account.NewRegisterHandler(broker, users)
-
-	// Seed the repo
-	errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
 
 	t.Run("properties", func(t *testing.T) {
 		var wantEvents []event.Event

@@ -24,7 +24,6 @@ func TestVerifyTOTP(t *testing.T) {
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
 	handler := account.NewVerifyTOTPHandler(broker, users)
 
-	// Seed the repo
 	password := "password"
 	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
 	setupTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jane@doe.com", password))

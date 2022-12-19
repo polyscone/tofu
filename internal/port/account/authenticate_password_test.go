@@ -23,9 +23,8 @@ func TestAuthenticateWithPassword(t *testing.T) {
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
 	handler := account.NewAuthenticateWithPasswordHandler(broker, users)
 
-	// Seed the repo
 	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", "password"))
-	errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
+	unactivatedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
 
 	t.Run("success for matching email and password", func(t *testing.T) {
 		var wantEvents []event.Event
@@ -39,7 +38,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		})
 
 		_, err := handler(ctx, account.AuthenticateWithPassword{
-			Email:    "joe@bloggs.com",
+			Email:    activatedUser.Email.String(),
 			Password: "password",
 		})
 		if err != nil {
@@ -67,8 +66,8 @@ func TestAuthenticateWithPassword(t *testing.T) {
 			{"email without @ sign", "joebloggs.com", "password", port.ErrInvalidInput},
 			{"non-existent email", "foo@bar.com", "password", nil},
 			{"short password", "joe@bloggs.com", "0123456", port.ErrInvalidInput},
-			{"incorrect password", "joe@bloggs.com", "0123456789", port.ErrBadRequest},
-			{"unactivated user", "jane@doe.com", "password", port.ErrBadRequest},
+			{"incorrect password", activatedUser.Email.String(), "0123456789", port.ErrBadRequest},
+			{"unactivated user", unactivatedUser.Email.String(), "password", port.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			tc := tc

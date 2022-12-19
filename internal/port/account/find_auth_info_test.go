@@ -20,7 +20,6 @@ func TestFindAuthInfo(t *testing.T) {
 	authenticateWithPasswordHandler := account.NewAuthenticateWithPasswordHandler(broker, users)
 	handler := account.NewFindAuthInfoHandler(broker, users)
 
-	// Seed the repo
 	password := "password"
 	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
 
