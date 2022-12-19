@@ -19,6 +19,7 @@ func (api *API) accountVerifyTOTPPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	cmd := account.VerifyTOTP{
+		Guard:  api.passport(ctx),
 		UserID: api.sessions.GetString(ctx, sesskey.UserID),
 		TOTP:   input.TOTP,
 	}
