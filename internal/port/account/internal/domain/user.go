@@ -175,8 +175,23 @@ func (u *User) SetupTOTP() (TOTPParams, error) {
 	return params, nil
 }
 
-func (u *User) VerifyTOTP() {
+func (u *User) VerifyTOTP(totp TOTP) error {
+	if u.HasVerifiedTOTP() {
+		return errors.Tracef(port.ErrBadRequest, "already verified")
+	}
+
+	tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
+	ok, err := tb.Verify(u.TOTPKey, time.Now(), 1, totp.String())
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	if !ok {
+		return errors.Tracef(port.ErrBadRequest, "could not validate TOTP")
+	}
+
 	u.TOTPVerifiedAt = time.Now()
+
+	return nil
 }
 
 func (u *User) SetAuthStatus(status AuthStatus) {

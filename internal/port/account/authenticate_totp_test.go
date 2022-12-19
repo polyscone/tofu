@@ -83,9 +83,9 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 		}{
 			{"empty user id correct TOTP", "", activatedUser.TOTPKey, port.ErrInvalidInput},
 			{"empty user id incorrect TOTP", "", nil, port.ErrInvalidInput},
-			{"activated user user id incorrect TOTP", activatedUser.ID.String(), nil, port.ErrBadRequest},
-			{"activated user user id unverified correct TOTP", unverifiedTOTPUser.ID.String(), unverifiedTOTPUser.TOTPKey, port.ErrBadRequest},
-			{"activated user user id without TOTP setup", activatedNoTOTPUser.ID.String(), nil, port.ErrBadRequest},
+			{"activated user id incorrect TOTP", activatedUser.ID.String(), nil, port.ErrBadRequest},
+			{"activated user id unverified correct TOTP", unverifiedTOTPUser.ID.String(), unverifiedTOTPUser.TOTPKey, port.ErrBadRequest},
+			{"activated user id without TOTP setup", activatedNoTOTPUser.ID.String(), nil, port.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			tc := tc
