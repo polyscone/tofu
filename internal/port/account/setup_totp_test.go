@@ -27,6 +27,9 @@ func (g setupTOTPGuard) CanSetupTOTP(userID uuid.V4) bool {
 }
 
 func TestSetupTOTP(t *testing.T) {
+	validGuard := setupTOTPGuard{canSetupTOTP: true}
+	invalidGuard := setupTOTPGuard{canSetupTOTP: false}
+
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
@@ -59,7 +62,7 @@ func TestSetupTOTP(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		res, err := handler(ctx, account.SetupTOTP{
-			Guard:  setupTOTPGuard{canSetupTOTP: true},
+			Guard:  validGuard,
 			UserID: activatedUser.ID.String(),
 		})
 		if err != nil {
@@ -86,8 +89,8 @@ func TestSetupTOTP(t *testing.T) {
 			userID string
 			want   error
 		}{
-			{"unauthorised", setupTOTPGuard{canSetupTOTP: false}, activatedUser.ID.String(), port.ErrUnauthorised},
-			{"TOTP already setup and verified", setupTOTPGuard{canSetupTOTP: true}, verifiedTOTPUser.ID.String(), port.ErrBadRequest},
+			{"unauthorised", invalidGuard, "", port.ErrUnauthorised},
+			{"TOTP already setup and verified", validGuard, verifiedTOTPUser.ID.String(), port.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			tc := tc

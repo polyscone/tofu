@@ -25,6 +25,9 @@ func (g changePasswordGuard) CanChangePassword(userID uuid.V4) bool {
 }
 
 func TestChangePassword(t *testing.T) {
+	validGuard := changePasswordGuard{canChangePassword: true}
+	invalidGuard := changePasswordGuard{canChangePassword: false}
+
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
@@ -46,7 +49,7 @@ func TestChangePassword(t *testing.T) {
 
 		newPassword := errors.Must(domain.NewPassword("password123"))
 		err := handler(ctx, account.ChangePassword{
-			Guard:       changePasswordGuard{canChangePassword: true},
+			Guard:       validGuard,
 			UserID:      user.ID.String(),
 			NewPassword: newPassword.String(),
 		})
@@ -76,8 +79,8 @@ func TestChangePassword(t *testing.T) {
 			newPassword string
 			want        error
 		}{
-			{"unauthorised", changePasswordGuard{canChangePassword: false}, user.ID.String(), "password123", port.ErrUnauthorised},
-			{"empty password", changePasswordGuard{canChangePassword: true}, user.ID.String(), "", port.ErrInvalidInput},
+			{"unauthorised", invalidGuard, "", "", port.ErrUnauthorised},
+			{"empty password", validGuard, user.ID.String(), "", port.ErrInvalidInput},
 		}
 		for _, tc := range tt {
 			tc := tc
@@ -109,7 +112,7 @@ func TestChangePassword(t *testing.T) {
 
 		execute := func(newPassword domain.Password) error {
 			err := handler(ctx, account.ChangePassword{
-				Guard:       changePasswordGuard{canChangePassword: true},
+				Guard:       validGuard,
 				UserID:      user.ID.String(),
 				NewPassword: newPassword.String(),
 			})
