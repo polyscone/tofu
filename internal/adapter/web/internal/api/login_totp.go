@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/internal/sess"
+	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/port/account"
@@ -21,7 +21,7 @@ func (api *API) accountLoginWithTOTPPost(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 
 	cmd := account.AuthenticateWithTOTP{
-		UserID: api.sessions.GetString(ctx, sess.UserID),
+		UserID: api.sessions.GetString(ctx, sesskey.UserID),
 		TOTP:   input.TOTP,
 	}
 	err := cmd.Execute(ctx, api.bus)
@@ -39,7 +39,7 @@ func (api *API) accountLoginWithTOTPPost(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	api.sessions.Delete(ctx, sess.IsAwaitingTOTP)
+	api.sessions.Delete(ctx, sesskey.IsAwaitingTOTP)
 
 	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 

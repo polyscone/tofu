@@ -9,7 +9,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/internal/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/passport"
-	"github.com/polyscone/tofu/internal/adapter/web/internal/sess"
+	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/token"
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
@@ -73,11 +73,11 @@ func (api *API) ErrorHandler(w http.ResponseWriter, r *http.Request, err error) 
 }
 
 func (api *API) passport(ctx context.Context) passport.Passport {
-	if api.sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+	if api.sessions.GetBool(ctx, sesskey.IsAwaitingTOTP) {
 		return passport.Empty
 	}
 
-	userID := api.sessions.GetString(ctx, sess.UserID)
+	userID := api.sessions.GetString(ctx, sesskey.UserID)
 	cmd := account.FindAuthInfo{
 		UserID: userID,
 	}
