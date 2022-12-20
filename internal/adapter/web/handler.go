@@ -30,7 +30,7 @@ func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tok
 	insecure := flags&Insecure != 0
 
 	broker.Listen(func(evt account.Registered) {
-		background.Func(func() {
+		background.Go(func() {
 			ctx := context.Background()
 			tok, err := tokens.AddActivationToken(ctx, text.Email(evt.Email), 1*time.Minute)
 			if err != nil {

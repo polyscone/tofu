@@ -47,7 +47,7 @@ func RateLimit(capacity, replenish int, config *RateLimitConfig) Middleware {
 	}
 
 	// Background goroutine to clean up expired clients
-	background.Func(func() {
+	background.Go(func() {
 		secondsUntilFull := time.Duration(capacity/replenish) * time.Second
 		lifespan := secondsUntilFull * 2
 

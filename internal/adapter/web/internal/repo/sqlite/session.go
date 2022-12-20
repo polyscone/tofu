@@ -23,7 +23,7 @@ func NewSessionRepo(ctx context.Context, db *sqlite.DB, lifespan time.Duration) 
 	}
 
 	// Background goroutine to clean up expired sessions
-	background.Func(func() {
+	background.Go(func() {
 		ctx := context.Background()
 
 		for range time.Tick(lifespan) {

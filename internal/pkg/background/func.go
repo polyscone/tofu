@@ -2,7 +2,7 @@ package background
 
 import "github.com/polyscone/tofu/internal/pkg/logger"
 
-func Func(fn func()) {
+func Go(fn func()) {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {

@@ -31,7 +31,7 @@ func NewTokenRepo(ctx context.Context, db *sqlite.DB) (*TokenRepo, error) {
 	}
 
 	// Background goroutine to clean up expired tokens
-	background.Func(func() {
+	background.Go(func() {
 		ctx := context.Background()
 
 		for range time.Tick(5 * time.Minute) {
