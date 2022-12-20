@@ -8,5 +8,6 @@ CREATE TABLE web__tokens (
   id         TEXT NOT NULL PRIMARY KEY,
   hash       TEXT NOT NULL UNIQUE,
   email      TEXT NOT NULL UNIQUE,
+  kind       TEXT NOT NULL,
   expires_at DATETIME NOT NULL
 );

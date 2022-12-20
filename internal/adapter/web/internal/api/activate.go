@@ -20,7 +20,7 @@ func (api *API) accountActivatePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	// TODO: Consume should return a sentinel error so we can respond with 400
-	_, err := api.tokens.Consume(ctx, input.Token)
+	_, err := api.tokens.ConsumeActivationToken(ctx, input.Token)
 	if writeError(w, r, errors.Tracef(err)) {
 		return
 	}
