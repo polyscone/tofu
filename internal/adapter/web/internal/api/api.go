@@ -10,6 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/internal/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
+	"github.com/polyscone/tofu/internal/adapter/web/internal/smtp"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/token"
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
@@ -29,13 +30,15 @@ type API struct {
 	bus      command.Bus
 	sessions *session.Manager
 	tokens   token.Repo
+	mailer   smtp.Mailer
 }
 
-func New(bus command.Bus, sessions *session.Manager, tokens token.Repo) *API {
+func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer smtp.Mailer) *API {
 	return &API{
 		bus:      bus,
 		sessions: sessions,
 		tokens:   tokens,
+		mailer:   mailer,
 	}
 }
 
@@ -54,6 +57,8 @@ func (api *API) Routes() http.Handler {
 			mux.Post("/login/totp", api.accountLoginWithTOTPPost)
 			mux.Post("/logout", api.accountLogoutPost)
 			mux.Put("/password", api.accountChangePasswordPut)
+			mux.Post("/password/reset", api.accountResetPasswordRequestPost)
+			mux.Put("/password/reset", api.accountResetPasswordPost)
 		})
 	})
 

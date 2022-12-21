@@ -89,18 +89,34 @@ func RunTokenTests(t *testing.T, tokens token.Repo) {
 	})
 
 	t.Run("token kinds", func(t *testing.T) {
+		ctx := context.Background()
+
 		quick.Check(t, func(email text.Email) bool {
-			ctx := context.Background()
-			ttl := 1 * time.Minute
-
-			if _, err := tokens.AddActivationToken(ctx, email, ttl); err != nil {
-				return false
-			}
-			if _, err := tokens.AddResetPasswordToken(ctx, email, ttl); err != nil {
+			tok, err := tokens.AddActivationToken(ctx, email, 1*time.Minute)
+			if err != nil {
 				return false
 			}
 
-			return true
+			val, err := tokens.ConsumeActivationToken(ctx, tok)
+			if err != nil {
+				return false
+			}
+
+			return email == val
+		})
+
+		quick.Check(t, func(email text.Email) bool {
+			tok, err := tokens.AddResetPasswordToken(ctx, email, 1*time.Minute)
+			if err != nil {
+				return false
+			}
+
+			val, err := tokens.ConsumeResetPasswordToken(ctx, tok)
+			if err != nil {
+				return false
+			}
+
+			return email == val
 		})
 	})
 }

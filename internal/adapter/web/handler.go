@@ -8,6 +8,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/internal/api"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/internal/smtp"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/token"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/ui"
 	"github.com/polyscone/tofu/internal/pkg/background"
@@ -26,20 +27,28 @@ type Flags byte
 
 const Insecure Flags = 1 << iota
 
-func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tokens token.Repo, mailer Mailer, proxies []string, flags Flags) http.Handler {
+func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tokens token.Repo, mailer smtp.Mailer, proxies []string, flags Flags) http.Handler {
 	insecure := flags&Insecure != 0
 
 	broker.Listen(func(evt account.Registered) {
 		background.Go(func() {
 			ctx := context.Background()
-			tok, err := tokens.AddActivationToken(ctx, text.Email(evt.Email), 1*time.Minute)
+
+			email, err := text.NewEmail(evt.Email)
 			if err != nil {
 				logger.PrintError(err)
 
 				return
 			}
 
-			msg := Msg{
+			tok, err := tokens.AddActivationToken(ctx, email, 48*time.Hour)
+			if err != nil {
+				logger.PrintError(err)
+
+				return
+			}
+
+			msg := smtp.Msg{
 				From:    "noreply@example.com",
 				To:      []string{evt.Email},
 				Subject: "Activate your account",
@@ -53,7 +62,7 @@ func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tok
 	})
 
 	sm := session.NewManager(sessions)
-	api := api.New(bus, sm, tokens)
+	api := api.New(bus, sm, tokens, mailer)
 	ui := ui.New(bus, sm)
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
