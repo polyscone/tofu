@@ -46,7 +46,7 @@ func (api *API) accountResetPasswordRequestPost(w http.ResponseWriter, r *http.R
 	}
 }
 
-func (api *API) accountResetPasswordPost(w http.ResponseWriter, r *http.Request) {
+func (api *API) accountResetPasswordPut(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Token       string
 		NewPassword string

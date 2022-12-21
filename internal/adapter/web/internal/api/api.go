@@ -58,7 +58,7 @@ func (api *API) Routes() http.Handler {
 			mux.Post("/logout", api.accountLogoutPost)
 			mux.Put("/password", api.accountChangePasswordPut)
 			mux.Post("/password/reset", api.accountResetPasswordRequestPost)
-			mux.Put("/password/reset", api.accountResetPasswordPost)
+			mux.Put("/password/reset", api.accountResetPasswordPut)
 		})
 	})
 
