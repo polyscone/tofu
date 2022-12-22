@@ -179,7 +179,7 @@ func TestArgon2Verify(t *testing.T) {
 			}
 
 			var pass argon2.Argon2
-			passed, rehash, err := pass.Validate([]byte(tc.password), []byte(tc.encoded), &params)
+			passed, rehash, err := pass.Verify([]byte(tc.password), []byte(tc.encoded), &params)
 
 			if tc.wantError {
 				if err == nil {

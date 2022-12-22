@@ -157,9 +157,9 @@ func EncodedHash(password []byte, p Params) ([]byte, error) {
 	return Default.EncodedHash(password, p)
 }
 
-// Validate passes arguments through to the default configuration of Argon2.
-func Validate(password, encodedHash []byte, preferred *Params) (bool, bool, error) {
-	return Default.Validate(password, encodedHash, preferred)
+// Verify passes arguments through to the default configuration of Argon2.
+func Verify(password, encodedHash []byte, preferred *Params) (bool, bool, error) {
+	return Default.Verify(password, encodedHash, preferred)
 }
 
 // Argon2 implements methods to generate and validate variants of Argon2 hashes.
@@ -254,7 +254,7 @@ func (a *Argon2) EncodedHash(password []byte, p Params) ([]byte, error) {
 	return a.encodedHashWithSalt(password, salt, p)
 }
 
-// Validate will validate whether the given password matches the given encoded
+// Verify will verify whether the given password matches the given encoded
 // hash or not.
 //
 // The given password will be hashed according to the parameters available in
@@ -267,8 +267,8 @@ func (a *Argon2) EncodedHash(password []byte, p Params) ([]byte, error) {
 // hash's because preferred is treated as the "preferred" parameters.
 //
 // The rehash return value will only be set to anything other than false
-// on successful validation.
-func (a *Argon2) Validate(password, encodedHash []byte, preferred *Params) (bool, bool, error) {
+// on successful verification.
+func (a *Argon2) Verify(password, encodedHash []byte, preferred *Params) (bool, bool, error) {
 	var isValid bool
 	var rehash bool
 
