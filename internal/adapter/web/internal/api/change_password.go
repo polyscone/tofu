@@ -10,6 +10,7 @@ import (
 
 func (api *API) accountChangePasswordPut(w http.ResponseWriter, r *http.Request) {
 	var input struct {
+		OldPassword string
 		NewPassword string
 	}
 	if writeError(w, r, errors.Tracef(decodeJSON(r, &input))) {
@@ -21,6 +22,7 @@ func (api *API) accountChangePasswordPut(w http.ResponseWriter, r *http.Request)
 	cmd := account.ChangePassword{
 		Guard:       api.passport(ctx),
 		UserID:      api.sessions.GetString(ctx, sesskey.UserID),
+		OldPassword: input.OldPassword,
 		NewPassword: input.NewPassword,
 	}
 	err := cmd.Execute(ctx, api.bus)

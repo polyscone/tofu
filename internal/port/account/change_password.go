@@ -17,12 +17,14 @@ type ChangePasswordGuard interface {
 
 type changePasswordRequest struct {
 	userID      uuid.V4
+	oldPassword domain.Password
 	newPassword domain.Password
 }
 
 type ChangePassword struct {
 	Guard       ChangePasswordGuard
 	UserID      string
+	OldPassword string
 	NewPassword string
 }
 
@@ -50,6 +52,9 @@ func (cmd ChangePassword) request(ctx context.Context) (changePasswordRequest, e
 	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("user id", err)
 	}
+	if req.oldPassword, err = domain.NewPassword(cmd.OldPassword); err != nil {
+		errs.Set("old password", err)
+	}
 	if req.newPassword, err = domain.NewPassword(cmd.NewPassword); err != nil {
 		errs.Set("new password", err)
 	}
@@ -68,6 +73,10 @@ func NewChangePasswordHandler(broker event.Broker, users UserRepo) ChangePasswor
 
 		user, err := users.FindByID(ctx, req.userID)
 		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		if err := user.VerifyPassword(req.oldPassword); err != nil {
 			return errors.Tracef(err)
 		}
 

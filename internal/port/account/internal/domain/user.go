@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/aggregate"
@@ -13,26 +12,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 )
-
-const (
-	authStatusStart AuthStatus = iota
-	Unauthenticated
-	AwaitingTOTP
-	Authenticated
-	authStatusEnd
-)
-
-type AuthStatus byte
-
-func (s AuthStatus) isValid() bool {
-	return authStatusStart < s && s < authStatusEnd
-}
-
-func (s AuthStatus) assertValid() {
-	if !s.isValid() {
-		panic(fmt.Sprintf("invalid auth status %v", s))
-	}
-}
 
 type Registered struct {
 	Email string
@@ -66,14 +45,10 @@ type User struct {
 	Roles          []Role
 	Claims         []Claim
 	ActivatedAt    time.Time
-	authStatus     AuthStatus
 }
 
 func NewUser(id uuid.V4) User {
-	return User{
-		ID:         id,
-		authStatus: Unauthenticated,
-	}
+	return User{ID: id}
 }
 
 func (u *User) HasVerifiedTOTP() bool {
@@ -194,18 +169,16 @@ func (u *User) VerifyTOTP(totp TOTP) error {
 	return nil
 }
 
-func (u *User) SetAuthStatus(status AuthStatus) {
-	status.assertValid()
-
-	u.authStatus = status
-}
-
-func (u *User) AuthStatus() AuthStatus {
-	if !u.authStatus.isValid() {
-		u.SetAuthStatus(Unauthenticated)
+func (u *User) VerifyPassword(password Password) error {
+	ok, _, err := argon2.Verify(password, u.HashedPassword, nil)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	if !ok {
+		return errors.Tracef(port.ErrBadRequest, "could not validate password")
 	}
 
-	return u.authStatus
+	return nil
 }
 
 func (u *User) AuthenticateWithPassword(password Password) error {
@@ -213,12 +186,8 @@ func (u *User) AuthenticateWithPassword(password Password) error {
 		return errors.Tracef(port.ErrBadRequest, "account is not activated")
 	}
 
-	ok, _, err := argon2.Validate(password, u.HashedPassword, nil)
-	if err != nil {
+	if err := u.VerifyPassword(password); err != nil {
 		return errors.Tracef(err)
-	}
-	if !ok {
-		return errors.Tracef(port.ErrBadRequest, "could not validate password")
 	}
 
 	u.Events.Enqueue(AuthenticatedWithPassword{
