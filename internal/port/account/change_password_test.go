@@ -44,7 +44,7 @@ func TestChangePassword(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		wantEvents = append(wantEvents, account.ChangedPassword{
+		wantEvents = append(wantEvents, account.PasswordChanged{
 			Email: user1.Email.String(),
 		})
 
@@ -126,7 +126,7 @@ func TestChangePassword(t *testing.T) {
 				NewPassword: newPassword.String(),
 			})
 			if err == nil {
-				wantEvents = append(wantEvents, account.ChangedPassword{
+				wantEvents = append(wantEvents, account.PasswordChanged{
 					Email: user1.Email.String(),
 				})
 			}

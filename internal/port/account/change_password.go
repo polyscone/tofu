@@ -76,11 +76,7 @@ func NewChangePasswordHandler(broker event.Broker, users UserRepo) ChangePasswor
 			return errors.Tracef(err)
 		}
 
-		if err := user.VerifyPassword(req.oldPassword); err != nil {
-			return errors.Tracef(err)
-		}
-
-		if err := user.ChangePassword(req.newPassword); err != nil {
+		if err := user.ChangePassword(req.oldPassword, req.newPassword); err != nil {
 			return errors.Tracef(err)
 		}
 

@@ -30,7 +30,7 @@ type AuthenticatedWithTOTP struct {
 	Email string
 }
 
-type ChangedPassword struct {
+type PasswordChanged struct {
 	Email string
 }
 
@@ -112,7 +112,25 @@ func (u *User) setPassword(newPassword Password) error {
 	return nil
 }
 
-func (u *User) ChangePassword(newPassword Password) error {
+func (u *User) ChangePassword(oldPassword, newPassword Password) error {
+	if u.ActivatedAt.IsZero() {
+		return errors.Tracef("cannot change password until activated")
+	}
+
+	if err := u.verifyPassword(oldPassword); err != nil {
+		return errors.Tracef(err)
+	}
+
+	if err := u.setPassword(newPassword); err != nil {
+		return errors.Tracef(err)
+	}
+
+	u.Events.Enqueue(PasswordChanged{
+		Email: u.Email.String(),
+	})
+
+	return nil
+}
 	if u.ActivatedAt.IsZero() {
 		return errors.Tracef("cannot change password until activated")
 	}
@@ -169,7 +187,7 @@ func (u *User) VerifyTOTP(totp TOTP) error {
 	return nil
 }
 
-func (u *User) VerifyPassword(password Password) error {
+func (u *User) verifyPassword(password Password) error {
 	ok, _, err := argon2.Verify(password, u.HashedPassword, nil)
 	if err != nil {
 		return errors.Tracef(err)
@@ -186,7 +204,7 @@ func (u *User) AuthenticateWithPassword(password Password) error {
 		return errors.Tracef(port.ErrBadRequest, "account is not activated")
 	}
 
-	if err := u.VerifyPassword(password); err != nil {
+	if err := u.verifyPassword(password); err != nil {
 		return errors.Tracef(err)
 	}
 
