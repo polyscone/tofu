@@ -34,6 +34,10 @@ type PasswordChanged struct {
 	Email string
 }
 
+type PasswordReset struct {
+	Email string
+}
+
 type User struct {
 	aggregate.Root
 
@@ -131,6 +135,8 @@ func (u *User) ChangePassword(oldPassword, newPassword Password) error {
 
 	return nil
 }
+
+func (u *User) ResetPassword(newPassword Password) error {
 	if u.ActivatedAt.IsZero() {
 		return errors.Tracef("cannot change password until activated")
 	}
@@ -139,7 +145,7 @@ func (u *User) ChangePassword(oldPassword, newPassword Password) error {
 		return errors.Tracef(err)
 	}
 
-	u.Events.Enqueue(ChangedPassword{
+	u.Events.Enqueue(PasswordReset{
 		Email: u.Email.String(),
 	})
 

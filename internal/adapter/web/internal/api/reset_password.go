@@ -73,7 +73,7 @@ func (api *API) accountResetPasswordPut(w http.ResponseWriter, r *http.Request) 
 
 	guardClaims := []string{user.ID}
 
-	cmd := account.ChangePassword{
+	cmd := account.ResetPassword{
 		Guard:       passport.New(guardClaims, nil, nil),
 		UserID:      user.ID,
 		NewPassword: input.NewPassword,

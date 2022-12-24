@@ -16,8 +16,8 @@ type (
 	Activated                 = domain.Activated
 	AuthenticatedWithPassword = domain.AuthenticatedWithPassword
 	AuthenticatedWithTOTP     = domain.AuthenticatedWithTOTP
-	ChangedPassword           = domain.ChangedPassword
 	PasswordChanged           = domain.PasswordChanged
+	PasswordReset             = domain.PasswordReset
 )
 
 type UserRepo interface {
