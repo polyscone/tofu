@@ -12,7 +12,7 @@ import (
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func (api *API) accountResetPasswordRequestPost(w http.ResponseWriter, r *http.Request) {
+func (api *API) accountResetPasswordPost(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Email string
 	}
