@@ -1,9 +1,11 @@
 package api
 
 import (
+	"encoding/base64"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
+	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/port/account"
 )
@@ -27,4 +29,20 @@ func (api *API) accountVerifyTOTPPost(w http.ResponseWriter, r *http.Request) {
 	if writeError(w, r, errors.Tracef(err)) {
 		return
 	}
+
+	err = csrf.RenewToken(ctx)
+	if writeError(w, r, errors.Tracef(err)) {
+		return
+	}
+
+	err = api.sessions.Renew(ctx)
+	if writeError(w, r, errors.Tracef(err)) {
+		return
+	}
+
+	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
+
+	writeJSON(w, r, map[string]any{
+		"csrfToken": csrfTokenBase64,
+	})
 }

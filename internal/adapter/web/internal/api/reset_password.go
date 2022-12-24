@@ -1,11 +1,13 @@
 package api
 
 import (
+	"encoding/base64"
 	"net/http"
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/internal/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/smtp"
+	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
@@ -82,7 +84,7 @@ func (api *API) accountResetPasswordPut(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Only consume after manual command validation
+	// Only consume after manual command validation, but before execution
 	// This way the token will only be consumed once we know there aren't any
 	// input validation or authorisation errors
 	err = api.tokens.ConsumeResetPasswordToken(ctx, input.Token)
@@ -94,4 +96,20 @@ func (api *API) accountResetPasswordPut(w http.ResponseWriter, r *http.Request) 
 	if writeError(w, r, errors.Tracef(err)) {
 		return
 	}
+
+	err = csrf.RenewToken(ctx)
+	if writeError(w, r, errors.Tracef(err)) {
+		return
+	}
+
+	err = api.sessions.Renew(ctx)
+	if writeError(w, r, errors.Tracef(err)) {
+		return
+	}
+
+	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
+
+	writeJSON(w, r, map[string]any{
+		"csrfToken": csrfTokenBase64,
+	})
 }
