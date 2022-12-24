@@ -17,16 +17,16 @@ import (
 )
 
 type changePasswordGuard struct {
-	canChangePassword bool
+	value bool
 }
 
 func (g changePasswordGuard) CanChangePassword(userID uuid.V4) bool {
-	return g.canChangePassword
+	return g.value
 }
 
 func TestChangePassword(t *testing.T) {
-	validGuard := changePasswordGuard{canChangePassword: true}
-	invalidGuard := changePasswordGuard{canChangePassword: false}
+	validGuard := changePasswordGuard{value: true}
+	invalidGuard := changePasswordGuard{value: false}
 
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()

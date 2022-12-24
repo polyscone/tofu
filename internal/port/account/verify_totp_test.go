@@ -19,16 +19,16 @@ import (
 )
 
 type verifyTOTPGuard struct {
-	canVerifyTOTP bool
+	value bool
 }
 
 func (g verifyTOTPGuard) CanVerifyTOTP(userID uuid.V4) bool {
-	return g.canVerifyTOTP
+	return g.value
 }
 
 func TestVerifyTOTP(t *testing.T) {
-	validGuard := verifyTOTPGuard{canVerifyTOTP: true}
-	invalidGuard := verifyTOTPGuard{canVerifyTOTP: false}
+	validGuard := verifyTOTPGuard{value: true}
+	invalidGuard := verifyTOTPGuard{value: false}
 
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()

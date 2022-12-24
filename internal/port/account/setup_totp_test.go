@@ -19,16 +19,16 @@ import (
 )
 
 type setupTOTPGuard struct {
-	canSetupTOTP bool
+	value bool
 }
 
 func (g setupTOTPGuard) CanSetupTOTP(userID uuid.V4) bool {
-	return g.canSetupTOTP
+	return g.value
 }
 
 func TestSetupTOTP(t *testing.T) {
-	validGuard := setupTOTPGuard{canSetupTOTP: true}
-	invalidGuard := setupTOTPGuard{canSetupTOTP: false}
+	validGuard := setupTOTPGuard{value: true}
+	invalidGuard := setupTOTPGuard{value: false}
 
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
