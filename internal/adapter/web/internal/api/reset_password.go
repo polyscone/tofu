@@ -57,8 +57,7 @@ func (api *API) accountResetPasswordPut(w http.ResponseWriter, r *http.Request) 
 
 	ctx := r.Context()
 
-	// TODO: Consume should return a sentinel error so we can respond with 400
-	email, err := api.tokens.ConsumeResetPasswordToken(ctx, input.Token)
+	email, err := api.tokens.FindResetPasswordTokenEmail(ctx, input.Token)
 	if writeError(w, r, errors.Tracef(err)) {
 		return
 	}
@@ -78,6 +77,19 @@ func (api *API) accountResetPasswordPut(w http.ResponseWriter, r *http.Request) 
 		UserID:      user.ID,
 		NewPassword: input.NewPassword,
 	}
+	err = cmd.Validate(ctx)
+	if writeError(w, r, errors.Tracef(err)) {
+		return
+	}
+
+	// Only consume after manual command validation
+	// This way the token will only be consumed once we know there aren't any
+	// input validation or authorisation errors
+	err = api.tokens.ConsumeResetPasswordToken(ctx, input.Token)
+	if writeError(w, r, errors.Tracef(err)) {
+		return
+	}
+
 	err = cmd.Execute(ctx, api.bus)
 	if writeError(w, r, errors.Tracef(err)) {
 		return

@@ -9,8 +9,10 @@ import (
 
 type Repo interface {
 	AddActivationToken(ctx context.Context, email text.Email, ttl time.Duration) (string, error)
-	ConsumeActivationToken(ctx context.Context, token string) (text.Email, error)
+	FindActivationTokenEmail(ctx context.Context, token string) (text.Email, error)
+	ConsumeActivationToken(ctx context.Context, token string) error
 
 	AddResetPasswordToken(ctx context.Context, email text.Email, ttl time.Duration) (string, error)
-	ConsumeResetPasswordToken(ctx context.Context, token string) (text.Email, error)
+	FindResetPasswordTokenEmail(ctx context.Context, token string) (text.Email, error)
+	ConsumeResetPasswordToken(ctx context.Context, token string) error
 }

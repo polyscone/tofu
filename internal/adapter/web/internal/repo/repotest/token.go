@@ -39,14 +39,14 @@ func RunTokenTests(t *testing.T, tokens token.Repo) {
 
 		// Generating another token for the same email should succeed and
 		// replace the old token so it can't be used in place of the new one
-		// This means that trying to consume the old token should result in
+		// This means that trying to find the old token should result in
 		// a not found error
 		tok1Old := tok1
 		tok1, err = tokens.AddActivationToken(ctx, email1, 1*time.Minute)
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = tokens.ConsumeActivationToken(ctx, tok1Old)
+		_, err = tokens.FindActivationTokenEmail(ctx, tok1Old)
 		if want, got := repo.ErrNotFound, err; !errors.Is(got, want) {
 			t.Errorf("want repo.ErrNotFound; got %q", got)
 		}
@@ -61,8 +61,8 @@ func RunTokenTests(t *testing.T, tokens token.Repo) {
 			t.Error("want unique tokens; got duplicates")
 		}
 
-		// Consuming a token successfully should return the associated email
-		emailCmp, err := tokens.ConsumeActivationToken(ctx, tok1)
+		// Querying a token successfully should return the associated email
+		emailCmp, err := tokens.FindActivationTokenEmail(ctx, tok1)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,19 +70,27 @@ func RunTokenTests(t *testing.T, tokens token.Repo) {
 			t.Errorf("want email %q; got %q", want, got)
 		}
 
-		// Trying to consume the same token again should result in not found
-		// because the token should have been deleted
-		_, err = tokens.ConsumeActivationToken(ctx, tok1)
+		// Trying to consume a token and then finding its data should result in
+		// not found because the token should have been deleted
+		err = tokens.ConsumeActivationToken(ctx, tok1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = tokens.FindActivationTokenEmail(ctx, tok1)
 		if want, got := repo.ErrNotFound, err; !errors.Is(got, want) {
 			t.Errorf("want repo.ErrNotFound; got %q", got)
 		}
 
-		// Trying to consume an expired token should fail with not found
+		// Trying to consume or find an expired token should fail with not found
 		tok3, err := tokens.AddActivationToken(ctx, email3, -1*time.Minute)
 		if err != nil {
 			t.Fatal(err)
 		}
-		_, err = tokens.ConsumeActivationToken(ctx, tok3)
+		_, err = tokens.FindActivationTokenEmail(ctx, tok3)
+		if want, got := repo.ErrNotFound, err; !errors.Is(got, want) {
+			t.Errorf("want repo.ErrNotFound; got %q", got)
+		}
+		err = tokens.ConsumeActivationToken(ctx, tok3)
 		if want, got := repo.ErrNotFound, err; !errors.Is(got, want) {
 			t.Errorf("want repo.ErrNotFound; got %q", got)
 		}
@@ -97,7 +105,12 @@ func RunTokenTests(t *testing.T, tokens token.Repo) {
 				return false
 			}
 
-			val, err := tokens.ConsumeActivationToken(ctx, tok)
+			val, err := tokens.FindActivationTokenEmail(ctx, tok)
+			if err != nil {
+				return false
+			}
+
+			err = tokens.ConsumeActivationToken(ctx, tok)
 			if err != nil {
 				return false
 			}
@@ -111,7 +124,12 @@ func RunTokenTests(t *testing.T, tokens token.Repo) {
 				return false
 			}
 
-			val, err := tokens.ConsumeResetPasswordToken(ctx, tok)
+			val, err := tokens.FindResetPasswordTokenEmail(ctx, tok)
+			if err != nil {
+				return false
+			}
+
+			err = tokens.ConsumeResetPasswordToken(ctx, tok)
 			if err != nil {
 				return false
 			}
