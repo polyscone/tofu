@@ -86,7 +86,7 @@ func TestArgon2(t *testing.T) {
 	}
 }
 
-func TestArgon2CSrand(t *testing.T) {
+func TestArgon2CSPRNG(t *testing.T) {
 	tt := []struct {
 		name    string
 		variant argon2.Variant
