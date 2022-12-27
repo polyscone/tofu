@@ -14,6 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/internal/httputil"
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/fstack"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/session"
 )
@@ -45,11 +46,9 @@ type App struct {
 func New(bus command.Bus, sessions *session.Manager, opts ...Option) *App {
 	files := fs.FS(embeddedFiles)
 
-	var dev bool
-	dir := "internal/web/internal/ui"
+	dir := "internal/adapter/web/internal/ui"
 	if info, err := os.Stat(dir); err == nil && info.IsDir() {
-		dev = true
-		files = os.DirFS(dir)
+		files = fstack.New(os.DirFS(dir), files)
 	}
 
 	templates := make(map[string]*template.Template)
