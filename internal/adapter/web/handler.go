@@ -23,12 +23,37 @@ import (
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-type Flags byte
+type Options struct {
+	dev      bool
+	insecure bool
+	proxies  []string
+}
 
-const Insecure Flags = 1 << iota
+type Option func(opts *Options)
 
-func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tokens token.Repo, mailer smtp.Mailer, proxies []string, flags Flags) http.Handler {
-	insecure := flags&Insecure != 0
+func WithDev(value bool) Option {
+	return func(opts *Options) {
+		opts.dev = value
+	}
+}
+
+func WithInsecure(value bool) Option {
+	return func(opts *Options) {
+		opts.insecure = value
+	}
+}
+
+func WithProxies(proxies []string) Option {
+	return func(opts *Options) {
+		opts.proxies = proxies
+	}
+}
+
+func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tokens token.Repo, mailer smtp.Mailer, _opts ...Option) http.Handler {
+	var opts Options
+	for _, opt := range _opts {
+		opt(&opts)
+	}
 
 	broker.Listen(func(evt account.Registered) {
 		background.Go(func() {
@@ -63,7 +88,7 @@ func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tok
 
 	sm := session.NewManager(sessions)
 	api := api.New(bus, sm, tokens, mailer)
-	ui := ui.New(bus, sm)
+	ui := ui.New(bus, sm, ui.WithDev(opts.dev))
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		if strings.HasPrefix(r.URL.Path, "/api/") {
@@ -78,10 +103,10 @@ func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tok
 	mux.Use(middleware.Recover(errorHandler))
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
 		ErrorHandler:   errorHandler,
-		TrustedProxies: proxies,
+		TrustedProxies: opts.proxies,
 	}))
 	mux.Use(middleware.Session(sm, &middleware.SessionConfig{
-		Insecure:     insecure,
+		Insecure:     opts.insecure,
 		ErrorHandler: errorHandler,
 	}))
 	mux.Use(httputil.TraceRequest(sm, errorHandler))
@@ -89,7 +114,7 @@ func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tok
 	mux.Use(middleware.SecurityHeaders)
 	mux.Use(middleware.ETag)
 	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
-		Insecure:     insecure,
+		Insecure:     opts.insecure,
 		ErrorHandler: errorHandler,
 	}))
 	mux.Use(middleware.Heartbeat("/meta/health"))

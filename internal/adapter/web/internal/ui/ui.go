@@ -25,6 +25,14 @@ var tmplFuncs = template.FuncMap{
 	"StatusText": http.StatusText,
 }
 
+type Option func(app *App)
+
+func WithDev(value bool) Option {
+	return func(app *App) {
+		app.dev = value
+	}
+}
+
 type App struct {
 	dev         bool
 	bus         command.Bus
@@ -34,7 +42,7 @@ type App struct {
 	templates   map[string]*template.Template
 }
 
-func New(bus command.Bus, sessions *session.Manager) *App {
+func New(bus command.Bus, sessions *session.Manager, opts ...Option) *App {
 	files := fs.FS(embeddedFiles)
 
 	var dev bool
@@ -46,13 +54,18 @@ func New(bus command.Bus, sessions *session.Manager) *App {
 
 	templates := make(map[string]*template.Template)
 
-	return &App{
-		dev:       dev,
+	app := App{
 		bus:       bus,
 		sessions:  sessions,
 		files:     files,
 		templates: templates,
 	}
+
+	for _, opt := range opts {
+		opt(&app)
+	}
+
+	return &app
 }
 
 func (app *App) Routes() http.Handler {

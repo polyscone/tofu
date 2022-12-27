@@ -33,6 +33,7 @@ var (
 
 var opts struct {
 	data    string
+	dev     bool
 	version bool
 
 	log struct {
@@ -51,7 +52,7 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %v:\n", os.Args[0])
-		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-addr <addr>] [-log-style <text|json>]\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-dev] [-addr <addr>] [-log-style <text|json>]\n", os.Args[0])
 		fmt.Fprintln(flag.CommandLine.Output(), "Commands:")
 		fmt.Fprintf(flag.CommandLine.Output(), "  version\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "    \tDisplay binary version information\n")
@@ -60,6 +61,7 @@ func main() {
 	}
 
 	flag.StringVar(&opts.data, "data", "./.tofu", "The directory to use for storing application data")
+	flag.BoolVar(&opts.dev, "dev", false, "Whether to run in development mode")
 	flag.BoolVar(&opts.version, "version", false, "Display binary version information")
 	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json)")
 	flag.Var(&opts.server.addr, "addr", "The address to run the build server on, for example :8080; random if empty")
@@ -186,12 +188,12 @@ func main() {
 
 	proxies := strings.Fields(opts.server.proxies)
 
-	var flags web.Flags
-	if opts.server.insecure {
-		flags |= web.Insecure
-	}
-
-	handler := web.NewHandler(bus, broker, sessions, tokens, mailer, proxies, flags)
+	handler := web.NewHandler(
+		bus, broker, sessions, tokens, mailer,
+		web.WithDev(opts.dev),
+		web.WithInsecure(opts.server.insecure),
+		web.WithProxies(proxies),
+	)
 
 	srv := http.Server{
 		Addr:         opts.server.addr.Value,
