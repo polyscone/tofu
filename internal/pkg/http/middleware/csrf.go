@@ -8,6 +8,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/size"
 )
 
 const (
@@ -93,13 +94,20 @@ func CSRF(config *CSRFConfig) Middleware {
 				return
 			}
 
-			var safe bool
 			switch r.Method {
 			case http.MethodGet, http.MethodHead, http.MethodOptions, http.MethodTrace:
-				safe = true
-			}
+				// Do nothing for safe methods
 
-			if !safe {
+			default:
+				if r.PostForm == nil {
+					err := r.ParseMultipartForm(32 * size.Megabyte)
+					if err != nil && !errors.Is(err, http.ErrNotMultipart) {
+						handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError)
+
+						return
+					}
+				}
+
 				sentToken := r.Header.Get(CSRFTokenHeaderName)
 				if sentToken == "" {
 					sentToken = r.PostFormValue(CSRFTokenFieldName)
