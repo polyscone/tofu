@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"embed"
+	"encoding/base64"
 	"io/fs"
 	"net/http"
 	"os"
@@ -12,7 +13,10 @@ import (
 	"text/template"
 
 	"github.com/polyscone/tofu/internal/adapter/web/internal/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/internal/smtp"
+	"github.com/polyscone/tofu/internal/adapter/web/internal/token"
 	"github.com/polyscone/tofu/internal/pkg/command"
+	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/fstack"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
@@ -38,12 +42,14 @@ type App struct {
 	dev         bool
 	bus         command.Bus
 	sessions    *session.Manager
+	tokens      token.Repo
+	mailer      smtp.Mailer
 	files       fs.FS
 	templatesMu sync.RWMutex
 	templates   map[string]*template.Template
 }
 
-func New(bus command.Bus, sessions *session.Manager, opts ...Option) *App {
+func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer smtp.Mailer, opts ...Option) *App {
 	files := fs.FS(embeddedFiles)
 
 	dir := "internal/adapter/web/internal/ui"
@@ -56,6 +62,8 @@ func New(bus command.Bus, sessions *session.Manager, opts ...Option) *App {
 	app := App{
 		bus:       bus,
 		sessions:  sessions,
+		tokens:    tokens,
+		mailer:    mailer,
 		files:     files,
 		templates: templates,
 	}
@@ -93,6 +101,12 @@ func (app *App) ErrorHandler(w http.ResponseWriter, r *http.Request, err error) 
 	app.renderError(w, r, errors.Tracef(err))
 }
 
+func (app *App) csrfToken(r *http.Request) string {
+	ctx := r.Context()
+
+	return base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
+}
+
 func (app *App) view(view string) *template.Template {
 	app.templatesMu.RLock()
 
@@ -110,7 +124,7 @@ func (app *App) view(view string) *template.Template {
 
 	key := strings.TrimSuffix(filepath.Base(view), ".go.html")
 
-	tmpl := template.New(key).Funcs(tmplFuncs)
+	tmpl := template.New(key).Option("missingkey=zero").Funcs(tmplFuncs)
 	tmpl = errors.Must(tmpl.ParseFS(app.files, "files/template/master.go.html"))
 	tmpl = errors.Must(tmpl.ParseFS(app.files, "files/template/partial/*.go.html"))
 	tmpl = errors.Must(tmpl.ParseFS(app.files, "files/template/view/"+view+".go.html"))
@@ -120,13 +134,47 @@ func (app *App) view(view string) *template.Template {
 	return tmpl
 }
 
-func (app *App) render(w http.ResponseWriter, r *http.Request, status int, view string) {
-	var buf bytes.Buffer
+type renderData struct {
+	Status       int
+	CSRFToken    string
+	ErrorMessage string
+	Errors       errors.Map
+	PostForm     map[string]string
+	Query        map[string]string
+}
 
-	data := struct {
-		Status int
-	}{
-		Status: status,
+type renderDataFunc func(data *renderData)
+
+func (app *App) render(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc renderDataFunc) {
+	var buf bytes.Buffer
+	var postForm map[string]string
+	var query map[string]string
+
+	if r.PostForm != nil {
+		postForm = make(map[string]string, len(r.PostForm))
+
+		for key, values := range r.PostForm {
+			postForm[key] = values[0]
+		}
+	}
+
+	if q := r.URL.Query(); q != nil {
+		query = make(map[string]string, len(q))
+
+		for key, values := range q {
+			query[key] = values[0]
+		}
+	}
+
+	data := renderData{
+		CSRFToken: app.csrfToken(r),
+		Status:    status,
+		PostForm:  postForm,
+		Query:     query,
+	}
+
+	if dataFunc != nil {
+		dataFunc(&data)
 	}
 
 	if err := app.view(view).ExecuteTemplate(&buf, "master", data); err != nil {
@@ -152,7 +200,15 @@ func (app *App) renderError(w http.ResponseWriter, r *http.Request, err error) b
 
 	status := httputil.ErrorStatus(err)
 
-	app.render(w, r, status, "error")
+	app.render(w, r, status, "error", func(data *renderData) {
+		switch {
+		case errors.Is(err, csrf.ErrEmptyToken):
+			data.ErrorMessage = "Empty CSRF token"
+
+		case errors.Is(err, csrf.ErrInvalidToken):
+			data.ErrorMessage = "Invalid CSRF token"
+		}
+	})
 
 	return true
 }
