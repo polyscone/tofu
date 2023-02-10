@@ -41,9 +41,10 @@ var opts struct {
 	}
 
 	server struct {
-		addr     Addr
-		insecure bool
-		proxies  string
+		addr         Addr
+		insecure     bool
+		insecureHTTP bool
+		proxies      string
 	}
 }
 
@@ -65,9 +66,14 @@ func main() {
 	flag.BoolVar(&opts.version, "version", false, "Display binary version information")
 	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json)")
 	flag.Var(&opts.server.addr, "addr", "The address to run the build server on, for example :8080; random if empty")
-	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode")
+	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
+	flag.BoolVar(&opts.server.insecureHTTP, "insecure-http", false, "Run in secure mode but without HTTPS")
 	flag.StringVar(&opts.server.proxies, "trusted-proxies", "", "A space separated list of trusted proxy addresses")
 	flag.Parse()
+
+	if opts.server.insecure {
+		opts.server.insecureHTTP = true
+	}
 
 	if flag.NArg() != 0 && flag.Arg(0) != "version" {
 		fmt.Fprintf(flag.CommandLine.Output(), "Unknown command %q\n", flag.Arg(0))
@@ -112,7 +118,7 @@ func main() {
 		opts.server.addr.Set(":0")
 	}
 
-	opts.server.addr.Insecure = opts.server.insecure
+	opts.server.addr.Insecure = opts.server.insecureHTTP
 
 	// Required flag checks
 	for _, name := range requiredFlags {
