@@ -10,6 +10,7 @@ import (
 )
 
 type Addr struct {
+	listener net.Listener
 	Value    string
 	Insecure bool
 }
@@ -23,18 +24,32 @@ func (a *Addr) Set(value string) error {
 	if host == "" {
 		host = "localhost"
 	}
-	if port == "" || port == "0" {
-		listener, err := net.Listen("tcp", ":0")
-		if err != nil {
-			return errors.Tracef(err)
-		}
-
-		port = strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
+	if port == "" {
+		port = "0"
 	}
 
+	listener, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	port = strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
+
 	a.Value = fmt.Sprintf("%v:%v", host, port)
+	a.listener = listener
 
 	return nil
+}
+
+func (a *Addr) Listener() (net.Listener, error) {
+	if a.listener == nil {
+		err := a.Set(":0")
+		if err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	return a.listener, nil
 }
 
 func (a Addr) String() string {

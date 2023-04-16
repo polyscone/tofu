@@ -114,10 +114,6 @@ func main() {
 	logger.Info.SetOutput(infoLogger)
 	logger.Error.SetOutput(errorLogger)
 
-	if opts.server.addr.Value == "" {
-		opts.server.addr.Set(":0")
-	}
-
 	opts.server.addr.Insecure = opts.server.insecureHTTP
 
 	// Required flag checks
@@ -146,6 +142,13 @@ func main() {
 		if f := flag.Lookup(name); f.Value.String() == "" {
 			fail(name, f.Value.String(), f.Value.Set(f.Value.String()))
 		}
+	}
+
+	listener, err := opts.server.addr.Listener()
+	if err != nil {
+		logger.PrintError(err)
+
+		os.Exit(1)
 	}
 
 	ctx := context.Background()
@@ -213,7 +216,7 @@ func main() {
 		logger.Info.Printf("listening on %v (pid %v)\n", opts.server.addr, os.Getpid())
 
 		if opts.server.addr.Insecure {
-			err := srv.ListenAndServe()
+			err := srv.Serve(listener)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				logger.PrintError(errors.Tracef(err))
 			}
@@ -221,7 +224,7 @@ func main() {
 			cert := filepath.Join(opts.data, "cert.pem")
 			key := filepath.Join(opts.data, "key.pem")
 
-			err := srv.ListenAndServeTLS(cert, key)
+			err := srv.ServeTLS(listener, cert, key)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
 				logger.PrintError(errors.Tracef(err))
 			}
