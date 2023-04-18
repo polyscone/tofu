@@ -16,6 +16,28 @@ var usedTOTPs = struct {
 	data map[string]time.Time
 }{data: make(map[string]time.Time)}
 
+// CleanUsedTOTP will clear any recorded used TOTP that matches
+// the given string.
+func CleanUsedTOTP(password string) {
+	usedTOTPs.Lock()
+	defer usedTOTPs.Unlock()
+
+	delete(usedTOTPs.data, password)
+}
+
+// CleanUsedTOTPs will clear all recorded used TOTPs that are older than the
+// given age duration.
+func CleanUsedTOTPs(age time.Duration) {
+	usedTOTPs.Lock()
+	defer usedTOTPs.Unlock()
+
+	for password, t := range usedTOTPs.data {
+		if time.Since(t) > age {
+			delete(usedTOTPs.data, password)
+		}
+	}
+}
+
 // TimeBased implements a "Time-based One Time Password" (TOTP) in accordance
 // with RFC6238 and any errata.
 type TimeBased struct {
@@ -74,18 +96,7 @@ func (otp TimeBased) Verify(key []byte, t time.Time, delaySteps int, userPasswor
 		return false, nil
 	}
 
-	// Defer a function to do a clean up of used OTPs in memory
-	// after each verification
-	defer func() {
-		usedTOTPs.Lock()
-		defer usedTOTPs.Unlock()
-
-		for password, t := range usedTOTPs.data {
-			if time.Since(t) > 10*time.Minute {
-				delete(usedTOTPs.data, password)
-			}
-		}
-	}()
+	defer CleanUsedTOTPs(10 * time.Minute)
 
 	usedTOTPs.RLock()
 	if _, ok := usedTOTPs.data[userPassword]; ok {
