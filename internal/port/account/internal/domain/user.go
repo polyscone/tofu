@@ -30,6 +30,10 @@ type AuthenticatedWithTOTP struct {
 	Email string
 }
 
+type DisabledTOTP struct {
+	Email string
+}
+
 type PasswordChanged struct {
 	Email string
 }
@@ -189,6 +193,21 @@ func (u *User) VerifyTOTP(totp TOTP) error {
 	}
 
 	u.TOTPVerifiedAt = time.Now()
+
+	return nil
+}
+
+func (u *User) DisableTOTP(totp TOTP) error {
+	if err := u.AuthenticateWithTOTP(totp); err != nil {
+		return errors.Tracef(err)
+	}
+
+	u.TOTPKey = TOTPKey{}
+	u.TOTPVerifiedAt = time.Time{}
+
+	u.Events.Enqueue(DisabledTOTP{
+		Email: u.Email.String(),
+	})
 
 	return nil
 }

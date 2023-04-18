@@ -16,6 +16,7 @@ type (
 	Activated                 = domain.Activated
 	AuthenticatedWithPassword = domain.AuthenticatedWithPassword
 	AuthenticatedWithTOTP     = domain.AuthenticatedWithTOTP
+	DisabledTOTP              = domain.DisabledTOTP
 	PasswordChanged           = domain.PasswordChanged
 	PasswordReset             = domain.PasswordReset
 )

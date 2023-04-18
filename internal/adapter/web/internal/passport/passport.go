@@ -20,6 +20,7 @@ func New(claims, roles, permissions []string) Passport {
 
 func (p Passport) CanChangePassword(userID uuid.V4) bool { return p.is(userID.String()) }
 func (p Passport) CanResetPassword(userID uuid.V4) bool  { return p.is(userID.String()) }
+func (p Passport) CanDisableTOTP(userID uuid.V4) bool    { return p.is(userID.String()) }
 func (p Passport) CanSetupTOTP(userID uuid.V4) bool      { return p.is(userID.String()) }
 func (p Passport) CanVerifyTOTP(userID uuid.V4) bool     { return p.is(userID.String()) }
 
