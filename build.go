@@ -691,7 +691,7 @@ func kill() {
 				fmt.Println(err)
 				fmt.Printf("-> forcibly killing process #%v...\n", i)
 
-				if err := exec.Command("taskkill", "/pid", pid, "/f").Run(); err != nil {
+				if err := exec.Command("taskkill", "/pid", pid, "/f", "/t").Run(); err != nil {
 					fmt.Println(err)
 
 					continue
