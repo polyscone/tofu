@@ -16,6 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
@@ -25,6 +26,10 @@ var (
 	ErrBadJSON      = errors.New("bad json data")
 	ErrExpectedJSON = errors.New("expected content-type application/json")
 )
+
+func init() {
+	logger.AddSkipRule("api.writeError", logger.SkipFunc)
+}
 
 type API struct {
 	bus      command.Bus

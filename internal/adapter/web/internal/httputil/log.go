@@ -8,6 +8,10 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
+func init() {
+	logger.AddSkipRule("/httputil/log.go", logger.SkipFile)
+}
+
 func LogError(r *http.Request, err error) {
 	remoteAddr := r.RemoteAddr // TODO: check x-forwarded-for if we have trusted proxies
 	text := logger.SprintError(err)
