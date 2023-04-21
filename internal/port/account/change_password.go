@@ -16,16 +16,18 @@ type ChangePasswordGuard interface {
 }
 
 type changePasswordRequest struct {
-	userID      uuid.V4
-	oldPassword domain.Password
-	newPassword domain.Password
+	userID           uuid.V4
+	oldPassword      domain.Password
+	newPassword      domain.Password
+	newPasswordCheck domain.Password
 }
 
 type ChangePassword struct {
-	Guard       ChangePasswordGuard
-	UserID      string
-	OldPassword string
-	NewPassword string
+	Guard            ChangePasswordGuard
+	UserID           string
+	OldPassword      string
+	NewPassword      string
+	NewPasswordCheck string
 }
 
 func (cmd ChangePassword) Execute(ctx context.Context, bus command.Bus) error {
@@ -57,6 +59,12 @@ func (cmd ChangePassword) request(ctx context.Context) (changePasswordRequest, e
 	}
 	if req.newPassword, err = domain.NewPassword(cmd.NewPassword); err != nil {
 		errs.Set("new password", err)
+	}
+	if req.newPasswordCheck, err = domain.NewPassword(cmd.NewPasswordCheck); err != nil {
+		errs.Set("new password check", err)
+	}
+	if !req.newPassword.Equal(req.newPasswordCheck) {
+		errs.Set("new password", "passwords do not match")
 	}
 
 	return req, errs.Tracef(port.ErrInvalidInput)

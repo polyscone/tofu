@@ -1,6 +1,7 @@
 package account_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -31,7 +32,7 @@ func TestChangePassword(t *testing.T) {
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
+	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
 	handler := account.NewChangePasswordHandler(broker, users)
 
 	password := "password"
@@ -50,10 +51,11 @@ func TestChangePassword(t *testing.T) {
 
 		newPassword := errors.Must(domain.NewPassword("password123"))
 		err := handler(ctx, account.ChangePassword{
-			Guard:       validGuard,
-			UserID:      user1.ID.String(),
-			OldPassword: password,
-			NewPassword: newPassword.String(),
+			Guard:            validGuard,
+			UserID:           user1.ID.String(),
+			OldPassword:      password,
+			NewPassword:      newPassword.String(),
+			NewPasswordCheck: newPassword.String(),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -92,10 +94,11 @@ func TestChangePassword(t *testing.T) {
 
 			t.Run(tc.name, func(t *testing.T) {
 				err := handler(ctx, account.ChangePassword{
-					Guard:       tc.guard,
-					UserID:      tc.userID,
-					OldPassword: tc.oldPassword,
-					NewPassword: tc.newPassword,
+					Guard:            tc.guard,
+					UserID:           tc.userID,
+					OldPassword:      tc.oldPassword,
+					NewPassword:      tc.newPassword,
+					NewPasswordCheck: tc.newPassword,
 				})
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
@@ -118,12 +121,13 @@ func TestChangePassword(t *testing.T) {
 
 		oldPassword := domain.Password(password)
 
-		execute := func(oldPassword, newPassword domain.Password) error {
+		execute := func(oldPassword, newPassword, newPasswordCheck domain.Password) error {
 			err := handler(ctx, account.ChangePassword{
-				Guard:       validGuard,
-				UserID:      user1.ID.String(),
-				OldPassword: oldPassword.String(),
-				NewPassword: newPassword.String(),
+				Guard:            validGuard,
+				UserID:           user1.ID.String(),
+				OldPassword:      oldPassword.String(),
+				NewPassword:      newPassword.String(),
+				NewPasswordCheck: newPasswordCheck.String(),
 			})
 			if err == nil {
 				wantEvents = append(wantEvents, account.PasswordChanged{
@@ -136,7 +140,7 @@ func TestChangePassword(t *testing.T) {
 
 		t.Run("valid inputs", func(t *testing.T) {
 			quick.Check(t, func(newPassword domain.Password) bool {
-				err := execute(oldPassword, newPassword)
+				err := execute(oldPassword, newPassword, newPassword)
 
 				oldPassword = newPassword
 
@@ -146,7 +150,18 @@ func TestChangePassword(t *testing.T) {
 
 		t.Run("invalid new password", func(t *testing.T) {
 			quick.Check(t, func(newPassword quick.Invalid[domain.Password]) bool {
-				err := execute(oldPassword, newPassword.Unwrap())
+				err := execute(oldPassword, newPassword.Unwrap(), newPassword.Unwrap())
+
+				return errors.Is(err, port.ErrInvalidInput)
+			})
+		})
+
+		t.Run("mismatched password", func(t *testing.T) {
+			quick.Check(t, func(newPassword domain.Password) bool {
+				mismatch := bytes.Clone(newPassword)
+				mismatch[0]++
+
+				err := execute(oldPassword, newPassword, mismatch)
 
 				return errors.Is(err, port.ErrInvalidInput)
 			})
