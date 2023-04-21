@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
@@ -39,7 +40,7 @@ func TraceRequest(sm *session.Manager, errorHandler middleware.ErrorHandler) mid
 				return
 			}
 
-			userID := sm.GetString(ctx, "userID")
+			userID := sm.GetString(ctx, sesskey.UserID)
 
 			td := traceData{
 				id:     id.String(),
