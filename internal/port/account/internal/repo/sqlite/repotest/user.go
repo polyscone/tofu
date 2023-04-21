@@ -64,6 +64,37 @@ func RunUserTests(t *testing.T, users account.UserRepo) {
 		t.Error("want non-zero time")
 	}
 
+	// Setting up a TOTP should also save a non-zero number of recovery code
+	// strings which should not be empty
+	if _, err := found.SetupTOTP(); err != nil {
+		t.Fatal(err)
+	}
+	if err := users.Save(ctx, found); err != nil {
+		t.Fatalf("want <nil>; got error %q", err)
+	}
+	found = errors.Must(users.FindByID(ctx, found.ID))
+	if len(found.RecoveryCodes) == 0 {
+		t.Fatal("want at least one recovery code")
+	} else {
+		for _, code := range found.RecoveryCodes {
+			if len(code) == 0 {
+				t.Error("want code; got empty string")
+			}
+		}
+	}
+
+	// Running TOTP setup a second time should replace old codes
+	nOldCodes := len(found.RecoveryCodes)
+	if _, err := found.SetupTOTP(); err != nil {
+		t.Fatal(err)
+	}
+	if err := users.Save(ctx, found); err != nil {
+		t.Fatalf("want <nil>; got error %q", err)
+	}
+	found = errors.Must(users.FindByID(ctx, found.ID))
+	if want, got := nOldCodes, len(found.RecoveryCodes); want != got {
+		t.Errorf("want %v codes; got %v", want, got)
+	}
 }
 
 func AddUser(t *testing.T, users account.UserRepo, ctx context.Context, _email string) (domain.User, error) {

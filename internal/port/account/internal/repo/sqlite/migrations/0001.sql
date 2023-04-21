@@ -39,3 +39,11 @@ CREATE TABLE account__user_roles (
   FOREIGN KEY (role_id) REFERENCES account__roles (id) ON DELETE CASCADE ON UPDATE CASCADE,
   PRIMARY KEY (user_id, role_id)
 );
+
+CREATE TABLE account__recovery_codes (
+  user_id    TEXT NOT NULL,
+  code       TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES account__users (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  PRIMARY KEY (user_id, code)
+);

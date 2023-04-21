@@ -10,8 +10,8 @@ import (
 type Alg int
 
 const (
-	SHA1   Alg = 1
-	SHA512 Alg = 2
+	SHA1 Alg = iota + 1
+	SHA512
 )
 
 // NewKey will use the given reader to generate some random bytes to be used
@@ -38,23 +38,6 @@ func NewKey(r io.Reader, alg Alg) ([]byte, error) {
 	}
 
 	b := make([]byte, n)
-	_, err := io.ReadFull(r, b)
-
-	return b, errors.Tracef(err)
-}
-
-// NewRecoveryCode will use the given reader to generate some random bytes to
-// be used as a recovery code.
-//
-// Because of this it's important that the reader be set to nil in a production
-// environment so that internally the function can use the most secure option
-// which will be the standard library's crypto/rand reader.
-func NewRecoveryCode(r io.Reader) ([]byte, error) {
-	if r == nil {
-		r = rand.Reader
-	}
-
-	b := make([]byte, 8)
 	_, err := io.ReadFull(r, b)
 
 	return b, errors.Tracef(err)

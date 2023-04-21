@@ -6,6 +6,7 @@ import (
 	"embed"
 	"fmt"
 
+	"github.com/polyscone/tofu/internal/pkg/aesgcm"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/repo"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
@@ -59,6 +60,11 @@ func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (
 		return domain.User{}, errors.Tracef(err)
 	}
 
+	recoveryCodes, err := r.findRecoveryCodesByUserID(ctx, tx, id)
+	if err != nil && !errors.Is(err, repo.ErrNotFound) {
+		return domain.User{}, errors.Tracef(err)
+	}
+
 	roles, err := r.findRolesByUserID(ctx, tx, id)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
 		return domain.User{}, errors.Tracef(err)
@@ -70,6 +76,7 @@ func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (
 	res.HashedPassword = hashedPassword
 	res.TOTPKey = totpKey
 	res.TOTPVerifiedAt = totpVerifiedAt.Time
+	res.RecoveryCodes = recoveryCodes
 	res.Roles = roles
 	res.ActivatedAt = activatedAt.Time
 
@@ -114,6 +121,26 @@ func (r *UserRepo) Add(ctx context.Context, u domain.User) error {
 		return errors.Tracef(err)
 	}
 
+	for _, code := range u.RecoveryCodes {
+		encrypted, err := aesgcm.Encrypt(r.secret, []byte(code))
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		stmt, args := `
+			INSERT INTO account__recovery_codes
+				(user_id, code)
+			VALUES
+				(:user_id, :code);
+		`, sqlite.Args{
+			"user_id": u.ID,
+			"code":    encrypted,
+		}
+		if _, err := tx.Exec(ctx, stmt, args); err != nil {
+			return errors.Tracef(err)
+		}
+	}
+
 	// for _, role := range u.Roles {
 	// 	var roleID uuid.V4
 
@@ -134,6 +161,12 @@ func (r *UserRepo) Add(ctx context.Context, u domain.User) error {
 }
 
 func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
+	tx, err := r.db.Begin(ctx, nil)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
 	stmt, args := `
 		UPDATE account__users SET
 			email = :email,
@@ -150,7 +183,39 @@ func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
 		"totp_verified_at": sqlite.NewNullTime(u.TOTPVerifiedAt.UTC()),
 		"activated_at":     sqlite.NewNullTime(u.ActivatedAt.UTC()),
 	}
-	_, err := r.db.Exec(ctx, stmt, args)
+	if _, err := tx.Exec(ctx, stmt, args); err != nil {
+		return errors.Tracef(err)
+	}
 
-	return errors.Tracef(err)
+	stmt, args = `
+		DELETE FROM account__recovery_codes
+		WHERE user_id = :user_id;
+	`, sqlite.Args{
+		"user_id": u.ID,
+	}
+	if _, err := tx.Exec(ctx, stmt, args); err != nil {
+		return errors.Tracef(err)
+	}
+
+	for _, code := range u.RecoveryCodes {
+		encrypted, err := aesgcm.Encrypt(r.secret, []byte(code))
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		stmt, args := `
+			INSERT INTO account__recovery_codes
+				(user_id, code)
+			VALUES
+				(:user_id, :code);
+		`, sqlite.Args{
+			"user_id": u.ID,
+			"code":    encrypted,
+		}
+		if _, err := tx.Exec(ctx, stmt, args); err != nil {
+			return errors.Tracef(err)
+		}
+	}
+
+	return errors.Tracef(tx.Commit())
 }

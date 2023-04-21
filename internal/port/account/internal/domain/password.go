@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"bytes"
 	"math/rand"
 	"regexp"
 	"unicode/utf8"
@@ -40,6 +41,10 @@ func NewPassword(password string) (Password, error) {
 
 func (p Password) String() string {
 	return string(p)
+}
+
+func (p Password) Equal(rhs Password) bool {
+	return bytes.Equal(p, rhs)
 }
 
 func (p Password) Generate(rand *rand.Rand) any {

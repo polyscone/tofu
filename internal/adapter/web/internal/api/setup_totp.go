@@ -56,9 +56,9 @@ func (api *API) accountSetupTOTPPost(w http.ResponseWriter, r *http.Request) {
 
 	qrcodeBase64 := "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
 
-	// TODO: Add an array of recovery codes to the response
 	writeJSON(w, r, map[string]any{
-		"keyBase32":    keyBase32,
-		"qrcodeBase64": qrcodeBase64,
+		"keyBase32":     keyBase32,
+		"qrcodeBase64":  qrcodeBase64,
+		"recoveryCodes": res.RecoveryCodes,
 	})
 }

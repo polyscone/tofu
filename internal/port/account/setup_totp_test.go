@@ -3,6 +3,7 @@ package account_test
 import (
 	"bytes"
 	"context"
+	"sort"
 	"testing"
 	"time"
 
@@ -72,6 +73,31 @@ func TestSetupTOTP(t *testing.T) {
 		user := errors.Must(users.FindByID(ctx, activatedUser.ID))
 		if want, got := res.Key, user.TOTPKey; !bytes.Equal(want, got) {
 			t.Errorf("want %q; got %q", want, got)
+		}
+
+		if len(res.RecoveryCodes) == 0 {
+			t.Error("want at least one recovery code; got none")
+		} else {
+			for _, code := range res.RecoveryCodes {
+				if len(code) == 0 {
+					t.Fatal("want code; got empty string")
+				}
+			}
+		}
+
+		if want, got := len(res.RecoveryCodes), len(user.RecoveryCodes); want != got {
+			t.Errorf("want %v recovery codes; got %v", want, got)
+		} else {
+			sort.Strings(res.RecoveryCodes)
+			sort.Slice(user.RecoveryCodes, func(i, j int) bool {
+				return user.RecoveryCodes[i].String() < user.RecoveryCodes[j].String()
+			})
+
+			for i, want := range res.RecoveryCodes {
+				if got := user.RecoveryCodes[i]; want != got.String() {
+					t.Errorf("want code %q; got %q", want, got)
+				}
+			}
 		}
 
 		testutil.CheckEvents(t, wantEvents, gotEvents)

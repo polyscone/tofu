@@ -30,6 +30,10 @@ type AuthenticatedWithTOTP struct {
 	Email string
 }
 
+type AuthenticatedWithRecoveryCode struct {
+	Email string
+}
+
 type DisabledTOTP struct {
 	Email string
 }
@@ -50,6 +54,7 @@ type User struct {
 	HashedPassword []byte
 	TOTPKey        TOTPKey
 	TOTPVerifiedAt time.Time
+	RecoveryCodes  []RecoveryCode
 	Roles          []Role
 	Claims         []Claim
 	ActivatedAt    time.Time
@@ -166,7 +171,19 @@ func (u *User) SetupTOTP() (TOTPParams, error) {
 		return TOTPParams{}, errors.Tracef(err)
 	}
 
+	nCodes := 6
+
 	u.TOTPKey = key
+	u.RecoveryCodes = make([]RecoveryCode, nCodes)
+
+	for i := 0; i < nCodes; i++ {
+		code, err := GenerateRecoveryCode()
+		if err != nil {
+			return TOTPParams{}, errors.Tracef(err)
+		}
+
+		u.RecoveryCodes[i] = code
+	}
 
 	params := TOTPParams{
 		Key:       u.TOTPKey,
@@ -264,6 +281,30 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 	})
 
 	return nil
+}
+
+func (u *User) AuthenticateWithRecoveryCode(recoveryCode RecoveryCode) error {
+	if !u.HasVerifiedTOTP() {
+		return errors.Tracef(port.ErrBadRequest, "account cannot use recovery codes")
+	}
+
+	if u.ActivatedAt.IsZero() {
+		return errors.Tracef(port.ErrBadRequest, "account is not activated")
+	}
+
+	for i, code := range u.RecoveryCodes {
+		if code == recoveryCode {
+			u.RecoveryCodes = append(u.RecoveryCodes[:i], u.RecoveryCodes[i+1:]...)
+
+			u.Events.Enqueue(AuthenticatedWithRecoveryCode{
+				Email: u.Email.String(),
+			})
+
+			return nil
+		}
+	}
+
+	return errors.Tracef(port.ErrBadRequest, "could not validate recovery code")
 }
 
 func (u *User) Is(query Claim) bool {

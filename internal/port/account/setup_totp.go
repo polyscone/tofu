@@ -19,10 +19,11 @@ type setupTOTPRequest struct {
 }
 
 type setupTOTPResponse struct {
-	Key       []byte
-	Algorithm string
-	Digits    int
-	Period    int
+	Key           []byte
+	Algorithm     string
+	Digits        int
+	Period        int
+	RecoveryCodes []string
 }
 
 type SetupTOTP struct {
@@ -83,11 +84,17 @@ func NewSetupTOTPHandler(broker event.Broker, users UserRepo) SetupTOTPHandler {
 
 		broker.Flush(&user.Events)
 
+		recoveryCodes := make([]string, len(user.RecoveryCodes))
+		for i, code := range user.RecoveryCodes {
+			recoveryCodes[i] = code.String()
+		}
+
 		res := setupTOTPResponse{
-			Key:       params.Key,
-			Algorithm: params.Algorithm,
-			Digits:    params.Digits,
-			Period:    params.Period,
+			Key:           params.Key,
+			Algorithm:     params.Algorithm,
+			Digits:        params.Digits,
+			Period:        params.Period,
+			RecoveryCodes: recoveryCodes,
 		}
 
 		return res, nil
