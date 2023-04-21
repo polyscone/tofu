@@ -10,10 +10,10 @@ import (
 	"github.com/polyscone/tofu/internal/port/account/internal/repo/sqlite/repotest"
 )
 
-func TestUser(t *testing.T) {
+func TestUserRepo(t *testing.T) {
 	ctx := context.Background()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	repo := errors.Must(account.NewSQLiteUserRepo(ctx, db))
+	repo := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
 
 	repotest.RunUserTests(t, repo)
 }

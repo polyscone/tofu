@@ -19,7 +19,7 @@ func TestRegister(t *testing.T) {
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
+	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
 	handler := account.NewRegisterHandler(broker, users)
 
 	t.Run("properties", func(t *testing.T) {

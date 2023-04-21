@@ -32,9 +32,10 @@ var (
 )
 
 var opts struct {
-	data    string
-	dev     bool
 	version bool
+	dev     bool
+	data    string
+	secret  string
 
 	log struct {
 		style logger.Style
@@ -49,7 +50,7 @@ var opts struct {
 }
 
 func main() {
-	requiredFlags := []string{"addr"}
+	requiredFlags := []string{"secret", "addr"}
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %v:\n", os.Args[0])
@@ -69,6 +70,7 @@ func main() {
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
 	flag.BoolVar(&opts.server.insecureHTTP, "insecure-http", false, "Run in secure mode but without HTTPS")
 	flag.StringVar(&opts.server.proxies, "trusted-proxies", "", "A space separated list of trusted proxy addresses")
+	flag.StringVar(&opts.secret, "secret", "", "The secret to use for things like encrypting/decrypting data")
 	flag.Parse()
 
 	if opts.server.insecure {
@@ -167,7 +169,7 @@ func main() {
 		}
 	}()
 
-	bus, broker, err := app.Compose(ctx, db)
+	bus, broker, err := app.Compose(ctx, db, []byte(opts.secret))
 	if err != nil {
 		logger.PrintError(err)
 

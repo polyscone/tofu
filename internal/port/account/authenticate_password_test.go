@@ -20,7 +20,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
+	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
 	handler := account.NewAuthenticateWithPasswordHandler(broker, users)
 
 	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", "password"))

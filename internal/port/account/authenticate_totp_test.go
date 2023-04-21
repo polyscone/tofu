@@ -21,7 +21,7 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
+	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
 	handler := account.NewAuthenticateWithTOTPHandler(broker, users)
 
 	password := "password"

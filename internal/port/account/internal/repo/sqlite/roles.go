@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 )
 
-func findRolesByUserID(ctx context.Context, db sqlite.Querier, userID uuid.V4) ([]domain.Role, error) {
+func (r *UserRepo) findRolesByUserID(ctx context.Context, db sqlite.Querier, userID uuid.V4) ([]domain.Role, error) {
 	var roles []domain.Role
 
 	stmt, args := `

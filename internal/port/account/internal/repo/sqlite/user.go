@@ -18,15 +18,21 @@ import (
 var migrations embed.FS
 
 type UserRepo struct {
-	db *sqlite.DB
+	db     *sqlite.DB
+	secret []byte
 }
 
-func NewUserRepo(ctx context.Context, db *sqlite.DB) (*UserRepo, error) {
+func NewUserRepo(ctx context.Context, db *sqlite.DB, secret []byte) (*UserRepo, error) {
 	if err := db.MigrateFS(ctx, "account", migrations); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
-	return &UserRepo{db: db}, nil
+	repo := UserRepo{
+		db:     db,
+		secret: secret,
+	}
+
+	return &repo, nil
 }
 
 func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (domain.User, error) {
@@ -53,7 +59,7 @@ func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (
 		return domain.User{}, errors.Tracef(err)
 	}
 
-	roles, err := findRolesByUserID(ctx, tx, id)
+	roles, err := r.findRolesByUserID(ctx, tx, id)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
 		return domain.User{}, errors.Tracef(err)
 	}

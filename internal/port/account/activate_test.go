@@ -20,7 +20,7 @@ func TestActivate(t *testing.T) {
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	users := errors.Must(account.NewSQLiteUserRepo(ctx, db))
+	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
 	handler := account.NewActivateHandler(broker, users)
 
 	user := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))

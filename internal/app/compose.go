@@ -10,13 +10,13 @@ import (
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func Compose(ctx context.Context, db *sqlite.DB) (command.Bus, event.Broker, error) {
+func Compose(ctx context.Context, db *sqlite.DB, secret []byte) (command.Bus, event.Broker, error) {
 	bus := command.NewMemoryBus()
 	broker := event.NewMemoryBroker()
 
 	// Account
 	{
-		users, err := account.NewSQLiteUserRepo(ctx, db)
+		users, err := account.NewSQLiteUserRepo(ctx, db, secret)
 		if err != nil {
 			return nil, nil, errors.Tracef(err)
 		}
