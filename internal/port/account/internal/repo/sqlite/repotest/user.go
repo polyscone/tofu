@@ -13,13 +13,6 @@ import (
 	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 )
 
-var testUserRoles = []domain.Role{
-	domain.NewRole("Foo", "pages.create", "pages.update"),
-	domain.NewRole("Bar", "users.create", "users.delete"),
-	domain.NewRole("Baz", "plugins.create"),
-	domain.NewRole("Qux"),
-}
-
 func RunUserTests(t *testing.T, users account.UserRepo) {
 	ctx := context.Background()
 
