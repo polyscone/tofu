@@ -60,6 +60,7 @@ func (api *API) Routes() http.Handler {
 			mux.Post("/totp", api.accountSetupTOTPPost)
 			mux.Post("/totp/disable", api.accountDisableTOTPPost)
 			mux.Post("/totp/verify", api.accountVerifyTOTPPost)
+			mux.Put("/totp/recovery-codes", api.accountRegenerateRecoveryCodesPut)
 
 			mux.Post("/login/password", api.accountLoginWithPasswordPost)
 			mux.Post("/login/totp", api.accountLoginWithTOTPPost)

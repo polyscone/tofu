@@ -38,6 +38,10 @@ type DisabledTOTP struct {
 	Email string
 }
 
+type RecoveryCodesRegenerated struct {
+	Email string
+}
+
 type PasswordChanged struct {
 	Email string
 }
@@ -210,6 +214,30 @@ func (u *User) VerifyTOTP(totp TOTP) error {
 	}
 
 	u.TOTPVerifiedAt = time.Now()
+
+	return nil
+}
+
+func (u *User) RegenerateRecoveryCodes() error {
+	if !u.HasVerifiedTOTP() {
+		return errors.Tracef(port.ErrBadRequest, "cannot regenerate recovery codes without a verified TOTP")
+	}
+
+	nCodes := 6
+	u.RecoveryCodes = make([]RecoveryCode, nCodes)
+
+	for i := 0; i < nCodes; i++ {
+		code, err := GenerateRecoveryCode()
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		u.RecoveryCodes[i] = code
+	}
+
+	u.Events.Enqueue(RecoveryCodesRegenerated{
+		Email: u.Email.String(),
+	})
 
 	return nil
 }

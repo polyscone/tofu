@@ -18,6 +18,7 @@ type (
 	AuthenticatedWithTOTP         = domain.AuthenticatedWithTOTP
 	AuthenticatedWithRecoveryCode = domain.AuthenticatedWithRecoveryCode
 	DisabledTOTP                  = domain.DisabledTOTP
+	RecoveryCodesRegenerated      = domain.RecoveryCodesRegenerated
 	PasswordChanged               = domain.PasswordChanged
 	PasswordReset                 = domain.PasswordReset
 )
