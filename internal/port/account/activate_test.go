@@ -1,6 +1,7 @@
 package account_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -36,8 +37,9 @@ func TestActivate(t *testing.T) {
 		})
 
 		err := handler(ctx, account.Activate{
-			Email:    user.Email.String(),
-			Password: "password",
+			Email:         user.Email.String(),
+			Password:      "password",
+			PasswordCheck: "password",
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -75,16 +77,17 @@ func TestActivate(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		execute := func(email text.Email, password domain.Password) error {
+		execute := func(email text.Email, password, passwordCheck domain.Password) error {
 			return handler(ctx, account.Activate{
-				Email:    email.String(),
-				Password: password.String(),
+				Email:         email.String(),
+				Password:      password.String(),
+				PasswordCheck: passwordCheck.String(),
 			})
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
 			quick.Check(t, func(email text.Email, password domain.Password) bool {
-				err := execute(email, password)
+				err := execute(email, password, password)
 
 				return !errors.Is(err, port.ErrInvalidInput)
 			})
@@ -92,7 +95,7 @@ func TestActivate(t *testing.T) {
 
 		t.Run("invalid email", func(t *testing.T) {
 			quick.Check(t, func(email quick.Invalid[text.Email], password domain.Password) bool {
-				err := execute(email.Unwrap(), password)
+				err := execute(email.Unwrap(), password, password)
 
 				return errors.Is(err, port.ErrInvalidInput)
 			})
@@ -100,7 +103,18 @@ func TestActivate(t *testing.T) {
 
 		t.Run("invalid password", func(t *testing.T) {
 			quick.Check(t, func(email text.Email, password quick.Invalid[domain.Password]) bool {
-				err := execute(email, password.Unwrap())
+				err := execute(email, password.Unwrap(), password.Unwrap())
+
+				return errors.Is(err, port.ErrInvalidInput)
+			})
+		})
+
+		t.Run("mismatched password", func(t *testing.T) {
+			quick.Check(t, func(email text.Email, password domain.Password) bool {
+				mismatch := bytes.Clone(password)
+				mismatch[0]++
+
+				err := execute(email, password, mismatch)
 
 				return errors.Is(err, port.ErrInvalidInput)
 			})

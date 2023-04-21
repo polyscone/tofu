@@ -9,9 +9,10 @@ import (
 
 func (api *API) accountActivatePost(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Token    string
-		Email    string
-		Password string
+		Token         string
+		Email         string
+		Password      string
+		PasswordCheck string
 	}
 	if writeError(w, r, errors.Tracef(decodeJSON(r, &input))) {
 		return
@@ -20,8 +21,9 @@ func (api *API) accountActivatePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	cmd := account.Activate{
-		Email:    input.Email,
-		Password: input.Password,
+		Email:         input.Email,
+		Password:      input.Password,
+		PasswordCheck: input.PasswordCheck,
 	}
 	err := cmd.Validate(ctx)
 	if writeError(w, r, errors.Tracef(err)) {

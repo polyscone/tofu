@@ -12,13 +12,15 @@ import (
 )
 
 type activateRequest struct {
-	email    text.Email
-	password domain.Password
+	email         text.Email
+	password      domain.Password
+	passwordCheck domain.Password
 }
 
 type Activate struct {
-	Email    string
-	Password string
+	Email         string
+	Password      string
+	PasswordCheck string
 }
 
 func (cmd Activate) Execute(ctx context.Context, bus command.Bus) error {
@@ -43,6 +45,12 @@ func (cmd Activate) request(ctx context.Context) (activateRequest, error) {
 	}
 	if req.password, err = domain.NewPassword(cmd.Password); err != nil {
 		errs.Set("password", err)
+	}
+	if req.passwordCheck, err = domain.NewPassword(cmd.PasswordCheck); err != nil {
+		errs.Set("password check", err)
+	}
+	if !req.password.Equal(req.passwordCheck) {
+		errs.Set("password", "passwords do not match")
 	}
 
 	return req, errs.Tracef(port.ErrInvalidInput)
