@@ -50,8 +50,9 @@ func (api *API) accountResetPasswordPost(w http.ResponseWriter, r *http.Request)
 
 func (api *API) accountResetPasswordPut(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Token       string
-		NewPassword string
+		Token            string
+		NewPassword      string
+		NewPasswordCheck string
 	}
 	if writeError(w, r, errors.Tracef(decodeJSON(r, &input))) {
 		return
@@ -75,9 +76,10 @@ func (api *API) accountResetPasswordPut(w http.ResponseWriter, r *http.Request) 
 	guardClaims := []string{user.ID}
 
 	cmd := account.ResetPassword{
-		Guard:       passport.New(guardClaims, nil, nil),
-		UserID:      user.ID,
-		NewPassword: input.NewPassword,
+		Guard:            passport.New(guardClaims, nil, nil),
+		UserID:           user.ID,
+		NewPassword:      input.NewPassword,
+		NewPasswordCheck: input.NewPasswordCheck,
 	}
 	err = cmd.Validate(ctx)
 	if writeError(w, r, errors.Tracef(err)) {

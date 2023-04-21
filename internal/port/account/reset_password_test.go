@@ -1,6 +1,7 @@
 package account_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -49,9 +50,10 @@ func TestResetPassword(t *testing.T) {
 
 		newPassword := errors.Must(domain.NewPassword("password123"))
 		err := handler(ctx, account.ResetPassword{
-			Guard:       validGuard,
-			UserID:      user.ID.String(),
-			NewPassword: newPassword.String(),
+			Guard:            validGuard,
+			UserID:           user.ID.String(),
+			NewPassword:      newPassword.String(),
+			NewPasswordCheck: newPassword.String(),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -87,9 +89,10 @@ func TestResetPassword(t *testing.T) {
 
 			t.Run(tc.name, func(t *testing.T) {
 				err := handler(ctx, account.ResetPassword{
-					Guard:       tc.guard,
-					UserID:      tc.userID,
-					NewPassword: tc.newPassword,
+					Guard:            tc.guard,
+					UserID:           tc.userID,
+					NewPassword:      tc.newPassword,
+					NewPasswordCheck: tc.newPassword,
 				})
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
@@ -110,11 +113,12 @@ func TestResetPassword(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		execute := func(newPassword domain.Password) error {
+		execute := func(newPassword, newPasswordCheck domain.Password) error {
 			err := handler(ctx, account.ResetPassword{
-				Guard:       validGuard,
-				UserID:      user.ID.String(),
-				NewPassword: newPassword.String(),
+				Guard:            validGuard,
+				UserID:           user.ID.String(),
+				NewPassword:      newPassword.String(),
+				NewPasswordCheck: newPasswordCheck.String(),
 			})
 			if err == nil {
 				wantEvents = append(wantEvents, account.PasswordReset{
@@ -127,7 +131,7 @@ func TestResetPassword(t *testing.T) {
 
 		t.Run("valid inputs", func(t *testing.T) {
 			quick.Check(t, func(newPassword domain.Password) bool {
-				err := execute(newPassword)
+				err := execute(newPassword, newPassword)
 
 				return !errors.Is(err, port.ErrInvalidInput)
 			})
@@ -135,7 +139,18 @@ func TestResetPassword(t *testing.T) {
 
 		t.Run("invalid new password", func(t *testing.T) {
 			quick.Check(t, func(newPassword quick.Invalid[domain.Password]) bool {
-				err := execute(newPassword.Unwrap())
+				err := execute(newPassword.Unwrap(), newPassword.Unwrap())
+
+				return errors.Is(err, port.ErrInvalidInput)
+			})
+		})
+
+		t.Run("mismatched password", func(t *testing.T) {
+			quick.Check(t, func(newPassword domain.Password) bool {
+				mismatch := bytes.Clone(newPassword)
+				mismatch[0]++
+
+				err := execute(newPassword, mismatch)
 
 				return errors.Is(err, port.ErrInvalidInput)
 			})
