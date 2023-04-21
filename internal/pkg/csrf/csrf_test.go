@@ -114,6 +114,9 @@ func TestCSRF(t *testing.T) {
 		}
 
 		ctx, err = csrf.SetToken(ctx, token1)
+		if err != nil {
+			t.Errorf("want <nil>; got %q", err)
+		}
 		if want, got := false, csrf.IsNew(ctx); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}

@@ -42,6 +42,9 @@ func (api *API) accountSetupTOTPPost(w http.ResponseWriter, r *http.Request) {
 		qr.M,
 		qr.Auto,
 	)
+	if writeError(w, r, errors.Tracef(err)) {
+		return
+	}
 
 	qrcode, err = barcode.Scale(qrcode, 200, 200)
 	if writeError(w, r, errors.Tracef(err)) {

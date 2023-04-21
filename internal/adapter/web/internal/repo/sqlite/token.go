@@ -99,7 +99,9 @@ func (r *TokenRepo) add(ctx context.Context, email text.Email, ttl time.Duration
 		"kind":       kind,
 		"expires_at": expiresAt,
 	}
-	_, err = tx.Exec(ctx, stmt, args)
+	if _, err := tx.Exec(ctx, stmt, args); err != nil {
+		return "", errors.Tracef(err)
+	}
 
 	return string(token), errors.Tracef(tx.Commit())
 }
