@@ -187,7 +187,7 @@ func decodeJSON(r *http.Request, dst any) error {
 		case strings.HasPrefix(err.Error(), "json: unknown field "):
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
 
-			return errors.Tracef(ErrBadJSON, "unknown field %q", fieldName)
+			return errors.Tracef(ErrBadJSON, "unknown field %v", fieldName)
 
 		case errors.As(err, &maxBytesError):
 			return errors.Tracef(ErrBadJSON, "request body must be no larger than %v bytes", maxBytesError.Limit)
