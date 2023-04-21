@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 )
 
-func TestToken(t *testing.T) {
+func TestTokenRepo(t *testing.T) {
 	ctx := context.Background()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	repo := errors.Must(web.NewSQLiteTokenRepo(ctx, db))

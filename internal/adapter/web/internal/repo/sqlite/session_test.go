@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 )
 
-func TestSession(t *testing.T) {
+func TestSessionRepo(t *testing.T) {
 	ctx := context.Background()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	repo := errors.Must(web.NewSQLiteSessionRepo(ctx, db, 1*time.Minute))
