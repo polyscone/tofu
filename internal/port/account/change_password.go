@@ -16,10 +16,9 @@ type ChangePasswordGuard interface {
 }
 
 type changePasswordRequest struct {
-	userID           uuid.V4
-	oldPassword      domain.Password
-	newPassword      domain.Password
-	newPasswordCheck domain.Password
+	userID      uuid.V4
+	oldPassword domain.Password
+	newPassword domain.Password
 }
 
 type ChangePassword struct {

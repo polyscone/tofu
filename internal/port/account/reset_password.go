@@ -16,9 +16,8 @@ type ResetPasswordGuard interface {
 }
 
 type resetPasswordRequest struct {
-	userID           uuid.V4
-	newPassword      domain.Password
-	newPasswordCheck domain.Password
+	userID      uuid.V4
+	newPassword domain.Password
 }
 
 type ResetPassword struct {
