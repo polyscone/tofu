@@ -9,8 +9,10 @@ import (
 
 func (api *API) accountRegisterPost(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		UserID string
-		Email  string
+		UserID        string
+		Email         string
+		Password      string
+		PasswordCheck string
 	}
 	if writeError(w, r, errors.Tracef(decodeJSON(r, &input))) {
 		return

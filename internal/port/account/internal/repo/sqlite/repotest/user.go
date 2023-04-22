@@ -17,8 +17,8 @@ func RunUserTests(t *testing.T, users account.UserRepo) {
 	ctx := context.Background()
 
 	// Seed the repo
-	existing := errors.Must(AddUser(t, users, ctx, "joe@bloggs.com"))
-	errors.Must(AddUser(t, users, ctx, "jane@doe.com"))
+	existing := errors.Must(AddUser(t, users, ctx, "joe@bloggs.com", "password"))
+	errors.Must(AddUser(t, users, ctx, "jane@doe.com", "password"))
 
 	// An existing user should be found an be populated with correct values
 	found := errors.Must(users.FindByEmail(ctx, "joe@bloggs.com"))
@@ -33,20 +33,19 @@ func RunUserTests(t *testing.T, users account.UserRepo) {
 	}
 
 	// Adding a user with a duplicate email should conflict
-	_, err = AddUser(t, users, ctx, "jane@doe.com")
+	_, err = AddUser(t, users, ctx, "jane@doe.com", "password")
 	if want, got := repo.ErrConflict, err; !errors.Is(got, want) {
 		t.Errorf("want %q; got %q", want, got)
 	}
 
 	// Adding a user with a duplicate email with different casing should conflict
-	_, err = AddUser(t, users, ctx, "JANE@DOE.COM")
+	_, err = AddUser(t, users, ctx, "JANE@DOE.COM", "password")
 	if want, got := repo.ErrConflict, err; !errors.Is(got, want) {
 		t.Errorf("want %q; got %q", want, got)
 	}
 
 	// Activating should save a new flag to the database
-	password := errors.Must(domain.NewPassword("password"))
-	if err := found.ActivateAndSetPassword(password); err != nil {
+	if err := found.Activate(); err != nil {
 		t.Fatal(err)
 	}
 	if err := users.Save(ctx, found); err != nil {
@@ -90,7 +89,7 @@ func RunUserTests(t *testing.T, users account.UserRepo) {
 	}
 }
 
-func AddUser(t *testing.T, users account.UserRepo, ctx context.Context, _email string) (domain.User, error) {
+func AddUser(t *testing.T, users account.UserRepo, ctx context.Context, _email, _password string) (domain.User, error) {
 	t.Helper()
 
 	id := errors.Must(uuid.NewV4())
@@ -98,7 +97,9 @@ func AddUser(t *testing.T, users account.UserRepo, ctx context.Context, _email s
 
 	user := domain.NewUser(id)
 
-	user.Register(email)
+	if err := user.Register(email, errors.Must(domain.NewPassword(_password))); err != nil {
+		return domain.User{}, err
+	}
 
 	if err := users.Add(ctx, user); err != nil {
 		return domain.User{}, err
@@ -108,17 +109,12 @@ func AddUser(t *testing.T, users account.UserRepo, ctx context.Context, _email s
 }
 
 func AddActivatedUser(t *testing.T, users account.UserRepo, ctx context.Context, _email, _password string) (domain.User, error) {
-	user, err := AddUser(t, users, ctx, _email)
+	user, err := AddUser(t, users, ctx, _email, _password)
 	if err != nil {
 		return domain.User{}, err
 	}
 
-	password, err := domain.NewPassword(_password)
-	if err != nil {
-		return domain.User{}, err
-	}
-
-	if err := user.ActivateAndSetPassword(password); err != nil {
+	if err := user.Activate(); err != nil {
 		return domain.User{}, err
 	}
 	if err := users.Save(ctx, user); err != nil {

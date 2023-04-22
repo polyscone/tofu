@@ -13,13 +13,16 @@ import (
 )
 
 type registerRequest struct {
-	userID uuid.V4
-	email  text.Email
+	userID   uuid.V4
+	email    text.Email
+	password domain.Password
 }
 
 type Register struct {
-	UserID string
-	Email  string
+	UserID        string
+	Email         string
+	Password      string
+	PasswordCheck string
 }
 
 func (cmd Register) Execute(ctx context.Context, bus command.Bus) error {
@@ -39,11 +42,18 @@ func (cmd Register) request(ctx context.Context) (registerRequest, error) {
 	var err error
 	var errs errors.Map
 
+	passwordCheck, _ := domain.NewPassword(cmd.PasswordCheck)
+
 	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("id", err)
 	}
 	if req.email, err = text.NewEmail(cmd.Email); err != nil {
 		errs.Set("email", err)
+	}
+	if req.password, err = domain.NewPassword(cmd.Password); err != nil {
+		errs.Set("password", err)
+	} else if !req.password.Equal(passwordCheck) {
+		errs.Set("password", "passwords do not match")
 	}
 
 	return req, errs.Tracef(port.ErrInvalidInput)
@@ -60,7 +70,9 @@ func NewRegisterHandler(broker event.Broker, users UserRepo) RegisterHandler {
 
 		user := domain.NewUser(req.userID)
 
-		user.Register(req.email)
+		if err := user.Register(req.email, req.password); err != nil {
+			return errors.Tracef(err)
+		}
 
 		if err := users.Add(ctx, user); err != nil {
 			return errors.Tracef(err)

@@ -24,7 +24,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 	handler := account.NewAuthenticateWithPasswordHandler(broker, users)
 
 	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", "password"))
-	unactivatedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com"))
+	unactivatedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com", "password"))
 
 	t.Run("success for matching email and password", func(t *testing.T) {
 		var wantEvents []event.Event

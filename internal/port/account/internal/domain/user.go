@@ -72,21 +72,23 @@ func (u *User) HasVerifiedTOTP() bool {
 	return !u.TOTPVerifiedAt.IsZero() && len(u.TOTPKey) != 0
 }
 
-func (u *User) Register(email text.Email) {
+func (u *User) Register(email text.Email, password Password) error {
 	u.Email = email
+
+	if err := u.setPassword(password); err != nil {
+		return errors.Tracef(err)
+	}
 
 	u.Events.Enqueue(Registered{
 		Email: u.Email.String(),
 	})
+
+	return nil
 }
 
-func (u *User) ActivateAndSetPassword(password Password) error {
+func (u *User) Activate() error {
 	if !u.ActivatedAt.IsZero() {
 		return errors.Tracef("already activated")
-	}
-
-	if err := u.setPassword(password); err != nil {
-		return errors.Tracef(err)
 	}
 
 	u.ActivatedAt = time.Now()

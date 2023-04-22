@@ -8,19 +8,14 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/port"
-	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 )
 
 type activateRequest struct {
-	email         text.Email
-	password      domain.Password
-	passwordCheck domain.Password
+	email text.Email
 }
 
 type Activate struct {
-	Email         string
-	Password      string
-	PasswordCheck string
+	Email string
 }
 
 func (cmd Activate) Execute(ctx context.Context, bus command.Bus) error {
@@ -43,15 +38,6 @@ func (cmd Activate) request(ctx context.Context) (activateRequest, error) {
 	if req.email, err = text.NewEmail(cmd.Email); err != nil {
 		errs.Set("email", err)
 	}
-	if req.password, err = domain.NewPassword(cmd.Password); err != nil {
-		errs.Set("password", err)
-	}
-	if req.passwordCheck, err = domain.NewPassword(cmd.PasswordCheck); err != nil {
-		errs.Set("password check", err)
-	}
-	if !req.password.Equal(req.passwordCheck) {
-		errs.Set("password", "passwords do not match")
-	}
 
 	return req, errs.Tracef(port.ErrInvalidInput)
 }
@@ -70,7 +56,7 @@ func NewActivateHandler(broker event.Broker, users UserRepo) ActivateHandler {
 			return errors.Tracef(err)
 		}
 
-		if err := user.ActivateAndSetPassword(req.password); err != nil {
+		if err := user.Activate(); err != nil {
 			return errors.Tracef(err)
 		}
 

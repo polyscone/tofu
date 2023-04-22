@@ -9,10 +9,7 @@ import (
 
 func (api *API) accountActivatePost(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		Token         string
-		Email         string
-		Password      string
-		PasswordCheck string
+		Token string
 	}
 	if writeError(w, r, errors.Tracef(decodeJSON(r, &input))) {
 		return
@@ -20,12 +17,15 @@ func (api *API) accountActivatePost(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	cmd := account.Activate{
-		Email:         input.Email,
-		Password:      input.Password,
-		PasswordCheck: input.PasswordCheck,
+	email, err := api.tokens.FindActivationTokenEmail(ctx, input.Token)
+	if writeError(w, r, errors.Tracef(err)) {
+		return
 	}
-	err := cmd.Validate(ctx)
+
+	cmd := account.Activate{
+		Email: email.String(),
+	}
+	err = cmd.Validate(ctx)
 	if writeError(w, r, errors.Tracef(err)) {
 		return
 	}

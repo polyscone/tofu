@@ -1,7 +1,6 @@
 package account_test
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 	"github.com/polyscone/tofu/internal/port/account/internal/repo/sqlite/repotest"
 )
 
@@ -24,7 +22,7 @@ func TestActivate(t *testing.T) {
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
 	handler := account.NewActivateHandler(broker, users)
 
-	user := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com"))
+	user := errors.Must(repotest.AddUser(t, users, ctx, "joe@bloggs.com", "password"))
 
 	t.Run("success with existing user", func(t *testing.T) {
 		var wantEvents []event.Event
@@ -37,9 +35,7 @@ func TestActivate(t *testing.T) {
 		})
 
 		err := handler(ctx, account.Activate{
-			Email:         user.Email.String(),
-			Password:      "password",
-			PasswordCheck: "password",
+			Email: user.Email.String(),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -61,8 +57,7 @@ func TestActivate(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		err := handler(ctx, account.Activate{
-			Email:    user.Email.String(),
-			Password: "password",
+			Email: user.Email.String(),
 		})
 		if err == nil {
 			t.Error("want error; got <nil>")
@@ -77,44 +72,23 @@ func TestActivate(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		execute := func(email text.Email, password, passwordCheck domain.Password) error {
+		execute := func(email text.Email) error {
 			return handler(ctx, account.Activate{
-				Email:         email.String(),
-				Password:      password.String(),
-				PasswordCheck: passwordCheck.String(),
+				Email: email.String(),
 			})
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(email text.Email, password domain.Password) bool {
-				err := execute(email, password, password)
+			quick.Check(t, func(email text.Email) bool {
+				err := execute(email)
 
 				return !errors.Is(err, port.ErrInvalidInput)
 			})
 		})
 
 		t.Run("invalid email", func(t *testing.T) {
-			quick.Check(t, func(email quick.Invalid[text.Email], password domain.Password) bool {
-				err := execute(email.Unwrap(), password, password)
-
-				return errors.Is(err, port.ErrInvalidInput)
-			})
-		})
-
-		t.Run("invalid password", func(t *testing.T) {
-			quick.Check(t, func(email text.Email, password quick.Invalid[domain.Password]) bool {
-				err := execute(email, password.Unwrap(), password.Unwrap())
-
-				return errors.Is(err, port.ErrInvalidInput)
-			})
-		})
-
-		t.Run("mismatched password", func(t *testing.T) {
-			quick.Check(t, func(email text.Email, password domain.Password) bool {
-				mismatch := bytes.Clone(password)
-				mismatch[0]++
-
-				err := execute(email, password, mismatch)
+			quick.Check(t, func(email quick.Invalid[text.Email]) bool {
+				err := execute(email.Unwrap())
 
 				return errors.Is(err, port.ErrInvalidInput)
 			})

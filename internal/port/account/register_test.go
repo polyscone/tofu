@@ -1,6 +1,7 @@
 package account_test
 
 import (
+	"bytes"
 	"context"
 	"testing"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
+	"github.com/polyscone/tofu/internal/port/account/internal/domain"
 )
 
 func TestRegister(t *testing.T) {
@@ -28,10 +30,12 @@ func TestRegister(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		execute := func(id uuid.V4, email text.Email) error {
+		execute := func(id uuid.V4, email text.Email, password, passwordCheck domain.Password) error {
 			err := handler(ctx, account.Register{
-				UserID: id.String(),
-				Email:  email.String(),
+				UserID:        id.String(),
+				Email:         email.String(),
+				Password:      password.String(),
+				PasswordCheck: passwordCheck.String(),
 			})
 			if err == nil {
 				wantEvents = append(wantEvents, account.Registered{
@@ -43,8 +47,8 @@ func TestRegister(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(id uuid.V4, email text.Email) bool {
-				if err := execute(id, email); err != nil {
+			quick.Check(t, func(id uuid.V4, email text.Email, password domain.Password) bool {
+				if err := execute(id, email, password, password); err != nil {
 					t.Log(err)
 
 					return false
@@ -57,16 +61,35 @@ func TestRegister(t *testing.T) {
 		})
 
 		t.Run("invalid id", func(t *testing.T) {
-			quick.Check(t, func(id quick.Invalid[uuid.V4], email text.Email) bool {
-				err := execute(id.Unwrap(), email)
+			quick.Check(t, func(id quick.Invalid[uuid.V4], email text.Email, password domain.Password) bool {
+				err := execute(id.Unwrap(), email, password, password)
 
 				return errors.Is(err, port.ErrInvalidInput)
 			})
 		})
 
 		t.Run("invalid email", func(t *testing.T) {
-			quick.Check(t, func(id uuid.V4, email quick.Invalid[text.Email]) bool {
-				err := execute(id, email.Unwrap())
+			quick.Check(t, func(id uuid.V4, email quick.Invalid[text.Email], password domain.Password) bool {
+				err := execute(id, email.Unwrap(), password, password)
+
+				return errors.Is(err, port.ErrInvalidInput)
+			})
+		})
+
+		t.Run("invalid password", func(t *testing.T) {
+			quick.Check(t, func(id uuid.V4, email text.Email, password quick.Invalid[domain.Password]) bool {
+				err := execute(id, email, password.Unwrap(), password.Unwrap())
+
+				return errors.Is(err, port.ErrInvalidInput)
+			})
+		})
+
+		t.Run("mismatched password", func(t *testing.T) {
+			quick.Check(t, func(id uuid.V4, email text.Email, password domain.Password) bool {
+				mismatch := bytes.Clone(password)
+				mismatch[0]++
+
+				err := execute(id, email, password, mismatch)
 
 				return errors.Is(err, port.ErrInvalidInput)
 			})
