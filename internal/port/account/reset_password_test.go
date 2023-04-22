@@ -130,7 +130,7 @@ func TestResetPassword(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(newPassword domain.Password) bool {
+			quick.CheckN(t, 10, func(newPassword domain.Password) bool {
 				err := execute(newPassword, newPassword)
 
 				return !errors.Is(err, port.ErrInvalidInput)

@@ -47,7 +47,7 @@ func TestRegister(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(id uuid.V4, email text.Email, password domain.Password) bool {
+			quick.CheckN(t, 10, func(id uuid.V4, email text.Email, password domain.Password) bool {
 				if err := execute(id, email, password, password); err != nil {
 					t.Log(err)
 
