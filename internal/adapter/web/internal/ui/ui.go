@@ -51,12 +51,6 @@ type App struct {
 
 func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer smtp.Mailer, opts ...Option) *App {
 	files := fs.FS(embeddedFiles)
-
-	dir := "internal/adapter/web/internal/ui"
-	if info, err := os.Stat(dir); err == nil && info.IsDir() {
-		files = fstack.New(os.DirFS(dir), files)
-	}
-
 	templates := make(map[string]*template.Template)
 
 	app := App{
@@ -70,6 +64,13 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 
 	for _, opt := range opts {
 		opt(&app)
+	}
+
+	if app.dev {
+		dir := "internal/adapter/web/internal/ui"
+		if info, err := os.Stat(dir); err == nil && info.IsDir() {
+			app.files = fstack.New(os.DirFS(dir), app.files)
+		}
 	}
 
 	return &app
