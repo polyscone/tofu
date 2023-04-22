@@ -76,15 +76,14 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 }
 
 func (app *App) Routes() http.Handler {
-	static := errors.Must(fs.Sub(app.files, "files"))
+	static := errors.Must(fs.Sub(app.files, "files/static"))
 
 	mux := router.NewServeMux()
 
-	mux.GetHandler("/static/:rest", http.FileServer(http.FS(static)))
-	mux.Get("/favicon.ico", app.faviconGet)
-	mux.Get("/robots.txt", app.robotsGet)
+	mux.Redirect(http.MethodGet, "/favicon.ico", "/favicon.png", http.StatusTemporaryRedirect)
 
 	mux.Get("/", app.homeGet)
+	mux.GetHandler("/:rest", http.FileServer(http.FS(static)))
 
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		app.renderError(w, r, errors.Tracef("%w: %v %v", httputil.ErrNotFound, r.Method, r.URL))
