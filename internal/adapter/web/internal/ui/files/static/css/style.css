@@ -226,6 +226,7 @@
 
 @layer utility {
   .site-title {
+    margin: 0;
     padding-block: 0.6rem;
     padding-inline: 1rem;
     font-weight: bold;
