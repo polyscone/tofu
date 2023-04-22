@@ -152,6 +152,7 @@
 
   .main {
     padding-block: 2rem;
+    border-block: 1px solid var(--clr-black-100);
   }
 
   .footer {
@@ -182,9 +183,6 @@
   .register {
     max-width: 400px;
     margin-inline: auto;
-    border: 1px solid var(--clr-black-100);
-    border-radius: 3px;
-    padding: 1rem;
   }
 
   .bag {
