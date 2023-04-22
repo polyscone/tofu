@@ -49,16 +49,17 @@ func (cmd ResetPassword) request(ctx context.Context) (resetPasswordRequest, err
 	var err error
 	var errs errors.Map
 
+	newPasswordCheck, _ := domain.NewPassword(cmd.NewPasswordCheck)
+
 	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("user id", err)
 	}
 	if req.newPassword, err = domain.NewPassword(cmd.NewPassword); err != nil {
 		errs.Set("new password", err)
 	}
-	if req.newPasswordCheck, err = domain.NewPassword(cmd.NewPasswordCheck); err != nil {
-		errs.Set("new password check", err)
-	}
-	if !req.newPassword.Equal(req.newPasswordCheck) {
+	if req.newPassword, err = domain.NewPassword(cmd.NewPassword); err != nil {
+		errs.Set("new password", err)
+	} else if !req.newPassword.Equal(newPasswordCheck) {
 		errs.Set("new password", "passwords do not match")
 	}
 
