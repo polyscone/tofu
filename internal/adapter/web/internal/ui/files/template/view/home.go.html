@@ -1,73 +1,21 @@
 {{define "view"}}
 
-{{block "" .Status}}{{end}}
+<div class="register">
+  <p class="title">Register</p>
 
-<div class="flow" data-gap="flush">
-  <div class="content | split" data-type="search" data-direction="reverse">
-    <div class="flow">
-      <button>Search</button>
+  <form action="/" method="POST">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+
+    <label for="register__email">Email</label>
+    <input id="register__email" type="email" placeholder="ash@example.com" autocomplete="email" required>
+
+    <label for="register__password">Password</label>
+    <input id="register__password" type="password" placeholder="password" autocomplete="new-password" required>
+
+    <div class="bag">
+      <button type="submit" class="push-inline-end">Register</button>
     </div>
-    <div class="flow">
-      <input type="text">
-    </div>
-  </div>
-
-  <div class="content | split">
-    <div>
-      <p>Login form example</p>
-    </div>
-    <div>
-
-      <form class="login | flow">
-        <label for="login__email">Email</label>
-        <input id="login__email" type="email" placeholder="ash@example.com" required>
-
-        <label for="login__password">Password</label>
-        <input id="login__password" type="password" placeholder="password" required pattern="[ -~]{8,}">
-
-        <div class="bag | push-inline-end">
-          <button type="submit">Login</button>
-        </div>
-      </form>
-
-    </div>
-  </div>
-
-  <div class="content | split">
-    <div>
-      <p>Login form TOTP example</p>
-    </div>
-    <div>
-
-      <form class="login-mfa | flow">
-        <label for="login-mfa__totp">Passcode</label>
-        <input id="login-mfa__totp" type="text" placeholder="123456" required pattern="[0-9]{6}" maxlength="6">
-
-        <div class="bag | push-inline-end">
-          <button type="submit">Login</button>
-        </div>
-      </form>
-
-    </div>
-  </div>
-
-  <div class="content | split">
-    <div>
-      <p>Forgotten password form example</p>
-    </div>
-    <div>
-
-      <form class="forgotten-password | flow">
-        <label for="forgotten-password__email">Email</label>
-        <input id="forgotten-password__email" type="email" placeholder="ash@example.com" required>
-
-        <div class="bag | push-inline-end">
-          <button type="submit">Send Email</button>
-        </div>
-      </form>
-
-    </div>
-  </div>
+  </form>
 </div>
 
 {{end}}

@@ -6,16 +6,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tofu</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/css/style.css">
   </head>
   <body>
-    <div class="center" style="--center-max-size: 100ch">
-      <div class="flow">
-        {{template "header" .}}
-        {{template "nav" .}}
-        {{template "view" .}}
-      </div>
-    </div>
+    {{template "header" .}}
+
+    <main class="main">
+      {{template "view" .}}
+    </main>
+
+    {{template "footer" .}}
 
     <script>
       function _componentsInit () {
@@ -81,7 +81,7 @@
         window._components.actions.destroy.push({ selector, callback })
       }
     </script>
-    <script src="/static/js/components.js" async defer></script>
+    <script src="/js/components.js" async defer></script>
   </body>
 </html>
 
