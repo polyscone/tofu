@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 )
@@ -309,6 +311,37 @@ func (sm *ServeMux) MethodNotAllowedHandler(handler http.Handler) {
 // not allowed error is triggered.
 func (sm *ServeMux) MethodNotAllowed(handler http.HandlerFunc) {
 	sm.MethodNotAllowedHandler(http.HandlerFunc(handler))
+}
+
+// Redirect will create a new handler for the given source path that will
+// redirect the request to the given destination path using the code.
+// Any parameters used in the source path will have their value replaced into
+// the destination path where the same parameter is used.
+// For example, the patterns: "/:foo/greet"; "/:foo/world", will redirect the
+// source "/hello/greet" to "/hello/world".
+func (sm *ServeMux) Redirect(method, src, dst string, code int) {
+	sm.route(method, src, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		dst := dst
+
+		params, ok := r.Context().Value(ctxParams).(map[string]string)
+		if ok {
+			keys := make([]string, 0, len(params))
+			for key := range params {
+				keys = append(keys, key)
+			}
+
+			sort.Slice(keys, func(i, j int) bool {
+				// Reverse string length sort so the longest key comes first
+				return utf8.RuneCountInString(keys[j]) < utf8.RuneCountInString(keys[i])
+			})
+
+			for _, key := range keys {
+				dst = strings.ReplaceAll(dst, ":"+key, params[key])
+			}
+		}
+
+		http.Redirect(w, r, dst, code)
+	}))
 }
 
 // URLParam returns the string value associated with the given parameter name in

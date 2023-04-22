@@ -74,6 +74,14 @@ func TestMux(t *testing.T) {
 		w.Write([]byte(router.URLParam(r, "first") + "/" + router.URLParam(r, "rest")))
 	})
 
+	mux.Get("/redirect/dst", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("redirected"))
+	})
+
+	mux.Redirect(http.MethodGet, "/redirect/src", "/redirect/dst", http.StatusTemporaryRedirect)
+	mux.Redirect(http.MethodGet, "/:var/src/var", "/:var/dst", http.StatusTemporaryRedirect)
+	mux.Redirect(http.MethodGet, "/:var/:varfoo/src/var", "/:var/dst", http.StatusTemporaryRedirect)
+
 	ts := testutil.NewServer(t, mux)
 	defer ts.Close()
 
@@ -134,6 +142,10 @@ func TestMux(t *testing.T) {
 		{"dynamic url with rest", http.MethodGet, "/cat/foo/dog/baz/qux", "foo/baz/qux", http.StatusOK},
 		{"dynamic url with empty rest", http.MethodGet, "/cat/foo/dog/", "foo/", http.StatusOK},
 		{"dynamic url with rest no match", http.MethodGet, "/cat/foo/bar/dog/baz/qux", "", http.StatusNotFound},
+
+		{"redirect get method ok", http.MethodGet, "/redirect/src", "redirected", http.StatusOK},
+		{"redirect with dynamic param", http.MethodGet, "/redirect/src/var", "redirected", http.StatusOK},
+		{"redirect with multiple dynamic params", http.MethodGet, "/redirect/foo/src/var", "redirected", http.StatusOK},
 	}
 	for _, tc := range tt {
 		tc := tc
