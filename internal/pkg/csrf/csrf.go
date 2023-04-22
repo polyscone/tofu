@@ -125,7 +125,12 @@ func Verify(ctx context.Context, maskedCmp []byte) error {
 func getCSRF(ctx context.Context) *csrf {
 	value := ctx.Value(tokenDataKey)
 	if value == nil {
-		panic("no token data found")
+		ctx, err := SetToken(ctx, nil)
+		if err != nil {
+			panic(err)
+		}
+
+		return getCSRF(ctx)
 	}
 
 	data, ok := value.(*csrf)
