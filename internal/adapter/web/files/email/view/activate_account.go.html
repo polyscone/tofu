@@ -1,20 +1,25 @@
 {{define "subject" -}}
 
-Activate account
+Activate your account
 
 {{- end}}
 
 {{define "plain" -}}
 
-Activate account
+Activate your account
 
-Your security token is: {{.Token}}
+To activate your account paste the following URL into your browser:
+https://localhost:8080/account/activate?token={{.Token}}
 
 {{- end}}
 
 {{define "html" -}}
 
-<h1>Activate account</h1>
-<p>Your security token is: {{.Token}}</p>
+<h1>Activate your account</h1>
+<p><a href="https://localhost:8080/account/activate?token={{.Token}}">Click here</a> to activate your account.</p>
+<p>
+  If the link above does not work paste the following URL into your browser:<br>
+  https://localhost:8080/account/activate?token={{.Token}}
+</p>
 
 {{- end}}
