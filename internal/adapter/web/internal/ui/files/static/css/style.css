@@ -18,7 +18,7 @@
 
   --clr-accent-400: hsl(170 45% 40%);
 
-  --clr-focus-400: hsl(59 100% 90%);
+  --clr-focus-400: hsl(59 100% 95%);
 
   --clr-valid-400: hsl(126 100% 50%);
 
@@ -96,9 +96,10 @@
   :focus-visible:is(input, textarea) {
     outline-style: solid;
     outline-width: 0.1rem;
+    outline-color: var(--clr-black-100);
   }
 
-  :is(input, textarea):invalid,
+  :is(input, textarea):invalid:not(:placeholder-shown),
   [data-invalid] :is(input, textarea):invalid {
     background: var(--clr-invalid-100);
     outline-color: var(--clr-invalid-400);
@@ -137,6 +138,19 @@
 }
 
 @layer components {
+  .site-title {
+    margin: 0;
+    padding-block: 0.6rem;
+    font-weight: bold;
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .title {
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+
   .header,
   .main,
   .footer {
@@ -180,13 +194,9 @@
     padding-inline: 1rem;
   }
 
-  .register {
-    max-width: 400px;
-    margin-inline: auto;
-  }
-
   .bag {
     display: flex;
+    flex-wrap: wrap;
   }
 
   @media screen and (min-width: 400px) {
@@ -223,18 +233,9 @@
 }
 
 @layer utility {
-  .site-title {
-    margin: 0;
-    padding-block: 0.6rem;
-    padding-inline: 1rem;
-    font-weight: bold;
-    font-size: 1.5rem;
-    text-align: center;
-  }
-
-  .title {
-    font-weight: bold;
-    font-size: 1.2rem;
+  .center {
+    max-width: 400px;
+    margin-inline: auto;
   }
 
   .push-inline-end {
