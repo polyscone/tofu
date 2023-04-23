@@ -233,6 +233,18 @@
 }
 
 @layer utility {
+  .error {
+    color: red;
+  }
+
+  .error:empty {
+    display: none;
+  }
+
+  .error::first-letter {
+    text-transform: capitalize;
+  }
+
   .center {
     max-width: 400px;
     margin-inline: auto;
