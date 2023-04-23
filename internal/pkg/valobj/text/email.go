@@ -60,6 +60,11 @@ func NewEmail(email string) (Email, error) {
 	}
 
 	if !supportedEmail.MatchString(addr.Address) {
+		_, end, _ := strings.Cut(addr.Address, "@")
+		if !strings.Contains(end, ".") {
+			return "", errors.Tracef("missing top-level domain")
+		}
+
 		return "", errors.Tracef("contains unsupported characters")
 	}
 
