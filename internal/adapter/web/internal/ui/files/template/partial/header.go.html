@@ -6,7 +6,18 @@
   <nav class="nav">
     <ul>
       <li><a href="/">Home</a></li>
-      <li><a href="/account/login">Login</a></li>
+
+      {{if .Session.UserID}}
+        <li>
+          <form action="/account/logout" method="POST">
+            <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+
+            <button type="submit">Logout</button>
+          </form>
+        </li>
+      {{else}}
+        <li><a href="/account/login">Login</a></li>
+      {{end}}
     </ul>
   </nav>
 </header>

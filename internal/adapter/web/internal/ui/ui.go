@@ -13,6 +13,7 @@ import (
 	"text/template"
 
 	"github.com/polyscone/tofu/internal/adapter/web/internal/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/smtp"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/token"
 	"github.com/polyscone/tofu/internal/pkg/command"
@@ -93,6 +94,9 @@ func (app *App) Routes() http.Handler {
 		mux.Post("/register", app.accountRegisterPost)
 
 		mux.Get("/login", app.accountLoginGet)
+		mux.Post("/login", app.accountLoginPost)
+
+		mux.Post("/logout", app.accountLogoutPost)
 
 		mux.Get("/forgotten-password", app.accountForgottenPasswordGet)
 	})
@@ -147,17 +151,28 @@ func (app *App) view(view string) *template.Template {
 	return tmpl
 }
 
+type sessionRenderData struct {
+	UserID         string
+	Email          string
+	IsAwaitingTOTP bool
+}
+
+type registerRenderData struct {
+	Email string
+}
+
 type renderData struct {
+	// Generic render data
 	Status       int
 	CSRFToken    string
 	ErrorMessage string
 	Errors       errors.Map
 	PostForm     map[string]string
 	Query        map[string]string
+	Session      sessionRenderData
 
-	Register struct {
-		Email string
-	}
+	// View-specific render data
+	Register registerRenderData
 }
 
 type renderDataFunc func(data *renderData)
@@ -166,6 +181,8 @@ func (app *App) render(w http.ResponseWriter, r *http.Request, status int, view 
 	var buf bytes.Buffer
 	var postForm map[string]string
 	var query map[string]string
+
+	ctx := r.Context()
 
 	if r.PostForm != nil {
 		postForm = make(map[string]string, len(r.PostForm))
@@ -188,6 +205,11 @@ func (app *App) render(w http.ResponseWriter, r *http.Request, status int, view 
 		Status:    status,
 		PostForm:  postForm,
 		Query:     query,
+		Session: sessionRenderData{
+			UserID:         app.sessions.GetString(ctx, sesskey.UserID),
+			Email:          app.sessions.GetString(ctx, sesskey.Email),
+			IsAwaitingTOTP: app.sessions.GetBool(ctx, sesskey.IsAwaitingTOTP),
+		},
 	}
 
 	if dataFunc != nil {

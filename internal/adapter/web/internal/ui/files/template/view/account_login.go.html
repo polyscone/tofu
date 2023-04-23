@@ -1,28 +1,40 @@
 {{define "view"}}
 
 <div class="login center">
-  <p class="title">Login</p>
+  {{if .Session.UserID}}
+    <p class="title">Logout</p>
 
-  <form action="/account/login" method="POST">
-    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <p>You are already logged in.</p>
 
-    <label for="login__email">Email</label>
-    <input id="login__email" type="email" name="email" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
-    <p class="error">{{or .Errors.email ""}}</p>
+    <form action="/account/logout" method="POST">
+      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
 
-    <label for="login__password">Password</label>
-    <input id="login__password" type="password" name="password" placeholder="password" autocomplete="current-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
-    <p class="error">{{or .Errors.password ""}}</p>
+      <button type="submit">Logout</button>
+    </form>
+  {{else}}
+    <p class="title">Login</p>
 
-    <div class="bag">
-      <div>
-        <a href="/account/register">Create account</a><br>
-        <a href="/account/forgotten-password">Forgotten password</a>
+    <form action="/account/login" method="POST">
+      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+
+      <label for="login__email">Email</label>
+      <input id="login__email" type="email" name="email" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
+      <p class="error">{{or .Errors.email ""}}</p>
+
+      <label for="login__password">Password</label>
+      <input id="login__password" type="password" name="password" placeholder="password" autocomplete="current-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+      <p class="error">{{or .Errors.password ""}}</p>
+
+      <div class="bag">
+        <div>
+          <a href="/account/register">Create account</a><br>
+          <a href="/account/forgotten-password">Forgotten password</a>
+        </div>
+
+        <button type="submit" class="push-inline-end">Login</button>
       </div>
-
-      <button type="submit" class="push-inline-end">Login</button>
-    </div>
-  </form>
+    </form>
+  {{end}}
 </div>
 
 {{end}}
