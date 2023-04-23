@@ -188,10 +188,19 @@
     list-style: none;
   }
 
-  .nav a {
+  .nav a,
+  .nav button {
     display: block;
     padding-block: 1rem;
     padding-inline: 1rem;
+  }
+
+  .nav button {
+    background: transparent;
+    color: var(--clr-black-400);
+    border: none;
+    text-decoration: underline;
+    cursor: pointer;
   }
 
   .bag {
