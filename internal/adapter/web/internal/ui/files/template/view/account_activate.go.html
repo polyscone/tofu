@@ -10,12 +10,20 @@
 
     <p>If you are not automatically redirected please click on the button below to activate your account.</p>
 
-    <form action="/account/activate" method="POST">
+    <form action="/account/activate" method="POST" id="account-activate-form">
       <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
       <input type="hidden" name="token" value="{{.Query.token}}">
 
       <button type="submit">Activate Account</button>
     </form>
+
+    <script>
+      const form = document.getElementById("account-activate-form")
+
+      if (form) {
+        form.submit()
+      }
+    </script>
   {{else if eq .Query.status "success"}}
     <p class="title">Account Activated</p>
 
