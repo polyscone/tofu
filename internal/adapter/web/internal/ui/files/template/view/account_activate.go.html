@@ -1,0 +1,30 @@
+{{define "view"}}
+
+<div class="activate center">
+  {{if .ErrorMessage}}
+    <p class="title">Account Activation Error</p>
+
+    <p>Either the account you are trying to activate has already been activated or you have provided an invalid activation token.</p>
+  {{else if .Query.token}}
+    <p class="title">Account Activation</p>
+
+    <p>If you are not automatically redirected please click on the button below to activate your account.</p>
+
+    <form action="/account/activate" method="POST">
+      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+      <input type="hidden" name="token" value="{{.Query.token}}">
+
+      <button type="submit">Activate Account</button>
+    </form>
+  {{else if eq .Query.status "success"}}
+    <p class="title">Account Activated</p>
+
+    <p>Your account has been successfully activated.</p>
+  {{else}}
+    <p class="title">Account Activation Error</p>
+
+    <p>An account cannot be activated without an activation token.</p>
+  {{end}}
+</div>
+
+{{end}}
