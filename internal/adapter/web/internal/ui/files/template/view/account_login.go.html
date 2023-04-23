@@ -1,0 +1,28 @@
+{{define "view"}}
+
+<div class="login center">
+  <p class="title">Login</p>
+
+  <form action="/account/login" method="POST">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+
+    <label for="login__email">Email</label>
+    <input id="login__email" type="email" name="email" placeholder="ash@example.com" autocomplete="email" autofocus required>
+    {{if .Errors.email}}<p class="error">{{.Errors.email}}</p>{{end}}
+
+    <label for="login__password">Password</label>
+    <input id="login__password" type="password" name="password" placeholder="password" autocomplete="current-password" required pattern="[ -~]{8,100}">
+    {{if .Errors.password}}<p class="error">{{.Errors.password}}</p>{{end}}
+
+    <div class="bag">
+      <div>
+        <a href="/account/register">Create account</a><br>
+        <a href="/account/forgotten-password">Forgotten password</a>
+      </div>
+
+      <button type="submit" class="push-inline-end">Login</button>
+    </div>
+  </form>
+</div>
+
+{{end}}

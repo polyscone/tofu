@@ -1,0 +1,23 @@
+{{define "view"}}
+
+<div class="register center">
+  <p class="title">Create Account</p>
+
+  <form action="/account/register" method="POST">
+    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+
+    <label for="register__email">Email</label>
+    <input id="register__email" type="email" name="email" placeholder="ash@example.com" autocomplete="email" autofocus required>
+    {{if .Errors.email}}<p class="error">{{.Errors.email}}</p>{{end}}
+
+    <label for="register__password">Password</label>
+    <input id="register__password" type="password" name="password" placeholder="password" autocomplete="new-password" required pattern="[ -~]{8,100}">
+    {{if .Errors.password}}<p class="error">{{.Errors.password}}</p>{{end}}
+
+    <div class="bag">
+      <button type="submit" class="push-inline-end">Register</button>
+    </div>
+  </form>
+</div>
+
+{{end}}

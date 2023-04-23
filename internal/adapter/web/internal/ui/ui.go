@@ -84,6 +84,9 @@ func (app *App) Routes() http.Handler {
 	mux.Redirect(http.MethodGet, "/favicon.ico", "/favicon.png", http.StatusTemporaryRedirect)
 
 	mux.Get("/", app.homeGet)
+	mux.Get("/account/login", app.accountLoginGet)
+	mux.Get("/account/register", app.accountRegisterGet)
+	mux.Get("/account/forgotten-password", app.accountForgottenPasswordGet)
 	mux.GetHandler("/:rest", http.FileServer(http.FS(static)))
 
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
