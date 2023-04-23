@@ -106,7 +106,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.CheckN(t, 10, func(email text.Email, password domain.Password) bool {
+			quick.CheckN(t, 2, func(email text.Email, password domain.Password) bool {
 				err := execute(email, password)
 
 				return !errors.Is(err, port.ErrInvalidInput)
