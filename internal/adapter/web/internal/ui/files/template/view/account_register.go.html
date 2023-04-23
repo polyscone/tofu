@@ -1,23 +1,29 @@
 {{define "view"}}
 
 <div class="register center">
-  <p class="title">Create Account</p>
+  {{if eq .Query.status "success"}}
+    <p class="title">Thank You</p>
 
-  <form action="/account/register" method="POST">
-    <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <p>Your account details have been registered and an email containing an account activation link has been sent to {{or .Register.Email "you"}}.</p>
+  {{else}}
+    <p class="title">Create Account</p>
 
-    <label for="register__email">Email</label>
-    <input id="register__email" type="email" name="email" placeholder="ash@example.com" autocomplete="email" autofocus required>
-    {{if .Errors.email}}<p class="error">{{.Errors.email}}</p>{{end}}
+    <form action="/account/register" method="POST">
+      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
 
-    <label for="register__password">Password</label>
-    <input id="register__password" type="password" name="password" placeholder="password" autocomplete="new-password" required pattern="[ -~]{8,100}">
-    {{if .Errors.password}}<p class="error">{{.Errors.password}}</p>{{end}}
+      <label for="register__email">Email</label>
+      <input id="register__email" type="email" name="email" value="{{.PostForm.email}}" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
+      <p class="error">{{or .Errors.email ""}}</p>
 
-    <div class="bag">
-      <button type="submit" class="push-inline-end">Register</button>
-    </div>
-  </form>
+      <label for="register__password">Password</label>
+      <input id="register__password" type="password" name="password" value="{{.PostForm.password}}" placeholder="password" autocomplete="new-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+      <p class="error">{{or .Errors.password ""}}</p>
+
+      <div class="bag">
+        <button type="submit" class="push-inline-end">Register</button>
+      </div>
+    </form>
+  {{end}}
 </div>
 
 {{end}}
