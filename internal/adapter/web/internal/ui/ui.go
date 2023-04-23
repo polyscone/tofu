@@ -84,9 +84,19 @@ func (app *App) Routes() http.Handler {
 	mux.Redirect(http.MethodGet, "/favicon.ico", "/favicon.png", http.StatusTemporaryRedirect)
 
 	mux.Get("/", app.homeGet)
-	mux.Get("/account/login", app.accountLoginGet)
-	mux.Get("/account/register", app.accountRegisterGet)
-	mux.Get("/account/forgotten-password", app.accountForgottenPasswordGet)
+
+	mux.Prefix("/account", func(mux *router.ServeMux) {
+		mux.Get("/activate", app.accountActivateGet)
+		mux.Post("/activate", app.accountActivatePost)
+
+		mux.Get("/register", app.accountRegisterGet)
+		mux.Post("/register", app.accountRegisterPost)
+
+		mux.Get("/login", app.accountLoginGet)
+
+		mux.Get("/forgotten-password", app.accountForgottenPasswordGet)
+	})
+
 	mux.GetHandler("/:rest", http.FileServer(http.FS(static)))
 
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
@@ -144,6 +154,10 @@ type renderData struct {
 	Errors       errors.Map
 	PostForm     map[string]string
 	Query        map[string]string
+
+	Register struct {
+		Email string
+	}
 }
 
 type renderDataFunc func(data *renderData)
