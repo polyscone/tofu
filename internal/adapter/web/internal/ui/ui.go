@@ -191,7 +191,9 @@ func (app *App) render(w http.ResponseWriter, r *http.Request, status int, view 
 	w.Header().Set("content-type", "text/html")
 	w.WriteHeader(status)
 
-	buf.WriteTo(w)
+	if _, err := buf.WriteTo(w); err != nil {
+		httputil.LogError(r, errors.Tracef(err))
+	}
 }
 
 func (app *App) renderError(w http.ResponseWriter, r *http.Request, err error) bool {
