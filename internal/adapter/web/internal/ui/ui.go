@@ -196,7 +196,7 @@ func (app *App) render(w http.ResponseWriter, r *http.Request, status int, view 
 	}
 }
 
-func (app *App) renderError(w http.ResponseWriter, r *http.Request, err error) bool {
+func (app *App) renderErrorView(w http.ResponseWriter, r *http.Request, err error, view string, dataFunc renderDataFunc) bool {
 	if err == nil {
 		return false
 	}
@@ -205,15 +205,26 @@ func (app *App) renderError(w http.ResponseWriter, r *http.Request, err error) b
 
 	status := httputil.ErrorStatus(err)
 
-	app.render(w, r, status, "error", func(data *renderData) {
+	app.render(w, r, status, view, func(data *renderData) {
 		switch {
 		case errors.Is(err, csrf.ErrEmptyToken):
 			data.ErrorMessage = "Empty CSRF token"
 
 		case errors.Is(err, csrf.ErrInvalidToken):
 			data.ErrorMessage = "Invalid CSRF token"
+
+		default:
+			data.ErrorMessage = "An error has occurred"
+		}
+
+		if dataFunc != nil {
+			dataFunc(data)
 		}
 	})
 
 	return true
+}
+
+func (app *App) renderError(w http.ResponseWriter, r *http.Request, err error) bool {
+	return app.renderErrorView(w, r, err, "error", nil)
 }
