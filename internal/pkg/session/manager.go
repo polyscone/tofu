@@ -285,7 +285,7 @@ func (m *Manager) PopString(ctx context.Context, key string) string {
 func getSession(ctx context.Context) *Session {
 	value := ctx.Value(ctxSession)
 	if value == nil {
-		panic("no session found")
+		return newSessionPlaceholder()
 	}
 
 	s, ok := value.(*Session)

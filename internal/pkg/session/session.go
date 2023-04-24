@@ -15,6 +15,7 @@ const (
 	Accessed
 	Modified
 	Destroyed
+	placeholder
 )
 
 type Session struct {
@@ -22,6 +23,10 @@ type Session struct {
 	Data       Data
 	Status     Status
 	originalID string
+}
+
+func newSessionPlaceholder() *Session {
+	return &Session{Status: placeholder}
 }
 
 func newSession() (Session, error) {
