@@ -107,6 +107,7 @@ func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tok
 	mux := router.NewServeMux()
 
 	mux.Use(middleware.Recover(errorHandler))
+	mux.Use(middleware.MethodOverride)
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
 		ErrorHandler:   errorHandler,
 		TrustedProxies: opts.proxies,
