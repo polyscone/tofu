@@ -22,7 +22,7 @@ func (app *App) accountRegisterPost(w http.ResponseWriter, r *http.Request) {
 		UserID        string
 		Email         string
 		Password      string
-		PasswordCheck string `name:"password"` // The UI doesn't include a check field
+		PasswordCheck string `form:"password"` // The UI doesn't include a check field
 	}
 	if app.renderError(w, r, errors.Tracef(decodeForm(r, &input))) {
 		return

@@ -284,7 +284,7 @@ func decodeForm(r *http.Request, dst any) error {
 	for i := 0; i < s.NumField(); i++ {
 		typeField := s.Type().Field(i)
 
-		tag := typeField.Tag.Get("name")
+		tag := typeField.Tag.Get("form")
 		if tag == "" {
 			tag = strings.ToLower(typeField.Name)
 		}
