@@ -32,16 +32,6 @@ import (
 //go:embed "files/static" "files/template"
 var embeddedFiles embed.FS
 
-type routes map[string]*router.Route
-
-func (r routes) Get(key string, paramArgPairs ...string) string {
-	if len(paramArgPairs) != 0 {
-		return r[key].Replace(paramArgPairs...)
-	}
-
-	return r[key].String()
-}
-
 type Option func(ui *UI)
 
 func WithDev(value bool) Option {
@@ -59,7 +49,7 @@ type UI struct {
 	files       fs.FS
 	templatesMu sync.RWMutex
 	templates   map[string]*template.Template
-	routes      routes
+	mux         *router.ServeMux
 	tmplFuncs   template.FuncMap
 }
 
@@ -74,7 +64,7 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 		mailer:    mailer,
 		files:     files,
 		templates: templates,
-		routes:    make(routes),
+		mux:       router.NewServeMux(),
 	}
 
 	ui.tmplFuncs = template.FuncMap{
@@ -93,50 +83,52 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 		}
 	}
 
+	static := errors.Must(fs.Sub(ui.files, "files/static"))
+
+	ui.mux.Redirect(http.MethodGet, "/favicon.ico", "/favicon.png", http.StatusTemporaryRedirect)
+
+	ui.mux.Get("/", ui.homeGet, "home")
+
+	ui.mux.Prefix("/account", func(mux *router.ServeMux) {
+		mux.Get("/activate", ui.accountActivateGet, "account.activate")
+		mux.Post("/activate", ui.accountActivatePost, "account.activate.post")
+
+		mux.Get("/register", ui.accountRegisterGet, "account.register")
+		mux.Post("/register", ui.accountRegisterPost, "account.register.post")
+
+		mux.Get("/login", ui.accountLoginGet, "account.login")
+		mux.Post("/login", ui.accountLoginPost, "account.login.post")
+
+		mux.Post("/logout", ui.accountLogoutPost, "account.logout.post")
+
+		mux.Get("/forgotten-password", ui.accountForgottenPasswordGet, "account.forgottenPassword")
+		mux.Post("/forgotten-password", ui.accountForgottenPasswordPost, "account.forgottenPassword.post")
+		mux.Put("/forgotten-password", ui.accountForgottenPasswordPut, "account.forgottenPassword.put")
+	})
+
+	ui.mux.GetHandler("/:rest", http.FileServer(http.FS(static)))
+
+	ui.mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		ui.renderError(w, r, errors.Tracef("%w: %v %v", httputil.ErrNotFound, r.Method, r.URL))
+	})
+
+	ui.mux.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
+		ui.renderError(w, r, errors.Tracef("%w: %v %v", httputil.ErrMethodNotAllowed, r.Method, r.URL))
+	})
+
 	return &ui
 }
 
 func (ui *UI) route(key string, paramArgPairs ...string) string {
-	return ui.routes.Get(key, paramArgPairs...)
+	if len(paramArgPairs) != 0 {
+		return ui.mux.Route(key).Replace(paramArgPairs...)
+	}
+
+	return ui.mux.Route(key).String()
 }
 
 func (ui *UI) Routes() http.Handler {
-	static := errors.Must(fs.Sub(ui.files, "files/static"))
-
-	mux := router.NewServeMux()
-
-	mux.Redirect(http.MethodGet, "/favicon.ico", "/favicon.png", http.StatusTemporaryRedirect)
-
-	ui.routes["home"] = mux.Get("/", ui.homeGet)
-
-	mux.Prefix("/account", func(mux *router.ServeMux) {
-		ui.routes["account.activate"] = mux.Get("/activate", ui.accountActivateGet)
-		ui.routes["account.activate.post"] = mux.Post("/activate", ui.accountActivatePost)
-
-		ui.routes["account.register"] = mux.Get("/register", ui.accountRegisterGet)
-		ui.routes["account.register.post"] = mux.Post("/register", ui.accountRegisterPost)
-
-		ui.routes["account.login"] = mux.Get("/login", ui.accountLoginGet)
-		ui.routes["account.login.post"] = mux.Post("/login", ui.accountLoginPost)
-
-		ui.routes["account.logout.post"] = mux.Post("/logout", ui.accountLogoutPost)
-
-		ui.routes["account.forgottenPassword"] = mux.Get("/forgotten-password", ui.accountForgottenPasswordGet)
-		ui.routes["account.forgottenPassword.post"] = mux.Post("/forgotten-password", ui.accountForgottenPasswordPost)
-		ui.routes["account.forgottenPassword.put"] = mux.Put("/forgotten-password", ui.accountForgottenPasswordPut)
-	})
-
-	mux.GetHandler("/:rest", http.FileServer(http.FS(static)))
-
-	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		ui.renderError(w, r, errors.Tracef("%w: %v %v", httputil.ErrNotFound, r.Method, r.URL))
-	})
-
-	mux.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-		ui.renderError(w, r, errors.Tracef("%w: %v %v", httputil.ErrMethodNotAllowed, r.Method, r.URL))
-	})
-
-	return mux
+	return ui.mux
 }
 
 func (ui *UI) ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
