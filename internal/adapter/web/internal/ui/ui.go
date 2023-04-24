@@ -120,16 +120,21 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 }
 
 func (ui *UI) route(key string, paramArgPairs ...string) string {
-	if len(paramArgPairs) != 0 {
-		return ui.mux.Route(key).Replace(paramArgPairs...)
+	route := ui.mux.Route(key)
+	if route == nil {
+		panic(fmt.Sprintf("route %q does not exist", key))
 	}
 
-	route := ui.mux.Route(key).String()
-	if strings.Contains(route, "/:") {
+	if len(paramArgPairs) != 0 {
+		return route.Replace(paramArgPairs...)
+	}
+
+	str := route.String()
+	if strings.Contains(str, "/:") {
 		panic(fmt.Sprintf("route %q must use the replace method to replace parameters", key))
 	}
 
-	return route
+	return str
 }
 
 func (ui *UI) Routes() http.Handler {
