@@ -44,5 +44,5 @@ func (ui *UI) accountLoginPost(w http.ResponseWriter, r *http.Request) {
 	ui.sessions.Set(ctx, sesskey.Email, cmd.Email)
 	ui.sessions.Set(ctx, sesskey.IsAwaitingTOTP, res.IsAwaitingTOTP)
 
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, ui.route("account"), http.StatusSeeOther)
 }
