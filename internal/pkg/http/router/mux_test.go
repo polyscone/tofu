@@ -84,7 +84,11 @@ func TestMux(t *testing.T) {
 
 	route := mux.Get("/a/:b/c/:d", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("/a/" + router.URLParam(r, "b") + "/c/" + router.URLParam(r, "d")))
-	})
+	}, "foo.bar")
+
+	mux.Post("/a/:b/c/:d", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("/a/" + router.URLParam(r, "b") + "/c/" + router.URLParam(r, "d")))
+	}, "foo.bar.post")
 
 	ts := testutil.NewServer(t, mux)
 	defer ts.Close()
@@ -148,6 +152,8 @@ func TestMux(t *testing.T) {
 		{"dynamic url with rest no match", http.MethodGet, "/cat/foo/bar/dog/baz/qux", "", http.StatusNotFound},
 
 		{"route string param replacement", http.MethodGet, route.Replace(":b", "123", ":d", "456"), "/a/123/c/456", http.StatusOK},
+		{"mux object route string param replacement", http.MethodGet, mux.Route("foo.bar").Replace(":b", "x", ":d", "y"), "/a/x/c/y", http.StatusOK},
+		{"mux object route string param replacement post method", http.MethodPost, mux.Route("foo.bar.post").Replace(":b", "x", ":d", "y"), "/a/x/c/y", http.StatusOK},
 
 		{"redirect get method ok", http.MethodGet, "/redirect/src", "redirected", http.StatusOK},
 		{"redirect with dynamic param", http.MethodGet, "/redirect/src/var", "redirected", http.StatusOK},
