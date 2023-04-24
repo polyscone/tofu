@@ -50,7 +50,7 @@ func (ui *UI) accountForgottenPasswordPost(w http.ResponseWriter, r *http.Reques
 		logger.PrintError(err)
 	}
 
-	http.Redirect(w, r, "/account/forgotten-password?status=sent", http.StatusSeeOther)
+	http.Redirect(w, r, ui.route("account.forgottenPassword")+"?status=sent", http.StatusSeeOther)
 }
 
 func (ui *UI) accountForgottenPasswordPut(w http.ResponseWriter, r *http.Request) {
@@ -114,5 +114,5 @@ func (ui *UI) accountForgottenPasswordPut(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	http.Redirect(w, r, "/account/forgotten-password?status=success", http.StatusSeeOther)
+	http.Redirect(w, r, ui.route("account.forgottenPassword")+"?status=success", http.StatusSeeOther)
 }

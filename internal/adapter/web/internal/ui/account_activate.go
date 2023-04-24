@@ -22,7 +22,7 @@ func (ui *UI) accountActivatePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if input.Token == "" {
-		http.Redirect(w, r, "/account/activate", http.StatusSeeOther)
+		http.Redirect(w, r, ui.route("account.activate"), http.StatusSeeOther)
 
 		return
 	}
@@ -53,5 +53,5 @@ func (ui *UI) accountActivatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/account/activate?status=success", http.StatusSeeOther)
+	http.Redirect(w, r, ui.route("account.activate")+"?status=success", http.StatusSeeOther)
 }

@@ -17,5 +17,5 @@ func (ui *UI) accountLogoutPost(w http.ResponseWriter, r *http.Request) {
 
 	ui.sessions.Destroy(r.Context())
 
-	http.Redirect(w, r, "/account/login", http.StatusSeeOther)
+	http.Redirect(w, r, ui.route("account.login"), http.StatusSeeOther)
 }

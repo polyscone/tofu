@@ -32,8 +32,14 @@ import (
 //go:embed "files/static" "files/template"
 var embeddedFiles embed.FS
 
-var tmplFuncs = template.FuncMap{
-	"StatusText": http.StatusText,
+type routes map[string]*router.Route
+
+func (r routes) Get(key string, paramArgPairs ...string) string {
+	if len(paramArgPairs) != 0 {
+		return r[key].Replace(paramArgPairs...)
+	}
+
+	return r[key].String()
 }
 
 type Option func(ui *UI)
@@ -53,6 +59,8 @@ type UI struct {
 	files       fs.FS
 	templatesMu sync.RWMutex
 	templates   map[string]*template.Template
+	routes      routes
+	tmplFuncs   template.FuncMap
 }
 
 func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer smtp.Mailer, opts ...Option) *UI {
@@ -66,6 +74,12 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 		mailer:    mailer,
 		files:     files,
 		templates: templates,
+		routes:    make(routes),
+	}
+
+	ui.tmplFuncs = template.FuncMap{
+		"StatusText": http.StatusText,
+		"Route":      ui.route,
 	}
 
 	for _, opt := range opts {
@@ -82,6 +96,10 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 	return &ui
 }
 
+func (ui *UI) route(key string, paramArgPairs ...string) string {
+	return ui.routes.Get(key, paramArgPairs...)
+}
+
 func (ui *UI) Routes() http.Handler {
 	static := errors.Must(fs.Sub(ui.files, "files/static"))
 
@@ -89,23 +107,23 @@ func (ui *UI) Routes() http.Handler {
 
 	mux.Redirect(http.MethodGet, "/favicon.ico", "/favicon.png", http.StatusTemporaryRedirect)
 
-	mux.Get("/", ui.homeGet)
+	ui.routes["home"] = mux.Get("/", ui.homeGet)
 
 	mux.Prefix("/account", func(mux *router.ServeMux) {
-		mux.Get("/activate", ui.accountActivateGet)
-		mux.Post("/activate", ui.accountActivatePost)
+		ui.routes["account.activate"] = mux.Get("/activate", ui.accountActivateGet)
+		ui.routes["account.activate.post"] = mux.Post("/activate", ui.accountActivatePost)
 
-		mux.Get("/register", ui.accountRegisterGet)
-		mux.Post("/register", ui.accountRegisterPost)
+		ui.routes["account.register"] = mux.Get("/register", ui.accountRegisterGet)
+		ui.routes["account.register.post"] = mux.Post("/register", ui.accountRegisterPost)
 
-		mux.Get("/login", ui.accountLoginGet)
-		mux.Post("/login", ui.accountLoginPost)
+		ui.routes["account.login"] = mux.Get("/login", ui.accountLoginGet)
+		ui.routes["account.login.post"] = mux.Post("/login", ui.accountLoginPost)
 
-		mux.Post("/logout", ui.accountLogoutPost)
+		ui.routes["account.logout.post"] = mux.Post("/logout", ui.accountLogoutPost)
 
-		mux.Get("/forgotten-password", ui.accountForgottenPasswordGet)
-		mux.Post("/forgotten-password", ui.accountForgottenPasswordPost)
-		mux.Put("/forgotten-password", ui.accountForgottenPasswordPut)
+		ui.routes["account.forgottenPassword"] = mux.Get("/forgotten-password", ui.accountForgottenPasswordGet)
+		ui.routes["account.forgottenPassword.post"] = mux.Post("/forgotten-password", ui.accountForgottenPasswordPost)
+		ui.routes["account.forgottenPassword.put"] = mux.Put("/forgotten-password", ui.accountForgottenPasswordPut)
 	})
 
 	mux.GetHandler("/:rest", http.FileServer(http.FS(static)))
@@ -148,7 +166,7 @@ func (ui *UI) view(view string) *template.Template {
 
 	key := strings.TrimSuffix(filepath.Base(view), ".go.html")
 
-	tmpl := template.New(key).Option("missingkey=zero").Funcs(tmplFuncs)
+	tmpl := template.New(key).Option("missingkey=zero").Funcs(ui.tmplFuncs)
 	tmpl = errors.Must(tmpl.ParseFS(ui.files, "files/template/master.go.html"))
 	tmpl = errors.Must(tmpl.ParseFS(ui.files, "files/template/partial/*.go.html"))
 	tmpl = errors.Must(tmpl.ParseFS(ui.files, "files/template/view/"+view+".go.html"))

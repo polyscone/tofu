@@ -52,5 +52,5 @@ func (ui *UI) accountRegisterPost(w http.ResponseWriter, r *http.Request) {
 
 	ui.sessions.Set(ctx, "RegisterEmail", input.Email)
 
-	http.Redirect(w, r, "/account/register?status=success", http.StatusSeeOther)
+	http.Redirect(w, r, ui.route("account.register")+"?status=success", http.StatusSeeOther)
 }

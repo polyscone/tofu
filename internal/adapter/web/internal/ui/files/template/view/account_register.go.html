@@ -12,7 +12,7 @@
 
     <p class="title">Create Account</p>
 
-    <form action="/account/register" method="POST">
+    <form action="{{Route "account.register.post"}}" method="POST">
       <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
 
       <label for="register__email">Email</label>
