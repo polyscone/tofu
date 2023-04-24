@@ -12,16 +12,22 @@ func (app *App) accountActivateGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) accountActivatePost(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Token string
+	}
+	if app.renderError(w, r, errors.Tracef(decodeForm(r, &input))) {
+		return
+	}
+
 	ctx := r.Context()
 
-	token := r.PostFormValue("token")
-	if token == "" {
+	if input.Token == "" {
 		http.Redirect(w, r, "/account/activate", http.StatusSeeOther)
 
 		return
 	}
 
-	email, err := app.tokens.FindActivationTokenEmail(ctx, token)
+	email, err := app.tokens.FindActivationTokenEmail(ctx, input.Token)
 	if app.renderErrorView(w, r, errors.Tracef(err), "account_activate", nil) {
 		return
 	}
@@ -37,7 +43,7 @@ func (app *App) accountActivatePost(w http.ResponseWriter, r *http.Request) {
 	// Only consume after manual command validation, but before execution
 	// This way the token will only be consumed once we know there aren't any
 	// input validation or authorisation errors
-	err = app.tokens.ConsumeActivationToken(ctx, token)
+	err = app.tokens.ConsumeActivationToken(ctx, input.Token)
 	if app.renderErrorView(w, r, errors.Tracef(err), "account_activate", nil) {
 		return
 	}

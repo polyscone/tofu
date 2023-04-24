@@ -14,12 +14,17 @@ func (app *App) accountLoginGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) accountLoginPost(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		Email    string
+		Password string
+	}
+	if app.renderError(w, r, errors.Tracef(decodeForm(r, &input))) {
+		return
+	}
+
 	ctx := r.Context()
 
-	cmd := account.AuthenticateWithPassword{
-		Email:    r.PostFormValue("email"),
-		Password: r.PostFormValue("password"),
-	}
+	cmd := account.AuthenticateWithPassword(input)
 	res, err := cmd.Execute(ctx, app.bus)
 	if app.renderError(w, r, errors.Tracef(err)) {
 		return

@@ -18,19 +18,25 @@ func (app *App) accountRegisterGet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *App) accountRegisterPost(w http.ResponseWriter, r *http.Request) {
+	var input struct {
+		UserID        string
+		Email         string
+		Password      string
+		PasswordCheck string `name:"password-check"`
+	}
+	if app.renderError(w, r, errors.Tracef(decodeForm(r, &input))) {
+		return
+	}
+
 	id, err := uuid.NewV4()
 	if app.renderError(w, r, errors.Tracef(err)) {
 		return
 	}
+	input.UserID = id.String()
 
 	ctx := r.Context()
 
-	cmd := account.Register{
-		UserID:        id.String(),
-		Email:         r.PostFormValue("email"),
-		Password:      r.PostFormValue("password"),
-		PasswordCheck: r.PostFormValue("password"),
-	}
+	cmd := account.Register(input)
 	err = cmd.Execute(ctx, app.bus)
 	switch {
 	case errors.Is(err, port.ErrInvalidInput):
@@ -44,7 +50,7 @@ func (app *App) accountRegisterPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	app.sessions.Set(ctx, "RegisterEmail", cmd.Email)
+	app.sessions.Set(ctx, "RegisterEmail", input.Email)
 
 	http.Redirect(w, r, "/account/register?status=success", http.StatusSeeOther)
 }
