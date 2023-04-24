@@ -7,15 +7,15 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
-func (app *App) accountLogoutPost(w http.ResponseWriter, r *http.Request) {
+func (ui *UI) accountLogoutPost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	err := csrf.RenewToken(ctx)
-	if app.renderError(w, r, errors.Tracef(err)) {
+	if ui.renderError(w, r, errors.Tracef(err)) {
 		return
 	}
 
-	app.sessions.Destroy(r.Context())
+	ui.sessions.Destroy(r.Context())
 
 	http.Redirect(w, r, "/account/login", http.StatusSeeOther)
 }

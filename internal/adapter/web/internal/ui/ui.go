@@ -35,15 +35,15 @@ var tmplFuncs = template.FuncMap{
 	"StatusText": http.StatusText,
 }
 
-type Option func(app *App)
+type Option func(ui *UI)
 
 func WithDev(value bool) Option {
-	return func(app *App) {
-		app.dev = value
+	return func(ui *UI) {
+		ui.dev = value
 	}
 }
 
-type App struct {
+type UI struct {
 	dev         bool
 	bus         command.Bus
 	sessions    *session.Manager
@@ -54,11 +54,11 @@ type App struct {
 	templates   map[string]*template.Template
 }
 
-func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer smtp.Mailer, opts ...Option) *App {
+func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer smtp.Mailer, opts ...Option) *UI {
 	files := fs.FS(embeddedFiles)
 	templates := make(map[string]*template.Template)
 
-	app := App{
+	ui := UI{
 		bus:       bus,
 		sessions:  sessions,
 		tokens:    tokens,
@@ -68,91 +68,91 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 	}
 
 	for _, opt := range opts {
-		opt(&app)
+		opt(&ui)
 	}
 
-	if app.dev {
+	if ui.dev {
 		dir := "internal/adapter/web/internal/ui"
 		if info, err := os.Stat(dir); err == nil && info.IsDir() {
-			app.files = fstack.New(os.DirFS(dir), app.files)
+			ui.files = fstack.New(os.DirFS(dir), ui.files)
 		}
 	}
 
-	return &app
+	return &ui
 }
 
-func (app *App) Routes() http.Handler {
-	static := errors.Must(fs.Sub(app.files, "files/static"))
+func (ui *UI) Routes() http.Handler {
+	static := errors.Must(fs.Sub(ui.files, "files/static"))
 
 	mux := router.NewServeMux()
 
 	mux.Redirect(http.MethodGet, "/favicon.ico", "/favicon.png", http.StatusTemporaryRedirect)
 
-	mux.Get("/", app.homeGet)
+	mux.Get("/", ui.homeGet)
 
 	mux.Prefix("/account", func(mux *router.ServeMux) {
-		mux.Get("/activate", app.accountActivateGet)
-		mux.Post("/activate", app.accountActivatePost)
+		mux.Get("/activate", ui.accountActivateGet)
+		mux.Post("/activate", ui.accountActivatePost)
 
-		mux.Get("/register", app.accountRegisterGet)
-		mux.Post("/register", app.accountRegisterPost)
+		mux.Get("/register", ui.accountRegisterGet)
+		mux.Post("/register", ui.accountRegisterPost)
 
-		mux.Get("/login", app.accountLoginGet)
-		mux.Post("/login", app.accountLoginPost)
+		mux.Get("/login", ui.accountLoginGet)
+		mux.Post("/login", ui.accountLoginPost)
 
-		mux.Post("/logout", app.accountLogoutPost)
+		mux.Post("/logout", ui.accountLogoutPost)
 
-		mux.Get("/forgotten-password", app.accountForgottenPasswordGet)
-		mux.Post("/forgotten-password", app.accountForgottenPasswordPost)
-		mux.Put("/forgotten-password", app.accountForgottenPasswordPut)
+		mux.Get("/forgotten-password", ui.accountForgottenPasswordGet)
+		mux.Post("/forgotten-password", ui.accountForgottenPasswordPost)
+		mux.Put("/forgotten-password", ui.accountForgottenPasswordPut)
 	})
 
 	mux.GetHandler("/:rest", http.FileServer(http.FS(static)))
 
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		app.renderError(w, r, errors.Tracef("%w: %v %v", httputil.ErrNotFound, r.Method, r.URL))
+		ui.renderError(w, r, errors.Tracef("%w: %v %v", httputil.ErrNotFound, r.Method, r.URL))
 	})
 
 	mux.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-		app.renderError(w, r, errors.Tracef("%w: %v %v", httputil.ErrMethodNotAllowed, r.Method, r.URL))
+		ui.renderError(w, r, errors.Tracef("%w: %v %v", httputil.ErrMethodNotAllowed, r.Method, r.URL))
 	})
 
 	return mux
 }
 
-func (app *App) ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
-	app.renderError(w, r, errors.Tracef(err))
+func (ui *UI) ErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
+	ui.renderError(w, r, errors.Tracef(err))
 }
 
-func (app *App) csrfToken(r *http.Request) string {
+func (ui *UI) csrfToken(r *http.Request) string {
 	ctx := r.Context()
 
 	return base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 }
 
-func (app *App) view(view string) *template.Template {
-	app.templatesMu.RLock()
+func (ui *UI) view(view string) *template.Template {
+	ui.templatesMu.RLock()
 
 	// Return the cached template only when we're not in a dev environment
-	if tmpl := app.templates[view]; tmpl != nil && !app.dev {
-		app.templatesMu.RUnlock()
+	if tmpl := ui.templates[view]; tmpl != nil && !ui.dev {
+		ui.templatesMu.RUnlock()
 
 		return tmpl
 	}
 
-	app.templatesMu.RUnlock()
+	ui.templatesMu.RUnlock()
 
-	app.templatesMu.Lock()
-	defer app.templatesMu.Unlock()
+	ui.templatesMu.Lock()
+	defer ui.templatesMu.Unlock()
 
 	key := strings.TrimSuffix(filepath.Base(view), ".go.html")
 
 	tmpl := template.New(key).Option("missingkey=zero").Funcs(tmplFuncs)
-	tmpl = errors.Must(tmpl.ParseFS(app.files, "files/template/master.go.html"))
-	tmpl = errors.Must(tmpl.ParseFS(app.files, "files/template/partial/*.go.html"))
-	tmpl = errors.Must(tmpl.ParseFS(app.files, "files/template/view/"+view+".go.html"))
+	tmpl = errors.Must(tmpl.ParseFS(ui.files, "files/template/master.go.html"))
+	tmpl = errors.Must(tmpl.ParseFS(ui.files, "files/template/partial/*.go.html"))
+	tmpl = errors.Must(tmpl.ParseFS(ui.files, "files/template/view/"+view+".go.html"))
 
-	app.templates[key] = tmpl
+	ui.templates[key] = tmpl
 
 	return tmpl
 }
@@ -183,7 +183,7 @@ type renderData struct {
 
 type renderDataFunc func(data *renderData)
 
-func (app *App) render(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc renderDataFunc) {
+func (ui *UI) render(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc renderDataFunc) {
 	var buf bytes.Buffer
 	var postForm map[string]string
 	var query map[string]string
@@ -207,14 +207,14 @@ func (app *App) render(w http.ResponseWriter, r *http.Request, status int, view 
 	}
 
 	data := renderData{
-		CSRFToken: app.csrfToken(r),
+		CSRFToken: ui.csrfToken(r),
 		Status:    status,
 		PostForm:  postForm,
 		Query:     query,
 		Session: sessionRenderData{
-			UserID:         app.sessions.GetString(ctx, sesskey.UserID),
-			Email:          app.sessions.GetString(ctx, sesskey.Email),
-			IsAwaitingTOTP: app.sessions.GetBool(ctx, sesskey.IsAwaitingTOTP),
+			UserID:         ui.sessions.GetString(ctx, sesskey.UserID),
+			Email:          ui.sessions.GetString(ctx, sesskey.Email),
+			IsAwaitingTOTP: ui.sessions.GetBool(ctx, sesskey.IsAwaitingTOTP),
 		},
 	}
 
@@ -222,7 +222,7 @@ func (app *App) render(w http.ResponseWriter, r *http.Request, status int, view 
 		dataFunc(&data)
 	}
 
-	if err := app.view(view).ExecuteTemplate(&buf, "master", data); err != nil {
+	if err := ui.view(view).ExecuteTemplate(&buf, "master", data); err != nil {
 		httputil.LogError(r, errors.Tracef(err))
 
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -238,7 +238,7 @@ func (app *App) render(w http.ResponseWriter, r *http.Request, status int, view 
 	}
 }
 
-func (app *App) renderErrorView(w http.ResponseWriter, r *http.Request, err error, view string, dataFunc renderDataFunc) bool {
+func (ui *UI) renderErrorView(w http.ResponseWriter, r *http.Request, err error, view string, dataFunc renderDataFunc) bool {
 	if err == nil {
 		return false
 	}
@@ -247,7 +247,7 @@ func (app *App) renderErrorView(w http.ResponseWriter, r *http.Request, err erro
 
 	status := httputil.ErrorStatus(err)
 
-	app.render(w, r, status, view, func(data *renderData) {
+	ui.render(w, r, status, view, func(data *renderData) {
 		switch {
 		case errors.Is(err, csrf.ErrEmptyToken):
 			data.ErrorMessage = "Empty CSRF token"
@@ -267,8 +267,8 @@ func (app *App) renderErrorView(w http.ResponseWriter, r *http.Request, err erro
 	return true
 }
 
-func (app *App) renderError(w http.ResponseWriter, r *http.Request, err error) bool {
-	return app.renderErrorView(w, r, err, "error", nil)
+func (ui *UI) renderError(w http.ResponseWriter, r *http.Request, err error) bool {
+	return ui.renderErrorView(w, r, err, "error", nil)
 }
 
 var matchFirstUpper = regexp.MustCompile("(.)([A-Z][a-z]+)")

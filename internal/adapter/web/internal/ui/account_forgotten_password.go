@@ -13,26 +13,26 @@ import (
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func (app *App) accountForgottenPasswordGet(w http.ResponseWriter, r *http.Request) {
-	app.render(w, r, http.StatusOK, "account_forgotten_password", nil)
+func (ui *UI) accountForgottenPasswordGet(w http.ResponseWriter, r *http.Request) {
+	ui.render(w, r, http.StatusOK, "account_forgotten_password", nil)
 }
 
-func (app *App) accountForgottenPasswordPost(w http.ResponseWriter, r *http.Request) {
+func (ui *UI) accountForgottenPasswordPost(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Email string
 	}
-	if app.renderError(w, r, errors.Tracef(decodeForm(r, &input))) {
+	if ui.renderError(w, r, errors.Tracef(decodeForm(r, &input))) {
 		return
 	}
 
 	email, err := text.NewEmail(input.Email)
-	if app.renderError(w, r, errors.Tracef(err)) {
+	if ui.renderError(w, r, errors.Tracef(err)) {
 		return
 	}
 
 	ctx := r.Context()
 
-	tok, err := app.tokens.AddResetPasswordToken(ctx, email, 2*time.Hour)
+	tok, err := ui.tokens.AddResetPasswordToken(ctx, email, 2*time.Hour)
 	if err != nil {
 		logger.PrintError(err)
 
@@ -46,35 +46,35 @@ func (app *App) accountForgottenPasswordPost(w http.ResponseWriter, r *http.Requ
 		Plain:   "Reset code: " + tok,
 		HTML:    "<h1>Reset code</h1><p>" + tok + "</p>",
 	}
-	if err := app.mailer.Send(ctx, msg); err != nil {
+	if err := ui.mailer.Send(ctx, msg); err != nil {
 		logger.PrintError(err)
 	}
 
 	http.Redirect(w, r, "/account/forgotten-password?status=sent", http.StatusSeeOther)
 }
 
-func (app *App) accountForgottenPasswordPut(w http.ResponseWriter, r *http.Request) {
+func (ui *UI) accountForgottenPasswordPut(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Token            string
 		NewPassword      string
 		NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 	}
-	if app.renderError(w, r, errors.Tracef(decodeForm(r, &input))) {
+	if ui.renderError(w, r, errors.Tracef(decodeForm(r, &input))) {
 		return
 	}
 
 	ctx := r.Context()
 
-	email, err := app.tokens.FindResetPasswordTokenEmail(ctx, input.Token)
-	if app.renderError(w, r, errors.Tracef(err)) {
+	email, err := ui.tokens.FindResetPasswordTokenEmail(ctx, input.Token)
+	if ui.renderError(w, r, errors.Tracef(err)) {
 		return
 	}
 
 	findCmd := account.FindUserByEmail{
 		Email: email.String(),
 	}
-	user, err := findCmd.Execute(ctx, app.bus)
-	if app.renderError(w, r, errors.Tracef(err)) {
+	user, err := findCmd.Execute(ctx, ui.bus)
+	if ui.renderError(w, r, errors.Tracef(err)) {
 		return
 	}
 
@@ -87,30 +87,30 @@ func (app *App) accountForgottenPasswordPut(w http.ResponseWriter, r *http.Reque
 		NewPasswordCheck: input.NewPasswordCheck,
 	}
 	err = cmd.Validate(ctx)
-	if app.renderError(w, r, errors.Tracef(err)) {
+	if ui.renderError(w, r, errors.Tracef(err)) {
 		return
 	}
 
 	// Only consume after manual command validation, but before execution
 	// This way the token will only be consumed once we know there aren't any
 	// input validation or authorisation errors
-	err = app.tokens.ConsumeResetPasswordToken(ctx, input.Token)
-	if app.renderError(w, r, errors.Tracef(err)) {
+	err = ui.tokens.ConsumeResetPasswordToken(ctx, input.Token)
+	if ui.renderError(w, r, errors.Tracef(err)) {
 		return
 	}
 
-	err = cmd.Execute(ctx, app.bus)
-	if app.renderError(w, r, errors.Tracef(err)) {
+	err = cmd.Execute(ctx, ui.bus)
+	if ui.renderError(w, r, errors.Tracef(err)) {
 		return
 	}
 
 	err = csrf.RenewToken(ctx)
-	if app.renderError(w, r, errors.Tracef(err)) {
+	if ui.renderError(w, r, errors.Tracef(err)) {
 		return
 	}
 
-	err = app.sessions.Renew(ctx)
-	if app.renderError(w, r, errors.Tracef(err)) {
+	err = ui.sessions.Renew(ctx)
+	if ui.renderError(w, r, errors.Tracef(err)) {
 		return
 	}
 

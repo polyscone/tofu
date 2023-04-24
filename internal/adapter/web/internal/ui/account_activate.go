@@ -7,15 +7,15 @@ import (
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func (app *App) accountActivateGet(w http.ResponseWriter, r *http.Request) {
-	app.render(w, r, http.StatusOK, "account_activate", nil)
+func (ui *UI) accountActivateGet(w http.ResponseWriter, r *http.Request) {
+	ui.render(w, r, http.StatusOK, "account_activate", nil)
 }
 
-func (app *App) accountActivatePost(w http.ResponseWriter, r *http.Request) {
+func (ui *UI) accountActivatePost(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Token string
 	}
-	if app.renderError(w, r, errors.Tracef(decodeForm(r, &input))) {
+	if ui.renderError(w, r, errors.Tracef(decodeForm(r, &input))) {
 		return
 	}
 
@@ -27,8 +27,8 @@ func (app *App) accountActivatePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	email, err := app.tokens.FindActivationTokenEmail(ctx, input.Token)
-	if app.renderErrorView(w, r, errors.Tracef(err), "account_activate", nil) {
+	email, err := ui.tokens.FindActivationTokenEmail(ctx, input.Token)
+	if ui.renderErrorView(w, r, errors.Tracef(err), "account_activate", nil) {
 		return
 	}
 
@@ -36,20 +36,20 @@ func (app *App) accountActivatePost(w http.ResponseWriter, r *http.Request) {
 		Email: email.String(),
 	}
 	err = cmd.Validate(ctx)
-	if app.renderErrorView(w, r, errors.Tracef(err), "account_activate", nil) {
+	if ui.renderErrorView(w, r, errors.Tracef(err), "account_activate", nil) {
 		return
 	}
 
 	// Only consume after manual command validation, but before execution
 	// This way the token will only be consumed once we know there aren't any
 	// input validation or authorisation errors
-	err = app.tokens.ConsumeActivationToken(ctx, input.Token)
-	if app.renderErrorView(w, r, errors.Tracef(err), "account_activate", nil) {
+	err = ui.tokens.ConsumeActivationToken(ctx, input.Token)
+	if ui.renderErrorView(w, r, errors.Tracef(err), "account_activate", nil) {
 		return
 	}
 
-	err = cmd.Execute(ctx, app.bus)
-	if app.renderErrorView(w, r, errors.Tracef(err), "account_activate", nil) {
+	err = cmd.Execute(ctx, ui.bus)
+	if ui.renderErrorView(w, r, errors.Tracef(err), "account_activate", nil) {
 		return
 	}
 
