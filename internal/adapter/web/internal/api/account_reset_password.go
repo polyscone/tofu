@@ -23,7 +23,7 @@ func (api *API) accountResetPasswordPost(w http.ResponseWriter, r *http.Request)
 	}
 
 	email, err := text.NewEmail(input.Email)
-	if writeError(w, r, err) {
+	if writeError(w, r, errors.Tracef(err)) {
 		return
 	}
 
