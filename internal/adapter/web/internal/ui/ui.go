@@ -20,6 +20,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/smtp"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/token"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
@@ -157,6 +158,10 @@ func (ui *UI) view(view string) *template.Template {
 	return tmpl
 }
 
+type appRenderData struct {
+	Name string
+}
+
 type sessionRenderData struct {
 	UserID         string
 	Email          string
@@ -175,6 +180,7 @@ type renderData struct {
 	Errors       errors.Map
 	PostForm     map[string]string
 	Query        map[string]string
+	App          appRenderData
 	Session      sessionRenderData
 
 	// View-specific render data
@@ -211,6 +217,9 @@ func (ui *UI) render(w http.ResponseWriter, r *http.Request, status int, view st
 		Status:    status,
 		PostForm:  postForm,
 		Query:     query,
+		App: appRenderData{
+			Name: app.Name,
+		},
 		Session: sessionRenderData{
 			UserID:         ui.sessions.GetString(ctx, sesskey.UserID),
 			Email:          ui.sessions.GetString(ctx, sesskey.Email),

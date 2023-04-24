@@ -5,8 +5,8 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tofu</title>
-    <meta name="description" content="{{block "metaDescription" .}}Tofu{{end}}">
+    <title>{{.App.Name}}</title>
+    <meta name="description" content="{{block "metaDescription" .}}{{.App.Name}}{{end}}">
     <link rel="stylesheet" href="/css/style.css">
   </head>
   <body>
