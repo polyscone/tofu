@@ -102,6 +102,8 @@ func (app *App) Routes() http.Handler {
 		mux.Post("/logout", app.accountLogoutPost)
 
 		mux.Get("/forgotten-password", app.accountForgottenPasswordGet)
+		mux.Post("/forgotten-password", app.accountForgottenPasswordPost)
+		mux.Put("/forgotten-password", app.accountForgottenPasswordPut)
 	})
 
 	mux.GetHandler("/:rest", http.FileServer(http.FS(static)))
