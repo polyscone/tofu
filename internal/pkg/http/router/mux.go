@@ -26,15 +26,82 @@ type Route struct {
 	key      string
 	path     string
 	pattern  *regexp.Regexp
+	parts    []string
 	handlers map[string]http.Handler
 	methods  []string
+}
+
+func (r *Route) String() string {
+	return r.path
+}
+
+// Replace will create a path based on the route's pattern using the
+// replacements given.
+//
+// Replacements are given as a list of string pairs, where the first in a pair
+// is the parameter name starting with a colon, and the second in a pair is the
+// string to replace it with.
+//
+// If a parameter in the route's pattern is missing it will panic.
+// Empty replacements will also panic.
+func (r *Route) Replace(paramArgPairs ...string) string {
+	if len(paramArgPairs)%2 == 1 {
+		panic("route path substitution expects an equal number of arguments")
+	}
+
+	args := make(map[string]string, len(paramArgPairs)/2)
+	for i := 0; i < len(paramArgPairs); i += 2 {
+		param, arg := paramArgPairs[i], paramArgPairs[i+1]
+		if !strings.HasPrefix(param, ":") {
+			panic(fmt.Sprintf("want argument %v to start with a colon", i))
+		}
+		if arg == "" {
+			panic(fmt.Sprintf("want argument %v to not be empty", i))
+		}
+
+		args[param] = arg
+	}
+
+	var sb strings.Builder
+
+	seen := make(map[string]struct{})
+	for _, part := range r.parts {
+		sb.WriteRune('/')
+
+		if strings.HasPrefix(part, ":") {
+			arg, ok := args[part]
+			if !ok {
+				panic(fmt.Sprintf("want an argument for parameter %q in route path to be provided", part))
+			}
+
+			seen[part] = struct{}{}
+			part = arg
+		}
+
+		sb.WriteString(part)
+	}
+
+	if len(seen) != len(args) {
+		var unknowns []string
+		for param := range args {
+			if _, ok := seen[param]; ok {
+				continue
+			}
+
+			unknowns = append(unknowns, param)
+		}
+
+		panic(fmt.Sprintf("unknown parameters: %q", unknowns))
+	}
+
+	return sb.String()
 }
 
 // ServeMux represents an HTTP router.
 type ServeMux struct {
 	prefix           string
 	middlewares      []middleware.Middleware
-	routes           []Route
+	routes           []*Route
 	notFound         http.Handler
 	methodNotAllowed http.Handler
 }
@@ -109,9 +176,10 @@ func (sm *ServeMux) Prefix(prefix string, routeGroup func(*ServeMux)) {
 	sm.prefix = originalPrefix
 }
 
-func (sm *ServeMux) route(method string, path string, handler http.Handler) {
+func (sm *ServeMux) route(method string, path string, handler http.Handler) *Route {
 	method = strings.ToUpper(method)
 	path = sm.prefix + path
+	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
 	pattern := regexp.QuoteMeta(path)
 
 	if pattern == "" {
@@ -138,7 +206,7 @@ func (sm *ServeMux) route(method string, path string, handler http.Handler) {
 		route.handlers[method] = handler
 		route.methods = append(route.methods, method)
 
-		return
+		return route
 	}
 
 	compiled := regexp.MustCompile(pattern)
@@ -152,127 +220,132 @@ func (sm *ServeMux) route(method string, path string, handler http.Handler) {
 		seen[name] = struct{}{}
 	}
 
-	sm.routes = append(sm.routes, Route{
+	route := &Route{
 		key:      key,
 		path:     path,
 		pattern:  compiled,
+		parts:    parts,
 		handlers: map[string]http.Handler{method: handler},
 		methods:  []string{http.MethodOptions},
-	})
+	}
+
+	sm.routes = append(sm.routes, route)
+
+	return route
 }
 
 // OptionsHandler registers a handler that can be used to serve any OPTIONS
 // request matching the given path pattern.
-func (sm *ServeMux) OptionsHandler(path string, handler http.Handler) {
-	sm.route(http.MethodOptions, path, handler)
+func (sm *ServeMux) OptionsHandler(path string, handler http.Handler) *Route {
+	return sm.route(http.MethodOptions, path, handler)
 }
 
 // Options registers a handler that can be used to serve any OPTIONS
 // request matching the given path pattern.
-func (sm *ServeMux) Options(path string, handler http.HandlerFunc) {
-	sm.OptionsHandler(path, http.HandlerFunc(handler))
+func (sm *ServeMux) Options(path string, handler http.HandlerFunc) *Route {
+	return sm.OptionsHandler(path, http.HandlerFunc(handler))
 }
 
 // ConnectHandler registers a handler that can be used to serve any CONNECT
 // request matching the given path pattern.
-func (sm *ServeMux) ConnectHandler(path string, handler http.Handler) {
-	sm.route(http.MethodConnect, path, handler)
+func (sm *ServeMux) ConnectHandler(path string, handler http.Handler) *Route {
+	return sm.route(http.MethodConnect, path, handler)
 }
 
 // Connect registers a handler that can be used to serve any CONNECT
 // request matching the given path pattern.
-func (sm *ServeMux) Connect(path string, handler http.HandlerFunc) {
-	sm.ConnectHandler(path, http.HandlerFunc(handler))
+func (sm *ServeMux) Connect(path string, handler http.HandlerFunc) *Route {
+	return sm.ConnectHandler(path, http.HandlerFunc(handler))
 }
 
 // TraceHandler registers a handler that can be used to serve any TRACE
 // request matching the given path pattern.
-func (sm *ServeMux) TraceHandler(path string, handler http.Handler) {
-	sm.route(http.MethodTrace, path, handler)
+func (sm *ServeMux) TraceHandler(path string, handler http.Handler) *Route {
+	return sm.route(http.MethodTrace, path, handler)
 }
 
 // Trace registers a handler that can be used to serve any TRACE
 // request matching the given path pattern.
-func (sm *ServeMux) Trace(path string, handler http.HandlerFunc) {
-	sm.TraceHandler(path, http.HandlerFunc(handler))
+func (sm *ServeMux) Trace(path string, handler http.HandlerFunc) *Route {
+	return sm.TraceHandler(path, http.HandlerFunc(handler))
 }
 
 // HeadHandler registers a handler that can be used to serve any HEAD
 // request matching the given path pattern.
-func (sm *ServeMux) HeadHandler(path string, handler http.Handler) {
-	sm.route(http.MethodHead, path, handler)
+func (sm *ServeMux) HeadHandler(path string, handler http.Handler) *Route {
+	return sm.route(http.MethodHead, path, handler)
 }
 
 // Head registers a handler that can be used to serve any HEAD
 // request matching the given path pattern.
-func (sm *ServeMux) Head(path string, handler http.HandlerFunc) {
-	sm.HeadHandler(path, http.HandlerFunc(handler))
+func (sm *ServeMux) Head(path string, handler http.HandlerFunc) *Route {
+	return sm.HeadHandler(path, http.HandlerFunc(handler))
 }
 
 // GetHandler registers a handler that can be used to serve any GET
 // request matching the given path pattern.
-func (sm *ServeMux) GetHandler(path string, handler http.Handler) {
-	sm.route(http.MethodGet, path, handler)
+func (sm *ServeMux) GetHandler(path string, handler http.Handler) *Route {
+	return sm.route(http.MethodGet, path, handler)
 }
 
 // Get registers a handler that can be used to serve any GET
 // request matching the given path pattern.
-func (sm *ServeMux) Get(path string, handler http.HandlerFunc) {
-	sm.GetHandler(path, http.HandlerFunc(handler))
+func (sm *ServeMux) Get(path string, handler http.HandlerFunc) *Route {
+	return sm.GetHandler(path, http.HandlerFunc(handler))
 }
 
 // PostHandler registers a handler that can be used to serve any POST
 // request matching the given path pattern.
-func (sm *ServeMux) PostHandler(path string, handler http.Handler) {
-	sm.route(http.MethodPost, path, handler)
+func (sm *ServeMux) PostHandler(path string, handler http.Handler) *Route {
+	return sm.route(http.MethodPost, path, handler)
 }
 
 // Post registers a handler that can be used to serve any POST
 // request matching the given path pattern.
-func (sm *ServeMux) Post(path string, handler http.HandlerFunc) {
-	sm.PostHandler(path, http.HandlerFunc(handler))
+func (sm *ServeMux) Post(path string, handler http.HandlerFunc) *Route {
+	return sm.PostHandler(path, http.HandlerFunc(handler))
 }
 
 // PutHandler registers a handler that can be used to serve any PUT
 // request matching the given path pattern.
-func (sm *ServeMux) PutHandler(path string, handler http.Handler) {
-	sm.route(http.MethodPut, path, handler)
+func (sm *ServeMux) PutHandler(path string, handler http.Handler) *Route {
+	return sm.route(http.MethodPut, path, handler)
 }
 
 // Put registers a handler that can be used to serve any PUT
 // request matching the given path pattern.
-func (sm *ServeMux) Put(path string, handler http.HandlerFunc) {
-	sm.PutHandler(path, http.HandlerFunc(handler))
+func (sm *ServeMux) Put(path string, handler http.HandlerFunc) *Route {
+	return sm.PutHandler(path, http.HandlerFunc(handler))
 }
 
 // PatchHandler registers a handler that can be used to serve any PATCH
 // request matching the given path pattern.
-func (sm *ServeMux) PatchHandler(path string, handler http.Handler) {
-	sm.route(http.MethodPatch, path, handler)
+func (sm *ServeMux) PatchHandler(path string, handler http.Handler) *Route {
+	return sm.route(http.MethodPatch, path, handler)
 }
 
 // Patch registers a handler that can be used to serve any PATCH
 // request matching the given path pattern.
-func (sm *ServeMux) Patch(path string, handler http.HandlerFunc) {
-	sm.PatchHandler(path, http.HandlerFunc(handler))
+func (sm *ServeMux) Patch(path string, handler http.HandlerFunc) *Route {
+	return sm.PatchHandler(path, http.HandlerFunc(handler))
 }
 
 // DeleteHandler registers a handler that can be used to serve any DELETE
 // request matching the given path pattern.
-func (sm *ServeMux) DeleteHandler(path string, handler http.Handler) {
-	sm.route(http.MethodDelete, path, handler)
+func (sm *ServeMux) DeleteHandler(path string, handler http.Handler) *Route {
+	return sm.route(http.MethodDelete, path, handler)
 }
 
 // Delete registers a handler that can be used to serve any DELETE
 // request matching the given path pattern.
-func (sm *ServeMux) Delete(path string, handler http.HandlerFunc) {
-	sm.DeleteHandler(path, http.HandlerFunc(handler))
+func (sm *ServeMux) Delete(path string, handler http.HandlerFunc) *Route {
+	return sm.DeleteHandler(path, http.HandlerFunc(handler))
 }
 
 // AnyHandler registers a handler that can be used to serve any request matching
 // the given path pattern.
-func (sm *ServeMux) AnyHandler(path string, handler http.Handler) {
-	sm.OptionsHandler(path, handler)
+func (sm *ServeMux) AnyHandler(path string, handler http.Handler) *Route {
+	route := sm.OptionsHandler(path, handler)
 	sm.ConnectHandler(path, handler)
 	sm.TraceHandler(path, handler)
 	sm.HeadHandler(path, handler)
@@ -281,12 +354,14 @@ func (sm *ServeMux) AnyHandler(path string, handler http.Handler) {
 	sm.PutHandler(path, handler)
 	sm.PatchHandler(path, handler)
 	sm.DeleteHandler(path, handler)
+
+	return route
 }
 
 // Any registers a handler that can be used to serve any request matching
 // the given path pattern.
-func (sm *ServeMux) Any(path string, handler http.HandlerFunc) {
-	sm.AnyHandler(path, http.HandlerFunc(handler))
+func (sm *ServeMux) Any(path string, handler http.HandlerFunc) *Route {
+	return sm.AnyHandler(path, http.HandlerFunc(handler))
 }
 
 // NotFoundHandler registers a handler to be used when an HTTP not found error

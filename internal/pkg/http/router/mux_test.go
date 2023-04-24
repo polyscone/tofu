@@ -82,6 +82,10 @@ func TestMux(t *testing.T) {
 	mux.Redirect(http.MethodGet, "/:var/src/var", "/:var/dst", http.StatusTemporaryRedirect)
 	mux.Redirect(http.MethodGet, "/:var/:varfoo/src/var", "/:var/dst", http.StatusTemporaryRedirect)
 
+	route := mux.Get("/a/:b/c/:d", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("/a/" + router.URLParam(r, "b") + "/c/" + router.URLParam(r, "d")))
+	})
+
 	ts := testutil.NewServer(t, mux)
 	defer ts.Close()
 
@@ -142,6 +146,8 @@ func TestMux(t *testing.T) {
 		{"dynamic url with rest", http.MethodGet, "/cat/foo/dog/baz/qux", "foo/baz/qux", http.StatusOK},
 		{"dynamic url with empty rest", http.MethodGet, "/cat/foo/dog/", "foo/", http.StatusOK},
 		{"dynamic url with rest no match", http.MethodGet, "/cat/foo/bar/dog/baz/qux", "", http.StatusNotFound},
+
+		{"route string param replacement", http.MethodGet, route.Replace(":b", "123", ":d", "456"), "/a/123/c/456", http.StatusOK},
 
 		{"redirect get method ok", http.MethodGet, "/redirect/src", "redirected", http.StatusOK},
 		{"redirect with dynamic param", http.MethodGet, "/redirect/src/var", "redirected", http.StatusOK},
@@ -226,5 +232,34 @@ func TestMuxPanics(t *testing.T) {
 
 		mux.Get("/one/two/:foo/four", emptyHandler)
 		mux.Post("/one/two/:bar/four", emptyHandler)
+	})
+
+	t.Run("panic on invalid route path parameter replacements", func(t *testing.T) {
+		mux := router.NewServeMux()
+		route := mux.Get("/:w/x/y/:z", emptyHandler)
+
+		tt := []struct {
+			name string
+			list []string
+		}{
+			{"wrong number of elements", []string{":w"}},
+			{"wrong order", []string{"1", ":w"}},
+			{"missing parameter", []string{":w", "1"}},
+			{"unknown parameter", []string{":w", "1", ":x", "2", ":z", "3"}},
+			{"empty argument", []string{":w", "1", ":z", ""}},
+		}
+		for _, tc := range tt {
+			tc := tc
+
+			t.Run(tc.name, func(t *testing.T) {
+				defer func() {
+					if recover() == nil {
+						t.Error("want panic; got <nil>")
+					}
+				}()
+
+				route.Replace(tc.list...)
+			})
+		}
 	})
 }
