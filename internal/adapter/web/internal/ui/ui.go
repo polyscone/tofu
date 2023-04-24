@@ -124,7 +124,12 @@ func (ui *UI) route(key string, paramArgPairs ...string) string {
 		return ui.mux.Route(key).Replace(paramArgPairs...)
 	}
 
-	return ui.mux.Route(key).String()
+	route := ui.mux.Route(key).String()
+	if strings.Contains(route, "/:") {
+		panic(fmt.Sprintf("route %q must use the replace method to replace parameters", key))
+	}
+
+	return route
 }
 
 func (ui *UI) Routes() http.Handler {
