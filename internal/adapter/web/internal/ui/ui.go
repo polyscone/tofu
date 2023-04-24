@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -270,6 +271,16 @@ func (app *App) renderError(w http.ResponseWriter, r *http.Request, err error) b
 	return app.renderErrorView(w, r, err, "error", nil)
 }
 
+var matchFirstUpper = regexp.MustCompile("(.)([A-Z][a-z]+)")
+var matchAllUppers = regexp.MustCompile("([a-z0-9])([A-Z])")
+
+func toKebabCase(str string) string {
+	kebab := matchFirstUpper.ReplaceAllString(str, "${1}-${2}")
+	kebab = matchAllUppers.ReplaceAllString(kebab, "${1}-${2}")
+
+	return strings.ToLower(kebab)
+}
+
 func decodeForm(r *http.Request, dst any) error {
 	value := reflect.ValueOf(dst)
 	if value.Kind() != reflect.Ptr {
@@ -286,7 +297,7 @@ func decodeForm(r *http.Request, dst any) error {
 
 		tag := typeField.Tag.Get("form")
 		if tag == "" {
-			tag = strings.ToLower(typeField.Name)
+			tag = toKebabCase(typeField.Name)
 		}
 
 		str := r.PostFormValue(tag)

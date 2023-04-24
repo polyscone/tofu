@@ -56,7 +56,7 @@ func (app *App) accountForgottenPasswordPost(w http.ResponseWriter, r *http.Requ
 func (app *App) accountForgottenPasswordPut(w http.ResponseWriter, r *http.Request) {
 	var input struct {
 		Token            string
-		NewPassword      string `form:"new-password"`
+		NewPassword      string
 		NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 	}
 	if app.renderError(w, r, errors.Tracef(decodeForm(r, &input))) {
