@@ -8,6 +8,7 @@
       <li><a href="{{Route "home"}}">Home</a></li>
 
       {{if .Session.UserID}}
+        <li><a href="{{Route "account"}}">Account</a></li>
         <li>
           <form action="{{Route "account.logout.post"}}" method="POST">
             <input type="hidden" name="_csrf" value="{{.CSRFToken}}">

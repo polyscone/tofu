@@ -90,6 +90,8 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 	ui.mux.Get("/", ui.homeGet, "home")
 
 	ui.mux.Prefix("/account", func(mux *router.ServeMux) {
+		mux.Get("", ui.accountGet, "account")
+
 		mux.Get("/activate", ui.accountActivateGet, "account.activate")
 		mux.Post("/activate", ui.accountActivatePost, "account.activate.post")
 
