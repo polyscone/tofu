@@ -1,11 +1,15 @@
 {{define "view"}}
 
 <div class="register center">
+
   {{if eq .Query.status "success"}}
+
     <p class="title">Thank You</p>
 
     <p>Your account details have been registered and an email containing an account activation link has been sent to {{or .Register.Email "you"}}.</p>
+
   {{else}}
+
     <p class="title">Create Account</p>
 
     <form action="/account/register" method="POST">
@@ -23,7 +27,9 @@
         <button type="submit" class="push-inline-end">Register</button>
       </div>
     </form>
+
   {{end}}
+
 </div>
 
 {{end}}
