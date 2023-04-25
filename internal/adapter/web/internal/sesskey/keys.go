@@ -1,7 +1,8 @@
 package sesskey
 
 const (
-	UserID         = "UserID"
-	Email          = "Email"
-	IsAwaitingTOTP = "IsAwaitingTOTP"
+	UserID          = "UserID"
+	Email           = "Email"
+	HasVerifiedTOTP = "HasVerifiedTOTP"
+	IsAwaitingTOTP  = "IsAwaitingTOTP"
 )

@@ -39,12 +39,13 @@ func (api *API) accountLoginWithPasswordPost(w http.ResponseWriter, r *http.Requ
 
 	api.sessions.Set(ctx, sesskey.UserID, res.UserID)
 	api.sessions.Set(ctx, sesskey.Email, input.Email)
-	api.sessions.Set(ctx, sesskey.IsAwaitingTOTP, res.IsAwaitingTOTP)
+	api.sessions.Set(ctx, sesskey.HasVerifiedTOTP, res.HasVerifiedTOTP)
+	api.sessions.Set(ctx, sesskey.IsAwaitingTOTP, res.HasVerifiedTOTP)
 
 	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 
 	writeJSON(w, r, map[string]any{
 		"csrfToken":      csrfTokenBase64,
-		"isAwaitingTOTP": res.IsAwaitingTOTP,
+		"isAwaitingTOTP": res.HasVerifiedTOTP,
 	})
 }

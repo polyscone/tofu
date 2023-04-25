@@ -17,8 +17,8 @@ type authenticateWithPasswordRequest struct {
 }
 
 type authenticateWithPasswordResponse struct {
-	UserID         string
-	IsAwaitingTOTP bool
+	UserID          string
+	HasVerifiedTOTP bool
 }
 
 type AuthenticateWithPassword struct {
@@ -74,8 +74,8 @@ func NewAuthenticateWithPasswordHandler(broker event.Broker, users UserRepo) Aut
 		broker.Flush(&user.Events)
 
 		res := authenticateWithPasswordResponse{
-			UserID:         user.ID.String(),
-			IsAwaitingTOTP: user.HasVerifiedTOTP(),
+			UserID:          user.ID.String(),
+			HasVerifiedTOTP: user.HasVerifiedTOTP(),
 		}
 
 		return res, nil
