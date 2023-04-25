@@ -41,6 +41,7 @@ func (api *API) accountLoginWithPasswordPost(w http.ResponseWriter, r *http.Requ
 	api.sessions.Set(ctx, sesskey.Email, input.Email)
 	api.sessions.Set(ctx, sesskey.HasVerifiedTOTP, res.HasVerifiedTOTP)
 	api.sessions.Set(ctx, sesskey.IsAwaitingTOTP, res.HasVerifiedTOTP)
+	api.sessions.Set(ctx, sesskey.IsAuthenticated, !res.HasVerifiedTOTP)
 
 	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 

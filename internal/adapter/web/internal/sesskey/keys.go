@@ -5,4 +5,5 @@ const (
 	Email           = "Email"
 	HasVerifiedTOTP = "HasVerifiedTOTP"
 	IsAwaitingTOTP  = "IsAwaitingTOTP"
+	IsAuthenticated = "IsAuthenticated"
 )

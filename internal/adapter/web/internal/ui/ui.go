@@ -197,6 +197,7 @@ type sessionRenderData struct {
 	Email           string
 	HasVerifiedTOTP bool
 	IsAwaitingTOTP  bool
+	IsAuthenticated bool
 }
 
 type registerRenderData struct {
@@ -238,6 +239,7 @@ func (ui *UI) render(w http.ResponseWriter, r *http.Request, status int, view st
 			Email:           ui.sessions.GetString(ctx, sesskey.Email),
 			HasVerifiedTOTP: ui.sessions.GetBool(ctx, sesskey.HasVerifiedTOTP),
 			IsAwaitingTOTP:  ui.sessions.GetBool(ctx, sesskey.IsAwaitingTOTP),
+			IsAuthenticated: ui.sessions.GetBool(ctx, sesskey.IsAuthenticated),
 		},
 	}
 
