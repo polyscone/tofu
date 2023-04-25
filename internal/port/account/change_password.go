@@ -60,9 +60,6 @@ func (cmd ChangePassword) request(ctx context.Context) (changePasswordRequest, e
 	}
 	if req.newPassword, err = domain.NewPassword(cmd.NewPassword); err != nil {
 		errs.Set("new password", err)
-	}
-	if req.newPassword, err = domain.NewPassword(cmd.NewPassword); err != nil {
-		errs.Set("new password", err)
 	} else if !req.newPassword.Equal(newPasswordCheck) {
 		errs.Set("new password", "passwords do not match")
 	}
