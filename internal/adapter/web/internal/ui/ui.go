@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -207,8 +208,8 @@ type renderData struct {
 	CSRFToken    string
 	ErrorMessage string
 	Errors       errors.Map
-	PostForm     map[string]string
-	Query        map[string]string
+	PostForm     url.Values
+	Query        url.Values
 	App          appRenderData
 	Session      sessionRenderData
 
@@ -220,32 +221,14 @@ type renderDataFunc func(data *renderData)
 
 func (ui *UI) render(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc renderDataFunc) {
 	var buf bytes.Buffer
-	var postForm map[string]string
-	var query map[string]string
 
 	ctx := r.Context()
-
-	if r.PostForm != nil {
-		postForm = make(map[string]string, len(r.PostForm))
-
-		for key, values := range r.PostForm {
-			postForm[key] = values[0]
-		}
-	}
-
-	if q := r.URL.Query(); q != nil {
-		query = make(map[string]string, len(q))
-
-		for key, values := range q {
-			query[key] = values[0]
-		}
-	}
 
 	data := renderData{
 		CSRFToken: ui.csrfToken(r),
 		Status:    status,
-		PostForm:  postForm,
-		Query:     query,
+		PostForm:  r.PostForm,
+		Query:     r.URL.Query(),
 		App: appRenderData{
 			Name: app.Name,
 		},

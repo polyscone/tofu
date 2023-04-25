@@ -2,7 +2,7 @@
 
 <div class="register center">
 
-  {{if eq .Query.status "success"}}
+  {{if eq (.Query.Get "status") "success"}}
 
     <p class="title">Thank You</p>
 
@@ -16,11 +16,11 @@
       <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
 
       <label for="register__email">Email</label>
-      <input id="register__email" type="email" name="email" value="{{.PostForm.email}}" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
+      <input id="register__email" type="email" name="email" value="{{.PostForm.Get "email"}}" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
       <p class="error">{{.Errors.Get "email"}}</p>
 
       <label for="register__password">Password</label>
-      <input id="register__password" type="password" name="password" value="{{.PostForm.password}}" placeholder="password" autocomplete="new-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+      <input id="register__password" type="password" name="password" value="{{.PostForm.Get "password"}}" placeholder="password" autocomplete="new-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
       <p class="error">{{.Errors.Get "password"}}</p>
 
       <div class="bag">
