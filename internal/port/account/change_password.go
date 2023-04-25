@@ -82,6 +82,10 @@ func NewChangePasswordHandler(broker event.Broker, users UserRepo) ChangePasswor
 		}
 
 		if err := user.ChangePassword(req.oldPassword, req.newPassword); err != nil {
+			if errors.Is(err, port.ErrInvalidInput) {
+				return errors.Map{"old password": err}.Tracef(err)
+			}
+
 			return errors.Tracef(err)
 		}
 

@@ -137,7 +137,7 @@ func (u *User) ChangePassword(oldPassword, newPassword Password) error {
 	}
 
 	if err := u.verifyPassword(oldPassword); err != nil {
-		return errors.Tracef(err)
+		return errors.Tracef(port.ErrInvalidInput, err)
 	}
 
 	if err := u.setPassword(newPassword); err != nil {
@@ -212,7 +212,7 @@ func (u *User) VerifyTOTP(totp TOTP) error {
 		return errors.Tracef(err)
 	}
 	if !ok {
-		return errors.Tracef(port.ErrBadRequest, "could not validate TOTP")
+		return errors.Tracef(port.ErrBadRequest, "could not verify TOTP")
 	}
 
 	u.TOTPVerifiedAt = time.Now()
@@ -265,7 +265,7 @@ func (u *User) verifyPassword(password Password) error {
 		return errors.Tracef(err)
 	}
 	if !ok {
-		return errors.Tracef(port.ErrBadRequest, "could not validate password")
+		return errors.Tracef(port.ErrBadRequest, "could not verify password")
 	}
 
 	return nil
@@ -303,7 +303,7 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 		return errors.Tracef(err)
 	}
 	if !ok {
-		return errors.Tracef(port.ErrBadRequest, "could not validate TOTP")
+		return errors.Tracef(port.ErrBadRequest, "could not verify TOTP")
 	}
 
 	u.Events.Enqueue(AuthenticatedWithTOTP{
@@ -334,7 +334,7 @@ func (u *User) AuthenticateWithRecoveryCode(recoveryCode RecoveryCode) error {
 		}
 	}
 
-	return errors.Tracef(port.ErrBadRequest, "could not validate recovery code")
+	return errors.Tracef(port.ErrBadRequest, "could not verify recovery code")
 }
 
 func (u *User) Is(query Claim) bool {

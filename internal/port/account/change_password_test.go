@@ -35,9 +35,10 @@ func TestChangePassword(t *testing.T) {
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
 	handler := account.NewChangePasswordHandler(broker, users)
 
-	password := "password"
-	user1 := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
-	user2 := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jane@doe.com", password))
+	user1Password := "password"
+	user2Password := "password"
+	user1 := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", user1Password))
+	user2 := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jane@doe.com", user2Password))
 
 	t.Run("success with activated logged in user", func(t *testing.T) {
 		var wantEvents []event.Event
@@ -53,13 +54,17 @@ func TestChangePassword(t *testing.T) {
 		err := handler(ctx, account.ChangePassword{
 			Guard:            validGuard,
 			UserID:           user1.ID.String(),
-			OldPassword:      password,
+			OldPassword:      user1Password,
 			NewPassword:      newPassword.String(),
 			NewPasswordCheck: newPassword.String(),
 		})
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		// Keep the old password up to date with the latest password
+		// change so subsequent tests don't fail
+		user1Password = newPassword.String()
 
 		user := errors.Must(users.FindByID(ctx, user1.ID))
 
@@ -85,9 +90,9 @@ func TestChangePassword(t *testing.T) {
 			want        error
 		}{
 			{"unauthorised", invalidGuard, "", "", "", port.ErrUnauthorised},
-			{"empty new password", validGuard, user2.ID.String(), password, "", port.ErrInvalidInput},
-			{"empty old password", validGuard, user2.ID.String(), "", password, port.ErrInvalidInput},
-			{"incorrect old password", validGuard, user2.ID.String(), "password___", password, port.ErrBadRequest},
+			{"empty new password", validGuard, user2.ID.String(), user2Password, "", port.ErrInvalidInput},
+			{"empty old password", validGuard, user2.ID.String(), "", user2Password, port.ErrInvalidInput},
+			{"incorrect old password", validGuard, user2.ID.String(), "password___", user2Password, port.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			tc := tc
@@ -119,8 +124,6 @@ func TestChangePassword(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		oldPassword := domain.Password(password)
-
 		execute := func(oldPassword, newPassword, newPasswordCheck domain.Password) error {
 			err := handler(ctx, account.ChangePassword{
 				Guard:            validGuard,
@@ -138,13 +141,25 @@ func TestChangePassword(t *testing.T) {
 			return err
 		}
 
+		oldPassword := domain.Password(user1Password)
+
 		t.Run("valid inputs", func(t *testing.T) {
 			quick.CheckN(t, 2, func(newPassword domain.Password) bool {
 				err := execute(oldPassword, newPassword, newPassword)
 
+				// Keep the old password up to date with the latest password
+				// change so subsequent tests don't fail
 				oldPassword = newPassword
 
 				return !errors.Is(err, port.ErrInvalidInput)
+			})
+		})
+
+		t.Run("invalid old password", func(t *testing.T) {
+			quick.Check(t, func(newPassword domain.Password) bool {
+				err := execute(newPassword, newPassword, newPassword)
+
+				return errors.Is(err, port.ErrInvalidInput)
 			})
 		})
 
