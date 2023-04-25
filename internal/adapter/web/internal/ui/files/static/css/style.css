@@ -244,6 +244,7 @@
 @layer utility {
   .error {
     color: red;
+    margin-block: 0;
   }
 
   .error:empty {
