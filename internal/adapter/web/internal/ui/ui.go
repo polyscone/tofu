@@ -189,7 +189,8 @@ func (ui *UI) view(view string) *template.Template {
 }
 
 type appRenderData struct {
-	Name string
+	Name        string
+	Description string
 }
 
 type sessionRenderData struct {
@@ -232,7 +233,8 @@ func (ui *UI) render(w http.ResponseWriter, r *http.Request, status int, view st
 		Form:      r.PostForm,
 		Query:     r.URL.Query(),
 		App: appRenderData{
-			Name: app.Name,
+			Name:        app.Name,
+			Description: app.Description,
 		},
 		Session: sessionRenderData{
 			UserID:          ui.sessions.GetString(ctx, sesskey.UserID),
