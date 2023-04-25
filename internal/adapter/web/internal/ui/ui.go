@@ -193,9 +193,10 @@ type appRenderData struct {
 }
 
 type sessionRenderData struct {
-	UserID         string
-	Email          string
-	IsAwaitingTOTP bool
+	UserID          string
+	Email           string
+	HasVerifiedTOTP bool
+	IsAwaitingTOTP  bool
 }
 
 type registerRenderData struct {
@@ -225,17 +226,18 @@ func (ui *UI) render(w http.ResponseWriter, r *http.Request, status int, view st
 	ctx := r.Context()
 
 	data := renderData{
-		CSRFToken: ui.csrfToken(r),
 		Status:    status,
+		CSRFToken: ui.csrfToken(r),
 		Form:      r.PostForm,
 		Query:     r.URL.Query(),
 		App: appRenderData{
 			Name: app.Name,
 		},
 		Session: sessionRenderData{
-			UserID:         ui.sessions.GetString(ctx, sesskey.UserID),
-			Email:          ui.sessions.GetString(ctx, sesskey.Email),
-			IsAwaitingTOTP: ui.sessions.GetBool(ctx, sesskey.IsAwaitingTOTP),
+			UserID:          ui.sessions.GetString(ctx, sesskey.UserID),
+			Email:           ui.sessions.GetString(ctx, sesskey.Email),
+			HasVerifiedTOTP: ui.sessions.GetBool(ctx, sesskey.HasVerifiedTOTP),
+			IsAwaitingTOTP:  ui.sessions.GetBool(ctx, sesskey.IsAwaitingTOTP),
 		},
 	}
 
@@ -316,8 +318,10 @@ func (ui *UI) passport(ctx context.Context) passport.Passport {
 	return passport.New(info.Claims, info.Roles, info.Permissions)
 }
 
-var matchFirstUpper = regexp.MustCompile("(.)([A-Z][a-z]+)")
-var matchAllUppers = regexp.MustCompile("([a-z0-9])([A-Z])")
+var (
+	matchFirstUpper = regexp.MustCompile("(.)([A-Z][a-z]+)")
+	matchAllUppers  = regexp.MustCompile("([a-z0-9])([A-Z])")
+)
 
 func toKebabCase(str string) string {
 	kebab := matchFirstUpper.ReplaceAllString(str, "${1}-${2}")
