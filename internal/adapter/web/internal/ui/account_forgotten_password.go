@@ -26,7 +26,10 @@ func (ui *UI) accountForgottenPasswordPost(w http.ResponseWriter, r *http.Reques
 	}
 
 	email, err := text.NewEmail(input.Email)
-	if ui.renderError(w, r, errors.Tracef(err)) {
+	stop := ui.renderErrorView(w, r, errors.Tracef(err), "account_forgotten_password", func(data *renderData) {
+		data.Errors = errors.Map{"email": err}
+	})
+	if stop {
 		return
 	}
 
