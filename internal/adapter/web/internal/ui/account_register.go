@@ -5,7 +5,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
-	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
@@ -38,15 +37,7 @@ func (ui *UI) accountRegisterPost(w http.ResponseWriter, r *http.Request) {
 
 	cmd := account.Register(input)
 	err = cmd.Execute(ctx, ui.bus)
-	switch {
-	case errors.Is(err, port.ErrInvalidInput):
-		ui.render(w, r, http.StatusBadRequest, "account_register", func(data *renderData) {
-			data.Errors = err.(errors.Trace).Fields()
-		})
-
-		return
-
-	case ui.renderError(w, r, errors.Tracef(err)):
+	if ui.renderErrorView(w, r, errors.Tracef(err), "account_register", nil) {
 		return
 	}
 

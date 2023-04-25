@@ -87,7 +87,7 @@ func (ui *UI) accountForgottenPasswordPut(w http.ResponseWriter, r *http.Request
 		NewPasswordCheck: input.NewPasswordCheck,
 	}
 	err = cmd.Validate(ctx)
-	if ui.renderError(w, r, errors.Tracef(err)) {
+	if ui.renderErrorView(w, r, errors.Tracef(err), "account_forgotten_password", nil) {
 		return
 	}
 
@@ -100,7 +100,7 @@ func (ui *UI) accountForgottenPasswordPut(w http.ResponseWriter, r *http.Request
 	}
 
 	err = cmd.Execute(ctx, ui.bus)
-	if ui.renderError(w, r, errors.Tracef(err)) {
+	if ui.renderErrorView(w, r, errors.Tracef(err), "account_forgotten_password", nil) {
 		return
 	}
 
