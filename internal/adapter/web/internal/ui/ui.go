@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"encoding/base64"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"text/template"
 
 	"github.com/polyscone/tofu/internal/adapter/web/internal/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/internal/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/smtp"
 	"github.com/polyscone/tofu/internal/adapter/web/internal/token"
@@ -27,6 +29,8 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/fstack"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/session"
+	"github.com/polyscone/tofu/internal/port"
+	"github.com/polyscone/tofu/internal/port/account"
 )
 
 //go:embed "files/static" "files/template"
@@ -106,6 +110,9 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 		mux.Get("/forgotten-password", ui.accountForgottenPasswordGet, "account.forgottenPassword")
 		mux.Post("/forgotten-password", ui.accountForgottenPasswordPost, "account.forgottenPassword.post")
 		mux.Put("/forgotten-password", ui.accountForgottenPasswordPut, "account.forgottenPassword.put")
+
+		mux.Get("/change-password", ui.accountChangePasswordGet, "account.changePassword")
+		mux.Put("/change-password", ui.accountChangePasswordPut, "account.changePassword.put")
 	})
 
 	ui.mux.GetHandler("/:rest", http.FileServer(http.FS(static)))
@@ -280,6 +287,13 @@ func (ui *UI) renderErrorView(w http.ResponseWriter, r *http.Request, err error,
 
 	ui.render(w, r, status, view, func(data *renderData) {
 		switch {
+		case errors.Is(err, port.ErrInvalidInput):
+			data.ErrorMessage = "Invalid input"
+
+			if trace, ok := err.(errors.Trace); ok {
+				data.Errors = trace.Fields()
+			}
+
 		case errors.Is(err, csrf.ErrEmptyToken):
 			data.ErrorMessage = "Empty CSRF token"
 
@@ -300,6 +314,23 @@ func (ui *UI) renderErrorView(w http.ResponseWriter, r *http.Request, err error,
 
 func (ui *UI) renderError(w http.ResponseWriter, r *http.Request, err error) bool {
 	return ui.renderErrorView(w, r, err, "error", nil)
+}
+
+func (ui *UI) passport(ctx context.Context) passport.Passport {
+	if ui.sessions.GetBool(ctx, sesskey.IsAwaitingTOTP) {
+		return passport.Empty
+	}
+
+	userID := ui.sessions.GetString(ctx, sesskey.UserID)
+	cmd := account.FindAuthInfo{
+		UserID: userID,
+	}
+	info, err := cmd.Execute(ctx, ui.bus)
+	if err != nil {
+		return passport.Empty
+	}
+
+	return passport.New(info.Claims, info.Roles, info.Permissions)
 }
 
 var matchFirstUpper = regexp.MustCompile("(.)([A-Z][a-z]+)")
