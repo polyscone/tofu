@@ -23,11 +23,11 @@
 
       <label for="login__email">Email</label>
       <input id="login__email" type="email" name="email" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
-      <p class="error">{{or .Errors.email ""}}</p>
+      <p class="error">{{.Errors.Get "email"}}</p>
 
       <label for="login__password">Password</label>
       <input id="login__password" type="password" name="password" placeholder="password" autocomplete="current-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
-      <p class="error">{{or .Errors.password ""}}</p>
+      <p class="error">{{.Errors.Get "password"}}</p>
 
       <div class="bag">
         <div>
