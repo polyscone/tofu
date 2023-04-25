@@ -208,7 +208,7 @@ type renderData struct {
 	CSRFToken    string
 	ErrorMessage string
 	Errors       errors.Map
-	PostForm     url.Values
+	Form         url.Values
 	Query        url.Values
 	App          appRenderData
 	Session      sessionRenderData
@@ -227,7 +227,7 @@ func (ui *UI) render(w http.ResponseWriter, r *http.Request, status int, view st
 	data := renderData{
 		CSRFToken: ui.csrfToken(r),
 		Status:    status,
-		PostForm:  r.PostForm,
+		Form:      r.PostForm,
 		Query:     r.URL.Query(),
 		App: appRenderData{
 			Name: app.Name,
