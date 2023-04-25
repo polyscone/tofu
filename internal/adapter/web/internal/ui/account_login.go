@@ -26,7 +26,7 @@ func (ui *UI) accountLoginPost(w http.ResponseWriter, r *http.Request) {
 
 	cmd := account.AuthenticateWithPassword(input)
 	res, err := cmd.Execute(ctx, ui.bus)
-	if ui.renderError(w, r, errors.Tracef(err)) {
+	if ui.renderErrorView(w, r, errors.Tracef(err), "account_login", nil) {
 		return
 	}
 
