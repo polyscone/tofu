@@ -22,6 +22,15 @@ func (m Map) Tracef(format any, a ...any) error {
 	return trace
 }
 
+// Get will return the error string for the given key.
+func (m Map) Get(key string) string {
+	if err := m[key]; err != nil {
+		return err.Error()
+	}
+
+	return ""
+}
+
 // Set associates the given error with the given key.
 // The map is lazily instantiated if it is nil.
 func (m *Map) Set(key string, err any) {

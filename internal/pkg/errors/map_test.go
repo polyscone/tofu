@@ -13,12 +13,21 @@ func TestMap(t *testing.T) {
 	}
 
 	key := "foo"
-	errs.Set(key, errors.New("test error value"))
+	testErr := errors.New("test error value")
+
+	errs.Set(key, testErr)
 	if errs == nil {
 		t.Error("want non-nil map; got <nil>")
 	}
 
 	if _, ok := errs[key]; !ok {
 		t.Errorf("want key %q to be set in error map", key)
+	}
+
+	if want, got := testErr.Error(), errs.Get(key); want != got {
+		t.Errorf("want %q; got %q", want, got)
+	}
+	if want, got := "", errs.Get("does not exist"); want != got {
+		t.Errorf("want %q; got %q", want, got)
 	}
 }
