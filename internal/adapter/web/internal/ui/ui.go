@@ -270,7 +270,7 @@ func (ui *UI) renderErrorView(w http.ResponseWriter, r *http.Request, err error,
 		return false
 	}
 
-	httputil.LogError(r, err)
+	httputil.LogError(r, errors.Tracef(err))
 
 	status := httputil.ErrorStatus(err)
 

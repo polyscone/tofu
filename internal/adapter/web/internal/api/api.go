@@ -110,7 +110,7 @@ func writeError(w http.ResponseWriter, r *http.Request, err error) bool {
 		return false
 	}
 
-	httputil.LogError(r, err)
+	httputil.LogError(r, errors.Tracef(err))
 
 	var status int
 	var displayOK bool
@@ -152,7 +152,7 @@ func writeError(w http.ResponseWriter, r *http.Request, err error) bool {
 	}
 
 	if err := json.NewEncoder(w).Encode(detail); err != nil {
-		httputil.LogError(r, err)
+		httputil.LogError(r, errors.Tracef(err))
 	}
 
 	return true
