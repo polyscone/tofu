@@ -151,6 +151,11 @@
     font-size: 1.2rem;
   }
 
+  .bag {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
   .header,
   .main,
   .footer {
@@ -203,9 +208,22 @@
     cursor: pointer;
   }
 
-  .bag {
-    display: flex;
-    flex-wrap: wrap;
+  .totp-methods {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .error {
+    color: red;
+    margin-block: 0;
+  }
+
+  .error:empty {
+    display: none;
+  }
+
+  .error::first-letter {
+    text-transform: capitalize;
   }
 
   @media screen and (min-width: 400px) {
@@ -223,6 +241,10 @@
 
     .footer__col:nth-child(2n) {
       text-align: right;
+    }
+
+    .totp-methods {
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
@@ -242,21 +264,8 @@
 }
 
 @layer utility {
-  .error {
-    color: red;
-    margin-block: 0;
-  }
-
-  .error:empty {
-    display: none;
-  }
-
-  .error::first-letter {
-    text-transform: capitalize;
-  }
-
   .center {
-    max-width: 400px;
+    max-width: 500px;
     margin-inline: auto;
   }
 

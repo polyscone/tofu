@@ -1,0 +1,49 @@
+{{define "view"}}
+
+<div class="totp center">
+
+  {{if eq (.Query.Get "status") "success"}}
+
+    <p class="title">2FA Verified</p>
+
+  {{else if .TOTP.QRCodeBase64}}
+
+    <p class="title">2FA</p>
+
+    <p><img src="{{.TOTP.QRCodeBase64}}" alt="TOTP QR Code"></p>
+    <p>{{.TOTP.KeyBase32}}</p>
+
+    <form action="{{Route "account.totp.verify.post"}}" method="POST">
+      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+
+      <label for="totp__code">Code</label>
+      <input id="totp__code" type="text" name="totp" placeholder="123456" autocomplete="off" autofocus required pattern="\d{6}" minlength="6" maxlength="6">
+      <p class="error">{{.Errors.Get "totp"}}</p>
+
+      <button type="submit">Enable two-factor authentication</button>
+    </form>
+
+  {{else}}
+
+    <p class="title">Two-Factor Authentication</p>
+
+    <p>Two-factor authentication adds an additional layer of security to your account by requiring more than just your password to log in.</p>
+    <p>You can either use two-factor authentication through an application on your phone or computer, or you can use SMS.</p>
+
+    <div class="totp__methods">
+      <div class="totp__methods--app">
+        <p>Use an application on your phone or computer to get passcodes when prompted (recommended).</p>
+
+        <form action="{{Route "account.totp.app.post"}}" method="POST">
+          <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+
+          <button type="submit">Set up using an app</button>
+        </form>
+      </div>
+    </div>
+
+  {{end}}
+
+</div>
+
+{{end}}

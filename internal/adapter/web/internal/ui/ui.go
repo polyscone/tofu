@@ -114,6 +114,10 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 
 		mux.Get("/change-password", ui.accountChangePasswordGet, "account.changePassword")
 		mux.Put("/change-password", ui.accountChangePasswordPut, "account.changePassword.put")
+
+		mux.Get("/totp", ui.accountTOTPGet, "account.totp")
+		mux.Post("/totp/app", ui.accountTOTPSetupAppPost, "account.totp.app.post")
+		mux.Post("/totp/verify", ui.accountTOTPVerifyPost, "account.totp.verify.post")
 	})
 
 	ui.mux.GetHandler("/:rest", http.FileServer(http.FS(static)))
@@ -205,6 +209,11 @@ type registerRenderData struct {
 	Email string
 }
 
+type totpRenderData struct {
+	KeyBase32    string
+	QRCodeBase64 template.URL
+}
+
 type renderData struct {
 	// Generic render data
 	Status       int
@@ -218,6 +227,7 @@ type renderData struct {
 
 	// View-specific render data
 	Register registerRenderData
+	TOTP     totpRenderData
 }
 
 type renderDataFunc func(data *renderData)
