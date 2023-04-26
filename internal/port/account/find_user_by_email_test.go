@@ -37,6 +37,9 @@ func TestFindUserByEmail(t *testing.T) {
 		if want, got := activatedUser.ID.String(), found.ID; want != got {
 			t.Errorf("want user id %q; got %q", want, got)
 		}
+		if want, got := activatedUser.Email.String(), found.Email; want != got {
+			t.Errorf("want email %q; got %q", want, got)
+		}
 
 		testutil.CheckEvents(t, wantEvents, gotEvents)
 	})
