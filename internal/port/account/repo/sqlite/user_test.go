@@ -7,7 +7,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/repo/sqlite/repotest"
+	"github.com/polyscone/tofu/internal/port/account/repo/repotest"
 )
 
 func TestUserRepo(t *testing.T) {

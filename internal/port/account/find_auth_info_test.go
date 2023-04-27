@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/repo/sqlite/repotest"
+	"github.com/polyscone/tofu/internal/port/account/repo/repotest"
 )
 
 func TestFindAuthInfo(t *testing.T) {
