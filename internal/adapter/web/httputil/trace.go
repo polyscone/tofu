@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
+	"github.com/polyscone/tofu/internal/adapter/web/sesskey"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"

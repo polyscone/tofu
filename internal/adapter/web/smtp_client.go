@@ -3,7 +3,7 @@ package web
 import (
 	"context"
 
-	"github.com/polyscone/tofu/internal/adapter/web/internal/smtp"
+	"github.com/polyscone/tofu/internal/adapter/web/smtp"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/wneessen/go-mail"
 )

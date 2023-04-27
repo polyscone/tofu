@@ -1,6 +1,6 @@
 package web
 
-import "github.com/polyscone/tofu/internal/adapter/web/internal/repo/sqlite"
+import "github.com/polyscone/tofu/internal/adapter/web/repo/sqlite"
 
 var (
 	NewSQLiteSessionRepo = sqlite.NewSessionRepo

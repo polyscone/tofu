@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
+	"github.com/polyscone/tofu/internal/adapter/web/sesskey"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/port/account"

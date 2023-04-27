@@ -4,15 +4,15 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
+	"github.com/polyscone/tofu/internal/adapter/web/sesskey"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func (api *API) accountDisableTOTPPost(w http.ResponseWriter, r *http.Request) {
+func (api *API) accountLoginWithRecoveryCodePost(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		TOTP string
+		RecoveryCode string
 	}
 	if writeError(w, r, errors.Tracef(decodeJSON(r, &input))) {
 		return
@@ -20,10 +20,9 @@ func (api *API) accountDisableTOTPPost(w http.ResponseWriter, r *http.Request) {
 
 	ctx := r.Context()
 
-	cmd := account.DisableTOTP{
-		Guard:  api.passport(ctx),
-		UserID: api.sessions.GetString(ctx, sesskey.UserID),
-		TOTP:   input.TOTP,
+	cmd := account.AuthenticateWithRecoveryCode{
+		UserID:       api.sessions.GetString(ctx, sesskey.UserID),
+		RecoveryCode: input.RecoveryCode,
 	}
 	err := cmd.Execute(ctx, api.bus)
 	if writeError(w, r, errors.Tracef(err)) {

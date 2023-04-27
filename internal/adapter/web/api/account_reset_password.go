@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/polyscone/tofu/internal/adapter/web/internal/passport"
-	"github.com/polyscone/tofu/internal/adapter/web/internal/smtp"
+	"github.com/polyscone/tofu/internal/adapter/web/passport"
+	"github.com/polyscone/tofu/internal/adapter/web/smtp"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/logger"

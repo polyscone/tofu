@@ -4,15 +4,17 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
+	"github.com/polyscone/tofu/internal/adapter/web/sesskey"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func (api *API) accountLoginWithRecoveryCodePost(w http.ResponseWriter, r *http.Request) {
+func (api *API) accountChangePasswordPut(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		RecoveryCode string
+		OldPassword      string
+		NewPassword      string
+		NewPasswordCheck string
 	}
 	if writeError(w, r, errors.Tracef(decodeJSON(r, &input))) {
 		return
@@ -20,9 +22,12 @@ func (api *API) accountLoginWithRecoveryCodePost(w http.ResponseWriter, r *http.
 
 	ctx := r.Context()
 
-	cmd := account.AuthenticateWithRecoveryCode{
-		UserID:       api.sessions.GetString(ctx, sesskey.UserID),
-		RecoveryCode: input.RecoveryCode,
+	cmd := account.ChangePassword{
+		Guard:            api.passport(ctx),
+		UserID:           api.sessions.GetString(ctx, sesskey.UserID),
+		OldPassword:      input.OldPassword,
+		NewPassword:      input.NewPassword,
+		NewPasswordCheck: input.NewPasswordCheck,
 	}
 	err := cmd.Execute(ctx, api.bus)
 	if writeError(w, r, errors.Tracef(err)) {
@@ -38,8 +43,6 @@ func (api *API) accountLoginWithRecoveryCodePost(w http.ResponseWriter, r *http.
 	if writeError(w, r, errors.Tracef(err)) {
 		return
 	}
-
-	api.sessions.Delete(ctx, sesskey.IsAwaitingTOTP)
 
 	csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 

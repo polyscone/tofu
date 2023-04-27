@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/polyscone/tofu/internal/adapter/web/internal/token"
+	"github.com/polyscone/tofu/internal/adapter/web/token"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/repo"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"

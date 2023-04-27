@@ -4,17 +4,15 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/internal/sesskey"
+	"github.com/polyscone/tofu/internal/adapter/web/sesskey"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func (api *API) accountChangePasswordPut(w http.ResponseWriter, r *http.Request) {
+func (api *API) accountVerifyTOTPPost(w http.ResponseWriter, r *http.Request) {
 	var input struct {
-		OldPassword      string
-		NewPassword      string
-		NewPasswordCheck string
+		TOTP string
 	}
 	if writeError(w, r, errors.Tracef(decodeJSON(r, &input))) {
 		return
@@ -22,12 +20,10 @@ func (api *API) accountChangePasswordPut(w http.ResponseWriter, r *http.Request)
 
 	ctx := r.Context()
 
-	cmd := account.ChangePassword{
-		Guard:            api.passport(ctx),
-		UserID:           api.sessions.GetString(ctx, sesskey.UserID),
-		OldPassword:      input.OldPassword,
-		NewPassword:      input.NewPassword,
-		NewPasswordCheck: input.NewPasswordCheck,
+	cmd := account.VerifyTOTP{
+		Guard:  api.passport(ctx),
+		UserID: api.sessions.GetString(ctx, sesskey.UserID),
+		TOTP:   input.TOTP,
 	}
 	err := cmd.Execute(ctx, api.bus)
 	if writeError(w, r, errors.Tracef(err)) {

@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/polyscone/tofu/internal/adapter/web"
-	"github.com/polyscone/tofu/internal/adapter/web/internal/repo/repotest"
+	"github.com/polyscone/tofu/internal/adapter/web/repo/repotest"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 )
