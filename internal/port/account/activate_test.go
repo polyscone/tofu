@@ -12,7 +12,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/internal/repo/sqlite/repotest"
+	"github.com/polyscone/tofu/internal/port/account/repo/sqlite/repotest"
 )
 
 func TestActivate(t *testing.T) {

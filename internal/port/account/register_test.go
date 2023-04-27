@@ -14,7 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/internal/domain"
+	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
 func TestRegister(t *testing.T) {

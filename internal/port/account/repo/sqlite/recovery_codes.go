@@ -7,7 +7,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
-	"github.com/polyscone/tofu/internal/port/account/internal/domain"
+	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
 func (r *UserRepo) findRecoveryCodesByUserID(ctx context.Context, db sqlite.Querier, userID uuid.V4) ([]domain.RecoveryCode, error) {

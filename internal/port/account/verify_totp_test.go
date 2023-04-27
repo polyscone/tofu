@@ -14,8 +14,8 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/internal/domain"
-	"github.com/polyscone/tofu/internal/port/account/internal/repo/sqlite/repotest"
+	"github.com/polyscone/tofu/internal/port/account/domain"
+	"github.com/polyscone/tofu/internal/port/account/repo/sqlite/repotest"
 )
 
 type verifyTOTPGuard struct {
