@@ -11,6 +11,10 @@ import (
 )
 
 func RegisterGet(svc *handler.Services) http.HandlerFunc {
+	svc.SetDefaultVars("account/register", handler.Vars{
+		"Email": "",
+	})
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		svc.Render(w, r, http.StatusOK, "account/register", nil)
 	}
@@ -43,10 +47,8 @@ func RegisterPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		svc.Render(w, r, http.StatusOK, "account/register", func(data *handler.Data) {
-			data.View = map[string]any{
-				"Email": input.Email,
-			}
+		svc.Render(w, r, http.StatusOK, "account/register", handler.Vars{
+			"Email": input.Email,
 		})
 	}
 }

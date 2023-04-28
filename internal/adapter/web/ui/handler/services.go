@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -45,6 +46,20 @@ type SessionData struct {
 	IsAuthenticated bool
 }
 
+type Vars map[string]any
+
+func (v Vars) Merge(rhs Vars) Vars {
+	if v == nil {
+		v = make(Vars, len(rhs))
+	}
+
+	for key, value := range rhs {
+		v[key] = value
+	}
+
+	return v
+}
+
 type Data struct {
 	Status       int
 	CSRF         CSRF
@@ -54,7 +69,7 @@ type Data struct {
 	Query        url.Values
 	App          AppData
 	Session      SessionData
-	View         any
+	Vars         Vars
 }
 
 type DataFunc func(data *Data)
@@ -71,6 +86,7 @@ type Services struct {
 	templatesMu sync.RWMutex
 	templates   map[string]*template.Template
 	funcs       template.FuncMap
+	defaultVars map[string]Vars
 	mux         *router.ServeMux
 	Bus         command.Bus
 	Sessions    *session.Manager
@@ -79,14 +95,15 @@ type Services struct {
 
 func NewServices(mux *router.ServeMux, bus command.Bus, sessions *session.Manager, mailer smtp.Mailer, opts Options) *Services {
 	svc := Services{
-		cache:     opts.Cache,
-		files:     opts.Files,
-		templates: make(map[string]*template.Template),
-		funcs:     make(template.FuncMap),
-		mux:       mux,
-		Bus:       bus,
-		Sessions:  sessions,
-		Mailer:    mailer,
+		cache:       opts.Cache,
+		files:       opts.Files,
+		templates:   make(map[string]*template.Template),
+		funcs:       make(template.FuncMap),
+		defaultVars: make(map[string]Vars),
+		mux:         mux,
+		Bus:         bus,
+		Sessions:    sessions,
+		Mailer:      mailer,
 	}
 
 	for name, fn := range opts.Funcs {
@@ -94,30 +111,6 @@ func NewServices(mux *router.ServeMux, bus command.Bus, sessions *session.Manage
 	}
 
 	return &svc
-}
-
-func (svc *Services) view(view string) *template.Template {
-	svc.templatesMu.RLock()
-
-	if tmpl := svc.templates[view]; tmpl != nil && svc.cache {
-		svc.templatesMu.RUnlock()
-
-		return tmpl
-	}
-
-	svc.templatesMu.RUnlock()
-
-	svc.templatesMu.Lock()
-	defer svc.templatesMu.Unlock()
-
-	tmpl := template.New(view).Option("missingkey=zero").Funcs(svc.funcs)
-	tmpl = errors.Must(tmpl.ParseFS(svc.files, "master.go.html"))
-	tmpl = errors.Must(tmpl.ParseFS(svc.files, "partial/*.go.html"))
-	tmpl = errors.Must(tmpl.ParseFS(svc.files, "view/"+view+".go.html"))
-
-	svc.templates[view] = tmpl
-
-	return tmpl
 }
 
 func (svc *Services) Passport(ctx context.Context) passport.Passport {
@@ -153,7 +146,39 @@ func (svc *Services) Path(name string, paramArgPairs ...string) string {
 	return svc.mux.Path(name, paramArgPairs...)
 }
 
-func (svc *Services) Render(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc DataFunc) {
+func (svc *Services) SetDefaultVars(view string, vars Vars) {
+	if _, ok := svc.defaultVars[view]; ok {
+		panic(fmt.Sprintf("default vars already set for %q", view))
+	}
+
+	svc.defaultVars[view].Merge(vars)
+}
+
+func (svc *Services) view(view string) *template.Template {
+	svc.templatesMu.RLock()
+
+	if tmpl := svc.templates[view]; tmpl != nil && svc.cache {
+		svc.templatesMu.RUnlock()
+
+		return tmpl
+	}
+
+	svc.templatesMu.RUnlock()
+
+	svc.templatesMu.Lock()
+	defer svc.templatesMu.Unlock()
+
+	tmpl := template.New(view).Option("missingkey=zero").Funcs(svc.funcs)
+	tmpl = errors.Must(tmpl.ParseFS(svc.files, "master.go.html"))
+	tmpl = errors.Must(tmpl.ParseFS(svc.files, "partial/*.go.html"))
+	tmpl = errors.Must(tmpl.ParseFS(svc.files, "view/"+view+".go.html"))
+
+	svc.templates[view] = tmpl
+
+	return tmpl
+}
+
+func (svc *Services) RenderFunc(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc DataFunc) {
 	var buf bytes.Buffer
 
 	ctx := r.Context()
@@ -176,6 +201,10 @@ func (svc *Services) Render(w http.ResponseWriter, r *http.Request, status int, 
 		},
 	}
 
+	if vars, ok := svc.defaultVars[view]; ok {
+		data.Vars.Merge(vars)
+	}
+
 	if dataFunc != nil {
 		dataFunc(&data)
 	}
@@ -196,6 +225,12 @@ func (svc *Services) Render(w http.ResponseWriter, r *http.Request, status int, 
 	}
 }
 
+func (svc *Services) Render(w http.ResponseWriter, r *http.Request, status int, view string, vars Vars) {
+	svc.RenderFunc(w, r, status, view, func(data *Data) {
+		data.Vars.Merge(vars)
+	})
+}
+
 func (svc *Services) RenderError(w http.ResponseWriter, r *http.Request, err error, view string, dataFunc DataFunc) bool {
 	if err == nil {
 		return false
@@ -205,7 +240,7 @@ func (svc *Services) RenderError(w http.ResponseWriter, r *http.Request, err err
 
 	status := httputil.ErrorStatus(err)
 
-	svc.Render(w, r, status, view, func(data *Data) {
+	svc.RenderFunc(w, r, status, view, func(data *Data) {
 		switch {
 		case errors.Is(err, port.ErrInvalidInput):
 			data.ErrorMessage = "Invalid input"

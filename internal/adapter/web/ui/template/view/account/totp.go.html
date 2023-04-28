@@ -6,12 +6,12 @@
 
     <p class="title">2FA Verified</p>
 
-  {{else if .View.QRCodeBase64}}
+  {{else if .Vars.QRCodeBase64}}
 
     <p class="title">2FA</p>
 
-    <p><img src="{{.View.QRCodeBase64}}" alt="TOTP QR Code"></p>
-    <p>{{.View.KeyBase32}}</p>
+    <p><img src="{{.Vars.QRCodeBase64}}" alt="TOTP QR Code"></p>
+    <p>{{.Vars.KeyBase32}}</p>
 
     <form action="{{Path "account/totp/verify.post"}}" method="POST">
       <input type="hidden" name="_csrf" value="{{.CSRF.Token}}">

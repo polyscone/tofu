@@ -20,6 +20,11 @@ import (
 )
 
 func TOTPGet(svc *handler.Services) http.HandlerFunc {
+	svc.SetDefaultVars("account/totp", handler.Vars{
+		"KeyBase32":    "",
+		"QRCodeBase64": "",
+	})
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		svc.Render(w, r, http.StatusOK, "account/totp", nil)
 	}
@@ -69,11 +74,9 @@ func TOTPSetupAppPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		svc.Render(w, r, http.StatusOK, "account/totp", func(data *handler.Data) {
-			data.View = map[string]any{
-				"KeyBase32":    keyBase32,
-				"QRCodeBase64": template.URL("data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())),
-			}
+		svc.Render(w, r, http.StatusOK, "account/totp", handler.Vars{
+			"KeyBase32":    keyBase32,
+			"QRCodeBase64": template.URL("data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())),
 		})
 	}
 }
