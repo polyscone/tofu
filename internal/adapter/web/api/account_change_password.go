@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/sesskey"
+	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/port/account"
@@ -24,7 +24,7 @@ func (api *API) accountChangePasswordPut(w http.ResponseWriter, r *http.Request)
 
 	cmd := account.ChangePassword{
 		Guard:            api.passport(ctx),
-		UserID:           api.sessions.GetString(ctx, sesskey.UserID),
+		UserID:           api.sessions.GetString(ctx, sess.UserID),
 		OldPassword:      input.OldPassword,
 		NewPassword:      input.NewPassword,
 		NewPasswordCheck: input.NewPasswordCheck,

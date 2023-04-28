@@ -6,15 +6,15 @@
 
     <p class="title">2FA Verified</p>
 
-  {{else if .TOTP.QRCodeBase64}}
+  {{else if .View.QRCodeBase64}}
 
     <p class="title">2FA</p>
 
-    <p><img src="{{.TOTP.QRCodeBase64}}" alt="TOTP QR Code"></p>
-    <p>{{.TOTP.KeyBase32}}</p>
+    <p><img src="{{.View.QRCodeBase64}}" alt="TOTP QR Code"></p>
+    <p>{{.View.KeyBase32}}</p>
 
-    <form action="{{Route "account.totp.verify.post"}}" method="POST">
-      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <form action="{{Path "account/totp/verify.post"}}" method="POST">
+      <input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
       <label for="totp__code">Code</label>
       <input id="totp__code" type="text" name="totp" placeholder="123456" autocomplete="off" autofocus required pattern="\d{6}" minlength="6" maxlength="6">
@@ -34,8 +34,8 @@
       <div class="totp__methods--app">
         <p>Use an application on your phone or computer to get passcodes when prompted (recommended).</p>
 
-        <form action="{{Route "account.totp.app.post"}}" method="POST">
-          <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+        <form action="{{Path "account/totp/app.post"}}" method="POST">
+          <input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
           <button type="submit">Set up using an app</button>
         </form>

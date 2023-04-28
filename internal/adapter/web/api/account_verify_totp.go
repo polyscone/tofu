@@ -4,7 +4,7 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/sesskey"
+	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/port/account"
@@ -22,7 +22,7 @@ func (api *API) accountVerifyTOTPPost(w http.ResponseWriter, r *http.Request) {
 
 	cmd := account.VerifyTOTP{
 		Guard:  api.passport(ctx),
-		UserID: api.sessions.GetString(ctx, sesskey.UserID),
+		UserID: api.sessions.GetString(ctx, sess.UserID),
 		TOTP:   input.TOTP,
 	}
 	err := cmd.Execute(ctx, api.bus)

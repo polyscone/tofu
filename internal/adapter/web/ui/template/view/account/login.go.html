@@ -8,8 +8,8 @@
 
     <p>You are already logged in.</p>
 
-    <form action="{{Route "account.logout.post"}}" method="POST">
-      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <form action="{{Path "account/logout.post"}}" method="POST">
+      <input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
       <button type="submit">Logout</button>
     </form>
@@ -18,8 +18,8 @@
 
     <p class="title">Login</p>
 
-    <form action="{{Route "account.login.post"}}" method="POST">
-      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <form action="{{Path "account/login.post"}}" method="POST">
+      <input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
       <label for="login__email">Email</label>
       <input id="login__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
@@ -31,8 +31,8 @@
 
       <div class="bag">
         <div>
-          <a href="{{Route "account.register"}}">Create account</a><br>
-          <a href="{{Route "account.forgottenPassword"}}">Forgotten password</a>
+          <a href="{{Path "account/register"}}">Create account</a><br>
+          <a href="{{Path "account/forgotten_password"}}">Forgotten password</a>
         </div>
 
         <button type="submit" class="push-inline-end">Login</button>

@@ -10,7 +10,7 @@ import (
 
 	"github.com/boombuler/barcode"
 	"github.com/boombuler/barcode/qr"
-	"github.com/polyscone/tofu/internal/adapter/web/sesskey"
+	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/port/account"
@@ -21,7 +21,7 @@ func (api *API) accountSetupTOTPPost(w http.ResponseWriter, r *http.Request) {
 
 	cmd := account.SetupTOTP{
 		Guard:  api.passport(ctx),
-		UserID: api.sessions.GetString(ctx, sesskey.UserID),
+		UserID: api.sessions.GetString(ctx, sess.UserID),
 	}
 	res, err := cmd.Execute(ctx, api.bus)
 	if writeError(w, r, errors.Tracef(err)) {
@@ -30,7 +30,7 @@ func (api *API) accountSetupTOTPPost(w http.ResponseWriter, r *http.Request) {
 
 	keyBase32 := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(res.Key)
 	issuer := app.Name
-	accountName := api.sessions.GetString(ctx, sesskey.Email)
+	accountName := api.sessions.GetString(ctx, sess.Email)
 	qrcode, err := qr.Encode(
 		"otpauth://totp/"+
 			issuer+":"+accountName+

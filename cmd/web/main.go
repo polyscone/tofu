@@ -199,12 +199,11 @@ func main() {
 
 	proxies := strings.Fields(opts.server.proxies)
 
-	handler := web.NewHandler(
-		bus, broker, sessions, tokens, mailer,
-		web.WithDev(opts.dev),
-		web.WithInsecure(opts.server.insecure),
-		web.WithProxies(proxies),
-	)
+	handler := web.NewHandler(bus, broker, sessions, tokens, mailer, web.Options{
+		Dev:      opts.dev,
+		Insecure: opts.server.insecure,
+		Proxies:  proxies,
+	})
 
 	srv := http.Server{
 		Addr:         opts.server.addr.Value,

@@ -14,8 +14,8 @@
 
     <p>If you are not automatically redirected please click on the button below to activate your account.</p>
 
-    <form action="{{Route "account.activate.post"}}" method="POST" id="account-activate-form">
-      <input type="hidden" name="_csrf" value="{{.CSRFToken}}">
+    <form action="{{Path "account/activate.post"}}" method="POST" id="account-activate-form">
+      <input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
       <input type="hidden" name="token" value="{{.Query.Get "token"}}">
 
       <button type="submit">Activate Account</button>

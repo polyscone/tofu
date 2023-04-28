@@ -44,29 +44,9 @@ type MsgContent struct {
 }
 
 type Options struct {
-	dev      bool
-	insecure bool
-	proxies  []string
-}
-
-type Option func(opts *Options)
-
-func WithDev(value bool) Option {
-	return func(opts *Options) {
-		opts.dev = value
-	}
-}
-
-func WithInsecure(value bool) Option {
-	return func(opts *Options) {
-		opts.insecure = value
-	}
-}
-
-func WithProxies(proxies []string) Option {
-	return func(opts *Options) {
-		opts.proxies = proxies
-	}
+	Dev      bool
+	Insecure bool
+	Proxies  []string
 }
 
 type Handler struct {
@@ -77,12 +57,7 @@ type Handler struct {
 	templates   map[string]*template.Template
 }
 
-func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tokens token.Repo, mailer smtp.Mailer, _opts ...Option) http.Handler {
-	var opts Options
-	for _, opt := range _opts {
-		opt(&opts)
-	}
-
+func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tokens token.Repo, mailer smtp.Mailer, opts Options) http.Handler {
 	files := fs.FS(embeddedFiles)
 
 	dir := "internal/adapter/web"
@@ -94,7 +69,9 @@ func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tok
 
 	sm := session.NewManager(sessions)
 	api := api.New(bus, sm, tokens, mailer)
-	ui := ui.New(bus, sm, tokens, mailer, ui.WithDev(opts.dev))
+	ui := ui.New(bus, sm, tokens, mailer, ui.Options{
+		Dev: opts.Dev,
+	})
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		if strings.HasPrefix(r.URL.Path, "/api/") {
@@ -110,10 +87,10 @@ func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tok
 	mux.Use(middleware.MethodOverride)
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
 		ErrorHandler:   errorHandler,
-		TrustedProxies: opts.proxies,
+		TrustedProxies: opts.Proxies,
 	}))
 	mux.Use(middleware.Session(sm, &middleware.SessionConfig{
-		Insecure:     opts.insecure,
+		Insecure:     opts.Insecure,
 		ErrorHandler: errorHandler,
 	}))
 	mux.Use(httputil.TraceRequest(sm, errorHandler))
@@ -121,7 +98,7 @@ func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tok
 	mux.Use(middleware.SecurityHeaders)
 	mux.Use(middleware.ETag)
 	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
-		Insecure:     opts.insecure,
+		Insecure:     opts.Insecure,
 		ErrorHandler: errorHandler,
 	}))
 	mux.Use(middleware.Heartbeat("/meta/health"))
@@ -138,7 +115,7 @@ func NewHandler(bus command.Bus, broker event.Broker, sessions session.Repo, tok
 	mux.AnyHandler("/:rest", ui.Routes())
 
 	h := Handler{
-		dev:       opts.dev,
+		dev:       opts.Dev,
 		mux:       mux,
 		files:     files,
 		templates: templates,

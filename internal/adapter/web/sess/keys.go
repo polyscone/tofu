@@ -1,4 +1,4 @@
-package sesskey
+package sess
 
 const (
 	UserID          = "UserID"
