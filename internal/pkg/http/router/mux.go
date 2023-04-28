@@ -181,6 +181,24 @@ func (sm *ServeMux) Route(name string) *Route {
 	return sm.named[name]
 }
 
+func (sm *ServeMux) Path(key string, paramArgPairs ...string) string {
+	route := sm.Route(key)
+	if route == nil {
+		panic(fmt.Sprintf("route %q does not exist", key))
+	}
+
+	if len(paramArgPairs) != 0 {
+		return route.Replace(paramArgPairs...)
+	}
+
+	str := route.String()
+	if strings.Contains(str, "/:") {
+		panic(fmt.Sprintf("route %q must use the replace method to replace parameters", key))
+	}
+
+	return str
+}
+
 func (sm *ServeMux) route(method string, path string, handler http.Handler, names ...string) *Route {
 	method = strings.ToUpper(method)
 	path = sm.prefix + path

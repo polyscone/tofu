@@ -14,6 +14,9 @@ func TestMux(t *testing.T) {
 	mux := router.NewServeMux()
 
 	emptyHandler := func(w http.ResponseWriter, r *http.Request) {}
+	echoHandler := func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(r.URL.Path))
+	}
 
 	mux.Prefix("/route", func(mux *router.ServeMux) {
 		mux.Prefix("/test", func(mux *router.ServeMux) {
@@ -81,6 +84,9 @@ func TestMux(t *testing.T) {
 	mux.Redirect(http.MethodGet, "/redirect/src", "/redirect/dst", http.StatusTemporaryRedirect)
 	mux.Redirect(http.MethodGet, "/:var/src/var", "/:var/dst", http.StatusTemporaryRedirect)
 	mux.Redirect(http.MethodGet, "/:var/:varfoo/src/var", "/:var/dst", http.StatusTemporaryRedirect)
+
+	mux.Get("/aa/bb/cc/dd", echoHandler, "simple")
+	mux.Get("/aa/:bb/cc/:dd", echoHandler, "complex")
 
 	route := mux.Get("/a/:b/c/:d", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("/a/" + router.URLParam(r, "b") + "/c/" + router.URLParam(r, "d")))
@@ -154,6 +160,9 @@ func TestMux(t *testing.T) {
 		{"route string param replacement", http.MethodGet, route.Replace(":b", "123", ":d", "456"), "/a/123/c/456", http.StatusOK},
 		{"mux object route string param replacement", http.MethodGet, mux.Route("foo.bar").Replace(":b", "x", ":d", "y"), "/a/x/c/y", http.StatusOK},
 		{"mux object route string param replacement post method", http.MethodPost, mux.Route("foo.bar.post").Replace(":b", "x", ":d", "y"), "/a/x/c/y", http.StatusOK},
+
+		{"mux object path simple", http.MethodGet, mux.Path("simple"), "/aa/bb/cc/dd", http.StatusOK},
+		{"mux object path complex", http.MethodGet, mux.Path("complex", ":bb", "xx", ":dd", "yy"), "/aa/xx/cc/yy", http.StatusOK},
 
 		{"redirect get method ok", http.MethodGet, "/redirect/src", "redirected", http.StatusOK},
 		{"redirect with dynamic param", http.MethodGet, "/redirect/src/var", "redirected", http.StatusOK},
@@ -278,6 +287,51 @@ func TestMuxPanics(t *testing.T) {
 				}()
 
 				route.Replace(tc.list...)
+			})
+		}
+	})
+
+	t.Run("panic on non-existent path", func(t *testing.T) {
+		defer func() {
+			if recover() == nil {
+				t.Error("want panic; got <nil>")
+			}
+		}()
+
+		mux := router.NewServeMux()
+
+		mux.Get("/hello", emptyHandler, "simple")
+
+		mux.Path("foo")
+	})
+
+	t.Run("panic on invalid path calls", func(t *testing.T) {
+		mux := router.NewServeMux()
+
+		mux.Get("/:w/x/y/:z", emptyHandler, "complex")
+
+		tt := []struct {
+			name string
+			list []string
+		}{
+			{"wrong number of elements", []string{":w"}},
+			{"wrong order", []string{"1", ":w"}},
+			{"missing parameter", []string{":w", "1"}},
+			{"unknown parameter", []string{":w", "1", ":x", "2", ":z", "3"}},
+			{"empty argument", []string{":w", "1", ":z", ""}},
+			{"no arguments", nil},
+		}
+		for _, tc := range tt {
+			tc := tc
+
+			t.Run(tc.name, func(t *testing.T) {
+				defer func() {
+					if recover() == nil {
+						t.Error("want panic; got <nil>")
+					}
+				}()
+
+				mux.Path("complex", tc.list...)
 			})
 		}
 	})
