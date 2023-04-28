@@ -240,6 +240,19 @@ func TestMuxPanics(t *testing.T) {
 		mux.Post("/one/two/:bar/four", emptyHandler)
 	})
 
+	t.Run("panic on duplicate route names", func(t *testing.T) {
+		defer func() {
+			if recover() == nil {
+				t.Error("want panic; got <nil>")
+			}
+		}()
+
+		mux := router.NewServeMux()
+
+		mux.Get("/hello", emptyHandler, "hello")
+		mux.Post("/hello", emptyHandler, "hello")
+	})
+
 	t.Run("panic on invalid route path parameter replacements", func(t *testing.T) {
 		mux := router.NewServeMux()
 		route := mux.Get("/:w/x/y/:z", emptyHandler)

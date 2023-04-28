@@ -217,6 +217,10 @@ func (sm *ServeMux) route(method string, path string, handler http.Handler, name
 			}
 
 			for _, name := range names {
+				if _, ok := sm.named[name]; ok {
+					panic(fmt.Sprintf("duplicate route name %q", name))
+				}
+
 				sm.named[name] = route
 			}
 		}
