@@ -16,21 +16,28 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func TOTPGet(svc *handler.Services) http.HandlerFunc {
-	svc.SetDefaultVars("account/totp", handler.Vars{
+func TOTP(svc *handler.Services, mux *router.ServeMux) {
+	svc.SetViewVars("account/totp", handler.Vars{
 		"KeyBase32":    "",
 		"QRCodeBase64": "",
 	})
 
+	mux.Get("/totp", totpGet(svc), "account/totp")
+	mux.Post("/totp/app", totpSetupAppPost(svc), "account/totp/app.post")
+	mux.Post("/totp/verify", totpVerifyPost(svc), "account/totp/verify.post")
+}
+
+func totpGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		svc.Render(w, r, http.StatusOK, "account/totp", nil)
 	}
 }
 
-func TOTPSetupAppPost(svc *handler.Services) http.HandlerFunc {
+func totpSetupAppPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -81,7 +88,7 @@ func TOTPSetupAppPost(svc *handler.Services) http.HandlerFunc {
 	}
 }
 
-func TOTPVerifyPost(svc *handler.Services) http.HandlerFunc {
+func totpVerifyPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			TOTP string

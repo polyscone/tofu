@@ -6,21 +6,27 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func RegisterGet(svc *handler.Services) http.HandlerFunc {
-	svc.SetDefaultVars("account/register", handler.Vars{
+func Register(svc *handler.Services, mux *router.ServeMux) {
+	mux.Get("/register", registerGet(svc), "account/register")
+	mux.Post("/register", registerPost(svc), "account/register.post")
+
+	svc.SetViewVars("account/register", handler.Vars{
 		"Email": "",
 	})
+}
 
+func registerGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		svc.Render(w, r, http.StatusOK, "account/register", nil)
 	}
 }
 
-func RegisterPost(svc *handler.Services) http.HandlerFunc {
+func registerPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			UserID        string

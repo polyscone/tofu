@@ -8,16 +8,22 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func LoginGet(svc *handler.Services) http.HandlerFunc {
+func Login(svc *handler.Services, mux *router.ServeMux) {
+	mux.Get("/login", loginGet(svc), "account/login")
+	mux.Post("/login", loginPost(svc), "account/login.post")
+}
+
+func loginGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		svc.Render(w, r, http.StatusOK, "account/login", nil)
 	}
 }
 
-func LoginPost(svc *handler.Services) http.HandlerFunc {
+func loginPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Email    string

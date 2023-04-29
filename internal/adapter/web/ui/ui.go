@@ -56,37 +56,22 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 func (ui *UI) Routes() http.Handler {
 	svc, mux := ui.svc, ui.mux
 
-	// Redirects
-	mux.Redirect(http.MethodGet, "/favicon.ico", "/favicon.png", http.StatusTemporaryRedirect)
+	// Rewrites
+	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")
 
 	// Pages
-	mux.Get("/", page.HomeGet(svc), "page/home")
+	page.Home(svc, mux)
 
 	// Account
 	mux.Prefix("/account", func(mux *router.ServeMux) {
-		mux.Get("/dashboard", account.DashboardGet(svc), "account/dashboard")
-
-		mux.Get("/activate", account.ActivateGet(svc), "account/activate")
-		mux.Post("/activate", account.ActivatePost(svc, ui.tokens), "account/activate.post")
-
-		mux.Get("/register", account.RegisterGet(svc), "account/register")
-		mux.Post("/register", account.RegisterPost(svc), "account/register.post")
-
-		mux.Get("/login", account.LoginGet(svc), "account/login")
-		mux.Post("/login", account.LoginPost(svc), "account/login.post")
-
-		mux.Post("/logout", account.LogoutPost(svc), "account/logout.post")
-
-		mux.Get("/forgotten-password", account.ForgottenPasswordGet(svc), "account/forgotten_password")
-		mux.Post("/forgotten-password", account.ForgottenPasswordPost(svc, ui.tokens), "account/forgotten_password.post")
-		mux.Put("/forgotten-password", account.ForgottenPasswordPut(svc, ui.tokens), "account/forgotten_password.put")
-
-		mux.Get("/change-password", account.ChangePasswordGet(svc), "account/change_password")
-		mux.Put("/change-password", account.ChangePasswordPut(svc), "account/change_password.put")
-
-		mux.Get("/totp", account.TOTPGet(svc), "account/totp")
-		mux.Post("/totp/app", account.TOTPSetupAppPost(svc), "account/totp/app.post")
-		mux.Post("/totp/verify", account.TOTPVerifyPost(svc), "account/totp/verify.post")
+		account.Dashboard(svc, mux)
+		account.Activate(svc, mux, ui.tokens)
+		account.Register(svc, mux)
+		account.Login(svc, mux)
+		account.Logout(svc, mux)
+		account.ForgottenPassword(svc, mux, ui.tokens)
+		account.ChangePassword(svc, mux)
+		account.TOTP(svc, mux)
 	})
 
 	// Public static file handler

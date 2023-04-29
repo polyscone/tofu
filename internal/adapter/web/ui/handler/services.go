@@ -146,7 +146,7 @@ func (svc *Services) Path(name string, paramArgPairs ...string) string {
 	return svc.mux.Path(name, paramArgPairs...)
 }
 
-func (svc *Services) SetDefaultVars(view string, vars Vars) {
+func (svc *Services) SetViewVars(view string, vars Vars) {
 	if _, ok := svc.defaultVars[view]; ok {
 		panic(fmt.Sprintf("default vars already set for %q", view))
 	}

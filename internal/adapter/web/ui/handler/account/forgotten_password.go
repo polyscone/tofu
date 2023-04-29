@@ -10,18 +10,25 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func ForgottenPasswordGet(svc *handler.Services) http.HandlerFunc {
+func ForgottenPassword(svc *handler.Services, mux *router.ServeMux, tokens token.Repo) {
+	mux.Get("/forgotten-password", forgottenPasswordGet(svc), "account/forgotten_password")
+	mux.Post("/forgotten-password", forgottenPasswordPost(svc, tokens), "account/forgotten_password.post")
+	mux.Put("/forgotten-password", forgottenPasswordPut(svc, tokens), "account/forgotten_password.put")
+}
+
+func forgottenPasswordGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		svc.Render(w, r, http.StatusOK, "account/forgotten_password", nil)
 	}
 }
 
-func ForgottenPasswordPost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
+func forgottenPasswordPost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Email string
@@ -62,7 +69,7 @@ func ForgottenPasswordPost(svc *handler.Services, tokens token.Repo) http.Handle
 	}
 }
 
-func ForgottenPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
+func forgottenPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Token            string

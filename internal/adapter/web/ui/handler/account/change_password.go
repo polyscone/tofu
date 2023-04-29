@@ -8,16 +8,22 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func ChangePasswordGet(svc *handler.Services) http.HandlerFunc {
+func ChangePassword(svc *handler.Services, mux *router.ServeMux) {
+	mux.Get("/change-password", changePasswordGet(svc), "account/change_password")
+	mux.Put("/change-password", changePasswordPut(svc), "account/change_password.put")
+}
+
+func changePasswordGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		svc.Render(w, r, http.StatusOK, "account/change_password", nil)
 	}
 }
 
-func ChangePasswordPut(svc *handler.Services) http.HandlerFunc {
+func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			OldPassword      string
