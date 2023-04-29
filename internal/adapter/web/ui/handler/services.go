@@ -243,20 +243,20 @@ func (svc *Services) RenderError(w http.ResponseWriter, r *http.Request, err err
 	svc.RenderFunc(w, r, status, view, func(data *Data) {
 		switch {
 		case errors.Is(err, port.ErrInvalidInput):
-			data.ErrorMessage = "Invalid input"
+			data.ErrorMessage = "invalid input"
 
 			if trace, ok := err.(errors.Trace); ok {
 				data.Errors = trace.Fields()
 			}
 
 		case errors.Is(err, csrf.ErrEmptyToken):
-			data.ErrorMessage = "Empty CSRF token"
+			data.ErrorMessage = "empty CSRF token"
 
 		case errors.Is(err, csrf.ErrInvalidToken):
-			data.ErrorMessage = "Invalid CSRF token"
+			data.ErrorMessage = "invalid CSRF token"
 
 		default:
-			data.ErrorMessage = "An error has occurred"
+			data.ErrorMessage = "an error has occurred"
 		}
 
 		if dataFunc != nil {

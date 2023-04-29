@@ -22,7 +22,11 @@ func Register(svc *handler.Services, mux *router.ServeMux) {
 
 func registerGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.Render(w, r, http.StatusOK, "account/register", nil)
+		ctx := r.Context()
+
+		svc.Render(w, r, http.StatusOK, "account/register", handler.Vars{
+			"Email": svc.Sessions.PopString(ctx, "account.register.email"),
+		})
 	}
 }
 
@@ -53,8 +57,8 @@ func registerPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		svc.Render(w, r, http.StatusOK, "account/register", handler.Vars{
-			"Email": input.Email,
-		})
+		svc.Sessions.Set(ctx, "account.register.email", input.Email)
+
+		http.Redirect(w, r, svc.Path("account.register")+"?status=email-sent", http.StatusSeeOther)
 	}
 }
