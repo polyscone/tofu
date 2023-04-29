@@ -229,7 +229,7 @@ func (svc *Services) Render(w http.ResponseWriter, r *http.Request, status int, 
 	})
 }
 
-func (svc *Services) RenderError(w http.ResponseWriter, r *http.Request, err error, view string, dataFunc DataFunc) bool {
+func (svc *Services) RenderErrorFunc(w http.ResponseWriter, r *http.Request, err error, view string, dataFunc DataFunc) bool {
 	if err == nil {
 		return false
 	}
@@ -263,4 +263,10 @@ func (svc *Services) RenderError(w http.ResponseWriter, r *http.Request, err err
 	})
 
 	return true
+}
+
+func (svc *Services) RenderError(w http.ResponseWriter, r *http.Request, err error, view string, vars Vars) bool {
+	return svc.RenderErrorFunc(w, r, errors.Tracef(err), view, func(data *Data) {
+		data.Vars = data.Vars.Merge(vars)
+	})
 }

@@ -38,10 +38,11 @@ func forgottenPasswordPost(svc *handler.Services, tokens token.Repo) http.Handle
 		}
 
 		email, err := text.NewEmail(input.Email)
-		stop := svc.RenderError(w, r, errors.Tracef(err), "account/forgotten_password", func(data *handler.Data) {
-			data.Errors = errors.Map{"email": err}
-		})
-		if stop {
+		if err != nil {
+			svc.RenderErrorFunc(w, r, errors.Tracef(err), "account/forgotten_password", func(data *handler.Data) {
+				data.Errors = errors.Map{"email": err}
+			})
+
 			return
 		}
 
