@@ -102,10 +102,6 @@ func (r *UserRepo) Add(ctx context.Context, u domain.User) error {
 		u.HashedPassword = make([]byte, 0)
 	}
 
-	if u.TOTPKey == nil {
-		u.TOTPKey = make([]byte, 0)
-	}
-
 	stmt, args := `
 		INSERT INTO account__users
 			(id, email, hashed_password, totp_key)

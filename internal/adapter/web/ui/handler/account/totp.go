@@ -22,8 +22,9 @@ import (
 
 func TOTP(svc *handler.Services, mux *router.ServeMux) {
 	svc.SetViewVars("account/totp", handler.Vars{
-		"KeyBase32":    "",
-		"QRCodeBase64": "",
+		"RecoveryCodes": nil,
+		"KeyBase32":     "",
+		"QRCodeBase64":  "",
 	})
 
 	mux.Get("/totp", totpGet(svc), "account/totp")
@@ -82,8 +83,9 @@ func totpSetupWithAppPost(svc *handler.Services) http.HandlerFunc {
 		}
 
 		svc.Render(w, r, http.StatusOK, "account/totp", handler.Vars{
-			"KeyBase32":    keyBase32,
-			"QRCodeBase64": template.URL("data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())),
+			"RecoveryCodes": res.RecoveryCodes,
+			"KeyBase32":     keyBase32,
+			"QRCodeBase64":  template.URL("data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())),
 		})
 	}
 }

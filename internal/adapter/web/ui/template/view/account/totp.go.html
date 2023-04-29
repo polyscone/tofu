@@ -8,10 +8,56 @@
 
   {{else if .Vars.QRCodeBase64}}
 
-    <p class="title">2FA</p>
+    <p class="title">Recovery Codes</p>
 
+    <p>In the event that you lose access to your authentication device you can use the following recovery codes in place of a normal code.</p>
+
+    <div class="totp__recovery-codes-warning">
+      <p>Before enabling two-factor authentication use one of the buttons below to download, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.</p>
+      <p>
+        If possible, we recommend storing them in a password manager, such as
+        <a href="https://1password.com/" target="_blank" rel="noopener noreferrer">1Password</a>,
+        <a href="https://www.lastpass.com/" target="_blank" rel="noopener noreferrer">LastPass</a>, or
+        <a href="https://www.keepersecurity.com" target="_blank" rel="noopener noreferrer">Keeper</a>.
+      </p>
+    </div>
+
+    <div class="totp__recovery-codes">
+      <ul>
+        {{range $code := .Vars.RecoveryCodes}}
+          <li>{{$code}}</li>
+        {{end}}
+      </ul>
+    </div>
+
+    <p>If you don't already have an authenticator application installed on your phone or computer then you will need to download and install one to set up two-factor authentication.</p>
+    <p>We recommend using one of the following:</p>
+
+    <ul>
+      <li>
+        Authy
+        (<a href="https://authy.com/download/" target="_blank" rel="noopener noreferrer">Android, iOS, Windows, Mac, Linux</a>)
+      </li>
+      <li>
+        Google Authenticator
+        (<a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_blank" rel="noopener noreferrer">Android</a>, <a href="https://apps.apple.com/us/app/google-authenticator/id388497605" target="_blank" rel="noopener noreferrer">iOS</a>)
+      </li>
+      <li>
+        LastPass Authenticator
+        (<a href="https://support.logmeininc.com/lastpass/help/lastpass-authenticator-lp030014" target="_blank" rel="noopener noreferrer">Android, iOS, Windows mobile</a>)
+      </li>
+      <li>
+        1Password
+        (<a href="https://support.1password.com/one-time-passwords/" target="_blank" rel="noopener noreferrer">Android, iOS, Windows, Mac</a>)
+      </li>
+    </ul>
+
+    <!-- <a href="">Can't install an authenticator app? Click here to use SMS.</a> -->
+
+    <p>Use your authenticator app to scan the QR code below. If you can't scan the QR code then you can manually enter the secret key instead.</p>
     <p><img src="{{.Vars.QRCodeBase64}}" alt="TOTP QR Code"></p>
-    <p>{{.Vars.KeyBase32}}</p>
+    <p>Secret Key: {{.Vars.KeyBase32}}</p>
+    <p>After scanning the QR code, or manually entering the secret key, your app will display a 6 digit code that you can enter below to verify that your authenticator app is setup correctly and enable two-factor authentication.</p>
 
     <form action="{{Path "account/totp/verify.post"}}" method="POST">
       <input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
@@ -32,7 +78,7 @@
 
     <div class="totp__methods">
       <div class="totp__methods--app">
-        <p>Use an application on your phone or computer to get passcodes when prompted (recommended).</p>
+        <p>Use an application on your phone or computer to get codes when prompted (recommended).</p>
 
         <form action="{{Path "account/totp/app.post"}}" method="POST">
           <input type="hidden" name="_csrf" value="{{.CSRF.Token}}">

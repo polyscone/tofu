@@ -7,7 +7,7 @@
     <ul>
       <li><a href="{{Path "page/home"}}">Home</a></li>
 
-      {{if .Session.UserID}}
+      {{if .Session.IsAuthenticated}}
         <li><a href="{{Path "account/dashboard"}}">Account</a></li>
         <li>
           <form action="{{Path "account/logout.post"}}" method="POST">

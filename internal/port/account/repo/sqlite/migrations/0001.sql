@@ -2,7 +2,7 @@ CREATE TABLE account__users (
   id               TEXT NOT NULL PRIMARY KEY,
   email            TEXT UNIQUE COLLATE NOCASE,
   hashed_password  TEXT NOT NULL,
-  totp_key         TEXT NOT NULL,
+  totp_key         TEXT,
   totp_verified_at DATETIME,
   activated_at     DATETIME,
   created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
