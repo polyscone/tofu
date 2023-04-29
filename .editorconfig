@@ -3,13 +3,13 @@ root = true
 [*]
 charset = utf-8
 end_of_line = lf
-indent_size = 2
 indent_style = space
+indent_size = 2
+tab_width = 2
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.go]
-indent_size = 4
+[*.{go,tmpl,html}]
 indent_style = tab
 
 [*.md]
