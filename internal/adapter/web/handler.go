@@ -187,10 +187,10 @@ func (h *Handler) view(view string) *template.Template {
 	h.templatesMu.Lock()
 	defer h.templatesMu.Unlock()
 
-	key := strings.TrimSuffix(filepath.Base(view), ".go.html")
+	key := strings.TrimSuffix(filepath.Base(view), ".tmpl")
 
 	tmpl := template.New(key).Funcs(tmplFuncs)
-	tmpl = errors.Must(tmpl.ParseFS(h.files, "files/email/view/"+view+".go.html"))
+	tmpl = errors.Must(tmpl.ParseFS(h.files, "files/email/view/"+view+".tmpl"))
 
 	h.templates[key] = tmpl
 
