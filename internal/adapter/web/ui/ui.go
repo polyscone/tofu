@@ -2,7 +2,6 @@ package ui
 
 import (
 	"embed"
-	"html/template"
 	"io/fs"
 	"net/http"
 
@@ -40,10 +39,6 @@ func New(bus command.Bus, sessions *session.Manager, tokens token.Repo, mailer s
 	svc := handler.NewServices(mux, bus, sessions, mailer, handler.Options{
 		Cache: !opts.Dev,
 		Files: templateFiles,
-		Funcs: template.FuncMap{
-			"StatusText": http.StatusText,
-			"Path":       mux.Path,
-		},
 	})
 
 	return &UI{

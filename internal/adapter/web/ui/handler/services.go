@@ -77,7 +77,6 @@ type DataFunc func(data *Data)
 type Options struct {
 	Cache bool
 	Files fs.FS
-	Funcs template.FuncMap
 }
 
 type Services struct {
@@ -94,23 +93,22 @@ type Services struct {
 }
 
 func NewServices(mux *router.ServeMux, bus command.Bus, sessions *session.Manager, mailer smtp.Mailer, opts Options) *Services {
-	svc := Services{
+	funcs := template.FuncMap{
+		"StatusText": http.StatusText,
+		"Path":       mux.Path,
+	}
+
+	return &Services{
 		cache:     opts.Cache,
 		files:     opts.Files,
 		templates: make(map[string]*template.Template),
-		funcs:     make(template.FuncMap),
+		funcs:     funcs,
 		viewVars:  make(map[string]Vars),
 		mux:       mux,
 		Bus:       bus,
 		Sessions:  sessions,
 		Mailer:    mailer,
 	}
-
-	for name, fn := range opts.Funcs {
-		svc.funcs[name] = fn
-	}
-
-	return &svc
 }
 
 func (svc *Services) Passport(ctx context.Context) passport.Passport {
