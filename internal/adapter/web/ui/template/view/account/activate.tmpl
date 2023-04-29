@@ -1,48 +1,38 @@
 {{define "view"}}
 
 <div class="activate center">
+	{{if .ErrorMessage}}
+		<p class="title">Account Activation Error</p>
 
-  {{if .ErrorMessage}}
+		<p>Either the account you are trying to activate has already been activated or you have provided an invalid activation token.</p>
+	{{else if .Query.Get "token"}}
+		<p class="title">Account Activation</p>
 
-    <p class="title">Account Activation Error</p>
+		<p>If you are not automatically redirected please click on the button below to activate your account.</p>
 
-    <p>Either the account you are trying to activate has already been activated or you have provided an invalid activation token.</p>
+		<form action="{{Path "account/activate.post"}}" method="POST" id="account-activate-form">
+			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+			<input type="hidden" name="token" value="{{.Query.Get "token"}}">
 
-  {{else if .Query.Get "token"}}
+			<button type="submit">Activate Account</button>
+		</form>
 
-    <p class="title">Account Activation</p>
+		<script>
+			const form = document.getElementById("account-activate-form")
 
-    <p>If you are not automatically redirected please click on the button below to activate your account.</p>
+			if (form) {
+				form.submit()
+			}
+		</script>
+	{{else if eq (.Query.Get "status") "success"}}
+		<p class="title">Account Activated</p>
 
-    <form action="{{Path "account/activate.post"}}" method="POST" id="account-activate-form">
-      <input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
-      <input type="hidden" name="token" value="{{.Query.Get "token"}}">
+		<p>Your account has been successfully activated.</p>
+	{{else}}
+		<p class="title">Account Activation Error</p>
 
-      <button type="submit">Activate Account</button>
-    </form>
-
-    <script>
-      const form = document.getElementById("account-activate-form")
-
-      if (form) {
-        form.submit()
-      }
-    </script>
-
-  {{else if eq (.Query.Get "status") "success"}}
-
-    <p class="title">Account Activated</p>
-
-    <p>Your account has been successfully activated.</p>
-
-  {{else}}
-
-    <p class="title">Account Activation Error</p>
-
-    <p>An account cannot be activated without an activation token.</p>
-
-  {{end}}
-
+		<p>An account cannot be activated without an activation token.</p>
+	{{end}}
 </div>
 
 {{end}}

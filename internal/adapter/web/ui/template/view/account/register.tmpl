@@ -1,35 +1,29 @@
 {{define "view"}}
 
 <div class="register center">
+	{{if .Vars.Email}}
+		<p class="title">Thank You</p>
 
-  {{if .Vars.Email}}
+		<p>Your account details have been registered and an email containing an account activation link has been sent to {{or .Vars.Email "you"}}.</p>
+	{{else}}
+		<p class="title">Create Account</p>
 
-    <p class="title">Thank You</p>
+		<form action="{{Path "account/register.post"}}" method="POST">
+			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
-    <p>Your account details have been registered and an email containing an account activation link has been sent to {{or .Vars.Email "you"}}.</p>
+			<label for="register__email">Email</label>
+			<input id="register__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
+			<p class="error">{{.Errors.Get "email"}}</p>
 
-  {{else}}
+			<label for="register__password">Password</label>
+			<input id="register__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="new-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+			<p class="error">{{.Errors.Get "password"}}</p>
 
-    <p class="title">Create Account</p>
-
-    <form action="{{Path "account/register.post"}}" method="POST">
-      <input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
-
-      <label for="register__email">Email</label>
-      <input id="register__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
-      <p class="error">{{.Errors.Get "email"}}</p>
-
-      <label for="register__password">Password</label>
-      <input id="register__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="new-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
-      <p class="error">{{.Errors.Get "password"}}</p>
-
-      <div class="bag">
-        <button type="submit" class="push-inline-end">Register</button>
-      </div>
-    </form>
-
-  {{end}}
-
+			<div class="bag">
+				<button type="submit" class="push-inline-end">Register</button>
+			</div>
+		</form>
+	{{end}}
 </div>
 
 {{end}}
