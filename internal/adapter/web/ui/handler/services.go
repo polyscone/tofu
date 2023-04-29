@@ -168,7 +168,7 @@ func (svc *Services) view(view string) *template.Template {
 	svc.templatesMu.Lock()
 	defer svc.templatesMu.Unlock()
 
-	tmpl := template.New(view).Option("missingkey=error").Funcs(svc.funcs)
+	tmpl := template.New(view).Option("missingkey=default").Funcs(svc.funcs)
 	tmpl = errors.Must(tmpl.ParseFS(svc.files, "master.tmpl"))
 	tmpl = errors.Must(tmpl.ParseFS(svc.files, "partial/*.tmpl"))
 	tmpl = errors.Must(tmpl.ParseFS(svc.files, "view/"+view+".tmpl"))
