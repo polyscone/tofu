@@ -82,8 +82,16 @@ func TestMux(t *testing.T) {
 	})
 
 	mux.Redirect(http.MethodGet, "/redirect/src", "/redirect/dst", http.StatusTemporaryRedirect)
-	mux.Redirect(http.MethodGet, "/:var/src/var", "/:var/dst", http.StatusTemporaryRedirect)
-	mux.Redirect(http.MethodGet, "/:var/:varfoo/src/var", "/:var/dst", http.StatusTemporaryRedirect)
+	mux.Redirect(http.MethodGet, "/:var/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
+	mux.Redirect(http.MethodGet, "/:var/:varfoo/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
+
+	mux.Get("/rewrite/dst", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("rewritten"))
+	})
+
+	mux.Rewrite(http.MethodGet, "/rewrite/src", "/rewrite/dst")
+	mux.Rewrite(http.MethodGet, "/:var/rewrite/src/var", "/:var/dst")
+	mux.Rewrite(http.MethodGet, "/:var/:varfoo/rewrite/src/var", "/:var/dst")
 
 	mux.Get("/aa/bb/cc/dd", echoHandler, "simple")
 	mux.Get("/aa/:bb/cc/:dd", echoHandler, "complex")
@@ -165,8 +173,48 @@ func TestMux(t *testing.T) {
 		{"mux object path complex", http.MethodGet, mux.Path("complex", ":bb", "xx", ":dd", "yy"), "/aa/xx/cc/yy", http.StatusOK},
 
 		{"redirect get method ok", http.MethodGet, "/redirect/src", "redirected", http.StatusOK},
-		{"redirect with dynamic param", http.MethodGet, "/redirect/src/var", "redirected", http.StatusOK},
-		{"redirect with multiple dynamic params", http.MethodGet, "/redirect/foo/src/var", "redirected", http.StatusOK},
+		{"redirect with dynamic param", http.MethodGet, "/redirect/redirect/src/var", "redirected", http.StatusOK},
+		{"redirect with multiple dynamic params", http.MethodGet, "/redirect/foo/redirect/src/var", "redirected", http.StatusOK},
+	}
+	for _, tc := range tt {
+		tc := tc
+
+		t.Run(tc.name, func(t *testing.T) {
+			req := errors.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
+			res := errors.Must(ts.Client().Do(req))
+
+			defer res.Body.Close()
+
+			if tc.wantBody != "" {
+				body, err := io.ReadAll(res.Body)
+				if err != nil {
+					t.Errorf("want <nil>; got %q", err)
+				}
+				if want, got := tc.wantBody, string(body); want != got {
+					t.Errorf("want %q; got %q", want, got)
+				}
+			}
+
+			if want, got := tc.wantStatus, res.StatusCode; want != got {
+				t.Errorf("want %v; got %v", want, got)
+			}
+		})
+	}
+
+	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		return http.ErrUseLastResponse
+	}
+
+	tt = []struct {
+		name       string
+		method     string
+		path       string
+		wantBody   string
+		wantStatus int
+	}{
+		{"rewrite get method ok", http.MethodGet, "/rewrite/src", "rewritten", http.StatusOK},
+		{"rewrite with dynamic param", http.MethodGet, "/rewrite/rewrite/src/var", "rewritten", http.StatusOK},
+		{"rewrite with multiple dynamic params", http.MethodGet, "/rewrite/foo/rewrite/src/var", "rewritten", http.StatusOK},
 	}
 	for _, tc := range tt {
 		tc := tc

@@ -435,8 +435,44 @@ func (sm *ServeMux) MethodNotAllowed(handler http.HandlerFunc) {
 	sm.MethodNotAllowedHandler(http.HandlerFunc(handler))
 }
 
+// Rewrite will register a new route that rewrites the source path pattern to
+// the destination path pattern, and then attempts to find a handler that
+// matches the new pattern instead.
+//
+// Any parameters used in the source path will have their value replaced into
+// the destination path where the same parameter is used.
+// For example, the patterns: "/:foo/greet"; "/:foo/world", will rewrite the
+// source "/hello/greet" to "/hello/world".
+func (sm *ServeMux) Rewrite(method, src, dst string) {
+	sm.route(method, src, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		dst := dst
+
+		params, ok := r.Context().Value(ctxParams).(map[string]string)
+		if ok {
+			keys := make([]string, 0, len(params))
+			for key := range params {
+				keys = append(keys, key)
+			}
+
+			sort.Slice(keys, func(i, j int) bool {
+				// Reverse string length sort so the longest key comes first
+				return utf8.RuneCountInString(keys[j]) < utf8.RuneCountInString(keys[i])
+			})
+
+			for _, key := range keys {
+				dst = strings.ReplaceAll(dst, ":"+key, params[key])
+			}
+		}
+
+		r.URL.Path = dst
+
+		sm.ServeHTTP(w, r)
+	}))
+}
+
 // Redirect will create a new handler for the given source path that will
 // redirect the request to the given destination path using the code.
+//
 // Any parameters used in the source path will have their value replaced into
 // the destination path where the same parameter is used.
 // For example, the patterns: "/:foo/greet"; "/:foo/world", will redirect the
