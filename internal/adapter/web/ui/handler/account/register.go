@@ -7,6 +7,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/pkg/repo"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port/account"
 )
@@ -16,7 +17,8 @@ func Register(svc *handler.Services, mux *router.ServeMux) {
 	mux.Post("/register", registerPost(svc), "account.register.post")
 
 	svc.SetViewVars("account/register", handler.Vars{
-		"Email": "",
+		"Email":        "",
+		"IsEmailInUse": false,
 	})
 }
 
@@ -53,7 +55,15 @@ func registerPost(svc *handler.Services) http.HandlerFunc {
 
 		cmd := account.Register(input)
 		err = cmd.Execute(ctx, svc.Bus)
-		if svc.RenderError(w, r, errors.Tracef(err), "account/register", nil) {
+		switch {
+		case errors.Is(err, repo.ErrConflict):
+			svc.Render(w, r, http.StatusConflict, "account/register", handler.Vars{
+				"IsEmailInUse": true,
+			})
+
+			return
+
+		case svc.RenderError(w, r, errors.Tracef(err), "account/register", nil):
 			return
 		}
 

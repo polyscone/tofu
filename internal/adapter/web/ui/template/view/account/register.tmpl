@@ -1,14 +1,16 @@
 {{define "view"}}
 
 <div class="register center">
-	{{template "error_banner" .}}
-
 	{{if eq (.Query.Get "status") "email-sent"}}
 		<p class="title">Thank You</p>
 
 		<p>Your account details have been registered and an email containing an account activation link has been sent to {{or .Vars.Email "you"}}.</p>
 	{{else}}
 		<p class="title">Create Account</p>
+
+		{{if .Vars.IsEmailInUse}}
+			<p class="error-banner">That email address is already in use. Do you <a href="{{Path "account.login"}}">already have an account</a>?</p>
+		{{end}}
 
 		<form action="{{Path "account.register.post"}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
