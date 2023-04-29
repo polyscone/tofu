@@ -27,7 +27,7 @@ func TOTP(svc *handler.Services, mux *router.ServeMux) {
 	})
 
 	mux.Get("/totp", totpGet(svc), "account/totp")
-	mux.Post("/totp/app", totpSetupAppPost(svc), "account/totp/app.post")
+	mux.Post("/totp/app", totpSetupWithAppPost(svc), "account/totp/app.post")
 	mux.Post("/totp/verify", totpVerifyPost(svc), "account/totp/verify.post")
 }
 
@@ -37,7 +37,7 @@ func totpGet(svc *handler.Services) http.HandlerFunc {
 	}
 }
 
-func totpSetupAppPost(svc *handler.Services) http.HandlerFunc {
+func totpSetupWithAppPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
