@@ -86,7 +86,7 @@ type Services struct {
 	templatesMu sync.RWMutex
 	templates   map[string]*template.Template
 	funcs       template.FuncMap
-	defaultVars map[string]Vars
+	viewVars    map[string]Vars
 	mux         *router.ServeMux
 	Bus         command.Bus
 	Sessions    *session.Manager
@@ -95,15 +95,15 @@ type Services struct {
 
 func NewServices(mux *router.ServeMux, bus command.Bus, sessions *session.Manager, mailer smtp.Mailer, opts Options) *Services {
 	svc := Services{
-		cache:       opts.Cache,
-		files:       opts.Files,
-		templates:   make(map[string]*template.Template),
-		funcs:       make(template.FuncMap),
-		defaultVars: make(map[string]Vars),
-		mux:         mux,
-		Bus:         bus,
-		Sessions:    sessions,
-		Mailer:      mailer,
+		cache:     opts.Cache,
+		files:     opts.Files,
+		templates: make(map[string]*template.Template),
+		funcs:     make(template.FuncMap),
+		viewVars:  make(map[string]Vars),
+		mux:       mux,
+		Bus:       bus,
+		Sessions:  sessions,
+		Mailer:    mailer,
 	}
 
 	for name, fn := range opts.Funcs {
@@ -147,11 +147,11 @@ func (svc *Services) Path(name string, paramArgPairs ...string) string {
 }
 
 func (svc *Services) SetViewVars(view string, vars Vars) {
-	if _, ok := svc.defaultVars[view]; ok {
-		panic(fmt.Sprintf("default vars already set for %q", view))
+	if _, ok := svc.viewVars[view]; ok {
+		panic(fmt.Sprintf("default view vars already set for %q", view))
 	}
 
-	svc.defaultVars[view].Merge(vars)
+	svc.viewVars[view] = vars
 }
 
 func (svc *Services) view(view string) *template.Template {
@@ -168,7 +168,7 @@ func (svc *Services) view(view string) *template.Template {
 	svc.templatesMu.Lock()
 	defer svc.templatesMu.Unlock()
 
-	tmpl := template.New(view).Option("missingkey=zero").Funcs(svc.funcs)
+	tmpl := template.New(view).Option("missingkey=error").Funcs(svc.funcs)
 	tmpl = errors.Must(tmpl.ParseFS(svc.files, "master.go.html"))
 	tmpl = errors.Must(tmpl.ParseFS(svc.files, "partial/*.go.html"))
 	tmpl = errors.Must(tmpl.ParseFS(svc.files, "view/"+view+".go.html"))
@@ -201,8 +201,8 @@ func (svc *Services) RenderFunc(w http.ResponseWriter, r *http.Request, status i
 		},
 	}
 
-	if vars, ok := svc.defaultVars[view]; ok {
-		data.Vars.Merge(vars)
+	if vars, ok := svc.viewVars[view]; ok {
+		data.Vars = data.Vars.Merge(vars)
 	}
 
 	if dataFunc != nil {
@@ -227,7 +227,7 @@ func (svc *Services) RenderFunc(w http.ResponseWriter, r *http.Request, status i
 
 func (svc *Services) Render(w http.ResponseWriter, r *http.Request, status int, view string, vars Vars) {
 	svc.RenderFunc(w, r, status, view, func(data *Data) {
-		data.Vars.Merge(vars)
+		data.Vars = data.Vars.Merge(vars)
 	})
 }
 
