@@ -13,8 +13,8 @@ import (
 )
 
 func Login(svc *handler.Services, mux *router.ServeMux) {
-	mux.Get("/login", loginGet(svc), "account/login")
-	mux.Post("/login", loginPost(svc), "account/login.post")
+	mux.Get("/login", loginGet(svc), "account.login")
+	mux.Post("/login", loginPost(svc), "account.login.post")
 }
 
 func loginGet(svc *handler.Services) http.HandlerFunc {
@@ -58,6 +58,6 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 		svc.Sessions.Set(ctx, sess.IsAwaitingTOTP, res.HasVerifiedTOTP)
 		svc.Sessions.Set(ctx, sess.IsAuthenticated, !res.HasVerifiedTOTP)
 
-		http.Redirect(w, r, svc.Path("account/dashboard"), http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.dashboard"), http.StatusSeeOther)
 	}
 }

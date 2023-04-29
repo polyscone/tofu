@@ -12,8 +12,8 @@ import (
 )
 
 func Register(svc *handler.Services, mux *router.ServeMux) {
-	mux.Get("/register", registerGet(svc), "account/register")
-	mux.Post("/register", registerPost(svc), "account/register.post")
+	mux.Get("/register", registerGet(svc), "account.register")
+	mux.Post("/register", registerPost(svc), "account.register.post")
 
 	svc.SetViewVars("account/register", handler.Vars{
 		"Email": "",

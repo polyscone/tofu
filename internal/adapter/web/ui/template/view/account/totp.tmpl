@@ -43,7 +43,7 @@
 		<p>Secret Key: {{.Vars.KeyBase32}}</p>
 		<p>After scanning the QR code, or manually entering the secret key, your app will display a 6 digit code that you can enter below to verify that your authenticator app is setup correctly and enable two-factor authentication.</p>
 
-		<form action="{{Path "account/totp/verify.post"}}" method="POST">
+		<form action="{{Path "account.totp.verify.post"}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
 			<label for="totp__code">Code</label>
@@ -62,7 +62,7 @@
 			<div class="totp__methods--app">
 			<p>Use an application on your phone or computer to get codes when prompted (recommended).</p>
 
-			<form action="{{Path "account/totp/app.post"}}" method="POST">
+			<form action="{{Path "account.totp.app.post"}}" method="POST">
 				<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
 				<button type="submit">Set up using an app</button>

@@ -8,7 +8,7 @@
 	{{else}}
 		<p class="title">Create Account</p>
 
-		<form action="{{Path "account/register.post"}}" method="POST">
+		<form action="{{Path "account.register.post"}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
 			<label for="register__email">Email</label>

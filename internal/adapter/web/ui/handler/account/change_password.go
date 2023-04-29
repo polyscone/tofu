@@ -13,8 +13,8 @@ import (
 )
 
 func ChangePassword(svc *handler.Services, mux *router.ServeMux) {
-	mux.Get("/change-password", changePasswordGet(svc), "account/change_password")
-	mux.Put("/change-password", changePasswordPut(svc), "account/change_password.put")
+	mux.Get("/change-password", changePasswordGet(svc), "account.change_password")
+	mux.Put("/change-password", changePasswordPut(svc), "account.change_password.put")
 }
 
 func changePasswordGet(svc *handler.Services) http.HandlerFunc {
@@ -61,6 +61,6 @@ func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, svc.Path("account/change_password")+"?status=success", http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.change_password")+"?status=success", http.StatusSeeOther)
 	}
 }

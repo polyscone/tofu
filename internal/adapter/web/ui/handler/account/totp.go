@@ -21,15 +21,15 @@ import (
 )
 
 func TOTP(svc *handler.Services, mux *router.ServeMux) {
+	mux.Get("/totp", totpGet(svc), "account.totp")
+	mux.Post("/totp/app", totpSetupWithAppPost(svc), "account.totp.app.post")
+	mux.Post("/totp/verify", totpVerifyPost(svc), "account.totp.verify.post")
+
 	svc.SetViewVars("account/totp", handler.Vars{
 		"RecoveryCodes": nil,
 		"KeyBase32":     "",
 		"QRCodeBase64":  "",
 	})
-
-	mux.Get("/totp", totpGet(svc), "account/totp")
-	mux.Post("/totp/app", totpSetupWithAppPost(svc), "account/totp/app.post")
-	mux.Post("/totp/verify", totpVerifyPost(svc), "account/totp/verify.post")
 }
 
 func totpGet(svc *handler.Services) http.HandlerFunc {
@@ -113,11 +113,11 @@ func totpVerifyPost(svc *handler.Services) http.HandlerFunc {
 		if err != nil {
 			httputil.LogError(r, errors.Tracef(err))
 
-			http.Redirect(w, r, svc.Path("account/totp")+"?status=failed", http.StatusSeeOther)
+			http.Redirect(w, r, svc.Path("account.totp")+"?status=failed", http.StatusSeeOther)
 
 			return
 		}
 
-		http.Redirect(w, r, svc.Path("account/totp")+"?status=success", http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.totp")+"?status=success", http.StatusSeeOther)
 	}
 }

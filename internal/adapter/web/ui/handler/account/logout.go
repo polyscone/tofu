@@ -10,7 +10,7 @@ import (
 )
 
 func Logout(svc *handler.Services, mux *router.ServeMux) {
-	mux.Post("/logout", logoutPost(svc), "account/logout.post")
+	mux.Post("/logout", logoutPost(svc), "account.logout.post")
 }
 
 func logoutPost(svc *handler.Services) http.HandlerFunc {
@@ -24,7 +24,7 @@ func logoutPost(svc *handler.Services) http.HandlerFunc {
 
 		svc.Sessions.Destroy(r.Context())
 
-		http.Redirect(w, r, svc.Path("account/login"), http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.login"), http.StatusSeeOther)
 	}
 
 }

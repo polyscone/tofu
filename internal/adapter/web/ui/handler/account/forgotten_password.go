@@ -17,9 +17,9 @@ import (
 )
 
 func ForgottenPassword(svc *handler.Services, mux *router.ServeMux, tokens token.Repo) {
-	mux.Get("/forgotten-password", forgottenPasswordGet(svc), "account/forgotten_password")
-	mux.Post("/forgotten-password", forgottenPasswordPost(svc, tokens), "account/forgotten_password.post")
-	mux.Put("/forgotten-password", forgottenPasswordPut(svc, tokens), "account/forgotten_password.put")
+	mux.Get("/forgotten-password", forgottenPasswordGet(svc), "account.forgotten_password")
+	mux.Post("/forgotten-password", forgottenPasswordPost(svc, tokens), "account.forgotten_password.post")
+	mux.Put("/forgotten-password", forgottenPasswordPut(svc, tokens), "account.forgotten_password.put")
 }
 
 func forgottenPasswordGet(svc *handler.Services) http.HandlerFunc {
@@ -65,7 +65,7 @@ func forgottenPasswordPost(svc *handler.Services, tokens token.Repo) http.Handle
 			logger.PrintError(err)
 		}
 
-		http.Redirect(w, r, svc.Path("account/forgotten_password")+"?status=email-sent", http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.forgotten_password")+"?status=email-sent", http.StatusSeeOther)
 	}
 }
 
@@ -127,6 +127,6 @@ func forgottenPasswordPut(svc *handler.Services, tokens token.Repo) http.Handler
 			return
 		}
 
-		http.Redirect(w, r, svc.Path("account/forgotten_password")+"?status=success", http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.forgotten_password")+"?status=success", http.StatusSeeOther)
 	}
 }

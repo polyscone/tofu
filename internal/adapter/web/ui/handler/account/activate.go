@@ -12,8 +12,8 @@ import (
 )
 
 func Activate(svc *handler.Services, mux *router.ServeMux, tokens token.Repo) {
-	mux.Get("/activate", activateGet(svc), "account/activate")
-	mux.Post("/activate", activatePost(svc, tokens), "account/activate.post")
+	mux.Get("/activate", activateGet(svc), "account.activate")
+	mux.Post("/activate", activatePost(svc, tokens), "account.activate.post")
 }
 
 func activateGet(svc *handler.Services) http.HandlerFunc {
@@ -35,7 +35,7 @@ func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 		ctx := r.Context()
 
 		if input.Token == "" {
-			http.Redirect(w, r, svc.Path("account/activate"), http.StatusSeeOther)
+			http.Redirect(w, r, svc.Path("account.activate"), http.StatusSeeOther)
 
 			return
 		}
@@ -66,6 +66,6 @@ func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, svc.Path("account/activate")+"?status=success", http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.activate")+"?status=success", http.StatusSeeOther)
 	}
 }
