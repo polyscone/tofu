@@ -13,6 +13,8 @@ import (
 	"github.com/polyscone/tofu/internal/port"
 )
 
+var ErrNotActivated = errors.New("account is not activated")
+
 type Registered struct {
 	Email string
 }
@@ -273,7 +275,7 @@ func (u *User) verifyPassword(password Password) error {
 
 func (u *User) AuthenticateWithPassword(password Password) error {
 	if u.ActivatedAt.IsZero() {
-		return errors.Tracef(port.ErrBadRequest, "account is not activated")
+		return errors.Tracef(port.ErrBadRequest, ErrNotActivated)
 	}
 
 	if err := u.verifyPassword(password); err != nil {
@@ -294,7 +296,7 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 	}
 
 	if u.ActivatedAt.IsZero() {
-		return errors.Tracef(port.ErrBadRequest, "account is not activated")
+		return errors.Tracef(port.ErrBadRequest, ErrNotActivated)
 	}
 
 	tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
@@ -319,7 +321,7 @@ func (u *User) AuthenticateWithRecoveryCode(recoveryCode RecoveryCode) error {
 	}
 
 	if u.ActivatedAt.IsZero() {
-		return errors.Tracef(port.ErrBadRequest, "account is not activated")
+		return errors.Tracef(port.ErrBadRequest, ErrNotActivated)
 	}
 
 	for i, code := range u.RecoveryCodes {

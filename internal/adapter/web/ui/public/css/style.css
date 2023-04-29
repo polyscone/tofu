@@ -233,6 +233,7 @@
     background: var(--clr-invalid-100);
     border: 1px solid var(--clr-invalid-400);
     color: var(--clr-black-400);
+    text-align: center;
   }
 
   @media screen and (min-width: 400px) {

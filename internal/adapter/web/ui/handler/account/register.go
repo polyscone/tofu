@@ -63,7 +63,7 @@ func registerPost(svc *handler.Services) http.HandlerFunc {
 
 			return
 
-		case svc.RenderError(w, r, errors.Tracef(err), "account/register", nil):
+		case svc.RenderError(w, r, errors.Tracef(err), "error", nil):
 			return
 		}
 

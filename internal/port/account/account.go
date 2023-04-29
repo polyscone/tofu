@@ -11,6 +11,8 @@ import (
 
 var NewSQLiteUserRepo = sqlite.NewUserRepo
 
+var ErrNotActivated = domain.ErrNotActivated
+
 type (
 	Registered                    = domain.Registered
 	Activated                     = domain.Activated

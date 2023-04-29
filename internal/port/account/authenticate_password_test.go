@@ -68,6 +68,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 			{"short password", "joe@bloggs.com", "0123456", port.ErrInvalidInput},
 			{"incorrect password", activatedUser.Email.String(), "0123456789", port.ErrBadRequest},
 			{"unactivated user", unactivatedUser.Email.String(), "password", port.ErrBadRequest},
+			{"unactivated user", unactivatedUser.Email.String(), "password", account.ErrNotActivated},
 		}
 		for _, tc := range tt {
 			tc := tc

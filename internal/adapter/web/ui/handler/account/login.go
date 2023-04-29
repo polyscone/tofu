@@ -15,6 +15,10 @@ import (
 func Login(svc *handler.Services, mux *router.ServeMux) {
 	mux.Get("/login", loginGet(svc), "account.login")
 	mux.Post("/login", loginPost(svc), "account.login.post")
+
+	svc.SetViewVars("account/login", handler.Vars{
+		"IsAccountUnactivated": false,
+	})
 }
 
 func loginGet(svc *handler.Services) http.HandlerFunc {
@@ -38,7 +42,15 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 
 		cmd := account.AuthenticateWithPassword(input)
 		res, err := cmd.Execute(ctx, svc.Bus)
-		if svc.RenderError(w, r, errors.Tracef(err), "account/login", nil) {
+		switch {
+		case errors.Is(err, account.ErrNotActivated):
+			svc.RenderError(w, r, errors.Tracef(err), "account/login", handler.Vars{
+				"IsAccountUnactivated": true,
+			})
+
+			return
+
+		case svc.RenderError(w, r, errors.Tracef(err), "error", nil):
 			return
 		}
 

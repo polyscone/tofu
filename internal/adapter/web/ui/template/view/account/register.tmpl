@@ -9,7 +9,7 @@
 		<p class="title">Create Account</p>
 
 		{{if .Vars.IsEmailInUse}}
-			<p class="error-banner">That email address is already in use. Do you <a href="{{Path "account.login"}}">already have an account</a>?</p>
+			<p class="error-banner">This email address is already in use. Do you <a href="{{Path "account.login"}}">already have an account</a>?</p>
 		{{end}}
 
 		<form action="{{Path "account.register.post"}}" method="POST">
