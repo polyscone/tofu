@@ -18,11 +18,10 @@ func TestMethodOverride(t *testing.T) {
 
 	mux.Use(middleware.MethodOverride)
 
-	mux.Post("/", func(w http.ResponseWriter, r *http.Request) {
-		if want, got := r.URL.Query().Get("want"), r.Method; want != got {
-			t.Errorf("want %q; got %q", want, got)
-		}
-	})
+	mux.Post("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodPost)) })
+	mux.Put("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodPut)) })
+	mux.Patch("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodPatch)) })
+	mux.Delete("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodDelete)) })
 
 	ts := testutil.NewServer(t, mux)
 	defer ts.Close()
@@ -75,6 +74,11 @@ func TestMethodOverride(t *testing.T) {
 			res := errors.Must(ts.Client().Do(req))
 
 			defer res.Body.Close()
+
+			got := string(errors.Must(io.ReadAll(res.Body)))
+			if want := tc.want; want != got {
+				t.Errorf("want %v; got %v", want, got)
+			}
 		})
 	}
 }

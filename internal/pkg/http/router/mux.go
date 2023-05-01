@@ -101,6 +101,7 @@ func (r *Route) Replace(paramArgPairs ...string) string {
 type ServeMux struct {
 	prefix           string
 	middlewares      []middleware.Middleware
+	handler          http.Handler
 	routes           []*Route
 	named            map[string]*Route
 	notFound         http.Handler
@@ -109,11 +110,14 @@ type ServeMux struct {
 
 // NewServeMux returns a new serve mux.
 func NewServeMux() *ServeMux {
-	return &ServeMux{}
+	var sm ServeMux
+
+	sm.handler = http.HandlerFunc(sm.serveHTTP)
+
+	return &sm
 }
 
-// ServeHTTP implements the http.Handler interface.
-func (sm *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (sm *ServeMux) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, route := range sm.routes {
 		matches := route.pattern.FindStringSubmatch(r.URL.Path)
 		if matches == nil {
@@ -158,12 +162,19 @@ func (sm *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	sm.notFound.ServeHTTP(w, r)
 }
 
+// ServeHTTP implements the http.Handler interface.
+func (sm *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	sm.handler.ServeHTTP(w, r)
+}
+
 // Use adds a middleware function to the middleware stack to be called
 // before any handlers.
 // Middleware registered with this function are called in the order they
 // are registered.
-func (sm *ServeMux) Use(middleware middleware.Middleware) {
-	sm.middlewares = append(sm.middlewares, middleware)
+func (sm *ServeMux) Use(mw middleware.Middleware) {
+	sm.middlewares = append(sm.middlewares, mw)
+
+	sm.handler = middleware.Apply(http.HandlerFunc(sm.serveHTTP), sm.middlewares...)
 }
 
 // Prefix will automatically prefix any path patterns that are registered in
@@ -214,8 +225,6 @@ func (sm *ServeMux) route(method string, path string, handler http.Handler, name
 	pattern = "^" + pattern + "$"
 
 	key := reParams.ReplaceAllString(path, "*")
-
-	handler = middleware.Apply(handler, sm.middlewares...)
 
 	for _, route := range sm.routes {
 		if route.key != key {
@@ -414,7 +423,7 @@ func (sm *ServeMux) Any(path string, handler http.HandlerFunc, names ...string) 
 // NotFoundHandler registers a handler to be used when an HTTP not found error
 // is triggered.
 func (sm *ServeMux) NotFoundHandler(handler http.Handler) {
-	sm.notFound = middleware.Apply(handler, sm.middlewares...)
+	sm.notFound = handler
 }
 
 // NotFound registers a handler to be used when an HTTP not found error
@@ -426,7 +435,7 @@ func (sm *ServeMux) NotFound(handler http.HandlerFunc) {
 // MethodNotAllowedHandler registers a handler to be used when an HTTP method
 // not allowed error is triggered.
 func (sm *ServeMux) MethodNotAllowedHandler(handler http.Handler) {
-	sm.methodNotAllowed = middleware.Apply(handler, sm.middlewares...)
+	sm.methodNotAllowed = handler
 }
 
 // MethodNotAllowed registers a handler to be used when an HTTP method
