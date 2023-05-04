@@ -10,10 +10,20 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
+var _ http.Pusher = (*etagResponseWriter)(nil)
+
 type etagResponseWriter struct {
 	http.ResponseWriter
 	w      io.Writer
 	header bool
+}
+
+func (w *etagResponseWriter) Push(target string, opts *http.PushOptions) error {
+	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
+		return pusher.Push(target, opts)
+	}
+
+	return http.ErrNotSupported
 }
 
 func (w *etagResponseWriter) Write(b []byte) (int, error) {

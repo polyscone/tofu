@@ -8,9 +8,19 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
+var _ http.Pusher = (*securityHeadersResponseWriter)(nil)
+
 type securityHeadersResponseWriter struct {
 	http.ResponseWriter
 	body bool
+}
+
+func (w *securityHeadersResponseWriter) Push(target string, opts *http.PushOptions) error {
+	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
+		return pusher.Push(target, opts)
+	}
+
+	return http.ErrNotSupported
 }
 
 func (w *securityHeadersResponseWriter) Write(b []byte) (int, error) {

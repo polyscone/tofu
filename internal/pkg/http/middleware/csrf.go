@@ -22,6 +22,8 @@ type CSRFConfig struct {
 	ErrorHandler ErrorHandler
 }
 
+var _ http.Pusher = (*csrfResponseWriter)(nil)
+
 type csrfResponseWriter struct {
 	http.ResponseWriter
 	request   *http.Request
@@ -29,6 +31,14 @@ type csrfResponseWriter struct {
 	ctx       context.Context
 	insecure  bool
 	committed bool
+}
+
+func (w *csrfResponseWriter) Push(target string, opts *http.PushOptions) error {
+	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
+		return pusher.Push(target, opts)
+	}
+
+	return http.ErrNotSupported
 }
 
 func (w *csrfResponseWriter) Write(b []byte) (int, error) {

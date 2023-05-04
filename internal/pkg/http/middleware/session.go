@@ -17,6 +17,8 @@ type SessionConfig struct {
 	ErrorHandler ErrorHandler
 }
 
+var _ http.Pusher = (*sessionResponseWriter)(nil)
+
 type sessionResponseWriter struct {
 	http.ResponseWriter
 	request         *http.Request
@@ -25,6 +27,14 @@ type sessionResponseWriter struct {
 	ctx             context.Context
 	cookieSessionID string
 	committed       bool
+}
+
+func (w *sessionResponseWriter) Push(target string, opts *http.PushOptions) error {
+	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
+		return pusher.Push(target, opts)
+	}
+
+	return http.ErrNotSupported
 }
 
 func (w *sessionResponseWriter) Write(b []byte) (int, error) {

@@ -6,10 +6,20 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
+var _ http.Pusher = (*noContentResponseWriter)(nil)
+
 type noContentResponseWriter struct {
 	http.ResponseWriter
 	header bool
 	body   bool
+}
+
+func (w *noContentResponseWriter) Push(target string, opts *http.PushOptions) error {
+	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
+		return pusher.Push(target, opts)
+	}
+
+	return http.ErrNotSupported
 }
 
 func (w *noContentResponseWriter) Write(b []byte) (int, error) {
