@@ -3,9 +3,9 @@ package account
 import (
 	"net/http"
 
+	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
-	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
@@ -23,7 +23,7 @@ func Login(svc *handler.Services, mux *router.ServeMux) {
 
 func loginGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.Render(w, r, http.StatusOK, "account/login", nil)
+		svc.View(w, r, http.StatusOK, "account/login", nil)
 	}
 }
 
@@ -34,7 +34,7 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 			Password string
 		}
 		err := httputil.DecodeForm(r, &input)
-		if svc.RenderError(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
@@ -44,23 +44,23 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 		res, err := cmd.Execute(ctx, svc.Bus)
 		switch {
 		case errors.Is(err, account.ErrNotActivated):
-			svc.RenderError(w, r, errors.Tracef(err), "account/login", handler.Vars{
+			svc.ErrorView(w, r, errors.Tracef(err), "account/login", handler.Vars{
 				"IsAccountUnactivated": true,
 			})
 
 			return
 
-		case svc.RenderError(w, r, errors.Tracef(err), "error", nil):
+		case svc.ErrorView(w, r, errors.Tracef(err), "error", nil):
 			return
 		}
 
 		err = csrf.RenewToken(ctx)
-		if svc.RenderError(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
 		err = svc.Sessions.Renew(ctx)
-		if svc.RenderError(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 

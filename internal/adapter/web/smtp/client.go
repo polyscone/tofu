@@ -1,9 +1,8 @@
-package web
+package smtp
 
 import (
 	"context"
 
-	"github.com/polyscone/tofu/internal/adapter/web/smtp"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/wneessen/go-mail"
 )
@@ -21,7 +20,7 @@ func NewMailClient(host string, port int) (*MailClient, error) {
 	return &MailClient{client: c}, nil
 }
 
-func (m *MailClient) Send(ctx context.Context, _msgs ...smtp.Msg) error {
+func (m *MailClient) Send(ctx context.Context, _msgs ...Msg) error {
 	msgs := make([]*mail.Msg, len(_msgs))
 	for i, msg := range _msgs {
 		m := mail.NewMsg()

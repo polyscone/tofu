@@ -12,14 +12,7 @@ import (
 )
 
 func Activate(svc *handler.Services, mux *router.ServeMux, tokens token.Repo) {
-	mux.Get("/activate", activateGet(svc), "account.activate")
-	mux.Post("/activate", activatePost(svc, tokens), "account.activate.post")
-}
-
-func activateGet(svc *handler.Services) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "account/activate", nil)
-	}
+	mux.Post("/activate", activatePost(svc, tokens))
 }
 
 func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
@@ -27,21 +20,14 @@ func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 		var input struct {
 			Token string
 		}
-		err := httputil.DecodeForm(r, &input)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(httputil.DecodeJSON(r, &input))) {
 			return
 		}
 
 		ctx := r.Context()
 
-		if input.Token == "" {
-			http.Redirect(w, r, svc.Path("account.activate"), http.StatusSeeOther)
-
-			return
-		}
-
 		email, err := tokens.FindActivationTokenEmail(ctx, input.Token)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
@@ -49,7 +35,7 @@ func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 			Email: email.String(),
 		}
 		err = cmd.Validate(ctx)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
@@ -57,15 +43,13 @@ func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 		// This way the token will only be consumed once we know there aren't any
 		// input validation or authorisation errors
 		err = tokens.ConsumeActivationToken(ctx, input.Token)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
 		err = cmd.Execute(ctx, svc.Bus)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
-
-		http.Redirect(w, r, svc.Path("account.activate")+"?status=success", http.StatusSeeOther)
 	}
 }

@@ -11,9 +11,9 @@ import (
 
 	"github.com/boombuler/barcode"
 	"github.com/boombuler/barcode/qr"
+	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
-	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
@@ -34,7 +34,7 @@ func TOTP(svc *handler.Services, mux *router.ServeMux) {
 
 func totpGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.Render(w, r, http.StatusOK, "account/totp", nil)
+		svc.View(w, r, http.StatusOK, "account/totp", nil)
 	}
 }
 
@@ -49,7 +49,7 @@ func totpSetupWithAppPost(svc *handler.Services) http.HandlerFunc {
 			UserID: passport.GetString(sess.UserID),
 		}
 		res, err := cmd.Execute(ctx, svc.Bus)
-		if svc.RenderError(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
@@ -67,22 +67,22 @@ func totpSetupWithAppPost(svc *handler.Services) http.HandlerFunc {
 			qr.M,
 			qr.Auto,
 		)
-		if svc.RenderError(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
 		qrcode, err = barcode.Scale(qrcode, 200, 200)
-		if svc.RenderError(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
 		var buf bytes.Buffer
 		err = jpeg.Encode(&buf, qrcode, nil)
-		if svc.RenderError(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
-		svc.Render(w, r, http.StatusOK, "account/totp", handler.Vars{
+		svc.View(w, r, http.StatusOK, "account/totp", handler.Vars{
 			"RecoveryCodes": res.RecoveryCodes,
 			"KeyBase32":     keyBase32,
 			"QRCodeBase64":  template.URL("data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())),
@@ -96,7 +96,7 @@ func totpVerifyPost(svc *handler.Services) http.HandlerFunc {
 			TOTP string
 		}
 		err := httputil.DecodeForm(r, &input)
-		if svc.RenderError(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 

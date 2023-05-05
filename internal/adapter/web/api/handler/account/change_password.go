@@ -1,26 +1,21 @@
 package account
 
 import (
+	"encoding/base64"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
+	"github.com/polyscone/tofu/internal/adapter/web/token"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func ChangePassword(svc *handler.Services, mux *router.ServeMux) {
-	mux.Get("/change-password", changePasswordGet(svc), "account.change_password")
-	mux.Put("/change-password", changePasswordPut(svc), "account.change_password.put")
-}
-
-func changePasswordGet(svc *handler.Services) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "account/change_password", nil)
-	}
+func ChangePassword(svc *handler.Services, mux *router.ServeMux, tokens token.Repo) {
+	mux.Put("/password", changePasswordPut(svc))
 }
 
 func changePasswordPut(svc *handler.Services) http.HandlerFunc {
@@ -28,10 +23,9 @@ func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 		var input struct {
 			OldPassword      string
 			NewPassword      string
-			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
+			NewPasswordCheck string
 		}
-		err := httputil.DecodeForm(r, &input)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(httputil.DecodeJSON(r, &input))) {
 			return
 		}
 
@@ -46,21 +40,25 @@ func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 			NewPassword:      input.NewPassword,
 			NewPasswordCheck: input.NewPasswordCheck,
 		}
-		err = cmd.Execute(ctx, svc.Bus)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/change_password", nil) {
+		err := cmd.Execute(ctx, svc.Bus)
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
 		err = csrf.RenewToken(ctx)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
 		err = passport.Renew()
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
-		http.Redirect(w, r, svc.Path("account.change_password")+"?status=success", http.StatusSeeOther)
+		csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
+
+		svc.JSON(w, r, map[string]any{
+			"csrfToken": csrfTokenBase64,
+		})
 	}
 }

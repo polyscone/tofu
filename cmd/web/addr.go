@@ -9,13 +9,13 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
-type Addr struct {
+type addr struct {
 	listener net.Listener
-	Value    string
-	Insecure bool
+	value    string
+	insecure bool
 }
 
-func (a *Addr) Set(value string) error {
+func (a *addr) Set(value string) error {
 	if value == "" {
 		return nil
 	}
@@ -35,13 +35,13 @@ func (a *Addr) Set(value string) error {
 
 	port = strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 
-	a.Value = fmt.Sprintf("%v:%v", host, port)
+	a.value = fmt.Sprintf("%v:%v", host, port)
 	a.listener = listener
 
 	return nil
 }
 
-func (a *Addr) Listener() (net.Listener, error) {
+func (a *addr) Listener() (net.Listener, error) {
 	if a.listener == nil {
 		err := a.Set(":0")
 		if err != nil {
@@ -52,11 +52,11 @@ func (a *Addr) Listener() (net.Listener, error) {
 	return a.listener, nil
 }
 
-func (a Addr) String() string {
+func (a addr) String() string {
 	protocol := "https"
-	if a.Insecure {
+	if a.insecure {
 		protocol = "http"
 	}
 
-	return fmt.Sprintf("%v://%v", protocol, a.Value)
+	return fmt.Sprintf("%v://%v", protocol, a.value)
 }

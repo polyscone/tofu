@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"encoding/base64"
 	"net/http"
 	"time"
 
@@ -18,15 +19,8 @@ import (
 )
 
 func ResetPassword(svc *handler.Services, mux *router.ServeMux, tokens token.Repo) {
-	mux.Get("/reset-password", resetPasswordGet(svc), "account.reset_password")
-	mux.Post("/reset-password", resetPasswordPost(svc, tokens), "account.reset_password.post")
-	mux.Put("/reset-password", resetPasswordPut(svc, tokens), "account.reset_password.put")
-}
-
-func resetPasswordGet(svc *handler.Services) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "account/reset_password", nil)
-	}
+	mux.Post("/password/reset", resetPasswordPost(svc, tokens))
+	mux.Put("/password/reset", resetPasswordPut(svc, tokens))
 }
 
 func resetPasswordPost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
@@ -34,16 +28,12 @@ func resetPasswordPost(svc *handler.Services, tokens token.Repo) http.HandlerFun
 		var input struct {
 			Email string
 		}
-		if svc.ErrorView(w, r, errors.Tracef(httputil.DecodeForm(r, &input)), "error", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(httputil.DecodeJSON(r, &input))) {
 			return
 		}
 
 		email, err := text.NewEmail(input.Email)
-		if err != nil {
-			svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/reset_password", func(data *handler.ViewData) {
-				data.Errors = errors.Map{"email": err}
-			})
-
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
@@ -70,8 +60,6 @@ func resetPasswordPost(svc *handler.Services, tokens token.Repo) http.HandlerFun
 				logger.PrintError(err)
 			}
 		})
-
-		http.Redirect(w, r, svc.Path("account.reset_password")+"?status=email-sent", http.StatusSeeOther)
 	}
 }
 
@@ -80,22 +68,21 @@ func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc
 		var input struct {
 			Token            string
 			NewPassword      string
-			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
+			NewPasswordCheck string
 		}
-		err := httputil.DecodeForm(r, &input)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(httputil.DecodeJSON(r, &input))) {
 			return
 		}
 
 		ctx := r.Context()
 
 		email, err := tokens.FindResetPasswordTokenEmail(ctx, input.Token)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
 		passport, err := svc.PassportByEmail(ctx, email.String())
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
@@ -106,7 +93,7 @@ func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc
 			NewPasswordCheck: input.NewPasswordCheck,
 		}
 		err = cmd.Validate(ctx)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/reset_password", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
@@ -114,25 +101,29 @@ func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc
 		// This way the token will only be consumed once we know there aren't any
 		// input validation or authorisation errors
 		err = tokens.ConsumeResetPasswordToken(ctx, input.Token)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
 		err = cmd.Execute(ctx, svc.Bus)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/reset_password", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
 		err = csrf.RenewToken(ctx)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
 		err = passport.Renew()
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
 
-		http.Redirect(w, r, svc.Path("account.reset_password")+"?status=success", http.StatusSeeOther)
+		csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
+
+		svc.JSON(w, r, map[string]any{
+			"csrfToken": csrfTokenBase64,
+		})
 	}
 }
