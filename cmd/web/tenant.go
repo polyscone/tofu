@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -65,12 +64,10 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		return nil, errors.Tracef(err)
 	}
 
-	proxies := strings.Fields(opts.server.proxies)
-
 	tenant := &handler.Tenant{
 		Dev:      opts.dev,
 		Insecure: opts.server.insecure,
-		Proxies:  proxies,
+		Proxies:  opts.server.proxies,
 		Bus:      bus,
 		Broker:   broker,
 		Sessions: sessions,

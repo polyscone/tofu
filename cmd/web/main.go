@@ -44,7 +44,7 @@ var opts struct {
 		addr         addr
 		insecure     bool
 		insecureHTTP bool
-		proxies      string
+		proxies      proxies
 	}
 }
 
@@ -68,7 +68,7 @@ func main() {
 	flag.Var(&opts.server.addr, "addr", "The address to run the build server on, for example :8080; random if empty")
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
 	flag.BoolVar(&opts.server.insecureHTTP, "insecure-http", false, "Run in secure mode but without HTTPS")
-	flag.StringVar(&opts.server.proxies, "trusted-proxies", "", "A space separated list of trusted proxy addresses")
+	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
 	flag.StringVar(&opts.secret, "secret", "", "The secret to use for things like encrypting/decrypting data")
 	flag.Var(&opts.tenants, "tenants", "A list of tenant hostnames mapped to common names encoded as a JSON object")
 	flag.Parse()
