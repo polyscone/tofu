@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"os"
 	"path/filepath"
 	"sync"
 	"time"
@@ -23,7 +25,7 @@ var databases = struct {
 func newTenant(hostname string) (*handler.Tenant, error) {
 	ctx := context.Background()
 
-	common := opts.tenants[hostname]
+	common := opts.tenants.lookup[hostname]
 	if common == "" {
 		return nil, errors.Tracef("common name for the tenant %q is empty", hostname)
 	}
@@ -78,22 +80,48 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	return tenant, nil
 }
 
-type tenants map[string]string
+type tenants struct {
+	data   map[string][]string
+	lookup map[string]string
+}
 
 func (t *tenants) Set(value string) error {
 	if value == "" {
 		return nil
 	}
 
-	return json.Unmarshal([]byte(value), t)
+	if b, err := os.ReadFile(value); err == nil {
+		value = string(b)
+	}
+
+	if err := json.Unmarshal([]byte(value), &t.data); err != nil {
+		return errors.Tracef(err)
+	}
+
+	if t.lookup == nil {
+		t.lookup = make(map[string]string)
+	}
+
+	var errs errors.Map
+	for common, hostnames := range t.data {
+		for _, hostname := range hostnames {
+			if dupe, ok := t.lookup[hostname]; ok {
+				errs.Set(hostname, fmt.Sprintf("cannot associate with %q, already associated with %q", dupe, common))
+			}
+
+			t.lookup[hostname] = common
+		}
+	}
+
+	return errs.Tracef("duplicate tenant hostnames")
 }
 
 func (t tenants) String() string {
-	if t == nil {
+	if t.data == nil {
 		return ""
 	}
 
-	b, err := json.Marshal(t)
+	b, err := json.Marshal(t.data)
 	if err != nil {
 		panic(err)
 	}

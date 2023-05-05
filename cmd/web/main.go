@@ -53,7 +53,7 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %v:\n", os.Args[0])
-		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-dev] [-addr <addr>] [-tenants <tenants-json>] [-log-style <text|json>]\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-dev] [-addr <addr>] [-tenants <tenants-json|json-file>] [-log-style <text|json>]\n", os.Args[0])
 		fmt.Fprintln(flag.CommandLine.Output(), "Commands:")
 		fmt.Fprintf(flag.CommandLine.Output(), "  version\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "    \tDisplay binary version information\n")
@@ -70,7 +70,7 @@ func main() {
 	flag.BoolVar(&opts.server.insecureHTTP, "insecure-http", false, "Run in secure mode but without HTTPS")
 	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
 	flag.StringVar(&opts.secret, "secret", "", "The secret to use for things like encrypting/decrypting data")
-	flag.Var(&opts.tenants, "tenants", "A list of tenant hostnames mapped to common names encoded as a JSON object")
+	flag.Var(&opts.tenants, "tenants", "A map of tenant common name keys to hostname arrays encoded as a JSON object, or a path to a JSON file")
 	flag.Parse()
 
 	if opts.server.insecure {
