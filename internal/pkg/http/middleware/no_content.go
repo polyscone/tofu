@@ -6,6 +6,18 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
+func NoContent(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		rw := &noContentResponseWriter{ResponseWriter: w}
+
+		next(rw, r)
+
+		if !rw.header && !rw.body {
+			rw.WriteHeader(http.StatusNoContent)
+		}
+	}
+}
+
 var _ http.Pusher = (*noContentResponseWriter)(nil)
 
 type noContentResponseWriter struct {
@@ -36,16 +48,4 @@ func (w *noContentResponseWriter) WriteHeader(statusCode int) {
 	w.header = true
 
 	w.ResponseWriter.WriteHeader(statusCode)
-}
-
-func NoContent(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		rw := &noContentResponseWriter{ResponseWriter: w}
-
-		next(rw, r)
-
-		if !rw.header && !rw.body {
-			rw.WriteHeader(http.StatusNoContent)
-		}
-	}
 }

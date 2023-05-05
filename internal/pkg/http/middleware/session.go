@@ -17,6 +17,50 @@ type SessionConfig struct {
 	ErrorHandler ErrorHandler
 }
 
+func Session(sm *session.Manager, config *SessionConfig) Middleware {
+	if config == nil {
+		config = &SessionConfig{}
+	}
+
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			cookieSessionID, err := getSessionCookieID(r)
+			if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
+				return
+			}
+
+			ctx, err := sm.Load(r.Context(), cookieSessionID)
+			if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
+				return
+			}
+
+			var found bool
+			for _, value := range w.Header().Values("vary") {
+				if found = strings.ToLower(value) == "cookie"; found {
+					break
+				}
+			}
+			if !found {
+				w.Header().Add("vary", "cookie")
+			}
+
+			rw := &sessionResponseWriter{
+				ResponseWriter:  w,
+				request:         r,
+				config:          config,
+				sm:              sm,
+				ctx:             ctx,
+				cookieSessionID: cookieSessionID,
+			}
+			r = r.WithContext(ctx)
+
+			next(rw, r)
+
+			rw.commit()
+		}
+	}
+}
+
 var _ http.Pusher = (*sessionResponseWriter)(nil)
 
 type sessionResponseWriter struct {
@@ -97,48 +141,4 @@ func getSessionCookieID(r *http.Request) (string, error) {
 	}
 
 	return cookie.Value, nil
-}
-
-func Session(sm *session.Manager, config *SessionConfig) Middleware {
-	if config == nil {
-		config = &SessionConfig{}
-	}
-
-	return func(next http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			cookieSessionID, err := getSessionCookieID(r)
-			if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
-				return
-			}
-
-			ctx, err := sm.Load(r.Context(), cookieSessionID)
-			if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
-				return
-			}
-
-			var found bool
-			for _, value := range w.Header().Values("vary") {
-				if found = strings.ToLower(value) == "cookie"; found {
-					break
-				}
-			}
-			if !found {
-				w.Header().Add("vary", "cookie")
-			}
-
-			rw := &sessionResponseWriter{
-				ResponseWriter:  w,
-				request:         r,
-				config:          config,
-				sm:              sm,
-				ctx:             ctx,
-				cookieSessionID: cookieSessionID,
-			}
-			r = r.WithContext(ctx)
-
-			next(rw, r)
-
-			rw.commit()
-		}
-	}
 }

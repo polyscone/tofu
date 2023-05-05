@@ -22,59 +22,6 @@ type CSRFConfig struct {
 	ErrorHandler ErrorHandler
 }
 
-var _ http.Pusher = (*csrfResponseWriter)(nil)
-
-type csrfResponseWriter struct {
-	http.ResponseWriter
-	request   *http.Request
-	config    *CSRFConfig
-	ctx       context.Context
-	insecure  bool
-	committed bool
-}
-
-func (w *csrfResponseWriter) Push(target string, opts *http.PushOptions) error {
-	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
-		return pusher.Push(target, opts)
-	}
-
-	return http.ErrNotSupported
-}
-
-func (w *csrfResponseWriter) Write(b []byte) (int, error) {
-	w.commit()
-
-	return w.ResponseWriter.Write(b)
-}
-
-func (w *csrfResponseWriter) WriteHeader(statusCode int) {
-	w.commit()
-
-	w.ResponseWriter.WriteHeader(statusCode)
-}
-
-func (w *csrfResponseWriter) commit() {
-	if w.committed {
-		return
-	}
-
-	w.committed = true
-
-	if csrf.IsNew(w.ctx) {
-		encoded := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(w.ctx))
-
-		http.SetCookie(w, &http.Cookie{
-			Name:     CSRFTokenCookieName,
-			Value:    encoded,
-			Path:     "/",
-			MaxAge:   0,
-			HttpOnly: true,
-			Secure:   !w.config.Insecure,
-			SameSite: http.SameSiteLaxMode,
-		})
-	}
-}
-
 func CSRF(config *CSRFConfig) Middleware {
 	if config == nil {
 		config = &CSRFConfig{}
@@ -162,5 +109,58 @@ func CSRF(config *CSRFConfig) Middleware {
 
 			rw.commit()
 		}
+	}
+}
+
+var _ http.Pusher = (*csrfResponseWriter)(nil)
+
+type csrfResponseWriter struct {
+	http.ResponseWriter
+	request   *http.Request
+	config    *CSRFConfig
+	ctx       context.Context
+	insecure  bool
+	committed bool
+}
+
+func (w *csrfResponseWriter) Push(target string, opts *http.PushOptions) error {
+	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
+		return pusher.Push(target, opts)
+	}
+
+	return http.ErrNotSupported
+}
+
+func (w *csrfResponseWriter) Write(b []byte) (int, error) {
+	w.commit()
+
+	return w.ResponseWriter.Write(b)
+}
+
+func (w *csrfResponseWriter) WriteHeader(statusCode int) {
+	w.commit()
+
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (w *csrfResponseWriter) commit() {
+	if w.committed {
+		return
+	}
+
+	w.committed = true
+
+	if csrf.IsNew(w.ctx) {
+		encoded := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(w.ctx))
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     CSRFTokenCookieName,
+			Value:    encoded,
+			Path:     "/",
+			MaxAge:   0,
+			HttpOnly: true,
+			Secure:   !w.config.Insecure,
+			SameSite: http.SameSiteLaxMode,
+		})
 	}
 }

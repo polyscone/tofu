@@ -10,32 +10,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
-var _ http.Pusher = (*etagResponseWriter)(nil)
-
-type etagResponseWriter struct {
-	http.ResponseWriter
-	w      io.Writer
-	header bool
-}
-
-func (w *etagResponseWriter) Push(target string, opts *http.PushOptions) error {
-	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
-		return pusher.Push(target, opts)
-	}
-
-	return http.ErrNotSupported
-}
-
-func (w *etagResponseWriter) Write(b []byte) (int, error) {
-	return w.w.Write(b)
-}
-
-func (w *etagResponseWriter) WriteHeader(statusCode int) {
-	w.header = true
-
-	w.ResponseWriter.WriteHeader(statusCode)
-}
-
 func ETag(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -70,4 +44,30 @@ func ETag(next http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 	}
+}
+
+var _ http.Pusher = (*etagResponseWriter)(nil)
+
+type etagResponseWriter struct {
+	http.ResponseWriter
+	w      io.Writer
+	header bool
+}
+
+func (w *etagResponseWriter) Push(target string, opts *http.PushOptions) error {
+	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
+		return pusher.Push(target, opts)
+	}
+
+	return http.ErrNotSupported
+}
+
+func (w *etagResponseWriter) Write(b []byte) (int, error) {
+	return w.w.Write(b)
+}
+
+func (w *etagResponseWriter) WriteHeader(statusCode int) {
+	w.header = true
+
+	w.ResponseWriter.WriteHeader(statusCode)
 }
