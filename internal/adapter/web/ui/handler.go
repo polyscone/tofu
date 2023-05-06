@@ -33,6 +33,7 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	})
 
 	tenant.Broker.Listen(accountRegisteredHandler(tenant, svc))
+	tenant.Broker.Listen(accountResetPasswordRequestedHandler(tenant, svc))
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		svc.ErrorView(w, r, errors.Tracef(err), "error", nil)

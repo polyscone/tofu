@@ -1,8 +1,6 @@
 package api
 
 import (
-	"embed"
-	"io/fs"
 	"net/http"
 	"time"
 
@@ -10,22 +8,15 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/api/handler/security"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/pkg/dev"
 	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/pkg/fstack"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/size"
 )
 
-//go:embed "template"
-var files embed.FS
-
 func NewHandler(tenant *handler.Tenant) http.Handler {
-	templateFiles := fstack.New(dev.RelDirFS("template"), errors.Must(fs.Sub(files, "template")))
-
 	mux := router.NewServeMux()
-	svc := handler.NewServices(mux, tenant, templateFiles)
+	svc := handler.NewServices(mux, tenant, nil)
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		svc.ErrorJSON(w, r, errors.Tracef(err))

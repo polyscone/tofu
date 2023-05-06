@@ -1,18 +1,15 @@
 package account
 
 import (
-	"context"
 	"net/http"
-	"time"
 
+	"github.com/polyscone/tofu/internal/adapter/web/event"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/token"
-	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/port/account"
 )
@@ -38,7 +35,7 @@ func resetPasswordPost(svc *handler.Services, tokens token.Repo) http.HandlerFun
 			return
 		}
 
-		email, err := text.NewEmail(input.Email)
+		_, err := text.NewEmail(input.Email)
 		if err != nil {
 			svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/reset_password", func(data *handler.ViewData) {
 				data.Errors = errors.Map{"email": err}
@@ -47,28 +44,8 @@ func resetPasswordPost(svc *handler.Services, tokens token.Repo) http.HandlerFun
 			return
 		}
 
-		ctx := r.Context()
-
-		tok, err := tokens.AddResetPasswordToken(ctx, email, 2*time.Hour)
-		if err != nil {
-			logger.PrintError(err)
-
-			return
-		}
-
-		background.Go(func() {
-			ctx := context.Background()
-
-			recipients := handler.EmailRecipients{
-				From: "noreply@example.com",
-				To:   []string{input.Email},
-			}
-			vars := handler.Vars{
-				"Token": tok,
-			}
-			if err := svc.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
-				logger.PrintError(err)
-			}
+		svc.Broker.Dispatch(event.ResetPasswordRequested{
+			Email: input.Email,
 		})
 
 		http.Redirect(w, r, svc.Path("account.reset_password")+"?status=email-sent", http.StatusSeeOther)

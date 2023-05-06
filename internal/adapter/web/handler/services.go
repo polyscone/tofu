@@ -21,6 +21,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/port"
@@ -117,6 +118,7 @@ type Services struct {
 	mux         *router.ServeMux
 	mailer      smtp.Mailer
 	Bus         command.Bus
+	Broker      event.Broker
 	Sessions    *session.Manager
 }
 
@@ -137,6 +139,7 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 		mux:       mux,
 		mailer:    tenant.Mailer,
 		Bus:       tenant.Bus,
+		Broker:    tenant.Broker,
 		Sessions:  sessions,
 	}
 }
