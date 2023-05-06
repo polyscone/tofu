@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/event"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/token"
@@ -34,7 +33,7 @@ func resetPasswordPost(svc *handler.Services, tokens token.Repo) http.HandlerFun
 			return
 		}
 
-		svc.Broker.Dispatch(event.ResetPasswordRequested{
+		svc.Broker.Dispatch(handler.ResetPasswordRequested{
 			Email: input.Email,
 		})
 	}

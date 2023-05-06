@@ -1,4 +1,4 @@
-package event
+package handler
 
 type ResetPasswordRequested struct {
 	Email string

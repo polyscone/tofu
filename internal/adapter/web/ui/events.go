@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/polyscone/tofu/internal/adapter/web/event"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/logger"
@@ -46,7 +45,7 @@ func accountRegisteredHandler(tenant *handler.Tenant, svc *handler.Services) any
 }
 
 func accountResetPasswordRequestedHandler(tenant *handler.Tenant, svc *handler.Services) any {
-	return func(evt event.ResetPasswordRequested) {
+	return func(evt handler.ResetPasswordRequested) {
 		background.Go(func() {
 			ctx := context.Background()
 
