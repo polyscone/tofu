@@ -45,7 +45,7 @@ func (cmd AuthenticateWithTOTP) request(ctx context.Context) (authenticateWithTO
 		errs.Set("totp", err)
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type AuthenticateWithTOTPHandler func(ctx context.Context, cmd AuthenticateWithTOTP) error

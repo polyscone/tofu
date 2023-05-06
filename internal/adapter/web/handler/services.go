@@ -374,7 +374,9 @@ func (svc *Services) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err e
 		case errors.Is(err, http.ErrHandlerTimeout):
 			data.ErrorMessage = "the server took too long to respond"
 
-		case errors.Is(err, port.ErrInvalidInput):
+		case errors.Is(err, port.ErrMalformedInput),
+			errors.Is(err, port.ErrInvalidInput):
+
 			data.ErrorMessage = "invalid input"
 
 			if trace, ok := err.(errors.Trace); ok {
@@ -425,6 +427,7 @@ func (svc *Services) ErrorJSON(w http.ResponseWriter, r *http.Request, err error
 	default:
 		switch {
 		case errors.Is(err, http.ErrHandlerTimeout),
+			errors.Is(err, port.ErrMalformedInput),
 			errors.Is(err, port.ErrInvalidInput),
 			errors.Is(err, port.ErrUnauthorised),
 			errors.Is(err, csrf.ErrEmptyToken),

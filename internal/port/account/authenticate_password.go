@@ -50,7 +50,7 @@ func (cmd AuthenticateWithPassword) request(ctx context.Context) (authenticateWi
 		errs.Set("password", err)
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type AuthenticateWithPasswordHandler func(ctx context.Context, cmd AuthenticateWithPassword) (authenticateWithPasswordResponse, error)

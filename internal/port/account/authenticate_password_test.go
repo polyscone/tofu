@@ -60,12 +60,12 @@ func TestAuthenticateWithPassword(t *testing.T) {
 			password string
 			want     error
 		}{
-			{"empty email and password", "", "", port.ErrInvalidInput},
-			{"empty email", "", "123", port.ErrInvalidInput},
-			{"empty password", "empty@password.com", "", port.ErrInvalidInput},
-			{"email without @ sign", "joebloggs.com", "password", port.ErrInvalidInput},
+			{"empty email and password", "", "", port.ErrMalformedInput},
+			{"empty email", "", "123", port.ErrMalformedInput},
+			{"empty password", "empty@password.com", "", port.ErrMalformedInput},
+			{"email without @ sign", "joebloggs.com", "password", port.ErrMalformedInput},
 			{"non-existent email", "foo@bar.com", "password", nil},
-			{"short password", "joe@bloggs.com", "0123456", port.ErrInvalidInput},
+			{"short password", "joe@bloggs.com", "0123456", port.ErrMalformedInput},
 			{"incorrect password", activatedUser.Email.String(), "0123456789", port.ErrBadRequest},
 			{"unactivated user", unactivatedUser.Email.String(), "password", port.ErrBadRequest},
 			{"unactivated user", unactivatedUser.Email.String(), "password", account.ErrNotActivated},
@@ -110,7 +110,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 			quick.CheckN(t, 2, func(email text.Email, password domain.Password) bool {
 				err := execute(email, password)
 
-				return !errors.Is(err, port.ErrInvalidInput)
+				return !errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -118,7 +118,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 			quick.Check(t, func(email quick.Invalid[text.Email], password domain.Password) bool {
 				err := execute(email.Unwrap(), password)
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -126,7 +126,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 			quick.Check(t, func(email text.Email, password quick.Invalid[domain.Password]) bool {
 				err := execute(email, password.Unwrap())
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 

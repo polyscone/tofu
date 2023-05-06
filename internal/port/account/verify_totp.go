@@ -54,7 +54,7 @@ func (cmd VerifyTOTP) request(ctx context.Context) (verifyTOTPRequest, error) {
 		errs.Set("totp", err)
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type VerifyTOTPHandler func(ctx context.Context, cmd VerifyTOTP) error

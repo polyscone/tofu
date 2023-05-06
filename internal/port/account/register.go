@@ -56,7 +56,7 @@ func (cmd Register) request(ctx context.Context) (registerRequest, error) {
 		errs.Set("password", "passwords do not match")
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type RegisterHandler func(ctx context.Context, cmd Register) error

@@ -52,7 +52,7 @@ func (cmd RegenerateRecoveryCodes) request(ctx context.Context) (regenerateRecov
 		errs.Set("user id", err)
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type RegenerateRecoveryCodesHandler func(ctx context.Context, cmd RegenerateRecoveryCodes) (regenerateRecoveryCodesResponse, error)

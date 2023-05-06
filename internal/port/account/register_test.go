@@ -64,7 +64,7 @@ func TestRegister(t *testing.T) {
 			quick.Check(t, func(id quick.Invalid[uuid.V4], email text.Email, password domain.Password) bool {
 				err := execute(id.Unwrap(), email, password, password)
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -72,7 +72,7 @@ func TestRegister(t *testing.T) {
 			quick.Check(t, func(id uuid.V4, email quick.Invalid[text.Email], password domain.Password) bool {
 				err := execute(id, email.Unwrap(), password, password)
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -80,7 +80,7 @@ func TestRegister(t *testing.T) {
 			quick.Check(t, func(id uuid.V4, email text.Email, password quick.Invalid[domain.Password]) bool {
 				err := execute(id, email, password.Unwrap(), password.Unwrap())
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -91,7 +91,7 @@ func TestRegister(t *testing.T) {
 
 				err := execute(id, email, password, mismatch)
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 

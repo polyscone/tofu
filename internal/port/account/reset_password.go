@@ -59,7 +59,7 @@ func (cmd ResetPassword) request(ctx context.Context) (resetPasswordRequest, err
 		errs.Set("new password", "passwords do not match")
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type ResetPasswordHandler func(ctx context.Context, cmd ResetPassword) error

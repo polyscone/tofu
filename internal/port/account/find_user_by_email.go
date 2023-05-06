@@ -44,7 +44,7 @@ func (cmd FindUserByEmail) request(ctx context.Context) (findUserByEmailRequest,
 		errs.Set("email", err)
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type FindUserByEmailHandler func(ctx context.Context, cmd FindUserByEmail) (findUserByEmailResponse, error)

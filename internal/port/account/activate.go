@@ -39,7 +39,7 @@ func (cmd Activate) request(ctx context.Context) (activateRequest, error) {
 		errs.Set("email", err)
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type ActivateHandler func(ctx context.Context, cmd Activate) error

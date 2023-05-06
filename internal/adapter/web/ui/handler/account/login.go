@@ -43,15 +43,11 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 
 		cmd := account.AuthenticateWithPassword(input)
 		res, err := cmd.Execute(ctx, svc.Bus)
-		switch {
-		case errors.Is(err, account.ErrNotActivated):
+		if err != nil {
 			svc.ErrorView(w, r, errors.Tracef(err), "account/login", handler.Vars{
-				"IsAccountUnactivated": true,
+				"IsAccountUnactivated": errors.Is(err, account.ErrNotActivated),
 			})
 
-			return
-
-		case svc.ErrorView(w, r, errors.Tracef(err), "error", nil):
 			return
 		}
 
@@ -98,7 +94,7 @@ func loginTOTPPost(svc *handler.Services) http.HandlerFunc {
 			TOTP:   input.TOTP,
 		}
 		err = cmd.Execute(ctx, svc.Bus)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "account/login", nil) {
 			return
 		}
 

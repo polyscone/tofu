@@ -64,7 +64,7 @@ func (cmd ChangePassword) request(ctx context.Context) (changePasswordRequest, e
 		errs.Set("new password", "passwords do not match")
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type ChangePasswordHandler func(ctx context.Context, cmd ChangePassword) error
@@ -82,10 +82,6 @@ func NewChangePasswordHandler(broker event.Broker, users UserRepo) ChangePasswor
 		}
 
 		if err := user.ChangePassword(req.oldPassword, req.newPassword); err != nil {
-			if errors.Is(err, port.ErrInvalidInput) {
-				return errors.Map{"old password": err}.Tracef(err)
-			}
-
 			return errors.Tracef(err)
 		}
 

@@ -56,7 +56,7 @@ func (cmd SetupTOTP) request(ctx context.Context) (setupTOTPRequest, error) {
 		errs.Set("user id", err)
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type SetupTOTPHandler func(ctx context.Context, cmd SetupTOTP) (setupTOTPResponse, error)

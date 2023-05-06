@@ -1,6 +1,6 @@
 onMount("input, textarea", node => {
   // Set a data-invalid attribute on forms when they're submitted with
-  // invalid inputs
+  // malformed inputs
   //
   // This is to allow for styling invalid form elements after submittal
   // in a more persistent way than is allowed with CSS only

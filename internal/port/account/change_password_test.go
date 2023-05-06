@@ -90,9 +90,9 @@ func TestChangePassword(t *testing.T) {
 			want        error
 		}{
 			{"unauthorised", invalidGuard, "", "", "", port.ErrUnauthorised},
-			{"empty new password", validGuard, user2.ID.String(), user2Password, "", port.ErrInvalidInput},
-			{"empty old password", validGuard, user2.ID.String(), "", user2Password, port.ErrInvalidInput},
-			{"incorrect old password", validGuard, user2.ID.String(), "password___", user2Password, port.ErrBadRequest},
+			{"empty new password", validGuard, user2.ID.String(), user2Password, "", port.ErrMalformedInput},
+			{"empty old password", validGuard, user2.ID.String(), "", user2Password, port.ErrMalformedInput},
+			{"incorrect old password", validGuard, user2.ID.String(), "password___", user2Password, port.ErrInvalidInput},
 		}
 		for _, tc := range tt {
 			tc := tc
@@ -151,7 +151,7 @@ func TestChangePassword(t *testing.T) {
 				// change so subsequent tests don't fail
 				oldPassword = newPassword
 
-				return !errors.Is(err, port.ErrInvalidInput)
+				return !errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -167,7 +167,7 @@ func TestChangePassword(t *testing.T) {
 			quick.Check(t, func(newPassword quick.Invalid[domain.Password]) bool {
 				err := execute(oldPassword, newPassword.Unwrap(), newPassword.Unwrap())
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -178,7 +178,7 @@ func TestChangePassword(t *testing.T) {
 
 				err := execute(oldPassword, newPassword, mismatch)
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 

@@ -91,9 +91,9 @@ func TestVerifyTOTP(t *testing.T) {
 			want    error
 		}{
 			{"unauthorised", invalidGuard, "", nil, port.ErrUnauthorised},
-			{"empty user id correct TOTP", validGuard, "", setupTOTPUser.TOTPKey, port.ErrInvalidInput},
-			{"empty user id incorrect TOTP", validGuard, "", nil, port.ErrInvalidInput},
-			{"no TOTP user id correct TOTP", validGuard, activatedUser.ID.String(), setupTOTPUser.TOTPKey, port.ErrBadRequest},
+			{"empty user id correct TOTP", validGuard, "", setupTOTPUser.TOTPKey, port.ErrMalformedInput},
+			{"empty user id incorrect TOTP", validGuard, "", nil, port.ErrMalformedInput},
+			{"no TOTP user id correct TOTP", validGuard, activatedUser.ID.String(), setupTOTPUser.TOTPKey, port.ErrInvalidInput},
 			{"already verified TOTP", validGuard, verifiedTOTPUser.ID.String(), verifiedTOTPUser.TOTPKey, port.ErrBadRequest},
 		}
 		for _, tc := range tt {
@@ -144,7 +144,7 @@ func TestVerifyTOTP(t *testing.T) {
 			quick.Check(t, func(totp domain.TOTP) bool {
 				err := execute(totp)
 
-				return !errors.Is(err, port.ErrInvalidInput)
+				return !errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -152,7 +152,7 @@ func TestVerifyTOTP(t *testing.T) {
 			quick.Check(t, func(totp quick.Invalid[domain.TOTP]) bool {
 				err := execute(totp.Unwrap())
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 

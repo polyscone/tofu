@@ -19,7 +19,8 @@ func ErrorStatus(err error) int {
 	case errors.Is(err, http.ErrHandlerTimeout):
 		return http.StatusGatewayTimeout
 
-	case errors.Is(err, port.ErrInvalidInput),
+	case errors.Is(err, port.ErrMalformedInput),
+		errors.Is(err, port.ErrInvalidInput),
 		errors.Is(err, port.ErrBadRequest),
 		errors.Is(err, csrf.ErrEmptyToken),
 		errors.Is(err, csrf.ErrInvalidToken):

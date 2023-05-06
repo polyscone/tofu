@@ -82,7 +82,7 @@ func TestResetPassword(t *testing.T) {
 			want        error
 		}{
 			{"unauthorised", invalidGuard, "", "", port.ErrUnauthorised},
-			{"empty new password", validGuard, user.ID.String(), "", port.ErrInvalidInput},
+			{"empty new password", validGuard, user.ID.String(), "", port.ErrMalformedInput},
 		}
 		for _, tc := range tt {
 			tc := tc
@@ -133,7 +133,7 @@ func TestResetPassword(t *testing.T) {
 			quick.CheckN(t, 2, func(newPassword domain.Password) bool {
 				err := execute(newPassword, newPassword)
 
-				return !errors.Is(err, port.ErrInvalidInput)
+				return !errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -141,7 +141,7 @@ func TestResetPassword(t *testing.T) {
 			quick.Check(t, func(newPassword quick.Invalid[domain.Password]) bool {
 				err := execute(newPassword.Unwrap(), newPassword.Unwrap())
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -152,7 +152,7 @@ func TestResetPassword(t *testing.T) {
 
 				err := execute(newPassword, mismatch)
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 

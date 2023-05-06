@@ -54,7 +54,7 @@ func (cmd DisableTOTP) request(ctx context.Context) (disableTOTPRequest, error) 
 		errs.Set("totp", err)
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type DisableTOTPHandler func(ctx context.Context, cmd DisableTOTP) error

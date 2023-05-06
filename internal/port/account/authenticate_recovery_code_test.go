@@ -94,8 +94,8 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 			recoveryCode string
 			want         error
 		}{
-			{"empty user id correct recovery code", "", string(activatedUser.RecoveryCodes[1]), port.ErrInvalidInput},
-			{"empty user id incorrect recovery code", "", incorrectCode, port.ErrInvalidInput},
+			{"empty user id correct recovery code", "", string(activatedUser.RecoveryCodes[1]), port.ErrMalformedInput},
+			{"empty user id incorrect recovery code", "", incorrectCode, port.ErrMalformedInput},
 			{"activated user id incorrect recovery code", activatedUser.ID.String(), incorrectCode, port.ErrBadRequest},
 			{"activated user id unverified correct TOTP", unverifiedTOTPUser.ID.String(), string(unverifiedTOTPUser.RecoveryCodes[0]), port.ErrBadRequest},
 			{"activated user id without TOTP setup", activatedNoTOTPUser.ID.String(), incorrectCode, port.ErrBadRequest},
@@ -140,7 +140,7 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 			quick.Check(t, func(code domain.RecoveryCode) bool {
 				err := execute(code)
 
-				return !errors.Is(err, port.ErrInvalidInput)
+				return !errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -148,7 +148,7 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 			quick.Check(t, func(code quick.Invalid[domain.RecoveryCode]) bool {
 				err := execute(code.Unwrap())
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 

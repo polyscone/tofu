@@ -82,7 +82,7 @@ func TestActivate(t *testing.T) {
 			quick.Check(t, func(email text.Email) bool {
 				err := execute(email)
 
-				return !errors.Is(err, port.ErrInvalidInput)
+				return !errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -90,7 +90,7 @@ func TestActivate(t *testing.T) {
 			quick.Check(t, func(email quick.Invalid[text.Email]) bool {
 				err := execute(email.Unwrap())
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 

@@ -84,9 +84,9 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 			totpKey []byte
 			want    error
 		}{
-			{"empty user id correct TOTP", "", activatedUser.TOTPKey, port.ErrInvalidInput},
-			{"empty user id incorrect TOTP", "", nil, port.ErrInvalidInput},
-			{"activated user id incorrect TOTP", activatedUser.ID.String(), nil, port.ErrBadRequest},
+			{"empty user id correct TOTP", "", activatedUser.TOTPKey, port.ErrMalformedInput},
+			{"empty user id incorrect TOTP", "", nil, port.ErrMalformedInput},
+			{"activated user id incorrect TOTP", activatedUser.ID.String(), nil, port.ErrInvalidInput},
 			{"activated user id unverified correct TOTP", unverifiedTOTPUser.ID.String(), unverifiedTOTPUser.TOTPKey, port.ErrBadRequest},
 			{"activated user id without TOTP setup", activatedNoTOTPUser.ID.String(), nil, port.ErrBadRequest},
 		}
@@ -136,7 +136,7 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 			quick.Check(t, func(totp domain.TOTP) bool {
 				err := execute(totp)
 
-				return !errors.Is(err, port.ErrInvalidInput)
+				return !errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 
@@ -144,7 +144,7 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 			quick.Check(t, func(totp quick.Invalid[domain.TOTP]) bool {
 				err := execute(totp.Unwrap())
 
-				return errors.Is(err, port.ErrInvalidInput)
+				return errors.Is(err, port.ErrMalformedInput)
 			})
 		})
 

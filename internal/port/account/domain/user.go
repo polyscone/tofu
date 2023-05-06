@@ -139,7 +139,9 @@ func (u *User) ChangePassword(oldPassword, newPassword Password) error {
 	}
 
 	if err := u.verifyPassword(oldPassword); err != nil {
-		return errors.Tracef(port.ErrInvalidInput, err)
+		errs := errors.Map{"old password": err}
+
+		return errs.Tracef(port.ErrInvalidInput)
 	}
 
 	if err := u.setPassword(newPassword); err != nil {
@@ -214,7 +216,9 @@ func (u *User) VerifyTOTP(totp TOTP) error {
 		return errors.Tracef(err)
 	}
 	if !ok {
-		return errors.Tracef(port.ErrBadRequest, "could not verify TOTP")
+		errs := errors.Map{"totp": errors.New("could not verify TOTP")}
+
+		return errs.Tracef(port.ErrInvalidInput)
 	}
 
 	u.TOTPVerifiedAt = time.Now()
@@ -305,7 +309,9 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 		return errors.Tracef(err)
 	}
 	if !ok {
-		return errors.Tracef(port.ErrBadRequest, "could not verify TOTP")
+		errs := errors.Map{"totp": errors.New("could not verify TOTP")}
+
+		return errs.Tracef(port.ErrInvalidInput)
 	}
 
 	u.Events.Enqueue(AuthenticatedWithTOTP{

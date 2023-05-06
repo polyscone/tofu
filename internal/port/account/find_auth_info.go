@@ -45,7 +45,7 @@ func (cmd FindAuthInfo) request(ctx context.Context) (findAuthInfoRequest, error
 		errs.Set("user id", err)
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type FindAuthInfoHandler func(ctx context.Context, cmd FindAuthInfo) (findAuthInfoResponse, error)

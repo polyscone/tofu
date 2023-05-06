@@ -45,7 +45,7 @@ func (cmd AuthenticateWithRecoveryCode) request(ctx context.Context) (authentica
 		errs.Set("recovery code", err)
 	}
 
-	return req, errs.Tracef(port.ErrInvalidInput)
+	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
 type AuthenticateWithRecoveryCodeHandler func(ctx context.Context, cmd AuthenticateWithRecoveryCode) error
