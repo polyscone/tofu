@@ -453,6 +453,9 @@ func (sm *ServeMux) MethodNotAllowed(handler http.HandlerFunc) {
 // For example, the patterns: "/:foo/greet"; "/:foo/world", will rewrite the
 // source "/hello/greet" to "/hello/world".
 func (sm *ServeMux) Rewrite(method, src, dst string) {
+	originalPrefix := sm.prefix
+	sm.prefix = ""
+
 	sm.route(method, src, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		dst := dst
 
@@ -477,6 +480,8 @@ func (sm *ServeMux) Rewrite(method, src, dst string) {
 
 		sm.ServeHTTP(w, r)
 	}))
+
+	sm.prefix = originalPrefix
 }
 
 // Redirect will create a new handler for the given source path that will
@@ -487,6 +492,9 @@ func (sm *ServeMux) Rewrite(method, src, dst string) {
 // For example, the patterns: "/:foo/greet"; "/:foo/world", will redirect the
 // source "/hello/greet" to "/hello/world".
 func (sm *ServeMux) Redirect(method, src, dst string, code int) {
+	originalPrefix := sm.prefix
+	sm.prefix = ""
+
 	sm.route(method, src, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		dst := dst
 
@@ -509,6 +517,8 @@ func (sm *ServeMux) Redirect(method, src, dst string, code int) {
 
 		http.Redirect(w, r, dst, code)
 	}))
+
+	sm.prefix = originalPrefix
 }
 
 // URLParam returns the string value associated with the given parameter name in

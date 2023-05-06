@@ -81,17 +81,21 @@ func TestMux(t *testing.T) {
 		w.Write([]byte("redirected"))
 	})
 
-	mux.Redirect(http.MethodGet, "/redirect/src", "/redirect/dst", http.StatusTemporaryRedirect)
-	mux.Redirect(http.MethodGet, "/:var/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
-	mux.Redirect(http.MethodGet, "/:var/:varfoo/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
+	mux.Prefix("/foo-prefix", func(sm *router.ServeMux) {
+		mux.Redirect(http.MethodGet, "/redirect/src", "/redirect/dst", http.StatusTemporaryRedirect)
+		mux.Redirect(http.MethodGet, "/:var/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
+		mux.Redirect(http.MethodGet, "/:var/:varfoo/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
+	})
 
 	mux.Get("/rewrite/dst", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("rewritten"))
 	})
 
-	mux.Rewrite(http.MethodGet, "/rewrite/src", "/rewrite/dst")
-	mux.Rewrite(http.MethodGet, "/:var/rewrite/src/var", "/:var/dst")
-	mux.Rewrite(http.MethodGet, "/:var/:varfoo/rewrite/src/var", "/:var/dst")
+	mux.Prefix("/bar-prefix", func(sm *router.ServeMux) {
+		mux.Rewrite(http.MethodGet, "/rewrite/src", "/rewrite/dst")
+		mux.Rewrite(http.MethodGet, "/:var/rewrite/src/var", "/:var/dst")
+		mux.Rewrite(http.MethodGet, "/:var/:varfoo/rewrite/src/var", "/:var/dst")
+	})
 
 	mux.Get("/aa/bb/cc/dd", echoHandler, "simple")
 	mux.Get("/aa/:bb/cc/:dd", echoHandler, "complex")
