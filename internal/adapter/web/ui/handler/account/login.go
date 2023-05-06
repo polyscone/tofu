@@ -70,6 +70,13 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 		svc.Sessions.Set(ctx, sess.IsAwaitingTOTP, res.HasVerifiedTOTP)
 		svc.Sessions.Set(ctx, sess.IsAuthenticated, !res.HasVerifiedTOTP)
 
-		http.Redirect(w, r, svc.Path("account.dashboard"), http.StatusSeeOther)
+		var redirect string
+		if r := svc.Sessions.PopString(ctx, sess.Redirect); r != "" {
+			redirect = r
+		} else {
+			redirect = svc.Path("account.dashboard")
+		}
+
+		http.Redirect(w, r, redirect, http.StatusSeeOther)
 	}
 }

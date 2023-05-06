@@ -7,8 +7,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 )
 
-var Empty Passport
-
 // Passport is a wrapper around a session manager focused on the session for a
 // single given context.
 // The focus on a single context means that it can also implement guard

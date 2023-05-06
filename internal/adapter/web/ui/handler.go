@@ -28,6 +28,9 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 
 	mux := router.NewServeMux()
 	svc := handler.NewServices(mux, tenant, templateFiles)
+	guard := handler.NewGuard(svc, func() string {
+		return svc.Path("account.login")
+	})
 
 	tenant.Broker.Listen(accountRegisteredHandler(tenant, svc))
 
@@ -64,6 +67,7 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 
 		return 0
 	}))
+	mux.Use(guard.Middleware)
 
 	// Rewrites
 	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")
@@ -74,13 +78,13 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	// Account
 	mux.Prefix("/account", func(mux *router.ServeMux) {
 		account.Activate(svc, mux, tenant.Tokens)
-		account.ChangePassword(svc, mux)
-		account.Dashboard(svc, mux)
+		account.ChangePassword(svc, mux, guard)
+		account.Dashboard(svc, mux, guard)
 		account.ResetPassword(svc, mux, tenant.Tokens)
 		account.Login(svc, mux)
 		account.Logout(svc, mux)
 		account.Register(svc, mux)
-		account.TOTP(svc, mux)
+		account.TOTP(svc, mux, guard)
 	})
 
 	// Public static file handler

@@ -12,9 +12,11 @@ import (
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func ChangePassword(svc *handler.Services, mux *router.ServeMux) {
+func ChangePassword(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
 	mux.Get("/change-password", changePasswordGet(svc), "account.change_password")
 	mux.Put("/change-password", changePasswordPut(svc), "account.change_password.put")
+
+	guard.Protect(svc.Path("account.change_password"))
 }
 
 func changePasswordGet(svc *handler.Services) http.HandlerFunc {

@@ -141,9 +141,13 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 	}
 }
 
+func (svc *Services) emptyPassport(ctx context.Context) passport.Passport {
+	return passport.New(ctx, svc.Sessions, "", nil, nil, nil)
+}
+
 func (svc *Services) Passport(ctx context.Context) passport.Passport {
 	if svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
-		return passport.Empty
+		return svc.emptyPassport(ctx)
 	}
 
 	userID := svc.Sessions.GetString(ctx, sess.UserID)
@@ -152,7 +156,7 @@ func (svc *Services) Passport(ctx context.Context) passport.Passport {
 	}
 	info, err := cmd.Execute(ctx, svc.Bus)
 	if err != nil {
-		return passport.Empty
+		return svc.emptyPassport(ctx)
 	}
 
 	return passport.New(ctx, svc.Sessions, userID, info.Claims, info.Roles, info.Permissions)
@@ -164,7 +168,7 @@ func (svc *Services) PassportByEmail(ctx context.Context, email string) (passpor
 	}
 	user, err := cmd.Execute(ctx, svc.Bus)
 	if err != nil {
-		return passport.Empty, errors.Tracef(err)
+		return svc.emptyPassport(ctx), errors.Tracef(err)
 	}
 
 	return passport.New(ctx, svc.Sessions, user.ID, nil, nil, nil), nil

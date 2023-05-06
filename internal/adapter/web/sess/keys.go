@@ -6,4 +6,5 @@ const (
 	HasVerifiedTOTP = "global.has_verified_totp"
 	IsAwaitingTOTP  = "global.is_awaiting_totp"
 	IsAuthenticated = "global.is_authenticated"
+	Redirect        = "global.redirect"
 )

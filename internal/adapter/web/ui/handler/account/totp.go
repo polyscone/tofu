@@ -20,7 +20,7 @@ import (
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func TOTP(svc *handler.Services, mux *router.ServeMux) {
+func TOTP(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
 	mux.Get("/totp", totpGet(svc), "account.totp")
 	mux.Post("/totp/app", totpSetupWithAppPost(svc), "account.totp.app.post")
 	mux.Post("/totp/verify", totpVerifyPost(svc), "account.totp.verify.post")
@@ -30,6 +30,8 @@ func TOTP(svc *handler.Services, mux *router.ServeMux) {
 		"KeyBase32":     "",
 		"QRCodeBase64":  "",
 	})
+
+	guard.Protect(svc.Path("account.totp"))
 }
 
 func totpGet(svc *handler.Services) http.HandlerFunc {
