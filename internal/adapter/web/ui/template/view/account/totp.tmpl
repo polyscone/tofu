@@ -2,14 +2,21 @@
 
 <div class="totp center">
 	{{if eq (.Query.Get "status") "success"}}
-		<p class="title">2FA Verified</p>
+		<p class="title">Two-Factor Authentication Verified</p>
+
+		<p>Your passcode was successfully verified and two-factor authentication has been enabled for your account.</p>
+		<p>From now on when logging in you will be required to provide a 6 digit passcode to verify your identity.</p>
+	{{else if .Session.HasVerifiedTOTP}}
+		<p class="title">Two-Factor Authentication Already Enabled</p>
+
+		<p>Two-factor authentication has already been enabled for your account.</p>
 	{{else if .Vars.QRCodeBase64}}
 		<p class="title">Recovery Codes</p>
 
-		<p>In the event that you lose access to your authentication device you can use the following recovery codes in place of a normal code.</p>
+		<p>In the event that you lose access to your authentication device you can use the following recovery codes in place of a normal passcode.</p>
 
 		<div class="totp__recovery-codes-warning">
-			<p>Before enabling two-factor authentication use one of the buttons below to download, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.</p>
+			<p>Before enabling two-factor authentication, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.</p>
 			<p>
 				If possible, we recommend storing them in a password manager, such as
 				<a href="https://1password.com/" target="_blank" rel="noopener noreferrer">1Password</a>,
@@ -26,6 +33,8 @@
 			</ul>
 		</div>
 
+		<p class="title">Enable Two-Factor Authentication</p>
+
 		<p>If you don't already have an authenticator application installed on your phone or computer then you will need to download and install one to set up two-factor authentication.</p>
 		<p>We recommend using one of the following:</p>
 
@@ -39,15 +48,22 @@
 		<!-- <a href="">Can't install an authenticator app? Click here to use SMS.</a> -->
 
 		<p>Use your authenticator app to scan the QR code below. If you can't scan the QR code then you can manually enter the secret key instead.</p>
-		<p><img src="{{.Vars.QRCodeBase64}}" alt="TOTP QR Code"></p>
-		<p>Secret Key: {{.Vars.KeyBase32}}</p>
-		<p>After scanning the QR code, or manually entering the secret key, your app will display a 6 digit code that you can enter below to verify that your authenticator app is setup correctly and enable two-factor authentication.</p>
+
+		<div class="totp__qrcode">
+			<p><img src="{{.Vars.QRCodeBase64}}" alt="TOTP QR Code"></p>
+			<p>
+				Secret Key:<br>
+				{{.Vars.KeyBase32}}
+			</p>
+		</div>
+
+		<p>After scanning the QR code, or manually entering the secret key, your app will display a 6 digit passcode that you can enter below to verify that your authenticator app is setup correctly and enable two-factor authentication.</p>
 
 		<form action="{{Path "account.totp.verify.post"}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
-			<label for="totp__code">Code</label>
-			<input id="totp__code" type="text" name="totp" placeholder="123456" autocomplete="off" autofocus required pattern="\d{6}" minlength="6" maxlength="6">
+			<label for="totp__passcode">Passcode</label>
+			<input id="totp__passcode" type="text" name="totp" placeholder="123456" autocomplete="off" required pattern="\d{6}" minlength="6" maxlength="6">
 			<p class="error">{{.Errors.Get "totp"}}</p>
 
 			<button type="submit">Enable two-factor authentication</button>
@@ -60,7 +76,7 @@
 
 		<div class="totp__methods">
 			<div class="totp__methods--app">
-			<p>Use an application on your phone or computer to get codes when prompted (recommended).</p>
+			<p>Use an application on your phone or computer to get passcodes when prompted (recommended).</p>
 
 			<form action="{{Path "account.totp.app.post"}}" method="POST">
 				<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">

@@ -1,0 +1,28 @@
+{{define "view"}}
+
+<div class="totp center">
+	{{if eq (.Query.Get "status") "disabled"}}
+		<p class="title">Two-Factor Authentication Disabled</p>
+
+		<p>Two-factor authentication has been disabled for your account.</p>
+		<p>From now on you will not be required to provide any passcodes when logging in to your account.</p>
+	{{else if not .Session.HasVerifiedTOTP}}
+		<p class="title">Two-Factor Authentication Already Disabled</p>
+
+		<p>Two-factor authentication is already disabled for your account.</p>
+	{{else}}
+		<p class="title">Disable Two-Factor Authentication</p>
+
+		<form action="{{Path "account.totp.disable.post"}}" method="POST">
+			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+			<label for="totp__passcode">Passcode</label>
+			<input id="totp__passcode" type="text" name="totp" placeholder="123456" autocomplete="off" autofocus required pattern="\d{6}" minlength="6" maxlength="6">
+			<p class="error">{{.Errors.Get "totp"}}</p>
+
+			<button type="submit">Disable two-factor authentication</button>
+		</form>
+	{{end}}
+</div>
+
+{{end}}

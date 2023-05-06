@@ -114,7 +114,7 @@ func disableTOTPPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		passport.Delete(sess.IsAwaitingTOTP)
+		passport.Set(sess.HasVerifiedTOTP, false)
 
 		csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 
@@ -156,6 +156,8 @@ func verifyTOTPPost(svc *handler.Services) http.HandlerFunc {
 		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
+
+		passport.Set(sess.HasVerifiedTOTP, true)
 
 		csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 

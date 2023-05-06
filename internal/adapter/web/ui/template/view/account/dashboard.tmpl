@@ -5,7 +5,12 @@
 <nav>
 	<ul>
 		<li><a href="{{Path "account.change_password"}}">Change password</a></li>
-		<li><a href="{{Path "account.totp"}}">Setup 2FA</a></li>
+
+		{{if .Session.HasVerifiedTOTP}}
+			<li><a href="{{Path "account.totp.disable"}}">Disable two-factor authentication</a></li>
+		{{else}}
+			<li><a href="{{Path "account.totp"}}">Setup two-factor authentication</a></li>
+		{{end}}
 	</ul>
 </nav>
 

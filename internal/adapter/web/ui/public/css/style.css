@@ -213,6 +213,25 @@
     gap: 1rem;
   }
 
+  .totp__recovery-codes-warning {
+    background: var(--clr-invalid-100);
+    border: 1px solid var(--clr-invalid-400);
+    padding: 0.6rem 1rem 0;
+  }
+
+  .totp__recovery-codes,
+  .totp__qrcode {
+    font-family: monospace;
+  }
+
+  .totp__qrcode {
+    text-align: center;
+  }
+
+  .totp__qrcode img {
+    display: inline-block;
+  }
+
   .error {
     color: var(--clr-invalid-400);
     margin-block: 0;
