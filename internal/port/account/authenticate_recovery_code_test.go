@@ -96,7 +96,7 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 		}{
 			{"empty user id correct recovery code", "", string(activatedUser.RecoveryCodes[1]), port.ErrMalformedInput},
 			{"empty user id incorrect recovery code", "", incorrectCode, port.ErrMalformedInput},
-			{"activated user id incorrect recovery code", activatedUser.ID.String(), incorrectCode, port.ErrBadRequest},
+			{"activated user id incorrect recovery code", activatedUser.ID.String(), incorrectCode, port.ErrInvalidInput},
 			{"activated user id unverified correct TOTP", unverifiedTOTPUser.ID.String(), string(unverifiedTOTPUser.RecoveryCodes[0]), port.ErrBadRequest},
 			{"activated user id without TOTP setup", activatedNoTOTPUser.ID.String(), incorrectCode, port.ErrBadRequest},
 		}

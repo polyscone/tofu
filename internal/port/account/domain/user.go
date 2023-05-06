@@ -216,7 +216,7 @@ func (u *User) VerifyTOTP(totp TOTP) error {
 		return errors.Tracef(err)
 	}
 	if !ok {
-		errs := errors.Map{"totp": errors.New("could not verify TOTP")}
+		errs := errors.Map{"totp": errors.New("invalid passcode")}
 
 		return errs.Tracef(port.ErrInvalidInput)
 	}
@@ -309,7 +309,7 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 		return errors.Tracef(err)
 	}
 	if !ok {
-		errs := errors.Map{"totp": errors.New("could not verify TOTP")}
+		errs := errors.Map{"totp": errors.New("invalid passcode")}
 
 		return errs.Tracef(port.ErrInvalidInput)
 	}
@@ -342,7 +342,7 @@ func (u *User) AuthenticateWithRecoveryCode(recoveryCode RecoveryCode) error {
 		}
 	}
 
-	return errors.Tracef(port.ErrBadRequest, "could not verify recovery code")
+	return errors.Tracef(port.ErrInvalidInput, "invalid recovery code")
 }
 
 func (u *User) Is(query Claim) bool {
