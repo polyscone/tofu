@@ -92,6 +92,7 @@ func loginWithTOTPPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
+		svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
 		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
 
 		csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
@@ -132,6 +133,7 @@ func loginWithRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
+		svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
 		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
 
 		csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))

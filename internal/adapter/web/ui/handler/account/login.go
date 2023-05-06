@@ -15,6 +15,7 @@ import (
 func Login(svc *handler.Services, mux *router.ServeMux) {
 	mux.Get("/login", loginGet(svc), "account.login")
 	mux.Post("/login", loginPost(svc), "account.login.post")
+	mux.Post("/login/totp", loginTOTPPost(svc), "account.login.totp.post")
 
 	svc.SetViewVars("account/login", handler.Vars{
 		"IsAccountUnactivated": false,
@@ -70,13 +71,63 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 		svc.Sessions.Set(ctx, sess.IsAwaitingTOTP, res.HasVerifiedTOTP)
 		svc.Sessions.Set(ctx, sess.IsAuthenticated, !res.HasVerifiedTOTP)
 
-		var redirect string
-		if r := svc.Sessions.PopString(ctx, sess.Redirect); r != "" {
-			redirect = r
-		} else {
-			redirect = svc.Path("account.dashboard")
+		if svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+			http.Redirect(w, r, svc.Path("account.login")+"?step=totp", http.StatusSeeOther)
+
+			return
 		}
 
-		http.Redirect(w, r, redirect, http.StatusSeeOther)
+		loginSuccessRedirect(w, r, svc)
 	}
+}
+
+func loginTOTPPost(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			TOTP string
+		}
+		err := httputil.DecodeForm(r, &input)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		ctx := r.Context()
+
+		cmd := account.AuthenticateWithTOTP{
+			UserID: svc.Sessions.GetString(ctx, sess.UserID),
+			TOTP:   input.TOTP,
+		}
+		err = cmd.Execute(ctx, svc.Bus)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		err = csrf.RenewToken(ctx)
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
+			return
+		}
+
+		err = svc.Sessions.Renew(ctx)
+		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
+			return
+		}
+
+		svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
+		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
+
+		loginSuccessRedirect(w, r, svc)
+	}
+}
+
+func loginSuccessRedirect(w http.ResponseWriter, r *http.Request, svc *handler.Services) {
+	ctx := r.Context()
+
+	var redirect string
+	if r := svc.Sessions.PopString(ctx, sess.Redirect); r != "" {
+		redirect = r
+	} else {
+		redirect = svc.Path("account.dashboard")
+	}
+
+	http.Redirect(w, r, redirect, http.StatusSeeOther)
 }
