@@ -16,6 +16,9 @@ func ChangePassword(svc *handler.Services, mux *router.ServeMux, guard *handler.
 	mux.Get("/change-password", changePasswordGet(svc), "account.change_password")
 	mux.Put("/change-password", changePasswordPut(svc), "account.change_password.put")
 
+	// Redirect to help password managers find the change password page
+	mux.Redirect(http.MethodGet, "/.well-known/change-password", svc.Path("account.change_password"), http.StatusSeeOther)
+
 	guard.Protect(svc.Path("account.change_password"))
 }
 
