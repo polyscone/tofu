@@ -70,6 +70,9 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	}))
 	mux.Use(guard.Middleware)
 
+	// Redirects
+	mux.Redirect(http.MethodGet, "/security.txt", "/.well-known/security.txt", http.StatusSeeOther)
+
 	// Rewrites
 	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")
 
