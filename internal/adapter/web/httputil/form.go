@@ -45,7 +45,7 @@ func DecodeForm(r *http.Request, dst any) error {
 		str := r.PostFormValue(tag)
 		field := s.Field(i)
 
-		switch typeField.Type.Kind() {
+		switch typ := typeField.Type; typ.Kind() {
 		case reflect.Bool:
 			field.SetBool(str == "1" || str == "checked")
 
@@ -149,7 +149,11 @@ func DecodeForm(r *http.Request, dst any) error {
 			field.SetString(str)
 
 		default:
-			panic(fmt.Sprintf("unsupported struct field type %q", typeField.Type.Kind()))
+			if typ == reflect.TypeOf([]byte(nil)) {
+				field.SetBytes([]byte(str))
+			} else {
+				panic(fmt.Sprintf("unsupported struct field type %v", typ))
+			}
 		}
 	}
 
