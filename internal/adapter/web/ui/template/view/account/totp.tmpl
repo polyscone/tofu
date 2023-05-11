@@ -58,6 +58,7 @@
 		</div>
 
 		<p>After scanning the QR code, or manually entering the secret key, your app will display a 6 digit passcode that you can enter below to verify that your authenticator app is setup correctly and enable two-factor authentication.</p>
+		<p>Once two-factor authentication has been enabled you will be required to provide a 6 digit passcode to verify your identity when logging in.</p>
 
 		<form action="{{Path "account.totp.verify.post"}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
