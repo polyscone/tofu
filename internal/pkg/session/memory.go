@@ -1,41 +1,64 @@
 package session
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 
 	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
-// MemoryRepo implements an in-memory repo for use with a session manager.
+// JSONMemoryRepo implements an in-memory repo for use with a session manager.
 // The intended use of this repo is developer tests.
-type MemoryRepo struct {
-	data map[string]Data
+//
+// We want to test against JSON here to make sure we handle numbers correctly,
+// which is why we map to a byte slice
+type JSONMemoryRepo struct {
+	useNumber bool
+	data      map[string][]byte
 }
 
-// NewMemoryRepo returns a new in-memory session repo, intended
+// NewJSONMemoryRepo returns a new in-memory session repo, intended
 // for use in developer tests.
-func NewMemoryRepo() *MemoryRepo {
-	return &MemoryRepo{data: make(map[string]Data)}
+func NewJSONMemoryRepo(useNumber bool) *JSONMemoryRepo {
+	return &JSONMemoryRepo{
+		useNumber: useNumber,
+		data:      make(map[string][]byte),
+	}
 }
 
 // FindByID attempts to find session data using the given id.
-func (r *MemoryRepo) FindByID(ctx context.Context, id string) (Data, error) {
+func (r *JSONMemoryRepo) FindByID(ctx context.Context, id string) (Data, error) {
 	if data, ok := r.data[id]; ok {
-		return data, nil
+		d := json.NewDecoder(bytes.NewReader(data))
+
+		if r.useNumber {
+			d.UseNumber()
+		}
+
+		var res Data
+		err := d.Decode(&res)
+
+		return res, err
 	}
 
 	return nil, errors.Tracef(ErrNotFound)
 }
 
 // Save persists the given session in-memory.
-func (r *MemoryRepo) Save(ctx context.Context, s Session) error {
-	r.data[s.ID] = s.Data
+func (r *JSONMemoryRepo) Save(ctx context.Context, s Session) error {
+	b, err := json.Marshal(s.Data)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	r.data[s.ID] = b
 
 	return nil
 }
 
 // Destroy deletes a session by the given id from memory.
-func (r *MemoryRepo) Destroy(ctx context.Context, id string) error {
+func (r *JSONMemoryRepo) Destroy(ctx context.Context, id string) error {
 	delete(r.data, id)
 
 	return nil

@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/polyscone/tofu/internal/pkg/errors"
@@ -209,9 +210,25 @@ func (m *Manager) PopBool(ctx context.Context, key string) bool {
 // GetInt fetches a int from the session's data.
 // If the given key does not exist then the zero value is returned.
 func (m *Manager) GetInt(ctx context.Context, key string) int {
-	value, _ := m.Get(ctx, key).(int)
+	switch value := m.Get(ctx, key).(type) {
+	case int:
+		return value
 
-	return value
+	case float64:
+		if value == float64(int(value)) {
+			return int(value)
+		}
+
+		return 0
+
+	case json.Number:
+		i, _ := value.Int64()
+
+		return int(i)
+
+	default:
+		return 0
+	}
 }
 
 // PopInt fetches a int from the session's data.
@@ -228,9 +245,21 @@ func (m *Manager) PopInt(ctx context.Context, key string) int {
 // GetFloat32 fetches a float32 from the session's data.
 // If the given key does not exist then the zero value is returned.
 func (m *Manager) GetFloat32(ctx context.Context, key string) float32 {
-	value, _ := m.Get(ctx, key).(float32)
+	switch value := m.Get(ctx, key).(type) {
+	case float32:
+		return value
 
-	return value
+	case float64:
+		return float32(value)
+
+	case json.Number:
+		i, _ := value.Float64()
+
+		return float32(i)
+
+	default:
+		return 0
+	}
 }
 
 // PopFloat32 fetches a float32 from the session's data.
@@ -247,9 +276,18 @@ func (m *Manager) PopFloat32(ctx context.Context, key string) float32 {
 // GetFloat64 fetches a float64 from the session's data.
 // If the given key does not exist then the zero value is returned.
 func (m *Manager) GetFloat64(ctx context.Context, key string) float64 {
-	value, _ := m.Get(ctx, key).(float64)
+	switch value := m.Get(ctx, key).(type) {
+	case float64:
+		return value
 
-	return value
+	case json.Number:
+		i, _ := value.Float64()
+
+		return i
+
+	default:
+		return 0
+	}
 }
 
 // PopFloat64 fetches a float64 from the session's data.
