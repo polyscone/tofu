@@ -52,7 +52,7 @@ func totpSetupWithAppPost(svc *handler.Services) http.HandlerFunc {
 
 		cmd := account.SetupTOTP{
 			Guard:  passport,
-			UserID: passport.GetString(sess.UserID),
+			UserID: passport.UserID(),
 		}
 		res, err := cmd.Execute(ctx, svc.Bus)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
@@ -61,7 +61,7 @@ func totpSetupWithAppPost(svc *handler.Services) http.HandlerFunc {
 
 		keyBase32 := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(res.Key)
 		issuer := app.Name
-		accountName := passport.GetString(sess.Email)
+		accountName := svc.Sessions.GetString(ctx, sess.Email)
 		qrcode, err := qr.Encode(
 			"otpauth://totp/"+
 				issuer+":"+accountName+
@@ -112,7 +112,7 @@ func totpVerifyPost(svc *handler.Services) http.HandlerFunc {
 
 		cmd := account.VerifyTOTP{
 			Guard:  passport,
-			UserID: passport.GetString(sess.UserID),
+			UserID: passport.UserID(),
 			TOTP:   input.TOTP,
 		}
 		err = cmd.Execute(ctx, svc.Bus)
@@ -124,7 +124,7 @@ func totpVerifyPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		passport.Set(sess.HasVerifiedTOTP, true)
+		svc.Sessions.Set(ctx, sess.HasVerifiedTOTP, true)
 
 		http.Redirect(w, r, svc.Path("account.totp")+"?status=success", http.StatusSeeOther)
 	}
@@ -152,7 +152,7 @@ func totpDisablePost(svc *handler.Services) http.HandlerFunc {
 
 		cmd := account.DisableTOTP{
 			Guard:  passport,
-			UserID: passport.GetString(sess.UserID),
+			UserID: passport.UserID(),
 			TOTP:   input.TOTP,
 		}
 		err = cmd.Execute(ctx, svc.Bus)
@@ -165,7 +165,7 @@ func totpDisablePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		passport.Set(sess.HasVerifiedTOTP, false)
+		svc.Sessions.Set(ctx, sess.HasVerifiedTOTP, false)
 
 		http.Redirect(w, r, svc.Path("account.totp.disable")+"?status=disabled", http.StatusSeeOther)
 	}

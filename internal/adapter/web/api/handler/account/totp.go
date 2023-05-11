@@ -34,7 +34,7 @@ func setupTOTPPost(svc *handler.Services) http.HandlerFunc {
 
 		cmd := account.SetupTOTP{
 			Guard:  passport,
-			UserID: passport.GetString(sess.UserID),
+			UserID: passport.UserID(),
 		}
 		res, err := cmd.Execute(ctx, svc.Bus)
 		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
@@ -43,7 +43,7 @@ func setupTOTPPost(svc *handler.Services) http.HandlerFunc {
 
 		keyBase32 := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(res.Key)
 		issuer := app.Name
-		accountName := passport.GetString(sess.Email)
+		accountName := svc.Sessions.GetString(ctx, sess.Email)
 		qrcode, err := qr.Encode(
 			"otpauth://totp/"+
 				issuer+":"+accountName+
@@ -95,7 +95,7 @@ func disableTOTPPost(svc *handler.Services) http.HandlerFunc {
 
 		cmd := account.DisableTOTP{
 			Guard:  passport,
-			UserID: passport.GetString(sess.UserID),
+			UserID: passport.UserID(),
 			TOTP:   input.TOTP,
 		}
 		err := cmd.Execute(ctx, svc.Bus)
@@ -108,7 +108,7 @@ func disableTOTPPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		passport.Set(sess.HasVerifiedTOTP, false)
+		svc.Sessions.Set(ctx, sess.HasVerifiedTOTP, false)
 
 		svc.JSON(w, r, map[string]any{
 			"csrfToken": base64.RawURLEncoding.EncodeToString(csrfToken),
@@ -131,7 +131,7 @@ func verifyTOTPPost(svc *handler.Services) http.HandlerFunc {
 
 		cmd := account.VerifyTOTP{
 			Guard:  passport,
-			UserID: passport.GetString(sess.UserID),
+			UserID: passport.UserID(),
 			TOTP:   input.TOTP,
 		}
 		err := cmd.Execute(ctx, svc.Bus)
@@ -144,7 +144,7 @@ func verifyTOTPPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		passport.Set(sess.HasVerifiedTOTP, true)
+		svc.Sessions.Set(ctx, sess.HasVerifiedTOTP, true)
 
 		svc.JSON(w, r, map[string]any{
 			"csrfToken": base64.RawURLEncoding.EncodeToString(csrfToken),
@@ -160,7 +160,7 @@ func regenerateRecoveryCodesPut(svc *handler.Services) http.HandlerFunc {
 
 		cmd := account.RegenerateRecoveryCodes{
 			Guard:  passport,
-			UserID: passport.GetString(sess.UserID),
+			UserID: passport.UserID(),
 		}
 		res, err := cmd.Execute(ctx, svc.Bus)
 		if svc.ErrorJSON(w, r, errors.Tracef(err)) {

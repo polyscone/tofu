@@ -35,7 +35,7 @@ func (g *Guard) ProtectFunc(path string, isAuthorised IsAuthorisedFunc) {
 
 func (g *Guard) Protect(path string) {
 	g.ProtectFunc(path, func(passport passport.Passport) bool {
-		return passport.GetBool(sess.IsAuthenticated)
+		return passport.IsAuthenticated()
 	})
 }
 
@@ -46,7 +46,7 @@ func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
 
 			passport := g.svc.Passport(ctx)
 			if !isAuthorised(passport) {
-				passport.Set(sess.Redirect, r.URL.String())
+				g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
 				http.Redirect(w, r, g.redirect(), http.StatusSeeOther)
 

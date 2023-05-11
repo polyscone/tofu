@@ -6,7 +6,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/token"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
@@ -34,7 +33,7 @@ func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 
 		cmd := account.ChangePassword{
 			Guard:            passport,
-			UserID:           passport.GetString(sess.UserID),
+			UserID:           passport.UserID(),
 			OldPassword:      input.OldPassword,
 			NewPassword:      input.NewPassword,
 			NewPasswordCheck: input.NewPasswordCheck,
