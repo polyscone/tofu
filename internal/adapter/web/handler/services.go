@@ -144,6 +144,18 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 	}
 }
 
+func (svc *Services) RenewSession(ctx context.Context) ([]byte, error) {
+	if err := csrf.RenewToken(ctx); err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	if err := svc.Sessions.Renew(ctx); err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return csrf.MaskedToken(ctx), nil
+}
+
 func (svc *Services) emptyPassport(ctx context.Context) passport.Passport {
 	return passport.New(ctx, svc.Sessions, "", nil, nil, nil)
 }

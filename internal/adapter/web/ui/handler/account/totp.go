@@ -15,7 +15,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/port/account"
@@ -161,12 +160,7 @@ func totpDisablePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		err = csrf.RenewToken(ctx)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
-		}
-
-		err = passport.Renew()
+		_, err = svc.RenewSession(ctx)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}

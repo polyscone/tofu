@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
-	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
@@ -17,7 +16,7 @@ func logoutPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		err := csrf.RenewToken(ctx)
+		_, err := svc.RenewSession(ctx)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}

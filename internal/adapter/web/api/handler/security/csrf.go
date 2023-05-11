@@ -16,10 +16,9 @@ func CSRF(svc *handler.Services, mux *router.ServeMux) {
 func csrfGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
 
 		svc.JSON(w, r, map[string]any{
-			"csrfToken": csrfTokenBase64,
+			"csrfToken": base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx)),
 		})
 	}
 }

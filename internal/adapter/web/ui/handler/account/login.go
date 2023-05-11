@@ -6,7 +6,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
-	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/port/account"
@@ -51,12 +50,7 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		err = csrf.RenewToken(ctx)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
-		}
-
-		err = svc.Sessions.Renew(ctx)
+		_, err = svc.RenewSession(ctx)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -98,13 +92,8 @@ func loginTOTPPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		err = csrf.RenewToken(ctx)
-		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
-			return
-		}
-
-		err = svc.Sessions.Renew(ctx)
-		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
+		_, err = svc.RenewSession(ctx)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 

@@ -6,7 +6,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/token"
-	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
@@ -98,12 +97,7 @@ func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc
 			return
 		}
 
-		err = csrf.RenewToken(ctx)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
-		}
-
-		err = passport.Renew()
+		_, err = svc.RenewSession(ctx)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}

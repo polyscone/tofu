@@ -7,7 +7,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
-	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/port/account"
@@ -37,12 +36,7 @@ func loginWithPasswordPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		err = csrf.RenewToken(ctx)
-		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
-			return
-		}
-
-		err = svc.Sessions.Renew(ctx)
+		csrfToken, err := svc.RenewSession(ctx)
 		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
@@ -53,10 +47,8 @@ func loginWithPasswordPost(svc *handler.Services) http.HandlerFunc {
 		svc.Sessions.Set(ctx, sess.IsAwaitingTOTP, res.HasVerifiedTOTP)
 		svc.Sessions.Set(ctx, sess.IsAuthenticated, !res.HasVerifiedTOTP)
 
-		csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
-
 		svc.JSON(w, r, map[string]any{
-			"csrfToken":      csrfTokenBase64,
+			"csrfToken":      base64.RawURLEncoding.EncodeToString(csrfToken),
 			"isAwaitingTOTP": res.HasVerifiedTOTP,
 		})
 	}
@@ -82,12 +74,7 @@ func loginWithTOTPPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		err = csrf.RenewToken(ctx)
-		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
-			return
-		}
-
-		err = svc.Sessions.Renew(ctx)
+		csrfToken, err := svc.RenewSession(ctx)
 		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
@@ -95,10 +82,8 @@ func loginWithTOTPPost(svc *handler.Services) http.HandlerFunc {
 		svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
 		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
 
-		csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
-
 		svc.JSON(w, r, map[string]any{
-			"csrfToken": csrfTokenBase64,
+			"csrfToken": base64.RawURLEncoding.EncodeToString(csrfToken),
 		})
 	}
 }
@@ -123,12 +108,7 @@ func loginWithRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		err = csrf.RenewToken(ctx)
-		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
-			return
-		}
-
-		err = svc.Sessions.Renew(ctx)
+		csrfToken, err := svc.RenewSession(ctx)
 		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
@@ -136,10 +116,8 @@ func loginWithRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
 		svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
 		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
 
-		csrfTokenBase64 := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(ctx))
-
 		svc.JSON(w, r, map[string]any{
-			"csrfToken": csrfTokenBase64,
+			"csrfToken": base64.RawURLEncoding.EncodeToString(csrfToken),
 		})
 	}
 }
