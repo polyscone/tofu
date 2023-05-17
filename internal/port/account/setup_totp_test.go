@@ -41,7 +41,7 @@ func TestSetupTOTP(t *testing.T) {
 	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
 	verifiedTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jane@doe.com", password))
 
-	if _, err := verifiedTOTPUser.SetupTOTP(); err != nil {
+	if err := verifiedTOTPUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -49,7 +49,7 @@ func TestSetupTOTP(t *testing.T) {
 	_totp := errors.Must(tb.Generate(verifiedTOTPUser.TOTPKey, time.Now()))
 	totp := errors.Must(domain.NewTOTP(_totp))
 
-	if err := verifiedTOTPUser.VerifyTOTP(totp); err != nil {
+	if err := verifiedTOTPUser.VerifyTOTP(totp, domain.TOTPKindApp); err != nil {
 		t.Fatal(err)
 	}
 	if err := users.Save(ctx, verifiedTOTPUser); err != nil {
@@ -96,6 +96,39 @@ func TestSetupTOTP(t *testing.T) {
 			for i, want := range res.RecoveryCodes {
 				if got := user.RecoveryCodes[i]; want != got.String() {
 					t.Errorf("want code %q; got %q", want, got)
+				}
+			}
+		}
+
+		oldTOTPKey := user.TOTPKey
+		oldRecoveryCodes := user.RecoveryCodes
+
+		_, err = handler(ctx, account.SetupTOTP{
+			Guard:  validGuard,
+			UserID: activatedUser.ID.String(),
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		user = errors.Must(users.FindByID(ctx, activatedUser.ID))
+		if want, got := oldTOTPKey, user.TOTPKey; !bytes.Equal(want, got) {
+			t.Errorf("want TOTP key to remain unchanged (%q); got %q", want, got)
+		}
+
+		if want, got := len(oldRecoveryCodes), len(user.RecoveryCodes); want != got {
+			t.Errorf("want %v recovery codes; got %v", want, got)
+		} else {
+			sort.Slice(oldRecoveryCodes, func(i, j int) bool {
+				return oldRecoveryCodes[i].String() < oldRecoveryCodes[j].String()
+			})
+			sort.Slice(user.RecoveryCodes, func(i, j int) bool {
+				return user.RecoveryCodes[i].String() < user.RecoveryCodes[j].String()
+			})
+
+			for i, want := range oldRecoveryCodes {
+				if got := user.RecoveryCodes[i]; want != got {
+					t.Errorf("want code to remain unchanged (%q); got %q", want, got)
 				}
 			}
 		}

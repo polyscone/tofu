@@ -39,7 +39,7 @@ func TestDisableTOTP(t *testing.T) {
 	password := "password"
 	verifiedTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jane@doe.com", password))
 
-	if _, err := verifiedTOTPUser.SetupTOTP(); err != nil {
+	if err := verifiedTOTPUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -47,7 +47,7 @@ func TestDisableTOTP(t *testing.T) {
 	_totp := errors.Must(tb.Generate(verifiedTOTPUser.TOTPKey, time.Now()))
 	totp := errors.Must(domain.NewTOTP(_totp))
 
-	if err := verifiedTOTPUser.VerifyTOTP(totp); err != nil {
+	if err := verifiedTOTPUser.VerifyTOTP(totp, domain.TOTPKindApp); err != nil {
 		t.Fatal(err)
 	}
 	if err := users.Save(ctx, verifiedTOTPUser); err != nil {
@@ -86,8 +86,29 @@ func TestDisableTOTP(t *testing.T) {
 		if want, got := []byte(nil), user.TOTPKey; !bytes.Equal(want, got) {
 			t.Errorf("want %q; got %q", want, got)
 		}
+		if user.TOTPUseSMS {
+			t.Error("want TOTP use SMS to be cleared")
+		}
+		if user.TOTPTelephone != "" {
+			t.Error("want TOTP telephone to be cleared")
+		}
+		if user.TOTPKey != nil {
+			t.Error("want TOTP key to be cleared")
+		}
+		if user.TOTPAlgorithm != "" {
+			t.Error("want TOTP algorithm to be cleared")
+		}
+		if user.TOTPDigits != 0 {
+			t.Error("want TOTP digits to be cleared")
+		}
+		if user.TOTPPeriod != 0 {
+			t.Error("want TOTP period to be cleared")
+		}
 		if got := user.TOTPVerifiedAt; !got.IsZero() {
 			t.Errorf("want TOTP verified at to be zero; got %v", got)
+		}
+		if want, got := 0, len(user.RecoveryCodes); want != got {
+			t.Error("want recovery codes to be cleared")
 		}
 
 		testutil.CheckEvents(t, wantEvents, gotEvents)

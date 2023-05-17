@@ -40,7 +40,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
 	verifiedTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jane@doe.com", password))
 
-	if _, err := verifiedTOTPUser.SetupTOTP(); err != nil {
+	if err := verifiedTOTPUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
 
@@ -48,7 +48,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 	_totp := errors.Must(tb.Generate(verifiedTOTPUser.TOTPKey, time.Now()))
 	totp := errors.Must(domain.NewTOTP(_totp))
 
-	if err := verifiedTOTPUser.VerifyTOTP(totp); err != nil {
+	if err := verifiedTOTPUser.VerifyTOTP(totp, domain.TOTPKindApp); err != nil {
 		t.Fatal(err)
 	}
 	if err := users.Save(ctx, verifiedTOTPUser); err != nil {

@@ -73,8 +73,7 @@ func NewSetupTOTPHandler(broker event.Broker, users UserRepo) SetupTOTPHandler {
 			return setupTOTPResponse{}, errors.Tracef(err)
 		}
 
-		params, err := user.SetupTOTP()
-		if err != nil {
+		if err := user.SetupTOTP(); err != nil {
 			return setupTOTPResponse{}, errors.Tracef(err)
 		}
 
@@ -90,10 +89,10 @@ func NewSetupTOTPHandler(broker event.Broker, users UserRepo) SetupTOTPHandler {
 		}
 
 		res := setupTOTPResponse{
-			Key:           params.Key,
-			Algorithm:     params.Algorithm,
-			Digits:        params.Digits,
-			Period:        params.Period,
+			Key:           user.TOTPKey,
+			Algorithm:     user.TOTPAlgorithm,
+			Digits:        user.TOTPDigits,
+			Period:        int(user.TOTPPeriod.Seconds()),
 			RecoveryCodes: recoveryCodes,
 		}
 

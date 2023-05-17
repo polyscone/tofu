@@ -11,6 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
+	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
@@ -38,17 +39,31 @@ func TestVerifyTOTP(t *testing.T) {
 
 	password := "password"
 	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
-	setupTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jane@doe.com", password))
+	setupAppTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jane@doe.com", password))
+	setupSMSTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "baz@qux.com", password))
 	verifiedTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "foo@bar.com", password))
 
-	if _, err := setupTOTPUser.SetupTOTP(); err != nil {
+	if err := setupAppTOTPUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
-	if err := users.Save(ctx, setupTOTPUser); err != nil {
+	if err := setupAppTOTPUser.ChangeTOTPTelephone(text.GenerateTelephone()); err != nil {
+		t.Fatal(err)
+	}
+	if err := users.Save(ctx, setupAppTOTPUser); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := verifiedTOTPUser.SetupTOTP(); err != nil {
+	if err := setupSMSTOTPUser.SetupTOTP(); err != nil {
+		t.Fatal(err)
+	}
+	if err := setupSMSTOTPUser.ChangeTOTPTelephone(text.GenerateTelephone()); err != nil {
+		t.Fatal(err)
+	}
+	if err := users.Save(ctx, setupSMSTOTPUser); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := verifiedTOTPUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
 	verifiedTOTPUser.TOTPVerifiedAt = time.Now()
@@ -56,22 +71,58 @@ func TestVerifyTOTP(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("success with activated user with TOTP setup", func(t *testing.T) {
+	t.Run("success with activated user with app TOTP setup", func(t *testing.T) {
 		var wantEvents []event.Event
 		var gotEvents []event.Event
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
-		totp := errors.Must(tb.Generate(setupTOTPUser.TOTPKey, time.Now()))
+		totp := errors.Must(tb.Generate(setupAppTOTPUser.TOTPKey, time.Now()))
+
+		// Deliberately set the use SMS flag to ensure it's disabled by the command
+		setupAppTOTPUser.TOTPUseSMS = true
 
 		err := handler(ctx, account.VerifyTOTP{
 			Guard:  validGuard,
-			UserID: setupTOTPUser.ID.String(),
+			UserID: setupAppTOTPUser.ID.String(),
 			TOTP:   totp,
+			UseSMS: false,
 		})
 		if err != nil {
 			t.Fatal(err)
+		}
+
+		setupAppTOTPUser = errors.Must(users.FindByID(ctx, setupAppTOTPUser.ID))
+		if setupAppTOTPUser.TOTPUseSMS {
+			t.Error("want TOTP app users to have a false use SMS flag")
+		}
+
+		testutil.CheckEvents(t, wantEvents, gotEvents)
+	})
+
+	t.Run("success with activated user with SMS TOTP setup", func(t *testing.T) {
+		var wantEvents []event.Event
+		var gotEvents []event.Event
+		broker.Clear()
+		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
+
+		tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
+		totp := errors.Must(tb.Generate(setupSMSTOTPUser.TOTPKey, time.Now()))
+
+		err := handler(ctx, account.VerifyTOTP{
+			Guard:  validGuard,
+			UserID: setupSMSTOTPUser.ID.String(),
+			TOTP:   totp,
+			UseSMS: true,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		setupSMSTOTPUser = errors.Must(users.FindByID(ctx, setupSMSTOTPUser.ID))
+		if !setupSMSTOTPUser.TOTPUseSMS {
+			t.Error("want TOTP SMS users to have a true use SMS flag")
 		}
 
 		testutil.CheckEvents(t, wantEvents, gotEvents)
@@ -91,9 +142,9 @@ func TestVerifyTOTP(t *testing.T) {
 			want    error
 		}{
 			{"unauthorised", invalidGuard, "", nil, port.ErrUnauthorised},
-			{"empty user id correct TOTP", validGuard, "", setupTOTPUser.TOTPKey, port.ErrMalformedInput},
+			{"empty user id correct TOTP", validGuard, "", setupAppTOTPUser.TOTPKey, port.ErrMalformedInput},
 			{"empty user id incorrect TOTP", validGuard, "", nil, port.ErrMalformedInput},
-			{"no TOTP user id correct TOTP", validGuard, activatedUser.ID.String(), setupTOTPUser.TOTPKey, port.ErrInvalidInput},
+			{"no TOTP user id correct TOTP", validGuard, activatedUser.ID.String(), setupAppTOTPUser.TOTPKey, nil},
 			{"already verified TOTP", validGuard, verifiedTOTPUser.ID.String(), verifiedTOTPUser.TOTPKey, port.ErrBadRequest},
 		}
 		for _, tc := range tt {

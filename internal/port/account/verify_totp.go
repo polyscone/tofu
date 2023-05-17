@@ -18,12 +18,14 @@ type VerifyTOTPGuard interface {
 type verifyTOTPRequest struct {
 	userID uuid.V4
 	totp   domain.TOTP
+	useSMS bool
 }
 
 type VerifyTOTP struct {
 	Guard  VerifyTOTPGuard
 	UserID string
 	TOTP   string
+	UseSMS bool
 }
 
 func (cmd VerifyTOTP) Execute(ctx context.Context, bus command.Bus) error {
@@ -54,6 +56,8 @@ func (cmd VerifyTOTP) request(ctx context.Context) (verifyTOTPRequest, error) {
 		errs.Set("totp", err)
 	}
 
+	req.useSMS = cmd.UseSMS
+
 	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
@@ -71,7 +75,13 @@ func NewVerifyTOTPHandler(broker event.Broker, users UserRepo) VerifyTOTPHandler
 			return errors.Tracef(err)
 		}
 
-		if err := user.VerifyTOTP(req.totp); err != nil {
+		var kind string
+		if req.useSMS {
+			kind = domain.TOTPKindSMS
+		} else {
+			kind = domain.TOTPKindApp
+		}
+		if err := user.VerifyTOTP(req.totp, kind); err != nil {
 			return errors.Tracef(err)
 		}
 

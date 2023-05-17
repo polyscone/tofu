@@ -3,6 +3,7 @@ package account_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
@@ -27,17 +28,15 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 	activatedNoTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "jim@bloggs.com", password))
 	unverifiedTOTPUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "foo@bar.com", password))
 
-	if _, err := activatedUser.SetupTOTP(); err != nil {
+	if err := activatedUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
-	if err := activatedUser.VerifyTOTPKey(); err != nil {
-		t.Fatal(err)
-	}
+	activatedUser.TOTPVerifiedAt = time.Now()
 	if err := users.Save(ctx, activatedUser); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := unverifiedTOTPUser.SetupTOTP(); err != nil {
+	if err := unverifiedTOTPUser.SetupTOTP(); err != nil {
 		t.Fatal(err)
 	}
 	if err := users.Save(ctx, unverifiedTOTPUser); err != nil {
