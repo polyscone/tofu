@@ -26,7 +26,7 @@ func Compose(ctx context.Context, db *sqlite.DB, secret []byte) (command.Bus, ev
 		bus.Register(account.NewAuthenticateWithTOTPHandler(broker, users))
 		bus.Register(account.NewAuthenticateWithRecoveryCodeHandler(broker, users))
 		bus.Register(account.NewChangePasswordHandler(broker, users))
-		bus.Register(account.NewFindAuthInfoHandler(broker, users))
+		bus.Register(account.NewFindUserByIDHandler(broker, users))
 		bus.Register(account.NewFindUserByEmailHandler(broker, users))
 		bus.Register(account.NewRegisterHandler(broker, users))
 		bus.Register(account.NewResetPasswordHandler(broker, users))
@@ -34,6 +34,8 @@ func Compose(ctx context.Context, db *sqlite.DB, secret []byte) (command.Bus, ev
 		bus.Register(account.NewRegenerateRecoveryCodesHandler(broker, users))
 		bus.Register(account.NewSetupTOTPHandler(broker, users))
 		bus.Register(account.NewVerifyTOTPHandler(broker, users))
+		bus.Register(account.NewChangeTOTPTelephoneHandler(broker, users))
+		bus.Register(account.NewGenerateTOTPHandler(broker, users))
 	}
 
 	return bus, broker, nil
