@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/aggregate"
@@ -11,6 +12,11 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
+)
+
+const (
+	TOTPKindApp string = "app"
+	TOTPKindSMS string = "sms"
 )
 
 var ErrNotActivated = errors.New("account is not activated")
@@ -44,6 +50,12 @@ type RecoveryCodesRegenerated struct {
 	Email string
 }
 
+type TOTPTelephoneChanged struct {
+	Email        string
+	OldTelephone string
+	NewTelephone string
+}
+
 type PasswordChanged struct {
 	Email string
 }
@@ -58,7 +70,12 @@ type User struct {
 	ID             uuid.V4
 	Email          text.Email
 	HashedPassword []byte
+	TOTPUseSMS     bool
+	TOTPTelephone  text.Telephone
 	TOTPKey        TOTPKey
+	TOTPAlgorithm  string
+	TOTPDigits     int
+	TOTPPeriod     time.Duration
 	TOTPVerifiedAt time.Time
 	RecoveryCodes  []RecoveryCode
 	Roles          []Role
@@ -98,16 +115,6 @@ func (u *User) Activate() error {
 	u.Events.Enqueue(Activated{
 		Email: u.Email.String(),
 	})
-
-	return nil
-}
-
-func (u *User) VerifyTOTPKey() error {
-	if len(u.TOTPKey) == 0 {
-		return errors.Tracef("cannot verify an empty TOTP key")
-	}
-
-	u.TOTPVerifiedAt = time.Now()
 
 	return nil
 }
@@ -171,48 +178,62 @@ func (u *User) ResetPassword(newPassword Password) error {
 	return nil
 }
 
-func (u *User) SetupTOTP() (TOTPParams, error) {
+func (u *User) SetupTOTP() error {
 	if u.HasVerifiedTOTP() {
-		return TOTPParams{}, errors.Tracef(port.ErrBadRequest, "TOTP already setup and verified")
+		return errors.Tracef(port.ErrBadRequest, "TOTP already setup and verified")
 	}
 
-	key, err := NewTOTPKey(otp.SHA1)
-	if err != nil {
-		return TOTPParams{}, errors.Tracef(err)
-	}
-
-	nCodes := 6
-
-	u.TOTPKey = key
-	u.RecoveryCodes = make([]RecoveryCode, nCodes)
-
-	for i := 0; i < nCodes; i++ {
-		code, err := GenerateRecoveryCode()
+	if len(u.TOTPKey) == 0 {
+		key, err := NewTOTPKey(otp.SHA1)
 		if err != nil {
-			return TOTPParams{}, errors.Tracef(err)
+			return errors.Tracef(err)
 		}
 
-		u.RecoveryCodes[i] = code
+		u.TOTPKey = key
+		u.TOTPAlgorithm = "SHA1"
+		u.TOTPDigits = 6
+		u.TOTPPeriod = 30 * time.Second
 	}
 
-	params := TOTPParams{
-		Key:       u.TOTPKey,
-		Algorithm: "SHA1",
-		Digits:    6,
-		Period:    30,
+	if len(u.RecoveryCodes) == 0 {
+		nCodes := 6
+		u.RecoveryCodes = make([]RecoveryCode, nCodes)
+
+		for i := 0; i < nCodes; i++ {
+			code, err := GenerateRecoveryCode()
+			if err != nil {
+				return errors.Tracef(err)
+			}
+
+			u.RecoveryCodes[i] = code
+		}
 	}
 
-	return params, nil
+	return nil
 }
 
-func (u *User) VerifyTOTP(totp TOTP) error {
+func (u *User) VerifyTOTP(totp TOTP, kind string) error {
+	if kind != TOTPKindApp && kind != TOTPKindSMS {
+		panic(fmt.Sprintf("invalid TOTP verification kind %q", kind))
+	}
+
 	if u.HasVerifiedTOTP() {
 		return errors.Tracef(port.ErrBadRequest, "already verified")
 	}
 
-	tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
+	tb, err := otp.NewTimeBased(u.TOTPDigits, otp.SHA1, time.Unix(0, 0), u.TOTPPeriod)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
 	ok, err := tb.Verify(u.TOTPKey, time.Now(), 1, totp.String())
 	if err != nil {
+		if errors.Is(err, otp.ErrPasswordUsed) {
+			errs := errors.Map{"totp": errors.New("passcode already used")}
+
+			return errs.Tracef(port.ErrInvalidInput)
+		}
+
 		return errors.Tracef(err)
 	}
 	if !ok {
@@ -221,9 +242,47 @@ func (u *User) VerifyTOTP(totp TOTP) error {
 		return errs.Tracef(port.ErrInvalidInput)
 	}
 
+	u.TOTPUseSMS = kind == "sms"
 	u.TOTPVerifiedAt = time.Now()
 
 	return nil
+}
+
+func (u *User) ChangeTOTPTelephone(newTelephone text.Telephone) error {
+	if len(u.TOTPKey) == 0 {
+		return errors.Tracef(port.ErrBadRequest, "cannot change TOTP telephone without a key setup")
+	}
+
+	if u.TOTPTelephone == newTelephone {
+		return nil
+	}
+
+	oldTelephone := u.TOTPTelephone
+
+	u.TOTPTelephone = newTelephone
+
+	u.Events.Enqueue(TOTPTelephoneChanged{
+		Email:        u.Email.String(),
+		OldTelephone: oldTelephone.String(),
+		NewTelephone: u.TOTPTelephone.String(),
+	})
+
+	return nil
+}
+
+func (u *User) GenerateTOTP() (string, error) {
+	if len(u.TOTPKey) == 0 {
+		return "", errors.Tracef(port.ErrBadRequest, "cannot generate a TOTP without a key setup")
+	}
+
+	tb, err := otp.NewTimeBased(u.TOTPDigits, otp.SHA1, time.Unix(0, 0), u.TOTPPeriod)
+	if err != nil {
+		return "", errors.Tracef(err)
+	}
+
+	totp, err := tb.Generate(u.TOTPKey, time.Now())
+
+	return totp, errors.Tracef(err)
 }
 
 func (u *User) RegenerateRecoveryCodes() error {
@@ -255,8 +314,12 @@ func (u *User) DisableTOTP(totp TOTP) error {
 		return errors.Tracef(err)
 	}
 
-	u.TOTPKey = TOTPKey{}
+	u.TOTPKey = nil
+	u.TOTPAlgorithm = ""
+	u.TOTPDigits = 0
+	u.TOTPPeriod = 0
 	u.TOTPVerifiedAt = time.Time{}
+	u.RecoveryCodes = nil
 
 	u.Events.Enqueue(DisabledTOTP{
 		Email: u.Email.String(),
@@ -303,9 +366,19 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 		return errors.Tracef(port.ErrBadRequest, ErrNotActivated)
 	}
 
-	tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
+	tb, err := otp.NewTimeBased(u.TOTPDigits, otp.SHA1, time.Unix(0, 0), u.TOTPPeriod)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
 	ok, err := tb.Verify(u.TOTPKey, time.Now(), 1, totp.String())
 	if err != nil {
+		if errors.Is(err, otp.ErrPasswordUsed) {
+			errs := errors.Map{"totp": errors.New("passcode already used")}
+
+			return errs.Tracef(port.ErrInvalidInput)
+		}
+
 		return errors.Tracef(err)
 	}
 	if !ok {
