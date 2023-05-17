@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
@@ -15,6 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
+	"github.com/polyscone/tofu/internal/pkg/sms"
 )
 
 var databases = struct {
@@ -25,23 +27,23 @@ var databases = struct {
 func newTenant(hostname string) (*handler.Tenant, error) {
 	ctx := context.Background()
 
-	common := opts.tenants.lookup[hostname]
-	if common == "" {
+	data := opts.tenants.lookup[hostname]
+	if data.Common == "" {
 		return nil, errors.Tracef("common name for the tenant %q is empty", hostname)
 	}
 
 	databases.mu.Lock()
 
-	db := databases.data[common]
+	db := databases.data[data.Common]
 	if db == nil {
 		var err error
-		p := filepath.Join(opts.data, common, "main.db")
+		p := filepath.Join(opts.data, data.Common, "main.db")
 		db, err = sqlite.Open(ctx, sqlite.KindFile, p)
 		if err != nil {
 			return nil, errors.Tracef(err)
 		}
 
-		databases.data[common] = db
+		databases.data[data.Common] = db
 	}
 
 	databases.mu.Unlock()
@@ -66,6 +68,9 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		return nil, errors.Tracef(err)
 	}
 
+	client := http.Client{Timeout: 10 * time.Second}
+	messager := sms.NewTwilioClient(&client, data.Twilio.SID, data.Twilio.Token)
+
 	tenant := &handler.Tenant{
 		Dev:      opts.dev,
 		Insecure: opts.server.insecure,
@@ -74,15 +79,27 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		Broker:   broker,
 		Sessions: sessions,
 		Tokens:   tokens,
-		Mailer:   mailer,
+		Email:    mailer,
+		SMS:      messager,
 	}
 
 	return tenant, nil
 }
 
+type twilio struct {
+	SID   string
+	Token string
+}
+
+type tenant struct {
+	Common    string
+	Hostnames []string
+	Twilio    twilio
+}
+
 type tenants struct {
-	data   map[string][]string
-	lookup map[string]string
+	data   map[string]tenant
+	lookup map[string]tenant
 }
 
 func (t *tenants) Set(value string) error {
@@ -99,17 +116,19 @@ func (t *tenants) Set(value string) error {
 	}
 
 	if t.lookup == nil {
-		t.lookup = make(map[string]string)
+		t.lookup = make(map[string]tenant)
 	}
 
 	var errs errors.Map
-	for common, hostnames := range t.data {
-		for _, hostname := range hostnames {
+	for common, tenant := range t.data {
+		for _, hostname := range tenant.Hostnames {
 			if dupe, ok := t.lookup[hostname]; ok {
 				errs.Set(hostname, fmt.Sprintf("cannot associate with %q, already associated with %q", dupe, common))
 			}
 
-			t.lookup[hostname] = common
+			tenant.Common = common
+
+			t.lookup[hostname] = tenant
 		}
 	}
 
