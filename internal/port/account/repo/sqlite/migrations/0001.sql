@@ -1,8 +1,13 @@
 CREATE TABLE account__users (
   id               TEXT NOT NULL PRIMARY KEY,
-  email            TEXT UNIQUE COLLATE NOCASE,
+  email            TEXT NOT NULL UNIQUE COLLATE NOCASE,
   hashed_password  TEXT NOT NULL,
+  totp_use_sms     INTEGER NOT NULL,
+  totp_telephone   TEXT NOT NULL,
   totp_key         TEXT,
+  totp_algorithm   TEXT NOT NULL,
+  totp_digits      INTEGER NOT NULL,
+  totp_period      TEXT NOT NULL,
   totp_verified_at DATETIME,
   activated_at     DATETIME,
   created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP

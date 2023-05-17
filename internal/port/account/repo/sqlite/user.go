@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/aesgcm"
 	"github.com/polyscone/tofu/internal/pkg/errors"
@@ -46,19 +47,35 @@ func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (
 	var id uuid.V4
 	var email text.Email
 	var hashedPassword []byte
+	var totpUseSMS bool
+	var totpTelephone text.Telephone
 	var totpKey []byte
+	var totpAlgorithm string
+	var totpDigits int
+	var totpPeriod time.Duration
 	var totpVerifiedAt sql.NullTime
 	var activatedAt sql.NullTime
 
 	stmt := fmt.Sprintf(`
-		SELECT u.id, u.email, u.hashed_password, u.totp_key, u.totp_verified_at, u.activated_at
+		SELECT
+			u.id, u.email, u.hashed_password, u.totp_use_sms, u.totp_telephone, u.totp_key,
+			u.totp_algorithm, u.totp_digits, u.totp_period, u.totp_verified_at, u.activated_at
 		FROM account__users AS u
 		WHERE %v;
 	`, where)
-	err = tx.QueryRow(ctx, stmt, args).Scan(&id, &email, &hashedPassword, &totpKey, &totpVerifiedAt, &activatedAt)
+	err = tx.QueryRow(ctx, stmt, args).Scan(
+		&id, &email, &hashedPassword, &totpUseSMS, &totpTelephone, &totpKey,
+		&totpAlgorithm, &totpDigits, &totpPeriod, &totpVerifiedAt, &activatedAt,
+	)
 	if err != nil {
 		return domain.User{}, errors.Tracef(err)
 	}
+
+	decryptedTOTPKey, err := aesgcm.Decrypt(r.secret, totpKey)
+	if err != nil {
+		return domain.User{}, errors.Tracef(err)
+	}
+	totpKey = decryptedTOTPKey
 
 	recoveryCodes, err := r.findRecoveryCodesByUserID(ctx, tx, id)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
@@ -74,7 +91,12 @@ func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (
 
 	res.Email = email
 	res.HashedPassword = hashedPassword
+	res.TOTPUseSMS = totpUseSMS
+	res.TOTPTelephone = totpTelephone
 	res.TOTPKey = totpKey
+	res.TOTPAlgorithm = totpAlgorithm
+	res.TOTPDigits = totpDigits
+	res.TOTPPeriod = totpPeriod
 	res.TOTPVerifiedAt = totpVerifiedAt.Time
 	res.RecoveryCodes = recoveryCodes
 	res.Roles = roles
@@ -98,20 +120,26 @@ func (r *UserRepo) Add(ctx context.Context, u domain.User) error {
 	}
 	defer tx.Rollback()
 
-	if u.HashedPassword == nil {
-		u.HashedPassword = make([]byte, 0)
+	encryptedTOTPKey, err := aesgcm.Encrypt(r.secret, u.TOTPKey)
+	if err != nil {
+		return errors.Tracef(err)
 	}
 
 	stmt, args := `
 		INSERT INTO account__users
-			(id, email, hashed_password, totp_key)
+			(id, email, hashed_password, totp_use_sms, totp_telephone, totp_key, totp_algorithm, totp_digits, totp_period)
 		VALUES
-			(:id, :email, :hashed_password, :totp_key);
+			(:id, :email, :hashed_password, :totp_use_sms, :totp_telephone, :totp_key, :totp_algorithm, :totp_digits, :totp_period);
 	`, sqlite.Args{
 		"id":              u.ID,
 		"email":           u.Email,
 		"hashed_password": u.HashedPassword,
-		"totp_key":        u.TOTPKey,
+		"totp_use_sms":    u.TOTPUseSMS,
+		"totp_telephone":  u.TOTPTelephone,
+		"totp_key":        encryptedTOTPKey,
+		"totp_algorithm":  u.TOTPAlgorithm,
+		"totp_digits":     u.TOTPDigits,
+		"totp_period":     u.TOTPPeriod,
 	}
 	if _, err := tx.Exec(ctx, stmt, args); err != nil {
 		return errors.Tracef(err)
@@ -163,11 +191,21 @@ func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
 	}
 	defer tx.Rollback()
 
+	encryptedTOTPKey, err := aesgcm.Encrypt(r.secret, u.TOTPKey)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
 	stmt, args := `
 		UPDATE account__users SET
 			email = :email,
 			hashed_password = :hashed_password,
+			totp_use_sms = :totp_use_sms,
+			totp_telephone = :totp_telephone,
 			totp_key = :totp_key,
+			totp_algorithm = :totp_algorithm,
+			totp_digits = :totp_digits,
+			totp_period = :totp_period,
 			totp_verified_at = :totp_verified_at,
 			activated_at = :activated_at
 		WHERE id = :id;
@@ -175,7 +213,12 @@ func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
 		"id":               u.ID,
 		"email":            u.Email,
 		"hashed_password":  u.HashedPassword,
-		"totp_key":         u.TOTPKey,
+		"totp_use_sms":     u.TOTPUseSMS,
+		"totp_telephone":   u.TOTPTelephone,
+		"totp_key":         encryptedTOTPKey,
+		"totp_algorithm":   u.TOTPAlgorithm,
+		"totp_digits":      u.TOTPDigits,
+		"totp_period":      u.TOTPPeriod,
 		"totp_verified_at": sqlite.NewNullTime(u.TOTPVerifiedAt.UTC()),
 		"activated_at":     sqlite.NewNullTime(u.ActivatedAt.UTC()),
 	}
