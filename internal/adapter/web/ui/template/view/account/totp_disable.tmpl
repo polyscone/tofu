@@ -13,6 +13,23 @@
 	{{else}}
 		<p class="title">Disable Two-Factor Authentication</p>
 
+		{{if .Session.TOTPUseSMS}}
+			<p>
+				Click the button below to send a 6 digit passcode to your registered phone number.
+				You can press it again to resend new passcodes.
+			</p>
+
+			<form action="{{Path "account.totp.disable.send_sms.post"}}?{{.Query.Encode}}" method="POST">
+				<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+				<button type="submit" class="btn--alt">Send a passcode SMS</button>
+			</form>
+
+			<p>Enter your 6 digit passcode the SMS you receive to verify your identity and disable two-factor authentication.</p>
+		{{else}}
+			<p>Enter your 6 digit passcode from your authenticator app to verify your identity and disable two-factor authentication.</p>
+		{{end}}
+
 		<form action="{{Path "account.totp.disable.post"}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 

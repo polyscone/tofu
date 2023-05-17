@@ -8,7 +8,7 @@ import (
 )
 
 func Home(svc *handler.Services, mux *router.ServeMux) {
-	mux.Get("/", homeGet(svc), "page/home")
+	mux.Get("/", homeGet(svc), "page.home")
 }
 
 func homeGet(svc *handler.Services) http.HandlerFunc {

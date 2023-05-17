@@ -25,6 +25,12 @@
   --clr-invalid-100: hsl(0 100% 95%);
   --clr-invalid-400: hsl(0 100% 50%);
 
+  --clr-warning-100: hsl(45 100% 95%);
+  --clr-warning-400: hsl(40 100% 50%);
+
+  --clr-error-100: hsl(0 100% 95%);
+  --clr-error-400: hsl(0 100% 50%);
+
   --icon-external-link: url(
     'data:image/svg+xml,\
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"> \
@@ -78,10 +84,6 @@
     padding-inline: 1rem;
   }
 
-  h1, h2, h3, h4, h5, h6, p {
-    margin-block-start: 0;
-  }
-
   hr {
     inline-size: 100%;
     border: none;
@@ -102,9 +104,6 @@
   }
 
   button {
-    padding-inline: 1rem;
-    background: var(--clr-accent-400);
-    color: var(--clr-white-400);
     border: none;
   }
 
@@ -151,6 +150,18 @@
     display: block;
   }
 
+  label small {
+    color: gray;
+  }
+
+  label small::before {
+    content: "(";
+  }
+
+  label small::after {
+    content: ")";
+  }
+
   a[href^="http://"]::after,
   a[href^="https://"]::after {
     content: "";
@@ -161,6 +172,20 @@
 }
 
 @layer components {
+  .skip-nav-link {
+    position: absolute;
+    top: 0;
+    left: 0;
+    padding: 1rem;
+    background: var(--clr-white-400);
+    transform: translateY(-150%);
+    transition: transform 300ms ease-in;
+  }
+
+  .skip-nav-link:focus {
+    transform: translateY(0);
+  }
+
   .site-title {
     margin: 0;
     padding-block: 0.6rem;
@@ -177,6 +202,12 @@
   .bag {
     display: flex;
     flex-wrap: wrap;
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .bag.reverse {
+    flex-direction: row-reverse;
   }
 
   .header,
@@ -189,18 +220,16 @@
   .header {
     display: flex;
     flex-direction: column;
-    padding-block-end: 2rem;
   }
 
   .main {
-    padding-block: 2rem;
+    padding-block-end: 1.5rem;
     border-block: 1px solid var(--clr-black-100);
   }
 
   .footer {
     display: grid;
     gap: 1rem;
-    padding-block-start: 2rem;
   }
 
   .nav ul {
@@ -231,15 +260,76 @@
     cursor: pointer;
   }
 
-  .totp-methods {
-    display: grid;
-    gap: 1rem;
+  .flash-banner,
+  .error-banner,
+  .warning-banner {
+    margin-block: 1rem;
+    padding: 0 1rem;
   }
 
-  .totp__recovery-codes-warning {
-    background: var(--clr-invalid-100);
-    border: 1px solid var(--clr-invalid-400);
-    padding: 0.6rem 1rem 0;
+  .flash-banner {
+    border: 1px solid var(--clr-accent-400);
+    text-align: center;
+  }
+
+  .warning-banner {
+    background: var(--clr-warning-100);
+    border: 1px solid var(--clr-warning-400);
+  }
+
+  .error {
+    color: var(--clr-error-400);
+    margin-block: 0;
+  }
+
+  .error:empty {
+    display: none;
+  }
+
+  .error-banner::first-letter,
+  .error-banner *::first-letter,
+  .error-message::first-letter,
+  .error-message *::first-letter,
+  .error::first-letter,
+  .error *::first-letter {
+    text-transform: capitalize;
+  }
+
+  .error-banner {
+    background: var(--clr-error-100);
+    border: 1px solid var(--clr-error-400);
+    color: var(--clr-black-400);
+    text-align: center;
+  }
+
+  button,
+  .btn {
+    padding-block: 0.4rem;
+    padding-inline: 1rem;
+    background: var(--clr-accent-400);
+    color: var(--clr-white-400);
+    text-decoration: none;
+    cursor: default;
+  }
+
+  .btn--alt {
+    background: var(--clr-white-400);
+    color: var(--clr-accent-400);
+    outline: 1px solid var(--clr-accent-400);
+  }
+
+  .btn--link {
+    display: inline;
+    padding: 0;
+    background: transparent;
+    color: linktext;
+    cursor: pointer;
+  }
+
+  .totp__methods {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
   }
 
   .totp__recovery-codes,
@@ -253,29 +343,6 @@
 
   .totp__qrcode img {
     display: inline-block;
-  }
-
-  .error {
-    color: var(--clr-invalid-400);
-    margin-block: 0;
-  }
-
-  .error:empty {
-    display: none;
-  }
-
-  .error-banner::first-letter,
-  .error-message::first-letter,
-  .error::first-letter {
-    text-transform: capitalize;
-  }
-
-  .error-banner {
-    padding: 1rem;
-    background: var(--clr-invalid-100);
-    border: 1px solid var(--clr-invalid-400);
-    color: var(--clr-black-400);
-    text-align: center;
   }
 
   @media screen and (min-width: 400px) {

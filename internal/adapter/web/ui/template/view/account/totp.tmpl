@@ -10,28 +10,8 @@
 		<p class="title">Two-Factor Authentication Already Enabled</p>
 
 		<p>Two-factor authentication has already been enabled for your account.</p>
-	{{else if .Vars.QRCodeBase64}}
-		<p class="title">Recovery Codes</p>
-
-		<p>In the event that you lose access to your authentication device you can use the following recovery codes in place of a normal passcode.</p>
-
-		<div class="totp__recovery-codes-warning">
-			<p>Before enabling two-factor authentication, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.</p>
-			<p>
-				If possible, we recommend storing them in a password manager, such as
-				<a href="https://1password.com/" target="_blank" rel="noopener noreferrer">1Password</a>,
-				<a href="https://www.lastpass.com/" target="_blank" rel="noopener noreferrer">LastPass</a>, or
-				<a href="https://www.keepersecurity.com" target="_blank" rel="noopener noreferrer">Keeper</a>.
-			</p>
-		</div>
-
-		<div class="totp__recovery-codes">
-			<ul>
-				{{range $code := .Vars.RecoveryCodes}}
-					<li>{{$code}}</li>
-				{{end}}
-			</ul>
-		</div>
+	{{else if eq (.Query.Get "method") "app"}}
+		{{template "recovery_codes" .}}
 
 		<p class="title">Enable Two-Factor Authentication</p>
 
@@ -45,13 +25,13 @@
 			<li>1Password (<a href="https://support.1password.com/one-time-passwords/" target="_blank" rel="noopener noreferrer">Android, iOS, Windows, Mac</a>)</li>
 		</ul>
 
-		<!-- <a href="">Can't install an authenticator app? Click here to use SMS.</a> -->
+		<p><a href="{{Path "account.totp"}}?method=sms">Can't install an authenticator app? Click here to use SMS.</a></p>
 
 		<p>Use your authenticator app to scan the QR code below. If you can't scan the QR code then you can manually enter the secret key instead.</p>
 
 		<div class="totp__qrcode">
-			<p><img src="{{.Vars.QRCodeBase64}}" alt="TOTP QR Code"></p>
 			<p>
+				<img src="{{.Vars.QRCodeBase64}}" alt="TOTP QR Code"><br>
 				Secret Key:<br>
 				{{.Vars.KeyBase32}}
 			</p>
@@ -60,8 +40,9 @@
 		<p>After scanning the QR code, or manually entering the secret key, your app will display a 6 digit passcode that you can enter below to verify that your authenticator app is setup correctly and enable two-factor authentication.</p>
 		<p>Once two-factor authentication has been enabled you will be required to provide a 6 digit passcode to verify your identity when logging in.</p>
 
-		<form action="{{Path "account.totp.verify.post"}}" method="POST">
+		<form action="{{Path "account.totp.post"}}?{{.Query.Encode}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+			<input type="hidden" name="action" value="verify">
 
 			<label for="totp__passcode">Passcode</label>
 			<input id="totp__passcode" type="text" name="totp" placeholder="123456" autocomplete="off" required pattern="\d{6}" minlength="6" maxlength="6">
@@ -69,6 +50,45 @@
 
 			<button type="submit">Enable two-factor authentication</button>
 		</form>
+	{{else if eq (.Query.Get "method") "sms"}}
+		{{template "recovery_codes" .}}
+
+		{{if .Vars.TOTPTelephone}}
+			<p class="title">Change Phone Number or Resend Passcode</p>
+		{{else}}
+			<p class="title">Choose Phone Number and Resend Passcode</p>
+		{{end}}
+
+		<p>Enter the phone number that you would like to use below and we'll send you a passcode to enable two-factor authentication.</p>
+
+		<form action="{{Path "account.totp.post"}}?{{.Query.Encode}}" method="POST">
+			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+			<input type="hidden" name="action" value="send-sms">
+
+			<label for="totp__telephone">Phone Number <small>Full number with country code</small></label>
+			<input id="totp__telephone" type="tel" name="telephone" value="{{or (.Form.Get "telephone") .Vars.TOTPTelephone}}" placeholder="+00 00 0000 0000 " autocomplete="tel" required pattern="\+\d(\d| )+" minlength="4" maxlength="25">
+			<p class="error">{{.Errors.Get "new telephone"}}</p>
+
+			<button type="submit"{{if .Vars.TOTPTelephone}} class="btn--alt"{{end}}>Use this phone number and {{if .Vars.TOTPTelephone}}re{{end}}send passcode</button>
+		</form>
+
+		{{if .Vars.TOTPTelephone}}
+			<p class="title">Enable Two-Factor Authentication</p>
+
+			<form action="{{Path "account.totp.post"}}?{{.Query.Encode}}" method="POST">
+				<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+				<input type="hidden" name="action" value="verify">
+				<input type="hidden" name="use-sms" value="1">
+
+				<label for="totp__passcode">Passcode</label>
+				<input id="totp__passcode" type="text" name="totp" placeholder="123456" autocomplete="off" required pattern="\d{6}" minlength="6" maxlength="6">
+				<p class="error">{{.Errors.Get "totp"}}</p>
+
+				<button type="submit">Enable two-factor authentication</button>
+			</form>
+		{{end}}
+
+		<p><a href="{{Path "account.totp"}}?method=app">Don't want to use SMS? Click here to use an app.</a></p>
 	{{else}}
 		<p class="title">Two-Factor Authentication</p>
 
@@ -76,17 +96,57 @@
 		<p>You can either use two-factor authentication through an application on your phone or computer, or you can use SMS.</p>
 
 		<div class="totp__methods">
-			<div class="totp__methods--app">
-			<p>Use an application on your phone or computer to get passcodes when prompted (recommended).</p>
+			<div>
+				<p>Use an application on your phone or computer to get passcodes when prompted (recommended).</p>
 
-			<form action="{{Path "account.totp.app.post"}}" method="POST">
-				<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+				<form action="{{Path "account.totp.post"}}?method=app" method="POST">
+					<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+					<input type="hidden" name="action" value="setup">
 
-				<button type="submit">Set up using an app</button>
-			</form>
+					<button type="submit">Set up using an app</button>
+				</form>
+			</div>
+
+			<div>
+				<p>We will send you an SMS with a passcode when prompted (only recommended if you can't use an app).</p>
+
+				<form action="{{Path "account.totp.post"}}?method=sms" method="POST">
+					<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+					<input type="hidden" name="action" value="setup">
+
+					<button type="submit" class="btn--alt">Set up using an SMS</button>
+				</form>
 			</div>
 		</div>
 	{{end}}
 </div>
+
+{{end}}
+
+{{define "recovery_codes"}}
+
+{{if .Vars.RecoveryCodes}}
+	<p class="title">Recovery Codes</p>
+
+	<p>In the event that you lose access to your authentication device you can use the following recovery codes in place of a normal passcode.</p>
+
+	<div class="warning-banner">
+		<p>Before enabling two-factor authentication, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.</p>
+		<p>
+			If possible, we recommend storing them in a password manager, such as
+			<a href="https://1password.com/" target="_blank" rel="noopener noreferrer">1Password</a>,
+			<a href="https://www.lastpass.com/" target="_blank" rel="noopener noreferrer">LastPass</a>, or
+			<a href="https://www.keepersecurity.com" target="_blank" rel="noopener noreferrer">Keeper</a>.
+		</p>
+	</div>
+
+	<div class="totp__recovery-codes">
+		<ul>
+			{{range $code := .Vars.RecoveryCodes}}
+				<li>{{$code}}</li>
+			{{end}}
+		</ul>
+	</div>
+{{end}}
 
 {{end}}

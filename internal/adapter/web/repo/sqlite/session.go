@@ -1,6 +1,7 @@
 package sqlite
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"time"
@@ -52,8 +53,12 @@ func (r *SessionRepo) FindByID(ctx context.Context, id string) (session.Data, er
 		return nil, errors.Tracef(err)
 	}
 
+	d := json.NewDecoder(bytes.NewReader(data))
+
+	d.UseNumber()
+
 	var res session.Data
-	err = json.Unmarshal(data, &res)
+	err = d.Decode(&res)
 
 	return res, errors.Tracef(err)
 }

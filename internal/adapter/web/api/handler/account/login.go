@@ -44,6 +44,7 @@ func loginWithPasswordPost(svc *handler.Services) http.HandlerFunc {
 		svc.Sessions.Set(ctx, sess.UserID, res.UserID)
 		svc.Sessions.Set(ctx, sess.Email, input.Email)
 		svc.Sessions.Set(ctx, sess.HasVerifiedTOTP, res.HasVerifiedTOTP)
+		svc.Sessions.Set(ctx, sess.TOTPUseSMS, res.TOTPUseSMS)
 		svc.Sessions.Set(ctx, sess.IsAwaitingTOTP, res.HasVerifiedTOTP)
 		svc.Sessions.Set(ctx, sess.IsAuthenticated, !res.HasVerifiedTOTP)
 

@@ -60,6 +60,14 @@ func (p Passport) CanVerifyTOTP(userID uuid.V4) bool {
 	return p.userID == userID.String()
 }
 
+func (p Passport) CanChangeTOTPTelephone(userID uuid.V4) bool {
+	return p.userID == userID.String()
+}
+
+func (p Passport) CanGenerateTOTP(userID uuid.V4) bool {
+	return p.userID == userID.String()
+}
+
 func (p Passport) is(query string) bool {
 	for _, claim := range p.claims {
 		if query == claim {

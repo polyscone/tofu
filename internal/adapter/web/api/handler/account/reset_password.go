@@ -56,7 +56,7 @@ func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc
 			return
 		}
 
-		passport, err := svc.PassportByEmail(ctx, email.String())
+		passport, err := svc.LimitedPassportByEmail(ctx, email.String())
 		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}

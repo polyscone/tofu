@@ -27,7 +27,8 @@ The `-tenants` flag points to a JSON file that describes the tenants of the prog
     "hostnames": ["localhost"],
     "twilio": {
       "sid": "",
-      "token": ""
+      "token": "",
+      "from": ""
     }
   }
 }

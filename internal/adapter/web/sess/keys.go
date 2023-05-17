@@ -1,10 +1,16 @@
 package sess
 
 const (
-	UserID          = "global.user_id"
-	Email           = "global.email"
-	HasVerifiedTOTP = "global.has_verified_totp"
-	IsAwaitingTOTP  = "global.is_awaiting_totp"
-	IsAuthenticated = "global.is_authenticated"
-	Redirect        = "global.redirect"
+	// Global session keys
+	Flash    = "global.flash"
+	Redirect = "global.redirect"
+
+	// Account session keys
+	UserID                   = "account.user_id"
+	Email                    = "account.email"
+	HasVerifiedTOTP          = "account.has_verified_totp"
+	TOTPUseSMS               = "account.totp_use_sms"
+	IsAwaitingTOTP           = "account.is_awaiting_totp"
+	IsAuthenticated          = "account.is_authenticated"
+	PasswordKnownBreachCount = "account.password_known_breach_count"
 )

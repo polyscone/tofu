@@ -12,3 +12,7 @@ onMount("input, textarea", node => {
     }
   })
 })
+
+onMount("[data-locale-number]", node => {
+  node.innerText = Number(node.innerText).toLocaleString()
+})

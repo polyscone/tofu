@@ -10,9 +10,23 @@
 		<link rel="stylesheet" href="/css/style.css">
 	</head>
 	<body>
+		<a href="#main-content" class="skip-nav-link">Skip navigation</a>
+
 		{{template "header" .}}
 
-		<main class="main">
+		<main id="main-content" class="main">
+			{{if and .ErrorMessage (ne .View "error")}}
+				<div class="error-banner center">
+					<p>Error: {{.ErrorMessage}}</p>
+				</div>
+			{{end}}
+
+			{{if .Session.Flash}}
+				<div class="flash-banner center">
+					<p>{{.Session.Flash}}</p>
+				</div>
+			{{end}}
+
 			{{template "view" .}}
 		</main>
 

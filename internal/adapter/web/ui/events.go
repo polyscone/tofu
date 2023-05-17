@@ -76,3 +76,41 @@ func accountResetPasswordRequestedHandler(tenant *handler.Tenant, svc *handler.S
 		})
 	}
 }
+
+func accountAuthenticateWithPasswordHandler(tenant *handler.Tenant, svc *handler.Services) any {
+	return func(evt account.AuthenticatedWithPassword) {
+		if !evt.IsAwaitingTOTP {
+			return
+		}
+
+		ctx := context.Background()
+
+		cmd := account.FindUserByEmail{
+			Email: evt.Email,
+		}
+		user, err := cmd.Execute(ctx, svc.Bus)
+		if err != nil {
+			logger.PrintError(err)
+
+			return
+		}
+
+		if user.TOTPUseSMS {
+			background.Go(func() {
+				if err := svc.SendTOTPSMS(evt.Email); err != nil {
+					logger.PrintError(err)
+				}
+			})
+		}
+	}
+}
+
+func accountTOTPSMSRequestedHandler(tenant *handler.Tenant, svc *handler.Services) any {
+	return func(evt handler.TOTPSMSRequested) {
+		background.Go(func() {
+			if err := svc.SendTOTPSMS(evt.Email); err != nil {
+				logger.PrintError(err)
+			}
+		})
+	}
+}

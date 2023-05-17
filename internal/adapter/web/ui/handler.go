@@ -8,6 +8,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/account"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/page"
 	"github.com/polyscone/tofu/internal/pkg/dev"
@@ -34,6 +35,8 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 
 	tenant.Broker.Listen(accountRegisteredHandler(tenant, svc))
 	tenant.Broker.Listen(accountResetPasswordRequestedHandler(tenant, svc))
+	tenant.Broker.Listen(accountAuthenticateWithPasswordHandler(tenant, svc))
+	tenant.Broker.Listen(accountTOTPSMSRequestedHandler(tenant, svc))
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		svc.ErrorView(w, r, errors.Tracef(err), "error", nil)
@@ -69,6 +72,19 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 		return 0
 	}))
 	mux.Use(guard.Middleware)
+	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			// The redirect key in the session is supposed to be a one-time temporary
+			// redirect target, so we ensure it's deleted if we're visiting the target
+			if svc.Sessions.GetString(ctx, sess.Redirect) == r.URL.String() {
+				svc.Sessions.Delete(ctx, sess.Redirect)
+			}
+
+			next(w, r)
+		}
+	})
 
 	// Redirects
 	mux.Redirect(http.MethodGet, "/security.txt", "/.well-known/security.txt", http.StatusSeeOther)

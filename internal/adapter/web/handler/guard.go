@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
@@ -26,10 +25,6 @@ func NewGuard(svc *Services, redirect RedirectFunc) *Guard {
 }
 
 func (g *Guard) ProtectFunc(path string, isAuthorised IsAuthorisedFunc) {
-	if _, ok := g.protected[path]; ok {
-		panic(fmt.Sprintf("a guard has already been registered for the path %q", path))
-	}
-
 	g.protected[path] = isAuthorised
 }
 

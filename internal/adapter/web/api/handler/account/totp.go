@@ -145,6 +145,7 @@ func verifyTOTPPost(svc *handler.Services) http.HandlerFunc {
 		}
 
 		svc.Sessions.Set(ctx, sess.HasVerifiedTOTP, true)
+		// svc.Sessions.Set(ctx, sess.TOTPUseSMS, input.UseSMS)
 
 		svc.JSON(w, r, map[string]any{
 			"csrfToken": base64.RawURLEncoding.EncodeToString(csrfToken),

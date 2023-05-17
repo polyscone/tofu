@@ -81,6 +81,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		Tokens:   tokens,
 		Email:    mailer,
 		SMS:      messager,
+		SMSFrom:  data.Twilio.From,
 	}
 
 	return tenant, nil
@@ -89,6 +90,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 type twilio struct {
 	SID   string
 	Token string
+	From  string
 }
 
 type tenant struct {

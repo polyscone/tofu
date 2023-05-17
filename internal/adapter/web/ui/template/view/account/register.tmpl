@@ -23,8 +23,8 @@
 			<input id="register__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="new-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
 			<p class="error">{{.Errors.Get "password"}}</p>
 
-			<div class="bag">
-				<button type="submit" class="push-inline-end">Register</button>
+			<div class="bag push-inline-end">
+				<button type="submit">Register</button>
 			</div>
 		</form>
 	{{end}}

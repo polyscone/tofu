@@ -5,6 +5,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/token"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
@@ -68,7 +69,7 @@ func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc
 			return
 		}
 
-		passport, err := svc.PassportByEmail(ctx, email.String())
+		passport, err := svc.LimitedPassportByEmail(ctx, email.String())
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -97,11 +98,8 @@ func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc
 			return
 		}
 
-		_, err = svc.RenewSession(ctx)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
-		}
+		svc.Sessions.Set(ctx, sess.Flash, "Your password has been successfully changed.")
 
-		http.Redirect(w, r, svc.Path("account.reset_password")+"?status=success", http.StatusSeeOther)
+		loginWithPassword(ctx, svc, w, r, email.String(), input.NewPassword)
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/session"
+	"github.com/polyscone/tofu/internal/pkg/sms"
 )
 
 type Tenant struct {
@@ -20,5 +21,7 @@ type Tenant struct {
 	Broker   event.Broker
 	Sessions session.Repo
 	Tokens   token.Repo
-	Mailer   smtp.Mailer
+	Email    smtp.Mailer
+	SMS      sms.Messager
+	SMSFrom  string
 }

@@ -77,14 +77,22 @@ type AppData struct {
 }
 
 type SessionData struct {
-	UserID          string
-	Email           string
-	HasVerifiedTOTP bool
-	IsAwaitingTOTP  bool
-	IsAuthenticated bool
+	// General session keys
+	Flash    string
+	Redirect string
+
+	// Account session keys
+	UserID                   string
+	Email                    string
+	HasVerifiedTOTP          bool
+	TOTPUseSMS               bool
+	IsAwaitingTOTP           bool
+	IsAuthenticated          bool
+	PasswordKnownBreachCount int
 }
 
 type ViewData struct {
+	View         string
 	Status       int
 	CSRF         CSRF
 	ErrorMessage string
@@ -109,14 +117,12 @@ type emailDataFunc func(data *emailData)
 
 type Services struct {
 	tenant      *Tenant
-	cache       bool
 	files       fs.FS
 	templatesMu sync.RWMutex
 	templates   map[string]*template.Template
 	funcs       template.FuncMap
 	viewVars    map[string]Vars
 	mux         *router.ServeMux
-	mailer      smtp.Mailer
 	Bus         command.Bus
 	Broker      event.Broker
 	Sessions    *session.Manager
@@ -131,13 +137,11 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 
 	return &Services{
 		tenant:    tenant,
-		cache:     !tenant.Dev,
 		files:     files,
 		templates: make(map[string]*template.Template),
 		funcs:     funcs,
 		viewVars:  make(map[string]Vars),
 		mux:       mux,
-		mailer:    tenant.Mailer,
 		Bus:       tenant.Bus,
 		Broker:    tenant.Broker,
 		Sessions:  sessions,
@@ -166,18 +170,30 @@ func (svc *Services) Passport(ctx context.Context) passport.Passport {
 	}
 
 	userID := svc.Sessions.GetString(ctx, sess.UserID)
-	cmd := account.FindAuthInfo{
+	cmd := account.FindUserByID{
 		UserID: userID,
 	}
-	info, err := cmd.Execute(ctx, svc.Bus)
+	user, err := cmd.Execute(ctx, svc.Bus)
 	if err != nil {
 		return svc.emptyPassport(ctx)
 	}
 
-	return passport.New(ctx, svc.Sessions, userID, info.Claims, info.Roles, info.Permissions)
+	return passport.New(ctx, svc.Sessions, userID, user.Claims, user.Roles, user.Permissions)
 }
 
-func (svc *Services) PassportByEmail(ctx context.Context, email string) (passport.Passport, error) {
+func (svc *Services) LimitedPassportByUserID(ctx context.Context, userID string) (passport.Passport, error) {
+	cmd := account.FindUserByID{
+		UserID: userID,
+	}
+	user, err := cmd.Execute(ctx, svc.Bus)
+	if err != nil {
+		return svc.emptyPassport(ctx), errors.Tracef(err)
+	}
+
+	return passport.New(ctx, svc.Sessions, user.ID, nil, nil, nil), nil
+}
+
+func (svc *Services) LimitedPassportByEmail(ctx context.Context, email string) (passport.Passport, error) {
 	cmd := account.FindUserByEmail{
 		Email: email,
 	}
@@ -204,7 +220,7 @@ func (svc *Services) SetViewVars(name string, vars Vars) {
 func (svc *Services) template(name string, patterns ...string) *template.Template {
 	svc.templatesMu.RLock()
 
-	if tmpl := svc.templates[name]; tmpl != nil && svc.cache {
+	if tmpl := svc.templates[name]; tmpl != nil && !svc.tenant.Dev {
 		svc.templatesMu.RUnlock()
 
 		return tmpl
@@ -307,7 +323,41 @@ func (svc *Services) SendEmail(ctx context.Context, recipients EmailRecipients, 
 		HTML:    content.HTML,
 	}
 
-	return errors.Tracef(svc.mailer.Send(ctx, msg))
+	return errors.Tracef(svc.tenant.Email.Send(ctx, msg))
+}
+
+func (svc *Services) SendSMS(ctx context.Context, to, body string) error {
+	return errors.Tracef(svc.tenant.SMS.Send(ctx, svc.tenant.SMSFrom, to, body))
+}
+
+func (svc *Services) SendTOTPSMS(email string) error {
+	ctx := context.Background()
+
+	passport, err := svc.LimitedPassportByEmail(ctx, email)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	cmd := account.FindUserByID{
+		UserID: passport.UserID(),
+	}
+	user, err := cmd.Execute(ctx, svc.Bus)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	generateTOTPCmd := account.GenerateTOTP{
+		Guard:  passport,
+		UserID: passport.UserID(),
+	}
+	res, err := generateTOTPCmd.Execute(ctx, svc.Bus)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	err = svc.SendSMS(ctx, user.TOTPTelephone, res.TOTP)
+
+	return errors.Tracef(err)
 }
 
 func (svc *Services) view(name string) *template.Template {
@@ -318,6 +368,7 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 	ctx := r.Context()
 
 	data := ViewData{
+		View:   name,
 		Status: status,
 		CSRF:   CSRF{ctx: ctx},
 		Form:   r.PostForm,
@@ -333,11 +384,18 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 			Description: app.Description,
 		},
 		Session: SessionData{
-			UserID:          svc.Sessions.GetString(ctx, sess.UserID),
-			Email:           svc.Sessions.GetString(ctx, sess.Email),
-			HasVerifiedTOTP: svc.Sessions.GetBool(ctx, sess.HasVerifiedTOTP),
-			IsAwaitingTOTP:  svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
-			IsAuthenticated: svc.Sessions.GetBool(ctx, sess.IsAuthenticated),
+			// Global session keys
+			Flash:    svc.Sessions.PopString(ctx, sess.Flash),
+			Redirect: svc.Sessions.GetString(ctx, sess.Redirect),
+
+			// Account session keys
+			UserID:                   svc.Sessions.GetString(ctx, sess.UserID),
+			Email:                    svc.Sessions.GetString(ctx, sess.Email),
+			HasVerifiedTOTP:          svc.Sessions.GetBool(ctx, sess.HasVerifiedTOTP),
+			TOTPUseSMS:               svc.Sessions.GetBool(ctx, sess.TOTPUseSMS),
+			IsAwaitingTOTP:           svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
+			IsAuthenticated:          svc.Sessions.GetBool(ctx, sess.IsAuthenticated),
+			PasswordKnownBreachCount: svc.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount),
 		},
 	}
 
@@ -348,6 +406,9 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 	if dataFunc != nil {
 		dataFunc(&data)
 	}
+
+	// Make sure the current view name isn't overwritten by a user function
+	data.View = name
 
 	var buf bytes.Buffer
 	if err := svc.view(name).ExecuteTemplate(&buf, "master", data); err != nil {
