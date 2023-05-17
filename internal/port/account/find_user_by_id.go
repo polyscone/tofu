@@ -2,56 +2,72 @@ package account
 
 import (
 	"context"
+	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
+	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 )
 
-type findUserByEmailRequest struct {
-	email text.Email
+type findUserByIDRequest struct {
+	userID uuid.V4
 }
 
-type FindUserByEmail struct {
-	Email string
+type findUserResponse struct {
+	ID            string
+	Email         string
+	TOTPUseSMS    bool
+	TOTPTelephone string
+	TOTPKey       []byte
+	TOTPAlgorithm string
+	TOTPDigits    int
+	TOTPPeriod    time.Duration
+	RecoveryCodes []string
+	Claims        []string
+	Roles         []string
+	Permissions   []string
 }
 
-func (cmd FindUserByEmail) Execute(ctx context.Context, bus command.Bus) (findUserResponse, error) {
+type FindUserByID struct {
+	UserID string
+}
+
+func (cmd FindUserByID) Execute(ctx context.Context, bus command.Bus) (findUserResponse, error) {
 	res, err := bus.Dispatch(ctx, cmd)
 
 	return res.(findUserResponse), errors.Tracef(err)
 }
 
-func (cmd FindUserByEmail) Validate(ctx context.Context) error {
+func (cmd FindUserByID) Validate(ctx context.Context) error {
 	_, err := cmd.request(ctx)
 
 	return errors.Tracef(err)
 }
 
-func (cmd FindUserByEmail) request(ctx context.Context) (findUserByEmailRequest, error) {
-	var req findUserByEmailRequest
+func (cmd FindUserByID) request(ctx context.Context) (findUserByIDRequest, error) {
+	var req findUserByIDRequest
 	var err error
 	var errs errors.Map
 
-	if req.email, err = text.NewEmail(cmd.Email); err != nil {
-		errs.Set("email", err)
+	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
+		errs.Set("user id", err)
 	}
 
 	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
-type FindUserByEmailHandler func(ctx context.Context, cmd FindUserByEmail) (findUserResponse, error)
+type FindUserByIDHandler func(ctx context.Context, cmd FindUserByID) (findUserResponse, error)
 
-func NewFindUserByEmailHandler(broker event.Broker, users UserRepo) FindUserByEmailHandler {
-	return func(ctx context.Context, cmd FindUserByEmail) (findUserResponse, error) {
+func NewFindUserByIDHandler(broker event.Broker, users UserRepo) FindUserByIDHandler {
+	return func(ctx context.Context, cmd FindUserByID) (findUserResponse, error) {
 		req, err := cmd.request(ctx)
 		if err != nil {
 			return findUserResponse{}, errors.Tracef(err)
 		}
 
-		user, err := users.FindByEmail(ctx, req.email)
+		user, err := users.FindByID(ctx, req.userID)
 		if err != nil {
 			return findUserResponse{}, errors.Tracef(err)
 		}
