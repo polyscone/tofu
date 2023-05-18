@@ -56,7 +56,7 @@ func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 			NewPassword:      input.NewPassword,
 			NewPasswordCheck: input.NewPasswordCheck,
 		}
-		err = cmd.Validate(ctx)
+		err = cmd.Validate()
 		if svc.ErrorView(w, r, errors.Tracef(err), "account/change_password", nil) {
 			return
 		}

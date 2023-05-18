@@ -24,13 +24,13 @@ func (cmd FindUserByEmail) Execute(ctx context.Context, bus command.Bus) (findUs
 	return res.(findUserResponse), errors.Tracef(err)
 }
 
-func (cmd FindUserByEmail) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd FindUserByEmail) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd FindUserByEmail) request(ctx context.Context) (findUserByEmailRequest, error) {
+func (cmd FindUserByEmail) request() (findUserByEmailRequest, error) {
 	var req findUserByEmailRequest
 	var err error
 	var errs errors.Map
@@ -46,7 +46,7 @@ type FindUserByEmailHandler func(ctx context.Context, cmd FindUserByEmail) (find
 
 func NewFindUserByEmailHandler(broker event.Broker, users UserRepo) FindUserByEmailHandler {
 	return func(ctx context.Context, cmd FindUserByEmail) (findUserResponse, error) {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return findUserResponse{}, errors.Tracef(err)
 		}
@@ -56,41 +56,6 @@ func NewFindUserByEmailHandler(broker event.Broker, users UserRepo) FindUserByEm
 			return findUserResponse{}, errors.Tracef(err)
 		}
 
-		claims := []string{user.ID.String()}
-		for _, claim := range user.Claims {
-			claims = append(claims, claim.String())
-		}
-
-		var roles []string
-		var permissions []string
-		for _, role := range user.Roles {
-			roles = append(roles, role.Name)
-
-			for _, permission := range role.Permissions {
-				permissions = append(permissions, permission.String())
-			}
-		}
-
-		recoveryCodes := make([]string, len(user.RecoveryCodes))
-		for i, code := range user.RecoveryCodes {
-			recoveryCodes[i] = code.String()
-		}
-
-		res := findUserResponse{
-			ID:            user.ID.String(),
-			Email:         user.Email.String(),
-			TOTPUseSMS:    user.TOTPUseSMS,
-			TOTPTelephone: user.TOTPTelephone.String(),
-			TOTPKey:       user.TOTPKey,
-			TOTPAlgorithm: user.TOTPAlgorithm,
-			TOTPDigits:    user.TOTPDigits,
-			TOTPPeriod:    user.TOTPPeriod,
-			RecoveryCodes: recoveryCodes,
-			Claims:        claims,
-			Roles:         roles,
-			Permissions:   permissions,
-		}
-
-		return res, nil
+		return newFindUserResponse(user), nil
 	}
 }

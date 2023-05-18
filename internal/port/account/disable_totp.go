@@ -32,13 +32,13 @@ func (cmd DisableTOTP) Execute(ctx context.Context, bus command.Bus) error {
 	return errors.Tracef(err)
 }
 
-func (cmd DisableTOTP) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd DisableTOTP) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd DisableTOTP) request(ctx context.Context) (disableTOTPRequest, error) {
+func (cmd DisableTOTP) request() (disableTOTPRequest, error) {
 	var req disableTOTPRequest
 	if !cmd.Guard.CanDisableTOTP(uuid.ParseV4OrNil(cmd.UserID)) {
 		return req, errors.Tracef(port.ErrUnauthorised)
@@ -61,7 +61,7 @@ type DisableTOTPHandler func(ctx context.Context, cmd DisableTOTP) error
 
 func NewDisableTOTPHandler(broker event.Broker, users UserRepo) DisableTOTPHandler {
 	return func(ctx context.Context, cmd DisableTOTP) error {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return errors.Tracef(err)
 		}

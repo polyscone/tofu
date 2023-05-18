@@ -27,13 +27,13 @@ func (cmd AuthenticateWithTOTP) Execute(ctx context.Context, bus command.Bus) er
 	return errors.Tracef(err)
 }
 
-func (cmd AuthenticateWithTOTP) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd AuthenticateWithTOTP) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd AuthenticateWithTOTP) request(ctx context.Context) (authenticateWithTOTPRequest, error) {
+func (cmd AuthenticateWithTOTP) request() (authenticateWithTOTPRequest, error) {
 	var req authenticateWithTOTPRequest
 	var err error
 	var errs errors.Map
@@ -52,7 +52,7 @@ type AuthenticateWithTOTPHandler func(ctx context.Context, cmd AuthenticateWithT
 
 func NewAuthenticateWithTOTPHandler(broker event.Broker, users UserRepo) AuthenticateWithTOTPHandler {
 	return func(ctx context.Context, cmd AuthenticateWithTOTP) error {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return errors.Tracef(err)
 		}

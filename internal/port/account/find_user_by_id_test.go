@@ -17,16 +17,10 @@ func TestFindUserByID(t *testing.T) {
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
-	authenticateWithPasswordHandler := account.NewAuthenticateWithPasswordHandler(broker, users)
 	handler := account.NewFindUserByIDHandler(broker, users)
 
 	password := "password"
 	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
-
-	authRes := errors.Must(authenticateWithPasswordHandler(ctx, account.AuthenticateWithPassword{
-		Email:    activatedUser.Email.String(),
-		Password: password,
-	}))
 
 	t.Run("success with valid user id", func(t *testing.T) {
 		var wantEvents []event.Event
@@ -35,7 +29,7 @@ func TestFindUserByID(t *testing.T) {
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
 		user, err := handler(ctx, account.FindUserByID{
-			UserID: authRes.UserID,
+			UserID: activatedUser.ID.String(),
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -43,7 +37,7 @@ func TestFindUserByID(t *testing.T) {
 
 		var containsUserID bool
 		for _, claim := range user.Claims {
-			containsUserID = claim == authRes.UserID
+			containsUserID = claim == activatedUser.ID.String()
 			if containsUserID {
 				break
 			}

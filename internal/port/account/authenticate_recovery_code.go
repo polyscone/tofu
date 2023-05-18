@@ -27,13 +27,13 @@ func (cmd AuthenticateWithRecoveryCode) Execute(ctx context.Context, bus command
 	return errors.Tracef(err)
 }
 
-func (cmd AuthenticateWithRecoveryCode) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd AuthenticateWithRecoveryCode) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd AuthenticateWithRecoveryCode) request(ctx context.Context) (authenticateWithRecoveryCodeRequest, error) {
+func (cmd AuthenticateWithRecoveryCode) request() (authenticateWithRecoveryCodeRequest, error) {
 	var req authenticateWithRecoveryCodeRequest
 	var err error
 	var errs errors.Map
@@ -52,7 +52,7 @@ type AuthenticateWithRecoveryCodeHandler func(ctx context.Context, cmd Authentic
 
 func NewAuthenticateWithRecoveryCodeHandler(broker event.Broker, users UserRepo) AuthenticateWithRecoveryCodeHandler {
 	return func(ctx context.Context, cmd AuthenticateWithRecoveryCode) error {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return errors.Tracef(err)
 		}

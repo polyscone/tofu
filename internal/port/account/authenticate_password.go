@@ -33,13 +33,13 @@ func (cmd AuthenticateWithPassword) Execute(ctx context.Context, bus command.Bus
 	return res.(authenticateWithPasswordResponse), errors.Tracef(err)
 }
 
-func (cmd AuthenticateWithPassword) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd AuthenticateWithPassword) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd AuthenticateWithPassword) request(ctx context.Context) (authenticateWithPasswordRequest, error) {
+func (cmd AuthenticateWithPassword) request() (authenticateWithPasswordRequest, error) {
 	var req authenticateWithPasswordRequest
 	var err error
 	var errs errors.Map
@@ -58,7 +58,7 @@ type AuthenticateWithPasswordHandler func(ctx context.Context, cmd AuthenticateW
 
 func NewAuthenticateWithPasswordHandler(broker event.Broker, users UserRepo) AuthenticateWithPasswordHandler {
 	return func(ctx context.Context, cmd AuthenticateWithPassword) (authenticateWithPasswordResponse, error) {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return authenticateWithPasswordResponse{}, errors.Tracef(err)
 		}

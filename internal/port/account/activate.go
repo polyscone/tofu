@@ -24,13 +24,13 @@ func (cmd Activate) Execute(ctx context.Context, bus command.Bus) error {
 	return errors.Tracef(err)
 }
 
-func (cmd Activate) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd Activate) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd Activate) request(ctx context.Context) (activateRequest, error) {
+func (cmd Activate) request() (activateRequest, error) {
 	var req activateRequest
 	var err error
 	var errs errors.Map
@@ -46,7 +46,7 @@ type ActivateHandler func(ctx context.Context, cmd Activate) error
 
 func NewActivateHandler(broker event.Broker, users UserRepo) ActivateHandler {
 	return func(ctx context.Context, cmd Activate) error {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return errors.Tracef(err)
 		}

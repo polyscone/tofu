@@ -33,13 +33,13 @@ func (cmd RegenerateRecoveryCodes) Execute(ctx context.Context, bus command.Bus)
 	return res.(regenerateRecoveryCodesResponse), errors.Tracef(err)
 }
 
-func (cmd RegenerateRecoveryCodes) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd RegenerateRecoveryCodes) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd RegenerateRecoveryCodes) request(ctx context.Context) (regenerateRecoveryCodesRequest, error) {
+func (cmd RegenerateRecoveryCodes) request() (regenerateRecoveryCodesRequest, error) {
 	var req regenerateRecoveryCodesRequest
 	if !cmd.Guard.CanRegenerateRecoveryCodes(uuid.ParseV4OrNil(cmd.UserID)) {
 		return req, errors.Tracef(port.ErrUnauthorised)
@@ -59,7 +59,7 @@ type RegenerateRecoveryCodesHandler func(ctx context.Context, cmd RegenerateReco
 
 func NewRegenerateRecoveryCodesHandler(broker event.Broker, users UserRepo) RegenerateRecoveryCodesHandler {
 	return func(ctx context.Context, cmd RegenerateRecoveryCodes) (regenerateRecoveryCodesResponse, error) {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return regenerateRecoveryCodesResponse{}, errors.Tracef(err)
 		}

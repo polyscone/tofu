@@ -67,7 +67,7 @@ func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc
 			NewPassword:      input.NewPassword,
 			NewPasswordCheck: input.NewPasswordCheck,
 		}
-		err = cmd.Validate(ctx)
+		err = cmd.Validate()
 		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}

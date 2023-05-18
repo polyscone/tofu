@@ -32,13 +32,13 @@ func (cmd ChangeTOTPTelephone) Execute(ctx context.Context, bus command.Bus) err
 	return errors.Tracef(err)
 }
 
-func (cmd ChangeTOTPTelephone) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd ChangeTOTPTelephone) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd ChangeTOTPTelephone) request(ctx context.Context) (changeTOTPTelephoneRequest, error) {
+func (cmd ChangeTOTPTelephone) request() (changeTOTPTelephoneRequest, error) {
 	var req changeTOTPTelephoneRequest
 	if !cmd.Guard.CanChangeTOTPTelephone(uuid.ParseV4OrNil(cmd.UserID)) {
 		return req, errors.Tracef(port.ErrUnauthorised)
@@ -61,7 +61,7 @@ type ChangeTOTPTelephoneHandler func(ctx context.Context, cmd ChangeTOTPTelephon
 
 func NewChangeTOTPTelephoneHandler(broker event.Broker, users UserRepo) ChangeTOTPTelephoneHandler {
 	return func(ctx context.Context, cmd ChangeTOTPTelephone) error {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return errors.Tracef(err)
 		}

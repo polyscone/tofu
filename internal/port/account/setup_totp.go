@@ -37,13 +37,13 @@ func (cmd SetupTOTP) Execute(ctx context.Context, bus command.Bus) (setupTOTPRes
 	return res.(setupTOTPResponse), errors.Tracef(err)
 }
 
-func (cmd SetupTOTP) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd SetupTOTP) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd SetupTOTP) request(ctx context.Context) (setupTOTPRequest, error) {
+func (cmd SetupTOTP) request() (setupTOTPRequest, error) {
 	var req setupTOTPRequest
 	if !cmd.Guard.CanSetupTOTP(uuid.ParseV4OrNil(cmd.UserID)) {
 		return req, errors.Tracef(port.ErrUnauthorised)
@@ -63,7 +63,7 @@ type SetupTOTPHandler func(ctx context.Context, cmd SetupTOTP) (setupTOTPRespons
 
 func NewSetupTOTPHandler(broker event.Broker, users UserRepo) SetupTOTPHandler {
 	return func(ctx context.Context, cmd SetupTOTP) (setupTOTPResponse, error) {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return setupTOTPResponse{}, errors.Tracef(err)
 		}

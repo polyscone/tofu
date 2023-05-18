@@ -33,13 +33,13 @@ func (cmd GenerateTOTP) Execute(ctx context.Context, bus command.Bus) (generateT
 	return res.(generateTOTPResponse), errors.Tracef(err)
 }
 
-func (cmd GenerateTOTP) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd GenerateTOTP) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd GenerateTOTP) request(ctx context.Context) (generateTOTPRequest, error) {
+func (cmd GenerateTOTP) request() (generateTOTPRequest, error) {
 	var req generateTOTPRequest
 	if !cmd.Guard.CanGenerateTOTP(uuid.ParseV4OrNil(cmd.UserID)) {
 		return req, errors.Tracef(port.ErrUnauthorised)
@@ -59,7 +59,7 @@ type GenerateTOTPHandler func(ctx context.Context, cmd GenerateTOTP) (generateTO
 
 func NewGenerateTOTPHandler(broker event.Broker, users UserRepo) GenerateTOTPHandler {
 	return func(ctx context.Context, cmd GenerateTOTP) (generateTOTPResponse, error) {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return generateTOTPResponse{}, errors.Tracef(err)
 		}

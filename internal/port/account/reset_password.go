@@ -33,13 +33,13 @@ func (cmd ResetPassword) Execute(ctx context.Context, bus command.Bus) error {
 	return errors.Tracef(err)
 }
 
-func (cmd ResetPassword) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd ResetPassword) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd ResetPassword) request(ctx context.Context) (resetPasswordRequest, error) {
+func (cmd ResetPassword) request() (resetPasswordRequest, error) {
 	var req resetPasswordRequest
 	if !cmd.Guard.CanResetPassword(uuid.ParseV4OrNil(cmd.UserID)) {
 		return req, errors.Tracef(port.ErrUnauthorised)
@@ -66,7 +66,7 @@ type ResetPasswordHandler func(ctx context.Context, cmd ResetPassword) error
 
 func NewResetPasswordHandler(broker event.Broker, users UserRepo) ResetPasswordHandler {
 	return func(ctx context.Context, cmd ResetPassword) error {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return errors.Tracef(err)
 		}

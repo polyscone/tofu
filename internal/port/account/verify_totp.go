@@ -34,13 +34,13 @@ func (cmd VerifyTOTP) Execute(ctx context.Context, bus command.Bus) error {
 	return errors.Tracef(err)
 }
 
-func (cmd VerifyTOTP) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd VerifyTOTP) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd VerifyTOTP) request(ctx context.Context) (verifyTOTPRequest, error) {
+func (cmd VerifyTOTP) request() (verifyTOTPRequest, error) {
 	var req verifyTOTPRequest
 	if !cmd.Guard.CanVerifyTOTP(uuid.ParseV4OrNil(cmd.UserID)) {
 		return req, errors.Tracef(port.ErrUnauthorised)
@@ -65,7 +65,7 @@ type VerifyTOTPHandler func(ctx context.Context, cmd VerifyTOTP) error
 
 func NewVerifyTOTPHandler(broker event.Broker, users UserRepo) VerifyTOTPHandler {
 	return func(ctx context.Context, cmd VerifyTOTP) error {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return errors.Tracef(err)
 		}

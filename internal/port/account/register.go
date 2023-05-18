@@ -31,13 +31,13 @@ func (cmd Register) Execute(ctx context.Context, bus command.Bus) error {
 	return errors.Tracef(err)
 }
 
-func (cmd Register) Validate(ctx context.Context) error {
-	_, err := cmd.request(ctx)
+func (cmd Register) Validate() error {
+	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd Register) request(ctx context.Context) (registerRequest, error) {
+func (cmd Register) request() (registerRequest, error) {
 	var req registerRequest
 	var err error
 	var errs errors.Map
@@ -63,7 +63,7 @@ type RegisterHandler func(ctx context.Context, cmd Register) error
 
 func NewRegisterHandler(broker event.Broker, users UserRepo) RegisterHandler {
 	return func(ctx context.Context, cmd Register) error {
-		req, err := cmd.request(ctx)
+		req, err := cmd.request()
 		if err != nil {
 			return errors.Tracef(err)
 		}

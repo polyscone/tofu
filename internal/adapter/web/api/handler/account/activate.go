@@ -34,7 +34,7 @@ func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 		cmd := account.Activate{
 			Email: email.String(),
 		}
-		err = cmd.Validate(ctx)
+		err = cmd.Validate()
 		if svc.ErrorJSON(w, r, errors.Tracef(err)) {
 			return
 		}
