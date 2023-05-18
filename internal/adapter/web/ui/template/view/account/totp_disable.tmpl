@@ -10,6 +10,27 @@
 		<p class="title">Two-Factor Authentication Already Disabled</p>
 
 		<p>Two-factor authentication is already disabled for your account.</p>
+	{{else if eq (.Query.Get "method") "recovery-code"}}
+		<p class="title">Disable Two-Factor Authentication with Recovery Code</p>
+
+		<p>
+			Enter one of your recovery codes to verify your identity and disable two-factor authentication.
+			Once a recovery code has been used it cannot be used again.
+		</p>
+
+		<form action="{{Path "account.totp.disable.post"}}?{{.Query.Encode}}" method="POST">
+			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+			<input type="hidden" name="action" value="verify-recovery-code">
+
+			<label for="totp__recovery-code">Recovery Code</label>
+			<input id="totp__recovery-code" type="text" name="recovery-code" value="{{.Form.Get "recovery-code"}}" placeholder="ABCDEFGHIJKLM" autocomplete="off" autofocus required pattern="^[A-Z2-7]+$" minlength="13" maxlength="13">
+			<p class="error">{{.Errors.Get "recovery code"}}</p>
+
+			<div class="bag">
+				<a href="?method=totp">Use a passcode</a>
+				<button type="submit" class="push-inline-end">Disable two-factor authentication</button>
+			</div>
+		</form>
 	{{else}}
 		<p class="title">Disable Two-Factor Authentication</p>
 
@@ -30,14 +51,18 @@
 			<p>Enter your 6 digit passcode from your authenticator app to verify your identity and disable two-factor authentication.</p>
 		{{end}}
 
-		<form action="{{Path "account.totp.disable.post"}}" method="POST">
+		<form action="{{Path "account.totp.disable.post"}}?{{.Query.Encode}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+			<input type="hidden" name="action" value="verify-totp">
 
 			<label for="totp__passcode">Passcode</label>
 			<input id="totp__passcode" type="text" name="totp" placeholder="123456" autocomplete="off" autofocus required pattern="\d{6}" minlength="6" maxlength="6">
 			<p class="error">{{.Errors.Get "totp"}}</p>
 
-			<button type="submit">Disable two-factor authentication</button>
+			<div class="bag">
+				<a href="?method=recovery-code">Use a recovery code</a>
+				<button type="submit" class="push-inline-end">Disable two-factor authentication</button>
+			</div>
 		</form>
 	{{end}}
 </div>

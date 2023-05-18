@@ -328,6 +328,25 @@ func (u *User) DisableTOTP(totp TOTP) error {
 	return nil
 }
 
+func (u *User) DisableTOTPWithRecoveryCode(recoveryCode RecoveryCode) error {
+	if err := u.AuthenticateWithRecoveryCode(recoveryCode); err != nil {
+		return errors.Tracef(err)
+	}
+
+	u.TOTPKey = nil
+	u.TOTPAlgorithm = ""
+	u.TOTPDigits = 0
+	u.TOTPPeriod = 0
+	u.TOTPVerifiedAt = time.Time{}
+	u.RecoveryCodes = nil
+
+	u.Events.Enqueue(DisabledTOTP{
+		Email: u.Email.String(),
+	})
+
+	return nil
+}
+
 func (u *User) verifyPassword(password Password) error {
 	ok, _, err := argon2.Verify(password, u.HashedPassword, nil)
 	if err != nil {

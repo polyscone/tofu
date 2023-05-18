@@ -50,12 +50,13 @@
 			<p class="error">{{.Errors.Get "totp"}}</p>
 
 			<div class="bag reverse">
-				<button type="submit" class="push-inline-end">Login</button>
-				<a href="?step=recovery-code">Use a recovery code</a>
+				<button type="submit"{{if not .Session.TOTPUseSMS}} class="push-inline-end"{{end}}>Login</button>
 
 				{{if .Session.TOTPUseSMS}}
-					<button type="submit" formnovalidate formaction="{{Path "account.login.totp.send_sms.post"}}" class="btn--alt">Resend passcode SMS</button>
+					<button type="submit" formnovalidate formaction="{{Path "account.login.totp.send_sms.post"}}" class="btn--alt{{if .Session.TOTPUseSMS}} push-inline-end{{end}}">Resend passcode SMS</button>
 				{{end}}
+
+				<a href="?step=recovery-code">Use a recovery code</a>
 			</div>
 		</form>
 	{{else}}

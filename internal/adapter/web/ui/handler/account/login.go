@@ -108,6 +108,8 @@ func loginTOTPSendSMSPost(svc *handler.Services) http.HandlerFunc {
 			Email: svc.Sessions.GetString(ctx, sess.Email),
 		})
 
+		svc.Sessions.Set(ctx, sess.Flash, "A passcode has been sent to your registered phone number.")
+
 		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 	}
 }

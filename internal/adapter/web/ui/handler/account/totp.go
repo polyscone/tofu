@@ -258,10 +258,22 @@ func totpDisableGet(svc *handler.Services) http.HandlerFunc {
 func totpDisablePost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			TOTP string
+			Action       string
+			TOTP         string
+			RecoveryCode string
 		}
 		err := httputil.DecodeForm(r, &input)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		actions := map[string]struct{}{
+			"verify-totp":          {},
+			"verify-recovery-code": {},
+		}
+		if _, ok := actions[input.Action]; !ok {
+			svc.ErrorView(w, r, errors.Tracef("invalid action %q", input.Action), "error", nil)
+
 			return
 		}
 
@@ -269,14 +281,28 @@ func totpDisablePost(svc *handler.Services) http.HandlerFunc {
 
 		passport := svc.Passport(ctx)
 
-		cmd := account.DisableTOTP{
-			Guard:  passport,
-			UserID: passport.UserID(),
-			TOTP:   input.TOTP,
-		}
-		err = cmd.Execute(ctx, svc.Bus)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/totp_disable", nil) {
-			return
+		switch input.Action {
+		case "verify-totp":
+			cmd := account.DisableTOTP{
+				Guard:  passport,
+				UserID: passport.UserID(),
+				TOTP:   input.TOTP,
+			}
+			err := cmd.Execute(ctx, svc.Bus)
+			if svc.ErrorView(w, r, errors.Tracef(err), "account/totp_disable", nil) {
+				return
+			}
+
+		case "verify-recovery-code":
+			cmd := account.DisableTOTPWithRecoveryCode{
+				Guard:        passport,
+				UserID:       passport.UserID(),
+				RecoveryCode: input.RecoveryCode,
+			}
+			err := cmd.Execute(ctx, svc.Bus)
+			if svc.ErrorView(w, r, errors.Tracef(err), "account/totp_disable", nil) {
+				return
+			}
 		}
 
 		_, err = svc.RenewSession(ctx)
@@ -297,6 +323,8 @@ func totpDisableSendSMSPost(svc *handler.Services) http.HandlerFunc {
 		svc.Broker.Dispatch(handler.TOTPSMSRequested{
 			Email: svc.Sessions.GetString(ctx, sess.Email),
 		})
+
+		svc.Sessions.Set(ctx, sess.Flash, "A passcode has been sent to your registered phone number.")
 
 		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 	}
