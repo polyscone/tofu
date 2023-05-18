@@ -41,7 +41,7 @@ func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 		}
 
 		email, err := tokens.FindActivationTokenEmail(ctx, input.Token)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
@@ -57,7 +57,7 @@ func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 		// This way the token will only be consumed once we know there aren't any
 		// input validation or authorisation errors
 		err = tokens.ConsumeActivationToken(ctx, input.Token)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
