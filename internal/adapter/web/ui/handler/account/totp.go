@@ -70,22 +70,23 @@ func totpPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		switch input.Action {
-		case "setup", "send-sms", "verify":
-			// Valid input
-
-		default:
+		actions := map[string]struct{}{
+			"setup":    {},
+			"send-sms": {},
+			"verify":   {},
+		}
+		if _, ok := actions[input.Action]; !ok {
 			svc.ErrorView(w, r, errors.Tracef("invalid action %q", input.Action), "error", nil)
 
 			return
 		}
 
 		method := r.URL.Query().Get("method")
-		switch method {
-		case "app", "sms":
-			// Valid input
-
-		default:
+		methods := map[string]struct{}{
+			"app": {},
+			"sms": {},
+		}
+		if _, ok := methods[method]; !ok {
 			svc.ErrorView(w, r, errors.Tracef("invalid method %q", method), "error", nil)
 
 			return
