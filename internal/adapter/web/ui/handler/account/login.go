@@ -17,12 +17,7 @@ import (
 func Login(svc *handler.Services, mux *router.ServeMux) {
 	mux.Get("/login", loginGet(svc), "account.login")
 	mux.Post("/login", loginPost(svc), "account.login.post")
-	mux.Post("/login/totp", loginTOTPPost(svc), "account.login.totp.post")
 	mux.Post("/login/totp/send-sms", loginTOTPSendSMSPost(svc), "account.login.totp.send_sms.post")
-
-	svc.SetViewVars("account/login", handler.Vars{
-		"IsAccountUnactivated": false,
-	})
 }
 
 func loginGet(svc *handler.Services) http.HandlerFunc {
@@ -34,50 +29,74 @@ func loginGet(svc *handler.Services) http.HandlerFunc {
 func loginPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Email    string
-			Password string
+			Action       string
+			Email        string
+			Password     string
+			TOTP         string
+			RecoveryCode string
 		}
 		err := httputil.DecodeForm(r, &input)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
-		ctx := r.Context()
-
-		loginWithPassword(ctx, svc, w, r, input.Email, input.Password)
-	}
-}
-
-func loginTOTPPost(svc *handler.Services) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var input struct {
-			TOTP string
+		actions := map[string]struct{}{
+			"verify-password":      {},
+			"verify-totp":          {},
+			"verify-recovery-code": {},
 		}
-		err := httputil.DecodeForm(r, &input)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if _, ok := actions[input.Action]; !ok {
+			svc.ErrorView(w, r, errors.Tracef("invalid action %q", input.Action), "error", nil)
+
 			return
 		}
 
 		ctx := r.Context()
 
-		cmd := account.AuthenticateWithTOTP{
-			UserID: svc.Sessions.GetString(ctx, sess.UserID),
-			TOTP:   input.TOTP,
-		}
-		err = cmd.Execute(ctx, svc.Bus)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/login", nil) {
-			return
-		}
+		switch input.Action {
+		case "verify-password":
+			loginWithPassword(ctx, svc, w, r, input.Email, input.Password)
 
-		_, err = svc.RenewSession(ctx)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
+		case "verify-totp":
+			cmd := account.AuthenticateWithTOTP{
+				UserID: svc.Sessions.GetString(ctx, sess.UserID),
+				TOTP:   input.TOTP,
+			}
+			err := cmd.Execute(ctx, svc.Bus)
+			if svc.ErrorView(w, r, errors.Tracef(err), "account/login", nil) {
+				return
+			}
+
+			_, err = svc.RenewSession(ctx)
+			if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+				return
+			}
+
+			svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
+			svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
+
+			loginSuccessRedirect(svc, w, r)
+
+		case "verify-recovery-code":
+			cmd := account.AuthenticateWithRecoveryCode{
+				UserID:       svc.Sessions.GetString(ctx, sess.UserID),
+				RecoveryCode: input.RecoveryCode,
+			}
+			err := cmd.Execute(ctx, svc.Bus)
+			if svc.ErrorView(w, r, errors.Tracef(err), "account/login", nil) {
+				return
+			}
+
+			_, err = svc.RenewSession(ctx)
+			if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+				return
+			}
+
+			svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
+			svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
+
+			loginSuccessRedirect(svc, w, r)
 		}
-
-		svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
-		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
-
-		loginSuccessRedirect(svc, w, r)
 	}
 }
 
@@ -101,13 +120,9 @@ func loginWithPassword(ctx context.Context, svc *handler.Services, w http.Respon
 	res, err := cmd.Execute(ctx, svc.Bus)
 	if err != nil {
 		svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/login", func(data *handler.ViewData) {
-			if errors.Is(err, repo.ErrNotFound) {
+			if errors.Is(err, repo.ErrNotFound) || errors.Is(err, account.ErrNotActivated) {
 				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
 			}
-
-			data.Vars = data.Vars.Merge(handler.Vars{
-				"IsAccountUnactivated": errors.Is(err, account.ErrNotActivated),
-			})
 		})
 
 		return

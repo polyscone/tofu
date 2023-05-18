@@ -415,7 +415,9 @@ func (u *User) AuthenticateWithRecoveryCode(recoveryCode RecoveryCode) error {
 		}
 	}
 
-	return errors.Tracef(port.ErrInvalidInput, "invalid recovery code")
+	errs := errors.Map{"recovery code": errors.New("invalid recovery code")}
+
+	return errs.Tracef(port.ErrInvalidInput)
 }
 
 func (u *User) Is(query Claim) bool {
