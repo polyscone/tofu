@@ -4,8 +4,10 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/repo"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
@@ -17,13 +19,13 @@ func RunUserTests(t *testing.T, users account.UserRepo) {
 	ctx := context.Background()
 
 	// Seed the repo
-	existing := errors.Must(AddUser(t, users, ctx, "joe@bloggs.com", "password"))
+	user1 := errors.Must(AddUser(t, users, ctx, "joe@bloggs.com", "password"))
 	errors.Must(AddUser(t, users, ctx, "jane@doe.com", "password"))
 
 	// An existing user should be found an be populated with correct values
-	found := errors.Must(users.FindByEmail(ctx, "joe@bloggs.com"))
-	if !reflect.DeepEqual(existing, found) {
-		t.Errorf("\nwant %#v\ngot  %#v", existing, found)
+	user2 := errors.Must(users.FindByEmail(ctx, "joe@bloggs.com"))
+	if !reflect.DeepEqual(user1, user2) {
+		t.Errorf("\nwant %#v\ngot  %#v", user1, user2)
 	}
 
 	// A non-existent user should not be found
@@ -44,50 +46,24 @@ func RunUserTests(t *testing.T, users account.UserRepo) {
 		t.Errorf("want %q; got %q", want, got)
 	}
 
-	// Activating should save a new flag to the database
-	if err := found.Activate(); err != nil {
-		t.Fatal(err)
-	}
-	if err := users.Save(ctx, found); err != nil {
+	// Each populated field should be saved and retrieved
+	user2.TOTPUseSMS = true
+	user2.TOTPTelephone = "123"
+	user2.TOTPKey = errors.Must(domain.NewTOTPKey(otp.SHA1))
+	user2.TOTPAlgorithm = "SHA1"
+	user2.TOTPDigits = 6
+	user2.TOTPPeriod = time.Hour
+	user2.TOTPVerifiedAt = time.Now().UTC()
+	user2.RecoveryCodes = []domain.RecoveryCode{errors.Must(domain.GenerateRecoveryCode())}
+	user2.ActivatedAt = time.Now().UTC()
+
+	if err := users.Save(ctx, user2); err != nil {
 		t.Fatalf("want <nil>; got error %q", err)
 	}
-	found = errors.Must(users.FindByID(ctx, found.ID))
-	if found.ActivatedAt.IsZero() {
-		t.Error("want non-zero time")
-	}
 
-	// Setting up a TOTP should populate the TOTP parameters
-	//
-	// It should also save a non-zero number of recovery code
-	// strings which should not be empty
-	if err := found.SetupTOTP(); err != nil {
-		t.Fatal(err)
-	}
-	if err := users.Save(ctx, found); err != nil {
-		t.Fatalf("want <nil>; got error %q", err)
-	}
-	found = errors.Must(users.FindByID(ctx, found.ID))
-	if len(found.TOTPKey) == 0 {
-		t.Error("want the TOTP key to be populated")
-	}
-	if len(found.TOTPAlgorithm) == 0 {
-		t.Error("want the TOTP algorithm to be populated")
-	}
-	if found.TOTPDigits == 0 {
-		t.Error("want the TOTP digits to be populated")
-	}
-	if found.TOTPPeriod == 0 {
-		t.Error("want the TOTP period to be populated")
-	}
-
-	if len(found.RecoveryCodes) == 0 {
-		t.Error("want at least one recovery code")
-	} else {
-		for _, code := range found.RecoveryCodes {
-			if len(code) == 0 {
-				t.Error("want code; got empty string")
-			}
-		}
+	user3 := errors.Must(users.FindByID(ctx, user2.ID))
+	if !reflect.DeepEqual(user2, user3) {
+		t.Errorf("\nwant %#v\ngot  %#v", user2, user3)
 	}
 }
 
