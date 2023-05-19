@@ -6,6 +6,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
+	"github.com/polyscone/tofu/internal/pkg/password"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account/domain"
@@ -69,7 +70,7 @@ func (cmd ChangePassword) request() (changePasswordRequest, error) {
 
 type ChangePasswordHandler func(ctx context.Context, cmd ChangePassword) error
 
-func NewChangePasswordHandler(broker event.Broker, users UserRepo) ChangePasswordHandler {
+func NewChangePasswordHandler(broker event.Broker, hasher password.Hasher, users UserRepo) ChangePasswordHandler {
 	return func(ctx context.Context, cmd ChangePassword) error {
 		req, err := cmd.request()
 		if err != nil {
@@ -81,7 +82,7 @@ func NewChangePasswordHandler(broker event.Broker, users UserRepo) ChangePasswor
 			return errors.Tracef(err)
 		}
 
-		if err := user.ChangePassword(req.oldPassword, req.newPassword); err != nil {
+		if err := user.ChangePassword(req.oldPassword, req.newPassword, hasher); err != nil {
 			return errors.Tracef(err)
 		}
 

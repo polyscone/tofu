@@ -100,7 +100,7 @@ func main() {
 	flag.Var(&opts.after, "after", "Commands to run after a build has completed")
 	flag.BoolVar(&opts.watch, "watch", false, "Watches for changes and re-runs the build if changes are detected")
 	flag.StringVar(&opts.watchExts, "watch-exts", ".go .h .c .sql .json", "A space separated list of file extensions to watch")
-	flag.StringVar(&opts.watchSkipPatterns, "watch-skip-patterns", ".git/ .hg/ .svn/ node_modules/ build.go", "A space separated list of patterns to skip in watch mode")
+	flag.StringVar(&opts.watchSkipPatterns, "watch-skip-patterns", ".data/ .git/ .hg/ .svn/ node_modules/ build.go", "A space separated list of patterns to skip in watch mode")
 	flag.DurationVar(&opts.watchInterval, "watch-interval", 2*time.Second, "The interval that watch mode checks for file changes")
 	flag.Parse()
 

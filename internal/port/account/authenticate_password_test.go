@@ -20,8 +20,9 @@ func TestAuthenticateWithPassword(t *testing.T) {
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
+	hasher := testutil.NewPasswordHasher()
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
-	handler := account.NewAuthenticateWithPasswordHandler(broker, users)
+	handler := account.NewAuthenticateWithPasswordHandler(broker, hasher, users)
 
 	activatedUser := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", "password"))
 	unactivatedUser := errors.Must(repotest.AddUser(t, users, ctx, "jane@doe.com", "password"))
@@ -107,7 +108,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.CheckN(t, 2, func(email text.Email, password domain.Password) bool {
+			quick.Check(t, func(email text.Email, password domain.Password) bool {
 				err := execute(email, password)
 
 				return !errors.Is(err, port.ErrMalformedInput)

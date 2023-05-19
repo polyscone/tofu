@@ -155,6 +155,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := initPasswordHasher(); err != nil {
+		logger.PrintError(err)
+
+		os.Exit(1)
+	}
+
 	listener, err := opts.server.addr.Listener()
 	if err != nil {
 		logger.PrintError(err)

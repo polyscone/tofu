@@ -48,7 +48,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 	databases.mu.Unlock()
 
-	bus, broker, err := app.Compose(ctx, db, []byte(opts.secret))
+	bus, broker, err := app.Compose(ctx, db, []byte(opts.secret), hasher)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}

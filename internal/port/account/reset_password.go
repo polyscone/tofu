@@ -6,6 +6,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
+	"github.com/polyscone/tofu/internal/pkg/password"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account/domain"
@@ -64,7 +65,7 @@ func (cmd ResetPassword) request() (resetPasswordRequest, error) {
 
 type ResetPasswordHandler func(ctx context.Context, cmd ResetPassword) error
 
-func NewResetPasswordHandler(broker event.Broker, users UserRepo) ResetPasswordHandler {
+func NewResetPasswordHandler(broker event.Broker, hasher password.Hasher, users UserRepo) ResetPasswordHandler {
 	return func(ctx context.Context, cmd ResetPassword) error {
 		req, err := cmd.request()
 		if err != nil {
@@ -76,7 +77,7 @@ func NewResetPasswordHandler(broker event.Broker, users UserRepo) ResetPasswordH
 			return errors.Tracef(err)
 		}
 
-		if err := user.ResetPassword(req.newPassword); err != nil {
+		if err := user.ResetPassword(req.newPassword, hasher); err != nil {
 			return errors.Tracef(err)
 		}
 

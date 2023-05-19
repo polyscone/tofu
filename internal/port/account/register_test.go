@@ -21,8 +21,9 @@ func TestRegister(t *testing.T) {
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
+	hasher := testutil.NewPasswordHasher()
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
-	handler := account.NewRegisterHandler(broker, users)
+	handler := account.NewRegisterHandler(broker, hasher, users)
 
 	t.Run("properties", func(t *testing.T) {
 		var wantEvents []event.Event
@@ -47,7 +48,7 @@ func TestRegister(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.CheckN(t, 2, func(id uuid.V4, email text.Email, password domain.Password) bool {
+			quick.Check(t, func(id uuid.V4, email text.Email, password domain.Password) bool {
 				if err := execute(id, email, password, password); err != nil {
 					t.Log(err)
 

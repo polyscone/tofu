@@ -32,8 +32,9 @@ func TestResetPassword(t *testing.T) {
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
+	hasher := testutil.NewPasswordHasher()
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
-	handler := account.NewResetPasswordHandler(broker, users)
+	handler := account.NewResetPasswordHandler(broker, hasher, users)
 
 	password := "password"
 	user := errors.Must(repotest.AddActivatedUser(t, users, ctx, "joe@bloggs.com", password))
@@ -61,7 +62,7 @@ func TestResetPassword(t *testing.T) {
 
 		user := errors.Must(users.FindByID(ctx, user.ID))
 
-		if err := user.AuthenticateWithPassword(newPassword); err != nil {
+		if _, err := user.AuthenticateWithPassword(newPassword, hasher); err != nil {
 			t.Errorf("want to be able to authenticate with new password; got %q", err)
 		}
 
@@ -130,7 +131,7 @@ func TestResetPassword(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.CheckN(t, 2, func(newPassword domain.Password) bool {
+			quick.Check(t, func(newPassword domain.Password) bool {
 				err := execute(newPassword, newPassword)
 
 				return !errors.Is(err, port.ErrMalformedInput)

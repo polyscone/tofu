@@ -7,8 +7,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/aggregate"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/otp"
-	"github.com/polyscone/tofu/internal/pkg/password/argon2"
-	"github.com/polyscone/tofu/internal/pkg/size"
+	"github.com/polyscone/tofu/internal/pkg/password"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
@@ -91,10 +90,10 @@ func (u *User) HasVerifiedTOTP() bool {
 	return !u.TOTPVerifiedAt.IsZero() && len(u.TOTPKey) != 0
 }
 
-func (u *User) Register(email text.Email, password Password) error {
+func (u *User) Register(email text.Email, password Password, hasher password.Hasher) error {
 	u.Email = email
 
-	if err := u.setPassword(password); err != nil {
+	if err := u.setPassword(password, hasher); err != nil {
 		return errors.Tracef(err)
 	}
 
@@ -119,18 +118,8 @@ func (u *User) Activate() error {
 	return nil
 }
 
-func (u *User) setPassword(newPassword Password) error {
-	const mebibyte = 1 * size.Mebibyte / size.Kibibyte
-
-	// TODO: automatically detect argon2 parameters and use those instead
-	hashedPassword, err := argon2.EncodedHash(newPassword, argon2.Params{
-		Variant:     argon2.ID,
-		Iterations:  1,
-		Memory:      64 * mebibyte,
-		Parallelism: 4,
-		SaltLength:  8,
-		KeyLength:   16,
-	})
+func (u *User) setPassword(newPassword Password, hasher password.Hasher) error {
+	hashedPassword, err := hasher.EncodedHash(newPassword)
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -140,18 +129,18 @@ func (u *User) setPassword(newPassword Password) error {
 	return nil
 }
 
-func (u *User) ChangePassword(oldPassword, newPassword Password) error {
+func (u *User) ChangePassword(oldPassword, newPassword Password, hasher password.Hasher) error {
 	if u.ActivatedAt.IsZero() {
 		return errors.Tracef("cannot change password until activated")
 	}
 
-	if err := u.verifyPassword(oldPassword); err != nil {
+	if _, err := u.verifyPassword(oldPassword, hasher); err != nil {
 		errs := errors.Map{"old password": err}
 
 		return errs.Tracef(port.ErrInvalidInput)
 	}
 
-	if err := u.setPassword(newPassword); err != nil {
+	if err := u.setPassword(newPassword, hasher); err != nil {
 		return errors.Tracef(err)
 	}
 
@@ -162,12 +151,12 @@ func (u *User) ChangePassword(oldPassword, newPassword Password) error {
 	return nil
 }
 
-func (u *User) ResetPassword(newPassword Password) error {
+func (u *User) ResetPassword(newPassword Password, hasher password.Hasher) error {
 	if u.ActivatedAt.IsZero() {
 		return errors.Tracef("cannot change password until activated")
 	}
 
-	if err := u.setPassword(newPassword); err != nil {
+	if err := u.setPassword(newPassword, hasher); err != nil {
 		return errors.Tracef(err)
 	}
 
@@ -347,25 +336,31 @@ func (u *User) DisableTOTPWithRecoveryCode(recoveryCode RecoveryCode) error {
 	return nil
 }
 
-func (u *User) verifyPassword(password Password) error {
-	ok, _, err := argon2.Verify(password, u.HashedPassword, nil)
+func (u *User) verifyPassword(password Password, hasher password.Hasher) (bool, error) {
+	ok, rehash, err := hasher.Verify(password, u.HashedPassword)
 	if err != nil {
-		return errors.Tracef(err)
+		return false, errors.Tracef(err)
 	}
 	if !ok {
-		return errors.Tracef(port.ErrBadRequest, "could not verify password")
+		return false, errors.Tracef(port.ErrBadRequest, "could not verify password")
+	}
+	if rehash {
+		err := u.setPassword(password, hasher)
+
+		return true, errors.Tracef(err)
 	}
 
-	return nil
+	return false, nil
 }
 
-func (u *User) AuthenticateWithPassword(password Password) error {
+func (u *User) AuthenticateWithPassword(password Password, hasher password.Hasher) (bool, error) {
 	if u.ActivatedAt.IsZero() {
-		return errors.Tracef(port.ErrBadRequest, ErrNotActivated)
+		return false, errors.Tracef(port.ErrBadRequest, ErrNotActivated)
 	}
 
-	if err := u.verifyPassword(password); err != nil {
-		return errors.Tracef(err)
+	rehashed, err := u.verifyPassword(password, hasher)
+	if err != nil {
+		return false, errors.Tracef(err)
 	}
 
 	u.Events.Enqueue(AuthenticatedWithPassword{
@@ -373,7 +368,7 @@ func (u *User) AuthenticateWithPassword(password Password) error {
 		IsAwaitingTOTP: u.HasVerifiedTOTP(),
 	})
 
-	return nil
+	return rehashed, nil
 }
 
 func (u *User) AuthenticateWithTOTP(totp TOTP) error {

@@ -33,7 +33,8 @@ func TestChangePassword(t *testing.T) {
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
-	handler := account.NewChangePasswordHandler(broker, users)
+	hasher := testutil.NewPasswordHasher()
+	handler := account.NewChangePasswordHandler(broker, hasher, users)
 
 	user1Password := "password"
 	user2Password := "password"
@@ -68,7 +69,7 @@ func TestChangePassword(t *testing.T) {
 
 		user := errors.Must(users.FindByID(ctx, user1.ID))
 
-		if err := user.AuthenticateWithPassword(newPassword); err != nil {
+		if _, err := user.AuthenticateWithPassword(newPassword, hasher); err != nil {
 			t.Errorf("want to be able to authenticate with new password; got %q", err)
 		}
 
@@ -144,7 +145,7 @@ func TestChangePassword(t *testing.T) {
 		oldPassword := domain.Password(user1Password)
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.CheckN(t, 2, func(newPassword domain.Password) bool {
+			quick.Check(t, func(newPassword domain.Password) bool {
 				err := execute(oldPassword, newPassword, newPassword)
 
 				// Keep the old password up to date with the latest password

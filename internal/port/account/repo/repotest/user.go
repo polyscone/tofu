@@ -9,6 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/repo"
+	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port/account"
@@ -75,7 +76,8 @@ func AddUser(t *testing.T, users account.UserRepo, ctx context.Context, _email, 
 
 	user := domain.NewUser(id)
 
-	if err := user.Register(email, errors.Must(domain.NewPassword(_password))); err != nil {
+	hasher := testutil.NewPasswordHasher()
+	if err := user.Register(email, errors.Must(domain.NewPassword(_password)), hasher); err != nil {
 		return domain.User{}, err
 	}
 

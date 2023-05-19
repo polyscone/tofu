@@ -6,6 +6,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
+	"github.com/polyscone/tofu/internal/pkg/password"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account/domain"
@@ -56,7 +57,7 @@ func (cmd AuthenticateWithPassword) request() (authenticateWithPasswordRequest, 
 
 type AuthenticateWithPasswordHandler func(ctx context.Context, cmd AuthenticateWithPassword) (authenticateWithPasswordResponse, error)
 
-func NewAuthenticateWithPasswordHandler(broker event.Broker, users UserRepo) AuthenticateWithPasswordHandler {
+func NewAuthenticateWithPasswordHandler(broker event.Broker, hasher password.Hasher, users UserRepo) AuthenticateWithPasswordHandler {
 	return func(ctx context.Context, cmd AuthenticateWithPassword) (authenticateWithPasswordResponse, error) {
 		req, err := cmd.request()
 		if err != nil {
@@ -68,8 +69,15 @@ func NewAuthenticateWithPasswordHandler(broker event.Broker, users UserRepo) Aut
 			return authenticateWithPasswordResponse{}, errors.Tracef(err)
 		}
 
-		if err := user.AuthenticateWithPassword(req.password); err != nil {
+		rehashed, err := user.AuthenticateWithPassword(req.password, hasher)
+		if err != nil {
 			return authenticateWithPasswordResponse{}, errors.Tracef(err)
+		}
+
+		if rehashed {
+			if err := users.Save(ctx, user); err != nil {
+				return authenticateWithPasswordResponse{}, errors.Tracef(err)
+			}
 		}
 
 		broker.Flush(&user.Events)

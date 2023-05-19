@@ -6,6 +6,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
+	"github.com/polyscone/tofu/internal/pkg/password"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
@@ -61,7 +62,7 @@ func (cmd Register) request() (registerRequest, error) {
 
 type RegisterHandler func(ctx context.Context, cmd Register) error
 
-func NewRegisterHandler(broker event.Broker, users UserRepo) RegisterHandler {
+func NewRegisterHandler(broker event.Broker, hasher password.Hasher, users UserRepo) RegisterHandler {
 	return func(ctx context.Context, cmd Register) error {
 		req, err := cmd.request()
 		if err != nil {
@@ -70,7 +71,7 @@ func NewRegisterHandler(broker event.Broker, users UserRepo) RegisterHandler {
 
 		user := domain.NewUser(req.userID)
 
-		if err := user.Register(req.email, req.password); err != nil {
+		if err := user.Register(req.email, req.password, hasher); err != nil {
 			return errors.Tracef(err)
 		}
 
