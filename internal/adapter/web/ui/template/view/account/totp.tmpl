@@ -140,13 +140,11 @@
 		</p>
 	</div>
 
-	<div class="totp__recovery-codes">
-		<ul>
-			{{range $code := .Vars.RecoveryCodes}}
-				<li>{{$code}}</li>
-			{{end}}
-		</ul>
-	</div>
+	<ul>
+		{{range $code := .Vars.RecoveryCodes}}
+			<li>{{$code}}</li>
+		{{end}}
+	</ul>
 {{end}}
 
 {{end}}

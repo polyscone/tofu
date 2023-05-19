@@ -27,7 +27,9 @@ func TOTP(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
 	mux.Post("/totp", totpPost(svc), "account.totp.post")
 	mux.Get("/totp/disable", totpDisableGet(svc), "account.totp.disable")
 	mux.Post("/totp/disable", totpDisablePost(svc), "account.totp.disable.post")
-	mux.Post("/totp/disable/send-sms", totpDisableSendSMSPost(svc), "account.totp.disable.send_sms.post")
+	mux.Get("/totp/recovery-codes", totpRecoveryCodesGet(svc), "account.totp.recovery_codes")
+	mux.Post("/totp/recovery-codes", totpRecoveryCodesPost(svc), "account.totp.recovery_codes.post")
+	mux.Post("/totp/send-sms", totpDisableSendSMSPost(svc), "account.totp.disable.send_sms.post")
 
 	guard.Protect(svc.Path("account.totp"))
 	guard.Protect(svc.Path("account.totp.post"))
@@ -39,6 +41,10 @@ func TOTP(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
 		"KeyBase32":     "",
 		"QRCodeBase64":  "",
 		"TOTPTelephone": "",
+	})
+
+	svc.SetViewVars("account/totp_recovery_codes", handler.Vars{
+		"RecoveryCodes": nil,
 	})
 }
 
@@ -313,6 +319,44 @@ func totpDisablePost(svc *handler.Services) http.HandlerFunc {
 		svc.Sessions.Set(ctx, sess.HasVerifiedTOTP, false)
 
 		http.Redirect(w, r, svc.Path("account.totp.disable")+"?status=disabled", http.StatusSeeOther)
+	}
+}
+
+func totpRecoveryCodesGet(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		userID := svc.Sessions.GetString(ctx, sess.UserID)
+		cmd := account.FindUserByID{
+			UserID: userID,
+		}
+		user, err := cmd.Execute(ctx, svc.Bus)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		svc.View(w, r, http.StatusOK, "account/totp_recovery_codes", handler.Vars{
+			"RecoveryCodes": user.RecoveryCodes,
+		})
+	}
+}
+
+func totpRecoveryCodesPost(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		passport := svc.Passport(ctx)
+
+		cmd := account.RegenerateRecoveryCodes{
+			Guard:  passport,
+			UserID: passport.UserID(),
+		}
+		_, err := cmd.Execute(ctx, svc.Bus)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		http.Redirect(w, r, svc.Path("account.totp.recovery_codes")+"?status=success", http.StatusSeeOther)
 	}
 }
 

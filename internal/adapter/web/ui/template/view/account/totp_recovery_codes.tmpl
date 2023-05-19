@@ -1,0 +1,41 @@
+{{define "view"}}
+
+<div class="recovery-codes center">
+	{{if eq (.Query.Get "status") "success"}}
+		<p class="title">New Recovery Codes</p>
+
+		<div class="warning-banner">
+			<p>Your previous recovery codes are no longer valid.</p>
+			<p>Please print, copy, or photograph your new recovery codes and store them in a safe place separate from your authentication device.</p>
+			<p>
+				If possible, we recommend storing them in a password manager, such as
+				<a href="https://1password.com/" target="_blank" rel="noopener noreferrer">1Password</a>,
+				<a href="https://www.lastpass.com/" target="_blank" rel="noopener noreferrer">LastPass</a>, or
+				<a href="https://www.keepersecurity.com" target="_blank" rel="noopener noreferrer">Keeper</a>.
+			</p>
+		</div>
+
+		<ul>
+			{{range $code := .Vars.RecoveryCodes}}
+				<li>{{$code}}</li>
+			{{end}}
+		</ul>
+	{{else}}
+		<p class="title">Regenerate Recovery Codes</p>
+
+		<p>You have {{len .Vars.RecoveryCodes}} recovery codes remaining.</p>
+		<p>If you would like to generate new recovery codes click the button below.</p>
+
+		<div class="warning-banner">
+			<p>If you choose to generate new recovery codes your previous ones will no longer be valid, and you will not be able to use them.</p>
+		</div>
+
+		<form action="{{Path "account.totp.recovery_codes.post"}}" method="POST">
+			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+			<button type="submit">Regenerate Recovery Codes</button>
+		</form>
+	{{end}}
+</div>
+
+{{end}}
