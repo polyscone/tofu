@@ -63,8 +63,10 @@ func (g *Guard) ProtectPrefix(path string) {
 
 func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Exact path matches should take precedence over more
-		// generic prefix matches
+		// If a guard exists for an exact match on the path then we run that
+		// otherwise we look for the longest matching prefix guard
+		//
+		// This way we guarantee that only the best matching guard will be run
 		if isAuthorised, ok := g.exact[r.URL.Path]; ok {
 			ctx := r.Context()
 
@@ -76,22 +78,27 @@ func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
 
 				return
 			}
-		}
+		} else {
+			for _, guard := range g.prefixes {
+				if !strings.HasPrefix(r.URL.Path, guard.path) {
+					continue
+				}
 
-		for _, guard := range g.prefixes {
-			if !strings.HasPrefix(r.URL.Path, guard.path) {
-				continue
-			}
+				ctx := r.Context()
 
-			ctx := r.Context()
+				passport := g.svc.Passport(ctx)
+				if !guard.isAuthorised(passport) {
+					g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
-			passport := g.svc.Passport(ctx)
-			if !guard.isAuthorised(passport) {
-				g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+					http.Redirect(w, r, g.redirect(), http.StatusSeeOther)
 
-				http.Redirect(w, r, g.redirect(), http.StatusSeeOther)
+					return
+				}
 
-				return
+				// We only want to apply the guard with the longest matching prefix
+				// so we break out of the loop here to prevent running more guards
+				// than we should
+				break
 			}
 		}
 
