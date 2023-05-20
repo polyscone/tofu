@@ -15,6 +15,7 @@ import (
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
 	"github.com/polyscone/tofu/internal/port/account/domain"
+	"github.com/polyscone/tofu/internal/repo"
 )
 
 func TestRegister(t *testing.T) {
@@ -22,7 +23,7 @@ func TestRegister(t *testing.T) {
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	hasher := testutil.NewPasswordHasher()
-	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
+	users := errors.Must(repo.NewSQLiteAccountUserRepo(ctx, db, []byte("s")))
 	handler := account.NewRegisterHandler(broker, hasher, users)
 
 	t.Run("properties", func(t *testing.T) {

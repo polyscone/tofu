@@ -1,4 +1,4 @@
-package sqlite
+package repo
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"encoding/base32"
 	"io"
+	"io/fs"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/background"
@@ -22,11 +23,16 @@ const (
 	resetPassword = "reset_password"
 )
 
-type TokenRepo struct {
+type SQLiteWebTokenRepo struct {
 	db *sqlite.DB
 }
 
-func NewTokenRepo(ctx context.Context, db *sqlite.DB) (*TokenRepo, error) {
+func NewSQLiteWebTokenRepo(ctx context.Context, db *sqlite.DB) (*SQLiteWebTokenRepo, error) {
+	migrations, err := fs.Sub(migrations, "migrations/sqlite/web")
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
 	if err := db.MigrateFS(ctx, "web", migrations); err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -45,10 +51,10 @@ func NewTokenRepo(ctx context.Context, db *sqlite.DB) (*TokenRepo, error) {
 		}
 	})
 
-	return &TokenRepo{db: db}, nil
+	return &SQLiteWebTokenRepo{db: db}, nil
 }
 
-func (r *TokenRepo) add(ctx context.Context, email text.Email, ttl time.Duration, kind string) (string, error) {
+func (r *SQLiteWebTokenRepo) add(ctx context.Context, email text.Email, ttl time.Duration, kind string) (string, error) {
 	tx, err := r.db.Begin(ctx, nil)
 	if err != nil {
 		return "", errors.Tracef(err)
@@ -106,15 +112,15 @@ func (r *TokenRepo) add(ctx context.Context, email text.Email, ttl time.Duration
 	return string(token), errors.Tracef(tx.Commit())
 }
 
-func (r *TokenRepo) AddActivationToken(ctx context.Context, email text.Email, ttl time.Duration) (string, error) {
+func (r *SQLiteWebTokenRepo) AddActivationToken(ctx context.Context, email text.Email, ttl time.Duration) (string, error) {
 	return r.add(ctx, email, ttl, activation)
 }
 
-func (r *TokenRepo) AddResetPasswordToken(ctx context.Context, email text.Email, ttl time.Duration) (string, error) {
+func (r *SQLiteWebTokenRepo) AddResetPasswordToken(ctx context.Context, email text.Email, ttl time.Duration) (string, error) {
 	return r.add(ctx, email, ttl, resetPassword)
 }
 
-func (r *TokenRepo) find(ctx context.Context, token, kind string) (text.Email, error) {
+func (r *SQLiteWebTokenRepo) find(ctx context.Context, token, kind string) (text.Email, error) {
 	sum := sha256.Sum256([]byte(token))
 	hash := sum[:]
 
@@ -137,15 +143,15 @@ func (r *TokenRepo) find(ctx context.Context, token, kind string) (text.Email, e
 	return email, errors.Tracef(err)
 }
 
-func (r *TokenRepo) FindActivationTokenEmail(ctx context.Context, token string) (text.Email, error) {
+func (r *SQLiteWebTokenRepo) FindActivationTokenEmail(ctx context.Context, token string) (text.Email, error) {
 	return r.find(ctx, token, activation)
 }
 
-func (r *TokenRepo) FindResetPasswordTokenEmail(ctx context.Context, token string) (text.Email, error) {
+func (r *SQLiteWebTokenRepo) FindResetPasswordTokenEmail(ctx context.Context, token string) (text.Email, error) {
 	return r.find(ctx, token, resetPassword)
 }
 
-func (r *TokenRepo) consume(ctx context.Context, token, kind string) error {
+func (r *SQLiteWebTokenRepo) consume(ctx context.Context, token, kind string) error {
 	sum := sha256.Sum256([]byte(token))
 	hash := sum[:]
 
@@ -174,10 +180,10 @@ func (r *TokenRepo) consume(ctx context.Context, token, kind string) error {
 	return nil
 }
 
-func (r *TokenRepo) ConsumeActivationToken(ctx context.Context, token string) error {
+func (r *SQLiteWebTokenRepo) ConsumeActivationToken(ctx context.Context, token string) error {
 	return r.consume(ctx, token, activation)
 }
 
-func (r *TokenRepo) ConsumeResetPasswordToken(ctx context.Context, token string) error {
+func (r *SQLiteWebTokenRepo) ConsumeResetPasswordToken(ctx context.Context, token string) error {
 	return r.consume(ctx, token, resetPassword)
 }

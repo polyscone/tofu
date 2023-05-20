@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/smtp"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 	"github.com/polyscone/tofu/internal/pkg/sms"
+	"github.com/polyscone/tofu/internal/repo"
 )
 
 var databases = struct {
@@ -53,12 +53,12 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		return nil, errors.Tracef(err)
 	}
 
-	sessions, err := web.NewSQLiteSessionRepo(ctx, db, 2*time.Hour)
+	sessions, err := repo.NewSQLiteWebSessionRepo(ctx, db, 2*time.Hour)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
 
-	tokens, err := web.NewSQLiteTokenRepo(ctx, db)
+	tokens, err := repo.NewSQLiteWebTokenRepo(ctx, db)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}

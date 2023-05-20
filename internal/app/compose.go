@@ -9,6 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/password"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 	"github.com/polyscone/tofu/internal/port/account"
+	"github.com/polyscone/tofu/internal/repo"
 )
 
 func Compose(ctx context.Context, db *sqlite.DB, secret []byte, hasher password.Hasher) (command.Bus, event.Broker, error) {
@@ -17,7 +18,7 @@ func Compose(ctx context.Context, db *sqlite.DB, secret []byte, hasher password.
 
 	// Account
 	{
-		users, err := account.NewSQLiteUserRepo(ctx, db, secret)
+		users, err := repo.NewSQLiteAccountUserRepo(ctx, db, secret)
 		if err != nil {
 			return nil, nil, errors.Tracef(err)
 		}

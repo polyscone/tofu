@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -39,11 +38,6 @@ func init() {
 			return errors.Tracef(err)
 		},
 	})
-}
-
-type ReadDirFileFS interface {
-	fs.ReadDirFS
-	fs.ReadFileFS
 }
 
 type Querier interface {
@@ -300,55 +294,40 @@ func (db *DB) QueryRow(ctx context.Context, query string, args ...Args) *Row {
 	return &Row{row: row}
 }
 
-func (db *DB) MigrateFS(ctx context.Context, prefix string, fsys ReadDirFileFS) error {
+func (db *DB) MigrateFS(ctx context.Context, name string, fsys fs.FS) error {
 	tx, err := db.Begin(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	groups, err := fsys.ReadDir(".")
+	files, err := fs.ReadDir(fsys, ".")
 	if err != nil {
 		return errors.Tracef(err)
 	}
 
-	for _, group := range groups {
-		if !group.IsDir() {
-			continue
+	queries := make([]string, len(files))
+	for i, f := range files {
+		filename := f.Name()
+
+		if f.IsDir() {
+			return errors.Tracef("want file; got directory %q", filename)
 		}
 
-		dir := group.Name()
-		name := fmt.Sprintf("%v_%v", prefix, dir)
+		if filename[:4] != fmt.Sprintf("%04d", i+1) {
+			return errors.Tracef("want file beginning with %04d; got %q", i+1, filename)
+		}
 
-		files, err := fsys.ReadDir(dir)
+		b, err := fs.ReadFile(fsys, filename)
 		if err != nil {
 			return errors.Tracef(err)
 		}
 
-		queries := make([]string, len(files))
-		for i, f := range files {
-			filename := f.Name()
+		queries[i] = string(b)
+	}
 
-			if f.IsDir() {
-				return errors.Tracef("want file; got directory %q", filename)
-			}
-
-			if filename[:4] != fmt.Sprintf("%04d", i+1) {
-				return errors.Tracef("want file beginning with %04d; got %q", i+1, filename)
-			}
-
-			fp := path.Join(dir, filename)
-			b, err := fsys.ReadFile(fp)
-			if err != nil {
-				return errors.Tracef(err)
-			}
-
-			queries[i] = string(b)
-		}
-
-		if err := migrate(ctx, tx, name, queries); err != nil {
-			return errors.Tracef(err)
-		}
+	if err := migrate(ctx, tx, name, queries); err != nil {
+		return errors.Tracef(err)
 	}
 
 	return errors.Tracef(tx.Commit())

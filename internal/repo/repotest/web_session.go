@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 )
 
-func RunSessionTests(t *testing.T, sessions session.Repo) {
+func RunWebSessionTests(t *testing.T, sessions session.Repo) {
 	ctx := context.Background()
 	s := session.Session{ID: errors.Must(uuid.NewV4()).String()}
 

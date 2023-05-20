@@ -9,14 +9,15 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/repo/repotest"
+	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repo/repotest"
 )
 
 func TestFindUserByID(t *testing.T) {
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
+	users := errors.Must(repo.NewSQLiteAccountUserRepo(ctx, db, []byte("s")))
 	handler := account.NewFindUserByIDHandler(broker, users)
 
 	password := "password"

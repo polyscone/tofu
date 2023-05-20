@@ -1,4 +1,4 @@
-package sqlite_test
+package repo_test
 
 import (
 	"context"
@@ -6,14 +6,14 @@ import (
 
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
-	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/repo/repotest"
+	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repo/repotest"
 )
 
 func TestUserRepo(t *testing.T) {
 	ctx := context.Background()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	repo := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
+	repo := errors.Must(repo.NewSQLiteAccountUserRepo(ctx, db, []byte("s")))
 
-	repotest.RunUserTests(t, repo)
+	repotest.RunAccountUserTests(t, repo)
 }

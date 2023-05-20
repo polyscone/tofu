@@ -1,10 +1,10 @@
-package sqlite
+package repo
 
 import (
 	"context"
 	"database/sql"
-	"embed"
 	"fmt"
+	"io/fs"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/aesgcm"
@@ -16,20 +16,22 @@ import (
 	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
-//go:embed "migrations"
-var migrations embed.FS
-
-type UserRepo struct {
+type SQLiteAccountUserRepo struct {
 	db     *sqlite.DB
 	secret []byte
 }
 
-func NewUserRepo(ctx context.Context, db *sqlite.DB, secret []byte) (*UserRepo, error) {
+func NewSQLiteAccountUserRepo(ctx context.Context, db *sqlite.DB, secret []byte) (*SQLiteAccountUserRepo, error) {
+	migrations, err := fs.Sub(migrations, "migrations/sqlite/account")
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
 	if err := db.MigrateFS(ctx, "account", migrations); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
-	repo := UserRepo{
+	repo := SQLiteAccountUserRepo{
 		db:     db,
 		secret: secret,
 	}
@@ -37,7 +39,7 @@ func NewUserRepo(ctx context.Context, db *sqlite.DB, secret []byte) (*UserRepo, 
 	return &repo, nil
 }
 
-func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (domain.User, error) {
+func (r *SQLiteAccountUserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (domain.User, error) {
 	tx, err := r.db.Begin(ctx, nil)
 	if err != nil {
 		return domain.User{}, errors.Tracef(err)
@@ -105,15 +107,15 @@ func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (
 	return res, errors.Tracef(tx.Commit())
 }
 
-func (r *UserRepo) FindByID(ctx context.Context, id uuid.V4) (domain.User, error) {
+func (r *SQLiteAccountUserRepo) FindByID(ctx context.Context, id uuid.V4) (domain.User, error) {
 	return r.findBy(ctx, `u.id = :id`, sqlite.Args{"id": id})
 }
 
-func (r *UserRepo) FindByEmail(ctx context.Context, email text.Email) (domain.User, error) {
+func (r *SQLiteAccountUserRepo) FindByEmail(ctx context.Context, email text.Email) (domain.User, error) {
 	return r.findBy(ctx, `u.email = :email`, sqlite.Args{"email": email})
 }
 
-func (r *UserRepo) Add(ctx context.Context, u domain.User) error {
+func (r *SQLiteAccountUserRepo) Add(ctx context.Context, u domain.User) error {
 	tx, err := r.db.Begin(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
@@ -184,7 +186,7 @@ func (r *UserRepo) Add(ctx context.Context, u domain.User) error {
 	return errors.Tracef(tx.Commit())
 }
 
-func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
+func (r *SQLiteAccountUserRepo) Save(ctx context.Context, u domain.User) error {
 	tx, err := r.db.Begin(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
@@ -257,4 +259,91 @@ func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
 	}
 
 	return errors.Tracef(tx.Commit())
+}
+
+func (r *SQLiteAccountUserRepo) findRolesByUserID(ctx context.Context, db sqlite.Querier, userID uuid.V4) ([]domain.Role, error) {
+	var roles []domain.Role
+
+	stmt, args := `
+		SELECT id, name
+		FROM account__roles AS r
+		INNER JOIN account__user_roles AS ur ON r.id = ur.role_id
+		WHERE ur.user_id = :user_id;
+	`, sqlite.Args{"user_id": userID}
+	rows, err := db.Query(ctx, stmt, args)
+	if err != nil {
+		return roles, errors.Tracef(err)
+	}
+	for rows.Next() {
+		var roleID uuid.V4
+		var roleName string
+
+		if err := rows.Scan(&roleID, &roleName); err != nil {
+			return roles, errors.Tracef(err)
+		}
+
+		var permissions []domain.Permission
+
+		stmt, args := `
+			SELECT id
+			FROM account__permissions AS p
+			INNER JOIN account__role_permissions AS rp ON p.id = rp.permission_id
+			WHERE rp.role_id = :role_id;
+		`, sqlite.Args{"role_id": roleID}
+		rows, err := db.Query(ctx, stmt, args)
+		if err != nil {
+			return roles, errors.Tracef(err)
+		}
+		for rows.Next() {
+			var permissionID domain.Permission
+
+			if err := rows.Scan(&permissionID); err != nil {
+				return roles, errors.Tracef(err)
+			}
+
+			permissions = append(permissions, permissionID)
+		}
+		if err := rows.Err(); err != nil {
+			return roles, errors.Tracef(err)
+		}
+
+		roles = append(roles, domain.NewRole(roleName, permissions...))
+	}
+
+	return roles, errors.Tracef(rows.Err())
+}
+
+func (r *SQLiteAccountUserRepo) findRecoveryCodesByUserID(ctx context.Context, db sqlite.Querier, userID uuid.V4) ([]domain.RecoveryCode, error) {
+	var recoveryCodes []domain.RecoveryCode
+
+	stmt, args := `
+		SELECT code
+		FROM account__recovery_codes
+		WHERE user_id = :user_id;
+	`, sqlite.Args{"user_id": userID}
+	rows, err := db.Query(ctx, stmt, args)
+	if err != nil {
+		return recoveryCodes, errors.Tracef(err)
+	}
+	for rows.Next() {
+		var encrypted []byte
+
+		if err := rows.Scan(&encrypted); err != nil {
+			return recoveryCodes, errors.Tracef(err)
+		}
+
+		decrypted, err := aesgcm.Decrypt(r.secret, encrypted)
+		if err != nil {
+			return recoveryCodes, errors.Tracef(err)
+		}
+
+		recoveryCode, err := domain.NewRecoveryCode(string(decrypted))
+		if err != nil {
+			return recoveryCodes, errors.Tracef(err)
+		}
+
+		recoveryCodes = append(recoveryCodes, recoveryCode)
+	}
+
+	return recoveryCodes, errors.Tracef(rows.Err())
 }

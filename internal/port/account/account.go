@@ -6,10 +6,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port/account/domain"
-	"github.com/polyscone/tofu/internal/port/account/repo/sqlite"
 )
-
-var NewSQLiteUserRepo = sqlite.NewUserRepo
 
 var ErrNotActivated = domain.ErrNotActivated
 

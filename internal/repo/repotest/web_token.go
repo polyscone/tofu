@@ -13,7 +13,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
-func RunTokenTests(t *testing.T, tokens token.Repo) {
+func RunWebTokenTests(t *testing.T, tokens token.Repo) {
 	t.Run("sequence", func(t *testing.T) {
 		ctx := context.Background()
 		email1 := text.GenerateEmail()

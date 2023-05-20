@@ -14,7 +14,8 @@ import (
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
 	"github.com/polyscone/tofu/internal/port/account/domain"
-	"github.com/polyscone/tofu/internal/port/account/repo/repotest"
+	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repo/repotest"
 )
 
 type changePasswordGuard struct {
@@ -32,7 +33,7 @@ func TestChangePassword(t *testing.T) {
 	ctx := context.Background()
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	users := errors.Must(account.NewSQLiteUserRepo(ctx, db, []byte("s")))
+	users := errors.Must(repo.NewSQLiteAccountUserRepo(ctx, db, []byte("s")))
 	hasher := testutil.NewPasswordHasher()
 	handler := account.NewChangePasswordHandler(broker, hasher, users)
 

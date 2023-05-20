@@ -1,9 +1,10 @@
-package sqlite
+package repo
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io/fs"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/background"
@@ -14,11 +15,16 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/session"
 )
 
-type SessionRepo struct {
+type SQLiteWebSessionRepo struct {
 	db *sqlite.DB
 }
 
-func NewSessionRepo(ctx context.Context, db *sqlite.DB, lifespan time.Duration) (*SessionRepo, error) {
+func NewSQLiteWebSessionRepo(ctx context.Context, db *sqlite.DB, lifespan time.Duration) (*SQLiteWebSessionRepo, error) {
+	migrations, err := fs.Sub(migrations, "migrations/sqlite/web")
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
 	if err := db.MigrateFS(ctx, "web", migrations); err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -37,10 +43,10 @@ func NewSessionRepo(ctx context.Context, db *sqlite.DB, lifespan time.Duration) 
 		}
 	})
 
-	return &SessionRepo{db: db}, nil
+	return &SQLiteWebSessionRepo{db: db}, nil
 }
 
-func (r *SessionRepo) FindByID(ctx context.Context, id string) (session.Data, error) {
+func (r *SQLiteWebSessionRepo) FindByID(ctx context.Context, id string) (session.Data, error) {
 	var data []byte
 
 	stmt, args := "SELECT data FROM web__sessions WHERE id = :id;", sqlite.Args{"id": id}
@@ -63,7 +69,7 @@ func (r *SessionRepo) FindByID(ctx context.Context, id string) (session.Data, er
 	return res, errors.Tracef(err)
 }
 
-func (r *SessionRepo) Save(ctx context.Context, s session.Session) error {
+func (r *SQLiteWebSessionRepo) Save(ctx context.Context, s session.Session) error {
 	b, err := json.Marshal(s.Data)
 	if err != nil {
 		return errors.Tracef(err)
@@ -84,7 +90,7 @@ func (r *SessionRepo) Save(ctx context.Context, s session.Session) error {
 	return errors.Tracef(err)
 }
 
-func (r *SessionRepo) Destroy(ctx context.Context, id string) error {
+func (r *SQLiteWebSessionRepo) Destroy(ctx context.Context, id string) error {
 	stmt, args := "DELETE FROM web__sessions WHERE id = :id;", sqlite.Args{"id": id}
 	_, err := r.db.Exec(ctx, stmt, args)
 

@@ -16,7 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
-func RunUserTests(t *testing.T, users account.UserRepo) {
+func RunAccountUserTests(t *testing.T, users account.UserRepo) {
 	ctx := context.Background()
 
 	// Seed the repo
