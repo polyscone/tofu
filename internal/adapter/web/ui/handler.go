@@ -10,6 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/account"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/admin"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/page"
 	"github.com/polyscone/tofu/internal/pkg/dev"
 	"github.com/polyscone/tofu/internal/pkg/errors"
@@ -105,6 +106,13 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 		account.Logout(svc, mux)
 		account.Register(svc, mux)
 		account.TOTP(svc, mux, guard)
+	})
+
+	// Admin
+	guard.ProtectPrefix("/admin/")
+	mux.Prefix("/admin", func(mux *router.ServeMux) {
+		admin.Dashboard(svc, mux)
+		admin.UserManagement(svc, mux)
 	})
 
 	// Public static file handler

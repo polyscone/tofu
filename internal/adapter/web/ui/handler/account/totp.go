@@ -31,10 +31,7 @@ func TOTP(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
 	mux.Post("/totp/recovery-codes", totpRecoveryCodesPost(svc), "account.totp.recovery_codes.post")
 	mux.Post("/totp/send-sms", totpDisableSendSMSPost(svc), "account.totp.disable.send_sms.post")
 
-	guard.Protect(svc.Path("account.totp"))
-	guard.Protect(svc.Path("account.totp.post"))
-	guard.Protect(svc.Path("account.totp.disable"))
-	guard.Protect(svc.Path("account.totp.disable.post"))
+	guard.ProtectPrefix(svc.Path("account.totp"))
 
 	svc.SetViewVars("account/totp", handler.Vars{
 		"RecoveryCodes": nil,

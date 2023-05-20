@@ -19,7 +19,7 @@ func ChangePassword(svc *handler.Services, mux *router.ServeMux, guard *handler.
 	// Redirect to help password managers find the change password page
 	mux.Redirect(http.MethodGet, "/.well-known/change-password", svc.Path("account.change_password"), http.StatusSeeOther)
 
-	guard.Protect(svc.Path("account.change_password"))
+	guard.ProtectPrefix(svc.Path("account.change_password"))
 
 	svc.SetViewVars("account/change_password", handler.Vars{
 		"NewPasswordKnownBreachCount": 0,
