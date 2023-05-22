@@ -199,8 +199,9 @@ func main() {
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	caught := <-stop
+	signal.Stop(stop)
 
-	logger.Info.Printf("caught %v signal; shutting down\n", caught)
+	logger.Info.Printf("caught %v; shutting down\n", caught)
 
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
