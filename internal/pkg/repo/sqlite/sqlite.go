@@ -289,9 +289,9 @@ func (db *DB) Query(ctx context.Context, query string, args ...Args) (*Rows, err
 }
 
 func (db *DB) QueryRow(ctx context.Context, query string, args ...Args) *Row {
-	row := db.db.QueryRowContext(ctx, query, argsSlice(args)...)
+	rows, err := db.db.QueryContext(ctx, query, argsSlice(args)...)
 
-	return &Row{row: row}
+	return &Row{rows: rows, err: err}
 }
 
 func (db *DB) MigrateFS(ctx context.Context, name string, fsys fs.FS) error {
@@ -364,25 +364,81 @@ func (tx *Tx) Query(ctx context.Context, query string, args ...Args) (*Rows, err
 }
 
 func (tx *Tx) QueryRow(ctx context.Context, query string, args ...Args) *Row {
-	row := tx.tx.QueryRowContext(ctx, query, argsSlice(args)...)
+	rows, err := tx.tx.QueryContext(ctx, query, argsSlice(args)...)
 
-	return &Row{row: row}
+	return &Row{rows: rows, err: err}
 }
 
+// Row is a copy of the standard library's sql.Row with extra methods.
 type Row struct {
-	row *sql.Row
+	err  error
+	rows *sql.Rows
+	cols []string
 }
 
-func (r *Row) Err() error {
-	return errors.Tracef(asRepoError(r.row.Err()))
+func (r *Row) scan(dest ...any) error {
+	if r.err != nil {
+		return r.err
+	}
+
+	defer r.rows.Close()
+
+	for _, dp := range dest {
+		if _, ok := dp.(*sql.RawBytes); ok {
+			return errors.New("sql: RawBytes isn't allowed on Row.Scan")
+		}
+	}
+
+	if !r.rows.Next() {
+		if err := r.rows.Err(); err != nil {
+			return err
+		}
+		return sql.ErrNoRows
+	}
+
+	err := r.rows.Scan(dest...)
+	if err != nil {
+		return err
+	}
+
+	return r.rows.Close()
 }
 
 func (r *Row) Scan(dst ...any) error {
-	return errors.Tracef(asRepoError(r.row.Scan(dst...)))
+	return errors.Tracef(asRepoError(r.scan(dst...)))
+}
+
+func (r *Row) Err() error {
+	return errors.Tracef(asRepoError(r.err))
+}
+
+func (r *Row) Columns() ([]string, error) {
+	if r.cols != nil {
+		return r.cols, nil
+	}
+
+	cols, err := r.rows.Columns()
+	if err != nil {
+		return cols, err
+	}
+
+	r.cols = cols
+
+	return r.cols, nil
+}
+
+func (r *Row) ScanAddrs(ptr any) error {
+	cols, err := r.Columns()
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	return errors.Tracef(r.Scan(ScanInto(ptr, cols)...))
 }
 
 type Rows struct {
 	rows *sql.Rows
+	cols []string
 }
 
 func (rs *Rows) Close() error {
@@ -399,6 +455,30 @@ func (rs *Rows) Next() bool {
 
 func (rs *Rows) Scan(dst ...any) error {
 	return errors.Tracef(asRepoError(rs.rows.Scan(dst...)))
+}
+
+func (rs *Rows) Columns() ([]string, error) {
+	if rs.cols != nil {
+		return rs.cols, nil
+	}
+
+	cols, err := rs.rows.Columns()
+	if err != nil {
+		return cols, err
+	}
+
+	rs.cols = cols
+
+	return rs.cols, nil
+}
+
+func (rs *Rows) ScanAddrs(ptr any) error {
+	cols, err := rs.Columns()
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	return errors.Tracef(rs.Scan(ScanInto(ptr, cols)...))
 }
 
 func asRepoError(err error) error {
