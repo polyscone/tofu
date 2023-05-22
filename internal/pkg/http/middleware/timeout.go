@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -38,7 +39,7 @@ func Timeout(dt time.Duration, errorHandler ErrorHandler) Middleware {
 			go func() {
 				defer func() {
 					if p := recover(); p != nil {
-						panicChan <- p
+						panicChan <- fmt.Sprintf("%v\npreserved stack trace:\n%s", p, debug.Stack())
 					}
 				}()
 
