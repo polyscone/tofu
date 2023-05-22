@@ -427,7 +427,7 @@ func (r *Row) Columns() ([]string, error) {
 	return r.cols, nil
 }
 
-func (r *Row) ScanAddrs(ptr any) error {
+func (r *Row) ScanInto(ptr any) error {
 	cols, err := r.Columns()
 	if err != nil {
 		return errors.Tracef(err)
@@ -472,7 +472,7 @@ func (rs *Rows) Columns() ([]string, error) {
 	return rs.cols, nil
 }
 
-func (rs *Rows) ScanAddrs(ptr any) error {
+func (rs *Rows) ScanInto(ptr any) error {
 	cols, err := rs.Columns()
 	if err != nil {
 		return errors.Tracef(err)
