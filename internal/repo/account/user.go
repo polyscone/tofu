@@ -1,4 +1,4 @@
-package repo
+package account
 
 import (
 	"context"
@@ -16,13 +16,13 @@ import (
 	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
-type SQLiteAccountUserRepo struct {
+type UserRepo struct {
 	db     *sqlite.DB
 	secret []byte
 }
 
-func NewSQLiteAccountUserRepo(ctx context.Context, db *sqlite.DB, secret []byte) (*SQLiteAccountUserRepo, error) {
-	migrations, err := fs.Sub(migrations, "migrations/sqlite/account")
+func NewSQLiteUserRepo(ctx context.Context, db *sqlite.DB, secret []byte) (*UserRepo, error) {
+	migrations, err := fs.Sub(migrations, "migrations/sqlite")
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -31,7 +31,7 @@ func NewSQLiteAccountUserRepo(ctx context.Context, db *sqlite.DB, secret []byte)
 		return nil, errors.Tracef(err)
 	}
 
-	repo := SQLiteAccountUserRepo{
+	repo := UserRepo{
 		db:     db,
 		secret: secret,
 	}
@@ -39,7 +39,7 @@ func NewSQLiteAccountUserRepo(ctx context.Context, db *sqlite.DB, secret []byte)
 	return &repo, nil
 }
 
-func (r *SQLiteAccountUserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (domain.User, error) {
+func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (domain.User, error) {
 	tx, err := r.db.Begin(ctx, nil)
 	if err != nil {
 		return domain.User{}, errors.Tracef(err)
@@ -79,12 +79,12 @@ func (r *SQLiteAccountUserRepo) findBy(ctx context.Context, where string, args s
 	}
 	totpKey = decryptedTOTPKey
 
-	recoveryCodes, err := r.findRecoveryCodesByUserID(ctx, tx, id)
+	recoveryCodes, err := r.findRecoveryCodesByID(ctx, tx, id)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
 		return domain.User{}, errors.Tracef(err)
 	}
 
-	roles, err := r.findRolesByUserID(ctx, tx, id)
+	roles, err := r.findRolesByID(ctx, tx, id)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
 		return domain.User{}, errors.Tracef(err)
 	}
@@ -107,15 +107,15 @@ func (r *SQLiteAccountUserRepo) findBy(ctx context.Context, where string, args s
 	return res, errors.Tracef(tx.Commit())
 }
 
-func (r *SQLiteAccountUserRepo) FindByID(ctx context.Context, id uuid.V4) (domain.User, error) {
+func (r *UserRepo) FindByID(ctx context.Context, id uuid.V4) (domain.User, error) {
 	return r.findBy(ctx, `u.id = :id`, sqlite.Args{"id": id})
 }
 
-func (r *SQLiteAccountUserRepo) FindByEmail(ctx context.Context, email text.Email) (domain.User, error) {
+func (r *UserRepo) FindByEmail(ctx context.Context, email text.Email) (domain.User, error) {
 	return r.findBy(ctx, `u.email = :email`, sqlite.Args{"email": email})
 }
 
-func (r *SQLiteAccountUserRepo) Add(ctx context.Context, u domain.User) error {
+func (r *UserRepo) Add(ctx context.Context, u domain.User) error {
 	tx, err := r.db.Begin(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
@@ -186,7 +186,7 @@ func (r *SQLiteAccountUserRepo) Add(ctx context.Context, u domain.User) error {
 	return errors.Tracef(tx.Commit())
 }
 
-func (r *SQLiteAccountUserRepo) Save(ctx context.Context, u domain.User) error {
+func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
 	tx, err := r.db.Begin(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
@@ -261,7 +261,7 @@ func (r *SQLiteAccountUserRepo) Save(ctx context.Context, u domain.User) error {
 	return errors.Tracef(tx.Commit())
 }
 
-func (r *SQLiteAccountUserRepo) findRolesByUserID(ctx context.Context, db sqlite.Querier, userID uuid.V4) ([]domain.Role, error) {
+func (r *UserRepo) findRolesByID(ctx context.Context, db sqlite.Querier, userID uuid.V4) ([]domain.Role, error) {
 	var roles []domain.Role
 
 	stmt, args := `
@@ -313,7 +313,7 @@ func (r *SQLiteAccountUserRepo) findRolesByUserID(ctx context.Context, db sqlite
 	return roles, errors.Tracef(rows.Err())
 }
 
-func (r *SQLiteAccountUserRepo) findRecoveryCodesByUserID(ctx context.Context, db sqlite.Querier, userID uuid.V4) ([]domain.RecoveryCode, error) {
+func (r *UserRepo) findRecoveryCodesByID(ctx context.Context, db sqlite.Querier, userID uuid.V4) ([]domain.RecoveryCode, error) {
 	var recoveryCodes []domain.RecoveryCode
 
 	stmt, args := `

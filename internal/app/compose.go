@@ -31,8 +31,6 @@ func Compose(ctx context.Context, db *sqlite.DB, secret []byte, hasher password.
 		bus.Register(account.NewChangeTOTPTelephoneHandler(broker, users))
 		bus.Register(account.NewDisableTOTPHandler(broker, users))
 		bus.Register(account.NewDisableTOTPRecoveryCodeHandler(broker, users))
-		bus.Register(account.NewFindUserByEmailHandler(broker, users))
-		bus.Register(account.NewFindUserByIDHandler(broker, users))
 		bus.Register(account.NewGenerateTOTPHandler(broker, users))
 		bus.Register(account.NewRegenerateRecoveryCodesHandler(broker, users))
 		bus.Register(account.NewRegisterHandler(broker, hasher, users))

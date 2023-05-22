@@ -11,11 +11,13 @@
     "Apple Color Emoji",
     "Segoe UI Emoji";
 
-  --clr-black-100: hsl(170 0% 60%);
+  --clr-black-100: hsl(170 0% 80%);
+  --clr-black-200: hsl(170 0% 60%);
   --clr-black-400: hsl(170 0% 5%);
 
   --clr-white-400: hsl(170 0% 100%);
 
+  --clr-accent-100: hsl(170 45% 97%);
   --clr-accent-400: hsl(170 45% 30%);
 
   --clr-focus-400: hsl(59 100% 95%);
@@ -87,7 +89,7 @@
   hr {
     inline-size: 100%;
     border: none;
-    border-block: 1px solid var(--clr-black-100);
+    border-block: 1px solid var(--clr-black-200);
   }
 
   button, input {
@@ -95,7 +97,7 @@
   }
 
   input, textarea {
-    border: 1px solid var(--clr-black-100);
+    border: 1px solid var(--clr-black-200);
   }
 
   button, input, textarea {
@@ -224,7 +226,7 @@
 
   .main {
     padding-block-end: 1.5rem;
-    border-block: 1px solid var(--clr-black-100);
+    border-block: 1px solid var(--clr-black-200);
   }
 
   .footer {
@@ -300,6 +302,50 @@
     border: 1px solid var(--clr-error-400);
     color: var(--clr-black-400);
     text-align: center;
+  }
+
+  .management {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: auto;
+  }
+
+  .management tr:hover td {
+    background: var(--clr-accent-100);
+  }
+
+  .management th {
+    text-align: left;
+    border-bottom: 1px solid var(--clr-black-100);
+  }
+
+  .management th,
+  .management td {
+    padding: 0.5rem 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 1px;
+  }
+
+  .management .management__empty td {
+    text-align: center;
+    font-weight: bold;
+  }
+
+  .pagination {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    padding-block-start: 1rem;
+  }
+
+  .pagination__links {
+    display: flex;
+    justify-content: end;
+    gap: 0.7rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
   button,
@@ -388,7 +434,15 @@
     margin-inline: auto;
   }
 
+  .text-right {
+    text-align: right;
+  }
+
   .push-inline-end {
     margin-inline-start: auto;
+  }
+
+  .grow {
+    flex-grow: 1;
   }
 }

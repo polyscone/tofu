@@ -1,4 +1,4 @@
-package repo_test
+package web_test
 
 import (
 	"context"
@@ -6,14 +6,14 @@ import (
 
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
-	"github.com/polyscone/tofu/internal/repo"
-	"github.com/polyscone/tofu/internal/repo/repotest"
+	"github.com/polyscone/tofu/internal/repo/web"
+	"github.com/polyscone/tofu/internal/repo/web/repotest"
 )
 
 func TestWebTokenRepo(t *testing.T) {
 	ctx := context.Background()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	repo := errors.Must(repo.NewSQLiteWebTokenRepo(ctx, db))
+	repo := errors.Must(web.NewSQLiteTokenRepo(ctx, db))
 
-	repotest.RunWebTokenTests(t, repo)
+	repotest.RunTokenTests(t, repo)
 }

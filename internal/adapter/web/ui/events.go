@@ -7,7 +7,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/logger"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
@@ -16,14 +15,7 @@ func accountRegisteredHandler(tenant *handler.Tenant, svc *handler.Services) any
 		background.Go(func() {
 			ctx := context.Background()
 
-			email, err := text.NewEmail(evt.Email)
-			if err != nil {
-				logger.PrintError(err)
-
-				return
-			}
-
-			tok, err := tenant.Tokens.AddActivationToken(ctx, email, 48*time.Hour)
+			tok, err := tenant.Web.Tokens.AddActivationToken(ctx, evt.Email, 48*time.Hour)
 			if err != nil {
 				logger.PrintError(err)
 
@@ -49,14 +41,7 @@ func accountResetPasswordRequestedHandler(tenant *handler.Tenant, svc *handler.S
 		background.Go(func() {
 			ctx := context.Background()
 
-			email, err := text.NewEmail(evt.Email)
-			if err != nil {
-				logger.PrintError(err)
-
-				return
-			}
-
-			tok, err := tenant.Tokens.AddResetPasswordToken(ctx, email, 2*time.Hour)
+			tok, err := tenant.Web.Tokens.AddResetPasswordToken(ctx, evt.Email, 2*time.Hour)
 			if err != nil {
 				logger.PrintError(err)
 
@@ -85,10 +70,7 @@ func accountAuthenticateWithPasswordHandler(tenant *handler.Tenant, svc *handler
 
 		ctx := context.Background()
 
-		cmd := account.FindUserByEmail{
-			Email: evt.Email,
-		}
-		user, err := cmd.Execute(ctx, svc.Bus)
+		user, err := svc.Account.Users.FindByEmail(ctx, evt.Email)
 		if err != nil {
 			logger.PrintError(err)
 

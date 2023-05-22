@@ -1,4 +1,4 @@
-package repo_test
+package web_test
 
 import (
 	"context"
@@ -7,14 +7,14 @@ import (
 
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
-	"github.com/polyscone/tofu/internal/repo"
-	"github.com/polyscone/tofu/internal/repo/repotest"
+	"github.com/polyscone/tofu/internal/repo/web"
+	"github.com/polyscone/tofu/internal/repo/web/repotest"
 )
 
 func TestWebSessionRepo(t *testing.T) {
 	ctx := context.Background()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	repo := errors.Must(repo.NewSQLiteWebSessionRepo(ctx, db, 1*time.Minute))
+	repo := errors.Must(web.NewSQLiteSessionRepo(ctx, db, 1*time.Minute))
 
-	repotest.RunWebSessionTests(t, repo)
+	repotest.RunSessionTests(t, repo)
 }

@@ -47,7 +47,7 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	mux.Use(middleware.Recover(errorHandler))
 	mux.Use(middleware.Timeout(5*time.Second, errorHandler))
 	mux.Use(middleware.MethodOverride)
-	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
+	mux.Use(middleware.RateLimit(50, 3, &middleware.RateLimitConfig{
 		ErrorHandler:   errorHandler,
 		TrustedProxies: tenant.Proxies,
 	}))
@@ -98,10 +98,10 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 
 	// Account
 	mux.Prefix("/account", func(mux *router.ServeMux) {
-		account.Activate(svc, mux, tenant.Tokens)
+		account.Activate(svc, mux)
 		account.ChangePassword(svc, mux, guard)
 		account.Dashboard(svc, mux, guard)
-		account.ResetPassword(svc, mux, tenant.Tokens)
+		account.ResetPassword(svc, mux)
 		account.Login(svc, mux)
 		account.Logout(svc, mux)
 		account.Register(svc, mux)

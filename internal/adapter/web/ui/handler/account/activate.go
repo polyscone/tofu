@@ -5,15 +5,14 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/token"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func Activate(svc *handler.Services, mux *router.ServeMux, tokens token.Repo) {
+func Activate(svc *handler.Services, mux *router.ServeMux) {
 	mux.Get("/activate", activateGet(svc), "account.activate")
-	mux.Post("/activate", activatePost(svc, tokens), "account.activate.post")
+	mux.Post("/activate", activatePost(svc), "account.activate.post")
 }
 
 func activateGet(svc *handler.Services) http.HandlerFunc {
@@ -22,7 +21,7 @@ func activateGet(svc *handler.Services) http.HandlerFunc {
 	}
 }
 
-func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
+func activatePost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Token string
@@ -40,13 +39,13 @@ func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 			return
 		}
 
-		email, err := tokens.FindActivationTokenEmail(ctx, input.Token)
+		email, err := svc.Web.Tokens.FindActivationTokenEmail(ctx, input.Token)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
 		cmd := account.Activate{
-			Email: email.String(),
+			Email: email,
 		}
 		err = cmd.Validate()
 		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate", nil) {
@@ -56,7 +55,7 @@ func activatePost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
 		// Only consume after manual command validation, but before execution
 		// This way the token will only be consumed once we know there aren't any
 		// input validation or authorisation errors
-		err = tokens.ConsumeActivationToken(ctx, input.Token)
+		err = svc.Web.Tokens.ConsumeActivationToken(ctx, input.Token)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}

@@ -63,6 +63,11 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		return nil, errors.Tracef(err)
 	}
 
+	accountUsers, err := repo.NewSQLiteAccountUserQueryRepo(ctx, db, []byte(opts.secret))
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
 	mailer, err := smtp.NewMailClient("localhost", 25)
 	if err != nil {
 		return nil, errors.Tracef(err)
@@ -77,11 +82,16 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		Proxies:  opts.server.proxies,
 		Bus:      bus,
 		Broker:   broker,
-		Sessions: sessions,
-		Tokens:   tokens,
 		Email:    mailer,
 		SMS:      messager,
 		SMSFrom:  data.Twilio.From,
+		Web: handler.Web{
+			Sessions: sessions,
+			Tokens:   tokens,
+		},
+		Account: handler.Account{
+			Users: accountUsers,
+		},
 	}
 
 	return tenant, nil

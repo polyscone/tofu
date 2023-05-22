@@ -6,17 +6,16 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
-	"github.com/polyscone/tofu/internal/adapter/web/token"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func ResetPassword(svc *handler.Services, mux *router.ServeMux, tokens token.Repo) {
+func ResetPassword(svc *handler.Services, mux *router.ServeMux) {
 	mux.Get("/reset-password", resetPasswordGet(svc), "account.reset_password")
-	mux.Post("/reset-password", resetPasswordPost(svc, tokens), "account.reset_password.post")
-	mux.Put("/reset-password", resetPasswordPut(svc, tokens), "account.reset_password.put")
+	mux.Post("/reset-password", resetPasswordPost(svc), "account.reset_password.post")
+	mux.Put("/reset-password", resetPasswordPut(svc), "account.reset_password.put")
 }
 
 func resetPasswordGet(svc *handler.Services) http.HandlerFunc {
@@ -25,7 +24,7 @@ func resetPasswordGet(svc *handler.Services) http.HandlerFunc {
 	}
 }
 
-func resetPasswordPost(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
+func resetPasswordPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Email string
@@ -50,7 +49,7 @@ func resetPasswordPost(svc *handler.Services, tokens token.Repo) http.HandlerFun
 	}
 }
 
-func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc {
+func resetPasswordPut(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Token            string
@@ -64,12 +63,12 @@ func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc
 
 		ctx := r.Context()
 
-		email, err := tokens.FindResetPasswordTokenEmail(ctx, input.Token)
+		email, err := svc.Web.Tokens.FindResetPasswordTokenEmail(ctx, input.Token)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
-		passport, err := svc.LimitedPassportByEmail(ctx, email.String())
+		passport, err := svc.PassportByEmail(ctx, email)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -88,7 +87,7 @@ func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc
 		// Only consume after manual command validation, but before execution
 		// This way the token will only be consumed once we know there aren't any
 		// input validation or authorisation errors
-		err = tokens.ConsumeResetPasswordToken(ctx, input.Token)
+		err = svc.Web.Tokens.ConsumeResetPasswordToken(ctx, input.Token)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -100,6 +99,6 @@ func resetPasswordPut(svc *handler.Services, tokens token.Repo) http.HandlerFunc
 
 		svc.Sessions.Set(ctx, sess.Flash, "Your password has been successfully changed.")
 
-		loginWithPassword(ctx, svc, w, r, email.String(), input.NewPassword)
+		loginWithPassword(ctx, svc, w, r, email, input.NewPassword)
 	}
 }

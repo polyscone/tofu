@@ -58,12 +58,12 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 
 	// Account
 	mux.Prefix("/account", func(mux *router.ServeMux) {
-		account.Activate(svc, mux, tenant.Tokens)
-		account.ChangePassword(svc, mux, tenant.Tokens)
-		account.ResetPassword(svc, mux, tenant.Tokens)
+		account.Activate(svc, mux)
+		account.ChangePassword(svc, mux)
+		account.ResetPassword(svc, mux)
 		account.Login(svc, mux)
 		account.Logout(svc, mux)
-		account.Register(svc, mux, tenant.Tokens)
+		account.Register(svc, mux)
 		account.TOTP(svc, mux)
 	})
 

@@ -5,13 +5,12 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/token"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func Register(svc *handler.Services, mux *router.ServeMux, tokens token.Repo) {
+func Register(svc *handler.Services, mux *router.ServeMux) {
 	mux.Post("/register", registerPost(svc))
 }
 

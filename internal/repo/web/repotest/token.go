@@ -6,19 +6,19 @@ import (
 	"testing"
 	"time"
 
-	"github.com/polyscone/tofu/internal/adapter/web/token"
+	"github.com/polyscone/tofu/internal/adapter/web/query"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/repo"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
-func RunWebTokenTests(t *testing.T, tokens token.Repo) {
+func RunTokenTests(t *testing.T, tokens query.TokenRepo) {
 	t.Run("sequence", func(t *testing.T) {
 		ctx := context.Background()
-		email1 := text.GenerateEmail()
-		email2 := text.GenerateEmail()
-		email3 := text.GenerateEmail()
+		email1 := text.GenerateEmail().String()
+		email2 := text.GenerateEmail().String()
+		email3 := text.GenerateEmail().String()
 
 		// Generate a token for an email
 		tok1, err := tokens.AddActivationToken(ctx, email1, 1*time.Minute)
@@ -100,7 +100,7 @@ func RunWebTokenTests(t *testing.T, tokens token.Repo) {
 		ctx := context.Background()
 
 		quick.Check(t, func(email text.Email) bool {
-			tok, err := tokens.AddActivationToken(ctx, email, 1*time.Minute)
+			tok, err := tokens.AddActivationToken(ctx, email.String(), 1*time.Minute)
 			if err != nil {
 				return false
 			}
@@ -115,11 +115,11 @@ func RunWebTokenTests(t *testing.T, tokens token.Repo) {
 				return false
 			}
 
-			return email == val
+			return email.String() == val
 		})
 
 		quick.Check(t, func(email text.Email) bool {
-			tok, err := tokens.AddResetPasswordToken(ctx, email, 1*time.Minute)
+			tok, err := tokens.AddResetPasswordToken(ctx, email.String(), 1*time.Minute)
 			if err != nil {
 				return false
 			}
@@ -134,7 +134,7 @@ func RunWebTokenTests(t *testing.T, tokens token.Repo) {
 				return false
 			}
 
-			return email == val
+			return email.String() == val
 		})
 	})
 }

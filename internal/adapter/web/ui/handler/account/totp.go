@@ -172,15 +172,17 @@ func totpDisplayApp(svc *handler.Services, w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 
 	userID := svc.Sessions.GetString(ctx, sess.UserID)
-	cmd := account.FindUserByID{
-		UserID: userID,
-	}
-	user, err := cmd.Execute(ctx, svc.Bus)
+	params, err := svc.Account.Users.FindTOTPParamsByID(ctx, userID)
 	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 		return
 	}
 
-	keyBase32 := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(user.TOTPKey)
+	recoveryCodes, err := svc.Account.Users.FindRecoveryCodesByID(ctx, userID)
+	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		return
+	}
+
+	keyBase32 := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(params.Key)
 	issuer := app.Name
 	accountName := svc.Sessions.GetString(ctx, sess.Email)
 	qrcode, err := qr.Encode(
@@ -188,9 +190,9 @@ func totpDisplayApp(svc *handler.Services, w http.ResponseWriter, r *http.Reques
 			issuer+":"+accountName+
 			"?secret="+keyBase32+
 			"&issuer="+issuer+
-			"&algorithm="+user.TOTPAlgorithm+
-			"&digits="+strconv.Itoa(user.TOTPDigits)+
-			"&period="+strconv.Itoa(int(user.TOTPPeriod.Seconds())),
+			"&algorithm="+params.Algorithm+
+			"&digits="+strconv.Itoa(params.Digits)+
+			"&period="+strconv.Itoa(int(params.Period.Seconds())),
 		qr.M,
 		qr.Auto,
 	)
@@ -210,7 +212,7 @@ func totpDisplayApp(svc *handler.Services, w http.ResponseWriter, r *http.Reques
 	}
 
 	vars := handler.Vars{
-		"RecoveryCodes": user.RecoveryCodes,
+		"RecoveryCodes": recoveryCodes,
 		"KeyBase32":     keyBase32,
 		"QRCodeBase64":  template.URL("data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())),
 	}
@@ -226,16 +228,18 @@ func totpDisplaySMS(svc *handler.Services, w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 
 	userID := svc.Sessions.GetString(ctx, sess.UserID)
-	cmd := account.FindUserByID{
-		UserID: userID,
+	user, err := svc.Account.Users.FindByID(ctx, userID)
+	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		return
 	}
-	user, err := cmd.Execute(ctx, svc.Bus)
+
+	recoveryCodes, err := svc.Account.Users.FindRecoveryCodesByID(ctx, userID)
 	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 		return
 	}
 
 	vars := handler.Vars{
-		"RecoveryCodes": user.RecoveryCodes,
+		"RecoveryCodes": recoveryCodes,
 		"TOTPTelephone": user.TOTPTelephone,
 	}
 
@@ -324,16 +328,13 @@ func totpRecoveryCodesGet(svc *handler.Services) http.HandlerFunc {
 		ctx := r.Context()
 
 		userID := svc.Sessions.GetString(ctx, sess.UserID)
-		cmd := account.FindUserByID{
-			UserID: userID,
-		}
-		user, err := cmd.Execute(ctx, svc.Bus)
+		recoveryCodes, err := svc.Account.Users.FindRecoveryCodesByID(ctx, userID)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
 		svc.View(w, r, http.StatusOK, "account/totp_recovery_codes", handler.Vars{
-			"RecoveryCodes": user.RecoveryCodes,
+			"RecoveryCodes": recoveryCodes,
 		})
 	}
 }

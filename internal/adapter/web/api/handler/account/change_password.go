@@ -6,13 +6,12 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/token"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
-func ChangePassword(svc *handler.Services, mux *router.ServeMux, tokens token.Repo) {
+func ChangePassword(svc *handler.Services, mux *router.ServeMux) {
 	mux.Put("/password", changePasswordPut(svc))
 }
 

@@ -1,4 +1,4 @@
-package repo
+package web
 
 import (
 	"bytes"
@@ -15,12 +15,12 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/session"
 )
 
-type SQLiteWebSessionRepo struct {
+type SessionRepo struct {
 	db *sqlite.DB
 }
 
-func NewSQLiteWebSessionRepo(ctx context.Context, db *sqlite.DB, lifespan time.Duration) (*SQLiteWebSessionRepo, error) {
-	migrations, err := fs.Sub(migrations, "migrations/sqlite/web")
+func NewSQLiteSessionRepo(ctx context.Context, db *sqlite.DB, lifespan time.Duration) (*SessionRepo, error) {
+	migrations, err := fs.Sub(migrations, "migrations/sqlite")
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -43,10 +43,10 @@ func NewSQLiteWebSessionRepo(ctx context.Context, db *sqlite.DB, lifespan time.D
 		}
 	})
 
-	return &SQLiteWebSessionRepo{db: db}, nil
+	return &SessionRepo{db: db}, nil
 }
 
-func (r *SQLiteWebSessionRepo) FindByID(ctx context.Context, id string) (session.Data, error) {
+func (r *SessionRepo) FindByID(ctx context.Context, id string) (session.Data, error) {
 	var data []byte
 
 	stmt, args := "SELECT data FROM web__sessions WHERE id = :id;", sqlite.Args{"id": id}
@@ -69,7 +69,7 @@ func (r *SQLiteWebSessionRepo) FindByID(ctx context.Context, id string) (session
 	return res, errors.Tracef(err)
 }
 
-func (r *SQLiteWebSessionRepo) Save(ctx context.Context, s session.Session) error {
+func (r *SessionRepo) Save(ctx context.Context, s session.Session) error {
 	b, err := json.Marshal(s.Data)
 	if err != nil {
 		return errors.Tracef(err)
@@ -90,7 +90,7 @@ func (r *SQLiteWebSessionRepo) Save(ctx context.Context, s session.Session) erro
 	return errors.Tracef(err)
 }
 
-func (r *SQLiteWebSessionRepo) Destroy(ctx context.Context, id string) error {
+func (r *SessionRepo) Destroy(ctx context.Context, id string) error {
 	stmt, args := "DELETE FROM web__sessions WHERE id = :id;", sqlite.Args{"id": id}
 	_, err := r.db.Exec(ctx, stmt, args)
 

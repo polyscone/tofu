@@ -16,7 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/port/account"
 	"github.com/polyscone/tofu/internal/port/account/domain"
 	"github.com/polyscone/tofu/internal/repo"
-	"github.com/polyscone/tofu/internal/repo/repotest"
+	"github.com/polyscone/tofu/internal/repo/account/repotest"
 )
 
 type disableTOTPGuard struct {

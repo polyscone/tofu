@@ -6,22 +6,22 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"io/fs"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"sync"
-	"text/template"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
+	"github.com/polyscone/tofu/internal/adapter/web/query"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/smtp"
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/command"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/port"
@@ -105,6 +105,12 @@ type ViewData struct {
 	Vars         Vars
 }
 
+func (v ViewData) WithBook(book any) ViewData {
+	v.Vars["__Book"] = book
+
+	return v
+}
+
 type ViewDataFunc func(data *ViewData)
 
 type emailData struct {
@@ -116,34 +122,71 @@ type emailData struct {
 type emailDataFunc func(data *emailData)
 
 type Services struct {
-	tenant      *Tenant
+	*Tenant
 	files       fs.FS
 	templatesMu sync.RWMutex
 	templates   map[string]*template.Template
 	funcs       template.FuncMap
 	viewVars    map[string]Vars
 	mux         *router.ServeMux
-	Bus         command.Bus
-	Broker      event.Broker
 	Sessions    *session.Manager
 }
 
 func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
-	sessions := session.NewManager(tenant.Sessions)
+	sessions := session.NewManager(tenant.Web.Sessions)
 	funcs := template.FuncMap{
+		"HTML":       func(s string) template.HTML { return template.HTML(s) },
+		"HTMLAttr":   func(s string) template.HTMLAttr { return template.HTMLAttr(s) },
+		"URL":        func(s string) template.URL { return template.URL(s) },
 		"StatusText": http.StatusText,
 		"Path":       mux.Path,
+		"Add":        func(a, b int) int { return a + b },
+		"Sub":        func(a, b int) int { return a - b },
+		"Mul":        func(a, b int) int { return a * b },
+		"Div":        func(a, b int) int { return a / b },
+		"Mod":        func(a, b int) int { return a % b },
+		"Ints": func(start, end int) []int {
+			n := end - start
+			ints := make([]int, n)
+			for i := 0; i < n; i++ {
+				ints[i] = start + i
+			}
+
+			return ints
+		},
+		"QueryReplace": func(q url.Values, pairs ...any) (string, error) {
+			if len(pairs)%2 == 1 {
+				panic("QueryReplace expects pairs of key value replacements")
+			}
+
+			u, err := url.Parse("?" + q.Encode())
+			if err != nil {
+				return "", errors.Tracef(err)
+			}
+
+			qq := u.Query()
+			for i := 0; i < len(pairs); i += 2 {
+				key := fmt.Sprintf("%v", pairs[i])
+				value := fmt.Sprintf("%v", pairs[i+1])
+
+				if value == "" {
+					qq.Del(key)
+				} else {
+					qq.Set(key, value)
+				}
+			}
+
+			return qq.Encode(), nil
+		},
 	}
 
 	return &Services{
-		tenant:    tenant,
+		Tenant:    tenant,
 		files:     files,
 		templates: make(map[string]*template.Template),
 		funcs:     funcs,
 		viewVars:  make(map[string]Vars),
 		mux:       mux,
-		Bus:       tenant.Bus,
-		Broker:    tenant.Broker,
 		Sessions:  sessions,
 	}
 }
@@ -161,7 +204,7 @@ func (svc *Services) RenewSession(ctx context.Context) ([]byte, error) {
 }
 
 func (svc *Services) emptyPassport(ctx context.Context) passport.Passport {
-	return passport.New(ctx, svc.Sessions, "", nil, nil, nil)
+	return passport.New(ctx, svc.Sessions, query.AccountUser{})
 }
 
 func (svc *Services) Passport(ctx context.Context) passport.Passport {
@@ -170,39 +213,21 @@ func (svc *Services) Passport(ctx context.Context) passport.Passport {
 	}
 
 	userID := svc.Sessions.GetString(ctx, sess.UserID)
-	cmd := account.FindUserByID{
-		UserID: userID,
-	}
-	user, err := cmd.Execute(ctx, svc.Bus)
+	user, err := svc.Account.Users.FindByID(ctx, userID)
 	if err != nil {
 		return svc.emptyPassport(ctx)
 	}
 
-	return passport.New(ctx, svc.Sessions, userID, user.Claims, user.Roles, user.Permissions)
+	return passport.New(ctx, svc.Sessions, user)
 }
 
-func (svc *Services) LimitedPassportByUserID(ctx context.Context, userID string) (passport.Passport, error) {
-	cmd := account.FindUserByID{
-		UserID: userID,
-	}
-	user, err := cmd.Execute(ctx, svc.Bus)
+func (svc *Services) PassportByEmail(ctx context.Context, email string) (passport.Passport, error) {
+	user, err := svc.Account.Users.FindByEmail(ctx, email)
 	if err != nil {
 		return svc.emptyPassport(ctx), errors.Tracef(err)
 	}
 
-	return passport.New(ctx, svc.Sessions, user.ID, nil, nil, nil), nil
-}
-
-func (svc *Services) LimitedPassportByEmail(ctx context.Context, email string) (passport.Passport, error) {
-	cmd := account.FindUserByEmail{
-		Email: email,
-	}
-	user, err := cmd.Execute(ctx, svc.Bus)
-	if err != nil {
-		return svc.emptyPassport(ctx), errors.Tracef(err)
-	}
-
-	return passport.New(ctx, svc.Sessions, user.ID, nil, nil, nil), nil
+	return passport.New(ctx, svc.Sessions, user), nil
 }
 
 func (svc *Services) Path(name string, paramArgPairs ...string) string {
@@ -220,7 +245,7 @@ func (svc *Services) SetViewVars(name string, vars Vars) {
 func (svc *Services) template(name string, patterns ...string) *template.Template {
 	svc.templatesMu.RLock()
 
-	if tmpl := svc.templates[name]; tmpl != nil && !svc.tenant.Dev {
+	if tmpl := svc.templates[name]; tmpl != nil && !svc.Tenant.Dev {
 		svc.templatesMu.RUnlock()
 
 		return tmpl
@@ -249,10 +274,10 @@ func (svc *Services) email(name string) *template.Template {
 func (svc *Services) emailContentFunc(name string, dataFunc emailDataFunc) (emailContent, error) {
 	data := emailData{
 		Addr: AddrData{
-			Scheme:   svc.tenant.Scheme,
-			Host:     svc.tenant.Host,
-			Hostname: svc.tenant.Hostname,
-			Port:     svc.tenant.Port,
+			Scheme:   svc.Tenant.Scheme,
+			Host:     svc.Tenant.Host,
+			Hostname: svc.Tenant.Hostname,
+			Port:     svc.Tenant.Port,
 		},
 		App: AppData{
 			Name:        app.Name,
@@ -323,25 +348,22 @@ func (svc *Services) SendEmail(ctx context.Context, recipients EmailRecipients, 
 		HTML:    content.HTML,
 	}
 
-	return errors.Tracef(svc.tenant.Email.Send(ctx, msg))
+	return errors.Tracef(svc.Tenant.Email.Send(ctx, msg))
 }
 
 func (svc *Services) SendSMS(ctx context.Context, to, body string) error {
-	return errors.Tracef(svc.tenant.SMS.Send(ctx, svc.tenant.SMSFrom, to, body))
+	return errors.Tracef(svc.Tenant.SMS.Send(ctx, svc.Tenant.SMSFrom, to, body))
 }
 
 func (svc *Services) SendTOTPSMS(email string) error {
 	ctx := context.Background()
 
-	passport, err := svc.LimitedPassportByEmail(ctx, email)
+	passport, err := svc.PassportByEmail(ctx, email)
 	if err != nil {
 		return errors.Tracef(err)
 	}
 
-	cmd := account.FindUserByID{
-		UserID: passport.UserID(),
-	}
-	user, err := cmd.Execute(ctx, svc.Bus)
+	user, err := svc.Account.Users.FindByEmail(ctx, email)
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -374,10 +396,10 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 		Form:   r.PostForm,
 		Query:  r.URL.Query(),
 		Addr: AddrData{
-			Scheme:   svc.tenant.Scheme,
-			Host:     svc.tenant.Host,
-			Hostname: svc.tenant.Hostname,
-			Port:     svc.tenant.Port,
+			Scheme:   svc.Tenant.Scheme,
+			Host:     svc.Tenant.Host,
+			Hostname: svc.Tenant.Hostname,
+			Port:     svc.Tenant.Port,
 		},
 		App: AppData{
 			Name:        app.Name,
@@ -537,4 +559,29 @@ func (svc *Services) JSON(w http.ResponseWriter, r *http.Request, data any) bool
 	w.Header().Set("content-type", "application/json")
 
 	return !svc.ErrorJSON(w, r, errors.Tracef(json.NewEncoder(w).Encode(data)))
+}
+
+func (svc *Services) Pagination(r *http.Request) (int, int) {
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil {
+		page = 1
+	}
+	if page < 1 {
+		page = 1
+	}
+
+	const maxSize = 100
+
+	size, err := strconv.Atoi(r.URL.Query().Get("size"))
+	if err != nil {
+		size = 10
+	}
+	if size < 1 {
+		size = 1
+	}
+	if size > maxSize {
+		size = maxSize
+	}
+
+	return page, size
 }
