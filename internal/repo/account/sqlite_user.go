@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"io/fs"
+	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/aesgcm"
@@ -15,6 +16,20 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port/account/domain"
 )
+
+type sqliteUser struct {
+	ID             string        `sql:"id"`
+	Email          string        `sql:"email"`
+	HashedPassword []byte        `sql:"hashed_password"`
+	TOTPUseSMS     bool          `sql:"totp_use_sms"`
+	TOTPTelephone  string        `sql:"totp_telephone"`
+	TOTPKey        []byte        `sql:"totp_key"`
+	TOTPAlgorithm  string        `sql:"totp_algorithm"`
+	TOTPDigits     int           `sql:"totp_digits"`
+	TOTPPeriod     time.Duration `sql:"totp_period"`
+	TOTPVerifiedAt sql.NullTime  `sql:"totp_verified_at"`
+	ActivatedAt    sql.NullTime  `sql:"activated_at"`
+}
 
 type UserRepo struct {
 	db     *sqlite.DB
@@ -46,73 +61,61 @@ func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (
 	}
 	defer tx.Rollback()
 
-	var id uuid.V4
-	var email text.Email
-	var hashedPassword []byte
-	var totpUseSMS bool
-	var totpTelephone text.Telephone
-	var totpKey []byte
-	var totpAlgorithm string
-	var totpDigits int
-	var totpPeriod time.Duration
-	var totpVerifiedAt sql.NullTime
-	var activatedAt sql.NullTime
-
-	stmt := fmt.Sprintf(`
-		SELECT
-			u.id, u.email, u.hashed_password, u.totp_use_sms, u.totp_telephone, u.totp_key,
-			u.totp_algorithm, u.totp_digits, u.totp_period, u.totp_verified_at, u.activated_at
-		FROM account__users AS u
-		WHERE %v;
-	`, where)
-	err = tx.QueryRow(ctx, stmt, args).Scan(
-		&id, &email, &hashedPassword, &totpUseSMS, &totpTelephone, &totpKey,
-		&totpAlgorithm, &totpDigits, &totpPeriod, &totpVerifiedAt, &activatedAt,
-	)
-	if err != nil {
+	var row sqliteUser
+	cols := strings.Join(sqlite.Columns(&row), ", ")
+	stmt := fmt.Sprintf("SELECT %v FROM account__users WHERE %v;", cols, where)
+	if err := r.db.QueryRow(ctx, stmt, args).ScanAddrs(&row); err != nil {
 		return domain.User{}, errors.Tracef(err)
 	}
 
-	decryptedTOTPKey, err := aesgcm.Decrypt(r.secret, totpKey)
-	if err != nil {
-		return domain.User{}, errors.Tracef(err)
-	}
-	totpKey = decryptedTOTPKey
+	if row.TOTPKey != nil {
+		decryptedTOTPKey, err := aesgcm.Decrypt(r.secret, row.TOTPKey)
+		if err != nil {
+			return domain.User{}, errors.Tracef(err)
+		}
 
-	recoveryCodes, err := r.findRecoveryCodesByID(ctx, tx, id)
+		row.TOTPKey = decryptedTOTPKey
+	}
+
+	recoveryCodes, err := r.findRecoveryCodesByID(ctx, tx, row.ID)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
 		return domain.User{}, errors.Tracef(err)
 	}
 
-	roles, err := r.findRolesByID(ctx, tx, id)
+	roles, err := r.findRolesByID(ctx, tx, row.ID)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
+		return domain.User{}, errors.Tracef(err)
+	}
+
+	id, err := uuid.ParseV4(row.ID)
+	if err != nil {
 		return domain.User{}, errors.Tracef(err)
 	}
 
 	res := domain.NewUser(id)
 
-	res.Email = email
-	res.HashedPassword = hashedPassword
-	res.TOTPUseSMS = totpUseSMS
-	res.TOTPTelephone = totpTelephone
-	res.TOTPKey = totpKey
-	res.TOTPAlgorithm = totpAlgorithm
-	res.TOTPDigits = totpDigits
-	res.TOTPPeriod = totpPeriod
-	res.TOTPVerifiedAt = totpVerifiedAt.Time
+	res.Email = text.Email(row.Email)
+	res.HashedPassword = row.HashedPassword
+	res.TOTPUseSMS = row.TOTPUseSMS
+	res.TOTPTelephone = text.Telephone(row.TOTPTelephone)
+	res.TOTPKey = row.TOTPKey
+	res.TOTPAlgorithm = row.TOTPAlgorithm
+	res.TOTPDigits = row.TOTPDigits
+	res.TOTPPeriod = row.TOTPPeriod
+	res.TOTPVerifiedAt = row.TOTPVerifiedAt.Time
 	res.RecoveryCodes = recoveryCodes
 	res.Roles = roles
-	res.ActivatedAt = activatedAt.Time
+	res.ActivatedAt = row.ActivatedAt.Time
 
 	return res, errors.Tracef(tx.Commit())
 }
 
 func (r *UserRepo) FindByID(ctx context.Context, id uuid.V4) (domain.User, error) {
-	return r.findBy(ctx, `u.id = :id`, sqlite.Args{"id": id})
+	return r.findBy(ctx, `id = :id`, sqlite.Args{"id": id})
 }
 
 func (r *UserRepo) FindByEmail(ctx context.Context, email text.Email) (domain.User, error) {
-	return r.findBy(ctx, `u.email = :email`, sqlite.Args{"email": email})
+	return r.findBy(ctx, `email = :email`, sqlite.Args{"email": email})
 }
 
 func (r *UserRepo) Add(ctx context.Context, u domain.User) error {
@@ -261,7 +264,7 @@ func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
 	return errors.Tracef(tx.Commit())
 }
 
-func (r *UserRepo) findRolesByID(ctx context.Context, db sqlite.Querier, userID uuid.V4) ([]domain.Role, error) {
+func (r *UserRepo) findRolesByID(ctx context.Context, db sqlite.Querier, userID string) ([]domain.Role, error) {
 	var roles []domain.Role
 
 	stmt, args := `
@@ -313,7 +316,7 @@ func (r *UserRepo) findRolesByID(ctx context.Context, db sqlite.Querier, userID 
 	return roles, errors.Tracef(rows.Err())
 }
 
-func (r *UserRepo) findRecoveryCodesByID(ctx context.Context, db sqlite.Querier, userID uuid.V4) ([]domain.RecoveryCode, error) {
+func (r *UserRepo) findRecoveryCodesByID(ctx context.Context, db sqlite.Querier, userID string) ([]domain.RecoveryCode, error) {
 	var recoveryCodes []domain.RecoveryCode
 
 	stmt, args := `

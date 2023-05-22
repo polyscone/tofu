@@ -33,7 +33,7 @@ type TOTPParams struct {
 type AccountUserRepo interface {
 	FindByID(ctx context.Context, userID string) (AccountUser, error)
 	FindByEmail(ctx context.Context, email string) (AccountUser, error)
-	FindByPageFilter(ctx context.Context, page, size int, filter string) (*repo.Book[AccountUser], error)
+	FindByPage(ctx context.Context, page, size int, filter string) (*repo.Book[AccountUser], error)
 	FindTOTPParamsByID(ctx context.Context, userID string) (TOTPParams, error)
 	FindRecoveryCodesByID(ctx context.Context, userID string) ([]string, error)
 }

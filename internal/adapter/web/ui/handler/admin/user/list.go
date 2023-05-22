@@ -33,7 +33,7 @@ func listGet(svc *handler.Services) http.HandlerFunc {
 		} else {
 			search := r.URL.Query().Get("search")
 			page, size := svc.Pagination(r)
-			users, err := svc.Account.Users.FindByPageFilter(ctx, page, size, search)
+			users, err := svc.Account.Users.FindByPage(ctx, page, size, search)
 			if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 				return
 			}
