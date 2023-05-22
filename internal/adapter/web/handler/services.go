@@ -156,7 +156,7 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 		},
 		"QueryReplace": func(q url.Values, pairs ...any) (string, error) {
 			if len(pairs)%2 == 1 {
-				panic("QueryReplace expects pairs of key value replacements")
+				return "", errors.Tracef("QueryReplace expects pairs of key value replacements")
 			}
 
 			u, err := url.Parse("?" + q.Encode())
