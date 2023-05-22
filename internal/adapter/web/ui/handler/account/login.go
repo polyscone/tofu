@@ -11,6 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
 	"github.com/polyscone/tofu/internal/pkg/repo"
+	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
 )
 
@@ -122,7 +123,7 @@ func loginWithPassword(ctx context.Context, svc *handler.Services, w http.Respon
 	res, err := cmd.Execute(ctx, svc.Bus)
 	if err != nil {
 		svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/login", func(data *handler.ViewData) {
-			if errors.Is(err, repo.ErrNotFound) || errors.Is(err, account.ErrNotActivated) {
+			if errors.Is(err, port.ErrBadRequest) || errors.Is(err, repo.ErrNotFound) || errors.Is(err, account.ErrNotActivated) {
 				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
 			}
 		})
