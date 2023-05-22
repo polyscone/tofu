@@ -3,7 +3,7 @@
 <h1>User Management</h1>
 
 {{if .Query.Get "edit"}}
-	<p><a href="?{{URL (QueryReplace .Query "edit" "")}}">Back</a></p>
+	<p><a href="?{{URL (QueryReplace .Query "edit" nil)}}">Back</a></p>
 	<p>Editing {{.Vars.User.Email}}</p>
 {{else}}
 	<form class="bag">

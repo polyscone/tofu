@@ -167,13 +167,15 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 			qq := u.Query()
 			for i := 0; i < len(pairs); i += 2 {
 				key := fmt.Sprintf("%v", pairs[i])
-				value := fmt.Sprintf("%v", pairs[i+1])
+				value := pairs[i+1]
 
-				if value == "" {
+				if value == nil {
 					qq.Del(key)
-				} else {
-					qq.Set(key, value)
+
+					continue
 				}
+
+				qq.Set(key, fmt.Sprintf("%v", value))
 			}
 
 			return qq.Encode(), nil
