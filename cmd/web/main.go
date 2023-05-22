@@ -53,7 +53,7 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %v:\n", os.Args[0])
-		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-dev] [-addr <addr>] [-tenants <tenants-json|json-file>] [-log-style <text|json>]\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-dev] [-addr <addr>] [-tenants <json-file>] [-log-style <text|json>]\n", os.Args[0])
 		fmt.Fprintln(flag.CommandLine.Output(), "Commands:")
 		fmt.Fprintf(flag.CommandLine.Output(), "  version\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "    \tDisplay binary version information\n")
