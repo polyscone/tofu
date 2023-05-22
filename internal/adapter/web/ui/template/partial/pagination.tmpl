@@ -10,9 +10,9 @@
 		<div class="pagination__info">
 			{{if len $book.Page.Rows}}
 				{{if eq $startEntry $endEntry}}
-					Showing entry {{$startEntry}} of {{$book.TotalRows}}
+					Showing entry <span data-locale-number>{{$startEntry}}</span> of <span data-locale-number>{{$book.TotalRows}}</span>
 				{{else}}
-					Showing entries {{$startEntry}}-{{$endEntry}} of {{$book.TotalRows}}
+					Showing entries <span data-locale-number>{{$startEntry}}</span>-<span data-locale-number>{{$endEntry}}</span> of <span data-locale-number>{{$book.TotalRows}}</span>
 				{{end}}
 			{{end}}
 		</div>
@@ -26,7 +26,7 @@
 
 				{{range $i := Ints (Sub $book.Page.Number 2) (Add $book.Page.Number 3)}}
 					{{if and (gt $i 0) (le $i $book.TotalPages)}}
-						<li><a href="?{{URL (QueryReplace $.Query "page" $i)}}">{{$i}}</a></li>
+						<li><a href="?{{URL (QueryReplace $.Query "page" $i)}}" data-locale-number>{{$i}}</a></li>
 					{{end}}
 				{{end}}
 
