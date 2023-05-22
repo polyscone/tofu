@@ -9,12 +9,11 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/password"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/port"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
 type authenticateWithPasswordRequest struct {
 	email    text.Email
-	password domain.Password
+	password Password
 }
 
 type authenticateWithPasswordResponse struct {
@@ -48,7 +47,7 @@ func (cmd AuthenticateWithPassword) request() (authenticateWithPasswordRequest, 
 	if req.email, err = text.NewEmail(cmd.Email); err != nil {
 		errs.Set("email", err)
 	}
-	if req.password, err = domain.NewPassword(cmd.Password); err != nil {
+	if req.password, err = NewPassword(cmd.Password); err != nil {
 		errs.Set("password", err)
 	}
 

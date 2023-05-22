@@ -8,12 +8,11 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
 type authenticateWithTOTPRequest struct {
 	userID uuid.V4
-	totp   domain.TOTP
+	totp   TOTP
 }
 
 type AuthenticateWithTOTP struct {
@@ -41,7 +40,7 @@ func (cmd AuthenticateWithTOTP) request() (authenticateWithTOTPRequest, error) {
 	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("user id", err)
 	}
-	if req.totp, err = domain.NewTOTP(cmd.TOTP); err != nil {
+	if req.totp, err = NewTOTP(cmd.TOTP); err != nil {
 		errs.Set("totp", err)
 	}
 

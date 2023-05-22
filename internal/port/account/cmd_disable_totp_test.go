@@ -14,7 +14,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 	"github.com/polyscone/tofu/internal/repo"
 	"github.com/polyscone/tofu/internal/repo/account/repotest"
 )
@@ -46,9 +45,9 @@ func TestDisableTOTP(t *testing.T) {
 
 	tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
 	_totp := errors.Must(tb.Generate(verifiedTOTPUser.TOTPKey, time.Now()))
-	totp := errors.Must(domain.NewTOTP(_totp))
+	totp := errors.Must(account.NewTOTP(_totp))
 
-	if err := verifiedTOTPUser.VerifyTOTP(totp, domain.TOTPKindApp); err != nil {
+	if err := verifiedTOTPUser.VerifyTOTP(totp, account.TOTPKindApp); err != nil {
 		t.Fatal(err)
 	}
 	if err := users.Save(ctx, verifiedTOTPUser); err != nil {

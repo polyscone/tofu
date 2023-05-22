@@ -8,7 +8,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
 type VerifyTOTPGuard interface {
@@ -17,7 +16,7 @@ type VerifyTOTPGuard interface {
 
 type verifyTOTPRequest struct {
 	userID uuid.V4
-	totp   domain.TOTP
+	totp   TOTP
 	useSMS bool
 }
 
@@ -52,7 +51,7 @@ func (cmd VerifyTOTP) request() (verifyTOTPRequest, error) {
 	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("user id", err)
 	}
-	if req.totp, err = domain.NewTOTP(cmd.TOTP); err != nil {
+	if req.totp, err = NewTOTP(cmd.TOTP); err != nil {
 		errs.Set("totp", err)
 	}
 
@@ -77,9 +76,9 @@ func NewVerifyTOTPHandler(broker event.Broker, users UserRepo) VerifyTOTPHandler
 
 		var kind string
 		if req.useSMS {
-			kind = domain.TOTPKindSMS
+			kind = TOTPKindSMS
 		} else {
-			kind = domain.TOTPKindApp
+			kind = TOTPKindApp
 		}
 		if err := user.VerifyTOTP(req.totp, kind); err != nil {
 			return errors.Tracef(err)

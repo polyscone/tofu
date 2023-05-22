@@ -9,57 +9,51 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/password"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
-type ChangePasswordGuard interface {
-	CanChangePassword(userID uuid.V4) bool
+type ResetPasswordGuard interface {
+	CanResetPassword(userID uuid.V4) bool
 }
 
-type changePasswordRequest struct {
+type resetPasswordRequest struct {
 	userID      uuid.V4
-	oldPassword domain.Password
-	newPassword domain.Password
+	newPassword Password
 }
 
-type ChangePassword struct {
-	Guard            ChangePasswordGuard
+type ResetPassword struct {
+	Guard            ResetPasswordGuard
 	UserID           string
-	OldPassword      string
 	NewPassword      string
 	NewPasswordCheck string
 }
 
-func (cmd ChangePassword) Execute(ctx context.Context, bus command.Bus) error {
+func (cmd ResetPassword) Execute(ctx context.Context, bus command.Bus) error {
 	_, err := bus.Dispatch(ctx, cmd)
 
 	return errors.Tracef(err)
 }
 
-func (cmd ChangePassword) Validate() error {
+func (cmd ResetPassword) Validate() error {
 	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd ChangePassword) request() (changePasswordRequest, error) {
-	var req changePasswordRequest
-	if !cmd.Guard.CanChangePassword(uuid.ParseV4OrNil(cmd.UserID)) {
+func (cmd ResetPassword) request() (resetPasswordRequest, error) {
+	var req resetPasswordRequest
+	if !cmd.Guard.CanResetPassword(uuid.ParseV4OrNil(cmd.UserID)) {
 		return req, errors.Tracef(port.ErrUnauthorised)
 	}
 
 	var err error
 	var errs errors.Map
 
-	newPasswordCheck, _ := domain.NewPassword(cmd.NewPasswordCheck)
+	newPasswordCheck, _ := NewPassword(cmd.NewPasswordCheck)
 
 	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("user id", err)
 	}
-	if req.oldPassword, err = domain.NewPassword(cmd.OldPassword); err != nil {
-		errs.Set("old password", err)
-	}
-	if req.newPassword, err = domain.NewPassword(cmd.NewPassword); err != nil {
+	if req.newPassword, err = NewPassword(cmd.NewPassword); err != nil {
 		errs.Set("new password", err)
 	} else if !req.newPassword.Equal(newPasswordCheck) {
 		errs.Set("new password", "passwords do not match")
@@ -68,10 +62,10 @@ func (cmd ChangePassword) request() (changePasswordRequest, error) {
 	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
-type ChangePasswordHandler func(ctx context.Context, cmd ChangePassword) error
+type ResetPasswordHandler func(ctx context.Context, cmd ResetPassword) error
 
-func NewChangePasswordHandler(broker event.Broker, hasher password.Hasher, users UserRepo) ChangePasswordHandler {
-	return func(ctx context.Context, cmd ChangePassword) error {
+func NewResetPasswordHandler(broker event.Broker, hasher password.Hasher, users UserRepo) ResetPasswordHandler {
+	return func(ctx context.Context, cmd ResetPassword) error {
 		req, err := cmd.request()
 		if err != nil {
 			return errors.Tracef(err)
@@ -82,7 +76,7 @@ func NewChangePasswordHandler(broker event.Broker, hasher password.Hasher, users
 			return errors.Tracef(err)
 		}
 
-		if err := user.ChangePassword(req.oldPassword, req.newPassword, hasher); err != nil {
+		if err := user.ResetPassword(req.newPassword, hasher); err != nil {
 			return errors.Tracef(err)
 		}
 

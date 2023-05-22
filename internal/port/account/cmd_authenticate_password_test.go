@@ -12,7 +12,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 	"github.com/polyscone/tofu/internal/repo"
 	"github.com/polyscone/tofu/internal/repo/account/repotest"
 )
@@ -99,7 +98,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		execute := func(email text.Email, password domain.Password) error {
+		execute := func(email text.Email, password account.Password) error {
 			_, err := handler(ctx, account.AuthenticateWithPassword{
 				Email:    email.String(),
 				Password: password.String(),
@@ -109,7 +108,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(email text.Email, password domain.Password) bool {
+			quick.Check(t, func(email text.Email, password account.Password) bool {
 				err := execute(email, password)
 
 				return !errors.Is(err, port.ErrMalformedInput)
@@ -117,7 +116,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		})
 
 		t.Run("invalid email input", func(t *testing.T) {
-			quick.Check(t, func(email quick.Invalid[text.Email], password domain.Password) bool {
+			quick.Check(t, func(email quick.Invalid[text.Email], password account.Password) bool {
 				err := execute(email.Unwrap(), password)
 
 				return errors.Is(err, port.ErrMalformedInput)
@@ -125,7 +124,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		})
 
 		t.Run("invalid password input", func(t *testing.T) {
-			quick.Check(t, func(email text.Email, password quick.Invalid[domain.Password]) bool {
+			quick.Check(t, func(email text.Email, password quick.Invalid[account.Password]) bool {
 				err := execute(email, password.Unwrap())
 
 				return errors.Is(err, port.ErrMalformedInput)

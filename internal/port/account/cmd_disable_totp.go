@@ -8,34 +8,37 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
-type disableTOTPRecoveryCodeRequest struct {
-	userID       uuid.V4
-	recoveryCode domain.RecoveryCode
+type DisableTOTPGuard interface {
+	CanDisableTOTP(userID uuid.V4) bool
 }
 
-type DisableTOTPWithRecoveryCode struct {
-	Guard        DisableTOTPGuard
-	UserID       string
-	RecoveryCode string
+type disableTOTPRequest struct {
+	userID uuid.V4
+	totp   TOTP
 }
 
-func (cmd DisableTOTPWithRecoveryCode) Execute(ctx context.Context, bus command.Bus) error {
+type DisableTOTP struct {
+	Guard  DisableTOTPGuard
+	UserID string
+	TOTP   string
+}
+
+func (cmd DisableTOTP) Execute(ctx context.Context, bus command.Bus) error {
 	_, err := bus.Dispatch(ctx, cmd)
 
 	return errors.Tracef(err)
 }
 
-func (cmd DisableTOTPWithRecoveryCode) Validate() error {
+func (cmd DisableTOTP) Validate() error {
 	_, err := cmd.request()
 
 	return errors.Tracef(err)
 }
 
-func (cmd DisableTOTPWithRecoveryCode) request() (disableTOTPRecoveryCodeRequest, error) {
-	var req disableTOTPRecoveryCodeRequest
+func (cmd DisableTOTP) request() (disableTOTPRequest, error) {
+	var req disableTOTPRequest
 	if !cmd.Guard.CanDisableTOTP(uuid.ParseV4OrNil(cmd.UserID)) {
 		return req, errors.Tracef(port.ErrUnauthorised)
 	}
@@ -46,17 +49,17 @@ func (cmd DisableTOTPWithRecoveryCode) request() (disableTOTPRecoveryCodeRequest
 	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("user id", err)
 	}
-	if req.recoveryCode, err = domain.NewRecoveryCode(cmd.RecoveryCode); err != nil {
-		errs.Set("recovery code", err)
+	if req.totp, err = NewTOTP(cmd.TOTP); err != nil {
+		errs.Set("totp", err)
 	}
 
 	return req, errs.Tracef(port.ErrMalformedInput)
 }
 
-type DisableTOTPRecoveryCodeHandler func(ctx context.Context, cmd DisableTOTPWithRecoveryCode) error
+type DisableTOTPHandler func(ctx context.Context, cmd DisableTOTP) error
 
-func NewDisableTOTPRecoveryCodeHandler(broker event.Broker, users UserRepo) DisableTOTPRecoveryCodeHandler {
-	return func(ctx context.Context, cmd DisableTOTPWithRecoveryCode) error {
+func NewDisableTOTPHandler(broker event.Broker, users UserRepo) DisableTOTPHandler {
+	return func(ctx context.Context, cmd DisableTOTP) error {
 		req, err := cmd.request()
 		if err != nil {
 			return errors.Tracef(err)
@@ -67,7 +70,7 @@ func NewDisableTOTPRecoveryCodeHandler(broker event.Broker, users UserRepo) Disa
 			return errors.Tracef(err)
 		}
 
-		if err := user.DisableTOTPWithRecoveryCode(req.recoveryCode); err != nil {
+		if err := user.DisableTOTP(req.totp); err != nil {
 			return errors.Tracef(err)
 		}
 

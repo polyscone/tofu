@@ -14,7 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/repo/sqlite"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
-	"github.com/polyscone/tofu/internal/port/account/domain"
+	"github.com/polyscone/tofu/internal/port/account"
 )
 
 type sqliteUser struct {
@@ -54,24 +54,24 @@ func NewSQLiteUserRepo(ctx context.Context, db *sqlite.DB, secret []byte) (*User
 	return &repo, nil
 }
 
-func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (domain.User, error) {
+func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (account.User, error) {
 	tx, err := r.db.Begin(ctx, nil)
 	if err != nil {
-		return domain.User{}, errors.Tracef(err)
+		return account.User{}, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
 	var row sqliteUser
 	cols := strings.Join(sqlite.Columns(&row), ", ")
 	stmt := fmt.Sprintf("SELECT %v FROM account__users WHERE %v;", cols, where)
-	if err := r.db.QueryRow(ctx, stmt, args).ScanAddrs(&row); err != nil {
-		return domain.User{}, errors.Tracef(err)
+	if err := r.db.QueryRow(ctx, stmt, args).ScanInto(&row); err != nil {
+		return account.User{}, errors.Tracef(err)
 	}
 
 	if row.TOTPKey != nil {
 		decryptedTOTPKey, err := aesgcm.Decrypt(r.secret, row.TOTPKey)
 		if err != nil {
-			return domain.User{}, errors.Tracef(err)
+			return account.User{}, errors.Tracef(err)
 		}
 
 		row.TOTPKey = decryptedTOTPKey
@@ -79,20 +79,20 @@ func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (
 
 	recoveryCodes, err := r.findRecoveryCodesByID(ctx, tx, row.ID)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
-		return domain.User{}, errors.Tracef(err)
+		return account.User{}, errors.Tracef(err)
 	}
 
 	roles, err := r.findRolesByID(ctx, tx, row.ID)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
-		return domain.User{}, errors.Tracef(err)
+		return account.User{}, errors.Tracef(err)
 	}
 
 	id, err := uuid.ParseV4(row.ID)
 	if err != nil {
-		return domain.User{}, errors.Tracef(err)
+		return account.User{}, errors.Tracef(err)
 	}
 
-	res := domain.NewUser(id)
+	res := account.NewUser(id)
 
 	res.Email = text.Email(row.Email)
 	res.HashedPassword = row.HashedPassword
@@ -110,15 +110,15 @@ func (r *UserRepo) findBy(ctx context.Context, where string, args sqlite.Args) (
 	return res, errors.Tracef(tx.Commit())
 }
 
-func (r *UserRepo) FindByID(ctx context.Context, id uuid.V4) (domain.User, error) {
+func (r *UserRepo) FindByID(ctx context.Context, id uuid.V4) (account.User, error) {
 	return r.findBy(ctx, `id = :id`, sqlite.Args{"id": id})
 }
 
-func (r *UserRepo) FindByEmail(ctx context.Context, email text.Email) (domain.User, error) {
+func (r *UserRepo) FindByEmail(ctx context.Context, email text.Email) (account.User, error) {
 	return r.findBy(ctx, `email = :email`, sqlite.Args{"email": email})
 }
 
-func (r *UserRepo) Add(ctx context.Context, u domain.User) error {
+func (r *UserRepo) Add(ctx context.Context, u account.User) error {
 	tx, err := r.db.Begin(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
@@ -189,7 +189,7 @@ func (r *UserRepo) Add(ctx context.Context, u domain.User) error {
 	return errors.Tracef(tx.Commit())
 }
 
-func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
+func (r *UserRepo) Save(ctx context.Context, u account.User) error {
 	tx, err := r.db.Begin(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
@@ -264,8 +264,8 @@ func (r *UserRepo) Save(ctx context.Context, u domain.User) error {
 	return errors.Tracef(tx.Commit())
 }
 
-func (r *UserRepo) findRolesByID(ctx context.Context, db sqlite.Querier, userID string) ([]domain.Role, error) {
-	var roles []domain.Role
+func (r *UserRepo) findRolesByID(ctx context.Context, db sqlite.Querier, userID string) ([]account.Role, error) {
+	var roles []account.Role
 
 	stmt, args := `
 		SELECT id, name
@@ -285,7 +285,7 @@ func (r *UserRepo) findRolesByID(ctx context.Context, db sqlite.Querier, userID 
 			return roles, errors.Tracef(err)
 		}
 
-		var permissions []domain.Permission
+		var permissions []account.Permission
 
 		stmt, args := `
 			SELECT id
@@ -298,7 +298,7 @@ func (r *UserRepo) findRolesByID(ctx context.Context, db sqlite.Querier, userID 
 			return roles, errors.Tracef(err)
 		}
 		for rows.Next() {
-			var permissionID domain.Permission
+			var permissionID account.Permission
 
 			if err := rows.Scan(&permissionID); err != nil {
 				return roles, errors.Tracef(err)
@@ -310,14 +310,14 @@ func (r *UserRepo) findRolesByID(ctx context.Context, db sqlite.Querier, userID 
 			return roles, errors.Tracef(err)
 		}
 
-		roles = append(roles, domain.NewRole(roleName, permissions...))
+		roles = append(roles, account.NewRole(roleName, permissions...))
 	}
 
 	return roles, errors.Tracef(rows.Err())
 }
 
-func (r *UserRepo) findRecoveryCodesByID(ctx context.Context, db sqlite.Querier, userID string) ([]domain.RecoveryCode, error) {
-	var recoveryCodes []domain.RecoveryCode
+func (r *UserRepo) findRecoveryCodesByID(ctx context.Context, db sqlite.Querier, userID string) ([]account.RecoveryCode, error) {
+	var recoveryCodes []account.RecoveryCode
 
 	stmt, args := `
 		SELECT code
@@ -340,7 +340,7 @@ func (r *UserRepo) findRecoveryCodesByID(ctx context.Context, db sqlite.Querier,
 			return recoveryCodes, errors.Tracef(err)
 		}
 
-		recoveryCode, err := domain.NewRecoveryCode(string(decrypted))
+		recoveryCode, err := account.NewRecoveryCode(string(decrypted))
 		if err != nil {
 			return recoveryCodes, errors.Tracef(err)
 		}

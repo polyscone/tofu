@@ -1,4 +1,4 @@
-package domain
+package account
 
 type Role struct {
 	Name        string

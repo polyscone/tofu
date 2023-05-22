@@ -10,13 +10,12 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
 type registerRequest struct {
 	userID   uuid.V4
 	email    text.Email
-	password domain.Password
+	password Password
 }
 
 type Register struct {
@@ -43,7 +42,7 @@ func (cmd Register) request() (registerRequest, error) {
 	var err error
 	var errs errors.Map
 
-	passwordCheck, _ := domain.NewPassword(cmd.PasswordCheck)
+	passwordCheck, _ := NewPassword(cmd.PasswordCheck)
 
 	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("id", err)
@@ -51,7 +50,7 @@ func (cmd Register) request() (registerRequest, error) {
 	if req.email, err = text.NewEmail(cmd.Email); err != nil {
 		errs.Set("email", err)
 	}
-	if req.password, err = domain.NewPassword(cmd.Password); err != nil {
+	if req.password, err = NewPassword(cmd.Password); err != nil {
 		errs.Set("password", err)
 	} else if !req.password.Equal(passwordCheck) {
 		errs.Set("password", "passwords do not match")
@@ -69,7 +68,7 @@ func NewRegisterHandler(broker event.Broker, hasher password.Hasher, users UserR
 			return errors.Tracef(err)
 		}
 
-		user := domain.NewUser(req.userID)
+		user := NewUser(req.userID)
 
 		if err := user.Register(req.email, req.password, hasher); err != nil {
 			return errors.Tracef(err)

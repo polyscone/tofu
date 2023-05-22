@@ -12,7 +12,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 	"github.com/polyscone/tofu/internal/repo"
 	"github.com/polyscone/tofu/internal/repo/account/repotest"
 )
@@ -86,7 +85,7 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		incorrectCode := errors.Must(domain.GenerateRecoveryCode()).String()
+		incorrectCode := errors.Must(account.GenerateRecoveryCode()).String()
 
 		tt := []struct {
 			name         string
@@ -127,7 +126,7 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		execute := func(code domain.RecoveryCode) error {
+		execute := func(code account.RecoveryCode) error {
 			err := handler(ctx, account.AuthenticateWithRecoveryCode{
 				UserID:       activatedUser.ID.String(),
 				RecoveryCode: code.String(),
@@ -137,7 +136,7 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(code domain.RecoveryCode) bool {
+			quick.Check(t, func(code account.RecoveryCode) bool {
 				err := execute(code)
 
 				return !errors.Is(err, port.ErrMalformedInput)
@@ -145,7 +144,7 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 		})
 
 		t.Run("invalid recovery code input", func(t *testing.T) {
-			quick.Check(t, func(code quick.Invalid[domain.RecoveryCode]) bool {
+			quick.Check(t, func(code quick.Invalid[account.RecoveryCode]) bool {
 				err := execute(code.Unwrap())
 
 				return errors.Is(err, port.ErrMalformedInput)

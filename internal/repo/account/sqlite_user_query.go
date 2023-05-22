@@ -45,31 +45,41 @@ func NewSQLiteUserQueryRepo(ctx context.Context, db *sqlite.DB, secret []byte) (
 	return &repo, nil
 }
 
-func (r *UserQueryRepo) findBy(ctx context.Context, where string, args sqlite.Args) (query.AccountUser, error) {
+func (r *UserQueryRepo) findBy(ctx context.Context, cols string, where string, args sqlite.Args) (sqliteUser, error) {
 	var row sqliteUser
-	stmt := fmt.Sprintf("SELECT id, email, totp_use_sms, totp_telephone, activated_at FROM account__users WHERE %v;", where)
-	if err := r.db.QueryRow(ctx, stmt, args).ScanAddrs(&row); err != nil {
-		return query.AccountUser{}, errors.Tracef(err)
+	stmt := fmt.Sprintf("SELECT %v FROM account__users WHERE %v;", cols, where)
+	if err := r.db.QueryRow(ctx, stmt, args).ScanInto(&row); err != nil {
+		return row, errors.Tracef(err)
 	}
 
 	if row.TOTPKey != nil {
 		decryptedTOTPKey, err := aesgcm.Decrypt(r.secret, row.TOTPKey)
 		if err != nil {
-			return query.AccountUser{}, errors.Tracef(err)
+			return row, errors.Tracef(err)
 		}
 
 		row.TOTPKey = decryptedTOTPKey
 	}
 
-	return row.newWebAccountUser(), nil
+	return row, nil
 }
 
 func (r *UserQueryRepo) FindByID(ctx context.Context, userID string) (query.AccountUser, error) {
-	return r.findBy(ctx, "id = :user_id", sqlite.Args{"user_id": userID})
+	cols := "id, email, totp_use_sms, totp_telephone, activated_at"
+	where := "id = :user_id"
+	args := sqlite.Args{"user_id": userID}
+	row, err := r.findBy(ctx, cols, where, args)
+
+	return row.newWebAccountUser(), errors.Tracef(err)
 }
 
 func (r *UserQueryRepo) FindByEmail(ctx context.Context, email string) (query.AccountUser, error) {
-	return r.findBy(ctx, "email = :email", sqlite.Args{"email": email})
+	cols := "id, email, totp_use_sms, totp_telephone, activated_at"
+	where := "email = :email"
+	args := sqlite.Args{"email": email}
+	row, err := r.findBy(ctx, cols, where, args)
+
+	return row.newWebAccountUser(), errors.Tracef(err)
 }
 
 func (r *UserQueryRepo) FindByPage(ctx context.Context, page, size int, filter string) (*repo.Book[query.AccountUser], error) {
@@ -104,7 +114,7 @@ func (r *UserQueryRepo) FindByPage(ctx context.Context, page, size int, filter s
 	book := repo.NewBook[query.AccountUser](page, size, count)
 	for rows.Next() {
 		var row sqliteUser
-		if err := rows.ScanAddrs(&row); err != nil {
+		if err := rows.ScanInto(&row); err != nil {
 			return book, errors.Tracef(err)
 		}
 
@@ -117,23 +127,20 @@ func (r *UserQueryRepo) FindByPage(ctx context.Context, page, size int, filter s
 func (r *UserQueryRepo) FindTOTPParamsByID(ctx context.Context, userID string) (query.TOTPParams, error) {
 	var res query.TOTPParams
 
-	var row sqliteUser
-	stmt, args := `
-		SELECT totp_key, totp_algorithm, totp_digits, totp_period
-		FROM account__users
-		WHERE id = :user_id;
-	`, sqlite.Args{
-		"user_id": userID,
-	}
-	if err := r.db.QueryRow(ctx, stmt, args).ScanAddrs(&row); err != nil {
-		return res, errors.Tracef(err)
-	}
-
-	decryptedTOTPKey, err := aesgcm.Decrypt(r.secret, res.Key)
+	cols := "totp_key, totp_algorithm, totp_digits, totp_period"
+	where := "id = :user_id"
+	args := sqlite.Args{"user_id": userID}
+	row, err := r.findBy(ctx, cols, where, args)
 	if err != nil {
 		return res, errors.Tracef(err)
 	}
-	res.Key = decryptedTOTPKey
+
+	res = query.TOTPParams{
+		Key:       row.TOTPKey,
+		Algorithm: row.TOTPAlgorithm,
+		Digits:    row.TOTPDigits,
+		Period:    row.TOTPPeriod,
+	}
 
 	return res, nil
 }

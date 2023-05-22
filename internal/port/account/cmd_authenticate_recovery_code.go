@@ -8,12 +8,11 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
 type authenticateWithRecoveryCodeRequest struct {
 	userID       uuid.V4
-	recoveryCode domain.RecoveryCode
+	recoveryCode RecoveryCode
 }
 
 type AuthenticateWithRecoveryCode struct {
@@ -41,7 +40,7 @@ func (cmd AuthenticateWithRecoveryCode) request() (authenticateWithRecoveryCodeR
 	if req.userID, err = uuid.ParseV4(cmd.UserID); err != nil {
 		errs.Set("user id", err)
 	}
-	if req.recoveryCode, err = domain.NewRecoveryCode(cmd.RecoveryCode); err != nil {
+	if req.recoveryCode, err = NewRecoveryCode(cmd.RecoveryCode); err != nil {
 		errs.Set("recovery code", err)
 	}
 

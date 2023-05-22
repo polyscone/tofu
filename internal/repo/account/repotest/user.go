@@ -13,7 +13,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 )
 
 func RunUserTests(t *testing.T, users account.UserRepo) {
@@ -50,12 +49,12 @@ func RunUserTests(t *testing.T, users account.UserRepo) {
 	// Each populated field should be saved and retrieved
 	user2.TOTPUseSMS = true
 	user2.TOTPTelephone = "123"
-	user2.TOTPKey = errors.Must(domain.NewTOTPKey(otp.SHA1))
+	user2.TOTPKey = errors.Must(account.NewTOTPKey(otp.SHA1))
 	user2.TOTPAlgorithm = "SHA1"
 	user2.TOTPDigits = 6
 	user2.TOTPPeriod = time.Hour
 	user2.TOTPVerifiedAt = time.Now().UTC()
-	user2.RecoveryCodes = []domain.RecoveryCode{errors.Must(domain.GenerateRecoveryCode())}
+	user2.RecoveryCodes = []account.RecoveryCode{errors.Must(account.GenerateRecoveryCode())}
 	user2.ActivatedAt = time.Now().UTC()
 
 	if err := users.Save(ctx, user2); err != nil {
@@ -68,37 +67,37 @@ func RunUserTests(t *testing.T, users account.UserRepo) {
 	}
 }
 
-func AddUser(t *testing.T, users account.UserRepo, ctx context.Context, _email, _password string) (domain.User, error) {
+func AddUser(t *testing.T, users account.UserRepo, ctx context.Context, _email, _password string) (account.User, error) {
 	t.Helper()
 
 	id := errors.Must(uuid.NewV4())
 	email := errors.Must(text.NewEmail(_email))
 
-	user := domain.NewUser(id)
+	user := account.NewUser(id)
 
 	hasher := testutil.NewPasswordHasher()
-	if err := user.Register(email, errors.Must(domain.NewPassword(_password)), hasher); err != nil {
-		return domain.User{}, err
+	if err := user.Register(email, errors.Must(account.NewPassword(_password)), hasher); err != nil {
+		return account.User{}, err
 	}
 
 	if err := users.Add(ctx, user); err != nil {
-		return domain.User{}, err
+		return account.User{}, err
 	}
 
 	return users.FindByID(ctx, user.ID)
 }
 
-func AddActivatedUser(t *testing.T, users account.UserRepo, ctx context.Context, _email, _password string) (domain.User, error) {
+func AddActivatedUser(t *testing.T, users account.UserRepo, ctx context.Context, _email, _password string) (account.User, error) {
 	user, err := AddUser(t, users, ctx, _email, _password)
 	if err != nil {
-		return domain.User{}, err
+		return account.User{}, err
 	}
 
 	if err := user.Activate(); err != nil {
-		return domain.User{}, err
+		return account.User{}, err
 	}
 	if err := users.Save(ctx, user); err != nil {
-		return domain.User{}, err
+		return account.User{}, err
 	}
 
 	return users.FindByID(ctx, user.ID)

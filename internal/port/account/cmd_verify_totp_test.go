@@ -15,7 +15,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
 	"github.com/polyscone/tofu/internal/port"
 	"github.com/polyscone/tofu/internal/port/account"
-	"github.com/polyscone/tofu/internal/port/account/domain"
 	"github.com/polyscone/tofu/internal/repo"
 	"github.com/polyscone/tofu/internal/repo/account/repotest"
 )
@@ -182,7 +181,7 @@ func TestVerifyTOTP(t *testing.T) {
 		broker.Clear()
 		broker.ListenAny(func(evt event.Event) { gotEvents = append(gotEvents, evt) })
 
-		execute := func(totp domain.TOTP) error {
+		execute := func(totp account.TOTP) error {
 			err := handler(ctx, account.VerifyTOTP{
 				Guard:  validGuard,
 				UserID: activatedUser.ID.String(),
@@ -193,7 +192,7 @@ func TestVerifyTOTP(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(totp domain.TOTP) bool {
+			quick.Check(t, func(totp account.TOTP) bool {
 				err := execute(totp)
 
 				return !errors.Is(err, port.ErrMalformedInput)
@@ -201,7 +200,7 @@ func TestVerifyTOTP(t *testing.T) {
 		})
 
 		t.Run("invalid totp input", func(t *testing.T) {
-			quick.Check(t, func(totp quick.Invalid[domain.TOTP]) bool {
+			quick.Check(t, func(totp quick.Invalid[account.TOTP]) bool {
 				err := execute(totp.Unwrap())
 
 				return errors.Is(err, port.ErrMalformedInput)
