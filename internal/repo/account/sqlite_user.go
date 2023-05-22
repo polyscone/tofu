@@ -273,16 +273,11 @@ func (r *UserRepo) findRolesByID(ctx context.Context, db sqlite.Querier, userID 
 		INNER JOIN account__user_roles AS ur ON r.id = ur.role_id
 		WHERE ur.user_id = :user_id;
 	`, sqlite.Args{"user_id": userID}
-	rows, err := db.Query(ctx, stmt, args)
-	if err != nil {
-		return roles, errors.Tracef(err)
-	}
-	for rows.Next() {
+	err := db.QueryRows(ctx, stmt, args, func(rows *sqlite.Rows) error {
 		var roleID uuid.V4
 		var roleName string
-
 		if err := rows.Scan(&roleID, &roleName); err != nil {
-			return roles, errors.Tracef(err)
+			return errors.Tracef(err)
 		}
 
 		var permissions []account.Permission
@@ -293,27 +288,26 @@ func (r *UserRepo) findRolesByID(ctx context.Context, db sqlite.Querier, userID 
 			INNER JOIN account__role_permissions AS rp ON p.id = rp.permission_id
 			WHERE rp.role_id = :role_id;
 		`, sqlite.Args{"role_id": roleID}
-		rows, err := db.Query(ctx, stmt, args)
-		if err != nil {
-			return roles, errors.Tracef(err)
-		}
-		for rows.Next() {
+		err := db.QueryRows(ctx, stmt, args, func(rows *sqlite.Rows) error {
 			var permissionID account.Permission
-
 			if err := rows.Scan(&permissionID); err != nil {
-				return roles, errors.Tracef(err)
+				return errors.Tracef(err)
 			}
 
 			permissions = append(permissions, permissionID)
-		}
-		if err := rows.Err(); err != nil {
-			return roles, errors.Tracef(err)
+
+			return nil
+		})
+		if err != nil {
+			return errors.Tracef(err)
 		}
 
 		roles = append(roles, account.NewRole(roleName, permissions...))
-	}
 
-	return roles, errors.Tracef(rows.Err())
+		return nil
+	})
+
+	return roles, errors.Tracef(err)
 }
 
 func (r *UserRepo) findRecoveryCodesByID(ctx context.Context, db sqlite.Querier, userID string) ([]account.RecoveryCode, error) {
@@ -324,29 +318,26 @@ func (r *UserRepo) findRecoveryCodesByID(ctx context.Context, db sqlite.Querier,
 		FROM account__recovery_codes
 		WHERE user_id = :user_id;
 	`, sqlite.Args{"user_id": userID}
-	rows, err := db.Query(ctx, stmt, args)
-	if err != nil {
-		return recoveryCodes, errors.Tracef(err)
-	}
-	for rows.Next() {
+	err := db.QueryRows(ctx, stmt, args, func(rows *sqlite.Rows) error {
 		var encrypted []byte
-
 		if err := rows.Scan(&encrypted); err != nil {
-			return recoveryCodes, errors.Tracef(err)
+			return errors.Tracef(err)
 		}
 
 		decrypted, err := aesgcm.Decrypt(r.secret, encrypted)
 		if err != nil {
-			return recoveryCodes, errors.Tracef(err)
+			return errors.Tracef(err)
 		}
 
 		recoveryCode, err := account.NewRecoveryCode(string(decrypted))
 		if err != nil {
-			return recoveryCodes, errors.Tracef(err)
+			return errors.Tracef(err)
 		}
 
 		recoveryCodes = append(recoveryCodes, recoveryCode)
-	}
 
-	return recoveryCodes, errors.Tracef(rows.Err())
+		return nil
+	})
+
+	return recoveryCodes, errors.Tracef(err)
 }

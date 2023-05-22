@@ -45,7 +45,7 @@ func NewSQLiteUserQueryRepo(ctx context.Context, db *sqlite.DB, secret []byte) (
 	return &repo, nil
 }
 
-func (r *UserQueryRepo) findBy(ctx context.Context, cols string, where string, args sqlite.Args) (sqliteUser, error) {
+func (r *UserQueryRepo) find(ctx context.Context, cols string, where string, args sqlite.Args) (sqliteUser, error) {
 	var row sqliteUser
 	stmt := fmt.Sprintf("SELECT %v FROM account__users WHERE %v;", cols, where)
 	if err := r.db.QueryRow(ctx, stmt, args).ScanInto(&row); err != nil {
@@ -53,12 +53,12 @@ func (r *UserQueryRepo) findBy(ctx context.Context, cols string, where string, a
 	}
 
 	if row.TOTPKey != nil {
-		decryptedTOTPKey, err := aesgcm.Decrypt(r.secret, row.TOTPKey)
+		decrypted, err := aesgcm.Decrypt(r.secret, row.TOTPKey)
 		if err != nil {
 			return row, errors.Tracef(err)
 		}
 
-		row.TOTPKey = decryptedTOTPKey
+		row.TOTPKey = decrypted
 	}
 
 	return row, nil
@@ -68,7 +68,7 @@ func (r *UserQueryRepo) FindByID(ctx context.Context, userID string) (query.Acco
 	cols := "id, email, totp_use_sms, totp_telephone, activated_at"
 	where := "id = :user_id"
 	args := sqlite.Args{"user_id": userID}
-	row, err := r.findBy(ctx, cols, where, args)
+	row, err := r.find(ctx, cols, where, args)
 
 	return row.newWebAccountUser(), errors.Tracef(err)
 }
@@ -77,7 +77,7 @@ func (r *UserQueryRepo) FindByEmail(ctx context.Context, email string) (query.Ac
 	cols := "id, email, totp_use_sms, totp_telephone, activated_at"
 	where := "email = :email"
 	args := sqlite.Args{"email": email}
-	row, err := r.findBy(ctx, cols, where, args)
+	row, err := r.find(ctx, cols, where, args)
 
 	return row.newWebAccountUser(), errors.Tracef(err)
 }
@@ -102,26 +102,23 @@ func (r *UserQueryRepo) FindByPage(ctx context.Context, page, size int, filter s
 		return nil, errors.Tracef(err)
 	}
 
+	book := repo.NewBook[query.AccountUser](page, size, count)
 	stmt = fmt.Sprintf(
 		"SELECT id, email, totp_use_sms, totp_telephone, activated_at FROM account__users %v LIMIT %v, %v;",
 		where, (page-1)*size, size,
 	)
-	rows, err := r.db.Query(ctx, stmt, args)
-	if err != nil {
-		return nil, errors.Tracef(err)
-	}
-
-	book := repo.NewBook[query.AccountUser](page, size, count)
-	for rows.Next() {
+	err = r.db.QueryRows(ctx, stmt, args, func(rows *sqlite.Rows) error {
 		var row sqliteUser
 		if err := rows.ScanInto(&row); err != nil {
-			return book, errors.Tracef(err)
+			return errors.Tracef(err)
 		}
 
 		book.AddRow(row.newWebAccountUser())
-	}
 
-	return book, errors.Tracef(tx.Commit())
+		return nil
+	})
+
+	return book, errors.Tracef(err)
 }
 
 func (r *UserQueryRepo) FindTOTPParamsByID(ctx context.Context, userID string) (query.TOTPParams, error) {
@@ -130,7 +127,7 @@ func (r *UserQueryRepo) FindTOTPParamsByID(ctx context.Context, userID string) (
 	cols := "totp_key, totp_algorithm, totp_digits, totp_period"
 	where := "id = :user_id"
 	args := sqlite.Args{"user_id": userID}
-	row, err := r.findBy(ctx, cols, where, args)
+	row, err := r.find(ctx, cols, where, args)
 	if err != nil {
 		return res, errors.Tracef(err)
 	}
@@ -155,24 +152,21 @@ func (r *UserQueryRepo) FindRecoveryCodesByID(ctx context.Context, userID string
 	`, sqlite.Args{
 		"user_id": userID,
 	}
-	rows, err := r.db.Query(ctx, stmt, args)
-	if err != nil {
-		return nil, errors.Tracef(err)
-	}
-
-	for rows.Next() {
+	err := r.db.QueryRows(ctx, stmt, args, func(rows *sqlite.Rows) error {
 		var encrypted []byte
 		if err := rows.Scan(&encrypted); err != nil {
-			return nil, errors.Tracef(err)
+			return errors.Tracef(err)
 		}
 
 		decrypted, err := aesgcm.Decrypt(r.secret, encrypted)
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return errors.Tracef(err)
 		}
 
 		res = append(res, string(decrypted))
-	}
 
-	return res, nil
+		return nil
+	})
+
+	return res, errors.Tracef(err)
 }

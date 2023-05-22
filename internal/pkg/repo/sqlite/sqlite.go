@@ -40,10 +40,13 @@ func init() {
 	})
 }
 
+type RowsFunc func(rows *Rows) error
+
 type Querier interface {
 	Exec(ctx context.Context, query string, args ...Args) (sql.Result, error)
 	Query(ctx context.Context, query string, args ...Args) (*Rows, error)
 	QueryRow(ctx context.Context, query string, args ...Args) *Row
+	QueryRows(ctx context.Context, query string, args Args, rows RowsFunc) error
 }
 
 type Kind string
@@ -294,6 +297,22 @@ func (db *DB) QueryRow(ctx context.Context, query string, args ...Args) *Row {
 	return &Row{rows: rows, err: err}
 }
 
+func (db *DB) QueryRows(ctx context.Context, query string, args Args, row RowsFunc) error {
+	rows, err := db.Query(ctx, query, args)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := row(rows); err != nil {
+			return errors.Tracef(err)
+		}
+	}
+
+	return errors.Tracef(rows.Err())
+}
+
 func (db *DB) MigrateFS(ctx context.Context, name string, fsys fs.FS) error {
 	tx, err := db.Begin(ctx, nil)
 	if err != nil {
@@ -367,6 +386,22 @@ func (tx *Tx) QueryRow(ctx context.Context, query string, args ...Args) *Row {
 	rows, err := tx.tx.QueryContext(ctx, query, argsSlice(args)...)
 
 	return &Row{rows: rows, err: err}
+}
+
+func (tx *Tx) QueryRows(ctx context.Context, query string, args Args, row RowsFunc) error {
+	rows, err := tx.Query(ctx, query, args)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err := row(rows); err != nil {
+			return errors.Tracef(err)
+		}
+	}
+
+	return errors.Tracef(rows.Err())
 }
 
 // Row is a copy of the standard library's sql.Row with extra methods.
