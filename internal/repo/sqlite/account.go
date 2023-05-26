@@ -382,9 +382,13 @@ func (r *AccountRepo) attachRecoveryCodesToUser(ctx context.Context, tx *Tx, use
 }
 
 func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) error {
-	encryptedTOTPKey, err := aesgcm.Encrypt(r.secret, u.TOTPKey)
-	if err != nil {
-		return errors.Tracef(err)
+	var encryptedTOTPKey []byte
+	if u.TOTPKey != nil {
+		var err error
+		encryptedTOTPKey, err = aesgcm.Encrypt(r.secret, u.TOTPKey)
+		if err != nil {
+			return errors.Tracef(err)
+		}
 	}
 
 	res, err := tx.ExecContext(ctx, `
@@ -466,12 +470,16 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 }
 
 func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) error {
-	encryptedTOTPKey, err := aesgcm.Encrypt(r.secret, u.TOTPKey)
-	if err != nil {
-		return errors.Tracef(err)
+	var encryptedTOTPKey []byte
+	if u.TOTPKey != nil {
+		var err error
+		encryptedTOTPKey, err = aesgcm.Encrypt(r.secret, u.TOTPKey)
+		if err != nil {
+			return errors.Tracef(err)
+		}
 	}
 
-	_, err = tx.ExecContext(ctx, `
+	_, err := tx.ExecContext(ctx, `
 		UPDATE account__users SET
 			email = :email,
 			hashed_password = :hashed_password,
