@@ -34,7 +34,7 @@ func TestHOTPErrors(t *testing.T) {
 func TestHOTP(t *testing.T) {
 	tt := []struct {
 		name   string
-		alg    otp.Alg
+		alg    otp.Algorithm
 		digits int
 		count  uint64
 		hotp   string

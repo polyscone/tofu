@@ -28,7 +28,7 @@ func NewJSONMemoryRepo(useNumber bool) *JSONMemoryRepo {
 }
 
 // FindByID attempts to find session data using the given id.
-func (r *JSONMemoryRepo) FindByID(ctx context.Context, id string) (Data, error) {
+func (r *JSONMemoryRepo) FindSessionDataByID(ctx context.Context, id string) (Data, error) {
 	if data, ok := r.data[id]; ok {
 		d := json.NewDecoder(bytes.NewReader(data))
 
@@ -46,7 +46,7 @@ func (r *JSONMemoryRepo) FindByID(ctx context.Context, id string) (Data, error) 
 }
 
 // Save persists the given session in-memory.
-func (r *JSONMemoryRepo) Save(ctx context.Context, s Session) error {
+func (r *JSONMemoryRepo) SaveSession(ctx context.Context, s Session) error {
 	b, err := json.Marshal(s.Data)
 	if err != nil {
 		return errors.Tracef(err)
@@ -58,7 +58,7 @@ func (r *JSONMemoryRepo) Save(ctx context.Context, s Session) error {
 }
 
 // Destroy deletes a session by the given id from memory.
-func (r *JSONMemoryRepo) Destroy(ctx context.Context, id string) error {
+func (r *JSONMemoryRepo) DestroySession(ctx context.Context, id string) error {
 	delete(r.data, id)
 
 	return nil

@@ -96,8 +96,6 @@ func DecryptWithKey(key, ciphertext []byte) ([]byte, error) {
 		return nil, errors.Tracef(err)
 	}
 
-	// We expect the nonce to be prepended on the given ciphertext, so we need
-	// to slice it off and reassign the ciphertext slice to the correct position
 	nonce := ciphertext[:gcm.NonceSize()]
 	ciphertext = ciphertext[gcm.NonceSize():]
 

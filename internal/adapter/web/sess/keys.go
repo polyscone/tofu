@@ -9,7 +9,7 @@ const (
 	UserID                   = "account.user_id"
 	Email                    = "account.email"
 	HasVerifiedTOTP          = "account.has_verified_totp"
-	TOTPUseSMS               = "account.totp_use_sms"
+	TOTPMethod               = "account.totp_method"
 	IsAwaitingTOTP           = "account.is_awaiting_totp"
 	IsAuthenticated          = "account.is_authenticated"
 	PasswordKnownBreachCount = "account.password_known_breach_count"

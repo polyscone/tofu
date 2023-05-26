@@ -20,9 +20,9 @@ var ErrNotFound = errors.New("not found")
 // Repo represents the interface required by a session manager to
 // work with session data.
 type Repo interface {
-	FindByID(ctx context.Context, id string) (Data, error)
-	Save(ctx context.Context, s Session) error
-	Destroy(ctx context.Context, id string) error
+	FindSessionDataByID(ctx context.Context, id string) (Data, error)
+	SaveSession(ctx context.Context, s Session) error
+	DestroySession(ctx context.Context, id string) error
 }
 
 // Manager loads, creates, and commits session data via contexts.
@@ -45,7 +45,7 @@ func NewManager(repo Repo) *Manager {
 func (m *Manager) Load(ctx context.Context, id string) (context.Context, error) {
 	s := Session{ID: id}
 
-	data, err := m.repo.FindByID(ctx, id)
+	data, err := m.repo.FindSessionDataByID(ctx, id)
 	switch {
 	case errors.Is(err, ErrNotFound):
 		data = nil
@@ -74,7 +74,7 @@ func (m *Manager) Commit(ctx context.Context) (string, error) {
 	s := getSession(ctx)
 
 	if s.originalID != "" {
-		if err := m.repo.Destroy(ctx, s.originalID); err != nil {
+		if err := m.repo.DestroySession(ctx, s.originalID); err != nil {
 			return "", errors.Tracef(err)
 		}
 
@@ -83,12 +83,12 @@ func (m *Manager) Commit(ctx context.Context) (string, error) {
 
 	switch s.Status {
 	case Unchanged, Accessed, Modified:
-		if err := m.repo.Save(ctx, *s); err != nil {
+		if err := m.repo.SaveSession(ctx, *s); err != nil {
 			return "", errors.Tracef(err)
 		}
 
 	case Destroyed:
-		if err := m.repo.Destroy(ctx, s.ID); err != nil {
+		if err := m.repo.DestroySession(ctx, s.ID); err != nil {
 			return "", errors.Tracef(err)
 		}
 	}

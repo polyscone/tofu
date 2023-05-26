@@ -46,7 +46,7 @@ type TimeBased struct {
 	timeStep  time.Duration
 }
 
-func NewTimeBased(digits int, alg Alg, baseTime time.Time, timeStep time.Duration) (TimeBased, error) {
+func NewTimeBased(digits int, alg Algorithm, baseTime time.Time, timeStep time.Duration) (TimeBased, error) {
 	otp := TimeBased{
 		baseTime: baseTime,
 		timeStep: timeStep,

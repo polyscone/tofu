@@ -9,7 +9,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
-	"github.com/polyscone/tofu/internal/port/account"
 )
 
 func ResetPassword(svc *handler.Services, mux *router.ServeMux) {
@@ -29,7 +28,7 @@ func resetPasswordPost(svc *handler.Services) http.HandlerFunc {
 		var input struct {
 			Email string
 		}
-		if svc.ErrorView(w, r, errors.Tracef(httputil.DecodeForm(r, &input)), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(httputil.DecodeForm(&input, r)), "error", nil) {
 			return
 		}
 
@@ -56,14 +55,14 @@ func resetPasswordPut(svc *handler.Services) http.HandlerFunc {
 			NewPassword      string
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 		}
-		err := httputil.DecodeForm(r, &input)
+		err := httputil.DecodeForm(&input, r)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
 		ctx := r.Context()
 
-		email, err := svc.Web.Tokens.FindResetPasswordTokenEmail(ctx, input.Token)
+		email, err := svc.Repo.Web.FindResetPasswordTokenEmail(ctx, input.Token)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -73,27 +72,13 @@ func resetPasswordPut(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		cmd := account.ResetPassword{
-			Guard:            passport,
-			UserID:           passport.UserID(),
-			NewPassword:      input.NewPassword,
-			NewPasswordCheck: input.NewPasswordCheck,
-		}
-		err = cmd.Validate()
+		err = svc.Account.ResetPassword(ctx, passport, passport.UserID(), input.NewPassword, input.NewPasswordCheck)
 		if svc.ErrorView(w, r, errors.Tracef(err), "account/reset_password", nil) {
 			return
 		}
 
-		// Only consume after manual command validation, but before execution
-		// This way the token will only be consumed once we know there aren't any
-		// input validation or authorisation errors
-		err = svc.Web.Tokens.ConsumeResetPasswordToken(ctx, input.Token)
+		err = svc.Repo.Web.ConsumeResetPasswordToken(ctx, input.Token)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
-		}
-
-		err = cmd.Execute(ctx, svc.Bus)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/reset_password", nil) {
 			return
 		}
 

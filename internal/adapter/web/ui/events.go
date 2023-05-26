@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/logger"
-	"github.com/polyscone/tofu/internal/port/account"
 )
 
 func accountRegisteredHandler(tenant *handler.Tenant, svc *handler.Services) any {
@@ -15,7 +15,7 @@ func accountRegisteredHandler(tenant *handler.Tenant, svc *handler.Services) any
 		background.Go(func() {
 			ctx := context.Background()
 
-			tok, err := tenant.Web.Tokens.AddActivationToken(ctx, evt.Email, 48*time.Hour)
+			tok, err := tenant.Repo.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
 			if err != nil {
 				logger.PrintError(err)
 
@@ -41,7 +41,7 @@ func accountResetPasswordRequestedHandler(tenant *handler.Tenant, svc *handler.S
 		background.Go(func() {
 			ctx := context.Background()
 
-			tok, err := tenant.Web.Tokens.AddResetPasswordToken(ctx, evt.Email, 2*time.Hour)
+			tok, err := tenant.Repo.Web.AddResetPasswordToken(ctx, evt.Email, 2*time.Hour)
 			if err != nil {
 				logger.PrintError(err)
 
@@ -64,20 +64,16 @@ func accountResetPasswordRequestedHandler(tenant *handler.Tenant, svc *handler.S
 
 func accountAuthenticateWithPasswordHandler(tenant *handler.Tenant, svc *handler.Services) any {
 	return func(evt account.AuthenticatedWithPassword) {
-		if !evt.IsAwaitingTOTP {
-			return
-		}
-
 		ctx := context.Background()
 
-		user, err := svc.Account.Users.FindByEmail(ctx, evt.Email)
+		user, err := svc.Repo.Account.FindUserByEmail(ctx, evt.Email)
 		if err != nil {
 			logger.PrintError(err)
 
 			return
 		}
 
-		if user.TOTPUseSMS {
+		if user.HasVerifiedTOTP() && user.TOTPMethod == account.TOTPMethodSMS.String() {
 			background.Go(func() {
 				if err := svc.SendTOTPSMS(evt.Email); err != nil {
 					logger.PrintError(err)

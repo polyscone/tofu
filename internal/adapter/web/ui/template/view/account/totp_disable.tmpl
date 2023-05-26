@@ -10,57 +10,20 @@
 		<p class="title">Two-Factor Authentication Already Disabled</p>
 
 		<p>Two-factor authentication is already disabled for your account.</p>
-	{{else if eq (.Query.Get "method") "recovery-code"}}
-		<p class="title">Disable Two-Factor Authentication with Recovery Code</p>
-
-		<p>
-			Enter one of your recovery codes to verify your identity and disable two-factor authentication.
-			Once a recovery code has been used it cannot be used again.
-		</p>
-
-		<form action="{{Path "account.totp.disable.post"}}?{{.Query.Encode}}" method="POST">
-			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
-			<input type="hidden" name="action" value="verify-recovery-code">
-
-			<label for="totp__recovery-code">Recovery Code</label>
-			<input id="totp__recovery-code" type="text" name="recovery-code" value="{{.Form.Get "recovery-code"}}" placeholder="ABCDEFGHIJKLM" autocomplete="off" autofocus required pattern="^[A-Z2-7]+$" minlength="13" maxlength="13">
-			<p class="error">{{.Errors.Get "recovery code"}}</p>
-
-			<div class="bag">
-				<a href="?method=totp">Use a passcode</a>
-				<button type="submit" class="push-inline-end">Disable two-factor authentication</button>
-			</div>
-		</form>
 	{{else}}
 		<p class="title">Disable Two-Factor Authentication</p>
 
-		{{if .Session.TOTPUseSMS}}
-			<p>
-				Click the button below to send a 6 digit passcode to your registered phone number.
-				You can press it again to resend new passcodes.
-			</p>
+		<p>Enter your password to verify your identity and disable two-factor authentication.</p>
 
-			<form action="{{Path "account.totp.disable.send_sms.post"}}?{{.Query.Encode}}" method="POST">
-				<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
-
-				<button type="submit" class="btn--alt">Send a passcode SMS</button>
-			</form>
-
-			<p>Enter your 6 digit passcode the SMS you receive to verify your identity and disable two-factor authentication.</p>
-		{{else}}
-			<p>Enter your 6 digit passcode from your authenticator app to verify your identity and disable two-factor authentication.</p>
-		{{end}}
-
-		<form action="{{Path "account.totp.disable.post"}}?{{.Query.Encode}}" method="POST">
+		<form action="{{Path "account.totp.disable.post"}}?{{URL .Query.Encode}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 			<input type="hidden" name="action" value="verify-totp">
 
-			<label for="totp__passcode">Passcode</label>
-			<input id="totp__passcode" type="text" name="totp" placeholder="123456" autocomplete="off" autofocus required pattern="\d{6}" minlength="6" maxlength="6">
-			<p class="error">{{.Errors.Get "totp"}}</p>
+			<label for="totp__password">Password</label>
+			<input id="totp__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+			<p class="error">{{.Errors.Get "password"}}</p>
 
 			<div class="bag">
-				<a href="?method=recovery-code">Use a recovery code</a>
 				<button type="submit" class="push-inline-end">Disable two-factor authentication</button>
 			</div>
 		</form>

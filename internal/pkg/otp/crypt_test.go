@@ -9,7 +9,7 @@ import (
 func TestNewKey(t *testing.T) {
 	tt := []struct {
 		name   string
-		alg    otp.Alg
+		alg    otp.Algorithm
 		length int
 	}{
 		{"newhash for sha1", otp.SHA1, 20},

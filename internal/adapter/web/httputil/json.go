@@ -14,7 +14,7 @@ var (
 	ErrExpectedJSON = errors.New("expected content-type application/json")
 )
 
-func DecodeJSON(r *http.Request, dst any) error {
+func DecodeJSON(dst any, r *http.Request) error {
 	if !strings.HasPrefix(r.Header.Get("content-type"), "application/json") {
 		return errors.Tracef(ErrExpectedJSON)
 	}

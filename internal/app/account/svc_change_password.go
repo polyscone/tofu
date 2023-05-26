@@ -1,0 +1,63 @@
+package account
+
+import (
+	"context"
+
+	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/pkg/errors"
+)
+
+type ChangePasswordGuard interface {
+	CanChangePassword(userID int) bool
+}
+
+func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard, userID int, oldPassword, newPassword, newPasswordCheck string) error {
+	var input struct {
+		userID           int
+		oldPassword      Password
+		newPassword      Password
+		newPasswordCheck Password
+	}
+	{
+		if !guard.CanChangePassword(userID) {
+			return errors.Tracef(app.ErrUnauthorised)
+		}
+
+		var err error
+		var errs errors.Map
+
+		newPasswordCheck, _ := NewPassword(newPasswordCheck)
+
+		input.userID = userID
+
+		if input.oldPassword, err = NewPassword(oldPassword); err != nil {
+			errs.Set("old password", err)
+		}
+		if input.newPassword, err = NewPassword(newPassword); err != nil {
+			errs.Set("new password", err)
+		} else if !input.newPassword.Equal(newPasswordCheck) {
+			errs.Set("new password", "passwords do not match")
+		}
+
+		if errs != nil {
+			return errs.Tracef(app.ErrMalformedInput)
+		}
+	}
+
+	user, err := s.repo.FindUserByID(ctx, input.userID)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	if err := user.ChangePassword(input.oldPassword, input.newPassword, s.hasher); err != nil {
+		return errors.Tracef(err)
+	}
+
+	if err := s.repo.SaveUser(ctx, user); err != nil {
+		return errors.Tracef(err)
+	}
+
+	s.broker.Flush(&user.Events)
+
+	return nil
+}

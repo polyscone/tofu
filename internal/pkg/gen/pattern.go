@@ -60,12 +60,12 @@ func NewPatternGenerator(pattern string) (*PatternGenerator, error) {
 		return nil, errors.Tracef(err)
 	}
 
-	pg := &PatternGenerator{
+	pg := PatternGenerator{
 		re:   re,
 		rand: defaultRand,
 	}
 
-	return pg, nil
+	return &pg, nil
 }
 
 func (pg *PatternGenerator) generate(re *syntax.Regexp, sb *strings.Builder, limit int) {

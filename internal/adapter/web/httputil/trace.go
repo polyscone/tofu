@@ -3,6 +3,7 @@ package httputil
 import (
 	"context"
 	"net/http"
+	"strconv"
 
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
@@ -40,11 +41,11 @@ func TraceRequest(sm *session.Manager, errorHandler middleware.ErrorHandler) mid
 				return
 			}
 
-			userID := sm.GetString(ctx, sess.UserID)
+			userID := sm.GetInt(ctx, sess.UserID)
 
 			td := traceData{
 				id:     id.String(),
-				userID: userID,
+				userID: strconv.Itoa(userID),
 			}
 
 			ctx = context.WithValue(ctx, ctxTraceData, &td)

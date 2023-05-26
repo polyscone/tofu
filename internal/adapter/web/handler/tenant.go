@@ -1,21 +1,37 @@
 package handler
 
 import (
-	"github.com/polyscone/tofu/internal/adapter/web/query"
+	"context"
+	"time"
+
 	"github.com/polyscone/tofu/internal/adapter/web/smtp"
-	"github.com/polyscone/tofu/internal/pkg/command"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/sms"
 )
 
-type Account struct {
-	Users query.AccountUserRepo
+type AccountReader interface {
+	account.Reader
+
+	FindUsersByPage(ctx context.Context, search string, page, size int) ([]*account.User, int, error)
 }
 
-type Web struct {
-	Sessions session.Repo
-	Tokens   query.TokenRepo
+type WebReadWriter interface {
+	session.Repo
+
+	AddActivationToken(ctx context.Context, email string, ttl time.Duration) (string, error)
+	FindActivationTokenEmail(ctx context.Context, token string) (string, error)
+	ConsumeActivationToken(ctx context.Context, token string) error
+
+	AddResetPasswordToken(ctx context.Context, email string, ttl time.Duration) (string, error)
+	FindResetPasswordTokenEmail(ctx context.Context, token string) (string, error)
+	ConsumeResetPasswordToken(ctx context.Context, token string) error
+}
+
+type Repo struct {
+	Account AccountReader
+	Web     WebReadWriter
 }
 
 type Tenant struct {
@@ -26,12 +42,12 @@ type Tenant struct {
 	Dev      bool
 	Insecure bool
 	Proxies  []string
-	Bus      command.Bus
 	Broker   event.Broker
 	Email    smtp.Mailer
 	SMS      sms.Messager
 	SMSFrom  string
 
-	Account Account
-	Web     Web
+	Account *account.Service
+
+	Repo Repo
 }

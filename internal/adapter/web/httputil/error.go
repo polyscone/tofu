@@ -4,9 +4,9 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/rate"
-	"github.com/polyscone/tofu/internal/port"
 )
 
 var (
@@ -19,9 +19,9 @@ func ErrorStatus(err error) int {
 	case errors.Is(err, http.ErrHandlerTimeout):
 		return http.StatusGatewayTimeout
 
-	case errors.Is(err, port.ErrMalformedInput),
-		errors.Is(err, port.ErrInvalidInput),
-		errors.Is(err, port.ErrBadRequest),
+	case errors.Is(err, app.ErrMalformedInput),
+		errors.Is(err, app.ErrInvalidInput),
+		errors.Is(err, app.ErrBadRequest),
 		errors.Is(err, csrf.ErrEmptyToken),
 		errors.Is(err, csrf.ErrInvalidToken):
 
@@ -30,7 +30,7 @@ func ErrorStatus(err error) int {
 	case errors.Is(err, ErrNotFound):
 		return http.StatusNotFound
 
-	case errors.Is(err, port.ErrUnauthorised):
+	case errors.Is(err, app.ErrUnauthorised):
 		return http.StatusUnauthorized
 
 	case errors.Is(err, ErrMethodNotAllowed):

@@ -13,19 +13,18 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
-	"github.com/polyscone/tofu/internal/adapter/web/query"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/smtp"
 	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/session"
-	"github.com/polyscone/tofu/internal/port"
-	"github.com/polyscone/tofu/internal/port/account"
 )
 
 type CSRF struct {
@@ -82,10 +81,10 @@ type SessionData struct {
 	Redirect string
 
 	// Account session keys
-	UserID                   string
+	UserID                   int
 	Email                    string
 	HasVerifiedTOTP          bool
-	TOTPUseSMS               bool
+	TOTPMethod               string
 	IsAwaitingTOTP           bool
 	IsAuthenticated          bool
 	PasswordKnownBreachCount int
@@ -133,7 +132,7 @@ type Services struct {
 }
 
 func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
-	sessions := session.NewManager(tenant.Web.Sessions)
+	sessions := session.NewManager(tenant.Repo.Web)
 	funcs := template.FuncMap{
 		"HTML":       func(s string) template.HTML { return template.HTML(s) },
 		"HTMLAttr":   func(s string) template.HTMLAttr { return template.HTMLAttr(s) },
@@ -180,6 +179,14 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 
 			return qq.Encode(), nil
 		},
+		"FormatTime": func(t time.Time, format string) string {
+			switch format {
+			case "RFC3339":
+				return t.Format(time.RFC3339)
+			}
+
+			return t.Format(format)
+		},
 	}
 
 	return &Services{
@@ -206,7 +213,7 @@ func (svc *Services) RenewSession(ctx context.Context) ([]byte, error) {
 }
 
 func (svc *Services) emptyPassport(ctx context.Context) passport.Passport {
-	return passport.New(ctx, svc.Sessions, query.AccountUser{})
+	return passport.New(ctx, svc.Sessions, &account.User{})
 }
 
 func (svc *Services) Passport(ctx context.Context) passport.Passport {
@@ -214,8 +221,8 @@ func (svc *Services) Passport(ctx context.Context) passport.Passport {
 		return svc.emptyPassport(ctx)
 	}
 
-	userID := svc.Sessions.GetString(ctx, sess.UserID)
-	user, err := svc.Account.Users.FindByID(ctx, userID)
+	userID := svc.Sessions.GetInt(ctx, sess.UserID)
+	user, err := svc.Repo.Account.FindUserByID(ctx, userID)
 	if err != nil {
 		return svc.emptyPassport(ctx)
 	}
@@ -224,7 +231,7 @@ func (svc *Services) Passport(ctx context.Context) passport.Passport {
 }
 
 func (svc *Services) PassportByEmail(ctx context.Context, email string) (passport.Passport, error) {
-	user, err := svc.Account.Users.FindByEmail(ctx, email)
+	user, err := svc.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return svc.emptyPassport(ctx), errors.Tracef(err)
 	}
@@ -360,26 +367,17 @@ func (svc *Services) SendSMS(ctx context.Context, to, body string) error {
 func (svc *Services) SendTOTPSMS(email string) error {
 	ctx := context.Background()
 
-	passport, err := svc.PassportByEmail(ctx, email)
+	user, err := svc.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return errors.Tracef(err)
 	}
 
-	user, err := svc.Account.Users.FindByEmail(ctx, email)
+	totp, err := user.GenerateTOTP()
 	if err != nil {
 		return errors.Tracef(err)
 	}
 
-	generateTOTPCmd := account.GenerateTOTP{
-		Guard:  passport,
-		UserID: passport.UserID(),
-	}
-	res, err := generateTOTPCmd.Execute(ctx, svc.Bus)
-	if err != nil {
-		return errors.Tracef(err)
-	}
-
-	err = svc.SendSMS(ctx, user.TOTPTelephone, res.TOTP)
+	err = svc.SendSMS(ctx, user.TOTPTelephone, totp)
 
 	return errors.Tracef(err)
 }
@@ -413,10 +411,10 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 			Redirect: svc.Sessions.GetString(ctx, sess.Redirect),
 
 			// Account session keys
-			UserID:                   svc.Sessions.GetString(ctx, sess.UserID),
+			UserID:                   svc.Sessions.GetInt(ctx, sess.UserID),
 			Email:                    svc.Sessions.GetString(ctx, sess.Email),
 			HasVerifiedTOTP:          svc.Sessions.GetBool(ctx, sess.HasVerifiedTOTP),
-			TOTPUseSMS:               svc.Sessions.GetBool(ctx, sess.TOTPUseSMS),
+			TOTPMethod:               svc.Sessions.GetString(ctx, sess.TOTPMethod),
 			IsAwaitingTOTP:           svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
 			IsAuthenticated:          svc.Sessions.GetBool(ctx, sess.IsAuthenticated),
 			PasswordKnownBreachCount: svc.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount),
@@ -471,8 +469,8 @@ func (svc *Services) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err e
 		case errors.Is(err, http.ErrHandlerTimeout):
 			data.ErrorMessage = "the server took too long to respond"
 
-		case errors.Is(err, port.ErrMalformedInput),
-			errors.Is(err, port.ErrInvalidInput):
+		case errors.Is(err, app.ErrMalformedInput),
+			errors.Is(err, app.ErrInvalidInput):
 
 			data.ErrorMessage = "invalid input"
 
@@ -524,9 +522,9 @@ func (svc *Services) ErrorJSON(w http.ResponseWriter, r *http.Request, err error
 	default:
 		switch {
 		case errors.Is(err, http.ErrHandlerTimeout),
-			errors.Is(err, port.ErrMalformedInput),
-			errors.Is(err, port.ErrInvalidInput),
-			errors.Is(err, port.ErrUnauthorised),
+			errors.Is(err, app.ErrMalformedInput),
+			errors.Is(err, app.ErrInvalidInput),
+			errors.Is(err, app.ErrUnauthorised),
 			errors.Is(err, csrf.ErrEmptyToken),
 			errors.Is(err, csrf.ErrInvalidToken):
 

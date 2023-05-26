@@ -20,7 +20,7 @@ type HMACBased struct {
 	minKeyLen int
 }
 
-func NewHMACBased(digits int, alg Alg) (HMACBased, error) {
+func NewHMACBased(digits int, alg Algorithm) (HMACBased, error) {
 	var otp HMACBased
 
 	switch alg {

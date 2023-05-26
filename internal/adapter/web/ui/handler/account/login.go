@@ -7,12 +7,12 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
+	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
-	"github.com/polyscone/tofu/internal/pkg/repo"
-	"github.com/polyscone/tofu/internal/port"
-	"github.com/polyscone/tofu/internal/port/account"
+	"github.com/polyscone/tofu/internal/repo"
 )
 
 func Login(svc *handler.Services, mux *router.ServeMux) {
@@ -36,7 +36,7 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 			TOTP         string
 			RecoveryCode string
 		}
-		err := httputil.DecodeForm(r, &input)
+		err := httputil.DecodeForm(&input, r)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -59,11 +59,8 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 			loginWithPassword(ctx, svc, w, r, input.Email, input.Password)
 
 		case "verify-totp":
-			cmd := account.AuthenticateWithTOTP{
-				UserID: svc.Sessions.GetString(ctx, sess.UserID),
-				TOTP:   input.TOTP,
-			}
-			err := cmd.Execute(ctx, svc.Bus)
+			userID := svc.Sessions.GetInt(ctx, sess.UserID)
+			err := svc.Account.AuthenticateWithTOTP(ctx, userID, input.TOTP)
 			if svc.ErrorView(w, r, errors.Tracef(err), "account/login", nil) {
 				return
 			}
@@ -79,11 +76,8 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 			loginSuccessRedirect(svc, w, r)
 
 		case "verify-recovery-code":
-			cmd := account.AuthenticateWithRecoveryCode{
-				UserID:       svc.Sessions.GetString(ctx, sess.UserID),
-				RecoveryCode: input.RecoveryCode,
-			}
-			err := cmd.Execute(ctx, svc.Bus)
+			userID := svc.Sessions.GetInt(ctx, sess.UserID)
+			err := svc.Account.AuthenticateWithRecoveryCode(ctx, userID, input.RecoveryCode)
 			if svc.ErrorView(w, r, errors.Tracef(err), "account/login", nil) {
 				return
 			}
@@ -116,14 +110,10 @@ func loginTOTPSendSMSPost(svc *handler.Services) http.HandlerFunc {
 }
 
 func loginWithPassword(ctx context.Context, svc *handler.Services, w http.ResponseWriter, r *http.Request, email, password string) {
-	cmd := account.AuthenticateWithPassword{
-		Email:    email,
-		Password: password,
-	}
-	res, err := cmd.Execute(ctx, svc.Bus)
+	err := svc.Account.AuthenticateWithPassword(ctx, email, password)
 	if err != nil {
 		svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/login", func(data *handler.ViewData) {
-			if errors.Is(err, port.ErrBadRequest) || errors.Is(err, repo.ErrNotFound) || errors.Is(err, account.ErrNotActivated) {
+			if errors.Is(err, app.ErrBadRequest) || errors.Is(err, repo.ErrNotFound) || errors.Is(err, account.ErrNotActivated) {
 				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
 			}
 		})
@@ -136,12 +126,17 @@ func loginWithPassword(ctx context.Context, svc *handler.Services, w http.Respon
 		return
 	}
 
-	svc.Sessions.Set(ctx, sess.UserID, res.UserID)
+	user, err := svc.Repo.Account.FindUserByEmail(ctx, email)
+	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		return
+	}
+
+	svc.Sessions.Set(ctx, sess.UserID, user.ID)
 	svc.Sessions.Set(ctx, sess.Email, email)
-	svc.Sessions.Set(ctx, sess.HasVerifiedTOTP, res.HasVerifiedTOTP)
-	svc.Sessions.Set(ctx, sess.TOTPUseSMS, res.TOTPUseSMS)
-	svc.Sessions.Set(ctx, sess.IsAwaitingTOTP, res.HasVerifiedTOTP)
-	svc.Sessions.Set(ctx, sess.IsAuthenticated, !res.HasVerifiedTOTP)
+	svc.Sessions.Set(ctx, sess.HasVerifiedTOTP, user.HasVerifiedTOTP())
+	svc.Sessions.Set(ctx, sess.TOTPMethod, user.TOTPMethod)
+	svc.Sessions.Set(ctx, sess.IsAwaitingTOTP, user.HasVerifiedTOTP())
+	svc.Sessions.Set(ctx, sess.IsAuthenticated, !user.HasVerifiedTOTP())
 
 	knownBreachCount, err := pwned.PasswordKnownBreachCount(ctx, []byte(password))
 	if err != nil {

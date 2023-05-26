@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web"
+	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
@@ -34,7 +35,7 @@ var opts struct {
 	dev     bool
 	data    string
 	secret  string
-	tenants tenants
+	tenants string
 
 	log struct {
 		style logger.Style
@@ -49,11 +50,11 @@ var opts struct {
 }
 
 func main() {
-	requiredFlags := []string{"secret", "addr", "tenants"}
+	requiredFlags := []string{"secret", "addr"}
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %v:\n", os.Args[0])
-		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-dev] [-addr <addr>] [-tenants <json-file>] [-log-style <text|json>]\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-dev] [-addr <addr>] [-log-style <text|json>]\n", os.Args[0])
 		fmt.Fprintln(flag.CommandLine.Output(), "Commands:")
 		fmt.Fprintf(flag.CommandLine.Output(), "  version\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "    \tDisplay binary version information\n")
@@ -70,12 +71,8 @@ func main() {
 	flag.BoolVar(&opts.server.insecureHTTP, "insecure-http", false, "Run in secure mode but without HTTPS")
 	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
 	flag.StringVar(&opts.secret, "secret", "", "The secret to use for things like encrypting/decrypting data")
-	flag.Var(&opts.tenants, "tenants", "A path to a JSON file that describes the tenants of the program")
+	flag.StringVar(&opts.tenants, "tenants", "", "A path to a JSON file that describes the tenants of the program")
 	flag.Parse()
-
-	if opts.server.insecure {
-		opts.server.insecureHTTP = true
-	}
 
 	if flag.NArg() != 0 && flag.Arg(0) != "version" {
 		fmt.Fprintf(flag.CommandLine.Output(), "Unknown command %q\n", flag.Arg(0))
@@ -99,6 +96,14 @@ func main() {
 		fmt.Print(info)
 
 		return
+	}
+
+	if opts.tenants == "" {
+		opts.tenants = filepath.Join(opts.data, "tenants.json")
+	}
+
+	if opts.server.insecure {
+		opts.server.insecureHTTP = true
 	}
 
 	if opts.log.style == "" {
@@ -149,7 +154,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	if err := os.MkdirAll(opts.data, os.ModePerm); err != nil {
+	if err := os.MkdirAll(opts.data, 0666); err != nil {
 		logger.PrintError(err)
 
 		os.Exit(1)
@@ -160,6 +165,14 @@ func main() {
 
 		os.Exit(1)
 	}
+
+	if err := initTenants(); err != nil {
+		logger.PrintError(err)
+
+		os.Exit(1)
+	}
+
+	httputil.TrustedProxies = opts.server.proxies
 
 	listener, err := opts.server.addr.Listener()
 	if err != nil {
@@ -213,9 +226,9 @@ func main() {
 	databases.mu.Lock()
 	defer databases.mu.Unlock()
 
-	for common, db := range databases.data {
+	for alias, db := range databases.data {
 		if err := db.Close(); err != nil {
-			logger.PrintError(errors.Tracef("%v: %v", common, err))
+			logger.PrintError(errors.Tracef("%v: %v", alias, err))
 		}
 	}
 }

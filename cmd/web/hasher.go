@@ -34,7 +34,7 @@ func initPasswordHasher() error {
 			return errors.Tracef(err)
 		}
 
-		if err := os.WriteFile(paramsCache, paramsJSON, os.ModePerm); err != nil {
+		if err := os.WriteFile(paramsCache, paramsJSON, 0666); err != nil {
 			return errors.Tracef(err)
 		}
 

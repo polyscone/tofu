@@ -9,7 +9,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
-	"github.com/polyscone/tofu/internal/port/account"
 )
 
 func ChangePassword(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
@@ -40,7 +39,7 @@ func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 			InsecurePassword string
 		}
-		err := httputil.DecodeForm(r, &input)
+		err := httputil.DecodeForm(&input, r)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -48,18 +47,6 @@ func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 		ctx := r.Context()
 
 		passport := svc.Passport(ctx)
-
-		cmd := account.ChangePassword{
-			Guard:            passport,
-			UserID:           passport.UserID(),
-			OldPassword:      input.OldPassword,
-			NewPassword:      input.NewPassword,
-			NewPasswordCheck: input.NewPasswordCheck,
-		}
-		err = cmd.Validate()
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/change_password", nil) {
-			return
-		}
 
 		knownBreachCount, err := pwned.PasswordKnownBreachCount(ctx, []byte(input.NewPassword))
 		if err != nil {
@@ -80,7 +67,13 @@ func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		err = cmd.Execute(ctx, svc.Bus)
+		err = svc.Account.ChangePassword(ctx,
+			passport,
+			passport.UserID(),
+			input.OldPassword,
+			input.NewPassword,
+			input.NewPasswordCheck,
+		)
 		if svc.ErrorView(w, r, errors.Tracef(err), "account/change_password", nil) {
 			return
 		}

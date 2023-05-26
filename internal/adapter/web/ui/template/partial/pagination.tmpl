@@ -1,44 +1,41 @@
 {{define "pagination"}}
 
 {{$book := .Vars.__Book}}
+{{$startEntry := Add 1 (Mul $book.PageSize (Sub $book.Page.Number 1))}}
+{{$endEntry := Add (Sub $startEntry 1) (len $book.Page.Rows)}}
 
-{{if $book.TotalRows}}
-	{{$startEntry := Add 1 (Mul $book.PageSize (Sub $book.Page.Number 1))}}
-	{{$endEntry := Add (Sub $startEntry 1) (len $book.Page.Rows)}}
+<nav class="pagination">
+	<div class="pagination__info">
+		{{if len $book.Page.Rows}}
+			{{if eq $startEntry $endEntry}}
+				Showing entry <span data-locale-number>{{$startEntry}}</span> of <span data-locale-number>{{$book.TotalRows}}</span>
+			{{else}}
+				Showing entries <span data-locale-number>{{$startEntry}}</span>-<span data-locale-number>{{$endEntry}}</span> of <span data-locale-number>{{$book.TotalRows}}</span>
+			{{end}}
+		{{end}}
+	</div>
 
-	<nav class="pagination">
-		<div class="pagination__info">
-			{{if len $book.Page.Rows}}
-				{{if eq $startEntry $endEntry}}
-					Showing entry <span data-locale-number>{{$startEntry}}</span> of <span data-locale-number>{{$book.TotalRows}}</span>
-				{{else}}
-					Showing entries <span data-locale-number>{{$startEntry}}</span>-<span data-locale-number>{{$endEntry}}</span> of <span data-locale-number>{{$book.TotalRows}}</span>
+	<ul class="pagination__links">
+		{{if and (len $book.Page.Rows) (gt $book.TotalPages 1)}}
+			{{if gt $book.Page.Number 1}}
+				<li><a href="?{{URL (QueryReplace .Query "page" "1")}}">&laquo; First</a></li>
+				<li><a href="?{{URL (QueryReplace .Query "page" (Sub $book.Page.Number 1))}}">&lt; Prev</a></li>
+			{{end}}
+
+			{{range $i := Ints (Sub $book.Page.Number 2) (Add $book.Page.Number 3)}}
+				{{if and (gt $i 0) (le $i $book.TotalPages)}}
+					<li><a href="?{{URL (QueryReplace $.Query "page" $i)}}" data-locale-number>{{$i}}</a></li>
 				{{end}}
 			{{end}}
-		</div>
 
-		<ul class="pagination__links">
-			{{if and (len $book.Page.Rows) (gt $book.TotalPages 1)}}
-				{{if gt $book.Page.Number 1}}
-					<li><a href="?{{URL (QueryReplace .Query "page" "1")}}">&laquo; First</a></li>
-					<li><a href="?{{URL (QueryReplace .Query "page" (Sub $book.Page.Number 1))}}">&lt; Prev</a></li>
-				{{end}}
-
-				{{range $i := Ints (Sub $book.Page.Number 2) (Add $book.Page.Number 3)}}
-					{{if and (gt $i 0) (le $i $book.TotalPages)}}
-						<li><a href="?{{URL (QueryReplace $.Query "page" $i)}}" data-locale-number>{{$i}}</a></li>
-					{{end}}
-				{{end}}
-
-				{{if lt $book.Page.Number $book.TotalPages}}
-					<li><a href="?{{URL (QueryReplace .Query "page" (Add $book.Page.Number 1))}}">Next &gt;</a></li>
-					<li><a href="?{{URL (QueryReplace .Query "page" $book.TotalPages)}}">Last &raquo;</a></li>
-				{{end}}
-			{{else if not (eq $book.Page.Number 1)}}
-				<li><a href="?{{URL (QueryReplace .Query "page" "1")}}">Go to the first page</a></li>
+			{{if lt $book.Page.Number $book.TotalPages}}
+				<li><a href="?{{URL (QueryReplace .Query "page" (Add $book.Page.Number 1))}}">Next &gt;</a></li>
+				<li><a href="?{{URL (QueryReplace .Query "page" $book.TotalPages)}}">Last &raquo;</a></li>
 			{{end}}
-		</ul>
-	</nav>
-{{end}}
+		{{else if not (eq $book.Page.Number 1)}}
+			<li><a href="?{{URL (QueryReplace .Query "page" "1")}}">Go to the first page</a></li>
+		{{end}}
+	</ul>
+</nav>
 
 {{end}}

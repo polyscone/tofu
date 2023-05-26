@@ -7,7 +7,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/port/account"
 )
 
 func Activate(svc *handler.Services, mux *router.ServeMux) {
@@ -26,7 +25,7 @@ func activatePost(svc *handler.Services) http.HandlerFunc {
 		var input struct {
 			Token string
 		}
-		err := httputil.DecodeForm(r, &input)
+		err := httputil.DecodeForm(&input, r)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -39,29 +38,18 @@ func activatePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		email, err := svc.Web.Tokens.FindActivationTokenEmail(ctx, input.Token)
+		email, err := svc.Repo.Web.FindActivationTokenEmail(ctx, input.Token)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
-		cmd := account.Activate{
-			Email: email,
-		}
-		err = cmd.Validate()
+		err = svc.Account.ActivateUser(ctx, email)
 		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate", nil) {
 			return
 		}
 
-		// Only consume after manual command validation, but before execution
-		// This way the token will only be consumed once we know there aren't any
-		// input validation or authorisation errors
-		err = svc.Web.Tokens.ConsumeActivationToken(ctx, input.Token)
+		err = svc.Repo.Web.ConsumeActivationToken(ctx, input.Token)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
-		}
-
-		err = cmd.Execute(ctx, svc.Bus)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate", nil) {
 			return
 		}
 

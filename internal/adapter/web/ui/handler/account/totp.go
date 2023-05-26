@@ -18,8 +18,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/sms"
-	"github.com/polyscone/tofu/internal/port"
-	"github.com/polyscone/tofu/internal/port/account"
 )
 
 func TOTP(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
@@ -29,7 +27,6 @@ func TOTP(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
 	mux.Post("/totp/disable", totpDisablePost(svc), "account.totp.disable.post")
 	mux.Get("/totp/recovery-codes", totpRecoveryCodesGet(svc), "account.totp.recovery_codes")
 	mux.Post("/totp/recovery-codes", totpRecoveryCodesPost(svc), "account.totp.recovery_codes.post")
-	mux.Post("/totp/send-sms", totpDisableSendSMSPost(svc), "account.totp.disable.send_sms.post")
 
 	guard.ProtectPrefix(svc.Path("account.totp"))
 
@@ -66,9 +63,8 @@ func totpPost(svc *handler.Services) http.HandlerFunc {
 			Action    string
 			Telephone string
 			TOTP      string
-			UseSMS    bool
 		}
-		err := httputil.DecodeForm(r, &input)
+		err := httputil.DecodeForm(&input, r)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -101,11 +97,7 @@ func totpPost(svc *handler.Services) http.HandlerFunc {
 
 		switch input.Action {
 		case "setup":
-			cmd := account.SetupTOTP{
-				Guard:  passport,
-				UserID: passport.UserID(),
-			}
-			_, err := cmd.Execute(ctx, svc.Bus)
+			err := svc.Account.SetupTOTP(ctx, passport, passport.UserID())
 			if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 				return
 			}
@@ -113,12 +105,7 @@ func totpPost(svc *handler.Services) http.HandlerFunc {
 			http.Redirect(w, r, svc.Path("account.totp")+"?method="+method, http.StatusSeeOther)
 
 		case "send-sms":
-			changeTOTPTelephoneCmd := account.ChangeTOTPTelephone{
-				Guard:        passport,
-				UserID:       passport.UserID(),
-				NewTelephone: input.Telephone,
-			}
-			err := changeTOTPTelephoneCmd.Execute(ctx, svc.Bus)
+			err := svc.Account.ChangeTOTPTelephone(ctx, passport, passport.UserID(), input.Telephone)
 			if err != nil {
 				totpDisplay(svc, w, r, err)
 
@@ -130,13 +117,7 @@ func totpPost(svc *handler.Services) http.HandlerFunc {
 			totpDisplay(svc, w, r, err)
 
 		case "verify":
-			cmd := account.VerifyTOTP{
-				Guard:  passport,
-				UserID: passport.UserID(),
-				TOTP:   input.TOTP,
-				UseSMS: input.UseSMS,
-			}
-			err := cmd.Execute(ctx, svc.Bus)
+			err := svc.Account.VerifyTOTP(ctx, passport, passport.UserID(), input.TOTP, method)
 			if err != nil {
 				totpDisplay(svc, w, r, err)
 
@@ -144,7 +125,7 @@ func totpPost(svc *handler.Services) http.HandlerFunc {
 			}
 
 			svc.Sessions.Set(ctx, sess.HasVerifiedTOTP, true)
-			svc.Sessions.Set(ctx, sess.TOTPUseSMS, input.UseSMS)
+			svc.Sessions.Set(ctx, sess.TOTPMethod, method)
 
 			http.Redirect(w, r, svc.Path("account.totp")+"?status=success", http.StatusSeeOther)
 		}
@@ -171,18 +152,13 @@ func totpDisplay(svc *handler.Services, w http.ResponseWriter, r *http.Request, 
 func totpDisplayApp(svc *handler.Services, w http.ResponseWriter, r *http.Request, _err error) {
 	ctx := r.Context()
 
-	userID := svc.Sessions.GetString(ctx, sess.UserID)
-	params, err := svc.Account.Users.FindTOTPParamsByID(ctx, userID)
+	userID := svc.Sessions.GetInt(ctx, sess.UserID)
+	user, err := svc.Repo.Account.FindUserByID(ctx, userID)
 	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 		return
 	}
 
-	recoveryCodes, err := svc.Account.Users.FindRecoveryCodesByID(ctx, userID)
-	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-		return
-	}
-
-	keyBase32 := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(params.Key)
+	keyBase32 := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(user.TOTPKey)
 	issuer := app.Name
 	accountName := svc.Sessions.GetString(ctx, sess.Email)
 	qrcode, err := qr.Encode(
@@ -190,9 +166,9 @@ func totpDisplayApp(svc *handler.Services, w http.ResponseWriter, r *http.Reques
 			issuer+":"+accountName+
 			"?secret="+keyBase32+
 			"&issuer="+issuer+
-			"&algorithm="+params.Algorithm+
-			"&digits="+strconv.Itoa(params.Digits)+
-			"&period="+strconv.Itoa(int(params.Period.Seconds())),
+			"&algorithm="+user.TOTPAlgorithm+
+			"&digits="+strconv.Itoa(user.TOTPDigits)+
+			"&period="+strconv.Itoa(int(user.TOTPPeriod.Seconds())),
 		qr.M,
 		qr.Auto,
 	)
@@ -212,7 +188,7 @@ func totpDisplayApp(svc *handler.Services, w http.ResponseWriter, r *http.Reques
 	}
 
 	vars := handler.Vars{
-		"RecoveryCodes": recoveryCodes,
+		"RecoveryCodes": user.RecoveryCodes,
 		"KeyBase32":     keyBase32,
 		"QRCodeBase64":  template.URL("data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())),
 	}
@@ -227,26 +203,21 @@ func totpDisplayApp(svc *handler.Services, w http.ResponseWriter, r *http.Reques
 func totpDisplaySMS(svc *handler.Services, w http.ResponseWriter, r *http.Request, _err error) {
 	ctx := r.Context()
 
-	userID := svc.Sessions.GetString(ctx, sess.UserID)
-	user, err := svc.Account.Users.FindByID(ctx, userID)
-	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-		return
-	}
-
-	recoveryCodes, err := svc.Account.Users.FindRecoveryCodesByID(ctx, userID)
+	userID := svc.Sessions.GetInt(ctx, sess.UserID)
+	user, err := svc.Repo.Account.FindUserByID(ctx, userID)
 	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 		return
 	}
 
 	vars := handler.Vars{
-		"RecoveryCodes": recoveryCodes,
+		"RecoveryCodes": user.RecoveryCodes,
 		"TOTPTelephone": user.TOTPTelephone,
 	}
 
 	if errors.Is(_err, sms.ErrInvalidNumber) {
 		errs := errors.Map{"new telephone": errors.New("invalid phone number")}
 
-		_err = errs.Tracef(port.ErrInvalidInput)
+		_err = errs.Tracef(app.ErrInvalidInput)
 	}
 
 	if svc.ErrorView(w, r, errors.Tracef(_err), "account/totp", vars) {
@@ -265,22 +236,10 @@ func totpDisableGet(svc *handler.Services) http.HandlerFunc {
 func totpDisablePost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Action       string
-			TOTP         string
-			RecoveryCode string
+			Password string
 		}
-		err := httputil.DecodeForm(r, &input)
+		err := httputil.DecodeForm(&input, r)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
-		}
-
-		actions := map[string]struct{}{
-			"verify-totp":          {},
-			"verify-recovery-code": {},
-		}
-		if _, ok := actions[input.Action]; !ok {
-			svc.ErrorView(w, r, errors.Tracef("invalid action %q", input.Action), "error", nil)
-
 			return
 		}
 
@@ -288,28 +247,15 @@ func totpDisablePost(svc *handler.Services) http.HandlerFunc {
 
 		passport := svc.Passport(ctx)
 
-		switch input.Action {
-		case "verify-totp":
-			cmd := account.DisableTOTP{
-				Guard:  passport,
-				UserID: passport.UserID(),
-				TOTP:   input.TOTP,
-			}
-			err := cmd.Execute(ctx, svc.Bus)
-			if svc.ErrorView(w, r, errors.Tracef(err), "account/totp_disable", nil) {
-				return
-			}
+		err = svc.Account.DisableTOTP(ctx, passport, passport.UserID(), input.Password)
+		if err != nil {
+			svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/totp_disable", func(data *handler.ViewData) {
+				if errors.Is(err, app.ErrBadRequest) {
+					data.Errors.Set("password", "invalid password")
+				}
+			})
 
-		case "verify-recovery-code":
-			cmd := account.DisableTOTPWithRecoveryCode{
-				Guard:        passport,
-				UserID:       passport.UserID(),
-				RecoveryCode: input.RecoveryCode,
-			}
-			err := cmd.Execute(ctx, svc.Bus)
-			if svc.ErrorView(w, r, errors.Tracef(err), "account/totp_disable", nil) {
-				return
-			}
+			return
 		}
 
 		_, err = svc.RenewSession(ctx)
@@ -327,14 +273,14 @@ func totpRecoveryCodesGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		userID := svc.Sessions.GetString(ctx, sess.UserID)
-		recoveryCodes, err := svc.Account.Users.FindRecoveryCodesByID(ctx, userID)
+		userID := svc.Sessions.GetInt(ctx, sess.UserID)
+		user, err := svc.Repo.Account.FindUserByID(ctx, userID)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
 		svc.View(w, r, http.StatusOK, "account/totp_recovery_codes", handler.Vars{
-			"RecoveryCodes": recoveryCodes,
+			"RecoveryCodes": user.RecoveryCodes,
 		})
 	}
 }
@@ -345,29 +291,11 @@ func totpRecoveryCodesPost(svc *handler.Services) http.HandlerFunc {
 
 		passport := svc.Passport(ctx)
 
-		cmd := account.RegenerateRecoveryCodes{
-			Guard:  passport,
-			UserID: passport.UserID(),
-		}
-		_, err := cmd.Execute(ctx, svc.Bus)
+		err := svc.Account.RegenerateRecoveryCodes(ctx, passport, passport.UserID())
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
 		http.Redirect(w, r, svc.Path("account.totp.recovery_codes")+"?status=success", http.StatusSeeOther)
-	}
-}
-
-func totpDisableSendSMSPost(svc *handler.Services) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		svc.Broker.Dispatch(handler.TOTPSMSRequested{
-			Email: svc.Sessions.GetString(ctx, sess.Email),
-		})
-
-		svc.Sessions.Set(ctx, sess.Flash, "A passcode has been sent to your registered phone number.")
-
-		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 	}
 }

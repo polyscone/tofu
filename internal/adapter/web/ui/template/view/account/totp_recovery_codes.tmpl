@@ -16,8 +16,8 @@
 		</div>
 
 		<ul>
-			{{range $code := .Vars.RecoveryCodes}}
-				<li>{{$code}}</li>
+			{{range .Vars.RecoveryCodes}}
+				<li>{{.Code}}</li>
 			{{end}}
 		</ul>
 	{{else}}

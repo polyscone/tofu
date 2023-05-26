@@ -58,7 +58,7 @@ func TestTOTPErrors(t *testing.T) {
 func TestTOTP(t *testing.T) {
 	tt := []struct {
 		name   string
-		alg    otp.Alg
+		alg    otp.Algorithm
 		digits int
 		step   time.Duration
 		time   time.Time

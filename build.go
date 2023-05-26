@@ -100,7 +100,7 @@ func main() {
 	flag.Var(&opts.after, "after", "Commands to run after a build has completed")
 	flag.BoolVar(&opts.watch, "watch", false, "Watches for changes and re-runs the build if changes are detected")
 	flag.StringVar(&opts.watchExts, "watch-exts", ".go .h .c .sql .json", "A space separated list of file extensions to watch")
-	flag.StringVar(&opts.watchSkipPatterns, "watch-skip-patterns", ".data/ .git/ .hg/ .svn/ node_modules/ build.go", "A space separated list of patterns to skip in watch mode")
+	flag.StringVar(&opts.watchSkipPatterns, "watch-skip-patterns", ".data/* .git/* .hg/* .svn/* node_modules/* build.go", "A space separated list of patterns to skip in watch mode")
 	flag.DurationVar(&opts.watchInterval, "watch-interval", 2*time.Second, "The interval that watch mode checks for file changes")
 	flag.Parse()
 
@@ -179,11 +179,11 @@ func main() {
 			for _, pattern := range skipPatterns {
 				path = filepath.ToSlash(path)
 
-				if path == pattern {
-					return true
+				matched, err := filepath.Match(pattern, path)
+				if err != nil {
+					fmt.Printf("skip pattern error: %v\n", err)
 				}
-
-				if strings.HasSuffix(pattern, "/") && strings.HasPrefix(path, pattern) {
+				if matched {
 					return true
 				}
 			}

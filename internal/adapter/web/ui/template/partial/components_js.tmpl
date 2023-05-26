@@ -1,0 +1,125 @@
+{{define "components_js"}}
+
+<script>
+	onMount("input, textarea", node => {
+	  // Set a data-invalid attribute on forms when they're submitted with
+	  // malformed inputs
+	  //
+	  // This is to allow for styling invalid form elements after submittal
+	  // in a more persistent way than is allowed with CSS only
+	  node.addEventListener("invalid", e => {
+	    const form = e.target.closest("form")
+
+	    if (form) {
+	      form.dataset.invalid = true
+	    }
+	  })
+	})
+
+	onMount("[data-locale-number]", node => {
+		const str = node.innerText.trim()
+
+		if (!str.trim()) {
+			return
+		}
+
+	  node.innerText = Number(str).toLocaleString()
+	})
+
+	onMount("[data-locale-date]", node => {
+		const str = node.innerText.trim()
+
+		if (!str.trim()) {
+			return
+		}
+
+	  node.innerText = (new Date(str)).toLocaleDateString()
+	})
+
+	onMount("[data-locale-time]", node => {
+		const str = node.innerText.trim()
+
+		if (!str.trim()) {
+			return
+		}
+
+	  node.innerText = (new Date(str)).toLocaleTimeString()
+	})
+
+	onMount("[data-locale-datetime]", node => {
+		const str = node.innerText.trim()
+
+		if (!str.trim()) {
+			return
+		}
+
+	  const date = new Date(str)
+
+	  node.innerText = date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
+	})
+
+	function _componentsInit () {
+	  window._components ||= {
+	    actions: {
+	      mount: [],
+	      destroy: [],
+	    },
+	    observer: new MutationObserver(mutations => {
+	      for (const mutation of mutations) {
+	        for (const node of mutation.addedNodes) {
+	          if (!node.matches) {
+	            continue
+	          }
+
+	          for (const action of window._components.actions.mount) {
+	            if (!node.matches(action.selector)) {
+	              continue
+	            }
+
+	            action.callback(node)
+	          }
+	        }
+
+	        for (const node of mutation.removedNodes) {
+	          if (!node.matches) {
+	            continue
+	          }
+
+	          for (const action of window._components.actions.destroy) {
+	            if (!node.matches(action.selector)) {
+	              continue
+	            }
+
+	            action.callback(node)
+	          }
+	        }
+	      }
+	    }),
+	  }
+
+	  window._components.observer.observe(document.body, {
+	    childList: true,
+	    subtree: true,
+	  })
+	}
+
+	function onMount (selector, callback) {
+	  _componentsInit()
+
+	  const nodes = Array.from(document.querySelectorAll(selector))
+
+	  for (const node of nodes) {
+	    callback(node)
+	  }
+
+	  window._components.actions.mount.push({ selector, callback })
+	}
+
+	function onDestroy (selector, callback) {
+	  _componentsInit()
+
+	  window._components.actions.destroy.push({ selector, callback })
+	}
+</script>
+
+{{end}}

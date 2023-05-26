@@ -7,9 +7,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/repo"
-	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
-	"github.com/polyscone/tofu/internal/port/account"
+	"github.com/polyscone/tofu/internal/repo"
 )
 
 func Register(svc *handler.Services, mux *router.ServeMux) {
@@ -35,26 +33,18 @@ func registerGet(svc *handler.Services) http.HandlerFunc {
 func registerPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			UserID        string
 			Email         string
 			Password      string
 			PasswordCheck string `form:"password"` // The UI doesn't include a check field
 		}
-		err := httputil.DecodeForm(r, &input)
+		err := httputil.DecodeForm(&input, r)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
-
-		id, err := uuid.NewV4()
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
-		}
-		input.UserID = id.String()
 
 		ctx := r.Context()
 
-		cmd := account.Register(input)
-		err = cmd.Execute(ctx, svc.Bus)
+		err = svc.Account.RegisterUser(ctx, input.Email, input.Password, input.PasswordCheck)
 		switch {
 		case errors.Is(err, repo.ErrConflict):
 			svc.View(w, r, http.StatusConflict, "account/register", handler.Vars{

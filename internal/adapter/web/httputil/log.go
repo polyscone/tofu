@@ -6,14 +6,23 @@ import (
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/pkg/logger"
+	"github.com/polyscone/tofu/internal/pkg/realip"
 )
+
+var TrustedProxies []string
 
 func init() {
 	logger.AddSkipRule("/httputil/log.go", logger.SkipFile)
 }
 
 func LogError(r *http.Request, err error) {
-	remoteAddr := r.RemoteAddr // TODO: check x-forwarded-for if we have trusted proxies
+	remoteAddr, err := realip.FromRequest(r, TrustedProxies...)
+	if err != nil {
+		remoteAddr = r.RemoteAddr
+
+		logger.Error.Println(err)
+	}
+
 	text := logger.SprintError(err)
 	td := getTraceData(r.Context())
 	request := fmt.Sprintf("%v %v", r.Method, r.URL)
@@ -43,7 +52,13 @@ func LogError(r *http.Request, err error) {
 }
 
 func LogInfof(r *http.Request, format string, a ...any) {
-	remoteAddr := r.RemoteAddr // TODO: check x-forwarded-for if we have trusted proxies
+	remoteAddr, err := realip.FromRequest(r, TrustedProxies...)
+	if err != nil {
+		remoteAddr = r.RemoteAddr
+
+		logger.Error.Println(err)
+	}
+
 	text := fmt.Sprintf(format, a...)
 	td := getTraceData(r.Context())
 	request := fmt.Sprintf("%v %v", r.Method, r.URL)

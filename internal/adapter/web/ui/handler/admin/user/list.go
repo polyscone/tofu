@@ -4,8 +4,10 @@ import (
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
+	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/repo"
 )
 
 func List(svc *handler.Services, mux *router.ServeMux) {
@@ -19,10 +21,18 @@ func List(svc *handler.Services, mux *router.ServeMux) {
 
 func listGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			EditID int `query:"edit"`
+		}
+		err := httputil.DecodeQuery(&input, r)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
 		ctx := r.Context()
 
-		if editID := r.URL.Query().Get("edit"); editID != "" {
-			user, err := svc.Account.Users.FindByID(ctx, editID)
+		if input.EditID > 0 {
+			user, err := svc.Repo.Account.FindUserByID(ctx, input.EditID)
 			if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 				return
 			}
@@ -33,13 +43,13 @@ func listGet(svc *handler.Services) http.HandlerFunc {
 		} else {
 			search := r.URL.Query().Get("search")
 			page, size := svc.Pagination(r)
-			users, err := svc.Account.Users.FindByPage(ctx, page, size, search)
+			users, total, err := svc.Repo.Account.FindUsersByPage(ctx, search, page, size)
 			if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 				return
 			}
 
 			svc.View(w, r, http.StatusOK, "admin/user/list", handler.Vars{
-				"Users": users,
+				"Users": repo.NewBook(users, page, size, total),
 			})
 		}
 	}
