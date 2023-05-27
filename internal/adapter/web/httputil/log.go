@@ -16,11 +16,11 @@ func init() {
 }
 
 func LogError(r *http.Request, err error) {
-	remoteAddr, err := realip.FromRequest(r, TrustedProxies...)
-	if err != nil {
+	remoteAddr, _err := realip.FromRequest(r, TrustedProxies...)
+	if _err != nil {
 		remoteAddr = r.RemoteAddr
 
-		logger.Error.Println(err)
+		logger.Error.Println(_err)
 	}
 
 	text := logger.SprintError(err)
@@ -52,11 +52,11 @@ func LogError(r *http.Request, err error) {
 }
 
 func LogInfof(r *http.Request, format string, a ...any) {
-	remoteAddr, err := realip.FromRequest(r, TrustedProxies...)
-	if err != nil {
+	remoteAddr, _err := realip.FromRequest(r, TrustedProxies...)
+	if _err != nil {
 		remoteAddr = r.RemoteAddr
 
-		logger.Error.Println(err)
+		logger.Error.Println(_err)
 	}
 
 	text := fmt.Sprintf(format, a...)
