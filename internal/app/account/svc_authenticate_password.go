@@ -31,6 +31,12 @@ func (s *Service) AuthenticateWithPassword(ctx context.Context, email, password 
 
 	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	if err != nil {
+		// We always hash a password even when we error finding a user to help
+		// prevent timing attacks that would allow enumeration of valid emails
+		if _, err := s.hasher.EncodedHash(input.password); err != nil {
+			return errors.Tracef(err)
+		}
+
 		return errors.Tracef(err)
 	}
 
