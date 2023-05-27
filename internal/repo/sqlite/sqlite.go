@@ -355,7 +355,7 @@ func (t *Time) Scan(value any) error {
 		*t = Time(parsed)
 
 	default:
-		return errors.Tracef("Time: cannot scan to time.Time: %T", value)
+		return errors.Tracef("%T: cannot scan to time.Time: %T", Time{}, value)
 	}
 
 	return nil
@@ -399,7 +399,7 @@ func (t *NullTime) Scan(value any) error {
 		*t = NullTime(parsed)
 
 	default:
-		return errors.Tracef("NullTime: cannot scan to time.Time: %T", value)
+		return errors.Tracef("%T: cannot scan to time.Time: %T", NullTime{}, value)
 	}
 
 	return nil
@@ -462,6 +462,12 @@ func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 }
 
 func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
 	rows, err := db.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, errors.Tracef(repoerr(err))
