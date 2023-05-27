@@ -109,14 +109,25 @@ func Open(ctx context.Context, kind Kind, filename string) (*sql.DB, error) {
 	databases.mu.Lock()
 	defer databases.mu.Unlock()
 
-	db, ok := databases.data[dsn]
-	if !ok {
-		_db, err := sql.Open(driverName, dsn)
-		if err != nil {
-			return nil, errors.Tracef(err)
+	// We check for an existing connection pool here because another goroutine
+	// could have already connected whilst other locks were waiting
+	if db, ok := databases.data[dsn]; ok {
+		// It's possible that we find an existing connection pool that failed
+		// to ping, in which case we only want to return it if we know the
+		// connection is still alive, so we try to ping again to be sure
+		if err := db.PingContext(ctx); err == nil {
+			return db, nil
 		}
 
-		db = _db
+		// If we reach this point then it's because we've failed to ping the
+		// database a couple of times and we need to replace the connection pool
+		// so we attempt to close before replacing
+		db.Close()
+	}
+
+	db, err := sql.Open(driverName, dsn)
+	if err != nil {
+		return nil, errors.Tracef(err)
 	}
 
 	if err := db.PingContext(ctx); err != nil {
@@ -143,7 +154,7 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 		CREATE TABLE IF NOT EXISTS _migrations (
 			name       TEXT PRIMARY KEY NOT NULL,
 			version    INTEGER NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			created_at DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', CURRENT_TIMESTAMP)),
 			updated_at DATETIME
 		);
 
@@ -216,7 +227,7 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 		`
 		args := []any{
 			sql.Named("version", migration),
-			sql.Named("updated_at", time.Now().UTC()),
+			sql.Named("updated_at", Time(time.Now().UTC())),
 			sql.Named("name", name),
 		}
 		if _, err := tx.ExecContext(ctx, stmt, args...); err != nil {
