@@ -331,10 +331,6 @@ func (t Time) String() string {
 	return time.Time(t).String()
 }
 
-func (t Time) UTC() Time {
-	return Time(time.Time(t).UTC())
-}
-
 func (t *Time) Scan(value any) error {
 	switch value := value.(type) {
 	case nil:
@@ -373,10 +369,6 @@ type NullTime time.Time
 
 func (t NullTime) String() string {
 	return time.Time(t).String()
-}
-
-func (t NullTime) UTC() NullTime {
-	return NullTime(time.Time(t).UTC())
 }
 
 func (t *NullTime) Scan(value any) error {
