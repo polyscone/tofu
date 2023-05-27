@@ -691,7 +691,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if typ == reflect.TypeOf([]byte(nil)) {
 			as.SetBytes([]byte(str))
 		} else {
-			return res, errors.Tracef("unsupported type %v", typ)
+			panic(fmt.Sprintf("unsupported conversion type %v", typ))
 		}
 	}
 
