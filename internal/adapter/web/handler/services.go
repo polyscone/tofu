@@ -181,6 +181,9 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 		},
 		"FormatTime": func(t time.Time, format string) string {
 			switch format {
+			case "DateTime":
+				return t.Format(time.DateTime)
+
 			case "RFC3339":
 				return t.Format(time.RFC3339)
 			}

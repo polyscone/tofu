@@ -1,442 +1,442 @@
 @layer reset, universal, utility, components;
 
 :root {
-  --ff-primary:
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Helvetica,
-    Arial,
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji";
+	--ff-primary:
+		-apple-system,
+		BlinkMacSystemFont,
+		"Segoe UI",
+		Helvetica,
+		Arial,
+		sans-serif,
+		"Apple Color Emoji",
+		"Segoe UI Emoji";
 
-  --clr-black-100: hsl(170 0% 80%);
-  --clr-black-200: hsl(170 0% 60%);
-  --clr-black-400: hsl(170 0% 5%);
+	--clr-black-100: hsl(170 0% 80%);
+	--clr-black-200: hsl(170 0% 60%);
+	--clr-black-400: hsl(170 0% 5%);
 
-  --clr-white-400: hsl(170 0% 100%);
+	--clr-white-400: hsl(170 0% 100%);
 
-  --clr-accent-100: hsl(170 45% 97%);
-  --clr-accent-400: hsl(170 45% 30%);
+	--clr-accent-100: hsl(170 45% 97%);
+	--clr-accent-400: hsl(170 45% 30%);
 
-  --clr-focus-400: hsl(59 100% 95%);
+	--clr-focus-400: hsl(59 100% 95%);
 
-  --clr-valid-400: transparent;
+	--clr-valid-400: transparent;
 
-  --clr-invalid-100: hsl(0 100% 95%);
-  --clr-invalid-400: hsl(0 100% 50%);
+	--clr-invalid-100: hsl(0 100% 95%);
+	--clr-invalid-400: hsl(0 100% 50%);
 
-  --clr-warning-100: hsl(45 100% 95%);
-  --clr-warning-400: hsl(40 100% 50%);
+	--clr-warning-100: hsl(45 100% 95%);
+	--clr-warning-400: hsl(40 100% 50%);
 
-  --clr-error-100: hsl(0 100% 95%);
-  --clr-error-400: hsl(0 100% 50%);
+	--clr-error-100: hsl(0 100% 95%);
+	--clr-error-400: hsl(0 100% 50%);
 
-  --icon-external-link: url(
-    'data:image/svg+xml,\
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"> \
-      <g style="stroke:rgb(35,82,124);stroke-width:1"> \
-        <line x1="5" y1="5" x2="5" y2="14" /> \
-        <line x1="14" y1="9" x2="14" y2="14" /> \
-        <line x1="5" y1="14" x2="14" y2="14" /> \
-        <line x1="5" y1="5" x2="9" y2="5" /> \
-        <line x1="10" y1="2" x2="17" y2="2"  /> \
-        <line x1="17" y1="2" x2="17" y2="9" /> \
-        <line x1="10" y1="9" x2="17" y2="2" style="stroke-width:1.5" /> \
-      </g> \
-    </svg>'
-  );
+	--icon-external-link: url(
+		'data:image/svg+xml,\
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"> \
+			<g style="stroke:rgb(35,82,124);stroke-width:1"> \
+				<line x1="5" y1="5" x2="5" y2="14" /> \
+				<line x1="14" y1="9" x2="14" y2="14" /> \
+				<line x1="5" y1="14" x2="14" y2="14" /> \
+				<line x1="5" y1="5" x2="9" y2="5" /> \
+				<line x1="10" y1="2" x2="17" y2="2"  /> \
+				<line x1="17" y1="2" x2="17" y2="9" /> \
+				<line x1="10" y1="9" x2="17" y2="2" style="stroke-width:1.5" /> \
+			</g> \
+		</svg>'
+	);
 }
 
 @layer reset {
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
+	*, *::before, *::after {
+		box-sizing: border-box;
+	}
 
-  html:focus-within {
-    scroll-behavior: smooth;
-  }
+	html:focus-within {
+		scroll-behavior: smooth;
+	}
 
-  body {
-    margin: 0;
-    line-height: 1.3;
-    text-rendering: optimizeSpeed;
-  }
+	body {
+		margin: 0;
+		line-height: 1.3;
+		text-rendering: optimizeSpeed;
+	}
 
-  img, picture {
-    display: block;
-    max-inline-size: 100%;
-  }
+	img, picture {
+		display: block;
+		max-inline-size: 100%;
+	}
 
-  button, input, select, textarea {
-    font: inherit;
-  }
+	button, input, select, textarea {
+		font: inherit;
+	}
 }
 
 @layer universal {
-  html {
-    font-family: var(--ff-primary);
-    font-size: 0.875rem;
-  }
+	html {
+		font-family: var(--ff-primary);
+		font-size: 0.875rem;
+	}
 
-  body {
-    background: var(--clr-white-400);
-    color: var(--clr-black-400);
-    padding-inline: 1rem;
-  }
+	body {
+		background: var(--clr-white-400);
+		color: var(--clr-black-400);
+		padding-inline: 1rem;
+	}
 
-  hr {
-    inline-size: 100%;
-    border: none;
-    border-block: 1px solid var(--clr-black-200);
-  }
+	hr {
+		inline-size: 100%;
+		border: none;
+		border-block: 1px solid var(--clr-black-200);
+	}
 
-  button, input {
-    min-height: 1.5rem;
-  }
+	button, input {
+		min-height: 1.5rem;
+	}
 
-  input, textarea {
-    border: 1px solid var(--clr-black-200);
-  }
+	input, textarea {
+		border: 1px solid var(--clr-black-200);
+	}
 
-  button, input, textarea {
-    padding-block: 0.4rem;
-    padding-inline: 0.6rem;
-  }
+	button, input, textarea {
+		padding-block: 0.4rem;
+		padding-inline: 0.6rem;
+	}
 
-  button {
-    border: none;
-  }
+	button {
+		border: none;
+	}
 
-  :focus-visible:is(input, textarea) {
-    outline-style: solid;
-    outline-width: 0.1rem;
-    outline-color: transparent;
-  }
+	:focus-visible:is(input, textarea) {
+		outline-style: solid;
+		outline-width: 0.1rem;
+		outline-color: transparent;
+	}
 
-  :is(input, textarea):invalid:not(:placeholder-shown),
-  [data-invalid] :is(input, textarea):invalid {
-    background: var(--clr-invalid-100);
-    outline-color: var(--clr-invalid-400);
-  }
+	:is(input, textarea):invalid:not(:placeholder-shown),
+	[data-invalid] :is(input, textarea):invalid {
+		background: var(--clr-invalid-100);
+		outline-color: var(--clr-invalid-400);
+	}
 
-  :is(input, textarea):invalid:focus {
-    background: var(--clr-focus-400);
-  }
+	:is(input, textarea):invalid:focus {
+		background: var(--clr-focus-400);
+	}
 
-  :is(input, textarea):valid:focus {
-    outline-color: var(--clr-valid-400);
-  }
+	:is(input, textarea):valid:focus {
+		outline-color: var(--clr-valid-400);
+	}
 
-  :is(input, textarea):placeholder-shown {
-    background: white;
-  }
+	:is(input, textarea):placeholder-shown {
+		background: white;
+	}
 
-  label:has(+ [required])::after {
-    content: "*";
-    color: var(--clr-invalid-400);
-    margin-inline-start: 0.2em;
-  }
+	label:has(+ [required])::after {
+		content: "*";
+		color: var(--clr-invalid-400);
+		margin-inline-start: 0.2em;
+	}
 
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+	form {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
 
-  form label,
-  form input,
-  form textarea,
-  form button {
-    display: block;
-  }
+	form label,
+	form input,
+	form textarea,
+	form button {
+		display: block;
+	}
 
-  label small {
-    color: gray;
-  }
+	label small {
+		color: gray;
+	}
 
-  label small::before {
-    content: "(";
-  }
+	label small::before {
+		content: "(";
+	}
 
-  label small::after {
-    content: ")";
-  }
+	label small::after {
+		content: ")";
+	}
 
-  a[href^="http://"]::after,
-  a[href^="https://"]::after {
-    content: "";
-    background-image: var(--icon-external-link);
-    background-repeat: no-repeat;
-    padding-right: 1rem;
-  }
+	a[href^="http://"]::after,
+	a[href^="https://"]::after {
+		content: "";
+		background-image: var(--icon-external-link);
+		background-repeat: no-repeat;
+		padding-right: 1rem;
+	}
 }
 
 @layer components {
-  .skip-nav-link {
-    position: absolute;
-    top: 0;
-    left: 0;
-    padding: 1rem;
-    background: var(--clr-white-400);
-    transform: translateY(-150%);
-    transition: transform 300ms ease-in;
-  }
+	.skip-nav-link {
+		position: absolute;
+		top: 0;
+		left: 0;
+		padding: 1rem;
+		background: var(--clr-white-400);
+		transform: translateY(-150%);
+		transition: transform 300ms ease-in;
+	}
 
-  .skip-nav-link:focus {
-    transform: translateY(0);
-  }
+	.skip-nav-link:focus {
+		transform: translateY(0);
+	}
 
-  .site-title {
-    margin: 0;
-    padding-block: 0.6rem;
-    font-weight: bold;
-    font-size: 1.5rem;
-    text-align: center;
-  }
+	.site-title {
+		margin: 0;
+		padding-block: 0.6rem;
+		font-weight: bold;
+		font-size: 1.5rem;
+		text-align: center;
+	}
 
-  .title {
-    font-weight: bold;
-    font-size: 1.2rem;
-  }
+	.title {
+		font-weight: bold;
+		font-size: 1.2rem;
+	}
 
-  .bag {
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
-  }
+	.bag {
+		display: flex;
+		flex-wrap: wrap;
+		flex-direction: row;
+		align-items: center;
+		gap: 0.5rem;
+	}
 
-  .bag.reverse {
-    flex-direction: row-reverse;
-  }
+	.bag.reverse {
+		flex-direction: row-reverse;
+	}
 
-  .header,
-  .main,
-  .footer {
-    max-width: 960px;
-    margin-inline: auto;
-  }
+	.header,
+	.main,
+	.footer {
+		max-width: 960px;
+		margin-inline: auto;
+	}
 
-  .header {
-    display: flex;
-    flex-direction: column;
-  }
+	.header {
+		display: flex;
+		flex-direction: column;
+	}
 
-  .main {
-    padding-block-end: 1.5rem;
-    border-block: 1px solid var(--clr-black-200);
-  }
+	.main {
+		padding-block-end: 1.5rem;
+		border-block: 1px solid var(--clr-black-200);
+	}
 
-  .footer {
-    display: grid;
-    gap: 1rem;
-  }
+	.footer {
+		display: grid;
+		gap: 1rem;
+	}
 
-  .nav ul {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0;
-  }
+	.nav ul {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 0.5rem;
+		margin: 0;
+		padding: 0;
+	}
 
-  .nav li {
-    list-style: none;
-  }
+	.nav li {
+		list-style: none;
+	}
 
-  .nav a,
-  .nav button {
-    display: block;
-    padding-block: 1rem;
-    padding-inline: 1rem;
-  }
+	.nav a,
+	.nav button {
+		display: block;
+		padding-block: 1rem;
+		padding-inline: 1rem;
+	}
 
-  .flash-banner,
-  .error-banner,
-  .warning-banner {
-    margin-block: 1rem;
-    padding: 0 1rem;
-  }
+	.flash-banner,
+	.error-banner,
+	.warning-banner {
+		margin-block: 1rem;
+		padding: 0 1rem;
+	}
 
-  .flash-banner {
-    border: 1px solid var(--clr-accent-400);
-    text-align: center;
-  }
+	.flash-banner {
+		border: 1px solid var(--clr-accent-400);
+		text-align: center;
+	}
 
-  .warning-banner {
-    background: var(--clr-warning-100);
-    border: 1px solid var(--clr-warning-400);
-  }
+	.warning-banner {
+		background: var(--clr-warning-100);
+		border: 1px solid var(--clr-warning-400);
+	}
 
-  .error {
-    color: var(--clr-error-400);
-    margin-block: 0;
-  }
+	.error {
+		color: var(--clr-error-400);
+		margin-block: 0;
+	}
 
-  .error:empty {
-    display: none;
-  }
+	.error:empty {
+		display: none;
+	}
 
-  .error-banner::first-letter,
-  .error-banner *::first-letter,
-  .error-message::first-letter,
-  .error-message *::first-letter,
-  .error::first-letter,
-  .error *::first-letter {
-    text-transform: capitalize;
-  }
+	.error-banner::first-letter,
+	.error-banner *::first-letter,
+	.error-message::first-letter,
+	.error-message *::first-letter,
+	.error::first-letter,
+	.error *::first-letter {
+		text-transform: capitalize;
+	}
 
-  .error-banner {
-    background: var(--clr-error-100);
-    border: 1px solid var(--clr-error-400);
-    color: var(--clr-black-400);
-    text-align: center;
-  }
+	.error-banner {
+		background: var(--clr-error-100);
+		border: 1px solid var(--clr-error-400);
+		color: var(--clr-black-400);
+		text-align: center;
+	}
 
-  .management {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: auto;
-  }
+	.management {
+		width: 100%;
+		border-collapse: collapse;
+		table-layout: auto;
+	}
 
-  .management tr:hover td {
-    background: var(--clr-accent-100);
-  }
+	.management tr:hover td {
+		background: var(--clr-accent-100);
+	}
 
-  .management th {
-    text-align: left;
-    border-bottom: 1px solid var(--clr-black-100);
-  }
+	.management th {
+		text-align: left;
+		border-bottom: 1px solid var(--clr-black-100);
+	}
 
-  .management th,
-  .management td {
-    padding: 0.5rem 1rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 1px;
-  }
+	.management th,
+	.management td {
+		padding: 0.5rem 1rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 1px;
+	}
 
-  .management .management__empty td {
-    text-align: center;
-    font-weight: bold;
-  }
+	.management .management__empty td {
+		text-align: center;
+		font-weight: bold;
+	}
 
-  .pagination {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    padding-block-start: 1rem;
-  }
+	.pagination {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		padding-block-start: 1rem;
+	}
 
-  .pagination__links {
-    display: flex;
-    justify-content: end;
-    gap: 0.7rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
+	.pagination__links {
+		display: flex;
+		justify-content: end;
+		gap: 0.7rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
 
-  button,
-  .btn {
-    padding-block: 0.4rem;
-    padding-inline: 1rem;
-    background: var(--clr-accent-400);
-    color: var(--clr-white-400);
-    text-decoration: none;
-    cursor: default;
-  }
+	button,
+	.btn {
+		padding-block: 0.4rem;
+		padding-inline: 1rem;
+		background: var(--clr-accent-400);
+		color: var(--clr-white-400);
+		text-decoration: none;
+		cursor: default;
+	}
 
-  .btn--alt {
-    background: var(--clr-white-400);
-    color: var(--clr-accent-400);
-    outline: 1px solid var(--clr-accent-400);
-  }
+	.btn--alt {
+		background: var(--clr-white-400);
+		color: var(--clr-accent-400);
+		outline: 1px solid var(--clr-accent-400);
+	}
 
-  .btn--link {
-    display: inline;
-    padding: 0;
-    background: transparent;
-    color: linktext;
-    cursor: pointer;
-    text-decoration: underline;
-  }
+	.btn--link {
+		display: inline;
+		padding: 0;
+		background: transparent;
+		color: linktext;
+		cursor: pointer;
+		text-decoration: underline;
+	}
 
-  .totp__methods {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
+	.totp__methods {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1rem;
+	}
 
-  .totp__recovery-codes,
-  .totp__qrcode {
-    font-family: monospace;
-  }
+	.totp__recovery-codes,
+	.totp__qrcode {
+		font-family: monospace;
+	}
 
-  .totp__qrcode {
-    text-align: center;
-  }
+	.totp__qrcode {
+		text-align: center;
+	}
 
-  .totp__qrcode img {
-    display: inline-block;
-  }
+	.totp__qrcode img {
+		display: inline-block;
+	}
 
-  @media screen and (min-width: 400px) {
-    .header {
-      flex-direction: row;
-    }
+	@media screen and (min-width: 400px) {
+		.header {
+			flex-direction: row;
+		}
 
-    .nav {
-      margin-inline-start: auto;
-    }
+		.nav {
+			margin-inline-start: auto;
+		}
 
-    .footer {
-      grid-template-columns: repeat(2, 1fr);
-    }
+		.footer {
+			grid-template-columns: repeat(2, 1fr);
+		}
 
-    .footer__col:nth-child(2n) {
-      text-align: right;
-    }
+		.footer__col:nth-child(2n) {
+			text-align: right;
+		}
 
-    .totp-methods {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
+		.totp-methods {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
 
-  @media screen and (min-width: 600px) {
-    .footer {
-      grid-template-columns: repeat(4, 1fr);
-    }
+	@media screen and (min-width: 600px) {
+		.footer {
+			grid-template-columns: repeat(4, 1fr);
+		}
 
-    .footer__col:nth-child(-n+2) {
-      text-align: left;
-    }
+		.footer__col:nth-child(-n+2) {
+			text-align: left;
+		}
 
-    .footer__col:nth-last-child(-n+2) {
-      text-align: right;
-    }
-  }
+		.footer__col:nth-last-child(-n+2) {
+			text-align: right;
+		}
+	}
 }
 
 @layer utility {
-  .center {
-    max-width: 500px;
-    margin-inline: auto;
-  }
+	.center {
+		max-width: 500px;
+		margin-inline: auto;
+	}
 
-  .text-right {
-    text-align: right;
-  }
+	.text-right {
+		text-align: right;
+	}
 
-  .push-inline-end {
-    margin-inline-start: auto;
-  }
+	.push-inline-end {
+		margin-inline-start: auto;
+	}
 
-  .grow {
-    flex-grow: 1;
-  }
+	.grow {
+		flex-grow: 1;
+	}
 }

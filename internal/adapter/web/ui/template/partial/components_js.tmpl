@@ -2,18 +2,18 @@
 
 <script>
 	onMount("input, textarea", node => {
-	  // Set a data-invalid attribute on forms when they're submitted with
-	  // malformed inputs
-	  //
-	  // This is to allow for styling invalid form elements after submittal
-	  // in a more persistent way than is allowed with CSS only
-	  node.addEventListener("invalid", e => {
-	    const form = e.target.closest("form")
+		// Set a data-invalid attribute on forms when they're submitted with
+		// malformed inputs
+		//
+		// This is to allow for styling invalid form elements after submittal
+		// in a more persistent way than is allowed with CSS only
+		node.addEventListener("invalid", e => {
+			const form = e.target.closest("form")
 
-	    if (form) {
-	      form.dataset.invalid = true
-	    }
-	  })
+			if (form) {
+				form.dataset.invalid = true
+			}
+		})
 	})
 
 	onMount("[data-locale-number]", node => {
@@ -23,102 +23,104 @@
 			return
 		}
 
-	  node.innerText = Number(str).toLocaleString()
+		node.innerText = Number(str).toLocaleString()
 	})
 
-	onMount("[data-locale-date]", node => {
-		const str = node.innerText.trim()
+	onMount("time", node => {
+		let str = (node.getAttribute("datetime") || node.innerText).trim()
 
 		if (!str.trim()) {
 			return
 		}
 
-	  node.innerText = (new Date(str)).toLocaleDateString()
-	})
+		const hasDate = /\d{4}-\d{2}-\d{2}/.test(str)
+		const hasTime = /\d{2}:\d{2}/.test(str)
 
-	onMount("[data-locale-time]", node => {
-		const str = node.innerText.trim()
+		if (!hasDate && hasTime) {
+			const now = (new Date()).toISOString().split("T").shift()
 
-		if (!str.trim()) {
-			return
+			str = now + "T" + str
 		}
 
-	  node.innerText = (new Date(str)).toLocaleTimeString()
-	})
+		const date = new Date(str)
 
-	onMount("[data-locale-datetime]", node => {
-		const str = node.innerText.trim()
-
-		if (!str.trim()) {
-			return
+		if (hasDate && hasTime) {
+			node.innerText = date.toLocaleString([], {
+				dateStyle: node.dataset.date || "short",
+				timeStyle: node.dataset.time || "medium",
+			})
+		} else if (hasDate) {
+			node.innerText = date.toLocaleDateString([], {
+				dateStyle: node.dataset.date || "short",
+			})
+		} else if (hasTime) {
+			node.innerText = date.toLocaleTimeString([], {
+				timeStyle: node.dataset.time || "medium",
+			})
 		}
-
-	  const date = new Date(str)
-
-	  node.innerText = date.toLocaleDateString() + ' ' + date.toLocaleTimeString()
 	})
 
 	function _componentsInit () {
-	  window._components ||= {
-	    actions: {
-	      mount: [],
-	      destroy: [],
-	    },
-	    observer: new MutationObserver(mutations => {
-	      for (const mutation of mutations) {
-	        for (const node of mutation.addedNodes) {
-	          if (!node.matches) {
-	            continue
-	          }
+		window._components ||= {
+			actions: {
+				mount: [],
+				destroy: [],
+			},
+			observer: new MutationObserver(mutations => {
+				for (const mutation of mutations) {
+					for (const node of mutation.addedNodes) {
+						if (!node.matches) {
+							continue
+						}
 
-	          for (const action of window._components.actions.mount) {
-	            if (!node.matches(action.selector)) {
-	              continue
-	            }
+						for (const action of window._components.actions.mount) {
+							if (!node.matches(action.selector)) {
+								continue
+							}
 
-	            action.callback(node)
-	          }
-	        }
+							action.callback(node)
+						}
+					}
 
-	        for (const node of mutation.removedNodes) {
-	          if (!node.matches) {
-	            continue
-	          }
+					for (const node of mutation.removedNodes) {
+						if (!node.matches) {
+							continue
+						}
 
-	          for (const action of window._components.actions.destroy) {
-	            if (!node.matches(action.selector)) {
-	              continue
-	            }
+						for (const action of window._components.actions.destroy) {
+							if (!node.matches(action.selector)) {
+								continue
+							}
 
-	            action.callback(node)
-	          }
-	        }
-	      }
-	    }),
-	  }
+							action.callback(node)
+						}
+					}
+				}
+			}),
+		}
 
-	  window._components.observer.observe(document.body, {
-	    childList: true,
-	    subtree: true,
-	  })
+		window._components.observer.observe(document.body, {
+			childList: true,
+			subtree: true,
+		})
 	}
 
 	function onMount (selector, callback) {
-	  _componentsInit()
+		_componentsInit()
 
-	  const nodes = Array.from(document.querySelectorAll(selector))
+		const nodes = Array.from(document.querySelectorAll(selector))
 
-	  for (const node of nodes) {
-	    callback(node)
-	  }
+		for (const node of nodes) {
+			callback(node)
+		}
 
-	  window._components.actions.mount.push({ selector, callback })
+		window._components.actions.mount.push({ selector, callback })
 	}
 
 	function onDestroy (selector, callback) {
-	  _componentsInit()
+		_componentsInit()
 
-	  window._components.actions.destroy.push({ selector, callback })
+		window._components.actions.destroy.push({ selector, callback })
 	}
 </script>
 

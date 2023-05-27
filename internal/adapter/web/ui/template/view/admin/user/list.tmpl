@@ -21,9 +21,9 @@
 		{{range .Vars.Users.Page.Rows}}
 			<tr>
 				<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
-				<td data-locale-datetime>
+				<td>
 					{{if not .LastLoggedInAt.IsZero}}
-						{{FormatTime .LastLoggedInAt "RFC3339"}}
+						<time datetime="{{FormatTime .LastLoggedInAt "RFC3339"}}" data-date="full">{{FormatTime .LastLoggedInAt "DateTime"}}</time>
 					{{end}}
 				</td>
 				<td class="text-right"><a href="?{{URL (QueryReplace $.Query "edit" .ID)}}">Edit</a></td>
