@@ -140,7 +140,7 @@ func Open(ctx context.Context, kind Kind, filename string) (*sql.DB, error) {
 }
 
 func OpenInMemoryTestDatabase(ctx context.Context) *sql.DB {
-	randomName := errors.Must(uuid.NewV4()).String() + ".db"
+	randomName := errors.Must(uuid.NewV4()).String() + ".sqlite"
 
 	return errors.Must(Open(ctx, KindMemory, randomName))
 }
@@ -422,20 +422,20 @@ func validateArg(arg any) error {
 }
 
 type DB struct {
-	db *sql.DB
+	*sql.DB
 }
 
 func newDB(db *sql.DB) *DB {
-	return &DB{db: db}
+	return &DB{DB: db}
 }
 
 func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
-	tx, err := db.db.BeginTx(ctx, opts)
+	tx, err := db.DB.BeginTx(ctx, opts)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
 
-	return &Tx{tx: tx}, nil
+	return &Tx{Tx: tx}, nil
 }
 
 func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
@@ -445,7 +445,7 @@ func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 		}
 	}
 
-	res, err := db.db.ExecContext(ctx, query, args...)
+	res, err := db.DB.ExecContext(ctx, query, args...)
 	if err != nil {
 		return res, errors.Tracef(repoerr(err))
 	}
@@ -460,7 +460,7 @@ func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Row
 		}
 	}
 
-	rows, err := db.db.QueryContext(ctx, query, args...)
+	rows, err := db.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, errors.Tracef(repoerr(err))
 	}
@@ -475,21 +475,21 @@ func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *R
 		}
 	}
 
-	row := db.db.QueryRowContext(ctx, query, args...)
+	row := db.DB.QueryRowContext(ctx, query, args...)
 
-	return &Row{row: row}
+	return &Row{Row: row}
 }
 
 type Tx struct {
-	tx *sql.Tx
+	*sql.Tx
 }
 
 func (tx *Tx) Commit() error {
-	return tx.tx.Commit()
+	return tx.Tx.Commit()
 }
 
 func (tx *Tx) Rollback() error {
-	return tx.tx.Rollback()
+	return tx.Tx.Rollback()
 }
 
 func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
@@ -499,7 +499,7 @@ func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 		}
 	}
 
-	res, err := tx.tx.ExecContext(ctx, query, args...)
+	res, err := tx.Tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return res, errors.Tracef(repoerr(err))
 	}
@@ -514,7 +514,7 @@ func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Row
 		}
 	}
 
-	rows, err := tx.tx.QueryContext(ctx, query, args...)
+	rows, err := tx.Tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, errors.Tracef(repoerr(err))
 	}
@@ -529,14 +529,14 @@ func (tx *Tx) QueryRowContext(ctx context.Context, query string, args ...any) *R
 		}
 	}
 
-	row := tx.tx.QueryRowContext(ctx, query, args...)
+	row := tx.Tx.QueryRowContext(ctx, query, args...)
 
-	return &Row{row: row}
+	return &Row{Row: row}
 }
 
 type Row struct {
 	err error
-	row *sql.Row
+	*sql.Row
 }
 
 func (r *Row) Err() error {
@@ -544,7 +544,7 @@ func (r *Row) Err() error {
 		return errors.Tracef(r.err)
 	}
 
-	return errors.Tracef(repoerr(r.row.Err()))
+	return errors.Tracef(repoerr(r.Row.Err()))
 }
 
 func (r *Row) Scan(dst ...any) error {
@@ -552,7 +552,7 @@ func (r *Row) Scan(dst ...any) error {
 		return errors.Tracef(r.err)
 	}
 
-	return errors.Tracef(repoerr(r.row.Scan(dst...)))
+	return errors.Tracef(repoerr(r.Row.Scan(dst...)))
 }
 
 type Rows struct {

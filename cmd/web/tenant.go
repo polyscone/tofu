@@ -40,7 +40,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	db := databases.data[data.Alias]
 	if db == nil {
 		var err error
-		p := filepath.Join(opts.data, data.Alias, "main.db")
+		p := filepath.Join(opts.data, data.Alias, "main.sqlite")
 		db, err = sqlite.Open(ctx, sqlite.KindFile, p)
 		if err != nil {
 			return nil, errors.Tracef(err)
