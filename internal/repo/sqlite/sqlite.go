@@ -314,39 +314,78 @@ func limitOffsetSQL(limit, offset int) string {
 	return ""
 }
 
-type NullTime time.Time
+type Time time.Time
 
-func (n NullTime) String() string {
-	return time.Time(n).String()
+func (t Time) String() string {
+	return time.Time(t).String()
 }
 
-func (n *NullTime) UTC() *NullTime {
-	if n == nil {
-		return nil
-	}
-
-	utc := (*time.Time)(n).UTC()
-
-	return (*NullTime)(&utc)
+func (t Time) UTC() Time {
+	return Time(time.Time(t).UTC())
 }
 
-func (n *NullTime) Scan(value any) error {
+func (t *Time) Scan(value any) error {
 	switch value := value.(type) {
 	case nil:
-		*(*time.Time)(n) = time.Time{}
+		*t = Time(time.Time{})
 
 	case time.Time:
-		*(*time.Time)(n) = value
+		*t = Time(value)
 
 	case *time.Time:
-		*(*time.Time)(n) = *value
+		*t = Time(*value)
 
 	case string:
-		var err error
-		*(*time.Time)(n), err = time.Parse(time.RFC3339, value)
+		parsed, err := time.Parse(time.RFC3339, value)
 		if err != nil {
 			return errors.Tracef(err)
 		}
+
+		*t = Time(parsed)
+
+	default:
+		return errors.Tracef("Time: cannot scan to time.Time: %T", value)
+	}
+
+	return nil
+}
+
+func (t Time) Value() (driver.Value, error) {
+	if time.Time(t).IsZero() {
+		return time.Time{}.Format(time.RFC3339), nil
+	}
+
+	return time.Time(t).Format(time.RFC3339), nil
+}
+
+type NullTime time.Time
+
+func (t NullTime) String() string {
+	return time.Time(t).String()
+}
+
+func (t NullTime) UTC() NullTime {
+	return NullTime(time.Time(t).UTC())
+}
+
+func (t *NullTime) Scan(value any) error {
+	switch value := value.(type) {
+	case nil:
+		*t = NullTime(time.Time{})
+
+	case time.Time:
+		*t = NullTime(value)
+
+	case *time.Time:
+		*t = NullTime(*value)
+
+	case string:
+		parsed, err := time.Parse(time.RFC3339, value)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		*t = NullTime(parsed)
 
 	default:
 		return errors.Tracef("NullTime: cannot scan to time.Time: %T", value)
@@ -355,12 +394,28 @@ func (n *NullTime) Scan(value any) error {
 	return nil
 }
 
-func (n *NullTime) Value() (driver.Value, error) {
-	if n == nil || (*time.Time)(n).IsZero() {
+func (t NullTime) Value() (driver.Value, error) {
+	if time.Time(t).IsZero() {
 		return nil, nil
 	}
 
-	return (*time.Time)(n).Format(time.RFC3339), nil
+	return time.Time(t).Format(time.RFC3339), nil
+}
+
+func validateArg(arg any) error {
+	switch arg := arg.(type) {
+	case time.Time, *time.Time, **time.Time:
+		return errors.Tracef(
+			"cannot use %T as an arg; convert to one of: %T, %T, %T, or %T instead",
+			arg, Time{}, &Time{}, NullTime{}, &NullTime{},
+		)
+
+	case sql.NamedArg:
+		return validateArg(arg.Value)
+
+	default:
+		return nil
+	}
 }
 
 type DB struct {
@@ -381,6 +436,12 @@ func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 }
 
 func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
 	res, err := db.db.ExecContext(ctx, query, args...)
 	if err != nil {
 		return res, errors.Tracef(repoerr(err))
@@ -399,6 +460,12 @@ func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Row
 }
 
 func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return &Row{err: errors.Tracef(err)}
+		}
+	}
+
 	row := db.db.QueryRowContext(ctx, query, args...)
 
 	return &Row{row: row}
@@ -417,6 +484,12 @@ func (tx *Tx) Rollback() error {
 }
 
 func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
 	res, err := tx.tx.ExecContext(ctx, query, args...)
 	if err != nil {
 		return res, errors.Tracef(repoerr(err))
@@ -426,6 +499,12 @@ func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 }
 
 func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
 	rows, err := tx.tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, errors.Tracef(repoerr(err))
@@ -435,20 +514,35 @@ func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Row
 }
 
 func (tx *Tx) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return &Row{err: errors.Tracef(err)}
+		}
+	}
+
 	row := tx.tx.QueryRowContext(ctx, query, args...)
 
 	return &Row{row: row}
 }
 
 type Row struct {
+	err error
 	row *sql.Row
 }
 
 func (r *Row) Err() error {
+	if r.err != nil {
+		return errors.Tracef(r.err)
+	}
+
 	return errors.Tracef(repoerr(r.row.Err()))
 }
 
 func (r *Row) Scan(dst ...any) error {
+	if r.err != nil {
+		return errors.Tracef(r.err)
+	}
+
 	return errors.Tracef(repoerr(r.row.Scan(dst...)))
 }
 

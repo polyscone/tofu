@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"io/fs"
 	"strings"
+	"time"
 
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/aesgcm"
@@ -206,7 +207,7 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			&user.TOTPDigits,
 			&user.TOTPPeriod,
 			(*NullTime)(&user.TOTPVerifiedAt),
-			&user.RegisteredAt,
+			(*Time)(&user.RegisteredAt),
 			(*NullTime)(&user.ActivatedAt),
 			(*NullTime)(&user.LastLoggedInAt),
 			&total,
@@ -428,10 +429,10 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 		sql.Named("totp_algorithm", u.TOTPAlgorithm),
 		sql.Named("totp_digits", u.TOTPDigits),
 		sql.Named("totp_period_ns", u.TOTPPeriod),
-		sql.Named("totp_verified_at", (*NullTime)(&u.TOTPVerifiedAt).UTC()),
-		sql.Named("registered_at", u.RegisteredAt.UTC()),
-		sql.Named("activated_at", (*NullTime)(&u.ActivatedAt).UTC()),
-		sql.Named("last_logged_in_at", (*NullTime)(&u.LastLoggedInAt).UTC()),
+		sql.Named("totp_verified_at", NullTime(u.TOTPVerifiedAt.UTC())),
+		sql.Named("registered_at", Time(u.RegisteredAt.UTC())),
+		sql.Named("activated_at", NullTime(u.ActivatedAt.UTC())),
+		sql.Named("last_logged_in_at", NullTime(u.LastLoggedInAt.UTC())),
 	)
 	if err != nil {
 		return errors.Tracef(err)
@@ -492,7 +493,8 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) err
 			totp_verified_at = :totp_verified_at,
 			registered_at = :registered_at,
 			activated_at = :activated_at,
-			last_logged_in_at = :last_logged_in_at
+			last_logged_in_at = :last_logged_in_at,
+			updated_at = :updated_at
 		WHERE id = :id
 	`,
 		sql.Named("id", u.ID),
@@ -504,10 +506,11 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) err
 		sql.Named("totp_algorithm", u.TOTPAlgorithm),
 		sql.Named("totp_digits", u.TOTPDigits),
 		sql.Named("totp_period_ns", u.TOTPPeriod),
-		sql.Named("totp_verified_at", (*NullTime)(&u.TOTPVerifiedAt).UTC()),
-		sql.Named("registered_at", u.RegisteredAt.UTC()),
-		sql.Named("activated_at", (*NullTime)(&u.ActivatedAt).UTC()),
-		sql.Named("last_logged_in_at", (*NullTime)(&u.LastLoggedInAt).UTC()),
+		sql.Named("totp_verified_at", NullTime(u.TOTPVerifiedAt.UTC())),
+		sql.Named("registered_at", Time(u.RegisteredAt.UTC())),
+		sql.Named("activated_at", NullTime(u.ActivatedAt.UTC())),
+		sql.Named("last_logged_in_at", NullTime(u.LastLoggedInAt.UTC())),
+		sql.Named("updated_at", Time(time.Now().UTC())),
 	)
 	if err != nil {
 		return errors.Tracef(err)

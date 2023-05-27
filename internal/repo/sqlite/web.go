@@ -47,7 +47,7 @@ func NewWebRepo(ctx context.Context, db *sql.DB, sessionLifespan time.Duration) 
 				DELETE FROM web__sessions
 				WHERE updated_at <= :expires_at;
 			`,
-				sql.Named("expires_at", time.Now().Add(-sessionLifespan).UTC()),
+				sql.Named("expires_at", Time(time.Now().Add(-sessionLifespan).UTC())),
 			)
 			if err != nil {
 				logger.PrintError(err)
@@ -64,7 +64,7 @@ func NewWebRepo(ctx context.Context, db *sql.DB, sessionLifespan time.Duration) 
 				DELETE FROM web__tokens
 				WHERE expires_at <= :expires_at;
 			`,
-				sql.Named("expires_at", time.Now().UTC()),
+				sql.Named("expires_at", Time(time.Now().UTC())),
 			)
 			if err != nil {
 				logger.PrintError(err)
@@ -119,7 +119,7 @@ func (r *WebRepo) SaveSession(ctx context.Context, s session.Session) error {
 	`,
 		sql.Named("id", s.ID),
 		sql.Named("data", b),
-		sql.Named("updated_at", time.Now().UTC()),
+		sql.Named("updated_at", Time(time.Now().UTC())),
 	)
 
 	return errors.Tracef(err)
@@ -168,7 +168,7 @@ func (r *WebRepo) add(ctx context.Context, email string, ttl time.Duration, kind
 	sum := sha256.Sum256(token)
 	hash := sum[:]
 
-	expiresAt := time.Now().Add(ttl).UTC()
+	expiresAt := Time(time.Now().Add(ttl).UTC())
 
 	_, err = tx.ExecContext(ctx, `
 		INSERT INTO web__tokens (
@@ -219,7 +219,7 @@ func (r *WebRepo) findToken(ctx context.Context, token, kind string) (string, er
 	`,
 		sql.Named("hash", hash),
 		sql.Named("kind", kind),
-		sql.Named("expires_at", time.Now().UTC()),
+		sql.Named("expires_at", Time(time.Now().UTC())),
 	).Scan(&email)
 
 	return email, errors.Tracef(repoerr(err))
@@ -245,7 +245,7 @@ func (r *WebRepo) consume(ctx context.Context, token, kind string) error {
 	`,
 		sql.Named("hash", hash),
 		sql.Named("kind", kind),
-		sql.Named("expires_at", time.Now().UTC()),
+		sql.Named("expires_at", Time(time.Now().UTC())),
 	)
 	if err != nil {
 		return errors.Tracef(err)
