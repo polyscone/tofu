@@ -13,7 +13,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
@@ -101,11 +100,12 @@ type ViewData struct {
 	Addr         AddrData
 	App          AppData
 	Session      SessionData
+	Data         any
 	Vars         Vars
 }
 
-func (v ViewData) WithBook(book any) ViewData {
-	v.Vars["__Book"] = book
+func (v ViewData) WithData(data any) ViewData {
+	v.Data = data
 
 	return v
 }
@@ -134,62 +134,20 @@ type Services struct {
 func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 	sessions := session.NewManager(tenant.Repo.Web)
 	funcs := template.FuncMap{
-		"HTML":       func(s string) template.HTML { return template.HTML(s) },
-		"HTMLAttr":   func(s string) template.HTMLAttr { return template.HTMLAttr(s) },
-		"URL":        func(s string) template.URL { return template.URL(s) },
-		"StatusText": http.StatusText,
-		"Path":       mux.Path,
-		"Add":        func(a, b int) int { return a + b },
-		"Sub":        func(a, b int) int { return a - b },
-		"Mul":        func(a, b int) int { return a * b },
-		"Div":        func(a, b int) int { return a / b },
-		"Mod":        func(a, b int) int { return a % b },
-		"Ints": func(start, end int) []int {
-			n := end - start
-			ints := make([]int, n)
-			for i := 0; i < n; i++ {
-				ints[i] = start + i
-			}
-
-			return ints
-		},
-		"QueryReplace": func(q url.Values, pairs ...any) (string, error) {
-			if len(pairs)%2 == 1 {
-				return "", errors.Tracef("QueryReplace expects pairs of key value replacements")
-			}
-
-			u, err := url.Parse("?" + q.Encode())
-			if err != nil {
-				return "", errors.Tracef(err)
-			}
-
-			qq := u.Query()
-			for i := 0; i < len(pairs); i += 2 {
-				key := fmt.Sprintf("%v", pairs[i])
-				value := pairs[i+1]
-
-				if value == nil {
-					qq.Del(key)
-
-					continue
-				}
-
-				qq.Set(key, fmt.Sprintf("%v", value))
-			}
-
-			return qq.Encode(), nil
-		},
-		"FormatTime": func(t time.Time, format string) string {
-			switch format {
-			case "DateTime":
-				return t.Format(time.DateTime)
-
-			case "RFC3339":
-				return t.Format(time.RFC3339)
-			}
-
-			return t.Format(format)
-		},
+		"Add":          tmplAdd,
+		"Sub":          tmplSub,
+		"Mul":          tmplMul,
+		"Div":          tmplDiv,
+		"Mod":          tmplMod,
+		"Ints":         tmplInts,
+		"StatusText":   http.StatusText,
+		"HTML":         tmplHTML,
+		"HTMLAttr":     tmplHTMLAttr,
+		"URL":          tmplURL,
+		"Path":         mux.Path,
+		"QueryString":  tmplQueryString,
+		"QueryReplace": tmplQueryReplace,
+		"FormatTime":   tmplFormatTime,
 	}
 
 	return &Services{
@@ -242,7 +200,7 @@ func (svc *Services) PassportByEmail(ctx context.Context, email string) (passpor
 	return passport.New(ctx, svc.Sessions, user), nil
 }
 
-func (svc *Services) Path(name string, paramArgPairs ...string) string {
+func (svc *Services) Path(name string, paramArgPairs ...any) string {
 	return svc.mux.Path(name, paramArgPairs...)
 }
 

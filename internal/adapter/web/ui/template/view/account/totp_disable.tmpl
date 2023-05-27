@@ -15,7 +15,7 @@
 
 		<p>Enter your password to verify your identity and disable two-factor authentication.</p>
 
-		<form action="{{Path "account.totp.disable.post"}}?{{URL .Query.Encode}}" method="POST">
+		<form action="{{Path "account.totp.disable.post"}}{{QueryString .Query}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 			<input type="hidden" name="action" value="verify-totp">
 

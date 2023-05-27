@@ -2,40 +2,35 @@
 
 <h1>User Management</h1>
 
-{{if .Query.Get "edit"}}
-	<p><a href="?{{URL (QueryReplace .Query "edit" nil)}}">Back</a></p>
-	<p>Editing {{.Vars.User.Email}}</p>
-{{else}}
-	<form class="bag">
-		<input type="search" aria-label="Search" name="search" value="{{.Query.Get "search"}}" placeholder="Search" autofocus class="grow">
-		<button>Search</button>
-	</form>
+<form class="bag">
+	<input type="search" aria-label="Search" name="search" value="{{.Query.Get "search"}}" placeholder="Search" autofocus class="grow">
+	<button>Search</button>
+</form>
 
-	<table class="management">
+<table class="management">
+	<tr>
+		<th>Email</th>
+		<th>Last Login</th>
+		<th></th>
+	</tr>
+
+	{{range .Vars.Users.Page.Rows}}
 		<tr>
-			<th>Email</th>
-			<th>Last Login</th>
-			<th></th>
+			<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
+			<td>
+				{{if not .LastLoggedInAt.IsZero}}
+					<time datetime="{{FormatTime .LastLoggedInAt "RFC3339"}}" data-date="full">{{FormatTime .LastLoggedInAt "DateTime"}}</time>
+				{{end}}
+			</td>
+			<td class="text-right"><a href="{{Path "admin.user.edit" ":userID" .ID}}{{QueryString $.Query}}">Edit</a></td>
 		</tr>
+	{{else}}
+		<tr class="management__empty">
+			<td colspan="3">No data found</td>
+		</tr>
+	{{end}}
+</table>
 
-		{{range .Vars.Users.Page.Rows}}
-			<tr>
-				<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
-				<td>
-					{{if not .LastLoggedInAt.IsZero}}
-						<time datetime="{{FormatTime .LastLoggedInAt "RFC3339"}}" data-date="full">{{FormatTime .LastLoggedInAt "DateTime"}}</time>
-					{{end}}
-				</td>
-				<td class="text-right"><a href="?{{URL (QueryReplace $.Query "edit" .ID)}}">Edit</a></td>
-			</tr>
-		{{else}}
-			<tr class="management__empty">
-				<td colspan="3">No data found</td>
-			</tr>
-		{{end}}
-	</table>
-
-	{{template "pagination" .WithBook .Vars.Users}}
-{{end}}
+{{template "pagination" .WithData .Vars.Users}}
 
 {{end}}

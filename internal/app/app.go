@@ -3,7 +3,7 @@ package app
 import "errors"
 
 const (
-	Name        = "App Name"
+	Name        = "Tofu"
 	Description = "This is a base reference project for a hex architecture implementation in Go."
 )
 

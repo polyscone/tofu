@@ -46,6 +46,7 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	// Middleware
 	mux.Use(middleware.Recover(errorHandler))
 	mux.Use(middleware.Timeout(5*time.Second, errorHandler))
+	mux.Use(middleware.RemoveTrailingSlash)
 	mux.Use(middleware.MethodOverride)
 	mux.Use(middleware.RateLimit(50, 3, &middleware.RateLimitConfig{
 		ErrorHandler:   errorHandler,
@@ -88,7 +89,7 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	})
 
 	// Redirects
-	mux.Redirect(http.MethodGet, "/security.txt", "/.well-known/security.txt", http.StatusSeeOther)
+	mux.Redirect(http.MethodGet, "/security.txt", "/.well-known/security.txt", http.StatusMovedPermanently)
 
 	// Rewrites
 	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")

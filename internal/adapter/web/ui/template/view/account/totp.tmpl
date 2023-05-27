@@ -40,7 +40,7 @@
 		<p>After scanning the QR code, or manually entering the secret key, your app will display a 6 digit passcode that you can enter below to verify that your authenticator app is setup correctly and enable two-factor authentication.</p>
 		<p>Once two-factor authentication has been enabled you will be required to provide a 6 digit passcode to verify your identity when logging in.</p>
 
-		<form action="{{Path "account.totp.post"}}?{{URL .Query.Encode}}" method="POST">
+		<form action="{{Path "account.totp.post"}}{{QueryString .Query}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 			<input type="hidden" name="action" value="verify">
 
@@ -61,7 +61,7 @@
 
 		<p>Enter the phone number that you would like to use below and we'll send you a passcode to enable two-factor authentication.</p>
 
-		<form action="{{Path "account.totp.post"}}?{{URL .Query.Encode}}" method="POST">
+		<form action="{{Path "account.totp.post"}}{{QueryString .Query}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 			<input type="hidden" name="action" value="send-sms">
 
@@ -75,7 +75,7 @@
 		{{if .Vars.TOTPTelephone}}
 			<p class="title">Enable Two-Factor Authentication</p>
 
-			<form action="{{Path "account.totp.post"}}?{{URL .Query.Encode}}" method="POST">
+			<form action="{{Path "account.totp.post"}}{{QueryString .Query}}" method="POST">
 				<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 				<input type="hidden" name="action" value="verify">
 
