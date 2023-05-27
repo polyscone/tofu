@@ -320,13 +320,13 @@ func TestMuxPanics(t *testing.T) {
 
 		tt := []struct {
 			name string
-			list []string
+			list []any
 		}{
-			{"wrong number of elements", []string{":w"}},
-			{"wrong order", []string{"1", ":w"}},
-			{"missing parameter", []string{":w", "1"}},
-			{"unknown parameter", []string{":w", "1", ":x", "2", ":z", "3"}},
-			{"empty argument", []string{":w", "1", ":z", ""}},
+			{"wrong number of elements", []any{":w"}},
+			{"wrong order", []any{"1", ":w"}},
+			{"missing parameter", []any{":w", "1"}},
+			{"unknown parameter", []any{":w", "1", ":x", "2", ":z", "3"}},
+			{"empty argument", []any{":w", "1", ":z", ""}},
 		}
 		for _, tc := range tt {
 			tc := tc
@@ -364,13 +364,13 @@ func TestMuxPanics(t *testing.T) {
 
 		tt := []struct {
 			name string
-			list []string
+			list []any
 		}{
-			{"wrong number of elements", []string{":w"}},
-			{"wrong order", []string{"1", ":w"}},
-			{"missing parameter", []string{":w", "1"}},
-			{"unknown parameter", []string{":w", "1", ":x", "2", ":z", "3"}},
-			{"empty argument", []string{":w", "1", ":z", ""}},
+			{"wrong number of elements", []any{":w"}},
+			{"wrong order", []any{"1", ":w"}},
+			{"missing parameter", []any{":w", "1"}},
+			{"unknown parameter", []any{":w", "1", ":x", "2", ":z", "3"}},
+			{"empty argument", []any{":w", "1", ":z", ""}},
 			{"no arguments", nil},
 		}
 		for _, tc := range tt {

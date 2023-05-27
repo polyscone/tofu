@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
+	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 )
 
@@ -44,14 +47,16 @@ func (r *Route) String() string {
 //
 // If a parameter in the route's pattern is missing it will panic.
 // Empty replacements will also panic.
-func (r *Route) Replace(paramArgPairs ...string) string {
+func (r *Route) Replace(paramArgPairs ...any) string {
 	if len(paramArgPairs)%2 == 1 {
 		panic("route path substitution expects an equal number of arguments")
 	}
 
 	args := make(map[string]string, len(paramArgPairs)/2)
 	for i := 0; i < len(paramArgPairs); i += 2 {
-		param, arg := paramArgPairs[i], paramArgPairs[i+1]
+		param := fmt.Sprintf("%v", paramArgPairs[i])
+		arg := fmt.Sprintf("%v", paramArgPairs[i+1])
+
 		if !strings.HasPrefix(param, ":") {
 			panic(fmt.Sprintf("want argument %v to start with a colon", i))
 		}
@@ -192,7 +197,7 @@ func (sm *ServeMux) Route(name string) *Route {
 	return sm.named[name]
 }
 
-func (sm *ServeMux) Path(key string, paramArgPairs ...string) string {
+func (sm *ServeMux) Path(key string, paramArgPairs ...any) string {
 	route := sm.Route(key)
 	if route == nil {
 		panic(fmt.Sprintf("route %q does not exist", key))
@@ -531,4 +536,164 @@ func URLParam(r *http.Request, name string) string {
 	}
 
 	return value
+}
+
+// URLParamAs returns the value associated with the given parameter name in
+// the given request URL after attempting to convert it to the given type T.
+// If the parameter name is not found then it panics.
+func URLParamAs[T any](r *http.Request, name string) (T, error) {
+	str := URLParam(r, name)
+
+	var res T
+	as := reflect.ValueOf(&res).Elem()
+
+	var err error
+	switch typ := as.Type(); typ.Kind() {
+	case reflect.Bool:
+		as.SetBool(str == "1" || str == "checked")
+
+	case reflect.Float32:
+		var value float64
+		if str != "" {
+			value, err = strconv.ParseFloat(str, 32)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetFloat(value)
+
+	case reflect.Float64:
+		var value float64
+		if str != "" {
+			value, err = strconv.ParseFloat(str, 64)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetFloat(value)
+
+	case reflect.Int8:
+		var value int64
+		if str != "" {
+			value, err = strconv.ParseInt(str, 10, 8)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetInt(value)
+
+	case reflect.Int16:
+		var value int64
+		if str != "" {
+			value, err = strconv.ParseInt(str, 10, 16)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetInt(value)
+
+	case reflect.Int32:
+		var value int64
+		if str != "" {
+			value, err = strconv.ParseInt(str, 10, 32)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetInt(value)
+
+	case reflect.Int64:
+		var value int64
+		if str != "" {
+			value, err = strconv.ParseInt(str, 10, 64)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetInt(value)
+
+	case reflect.Int:
+		var value int64
+		if str != "" {
+			value, err = strconv.ParseInt(str, 10, 64)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetInt(value)
+
+	case reflect.Uint8:
+		var value uint64
+		if str != "" {
+			value, err = strconv.ParseUint(str, 10, 8)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetUint(value)
+
+	case reflect.Uint16:
+		var value uint64
+		if str != "" {
+			value, err = strconv.ParseUint(str, 10, 16)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetUint(value)
+
+	case reflect.Uint32:
+		var value uint64
+		if str != "" {
+			value, err = strconv.ParseUint(str, 10, 32)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetUint(value)
+
+	case reflect.Uint64:
+		var value uint64
+		if str != "" {
+			value, err = strconv.ParseUint(str, 10, 64)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetUint(value)
+
+	case reflect.Uint:
+		var value uint64
+		if str != "" {
+			value, err = strconv.ParseUint(str, 10, 64)
+			if err != nil {
+				return res, errors.Tracef(err)
+			}
+		}
+
+		as.SetUint(value)
+
+	case reflect.String:
+		as.SetString(str)
+
+	default:
+		if typ == reflect.TypeOf([]byte(nil)) {
+			as.SetBytes([]byte(str))
+		} else {
+			return res, errors.Tracef("unsupported type %v", typ)
+		}
+	}
+
+	return res, nil
 }
