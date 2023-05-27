@@ -9,6 +9,10 @@ import (
 // Sprint returns the given error's string value by calling Error(), unless it
 // is a Trace, in which case it will return String().
 func Sprint(err error) string {
+	if err == nil {
+		return "<nil>"
+	}
+
 	if trace, ok := err.(Trace); ok {
 		return trace.String()
 	}
