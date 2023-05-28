@@ -3,11 +3,13 @@ package handler
 import (
 	"fmt"
 	"html/template"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
 func tmplAdd(a, b int) int {
@@ -40,19 +42,46 @@ func tmplInts(start, end int) []int {
 	return ints
 }
 
-func tmplHTML(s string) template.HTML {
-	return template.HTML(s)
+func tmplStatusText(code int) string {
+	return http.StatusText(code)
 }
 
-func tmplHTMLAttr(s string) template.HTMLAttr {
-	return template.HTMLAttr(s)
+type tmplPathFunc func(name string, paramArgPairs ...any) template.URL
+
+func tmplPath(mux *router.ServeMux) tmplPathFunc {
+	return func(name string, paramArgPairs ...any) template.URL {
+		return template.URL(mux.Path(name, paramArgPairs...))
+	}
 }
 
-func tmplURL(s string) template.URL {
-	return template.URL(s)
+func tmplQueryReplace(q url.Values, pairs ...any) (url.Values, error) {
+	if len(pairs)%2 == 1 {
+		return nil, errors.Tracef("QueryString expects pairs of key value replacements")
+	}
+
+	u, err := url.Parse("?" + q.Encode())
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	q = u.Query()
+	for i := 0; i < len(pairs); i += 2 {
+		key := fmt.Sprintf("%v", pairs[i])
+		value := pairs[i+1]
+
+		if value == nil {
+			q.Del(key)
+
+			continue
+		}
+
+		q.Set(key, fmt.Sprintf("%v", value))
+	}
+
+	return q, nil
 }
 
-func tmplQueryString(q url.Values) string {
+func tmplQueryURL(q url.Values) template.URL {
 	value := q.Encode()
 
 	if value == "" {
@@ -63,34 +92,31 @@ func tmplQueryString(q url.Values) string {
 		value = "?" + value
 	}
 
-	return value
+	return template.URL(value)
 }
 
-func tmplQueryReplace(q url.Values, pairs ...any) (string, error) {
-	if len(pairs)%2 == 1 {
-		return "", errors.Tracef("QueryReplace expects pairs of key value replacements")
-	}
-
-	u, err := url.Parse("?" + q.Encode())
+func tmplQueryString(q url.Values, pairs ...any) (template.URL, error) {
+	q, err := tmplQueryReplace(q, pairs...)
 	if err != nil {
 		return "", errors.Tracef(err)
 	}
 
-	qq := u.Query()
-	for i := 0; i < len(pairs); i += 2 {
-		key := fmt.Sprintf("%v", pairs[i])
-		value := pairs[i+1]
+	for key, values := range q {
+		var keep bool
+		for _, value := range values {
+			if value != "" {
+				keep = true
 
-		if value == nil {
-			qq.Del(key)
-
-			continue
+				break
+			}
 		}
 
-		qq.Set(key, fmt.Sprintf("%v", value))
+		if !keep {
+			q.Del(key)
+		}
 	}
 
-	return tmplQueryString(qq), nil
+	return tmplQueryURL(q), nil
 }
 
 func tmplFormatTime(t time.Time, format string) string {
