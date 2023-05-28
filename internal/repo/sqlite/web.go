@@ -38,18 +38,14 @@ func NewWebRepo(ctx context.Context, db *sql.DB, sessionLifespan time.Duration) 
 		return nil, errors.Tracef(err)
 	}
 
+	r := WebRepo{db: newDB(db)}
+
 	// Background goroutine to clean up expired sessions
 	background.Go(func() {
 		ctx := context.Background()
 
 		for range time.Tick(sessionLifespan) {
-			_, err := db.ExecContext(ctx, `
-				DELETE FROM web__sessions
-				WHERE updated_at <= :expires_at;
-			`,
-				sql.Named("expires_at", Time(time.Now().Add(-sessionLifespan).UTC())),
-			)
-			if err != nil {
+			if err := r.DestroyExpiredSessions(ctx, sessionLifespan); err != nil {
 				logger.PrintError(err)
 			}
 		}
@@ -60,27 +56,175 @@ func NewWebRepo(ctx context.Context, db *sql.DB, sessionLifespan time.Duration) 
 		ctx := context.Background()
 
 		for range time.Tick(5 * time.Minute) {
-			_, err := db.ExecContext(ctx, `
-				DELETE FROM web__tokens
-				WHERE expires_at <= :expires_at;
-			`,
-				sql.Named("expires_at", Time(time.Now().UTC())),
-			)
-			if err != nil {
+			if err := r.DeleteExpiredTokens(ctx); err != nil {
 				logger.PrintError(err)
 			}
 		}
 	})
 
-	r := WebRepo{db: newDB(db)}
-
 	return &r, nil
 }
 
 func (r *WebRepo) FindSessionDataByID(ctx context.Context, id string) (session.Data, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	session, err := r.findSessionDataByID(ctx, tx, id)
+
+	return session, errors.Tracef(err)
+}
+
+func (r *WebRepo) SaveSession(ctx context.Context, s session.Session) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	err = r.saveSession(ctx, tx, s)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	return errors.Tracef(tx.Commit())
+}
+
+func (r *WebRepo) DestroySession(ctx context.Context, id string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	err = r.destroySession(ctx, tx, id)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	return errors.Tracef(tx.Commit())
+}
+
+func (r *WebRepo) DestroyExpiredSessions(ctx context.Context, lifespan time.Duration) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	err = r.destroyExpiredSessions(ctx, tx, lifespan)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	return errors.Tracef(tx.Commit())
+}
+
+func (r *WebRepo) FindActivationTokenEmail(ctx context.Context, token string) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	token, err = r.findToken(ctx, tx, token, webTokenKindActivation)
+
+	return token, errors.Tracef(err)
+}
+
+func (r *WebRepo) FindResetPasswordTokenEmail(ctx context.Context, token string) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	token, err = r.findToken(ctx, tx, token, webTokenKindResetPassword)
+
+	return token, errors.Tracef(err)
+}
+
+func (r *WebRepo) AddActivationToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	token, err := r.addToken(ctx, tx, email, ttl, webTokenKindActivation)
+	if err != nil {
+		return "", errors.Tracef(err)
+	}
+
+	return token, errors.Tracef(tx.Commit())
+}
+
+func (r *WebRepo) AddResetPasswordToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	token, err := r.addToken(ctx, tx, email, ttl, webTokenKindResetPassword)
+	if err != nil {
+		return "", errors.Tracef(err)
+	}
+
+	return token, errors.Tracef(tx.Commit())
+}
+
+func (r *WebRepo) ConsumeActivationToken(ctx context.Context, token string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	err = r.consumeToken(ctx, tx, token, webTokenKindActivation)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	return errors.Tracef(tx.Commit())
+}
+
+func (r *WebRepo) ConsumeResetPasswordToken(ctx context.Context, token string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	err = r.consumeToken(ctx, tx, token, webTokenKindResetPassword)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	return errors.Tracef(tx.Commit())
+}
+
+func (r *WebRepo) DeleteExpiredTokens(ctx context.Context) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	err = r.deleteExpiredTokens(ctx, tx)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	return errors.Tracef(tx.Commit())
+}
+
+func (r *WebRepo) findSessionDataByID(ctx context.Context, tx *Tx, id string) (session.Data, error) {
 	var data []byte
 
-	err := r.db.QueryRowContext(ctx, `
+	err := tx.QueryRowContext(ctx, `
 		SELECT data
 		FROM web__sessions
 		WHERE id = :id;
@@ -105,17 +249,22 @@ func (r *WebRepo) FindSessionDataByID(ctx context.Context, id string) (session.D
 	return res, errors.Tracef(err)
 }
 
-func (r *WebRepo) SaveSession(ctx context.Context, s session.Session) error {
+func (r *WebRepo) saveSession(ctx context.Context, tx *Tx, s session.Session) error {
 	b, err := json.Marshal(s.Data)
 	if err != nil {
 		return errors.Tracef(err)
 	}
 
-	_, err = r.db.ExecContext(ctx, `
-		INSERT OR REPLACE INTO web__sessions
-			(id, data, updated_at)
-		VALUES
-			(:id, :data, :updated_at);
+	_, err = tx.ExecContext(ctx, `
+		INSERT OR REPLACE INTO web__sessions (
+			id,
+			data,
+			updated_at
+		) VALUES (
+			:id,
+			:data,
+			:updated_at
+		);
 	`,
 		sql.Named("id", s.ID),
 		sql.Named("data", b),
@@ -125,8 +274,8 @@ func (r *WebRepo) SaveSession(ctx context.Context, s session.Session) error {
 	return errors.Tracef(err)
 }
 
-func (r *WebRepo) DestroySession(ctx context.Context, id string) error {
-	_, err := r.db.ExecContext(ctx, `
+func (r *WebRepo) destroySession(ctx context.Context, tx *Tx, id string) error {
+	_, err := tx.ExecContext(ctx, `
 		DELETE FROM web__sessions
 		WHERE id = :id;
 	`,
@@ -136,14 +285,69 @@ func (r *WebRepo) DestroySession(ctx context.Context, id string) error {
 	return errors.Tracef(err)
 }
 
-func (r *WebRepo) add(ctx context.Context, email string, ttl time.Duration, kind string) (string, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return "", errors.Tracef(err)
-	}
-	defer tx.Rollback()
+func (r *WebRepo) destroyExpiredSessions(ctx context.Context, tx *Tx, lifespan time.Duration) error {
+	_, err := tx.ExecContext(ctx, `
+		DELETE FROM web__sessions
+		WHERE updated_at <= :expires_at;
+	`,
+		sql.Named("expires_at", Time(time.Now().Add(-lifespan).UTC())),
+	)
 
-	_, err = tx.ExecContext(ctx, `
+	return errors.Tracef(err)
+}
+
+func (r *WebRepo) findToken(ctx context.Context, tx *Tx, token, kind string) (string, error) {
+	sum := sha256.Sum256([]byte(token))
+	hash := sum[:]
+
+	var email string
+
+	err := tx.QueryRowContext(ctx, `
+		SELECT email
+		FROM web__tokens
+		WHERE
+			hash = :hash AND
+			kind = :kind AND
+			expires_at > :expires_at;
+	`,
+		sql.Named("hash", hash),
+		sql.Named("kind", kind),
+		sql.Named("expires_at", Time(time.Now().UTC())),
+	).Scan(&email)
+
+	return email, errors.Tracef(err)
+}
+
+func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) error {
+	sum := sha256.Sum256([]byte(token))
+	hash := sum[:]
+
+	res, err := tx.ExecContext(ctx, `
+		DELETE FROM web__tokens	WHERE
+			hash = :hash AND
+			kind = :kind AND
+			expires_at > :expires_at;
+	`,
+		sql.Named("hash", hash),
+		sql.Named("kind", kind),
+		sql.Named("expires_at", Time(time.Now().UTC())),
+	)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	if affected == 0 {
+		return errors.Tracef(repo.ErrNotFound)
+	}
+
+	return nil
+}
+
+func (r *WebRepo) addToken(ctx context.Context, tx *Tx, email string, ttl time.Duration, kind string) (string, error) {
+	_, err := tx.ExecContext(ctx, `
 		DELETE FROM web__tokens
 		WHERE
 			email = :email AND
@@ -192,79 +396,16 @@ func (r *WebRepo) add(ctx context.Context, email string, ttl time.Duration, kind
 		return "", errors.Tracef(err)
 	}
 
-	return string(token), errors.Tracef(tx.Commit())
+	return string(token), nil
 }
 
-func (r *WebRepo) AddActivationToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
-	return r.add(ctx, email, ttl, webTokenKindActivation)
-}
-
-func (r *WebRepo) AddResetPasswordToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
-	return r.add(ctx, email, ttl, webTokenKindResetPassword)
-}
-
-func (r *WebRepo) findToken(ctx context.Context, token, kind string) (string, error) {
-	sum := sha256.Sum256([]byte(token))
-	hash := sum[:]
-
-	var email string
-
-	err := r.db.QueryRowContext(ctx, `
-		SELECT email
-		FROM web__tokens
-		WHERE
-			hash = :hash AND
-			kind = :kind AND
-			expires_at > :expires_at;
+func (r *WebRepo) deleteExpiredTokens(ctx context.Context, tx *Tx) error {
+	_, err := tx.ExecContext(ctx, `
+		DELETE FROM web__tokens
+		WHERE expires_at <= :expires_at;
 	`,
-		sql.Named("hash", hash),
-		sql.Named("kind", kind),
-		sql.Named("expires_at", Time(time.Now().UTC())),
-	).Scan(&email)
-
-	return email, errors.Tracef(repoerr(err))
-}
-
-func (r *WebRepo) FindActivationTokenEmail(ctx context.Context, token string) (string, error) {
-	return r.findToken(ctx, token, webTokenKindActivation)
-}
-
-func (r *WebRepo) FindResetPasswordTokenEmail(ctx context.Context, token string) (string, error) {
-	return r.findToken(ctx, token, webTokenKindResetPassword)
-}
-
-func (r *WebRepo) consume(ctx context.Context, token, kind string) error {
-	sum := sha256.Sum256([]byte(token))
-	hash := sum[:]
-
-	res, err := r.db.ExecContext(ctx, `
-		DELETE FROM web__tokens	WHERE
-			hash = :hash AND
-			kind = :kind AND
-			expires_at > :expires_at;
-	`,
-		sql.Named("hash", hash),
-		sql.Named("kind", kind),
 		sql.Named("expires_at", Time(time.Now().UTC())),
 	)
-	if err != nil {
-		return errors.Tracef(err)
-	}
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return errors.Tracef(err)
-	}
-	if affected == 0 {
-		return errors.Tracef(repo.ErrNotFound)
-	}
 
-	return nil
-}
-
-func (r *WebRepo) ConsumeActivationToken(ctx context.Context, token string) error {
-	return r.consume(ctx, token, webTokenKindActivation)
-}
-
-func (r *WebRepo) ConsumeResetPasswordToken(ctx context.Context, token string) error {
-	return r.consume(ctx, token, webTokenKindResetPassword)
+	return errors.Tracef(err)
 }
