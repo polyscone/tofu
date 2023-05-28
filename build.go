@@ -67,6 +67,7 @@ var opts struct {
 	after             flagStrs
 	watch             bool
 	watchExts         string
+	watchPatterns     string
 	watchSkipPatterns string
 	watchInterval     time.Duration
 }
@@ -100,6 +101,7 @@ func main() {
 	flag.Var(&opts.after, "after", "Commands to run after a build has completed")
 	flag.BoolVar(&opts.watch, "watch", false, "Watches for changes and re-runs the build if changes are detected")
 	flag.StringVar(&opts.watchExts, "watch-exts", ".go .h .c .sql .json", "A space separated list of file extensions to watch")
+	flag.StringVar(&opts.watchPatterns, "watch-patterns", "", "A space separated list of patterns to watch")
 	flag.StringVar(&opts.watchSkipPatterns, "watch-skip-patterns", ".data/* .git/* .hg/* .svn/* node_modules/* build.go", "A space separated list of patterns to skip in watch mode")
 	flag.DurationVar(&opts.watchInterval, "watch-interval", 2*time.Second, "The interval that watch mode checks for file changes")
 	flag.Parse()
@@ -115,6 +117,7 @@ func main() {
 	opts.testTags = strings.TrimSpace(opts.tags + " " + opts.testTags)
 
 	opts.watchExts = strings.TrimSpace(opts.watchExts)
+	opts.watchPatterns = strings.TrimSpace(opts.watchPatterns)
 	opts.watchSkipPatterns = strings.TrimSpace(opts.watchSkipPatterns)
 
 	if !opts.build && !opts.vet && !opts.test && !opts.cover {
@@ -175,13 +178,24 @@ func main() {
 		fmt.Println("-> watching for changes...")
 
 		skipPatterns := strings.Fields(opts.watchSkipPatterns)
+		watchPatterns := strings.Fields(opts.watchPatterns)
 		skip := func(path string) bool {
-			for _, pattern := range skipPatterns {
-				path = filepath.ToSlash(path)
+			path = filepath.ToSlash(path)
 
+			for _, pattern := range watchPatterns {
 				matched, err := filepath.Match(pattern, path)
 				if err != nil {
-					fmt.Printf("skip pattern error: %v\n", err)
+					fmt.Printf("watch pattern error: %v\n", err)
+				}
+				if matched {
+					return false
+				}
+			}
+
+			for _, pattern := range skipPatterns {
+				matched, err := filepath.Match(pattern, path)
+				if err != nil {
+					fmt.Printf("watch skip pattern error: %v\n", err)
 				}
 				if matched {
 					return true
@@ -218,14 +232,14 @@ func main() {
 					return filepath.SkipDir
 				}
 
-				// Individually skip directories/files that haven't been entirely
-				// skipped by the previous check
-				if entry.IsDir() || skip(path) {
+				// Skip any files that don't match watch extensions
+				if _, ok := exts[filepath.Ext(path)]; !entry.IsDir() && !ok {
 					return nil
 				}
 
-				// Skip any files that don't match watch extensions
-				if _, ok := exts[filepath.Ext(path)]; !ok {
+				// Individually skip directories/files that haven't been entirely
+				// skipped by the previous check
+				if entry.IsDir() || skip(path) {
 					return nil
 				}
 
