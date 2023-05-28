@@ -268,7 +268,7 @@ func (svc *Services) emailContentFunc(name string, dataFunc emailDataFunc) (emai
 	var content emailContent
 	var buf bytes.Buffer
 
-	for _, name := range []string{"subject", "text", "html"} {
+	for _, name := range []string{"subject", "plain", "html"} {
 		tmpl := email.Lookup(name)
 		if tmpl == nil {
 			continue
@@ -284,7 +284,7 @@ func (svc *Services) emailContentFunc(name string, dataFunc emailDataFunc) (emai
 		case "subject":
 			content.Subject = buf.String()
 
-		case "text":
+		case "plain":
 			content.Plain = buf.String()
 
 		case "html":
