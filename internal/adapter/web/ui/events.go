@@ -10,58 +10,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
-func accountRegisteredHandler(tenant *handler.Tenant, svc *handler.Services) any {
-	return func(evt account.Registered) {
-		background.Go(func() {
-			ctx := context.Background()
-
-			tok, err := tenant.Repo.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
-			if err != nil {
-				logger.PrintError(err)
-
-				return
-			}
-
-			recipients := handler.EmailRecipients{
-				From: "noreply@example.com",
-				To:   []string{evt.Email},
-			}
-			vars := handler.Vars{
-				"Token": tok,
-			}
-			if err := svc.SendEmail(ctx, recipients, "activate_account", vars); err != nil {
-				logger.PrintError(err)
-			}
-		})
-	}
-}
-
-func accountResetPasswordRequestedHandler(tenant *handler.Tenant, svc *handler.Services) any {
-	return func(evt handler.ResetPasswordRequested) {
-		background.Go(func() {
-			ctx := context.Background()
-
-			tok, err := tenant.Repo.Web.AddResetPasswordToken(ctx, evt.Email, 2*time.Hour)
-			if err != nil {
-				logger.PrintError(err)
-
-				return
-			}
-
-			recipients := handler.EmailRecipients{
-				From: "noreply@example.com",
-				To:   []string{evt.Email},
-			}
-			vars := handler.Vars{
-				"Token": tok,
-			}
-			if err := svc.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
-				logger.PrintError(err)
-			}
-		})
-	}
-}
-
 func accountAuthenticateWithPasswordHandler(tenant *handler.Tenant, svc *handler.Services) any {
 	return func(evt account.AuthenticatedWithPassword) {
 		ctx := context.Background()
@@ -83,7 +31,75 @@ func accountAuthenticateWithPasswordHandler(tenant *handler.Tenant, svc *handler
 	}
 }
 
-func accountTOTPSMSRequestedHandler(tenant *handler.Tenant, svc *handler.Services) any {
+func accountDisabledTOTPHandler(tenant *handler.Tenant, svc *handler.Services) any {
+	return func(evt account.DisabledTOTP) {
+		background.Go(func() {
+			ctx := context.Background()
+
+			recipients := handler.EmailRecipients{
+				From: tenant.Email.From,
+				To:   []string{evt.Email},
+			}
+			if err := svc.SendEmail(ctx, recipients, "disabled_totp", nil); err != nil {
+				logger.PrintError(err)
+			}
+		})
+	}
+}
+
+func accountRegisteredHandler(tenant *handler.Tenant, svc *handler.Services) any {
+	return func(evt account.Registered) {
+		background.Go(func() {
+			ctx := context.Background()
+
+			tok, err := tenant.Repo.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
+			if err != nil {
+				logger.PrintError(err)
+
+				return
+			}
+
+			recipients := handler.EmailRecipients{
+				From: tenant.Email.From,
+				To:   []string{evt.Email},
+			}
+			vars := handler.Vars{
+				"Token": tok,
+			}
+			if err := svc.SendEmail(ctx, recipients, "activate_account", vars); err != nil {
+				logger.PrintError(err)
+			}
+		})
+	}
+}
+
+func webResetPasswordRequestedHandler(tenant *handler.Tenant, svc *handler.Services) any {
+	return func(evt handler.ResetPasswordRequested) {
+		background.Go(func() {
+			ctx := context.Background()
+
+			tok, err := tenant.Repo.Web.AddResetPasswordToken(ctx, evt.Email, 2*time.Hour)
+			if err != nil {
+				logger.PrintError(err)
+
+				return
+			}
+
+			recipients := handler.EmailRecipients{
+				From: tenant.Email.From,
+				To:   []string{evt.Email},
+			}
+			vars := handler.Vars{
+				"Token": tok,
+			}
+			if err := svc.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
+				logger.PrintError(err)
+			}
+		})
+	}
+}
+
+func webTOTPSMSRequestedHandler(tenant *handler.Tenant, svc *handler.Services) any {
 	return func(evt handler.TOTPSMSRequested) {
 		background.Go(func() {
 			if err := svc.SendTOTPSMS(evt.Email); err != nil {
