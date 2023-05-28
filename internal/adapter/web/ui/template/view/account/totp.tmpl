@@ -65,7 +65,7 @@
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 			<input type="hidden" name="action" value="send-sms">
 
-			<label for="totp__telephone">Phone Number <small>Full number with country code</small></label>
+			<label for="totp__telephone">Phone number <small>Full number with country code</small></label>
 			<input id="totp__telephone" type="tel" name="telephone" value="{{or (.Form.Get "telephone") .Vars.TOTPTelephone}}" placeholder="+00 00 0000 0000 " autocomplete="tel" required pattern="\+\d(\d| )+" minlength="4" maxlength="25">
 			<p class="error">{{.Errors.Get "new telephone"}}</p>
 
