@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
@@ -49,7 +50,18 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	mux.Use(middleware.Timeout(5*time.Second, errorHandler))
 	mux.Use(middleware.RemoveTrailingSlash)
 	mux.Use(middleware.MethodOverride)
-	mux.Use(middleware.RateLimit(50, 3, &middleware.RateLimitConfig{
+	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
+		Consume: func(r *http.Request) bool {
+			whitelist := []string{".css", ".js", ".gif", ".jpg", ".jpeg", ".png", ".ico"}
+
+			for _, ext := range whitelist {
+				if strings.HasSuffix(r.URL.Path, ext) {
+					return false
+				}
+			}
+
+			return true
+		},
 		ErrorHandler:   errorHandler,
 		TrustedProxies: tenant.Proxies,
 	}))

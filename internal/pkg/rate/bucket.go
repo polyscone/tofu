@@ -25,11 +25,11 @@ type TokenBucket struct {
 //
 // The capacity represents the maximum number of tokens in the bucket, and the
 // replenish parameter represents the rate tokens are replenished per second.
-func NewTokenBucket(capacity, replenish int) *TokenBucket {
+func NewTokenBucket(capacity, replenish float64) *TokenBucket {
 	return &TokenBucket{
-		capacity:      float64(capacity),
-		replenish:     float64(replenish),
-		tokens:        float64(capacity),
+		capacity:      capacity,
+		replenish:     replenish,
+		tokens:        capacity,
 		replenishedAt: time.Now(),
 	}
 }
@@ -43,7 +43,10 @@ func NewTokenBucket(capacity, replenish int) *TokenBucket {
 //
 // After replenishing tokens it will then leak n tokens.
 // An error is returned if the bucket has less than n tokens before leaking.
-func (tb *TokenBucket) Leak(n int, t time.Time) (int, error) {
+//
+// The number of remaining tokens returned always represents full tokens and any
+// decimal value is truncated.
+func (tb *TokenBucket) Leak(n float64, t time.Time) (int, error) {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 
@@ -58,12 +61,12 @@ func (tb *TokenBucket) Leak(n int, t time.Time) (int, error) {
 		}
 	}
 
-	if tb.tokens < float64(n) {
+	if tb.tokens < n {
 		return int(tb.tokens), errors.Tracef(ErrInsufficientTokens)
 	}
 
 	if n > 0 {
-		tb.tokens -= float64(n)
+		tb.tokens -= n
 
 		if tb.tokens < 0 {
 			tb.tokens = 0

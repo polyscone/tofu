@@ -23,6 +23,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/pkg/rate"
 	"github.com/polyscone/tofu/internal/pkg/session"
 )
 
@@ -444,6 +445,9 @@ func (svc *Services) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err e
 
 		case errors.Is(err, csrf.ErrInvalidToken):
 			data.ErrorMessage = "invalid CSRF token"
+
+		case errors.Is(err, rate.ErrInsufficientTokens):
+			data.ErrorMessage = "you have made too many consecutive requests"
 
 		default:
 			data.ErrorMessage = "an error has occurred"

@@ -12,7 +12,7 @@ import (
 func TestBucket(t *testing.T) {
 	t.Run("correctly leak and replenish tokens", func(t *testing.T) {
 		now := time.Now().UTC()
-		capacity, replenish := 50, 1
+		capacity, replenish := 50.0, 1.0
 		bucket := rate.NewTokenBucket(capacity, replenish)
 
 		if want, got := 50, errors.Must(bucket.Leak(0, now)); want != got {
@@ -135,7 +135,7 @@ func TestBucket(t *testing.T) {
 
 	t.Run("replenish more than one token", func(t *testing.T) {
 		now := time.Now().UTC()
-		capacity, replenish := 50, 3
+		capacity, replenish := 50.0, 3.0
 		bucket := rate.NewTokenBucket(capacity, replenish)
 
 		if want, got := 50, errors.Must(bucket.Leak(0, now)); want != got {
@@ -152,24 +152,61 @@ func TestBucket(t *testing.T) {
 		}
 	})
 
+	t.Run("consume and replenish fractional tokens", func(t *testing.T) {
+		now := time.Now().UTC()
+		capacity, replenish := 50.0, 0.5
+		bucket := rate.NewTokenBucket(capacity, replenish)
+
+		if want, got := 50, errors.Must(bucket.Leak(0, now)); want != got {
+			t.Errorf("want %v; got %v", want, got)
+		}
+		if want, got := 42, errors.Must(bucket.Leak(7.7, now)); want != got {
+			t.Errorf("want %v; got %v", want, got)
+		}
+
+		now = now.Add(1 * time.Second)
+
+		if want, got := 42, errors.Must(bucket.Leak(0, now)); want != got {
+			t.Errorf("want %v; got %v", want, got)
+		}
+
+		now = now.Add(1 * time.Second)
+
+		if want, got := 43, errors.Must(bucket.Leak(0, now)); want != got {
+			t.Errorf("want %v; got %v", want, got)
+		}
+
+		now = now.Add(1 * time.Second)
+
+		if want, got := 43, errors.Must(bucket.Leak(0, now)); want != got {
+			t.Errorf("want %v; got %v", want, got)
+		}
+
+		now = now.Add(1 * time.Second)
+
+		if want, got := 44, errors.Must(bucket.Leak(0, now)); want != got {
+			t.Errorf("want %v; got %v", want, got)
+		}
+	})
+
 	t.Run("safe concurrent usage of leak and replenish", func(t *testing.T) {
-		full := 1000
+		full := 1000.0
 		half, double := full/2, full*2
 		now := time.Now().UTC()
-		capacity, replenish := full, 1
+		capacity, replenish := full, 1.0
 		bucket := rate.NewTokenBucket(capacity, replenish)
 
 		// We expect some inconsistencies with timing at the limits of the
 		// bucket capacity, so to avoid those inconsistencies for the test
 		// we start by leaking half the tokens
-		if want, got := half, errors.Must(bucket.Leak(half, now)); want != got {
+		if want, got := int(half), errors.Must(bucket.Leak(half, now)); want != got {
 			t.Fatalf("want %v; got %v", want, got)
 		}
 
 		var wg sync.WaitGroup
 
-		wg.Add(double)
-		for i := 0; i < double; i++ {
+		wg.Add(int(double))
+		for i := 0; i < int(double); i++ {
 			now = now.Add(1 * time.Second)
 
 			go func(now time.Time) {
@@ -185,7 +222,7 @@ func TestBucket(t *testing.T) {
 		// inconsistencies in test results around the capacity limits, we
 		// expect half a bucket of tokens after consistently leaking and
 		// replenishing one token
-		if want, got := half, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := int(half), errors.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 	})

@@ -11,12 +11,15 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/realip"
 )
 
+type ConsumeFunc func(r *http.Request) bool
+
 type RateLimitConfig struct {
+	Consume        ConsumeFunc
 	TrustedProxies []string
 	ErrorHandler   ErrorHandler
 }
 
-func RateLimit(capacity, replenish int, config *RateLimitConfig) Middleware {
+func RateLimit(capacity, replenish float64, config *RateLimitConfig) Middleware {
 	if config == nil {
 		config = &RateLimitConfig{}
 	}
@@ -67,17 +70,19 @@ func RateLimit(capacity, replenish int, config *RateLimitConfig) Middleware {
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			ip, err := realip.FromRequest(r, config.TrustedProxies...)
-			if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
-				return
-			}
+			if config.Consume == nil || config.Consume(r) {
+				ip, err := realip.FromRequest(r, config.TrustedProxies...)
+				if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
+					return
+				}
 
-			client := getClient(ip)
+				client := getClient(ip)
 
-			if _, err := client.bucket.Leak(1, time.Now()); err != nil {
-				handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusTooManyRequests)
+				if _, err := client.bucket.Leak(1, time.Now()); err != nil {
+					handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusTooManyRequests)
 
-				return
+					return
+				}
 			}
 
 			next(w, r)
