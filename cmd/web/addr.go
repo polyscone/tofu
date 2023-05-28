@@ -9,13 +9,13 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
-type addr struct {
+type Addr struct {
 	listener net.Listener
 	value    string
 	insecure bool
 }
 
-func (a *addr) Set(value string) error {
+func (a *Addr) Set(value string) error {
 	if value == "" {
 		return nil
 	}
@@ -41,7 +41,7 @@ func (a *addr) Set(value string) error {
 	return nil
 }
 
-func (a *addr) Listener() (net.Listener, error) {
+func (a *Addr) Listener() (net.Listener, error) {
 	if a.listener == nil {
 		err := a.Set(":0")
 		if err != nil {
@@ -52,7 +52,7 @@ func (a *addr) Listener() (net.Listener, error) {
 	return a.listener, nil
 }
 
-func (a addr) String() string {
+func (a Addr) String() string {
 	protocol := "https"
 	if a.insecure {
 		protocol = "http"

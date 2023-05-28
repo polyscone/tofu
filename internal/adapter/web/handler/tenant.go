@@ -34,6 +34,16 @@ type Repo struct {
 	Web     WebReadWriter
 }
 
+type Email struct {
+	From   string
+	Mailer smtp.Mailer
+}
+
+type SMS struct {
+	From     string
+	Messager sms.Messager
+}
+
 type Tenant struct {
 	Scheme   string
 	Host     string
@@ -43,9 +53,8 @@ type Tenant struct {
 	Insecure bool
 	Proxies  []string
 	Broker   event.Broker
-	Email    smtp.Mailer
-	SMS      sms.Messager
-	SMSFrom  string
+	Email    Email
+	SMS      SMS
 
 	Account *account.Service
 

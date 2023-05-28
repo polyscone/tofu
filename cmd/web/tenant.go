@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/smtp"
 	"github.com/polyscone/tofu/internal/app/account"
@@ -20,7 +21,7 @@ import (
 	"github.com/polyscone/tofu/internal/repo/sqlite"
 )
 
-var tenants = make(map[string]tenant)
+var tenants = make(map[string]Tenant)
 
 var databases = struct {
 	mu   sync.Mutex
@@ -30,7 +31,10 @@ var databases = struct {
 func newTenant(hostname string) (*handler.Tenant, error) {
 	ctx := context.Background()
 
-	data := tenants[hostname]
+	data, ok := tenants[hostname]
+	if !ok {
+		return nil, errors.Tracef(web.ErrTenantNotFound, "tenant %q not found", hostname)
+	}
 	if data.Alias == "" {
 		return nil, errors.Tracef("alias name for the tenant %q is empty", hostname)
 	}
@@ -76,12 +80,15 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		Insecure: opts.server.insecure,
 		Proxies:  opts.server.proxies,
 		Broker:   broker,
-		Email:    mailer,
-		SMS:      messager,
-		SMSFrom:  data.Twilio.From,
-
+		Email: handler.Email{
+			From:   data.Email.From,
+			Mailer: mailer,
+		},
+		SMS: handler.SMS{
+			From:     data.Twilio.From,
+			Messager: messager,
+		},
 		Account: account.NewService(broker, accountRepo, hasher),
-
 		Repo: handler.Repo{
 			Account: accountRepo,
 			Web:     webRepo,
@@ -91,20 +98,26 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	return &tenant, nil
 }
 
-type twilio struct {
+type Email struct {
+	From string `json:"from"`
+}
+
+type Twilio struct {
 	SID   string `json:"sid"`
 	Token string `json:"token"`
 	From  string `json:"from"`
 }
 
-type tenant struct {
-	Alias     string   `json:",omitempty"`
-	Hostnames []string `json:"hostnames"`
-	Twilio    twilio   `json:"twilio"`
+type Tenant struct {
+	Alias      string   `json:",omitempty"`
+	Hostnames  []string `json:"hostnames"`
+	Email      Email    `json:"email"`
+	Twilio     Twilio   `json:"twilio"`
+	IsDisabled bool     `json:"isDisabled"`
 }
 
 func initTenants() error {
-	tenants = make(map[string]tenant)
+	tenants = make(map[string]Tenant)
 	value := opts.tenants
 
 	f, err := os.OpenFile(value, os.O_RDWR|os.O_CREATE, 0666)
@@ -121,18 +134,22 @@ func initTenants() error {
 		}
 
 		if info.Size() == 0 {
-			example := map[string]tenant{
+			example := map[string]Tenant{
 				"example": {
-					Hostnames: []string{"localhost"},
-					Twilio: twilio{
+					Hostnames: []string{"localhost", "local.example.com"},
+					Email: Email{
+						From: "noreply@example.com",
+					},
+					Twilio: Twilio{
 						SID:   "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 						Token: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
 						From:  "+00 0000 000000",
 					},
+					IsDisabled: true,
 				},
 			}
 
-			b, err := json.MarshalIndent(example, "", "  ")
+			b, err := json.MarshalIndent(example, "", "\t")
 			if err != nil {
 				return errors.Tracef(err)
 			}
@@ -152,23 +169,40 @@ func initTenants() error {
 		value = string(b)
 	}
 
-	data := make(map[string]tenant)
+	data := make(map[string]Tenant)
 	if err := json.Unmarshal([]byte(value), &data); err != nil {
 		return errors.Tracef(err)
 	}
 
 	var errs errors.Map
 	for alias, tenant := range data {
+		if len(tenant.Hostnames) == 0 {
+			errs.Set(alias+".hostnames", "must be populated with at least one hostname")
+		}
+		if tenant.Email.From == "" {
+			errs.Set(alias+".email.from", "cannot be empty")
+		}
+
+		if alias == "" && len(tenant.Hostnames) != 0 {
+			for _, hostname := range tenant.Hostnames {
+				errs.Set("hostname "+hostname, "alias cannot be empty")
+			}
+
+			continue
+		}
+
 		for _, hostname := range tenant.Hostnames {
 			if dupe, ok := tenants[hostname]; ok {
-				errs.Set(hostname, fmt.Sprintf("cannot associate with %q; already associated with %q", dupe, alias))
+				errs.Set(hostname, fmt.Sprintf("cannot associate with %q; already associated with %q", alias, dupe.Alias))
 			}
 
 			tenant.Alias = alias
 
-			tenants[hostname] = tenant
+			if !tenant.IsDisabled {
+				tenants[hostname] = tenant
+			}
 		}
 	}
 
-	return errs.Tracef("duplicate tenant hostnames")
+	return errs.Tracef("tenant configuration errors")
 }

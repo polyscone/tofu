@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-type proxies []string
+type Proxies []string
 
-func (p *proxies) Set(value string) error {
+func (p *Proxies) Set(value string) error {
 	if value == "" {
 		return nil
 	}
@@ -17,7 +17,7 @@ func (p *proxies) Set(value string) error {
 	return nil
 }
 
-func (p proxies) String() string {
+func (p Proxies) String() string {
 	if p == nil {
 		return ""
 	}

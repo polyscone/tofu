@@ -12,6 +12,8 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
+var ErrTenantNotFound = errors.New("tenant not found")
+
 type NewTenantFunc func(hostname string) (*handler.Tenant, error)
 
 type MultiTenantHandler struct {
@@ -76,7 +78,11 @@ func (h *MultiTenantHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httputil.LogError(r, errors.Tracef(err))
 
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		if errors.Is(err, ErrTenantNotFound) {
+			http.Error(w, "Site not served on this interface", http.StatusNotFound)
+		} else {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
 
 		return
 	}

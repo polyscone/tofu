@@ -318,11 +318,11 @@ func (svc *Services) SendEmail(ctx context.Context, recipients EmailRecipients, 
 		HTML:    content.HTML,
 	}
 
-	return errors.Tracef(svc.Tenant.Email.Send(ctx, msg))
+	return errors.Tracef(svc.Tenant.Email.Mailer.Send(ctx, msg))
 }
 
 func (svc *Services) SendSMS(ctx context.Context, to, body string) error {
-	return errors.Tracef(svc.Tenant.SMS.Send(ctx, svc.Tenant.SMSFrom, to, body))
+	return errors.Tracef(svc.Tenant.SMS.Messager.Send(ctx, svc.Tenant.SMS.From, to, body))
 }
 
 func (svc *Services) SendTOTPSMS(email string) error {

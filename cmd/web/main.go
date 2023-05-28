@@ -42,10 +42,10 @@ var opts struct {
 	}
 
 	server struct {
-		addr         addr
+		addr         Addr
 		insecure     bool
 		insecureHTTP bool
-		proxies      proxies
+		proxies      Proxies
 	}
 }
 
@@ -168,8 +168,6 @@ func main() {
 
 	if err := initTenants(); err != nil {
 		logger.PrintError(err)
-
-		os.Exit(1)
 	}
 
 	httputil.TrustedProxies = opts.server.proxies
