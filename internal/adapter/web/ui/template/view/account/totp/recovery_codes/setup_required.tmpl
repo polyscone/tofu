@@ -1,0 +1,10 @@
+{{define "view"}}
+
+<div class="recovery-codes center">
+	<p class="title">Two-Factor Authentication Not Setup</p>
+
+	<p>Two-factor authentication has not been setup for your account, so you do not have any recovery codes.</p>
+	<p><a href="{{Path "account.totp.setup"}}">Setup two-factor authentication.</a></p>
+</div>
+
+{{end}}

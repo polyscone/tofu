@@ -51,8 +51,6 @@ func TestArgon2(t *testing.T) {
 		{"argon2id error key too short", argon2.ID, "error", 1, mebibyte, 1, 8, 8, "", true},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			// All wanted strings are expecting the salt to be generated from
 			// the series of bytes: "0123456789012345"
@@ -96,8 +94,6 @@ func TestArgon2CSPRNG(t *testing.T) {
 		{"argon2id no duplicates: not setting the rand io.Reader should use crypto/rand", argon2.ID, 50},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			seen := make(map[string]struct{})
 			for i := 0; i < tc.samples; i++ {
@@ -150,8 +146,6 @@ func TestArgon2Verify(t *testing.T) {
 		{"argon2id different salt", argon2.ID, "correct horse battery staple", "$argon2id$v=19$m=1024,t=1,p=1$c29tZXNhbHRzb21lc2FsdA$RAME85Nb8CxpfIy5Ca0XN5R2weN/7wRhxgF0shgwz70", true, false, false, false},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			params := argon2.Params{
 				Variant:     tc.variant,

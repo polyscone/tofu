@@ -8,6 +8,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
+	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/repo/sqlite"
@@ -31,31 +32,41 @@ type TestUser struct {
 	SetupTOTP          bool
 	SetupTOTPTelephone bool
 	VerifyTOTP         bool
+	ActivateTOTP       bool
 }
 
-func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, u TestUser) *account.User {
+func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu TestUser) *account.User {
 	t.Helper()
 
-	u.SetupTOTP = u.SetupTOTP || u.SetupTOTPTelephone || u.VerifyTOTP
-	u.Activate = u.Activate || u.SetupTOTP || u.VerifyTOTP
+	tu.VerifyTOTP = tu.VerifyTOTP || tu.ActivateTOTP
+	tu.SetupTOTP = tu.SetupTOTP || tu.SetupTOTPTelephone || tu.VerifyTOTP || tu.ActivateTOTP
+	tu.Activate = tu.Activate || tu.SetupTOTP || tu.VerifyTOTP
 
-	user := account.NewUser(errors.Must(text.NewEmail(u.Email)))
-	password := errors.Must(account.NewPassword(u.Password))
+	user := account.NewUser(errors.Must(text.NewEmail(tu.Email)))
+	password := errors.Must(account.NewPassword(tu.Password))
 
 	errors.Must0(user.Register(password, hasher))
 
-	if u.Activate {
+	if tu.Activate {
 		errors.Must0(user.Activate())
 	}
-	if u.SetupTOTP {
+	if tu.SetupTOTP {
 		errors.Must0(user.SetupTOTP())
 	}
-	if u.SetupTOTPTelephone {
+	if tu.SetupTOTPTelephone {
 		errors.Must0(user.ChangeTOTPTelephone(text.GenerateTelephone()))
 	}
-	if u.VerifyTOTP {
-		user.TOTPMethod = account.TOTPMethodApp.String()
-		user.TOTPVerifiedAt = time.Now()
+	if tu.VerifyTOTP {
+		alg := errors.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
+		tb := errors.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
+		totp := errors.Must(account.NewTOTP(errors.Must(tb.Generate(user.TOTPKey, time.Now()))))
+
+		errors.Must0(user.VerifyTOTP(totp, "app"))
+
+		otp.CleanUsedTOTP(totp.String())
+	}
+	if tu.ActivateTOTP {
+		errors.Must0(user.ActivateTOTP())
 	}
 
 	errors.Must0(repo.AddUser(ctx, user))

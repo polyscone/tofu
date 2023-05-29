@@ -12,14 +12,6 @@ import (
 func List(svc *handler.Services, mux *router.ServeMux) {
 	mux.Get("/list", listGet(svc), "admin.user.list")
 	mux.Get("/list/:userID", listEditGet(svc), "admin.user.edit")
-
-	svc.SetViewVars("admin/user/list", handler.Vars{
-		"Users": nil,
-	})
-
-	svc.SetViewVars("admin/user/edit", handler.Vars{
-		"Users": nil,
-	})
 }
 
 func listGet(svc *handler.Services) http.HandlerFunc {

@@ -52,6 +52,10 @@ type EmailRecipients struct {
 type Vars map[string]any
 
 func (v Vars) Merge(rhs Vars) Vars {
+	if rhs == nil {
+		return v
+	}
+
 	if v == nil {
 		v = make(Vars, len(rhs))
 	}
@@ -77,14 +81,15 @@ type AppData struct {
 
 type SessionData struct {
 	// General session keys
-	Flash    string
-	Redirect string
+	Flash          template.HTML
+	FlashImportant bool
+	Redirect       string
 
 	// Account session keys
 	UserID                   int
 	Email                    string
-	HasVerifiedTOTP          bool
 	TOTPMethod               string
+	HasActivatedTOTP         bool
 	IsAwaitingTOTP           bool
 	IsAuthenticated          bool
 	PasswordKnownBreachCount int
@@ -113,6 +118,8 @@ func (v ViewData) WithData(data any) ViewData {
 
 type ViewDataFunc func(data *ViewData)
 
+type ViewVarsFunc func(r *http.Request) Vars
+
 type emailData struct {
 	Addr AddrData
 	App  AppData
@@ -123,13 +130,13 @@ type emailDataFunc func(data *emailData)
 
 type Services struct {
 	*Tenant
-	files       fs.FS
-	templatesMu sync.RWMutex
-	templates   map[string]*template.Template
-	funcs       template.FuncMap
-	viewVars    map[string]Vars
-	mux         *router.ServeMux
-	Sessions    *session.Manager
+	files         fs.FS
+	templatesMu   sync.RWMutex
+	templates     map[string]*template.Template
+	funcs         template.FuncMap
+	viewVarsFuncs map[string]ViewVarsFunc
+	mux           *router.ServeMux
+	Sessions      *session.Manager
 }
 
 func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
@@ -148,13 +155,13 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 	}
 
 	return &Services{
-		Tenant:    tenant,
-		files:     files,
-		templates: make(map[string]*template.Template),
-		funcs:     funcs,
-		viewVars:  make(map[string]Vars),
-		mux:       mux,
-		Sessions:  sessions,
+		Tenant:        tenant,
+		files:         files,
+		templates:     make(map[string]*template.Template),
+		funcs:         funcs,
+		viewVarsFuncs: make(map[string]ViewVarsFunc),
+		mux:           mux,
+		Sessions:      sessions,
 	}
 }
 
@@ -201,12 +208,12 @@ func (svc *Services) Path(name string, paramArgPairs ...any) string {
 	return svc.mux.Path(name, paramArgPairs...)
 }
 
-func (svc *Services) SetViewVars(name string, vars Vars) {
-	if _, ok := svc.viewVars[name]; ok {
+func (svc *Services) SetViewVars(name string, vars ViewVarsFunc) {
+	if _, ok := svc.viewVarsFuncs[name]; ok {
 		panic(fmt.Sprintf("default view vars already set for %q", name))
 	}
 
-	svc.viewVars[name] = vars
+	svc.viewVarsFuncs[name] = vars
 }
 
 func (svc *Services) template(name string, patterns ...string) *template.Template {
@@ -250,10 +257,6 @@ func (svc *Services) emailContentFunc(name string, dataFunc emailDataFunc) (emai
 			Name:        app.Name,
 			Description: app.Description,
 		},
-	}
-
-	if vars, ok := svc.viewVars[name]; ok {
-		data.Vars = data.Vars.Merge(vars)
 	}
 
 	if dataFunc != nil {
@@ -322,7 +325,7 @@ func (svc *Services) SendSMS(ctx context.Context, to, body string) error {
 	return errors.Tracef(svc.Tenant.SMS.Messager.Send(ctx, svc.Tenant.SMS.From, to, body))
 }
 
-func (svc *Services) SendTOTPSMS(email string) error {
+func (svc *Services) SendTOTPSMS(email, telephone string) error {
 	ctx := context.Background()
 
 	user, err := svc.Repo.Account.FindUserByEmail(ctx, email)
@@ -335,7 +338,11 @@ func (svc *Services) SendTOTPSMS(email string) error {
 		return errors.Tracef(err)
 	}
 
-	err = svc.SendSMS(ctx, user.TOTPTelephone, totp)
+	if telephone == "" {
+		telephone = user.TOTPTelephone
+	}
+
+	err = svc.SendSMS(ctx, telephone, totp)
 
 	return errors.Tracef(err)
 }
@@ -365,22 +372,23 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 		},
 		Session: SessionData{
 			// Global session keys
-			Flash:    svc.Sessions.PopString(ctx, sess.Flash),
-			Redirect: svc.Sessions.GetString(ctx, sess.Redirect),
+			Flash:          template.HTML(svc.Sessions.PopString(ctx, sess.Flash)),
+			FlashImportant: svc.Sessions.PopBool(ctx, sess.FlashImportant),
+			Redirect:       svc.Sessions.GetString(ctx, sess.Redirect),
 
 			// Account session keys
 			UserID:                   svc.Sessions.GetInt(ctx, sess.UserID),
 			Email:                    svc.Sessions.GetString(ctx, sess.Email),
-			HasVerifiedTOTP:          svc.Sessions.GetBool(ctx, sess.HasVerifiedTOTP),
 			TOTPMethod:               svc.Sessions.GetString(ctx, sess.TOTPMethod),
+			HasActivatedTOTP:         svc.Sessions.GetBool(ctx, sess.HasActivatedTOTP),
 			IsAwaitingTOTP:           svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
 			IsAuthenticated:          svc.Sessions.GetBool(ctx, sess.IsAuthenticated),
 			PasswordKnownBreachCount: svc.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount),
 		},
 	}
 
-	if vars, ok := svc.viewVars[name]; ok {
-		data.Vars = data.Vars.Merge(vars)
+	if vars, ok := svc.viewVarsFuncs[name]; ok {
+		data.Vars = data.Vars.Merge(vars(r))
 	}
 
 	if dataFunc != nil {

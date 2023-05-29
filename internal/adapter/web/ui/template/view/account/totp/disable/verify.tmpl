@@ -1,0 +1,21 @@
+{{define "view"}}
+
+<div class="totp center">
+	<p class="title">Disable Two-Factor Authentication</p>
+
+	<p>Enter your password to verify your identity and disable two-factor authentication.</p>
+
+	<form action="{{Path "account.totp.disable.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<label for="totp__password">Password</label>
+		<input id="totp__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+		<p class="error">{{.Errors.Get "password"}}</p>
+
+		<div class="bag">
+			<button type="submit" class="push-inline-end">Disable two-factor authentication</button>
+		</div>
+	</form>
+</div>
+
+{{end}}

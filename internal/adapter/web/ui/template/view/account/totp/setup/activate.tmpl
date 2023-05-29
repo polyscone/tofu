@@ -1,0 +1,33 @@
+{{define "view"}}
+
+<div class="totp center">
+	<p class="title">Recovery Codes</p>
+
+	<p>Two-factor authentication has not been enabled yet.</p>
+
+	<p>In the event that you lose access to your authentication device you can use the following recovery codes in place of a normal passcode.</p>
+
+	<div class="warning-banner">
+		<p>Before enabling two-factor authentication, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.</p>
+		<p>
+			If possible, we recommend storing them in a password manager, such as
+			<a href="https://1password.com/" target="_blank" rel="noopener noreferrer">1Password</a>,
+			<a href="https://www.lastpass.com/" target="_blank" rel="noopener noreferrer">LastPass</a>, or
+			<a href="https://www.keepersecurity.com" target="_blank" rel="noopener noreferrer">Keeper</a>.
+		</p>
+	</div>
+
+	<ul class="totp__recovery-codes">
+		{{range .Vars.RecoveryCodes}}
+			<li>{{.Code}}</li>
+		{{end}}
+	</ul>
+
+	<form action="{{Path "account.totp.setup.activate.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<button type="submit">I have saved my recovery codes</button>
+	</form>
+</div>
+
+{{end}}

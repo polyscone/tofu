@@ -22,50 +22,51 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 	activated := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Password: password, Activate: true})
 	unverifiedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", Password: password, SetupTOTP: true})
 	verifiedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, VerifyTOTP: true})
+	activatedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "bob@jones.com", Password: password, ActivateTOTP: true})
 
 	t.Run("success for valid user id and correct totp", func(t *testing.T) {
 		t.Run("last logged in should not update on password auth", func(t *testing.T) {
-			if !verifiedTOTP.LastLoggedInAt.IsZero() {
-				t.Errorf("want last logged in at to be zero; got %v", verifiedTOTP.LastLoggedInAt)
+			if !activatedTOTP.LastLoggedInAt.IsZero() {
+				t.Errorf("want last logged in at to be zero; got %v", activatedTOTP.LastLoggedInAt)
 			}
 
-			err := svc.AuthenticateWithPassword(ctx, verifiedTOTP.Email, "password")
+			err := svc.AuthenticateWithPassword(ctx, activatedTOTP.Email, "password")
 			if err != nil {
 				t.Errorf("want <nil>; got %q", err)
 			}
 
-			verifiedTOTP, err = store.FindUserByID(ctx, verifiedTOTP.ID)
+			activatedTOTP, err = store.FindUserByID(ctx, activatedTOTP.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			if !verifiedTOTP.LastLoggedInAt.IsZero() {
-				t.Errorf("want last logged in at to be zero; got %v", verifiedTOTP.LastLoggedInAt)
+			if !activatedTOTP.LastLoggedInAt.IsZero() {
+				t.Errorf("want last logged in at to be zero; got %v", activatedTOTP.LastLoggedInAt)
 			}
 		})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.AuthenticatedWithTOTP{Email: verifiedTOTP.Email})
+		events.Expect(account.AuthenticatedWithTOTP{Email: activatedTOTP.Email})
 
-		alg := errors.Must(otp.NewAlgorithm(verifiedTOTP.TOTPAlgorithm))
-		tb := errors.Must(otp.NewTimeBased(verifiedTOTP.TOTPDigits, alg, time.Unix(0, 0), verifiedTOTP.TOTPPeriod))
-		totp := errors.Must(tb.Generate(verifiedTOTP.TOTPKey, time.Now()))
+		alg := errors.Must(otp.NewAlgorithm(activatedTOTP.TOTPAlgorithm))
+		tb := errors.Must(otp.NewTimeBased(activatedTOTP.TOTPDigits, alg, time.Unix(0, 0), activatedTOTP.TOTPPeriod))
+		totp := errors.Must(tb.Generate(activatedTOTP.TOTPKey, time.Now()))
 
 		otp.CleanUsedTOTP(totp)
 
-		err := svc.AuthenticateWithTOTP(ctx, verifiedTOTP.ID, totp)
+		err := svc.AuthenticateWithTOTP(ctx, activatedTOTP.ID, totp)
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
-		verifiedTOTP, err = store.FindUserByID(ctx, verifiedTOTP.ID)
+		activatedTOTP, err = store.FindUserByID(ctx, activatedTOTP.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if verifiedTOTP.LastLoggedInAt.IsZero() {
+		if activatedTOTP.LastLoggedInAt.IsZero() {
 			t.Error("want last logged in at to be populated; got zero")
 		}
 	})
@@ -80,11 +81,12 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 			totpUser *account.User
 			want     error
 		}{
-			{"empty user id correct TOTP", 0, verifiedTOTP, repo.ErrNotFound},
+			{"empty user id correct TOTP", 0, activatedTOTP, repo.ErrNotFound},
 			{"empty user id incorrect TOTP", 0, nil, repo.ErrNotFound},
-			{"activated user id incorrect TOTP", verifiedTOTP.ID, nil, app.ErrInvalidInput},
+			{"activated user id incorrect TOTP", activatedTOTP.ID, nil, app.ErrInvalidInput},
 			{"activated user id unverified correct TOTP", unverifiedTOTP.ID, unverifiedTOTP, app.ErrBadRequest},
 			{"activated user id without TOTP setup", activated.ID, nil, app.ErrBadRequest},
+			{"activated user id without TOTP activated", verifiedTOTP.ID, verifiedTOTP, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -112,9 +114,9 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 		defer events.Check(t)
 
 		execute := func(totp account.TOTP) error {
-			err := svc.AuthenticateWithTOTP(ctx, verifiedTOTP.ID, totp.String())
+			err := svc.AuthenticateWithTOTP(ctx, activatedTOTP.ID, totp.String())
 			if err == nil {
-				events.Expect(account.AuthenticatedWithTOTP{Email: verifiedTOTP.Email})
+				events.Expect(account.AuthenticatedWithTOTP{Email: activatedTOTP.Email})
 			}
 
 			return err

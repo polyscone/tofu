@@ -12,14 +12,20 @@ import (
 )
 
 func ResetPassword(svc *handler.Services, mux *router.ServeMux) {
-	mux.Get("/reset-password", resetPasswordGet(svc), "account.reset_password")
-	mux.Post("/reset-password", resetPasswordPost(svc), "account.reset_password.post")
-	mux.Put("/reset-password", resetPasswordPut(svc), "account.reset_password.put")
+	mux.Prefix("/reset-password", func(mux *router.ServeMux) {
+		mux.Get("/", resetPasswordGet(svc), "account.reset_password")
+		mux.Post("/", resetPasswordPost(svc), "account.reset_password.post")
+
+		mux.Get("/email-sent", resetPasswordEmailSentGet(svc), "account.reset_password.email_sent")
+
+		mux.Get("/new-password", resetPasswordNewPasswordGet(svc), "account.reset_password.new_password")
+		mux.Post("/new-password", resetPasswordNewPasswordPost(svc), "account.reset_password.new_password.post")
+	})
 }
 
 func resetPasswordGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "account/reset_password", nil)
+		svc.View(w, r, http.StatusOK, "account/reset_password/request", nil)
 	}
 }
 
@@ -33,7 +39,7 @@ func resetPasswordPost(svc *handler.Services) http.HandlerFunc {
 		}
 
 		if _, err := text.NewEmail(input.Email); err != nil {
-			svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/reset_password", func(data *handler.ViewData) {
+			svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/reset_password/request", func(data *handler.ViewData) {
 				data.Errors = errors.Map{"email": err}
 			})
 
@@ -44,11 +50,23 @@ func resetPasswordPost(svc *handler.Services) http.HandlerFunc {
 			Email: input.Email,
 		})
 
-		http.Redirect(w, r, svc.Path("account.reset_password")+"?status=email-sent", http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.reset_password.email_sent"), http.StatusSeeOther)
 	}
 }
 
-func resetPasswordPut(svc *handler.Services) http.HandlerFunc {
+func resetPasswordEmailSentGet(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		svc.View(w, r, http.StatusOK, "account/reset_password/email_sent", nil)
+	}
+}
+
+func resetPasswordNewPasswordGet(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		svc.View(w, r, http.StatusOK, "account/reset_password/new_password", nil)
+	}
+}
+
+func resetPasswordNewPasswordPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Token            string
@@ -73,7 +91,7 @@ func resetPasswordPut(svc *handler.Services) http.HandlerFunc {
 		}
 
 		err = svc.Account.ResetPassword(ctx, passport, passport.UserID(), input.NewPassword, input.NewPasswordCheck)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/reset_password", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "account/reset_password/new_password", nil) {
 			return
 		}
 

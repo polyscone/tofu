@@ -47,7 +47,6 @@ func TestMessages(t *testing.T) {
 		{"invalid body too long", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "+818000000001", "+818000000002", strings.Repeat("X", 1601), true},
 	}
 	for _, tc := range tt {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			var callCount int
 			wantCalls := 1

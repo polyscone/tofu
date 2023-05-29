@@ -62,8 +62,6 @@ func TestMaxBytes(t *testing.T) {
 		{"too large request body on delete", http.MethodDelete, "/delete", "a", http.StatusRequestEntityTooLarge},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			req := errors.Must(http.NewRequest(tc.method, ts.URL+tc.path, strings.NewReader(tc.body)))
 			res := errors.Must(ts.Client().Do(req))

@@ -24,7 +24,7 @@
 			{{end}}
 
 			{{if .Session.Flash}}
-				<div class="flash-banner center">
+				<div class="flash-banner{{if .Session.FlashImportant}} flash-banner--important{{end}} center">
 					<p>{{.Session.Flash}}</p>
 				</div>
 			{{end}}

@@ -16,21 +16,22 @@ var ErrNotActivated = errors.New("account is not activated")
 type User struct {
 	aggregate.Root
 
-	ID             int
-	Email          string
-	HashedPassword []byte
-	TOTPMethod     string
-	TOTPTelephone  string
-	TOTPKey        []byte
-	TOTPAlgorithm  string
-	TOTPDigits     int
-	TOTPPeriod     time.Duration
-	TOTPVerifiedAt time.Time
-	RegisteredAt   time.Time
-	ActivatedAt    time.Time
-	LastLoggedInAt time.Time
-	Roles          []*Role
-	RecoveryCodes  []*RecoveryCode
+	ID              int
+	Email           string
+	HashedPassword  []byte
+	TOTPMethod      string
+	TOTPTelephone   string
+	TOTPKey         []byte
+	TOTPAlgorithm   string
+	TOTPDigits      int
+	TOTPPeriod      time.Duration
+	TOTPVerifiedAt  time.Time
+	TOTPActivatedAt time.Time
+	RegisteredAt    time.Time
+	ActivatedAt     time.Time
+	LastLoggedInAt  time.Time
+	Roles           []*Role
+	RecoveryCodes   []*RecoveryCode
 }
 
 type UserFilter struct {
@@ -47,7 +48,11 @@ func NewUser(email text.Email) *User {
 }
 
 func (u *User) HasVerifiedTOTP() bool {
-	return !u.TOTPVerifiedAt.IsZero() && len(u.TOTPKey) != 0
+	return !u.TOTPVerifiedAt.IsZero()
+}
+
+func (u *User) HasActivatedTOTP() bool {
+	return !u.TOTPActivatedAt.IsZero()
 }
 
 func (u *User) Register(password Password, hasher password.Hasher) error {
@@ -128,44 +133,26 @@ func (u *User) ResetPassword(newPassword Password, hasher password.Hasher) error
 }
 
 func (u *User) SetupTOTP() error {
-	if u.HasVerifiedTOTP() {
-		return errors.Tracef(app.ErrBadRequest, "TOTP already setup and verified")
+	if u.HasActivatedTOTP() {
+		return errors.Tracef(app.ErrBadRequest, "TOTP already setup and activated")
 	}
 
-	if len(u.TOTPKey) == 0 {
-		key, err := NewTOTPKey(otp.SHA1)
-		if err != nil {
-			return errors.Tracef(err)
-		}
-
-		u.TOTPKey = key
-		u.TOTPAlgorithm = otp.SHA1.String()
-		u.TOTPDigits = 6
-		u.TOTPPeriod = 30 * time.Second
+	key, err := NewTOTPKey(otp.SHA1)
+	if err != nil {
+		return errors.Tracef(err)
 	}
 
-	if len(u.RecoveryCodes) == 0 {
-		nCodes := 6
-		u.RecoveryCodes = make([]*RecoveryCode, nCodes)
-
-		for i := 0; i < nCodes; i++ {
-			code, err := GenerateCode()
-			if err != nil {
-				return errors.Tracef(err)
-			}
-
-			u.RecoveryCodes[i] = NewRecoveryCode(code)
-		}
-	}
+	u.TOTPMethod = TOTPMethodNone.String()
+	u.TOTPKey = key
+	u.TOTPAlgorithm = otp.SHA1.String()
+	u.TOTPDigits = 6
+	u.TOTPPeriod = 30 * time.Second
+	u.TOTPVerifiedAt = time.Time{}
 
 	return nil
 }
 
-func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) error {
-	if u.HasVerifiedTOTP() {
-		return errors.Tracef(app.ErrBadRequest, "already verified")
-	}
-
+func (u *User) verifyTOTP(totp TOTP) error {
 	alg, err := otp.NewAlgorithm(u.TOTPAlgorithm)
 	if err != nil {
 		return errors.Tracef(err)
@@ -192,8 +179,46 @@ func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) error {
 		return errs.Tracef(app.ErrInvalidInput)
 	}
 
+	return nil
+}
+
+func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) error {
+	if u.HasActivatedTOTP() {
+		return errors.Tracef(app.ErrBadRequest, "already verified and activated")
+	}
+
+	if err := u.verifyTOTP(totp); err != nil {
+		return errors.Tracef(err)
+	}
+
 	u.TOTPMethod = method.String()
 	u.TOTPVerifiedAt = time.Now()
+
+	nCodes := 6
+	u.RecoveryCodes = make([]*RecoveryCode, nCodes)
+
+	for i := 0; i < nCodes; i++ {
+		code, err := GenerateCode()
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		u.RecoveryCodes[i] = NewRecoveryCode(code)
+	}
+
+	return nil
+}
+
+func (u *User) ActivateTOTP() error {
+	if !u.HasVerifiedTOTP() {
+		return errors.Tracef(app.ErrBadRequest, "unverified TOTP cannot be activated")
+	}
+
+	if u.HasActivatedTOTP() {
+		return errors.Tracef(app.ErrBadRequest, "already activated")
+	}
+
+	u.TOTPActivatedAt = time.Now()
 
 	return nil
 }
@@ -240,9 +265,13 @@ func (u *User) GenerateTOTP() (string, error) {
 	return totp, errors.Tracef(err)
 }
 
-func (u *User) RegenerateRecoveryCodes() error {
-	if !u.HasVerifiedTOTP() {
-		return errors.Tracef(app.ErrBadRequest, "cannot regenerate recovery codes without a verified TOTP")
+func (u *User) RegenerateRecoveryCodes(totp TOTP) error {
+	if !u.HasActivatedTOTP() {
+		return errors.Tracef(app.ErrBadRequest, "cannot regenerate recovery codes without an activated TOTP")
+	}
+
+	if err := u.verifyTOTP(totp); err != nil {
+		return errors.Tracef(err)
 	}
 
 	nCodes := 6
@@ -265,6 +294,10 @@ func (u *User) RegenerateRecoveryCodes() error {
 }
 
 func (u *User) DisableTOTP(password Password, hasher password.Hasher) error {
+	if !u.HasActivatedTOTP() {
+		return errors.Tracef(app.ErrBadRequest, "cannot disable an unactivated TOTP")
+	}
+
 	if _, err := u.AuthenticateWithPassword(password, hasher); err != nil {
 		return errors.Tracef(err)
 	}
@@ -276,6 +309,7 @@ func (u *User) DisableTOTP(password Password, hasher password.Hasher) error {
 	u.TOTPDigits = 0
 	u.TOTPPeriod = 0
 	u.TOTPVerifiedAt = time.Time{}
+	u.TOTPActivatedAt = time.Time{}
 	u.RecoveryCodes = nil
 
 	u.Events.Enqueue(DisabledTOTP{
@@ -331,7 +365,7 @@ func (u *User) AuthenticateWithPassword(password Password, hasher password.Hashe
 		return false, errors.Tracef(err)
 	}
 
-	if !u.HasVerifiedTOTP() {
+	if !u.HasActivatedTOTP() {
 		u.LastLoggedInAt = time.Now()
 	}
 
@@ -343,7 +377,7 @@ func (u *User) AuthenticateWithPassword(password Password, hasher password.Hashe
 }
 
 func (u *User) AuthenticateWithTOTP(totp TOTP) error {
-	if !u.HasVerifiedTOTP() {
+	if !u.HasActivatedTOTP() {
 		return errors.Tracef(app.ErrBadRequest, "account does not have TOTP")
 	}
 
@@ -351,30 +385,8 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 		return errors.Tracef(app.ErrBadRequest, ErrNotActivated)
 	}
 
-	alg, err := otp.NewAlgorithm(u.TOTPAlgorithm)
-	if err != nil {
+	if err := u.verifyTOTP(totp); err != nil {
 		return errors.Tracef(err)
-	}
-
-	tb, err := otp.NewTimeBased(u.TOTPDigits, alg, time.Unix(0, 0), u.TOTPPeriod)
-	if err != nil {
-		return errors.Tracef(err)
-	}
-
-	ok, err := tb.Verify(u.TOTPKey, time.Now(), 1, totp.String())
-	if err != nil {
-		if errors.Is(err, otp.ErrPasswordUsed) {
-			errs := errors.Map{"totp": errors.New("passcode already used")}
-
-			return errs.Tracef(app.ErrInvalidInput)
-		}
-
-		return errors.Tracef(err)
-	}
-	if !ok {
-		errs := errors.Map{"totp": errors.New("invalid passcode")}
-
-		return errs.Tracef(app.ErrInvalidInput)
 	}
 
 	u.LastLoggedInAt = time.Now()
@@ -387,7 +399,7 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 }
 
 func (u *User) AuthenticateWithRecoveryCode(code Code) error {
-	if !u.HasVerifiedTOTP() {
+	if !u.HasActivatedTOTP() {
 		return errors.Tracef(app.ErrBadRequest, "account cannot use recovery codes")
 	}
 

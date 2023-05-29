@@ -28,8 +28,6 @@ func TestRateLimit(t *testing.T) {
 			{"same ip with different port too many requests", "1.2.3.4:8081", 1, http.StatusTooManyRequests},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				for i := 0; i < tc.requests; i++ {
 					wantStatus := http.StatusOK
@@ -107,8 +105,6 @@ func TestRateLimit(t *testing.T) {
 			}},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				for _, r := range tc.requests {
 					wantStatus := r.want
@@ -146,8 +142,6 @@ func TestRateLimit(t *testing.T) {
 			{"third request status too many requests", "1.2.3.4", http.StatusTooManyRequests},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				req := errors.Must(http.NewRequest(http.MethodGet, "/", nil))
 
@@ -190,8 +184,6 @@ func TestRateLimit(t *testing.T) {
 			{"2. third request status too many requests with different trusted", "1.1.1.1", http.StatusTooManyRequests},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				req := errors.Must(http.NewRequest(http.MethodGet, "/", nil))
 

@@ -24,10 +24,6 @@
 				form.submit()
 			}
 		</script>
-	{{else if eq (.Query.Get "status") "success"}}
-		<p class="title">Account Activated</p>
-
-		<p>Your account has been successfully activated.</p>
 	{{else}}
 		<p class="title">Account Activation Error</p>
 

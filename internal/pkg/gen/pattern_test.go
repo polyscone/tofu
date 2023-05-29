@@ -51,8 +51,6 @@ func TestPatternGenerator(t *testing.T) {
 		{"email", `^(?i)[a-z0-9_-]+\.?[a-z0-9_-]+@[a-z0-9_-]\.(com|co\.uk|fyi|org)$`},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			re := regexp.MustCompile(tc.pattern)
 			pg := errors.Must(gen.NewPatternGenerator(tc.pattern))

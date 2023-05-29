@@ -10,13 +10,17 @@ import (
 )
 
 func Activate(svc *handler.Services, mux *router.ServeMux) {
-	mux.Get("/activate", activateGet(svc), "account.activate")
-	mux.Post("/activate", activatePost(svc), "account.activate.post")
+	mux.Prefix("/activate", func(mux *router.ServeMux) {
+		mux.Get("/", activateGet(svc), "account.activate")
+		mux.Post("/", activatePost(svc), "account.activate.post")
+
+		mux.Get("/success", activateSuccessGet(svc), "account.activate.success")
+	})
 }
 
 func activateGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "account/activate", nil)
+		svc.View(w, r, http.StatusOK, "account/activate/form", nil)
 	}
 }
 
@@ -44,7 +48,7 @@ func activatePost(svc *handler.Services) http.HandlerFunc {
 		}
 
 		err = svc.Account.ActivateUser(ctx, email)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate/form", nil) {
 			return
 		}
 
@@ -53,6 +57,12 @@ func activatePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, svc.Path("account.activate")+"?status=success", http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.activate.success"), http.StatusSeeOther)
+	}
+}
+
+func activateSuccessGet(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		svc.View(w, r, http.StatusOK, "account/activate/success", nil)
 	}
 }

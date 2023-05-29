@@ -51,8 +51,6 @@ func TestCSRF(t *testing.T) {
 			{"delete requires a valid token", http.MethodDelete, http.StatusBadRequest},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				ts := testutil.NewServer(t, mux)
 				defer ts.Close()
@@ -82,8 +80,6 @@ func TestCSRF(t *testing.T) {
 			{"delete with a valid token", http.MethodDelete, http.StatusOK},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				ts := testutil.NewServer(t, mux)
 				defer ts.Close()
@@ -134,8 +130,6 @@ func TestCSRF(t *testing.T) {
 			{"patch with a valid token", http.MethodPatch, http.StatusOK},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				ts := testutil.NewServer(t, mux)
 				defer ts.Close()

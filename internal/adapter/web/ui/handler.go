@@ -39,7 +39,6 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	tenant.Broker.Listen(accountDisabledTOTPHandler(tenant, svc))
 	tenant.Broker.Listen(accountRegisteredHandler(tenant, svc))
 	tenant.Broker.Listen(webResetPasswordRequestedHandler(tenant, svc))
-	tenant.Broker.Listen(webTOTPSMSRequestedHandler(tenant, svc))
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		svc.ErrorView(w, r, errors.Tracef(err), "error", nil)

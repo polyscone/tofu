@@ -267,6 +267,11 @@
 		text-align: center;
 	}
 
+	.flash-banner--important {
+		border-color: red;
+		border-width: 2px;
+	}
+
 	.warning-banner {
 		background: var(--clr-warning-100);
 		border: 1px solid var(--clr-warning-400);

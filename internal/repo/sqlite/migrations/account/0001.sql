@@ -9,6 +9,7 @@ CREATE TABLE account__users (
   totp_digits       INTEGER NOT NULL,
   totp_period_ns    INTEGER NOT NULL,
   totp_verified_at  DATETIME,
+  totp_activated_at DATETIME,
   registered_at     DATETIME NOT NULL,
   activated_at      DATETIME,
   last_logged_in_at DATETIME,

@@ -23,8 +23,6 @@ func TestSizes(t *testing.T) {
 		{"gibibyte", size.Gibibyte, 1024 * 1024 * 1024},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.got != tc.want {
 				t.Errorf("want %v; got %v", tc.want, tc.got)

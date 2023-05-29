@@ -12,26 +12,25 @@ import (
 )
 
 func ChangePassword(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
-	mux.Get("/change-password", changePasswordGet(svc), "account.change_password")
-	mux.Put("/change-password", changePasswordPut(svc), "account.change_password.put")
+	guard.ProtectPrefix("/change-password/")
+	mux.Prefix("/change-password", func(mux *router.ServeMux) {
+		mux.Get("/", changePasswordGet(svc), "account.change_password")
+		mux.Post("/", changePasswordPost(svc), "account.change_password.post")
+
+		mux.Get("/success", changePasswordSuccessGet(svc), "account.change_password.success")
+	})
 
 	// Redirect to help password managers find the change password page
 	mux.Redirect(http.MethodGet, "/.well-known/change-password", svc.Path("account.change_password"), http.StatusSeeOther)
-
-	guard.ProtectPrefix(svc.Path("account.change_password"))
-
-	svc.SetViewVars("account/change_password", handler.Vars{
-		"NewPasswordKnownBreachCount": 0,
-	})
 }
 
 func changePasswordGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "account/change_password", nil)
+		svc.View(w, r, http.StatusOK, "account/change_password/form", nil)
 	}
 }
 
-func changePasswordPut(svc *handler.Services) http.HandlerFunc {
+func changePasswordPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			OldPassword      string
@@ -60,7 +59,7 @@ func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 				svc.Sessions.Delete(ctx, sess.PasswordKnownBreachCount)
 			}
 		} else if knownBreachCount > 0 {
-			svc.View(w, r, http.StatusOK, "account/change_password", handler.Vars{
+			svc.View(w, r, http.StatusOK, "account/change_password/form", handler.Vars{
 				"NewPasswordKnownBreachCount": knownBreachCount,
 			})
 
@@ -74,7 +73,7 @@ func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 			input.NewPassword,
 			input.NewPasswordCheck,
 		)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/change_password", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "account/change_password/form", nil) {
 			return
 		}
 
@@ -89,9 +88,15 @@ func changePasswordPut(svc *handler.Services) http.HandlerFunc {
 
 			redirect = r
 		} else {
-			redirect = svc.Path("account.change_password") + "?status=success"
+			redirect = svc.Path("account.change_password.success")
 		}
 
 		http.Redirect(w, r, redirect, http.StatusSeeOther)
+	}
+}
+
+func changePasswordSuccessGet(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		svc.View(w, r, http.StatusOK, "account/change_password/success", nil)
 	}
 }

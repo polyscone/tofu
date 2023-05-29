@@ -21,9 +21,9 @@ func accountAuthenticateWithPasswordHandler(tenant *handler.Tenant, svc *handler
 			return
 		}
 
-		if user.HasVerifiedTOTP() && user.TOTPMethod == account.TOTPMethodSMS.String() {
+		if user.HasActivatedTOTP() && user.TOTPMethod == account.TOTPMethodSMS.String() {
 			background.Go(func() {
-				if err := svc.SendTOTPSMS(evt.Email); err != nil {
+				if err := svc.SendTOTPSMS(user.Email, user.TOTPTelephone); err != nil {
 					logger.PrintError(err)
 				}
 			})
@@ -93,16 +93,6 @@ func webResetPasswordRequestedHandler(tenant *handler.Tenant, svc *handler.Servi
 				"Token": tok,
 			}
 			if err := svc.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
-				logger.PrintError(err)
-			}
-		})
-	}
-}
-
-func webTOTPSMSRequestedHandler(tenant *handler.Tenant, svc *handler.Services) any {
-	return func(evt handler.TOTPSMSRequested) {
-		background.Go(func() {
-			if err := svc.SendTOTPSMS(evt.Email); err != nil {
 				logger.PrintError(err)
 			}
 		})

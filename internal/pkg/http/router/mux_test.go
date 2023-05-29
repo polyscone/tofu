@@ -18,29 +18,39 @@ func TestMux(t *testing.T) {
 		w.Write([]byte(r.URL.Path))
 	}
 
+	mux.Options("/", emptyHandler)
+	mux.Connect("/", emptyHandler)
+	mux.Trace("/", emptyHandler)
+	mux.Head("/", emptyHandler)
+	mux.Get("/", emptyHandler)
+	mux.Post("/", emptyHandler)
+	mux.Put("/", emptyHandler)
+	mux.Patch("/", emptyHandler)
+	mux.Delete("/", emptyHandler)
+
 	mux.Prefix("/route", func(mux *router.ServeMux) {
 		mux.Prefix("/test", func(mux *router.ServeMux) {
-			mux.Options("", emptyHandler)
-			mux.Connect("", emptyHandler)
-			mux.Trace("", emptyHandler)
-			mux.Head("", emptyHandler)
-			mux.Get("", emptyHandler)
-			mux.Post("", emptyHandler)
-			mux.Put("", emptyHandler)
-			mux.Patch("", emptyHandler)
-			mux.Delete("", emptyHandler)
+			mux.Options("/", emptyHandler)
+			mux.Connect("/", emptyHandler)
+			mux.Trace("/", emptyHandler)
+			mux.Head("/", emptyHandler)
+			mux.Get("/", emptyHandler)
+			mux.Post("/", emptyHandler)
+			mux.Put("/", emptyHandler)
+			mux.Patch("/", emptyHandler)
+			mux.Delete("/", emptyHandler)
 		})
 	})
 
 	mux.Prefix("/get", func(mux *router.ServeMux) {
 		mux.Prefix("/only", func(mux *router.ServeMux) {
-			mux.Get("", emptyHandler)
+			mux.Get("/", emptyHandler)
 		})
 	})
 
 	mux.Prefix("/handle", func(mux *router.ServeMux) {
 		mux.Prefix("/all", func(mux *router.ServeMux) {
-			mux.Any("", emptyHandler)
+			mux.Any("/", emptyHandler)
 		})
 	})
 
@@ -81,7 +91,7 @@ func TestMux(t *testing.T) {
 		w.Write([]byte("redirected"))
 	})
 
-	mux.Prefix("/foo-prefix", func(sm *router.ServeMux) {
+	mux.Prefix("/foo-prefix", func(mux *router.ServeMux) {
 		mux.Redirect(http.MethodGet, "/redirect/src", "/redirect/dst", http.StatusTemporaryRedirect)
 		mux.Redirect(http.MethodGet, "/:var/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
 		mux.Redirect(http.MethodGet, "/:var/:varfoo/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
@@ -91,7 +101,7 @@ func TestMux(t *testing.T) {
 		w.Write([]byte("rewritten"))
 	})
 
-	mux.Prefix("/bar-prefix", func(sm *router.ServeMux) {
+	mux.Prefix("/bar-prefix", func(mux *router.ServeMux) {
 		mux.Rewrite(http.MethodGet, "/rewrite/src", "/rewrite/dst")
 		mux.Rewrite(http.MethodGet, "/:var/rewrite/src/var", "/:var/dst")
 		mux.Rewrite(http.MethodGet, "/:var/:varfoo/rewrite/src/var", "/:var/dst")
@@ -118,6 +128,16 @@ func TestMux(t *testing.T) {
 		wantBody   string
 		wantStatus int
 	}{
+		{"options method ok", http.MethodOptions, "/", "", http.StatusOK},
+		{"connect method ok", http.MethodConnect, "/", "", http.StatusOK},
+		{"trace method ok", http.MethodTrace, "/", "", http.StatusOK},
+		{"head method ok", http.MethodHead, "/", "", http.StatusOK},
+		{"get method ok", http.MethodGet, "/", "", http.StatusOK},
+		{"post method ok", http.MethodPost, "/", "", http.StatusOK},
+		{"put method ok", http.MethodPut, "/", "", http.StatusOK},
+		{"patch method ok", http.MethodPatch, "/", "", http.StatusOK},
+		{"delete method ok", http.MethodDelete, "/", "", http.StatusOK},
+
 		{"options method ok", http.MethodOptions, "/route/test", "", http.StatusOK},
 		{"connect method ok", http.MethodConnect, "/route/test", "", http.StatusOK},
 		{"trace method ok", http.MethodTrace, "/route/test", "", http.StatusOK},
@@ -181,8 +201,6 @@ func TestMux(t *testing.T) {
 		{"redirect with multiple dynamic params", http.MethodGet, "/redirect/foo/redirect/src/var", "redirected", http.StatusOK},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			req := errors.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
 			res := errors.Must(ts.Client().Do(req))
@@ -221,8 +239,6 @@ func TestMux(t *testing.T) {
 		{"rewrite with multiple dynamic params", http.MethodGet, "/rewrite/foo/rewrite/src/var", "rewritten", http.StatusOK},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			req := errors.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
 			res := errors.Must(ts.Client().Do(req))
@@ -329,8 +345,6 @@ func TestMuxPanics(t *testing.T) {
 			{"empty argument", []any{":w", "1", ":z", ""}},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				defer func() {
 					if recover() == nil {
@@ -374,8 +388,6 @@ func TestMuxPanics(t *testing.T) {
 			{"no arguments", nil},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				defer func() {
 					if recover() == nil {

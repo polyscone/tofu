@@ -15,25 +15,132 @@ import (
 	"github.com/polyscone/tofu/internal/repo"
 )
 
+const lowRecoveryCodes = 2
+
 func Login(svc *handler.Services, mux *router.ServeMux) {
-	mux.Get("/login", loginGet(svc), "account.login")
-	mux.Post("/login", loginPost(svc), "account.login.post")
-	mux.Post("/login/totp/send-sms", loginTOTPSendSMSPost(svc), "account.login.totp.send_sms.post")
+	mux.Prefix("/login", func(mux *router.ServeMux) {
+		mux.Get("/", loginGet(svc), "account.login")
+		mux.Post("/", loginPost(svc), "account.login.post")
+
+		mux.Prefix("/totp", func(mux *router.ServeMux) {
+			mux.Get("/", loginTOTPGet(svc), "account.login.totp")
+			mux.Post("/", loginTOTPPost(svc), "account.login.totp.post")
+		})
+
+		mux.Prefix("/recovery-code", func(mux *router.ServeMux) {
+			mux.Get("/", loginRecoveryCodeGet(svc), "account.login.recovery_code")
+			mux.Post("/", loginRecoveryCodePost(svc), "account.login.recovery_code.post")
+		})
+	})
 }
 
 func loginGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "account/login", nil)
+		ctx := r.Context()
+
+		if svc.Sessions.GetBool(ctx, sess.IsAuthenticated) {
+			svc.View(w, r, http.StatusOK, "account/login/logout", nil)
+
+			return
+		}
+
+		svc.View(w, r, http.StatusOK, "account/login/password", nil)
 	}
 }
 
 func loginPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Action       string
-			Email        string
-			Password     string
-			TOTP         string
+			Email    string
+			Password string
+		}
+		err := httputil.DecodeForm(&input, r)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		ctx := r.Context()
+
+		loginWithPassword(ctx, svc, w, r, input.Email, input.Password)
+	}
+}
+
+func loginTOTPGet(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		if svc.Sessions.GetBool(ctx, sess.IsAuthenticated) {
+			svc.View(w, r, http.StatusOK, "account/login/logout", nil)
+
+			return
+		}
+
+		svc.View(w, r, http.StatusOK, "account/login/totp", nil)
+	}
+}
+
+func loginTOTPPost(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			TOTP string
+		}
+		err := httputil.DecodeForm(&input, r)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		ctx := r.Context()
+
+		userID := svc.Sessions.GetInt(ctx, sess.UserID)
+		err = svc.Account.AuthenticateWithTOTP(ctx, userID, input.TOTP)
+		if svc.ErrorView(w, r, errors.Tracef(err), "account/login/totp", nil) {
+			return
+		}
+
+		_, err = svc.RenewSession(ctx)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		user, err := svc.Repo.Account.FindUserByID(ctx, userID)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		if len(user.RecoveryCodes) <= lowRecoveryCodes {
+			svc.Sessions.Set(ctx, sess.FlashImportant, true)
+			svc.Sessions.Set(ctx, sess.Flash, `
+				You are running low on recovery codes.<br>
+				We recommend
+				<a href="`+svc.Path("account.totp.recovery_codes")+`">generating new ones</a>
+				as soon as you can.
+			`)
+		}
+
+		svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
+		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
+
+		loginSuccessRedirect(svc, w, r)
+	}
+}
+
+func loginRecoveryCodeGet(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		if svc.Sessions.GetBool(ctx, sess.IsAuthenticated) {
+			svc.View(w, r, http.StatusOK, "account/login/logout", nil)
+
+			return
+		}
+
+		svc.View(w, r, http.StatusOK, "account/login/recovery_code", nil)
+	}
+}
+
+func loginRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
 			RecoveryCode string
 		}
 		err := httputil.DecodeForm(&input, r)
@@ -41,78 +148,54 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		actions := map[string]struct{}{
-			"verify-password":      {},
-			"verify-totp":          {},
-			"verify-recovery-code": {},
-		}
-		if _, ok := actions[input.Action]; !ok {
-			svc.ErrorView(w, r, errors.Tracef("invalid action %q", input.Action), "error", nil)
+		ctx := r.Context()
 
+		userID := svc.Sessions.GetInt(ctx, sess.UserID)
+		err = svc.Account.AuthenticateWithRecoveryCode(ctx, userID, input.RecoveryCode)
+		if svc.ErrorView(w, r, errors.Tracef(err), "account/login/recovery_code", nil) {
 			return
 		}
 
-		ctx := r.Context()
-
-		switch input.Action {
-		case "verify-password":
-			loginWithPassword(ctx, svc, w, r, input.Email, input.Password)
-
-		case "verify-totp":
-			userID := svc.Sessions.GetInt(ctx, sess.UserID)
-			err := svc.Account.AuthenticateWithTOTP(ctx, userID, input.TOTP)
-			if svc.ErrorView(w, r, errors.Tracef(err), "account/login", nil) {
-				return
-			}
-
-			_, err = svc.RenewSession(ctx)
-			if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-				return
-			}
-
-			svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
-			svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
-
-			loginSuccessRedirect(svc, w, r)
-
-		case "verify-recovery-code":
-			userID := svc.Sessions.GetInt(ctx, sess.UserID)
-			err := svc.Account.AuthenticateWithRecoveryCode(ctx, userID, input.RecoveryCode)
-			if svc.ErrorView(w, r, errors.Tracef(err), "account/login", nil) {
-				return
-			}
-
-			_, err = svc.RenewSession(ctx)
-			if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-				return
-			}
-
-			svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
-			svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
-
-			loginSuccessRedirect(svc, w, r)
+		_, err = svc.RenewSession(ctx)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
 		}
-	}
-}
 
-func loginTOTPSendSMSPost(svc *handler.Services) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
+		user, err := svc.Repo.Account.FindUserByID(ctx, userID)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
 
-		svc.Broker.Dispatch(handler.TOTPSMSRequested{
-			Email: svc.Sessions.GetString(ctx, sess.Email),
-		})
+		flash := `
+			If you have lost your authentication device
+			<a href="` + svc.Path("account.totp.disable") + `">disable two-factor authentication</a>
+			to avoid getting locked out of your account.
+		`
 
-		svc.Sessions.Set(ctx, sess.Flash, "A passcode has been sent to your registered phone number.")
+		if len(user.RecoveryCodes) <= lowRecoveryCodes {
+			flash += `
+				<br>
+				<br>
+				You are also running low on recovery codes.<br>
+				If you still have your authentication device you can
+				<a href="` + svc.Path("account.totp.recovery_codes") + `">generate new recovery codes</a>.
+			`
+		}
 
-		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
+		svc.Sessions.Set(ctx, sess.FlashImportant, true)
+		svc.Sessions.Set(ctx, sess.Flash, flash)
+
+		svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
+		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
+
+		loginSuccessRedirect(svc, w, r)
 	}
 }
 
 func loginWithPassword(ctx context.Context, svc *handler.Services, w http.ResponseWriter, r *http.Request, email, password string) {
 	err := svc.Account.AuthenticateWithPassword(ctx, email, password)
 	if err != nil {
-		svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/login", func(data *handler.ViewData) {
+		svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/login/password", func(data *handler.ViewData) {
 			if errors.Is(err, app.ErrBadRequest) || errors.Is(err, repo.ErrNotFound) || errors.Is(err, account.ErrNotActivated) {
 				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
 			}
@@ -133,10 +216,10 @@ func loginWithPassword(ctx context.Context, svc *handler.Services, w http.Respon
 
 	svc.Sessions.Set(ctx, sess.UserID, user.ID)
 	svc.Sessions.Set(ctx, sess.Email, email)
-	svc.Sessions.Set(ctx, sess.HasVerifiedTOTP, user.HasVerifiedTOTP())
 	svc.Sessions.Set(ctx, sess.TOTPMethod, user.TOTPMethod)
-	svc.Sessions.Set(ctx, sess.IsAwaitingTOTP, user.HasVerifiedTOTP())
-	svc.Sessions.Set(ctx, sess.IsAuthenticated, !user.HasVerifiedTOTP())
+	svc.Sessions.Set(ctx, sess.HasActivatedTOTP, user.HasActivatedTOTP())
+	svc.Sessions.Set(ctx, sess.IsAwaitingTOTP, user.HasActivatedTOTP())
+	svc.Sessions.Set(ctx, sess.IsAuthenticated, !user.HasActivatedTOTP())
 
 	knownBreachCount, err := pwned.PasswordKnownBreachCount(ctx, []byte(password))
 	if err != nil {
@@ -148,7 +231,7 @@ func loginWithPassword(ctx context.Context, svc *handler.Services, w http.Respon
 	}
 
 	if svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
-		http.Redirect(w, r, svc.Path("account.login")+"?step=totp", http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.login.totp"), http.StatusSeeOther)
 
 		return
 	}

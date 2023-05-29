@@ -54,6 +54,10 @@ func (p Passport) CanVerifyTOTP(userID int) bool {
 	return p.user.ID == userID
 }
 
+func (p Passport) CanActivateTOTP(userID int) bool {
+	return p.user.ID == userID
+}
+
 func (p Passport) CanChangeTOTPTelephone(userID int) bool {
 	return p.user.ID == userID
 }

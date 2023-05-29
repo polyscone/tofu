@@ -1,0 +1,23 @@
+{{define "view"}}
+
+<div class="totp center">
+	<p class="title">Set Your Phone Number</p>
+
+	<p>Enter the phone number that you would like to use below and we'll send you a passcode to enable two-factor authentication.</p>
+
+	<p><a href="{{Path "account.totp.setup.app"}}">Don't want to use SMS? Click here to use an app.</a></p>
+
+	<form action="{{Path "account.totp.setup.sms.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<label for="totp__telephone">Phone number <small>Full number with country code</small></label>
+		<input id="totp__telephone" type="tel" name="telephone" value="{{or (.Form.Get "telephone") .Vars.TOTPTelephone}}" placeholder="+00 00 0000 0000 " autocomplete="tel" required pattern="\+\d(\d| )+" minlength="4" maxlength="25">
+		<p class="error">{{.Errors.Get "new telephone"}}</p>
+
+		<div class="bag push-inline-end">
+			<button type="submit">Use this phone number and send a passcode</button>
+		</div>
+	</form>
+</div>
+
+{{end}}

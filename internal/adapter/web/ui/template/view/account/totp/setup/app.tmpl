@@ -1,0 +1,47 @@
+{{define "view"}}
+
+<div class="totp center">
+	<p class="title">Enable Two-Factor Authentication</p>
+
+	<p>If you don't already have an authenticator application installed on your phone or computer then you will need to download and install one to set up two-factor authentication.</p>
+	<p>We recommend using one of the following:</p>
+
+	<ul>
+		<li>Authy (<a href="https://authy.com/download/" target="_blank" rel="noopener noreferrer">Android, iOS, Windows, Mac, Linux</a>)</li>
+		<li>Google Authenticator (<a href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2" target="_blank" rel="noopener noreferrer">Android</a>, <a href="https://apps.apple.com/us/app/google-authenticator/id388497605" target="_blank" rel="noopener noreferrer">iOS</a>)</li>
+		<li>LastPass Authenticator (<a href="https://support.logmeininc.com/lastpass/help/lastpass-authenticator-lp030014" target="_blank" rel="noopener noreferrer">Android, iOS, Windows mobile</a>)</li>
+		<li>1Password (<a href="https://support.1password.com/one-time-passwords/" target="_blank" rel="noopener noreferrer">Android, iOS, Windows, Mac</a>)</li>
+	</ul>
+
+	<p><a href="{{Path "account.totp.setup.sms"}}">Can't install an authenticator app? Click here to use SMS.</a></p>
+
+	<p>
+		Use your authenticator app to scan the QR code below.
+		If you can't scan the QR code then you can manually enter the secret key below instead.
+	</p>
+
+	<div class="totp__qrcode">
+		<p>
+			<img src="{{.Vars.QRCodeBase64}}" alt="TOTP QR Code"><br>
+			Secret Key:<br>
+			{{.Vars.KeyBase32}}
+		</p>
+	</div>
+
+	<p>After scanning the QR code, or manually entering the secret key, your app will display a 6 digit passcode that you can enter below to verify that your authenticator app is setup correctly and enable two-factor authentication.</p>
+	<p>Once two-factor authentication has been enabled you will be required to provide a 6 digit passcode to verify your identity when logging in.</p>
+
+	<form action="{{Path "account.totp.setup.app.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<label for="totp__passcode">Passcode</label>
+		<input id="totp__passcode" type="text" name="totp" placeholder="123456" autocomplete="off" required pattern="\d{6}" minlength="6" maxlength="6">
+		<p class="error">{{.Errors.Get "totp"}}</p>
+
+		<div class="bag push-inline-end">
+			<button type="submit">Enable two-factor authentication</button>
+		</div>
+	</form>
+</div>
+
+{{end}}

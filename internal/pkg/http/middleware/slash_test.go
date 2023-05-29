@@ -68,8 +68,6 @@ func TestRemoveTrailingSlash(t *testing.T) {
 		{"delete trailing slash with query", http.MethodDelete, "/foo/?bar=baz&qux=quxx", "/foo?bar=baz&qux=quxx"},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			req := errors.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
 

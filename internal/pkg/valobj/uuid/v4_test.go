@@ -92,8 +92,6 @@ func TestParseInvalidV4(t *testing.T) {
 			{"valid v1", "351dc63c-f387-11ec-b939-0242ac120002"},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				if _, err := uuid.ParseV4(tc.input); err == nil {
 					t.Error("want error; got <nil>")
@@ -116,8 +114,6 @@ func TestParseInvalidV4(t *testing.T) {
 			{"valid v1", "351dc63c-f387-11ec-b939-0242ac120002"},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				if _, err := uuid.ParseNillableV4(tc.input); err == nil {
 					t.Error("want error; got <nil>")

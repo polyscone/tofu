@@ -43,8 +43,6 @@ func TestRecover(t *testing.T) {
 		{"nil pointer dereference", http.MethodGet, "/nil-pointer", http.StatusInternalServerError},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			req := errors.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
 			res := errors.Must(ts.Client().Do(req))

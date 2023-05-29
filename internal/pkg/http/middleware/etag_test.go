@@ -46,8 +46,6 @@ func TestETag(t *testing.T) {
 		{"no etag for delete", http.MethodDelete, "/hello/world", "", ""},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			req := errors.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
 

@@ -3,10 +3,12 @@ package account_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
@@ -24,7 +26,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 
 	password := "password"
 	activated := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Password: password, Activate: true})
-	verifiedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, VerifyTOTP: true})
+	activatedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, ActivateTOTP: true})
 
 	validGuard := regenerateRecoveryCodesGuard{value: true}
 	invalidGuard := regenerateRecoveryCodesGuard{value: false}
@@ -33,16 +35,20 @@ func TestRegenRecoveryCodes(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.RecoveryCodesRegenerated{Email: verifiedTOTP.Email})
+		events.Expect(account.RecoveryCodesRegenerated{Email: activatedTOTP.Email})
 
-		originals := verifiedTOTP.RecoveryCodes
+		originals := activatedTOTP.RecoveryCodes
 
-		err := svc.RegenerateRecoveryCodes(ctx, validGuard, verifiedTOTP.ID)
+		alg := errors.Must(otp.NewAlgorithm(activatedTOTP.TOTPAlgorithm))
+		tb := errors.Must(otp.NewTimeBased(activatedTOTP.TOTPDigits, alg, time.Unix(0, 0), activatedTOTP.TOTPPeriod))
+		totp := errors.Must(tb.Generate(activatedTOTP.TOTPKey, time.Now()))
+
+		err := svc.RegenerateRecoveryCodes(ctx, validGuard, activatedTOTP.ID, totp)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		user := errors.Must(store.FindUserByID(ctx, verifiedTOTP.ID))
+		user := errors.Must(store.FindUserByID(ctx, activatedTOTP.ID))
 
 		if len(user.RecoveryCodes) == 0 {
 			t.Error("want at least one recovery code; got none")
@@ -72,17 +78,25 @@ func TestRegenRecoveryCodes(t *testing.T) {
 		defer events.Check(t)
 
 		tt := []struct {
-			name   string
-			guard  account.RegenerateRecoveryCodesGuard
-			userID int
-			want   error
+			name     string
+			guard    account.RegenerateRecoveryCodesGuard
+			userID   int
+			totpUser *account.User
+			want     error
 		}{
-			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
-			{"TOTP not setup or verified", validGuard, activated.ID, app.ErrBadRequest},
+			{"unauthorised", invalidGuard, 0, activatedTOTP, app.ErrUnauthorised},
+			{"TOTP not setup or verified", validGuard, activated.ID, nil, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.RegenerateRecoveryCodes(ctx, tc.guard, tc.userID)
+				totp := "000000"
+				if tc.totpUser != nil {
+					alg := errors.Must(otp.NewAlgorithm(tc.totpUser.TOTPAlgorithm))
+					tb := errors.Must(otp.NewTimeBased(tc.totpUser.TOTPDigits, alg, time.Unix(0, 0), tc.totpUser.TOTPPeriod))
+					totp = errors.Must(tb.Generate(tc.totpUser.TOTPKey, time.Now()))
+				}
+
+				err := svc.RegenerateRecoveryCodes(ctx, tc.guard, tc.userID, totp)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want %q; got %q", tc.want, err)

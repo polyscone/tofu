@@ -16,8 +16,6 @@ func TestNewKey(t *testing.T) {
 		{"newhash for sha512", otp.SHA512, 64},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			key, err := otp.NewKey(nil, tc.alg)
 			if err != nil {

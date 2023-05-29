@@ -2,14 +2,15 @@ package sess
 
 const (
 	// Global session keys
-	Flash    = "global.flash"
-	Redirect = "global.redirect"
+	Flash          = "global.flash"
+	FlashImportant = "global.flash_important"
+	Redirect       = "global.redirect"
 
 	// Account session keys
 	UserID                   = "account.user_id"
 	Email                    = "account.email"
-	HasVerifiedTOTP          = "account.has_verified_totp"
 	TOTPMethod               = "account.totp_method"
+	HasActivatedTOTP         = "account.has_verified_totp"
 	IsAwaitingTOTP           = "account.is_awaiting_totp"
 	IsAuthenticated          = "account.is_authenticated"
 	PasswordKnownBreachCount = "account.password_known_breach_count"

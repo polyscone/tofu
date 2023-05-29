@@ -93,8 +93,6 @@ func TestTOTP(t *testing.T) {
 		{"totp sha512, digits 8, step 30s, time 20,000,000,000s", otp.SHA512, 8, defaultStep, time.Unix(20000000000, 0), "47863826"},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			tb := errors.Must(otp.NewTimeBased(tc.digits, tc.alg, time.Unix(0, 0), tc.step))
 
@@ -120,8 +118,6 @@ func TestTOTPDefaultVerifyErrors(t *testing.T) {
 		{"totp verify expect error with too many delay steps", 5},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			key := errors.Must(timeBasedKey(20))
 			totp := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
@@ -148,8 +144,6 @@ func TestTOTPDefaultVerify(t *testing.T) {
 		{"totp verify pass generated one step in the future, 0 delay steps", now.Add(defaultStep), 0, false},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			key := errors.Must(timeBasedKey(20))
 			totp := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))

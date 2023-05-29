@@ -62,8 +62,6 @@ func TestHOTP(t *testing.T) {
 		{"hotp digits 8, count 9", otp.SHA1, 8, 9, "45520489"},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			hb := errors.Must(otp.NewHMACBased(tc.digits, tc.alg))
 

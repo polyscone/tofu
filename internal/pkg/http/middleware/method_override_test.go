@@ -54,8 +54,6 @@ func TestMethodOverride(t *testing.T) {
 		{"ignore get override", http.MethodGet, http.MethodGet, http.MethodPost},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			var form io.Reader
 

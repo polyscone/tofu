@@ -1,0 +1,58 @@
+{{define "view"}}
+
+<div class="change-password center">
+	<p class="title">{{if .Vars.NewPasswordKnownBreachCount}}Confirm {{end}}Change Password</p>
+
+	{{if .Vars.NewPasswordKnownBreachCount}}
+		<div class="warning-banner">
+			<p>
+				Your password has not been changed yet because it appears <span data-locale-number>{{.Vars.NewPasswordKnownBreachCount}}</span> {{if gt .Vars.NewPasswordKnownBreachCount 1}}times{{else}}time{{end}}
+				in a <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer">database of security breaches</a> and is not considered to be secure.
+			</p>
+		</div>
+		<p>You can continue and use this password, but we recommend that you choose a more secure one.</p>
+	{{else if .Session.PasswordKnownBreachCount}}
+		<div class="warning-banner">
+			<p>
+				The password you are currently using appears <span data-locale-number>{{.Session.PasswordKnownBreachCount}}</span> {{if gt .Session.PasswordKnownBreachCount 1}}times{{else}}time{{end}}
+				in a <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer">database of security breaches</a> and is not considered to be secure.
+			</p>
+			<p>We recommend that you change this password to a more secure one as soon as possible.</p>
+		</div>
+	{{end}}
+
+	<form action="{{Path "account.change_password.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		{{if .Vars.NewPasswordKnownBreachCount}}
+			<input type="hidden" name="old-password" value="{{.Form.Get "old-password"}}">
+			<input type="hidden" name="insecure-password" value="{{.Form.Get "new-password"}}">
+
+			<label for="change-password__new-password">New password</label>
+			<input id="change-password__new-password" type="password" name="new-password" value="{{.Form.Get "new-password"}}" placeholder="new password" autocomplete="new-password" autofocus required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+			<p class="error">{{.Errors.Get "new password"}}</p>
+
+			<div class="bag push-inline-end">
+				<button type="submit">Use this password{{if .Session.Redirect}} and continue{{end}}</button>
+			</div>
+		{{else}}
+			<label for="change-password__old-password">Old password</label>
+			<input id="change-password__old-password" type="password" name="old-password" value="{{.Form.Get "old-password"}}" placeholder="old password" autocomplete="current-password" autofocus required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+			<p class="error">{{.Errors.Get "old password"}}</p>
+
+			<label for="change-password__new-password">New password</label>
+			<input id="change-password__new-password" type="password" name="new-password" value="{{.Form.Get "new-password"}}" placeholder="new password" autocomplete="new-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+			<p class="error">{{.Errors.Get "new password"}}</p>
+
+			<div class="bag push-inline-end">
+				{{if .Session.Redirect}}
+					<a href="{{.Session.Redirect}}" class="btn btn--alt">Change later</a>
+				{{end}}
+
+				<button type="submit">Update password{{if .Session.Redirect}} and continue{{end}}</button>
+			</div>
+		{{end}}
+	</form>
+</div>
+
+{{end}}

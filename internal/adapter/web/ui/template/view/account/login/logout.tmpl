@@ -1,0 +1,17 @@
+{{define "view"}}
+
+<div class="logout center">
+	<p class="title">Logout</p>
+
+	<p>You are already logged in.</p>
+
+	<form action="{{Path "account.logout.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<div class="bag">
+			<button type="submit" class="btn--link">Click here to logout.</button>
+		</div>
+	</form>
+</div>
+
+{{end}}

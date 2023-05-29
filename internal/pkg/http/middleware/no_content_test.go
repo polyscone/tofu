@@ -34,8 +34,6 @@ func TestNoContent(t *testing.T) {
 		{"some content", http.MethodGet, "/populated", http.StatusOK},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			req := errors.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
 			res := errors.Must(ts.Client().Do(req))

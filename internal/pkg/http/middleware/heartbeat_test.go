@@ -29,8 +29,6 @@ func TestHeartbeat(t *testing.T) {
 		{"status 404 not found on fallthrough", http.MethodGet, "/foo", http.StatusNotFound},
 	}
 	for _, tc := range tt {
-		tc := tc
-
 		t.Run(tc.name, func(t *testing.T) {
 			req := errors.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
 			res := errors.Must(ts.Client().Do(req))

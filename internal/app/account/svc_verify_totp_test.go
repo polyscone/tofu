@@ -30,7 +30,7 @@ func TestVerifyTOTP(t *testing.T) {
 	activated := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, Activate: true})
 	unverifiedAppTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", Password: password, SetupTOTP: true})
 	unverifiedSMSTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "baz@qux.com", Password: password, SetupTOTPTelephone: true})
-	verifiedAppTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", Password: password, VerifyTOTP: true})
+	activatedAppTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", Password: password, ActivateTOTP: true})
 
 	validGuard := verifyTOTPGuard{value: true}
 	invalidGuard := verifyTOTPGuard{value: false}
@@ -56,6 +56,16 @@ func TestVerifyTOTP(t *testing.T) {
 		if want, got := account.TOTPMethodApp.String(), unverifiedAppTOTPUser.TOTPMethod; want != got {
 			t.Errorf("want TOTP method to be %q; got %q", want, got)
 		}
+
+		if len(unverifiedAppTOTPUser.RecoveryCodes) == 0 {
+			t.Error("want at least one recovery code; got none")
+		} else {
+			for _, rc := range unverifiedAppTOTPUser.RecoveryCodes {
+				if len(rc.Code) == 0 {
+					t.Fatal("want code; got empty string")
+				}
+			}
+		}
 	})
 
 	t.Run("success with activated user with SMS TOTP setup", func(t *testing.T) {
@@ -79,6 +89,16 @@ func TestVerifyTOTP(t *testing.T) {
 		if want, got := account.TOTPMethodApp.String(), unverifiedSMSTOTPUser.TOTPMethod; want != got {
 			t.Errorf("want TOTP method to be %q; got %q", want, got)
 		}
+
+		if len(unverifiedSMSTOTPUser.RecoveryCodes) == 0 {
+			t.Error("want at least one recovery code; got none")
+		} else {
+			for _, rc := range unverifiedSMSTOTPUser.RecoveryCodes {
+				if len(rc.Code) == 0 {
+					t.Fatal("want code; got empty string")
+				}
+			}
+		}
 	})
 
 	t.Run("error cases", func(t *testing.T) {
@@ -96,11 +116,9 @@ func TestVerifyTOTP(t *testing.T) {
 			{"empty user id correct TOTP", validGuard, 0, unverifiedAppTOTPUser, repo.ErrNotFound},
 			{"empty user id incorrect TOTP", validGuard, 0, nil, repo.ErrNotFound},
 			{"no TOTP user id correct TOTP", validGuard, activated.ID, unverifiedAppTOTPUser, nil},
-			{"already verified TOTP", validGuard, verifiedAppTOTPUser.ID, verifiedAppTOTPUser, app.ErrBadRequest},
+			{"already activated TOTP", validGuard, activatedAppTOTPUser.ID, activatedAppTOTPUser, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
-			tc := tc
-
 			t.Run(tc.name, func(t *testing.T) {
 				totp := "000000"
 				if tc.totpUser != nil {
