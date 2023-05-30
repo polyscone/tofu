@@ -19,13 +19,13 @@
 		</div>
 
 		<div>
-			<p>We will send you an SMS with a passcode when prompted (only recommended if you can't use an app).</p>
+			<p>We will send you an SMS message with a passcode when prompted (only recommended if you can't use an app).</p>
 
 			<form action="{{Path "account.totp.setup.post"}}" method="POST">
 				<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 				<input type="hidden" name="method" value="sms">
 
-				<button type="submit" class="btn--alt">Set up using an SMS</button>
+				<button type="submit" class="btn--alt">Set up using SMS</button>
 			</form>
 		</div>
 	</div>
