@@ -108,8 +108,7 @@ func loginTOTPPost(svc *handler.Services) http.HandlerFunc {
 		}
 
 		if len(user.RecoveryCodes) <= lowRecoveryCodes {
-			svc.Sessions.Set(ctx, sess.FlashImportant, true)
-			svc.Sessions.Set(ctx, sess.Flash, `
+			svc.FlashImportant(ctx, `
 				You are running low on recovery codes.<br>
 				We recommend
 				<a href="`+svc.Path("account.totp.recovery_codes")+`">generating new ones</a>
@@ -182,8 +181,7 @@ func loginRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
 			`
 		}
 
-		svc.Sessions.Set(ctx, sess.FlashImportant, true)
-		svc.Sessions.Set(ctx, sess.Flash, flash)
+		svc.FlashImportant(ctx, flash)
 
 		svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
 		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)

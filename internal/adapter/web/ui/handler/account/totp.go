@@ -326,7 +326,7 @@ func totpSendSMSPost(svc *handler.Services) http.HandlerFunc {
 			}
 		})
 
-		svc.Sessions.Set(ctx, sess.Flash, "A passcode has been sent to your registered phone number.")
+		svc.Flash(ctx, "A passcode has been sent to your registered phone number.")
 
 		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 	}

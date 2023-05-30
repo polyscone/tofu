@@ -5,7 +5,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
@@ -100,7 +99,7 @@ func resetPasswordNewPasswordPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		svc.Sessions.Set(ctx, sess.Flash, "Your password has been successfully changed.")
+		svc.Flash(ctx, "Your password has been successfully changed.")
 
 		loginWithPassword(ctx, svc, w, r, email, input.NewPassword)
 	}

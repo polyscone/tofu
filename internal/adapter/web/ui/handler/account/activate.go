@@ -5,7 +5,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
@@ -61,7 +60,7 @@ func activatePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		svc.Sessions.Set(ctx, sess.Flash, "Your account has been successfully activated.")
+		svc.Flash(ctx, "Your account has been successfully activated.")
 
 		loginSuccessRedirect(svc, w, r)
 	}

@@ -444,6 +444,15 @@ func (svc *Services) JSON(w http.ResponseWriter, r *http.Request, data any) bool
 	return !svc.ErrorJSON(w, r, errors.Tracef(json.NewEncoder(w).Encode(data)))
 }
 
+func (svc *Services) Flash(ctx context.Context, message string) {
+	svc.Sessions.Set(ctx, sess.Flash, message)
+}
+
+func (svc *Services) FlashImportant(ctx context.Context, message string) {
+	svc.Sessions.Set(ctx, sess.FlashImportant, true)
+	svc.Flash(ctx, message)
+}
+
 func (svc *Services) Pagination(r *http.Request) (int, int) {
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil {
