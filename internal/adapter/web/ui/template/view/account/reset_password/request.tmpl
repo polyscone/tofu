@@ -10,8 +10,8 @@
 		<input id="reset-password__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
 		<p class="error">{{.Errors.Get "email"}}</p>
 
-		<div class="bag push-inline-end">
-			<button type="submit">Send email</button>
+		<div class="bag reverse">
+			<button type="submit">Send reset password link</button>
 		</div>
 	</form>
 </div>

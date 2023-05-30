@@ -36,7 +36,7 @@
 			<input id="change-password__new-password" type="password" name="new-password" value="{{.Form.Get "new-password"}}" placeholder="new password" autocomplete="new-password" autofocus required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
 			<p class="error">{{.Errors.Get "new password"}}</p>
 
-			<div class="bag push-inline-end">
+			<div class="bag reverse">
 				<button type="submit">Use this password{{if .Session.Redirect}} and continue{{end}}</button>
 			</div>
 		{{else}}
@@ -48,12 +48,12 @@
 			<input id="change-password__new-password" type="password" name="new-password" value="{{.Form.Get "new-password"}}" placeholder="new password" autocomplete="new-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
 			<p class="error">{{.Errors.Get "new password"}}</p>
 
-			<div class="bag push-inline-end">
+			<div class="bag reverse">
+				<button type="submit">Update password{{if .Session.Redirect}} and continue{{end}}</button>
+
 				{{if .Session.Redirect}}
 					<a href="{{.Session.Redirect}}" class="btn btn--alt">Change later</a>
 				{{end}}
-
-				<button type="submit">Update password{{if .Session.Redirect}} and continue{{end}}</button>
 			</div>
 		{{end}}
 	</form>

@@ -15,9 +15,10 @@
 		<input id="sign-in__recovery-code" type="text" name="recovery-code" value="{{.Form.Get "recovery-code"}}" placeholder="ABCDEFGHIJKLM" autocomplete="off" autofocus required pattern="^[A-Z2-7]+$" minlength="13" maxlength="13">
 		<p class="error">{{.Errors.Get "recovery code"}}</p>
 
-		<div class="bag">
-			<a href="{{Path "account.sign_in.totp"}}">Use a passcode</a>
+		<div class="bag reverse">
 			<button type="submit" class="push-inline-end">Sign in</button>
+
+			<a href="{{Path "account.sign_in.totp"}}">Use a passcode</a>
 		</div>
 	</form>
 </div>

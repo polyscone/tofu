@@ -14,7 +14,7 @@
 		<input id="totp__telephone" type="tel" name="telephone" value="{{or (.Form.Get "telephone") .Vars.TOTPTelephone}}" placeholder="+00 00 0000 0000 " autocomplete="tel" required pattern="\+\d(\d| )+" minlength="4" maxlength="25">
 		<p class="error">{{.Errors.Get "new telephone"}}</p>
 
-		<div class="bag push-inline-end">
+		<div class="bag reverse">
 			<button type="submit">Use this phone number and send a passcode</button>
 		</div>
 	</form>

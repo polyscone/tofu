@@ -20,9 +20,10 @@
 		<input id="sign-up__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="new-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
 		<p class="error">{{.Errors.Get "password"}}</p>
 
-		<div class="bag">
-			<a href="{{Path "account.sign_in"}}">Already have an account?</a>
+		<div class="bag reverse">
 			<button type="submit" class="push-inline-end">Sign up</button>
+
+			<a href="{{Path "account.sign_in"}}">Already have an account?</a>
 		</div>
 	</form>
 </div>

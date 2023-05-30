@@ -12,8 +12,8 @@
 		<input id="totp__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
 		<p class="error">{{.Errors.Get "password"}}</p>
 
-		<div class="bag">
-			<button type="submit" class="push-inline-end">Disable two-factor authentication</button>
+		<div class="bag reverse">
+			<button type="submit">Disable two-factor authentication</button>
 		</div>
 	</form>
 </div>
