@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
@@ -129,7 +130,33 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	})
 
 	// Public static file handler
-	mux.GetHandler("/:rest", http.FileServer(http.FS(publicFiles)))
+	publicFilesRoot := http.FS(publicFiles)
+	fileServer := http.FileServer(publicFilesRoot)
+	mux.GetHandler("/:rest", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		upath := r.URL.Path
+		if !strings.HasPrefix(upath, "/") {
+			upath = "/" + upath
+			r.URL.Path = upath
+		}
+		upath = path.Clean(upath)
+
+		f, err := publicFilesRoot.Open(upath)
+		switch {
+		case errors.Is(err, fs.ErrNotExist):
+			svc.ErrorView(w, r, errors.Tracef(httputil.ErrNotFound, "%w: %v %v", err, r.Method, r.URL), "error", nil)
+
+			return
+
+		case err != nil:
+			svc.ErrorView(w, r, errors.Tracef(httputil.ErrInternalServerError, "%w: %v %v", err, r.Method, r.URL), "error", nil)
+
+			return
+		}
+
+		f.Close()
+
+		fileServer.ServeHTTP(w, r)
+	}))
 
 	// Generic not found handler
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {

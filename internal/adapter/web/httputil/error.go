@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	ErrNotFound         = errors.New("not found")
-	ErrMethodNotAllowed = errors.New("method not allowed")
+	ErrNotFound            = errors.New("not found")
+	ErrMethodNotAllowed    = errors.New("method not allowed")
+	ErrInternalServerError = errors.New("internal server error")
 )
 
 func ErrorStatus(err error) int {
