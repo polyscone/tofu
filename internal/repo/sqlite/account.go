@@ -52,7 +52,7 @@ func (r *AccountRepo) FindUserByID(ctx context.Context, id int) (*account.User, 
 	}
 
 	user := users[0]
-	if err := r.attachRecoveryCodesToUser(ctx, tx, user); err != nil {
+	if err := r.attachUserRecoveryCodes(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
@@ -75,7 +75,7 @@ func (r *AccountRepo) FindUserByEmail(ctx context.Context, email string) (*accou
 	}
 
 	user := users[0]
-	if err := r.attachRecoveryCodesToUser(ctx, tx, user); err != nil {
+	if err := r.attachUserRecoveryCodes(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
@@ -373,7 +373,7 @@ func (r *AccountRepo) findRecoveryCodes(ctx context.Context, tx *Tx, filter acco
 	return recoveryCodes, total, errors.Tracef(rows.Err())
 }
 
-func (r *AccountRepo) attachRecoveryCodesToUser(ctx context.Context, tx *Tx, user *account.User) error {
+func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user *account.User) error {
 	recoveryCodes, _, err := r.findRecoveryCodes(ctx, tx, account.RecoveryCodeFilter{UserID: &user.ID})
 	if err != nil {
 		return errors.Tracef(err)
