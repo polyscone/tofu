@@ -1,10 +1,10 @@
 {{define "view"}}
 
 <div class="totp center">
-	<p class="title">Recovery Codes</p>
+	<h1>Recovery codes</h1>
 
 	<p>Two-factor authentication has not been enabled yet.</p>
-
+	<p>Once two-factor authentication has been enabled you will be required to provide a 6 digit passcode to verify your identity when logging in.</p>
 	<p>In the event that you lose access to your authentication device you can use the following recovery codes in place of a normal passcode.</p>
 
 	<div class="warning-banner">
@@ -17,7 +17,7 @@
 		</p>
 	</div>
 
-	{{template "component_recovery_codes" .Vars.RecoveryCodes}}
+	{{template "com_recovery_codes" .ComData .Vars.RecoveryCodes}}
 
 	<form action="{{Path "account.totp.setup.activate.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">

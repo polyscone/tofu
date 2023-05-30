@@ -5,6 +5,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
@@ -13,8 +14,6 @@ func Activate(svc *handler.Services, mux *router.ServeMux) {
 	mux.Prefix("/activate", func(mux *router.ServeMux) {
 		mux.Get("/", activateGet(svc), "account.activate")
 		mux.Post("/", activatePost(svc), "account.activate.post")
-
-		mux.Get("/success", activateSuccessGet(svc), "account.activate.success")
 	})
 }
 
@@ -57,12 +56,13 @@ func activatePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, svc.Path("account.activate.success"), http.StatusSeeOther)
-	}
-}
+		err = loginSetSession(ctx, svc, w, r, email)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
 
-func activateSuccessGet(svc *handler.Services) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "account/activate/success", nil)
+		svc.Sessions.Set(ctx, sess.Flash, "Your account has been successfully activated.")
+
+		loginSuccessRedirect(svc, w, r)
 	}
 }

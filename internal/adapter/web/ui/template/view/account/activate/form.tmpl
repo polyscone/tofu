@@ -2,11 +2,11 @@
 
 <div class="activate center">
 	{{if .ErrorMessage}}
-		<p class="title">Account Activation Error</p>
+		<h1>Account activation error</h1>
 
 		<p>Either the account you are trying to activate has already been activated or you have provided an invalid activation token.</p>
-	{{else if .Query.Get "token"}}
-		<p class="title">Account Activation</p>
+	{{else if .URL.Query.Get "token"}}
+		<h1>Account activation</h1>
 
 		<p>If you are not automatically redirected please click on the button below to activate your account.</p>
 
@@ -25,7 +25,7 @@
 			}
 		</script>
 	{{else}}
-		<p class="title">Account Activation Error</p>
+		<h1>Account activation error</h1>
 
 		<p>An account cannot be activated without an activation token.</p>
 	{{end}}

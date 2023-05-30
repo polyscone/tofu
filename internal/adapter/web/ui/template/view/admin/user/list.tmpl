@@ -1,6 +1,6 @@
 {{define "view"}}
 
-<h1>User Management</h1>
+<h1>User management</h1>
 
 <form class="bag">
 	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="Search" autofocus class="grow">
@@ -31,6 +31,6 @@
 	{{end}}
 </table>
 
-{{template "pagination" .WithData .Vars.Users}}
+{{template "com_pagination" .ComData .Vars.Users}}
 
 {{end}}

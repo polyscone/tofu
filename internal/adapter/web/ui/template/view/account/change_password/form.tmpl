@@ -1,7 +1,11 @@
 {{define "view"}}
 
 <div class="change-password center">
-	<p class="title">{{if .Vars.NewPasswordKnownBreachCount}}Confirm {{end}}Change Password</p>
+	{{if .Vars.NewPasswordKnownBreachCount}}
+		<h1>Confirm change password</h1>
+	{{else}}
+		<h1>Change password</h1>
+	{{end}}
 
 	{{if .Vars.NewPasswordKnownBreachCount}}
 		<div class="warning-banner">

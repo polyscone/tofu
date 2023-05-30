@@ -1,8 +1,8 @@
-{{define "component_recovery_codes"}}
+{{define "com_recovery_codes"}}
 
 <div class="recovery-code-list">
 	<ul class="recovery-code-list__codes">
-		{{range .}}
+		{{range .Data}}
 			<li>{{.Code}}</li>
 		{{end}}
 	</ul>
@@ -130,7 +130,7 @@
 
 				printContainer.innerHTML = `
 					<h1>
-						Two-Factor Authentication Recovery Codes<br>
+						Two-factor authentication recovery codes<br>
 						<small>${window.location.hostname}</small>
 					</h1>
 					<ul>${data}</ul>

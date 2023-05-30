@@ -1,0 +1,40 @@
+{{define "com_pagination"}}
+
+{{$startEntry := Add 1 (Mul .Com.PageSize (Sub .Com.Page.Number 1))}}
+{{$endEntry := Add (Sub $startEntry 1) (len .Com.Page.Rows)}}
+
+<nav class="pagination">
+	<div class="pagination__info">
+		{{if len .Com.Page.Rows}}
+			{{if eq $startEntry $endEntry}}
+				Showing entry <span data-locale-number>{{$startEntry}}</span> of <span data-locale-number>{{.Com.TotalRows}}</span>
+			{{else}}
+				Showing entries <span data-locale-number>{{$startEntry}}</span>-<span data-locale-number>{{$endEntry}}</span> of <span data-locale-number>{{.Com.TotalRows}}</span>
+			{{end}}
+		{{end}}
+	</div>
+
+	<ul class="pagination__links">
+		{{if and (len .Com.Page.Rows) (gt .Com.TotalPages 1)}}
+			{{if gt .Com.Page.Number 1}}
+				<li><a href="{{.URL.Query.String "page" "1"}}">&laquo; First</a></li>
+				<li><a href="{{.URL.Query.String "page" (Sub .Com.Page.Number 1)}}">&lt; Prev</a></li>
+			{{end}}
+
+			{{range $i := Ints (Sub .Com.Page.Number 2) (Add .Com.Page.Number 3)}}
+				{{if and (gt $i 0) (le $i $.Com.TotalPages)}}
+					<li><a href="{{$.URL.Query.String "page" $i}}" data-locale-number>{{$i}}</a></li>
+				{{end}}
+			{{end}}
+
+			{{if lt .Com.Page.Number .Com.TotalPages}}
+				<li><a href="{{.URL.Query.String "page" (Add .Com.Page.Number 1)}}">Next &gt;</a></li>
+				<li><a href="{{.URL.Query.String "page" .Com.TotalPages}}">Last &raquo;</a></li>
+			{{end}}
+		{{else if not (eq .Com.Page.Number 1)}}
+			<li><a href="{{.URL.Query.String "page" "1"}}">Go to the first page</a></li>
+		{{end}}
+	</ul>
+</nav>
+
+{{end}}

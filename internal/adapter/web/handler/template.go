@@ -89,12 +89,12 @@ type ViewData struct {
 	URL          URL
 	App          AppData
 	Session      SessionData
-	Data         any
+	Com          any
 	Vars         Vars
 }
 
-func (v ViewData) WithData(data any) ViewData {
-	v.Data = data
+func (v ViewData) ComData(data any) ViewData {
+	v.Com = data
 
 	return v
 }

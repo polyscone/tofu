@@ -1,14 +1,11 @@
 {{define "view"}}
 
 <div class="totp center">
-	<p class="title">Enable Two-Factor Authentication</p>
+	<h1>Setup using SMS</h1>
 
-	<p>Enter the 6 digit passcode you received via SMS to verify that your phone number is setup correctly and enable two-factor authentication.</p>
-	<p>Once two-factor authentication has been enabled you will be required to provide a 6 digit passcode to verify your identity when logging in.</p>
+	<p>Enter the 6 digit passcode you received via SMS to verify that your phone number is set up correctly.</p>
 
 	<p><a href="{{Path "account.totp.setup.app"}}">Don't want to use SMS? Click here to use an app.</a></p>
-
-	<p><a href="{{Path "account.totp.setup.sms"}}">Use a different phone number.</a></p>
 
 	<form action="{{Path "account.totp.setup.sms.verify.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
@@ -18,8 +15,9 @@
 		<p class="error">{{.Errors.Get "totp"}}</p>
 
 		<div class="bag reverse">
-			<button type="submit">Enable two-factor authentication</button>
-			<button type="submit" formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt">Resend passcode SMS</button>
+			<button type="submit">Verify setup</button>
+			<button type="submit" formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt push-inline-end">Resend passcode SMS</button>
+			<a href="{{Path "account.totp.setup.sms"}}">Change phone number</a>
 		</div>
 	</form>
 </div>

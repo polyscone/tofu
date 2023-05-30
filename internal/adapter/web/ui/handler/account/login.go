@@ -209,17 +209,10 @@ func loginWithPassword(ctx context.Context, svc *handler.Services, w http.Respon
 		return
 	}
 
-	user, err := svc.Repo.Account.FindUserByEmail(ctx, email)
+	err = loginSetSession(ctx, svc, w, r, email)
 	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 		return
 	}
-
-	svc.Sessions.Set(ctx, sess.UserID, user.ID)
-	svc.Sessions.Set(ctx, sess.Email, email)
-	svc.Sessions.Set(ctx, sess.TOTPMethod, user.TOTPMethod)
-	svc.Sessions.Set(ctx, sess.HasActivatedTOTP, user.HasActivatedTOTP())
-	svc.Sessions.Set(ctx, sess.IsAwaitingTOTP, user.HasActivatedTOTP())
-	svc.Sessions.Set(ctx, sess.IsAuthenticated, !user.HasActivatedTOTP())
 
 	knownBreachCount, err := pwned.PasswordKnownBreachCount(ctx, []byte(password))
 	if err != nil {
@@ -237,6 +230,22 @@ func loginWithPassword(ctx context.Context, svc *handler.Services, w http.Respon
 	}
 
 	loginSuccessRedirect(svc, w, r)
+}
+
+func loginSetSession(ctx context.Context, svc *handler.Services, w http.ResponseWriter, r *http.Request, email string) error {
+	user, err := svc.Repo.Account.FindUserByEmail(ctx, email)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	svc.Sessions.Set(ctx, sess.UserID, user.ID)
+	svc.Sessions.Set(ctx, sess.Email, email)
+	svc.Sessions.Set(ctx, sess.TOTPMethod, user.TOTPMethod)
+	svc.Sessions.Set(ctx, sess.HasActivatedTOTP, user.HasActivatedTOTP())
+	svc.Sessions.Set(ctx, sess.IsAwaitingTOTP, user.HasActivatedTOTP())
+	svc.Sessions.Set(ctx, sess.IsAuthenticated, !user.HasActivatedTOTP())
+
+	return nil
 }
 
 func loginSuccessRedirect(svc *handler.Services, w http.ResponseWriter, r *http.Request) {

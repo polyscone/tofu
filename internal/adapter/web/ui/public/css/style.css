@@ -86,6 +86,10 @@
 		padding-inline: 1rem;
 	}
 
+	h1 {
+		font-size: 1.7rem;
+	}
+
 	hr {
 		inline-size: 100%;
 		border: none;
@@ -194,11 +198,6 @@
 		font-weight: bold;
 		font-size: 1.5rem;
 		text-align: center;
-	}
-
-	.title {
-		font-weight: bold;
-		font-size: 1.2rem;
 	}
 
 	.bag {

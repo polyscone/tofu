@@ -1,7 +1,7 @@
 {{define "view"}}
 
 <div class="reset-password center">
-	<p class="title">Reset Password</p>
+	<h1>Reset password</h1>
 
 	<form action="{{Path "account.reset_password.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">

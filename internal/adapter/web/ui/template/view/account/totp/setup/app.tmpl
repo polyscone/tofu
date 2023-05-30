@@ -1,7 +1,7 @@
 {{define "view"}}
 
 <div class="totp center">
-	<p class="title">Enable Two-Factor Authentication</p>
+	<h1>Setup using an app</h1>
 
 	<p>If you don't already have an authenticator application installed on your phone or computer then you will need to download and install one to set up two-factor authentication.</p>
 	<p>We recommend using one of the following:</p>
@@ -28,8 +28,7 @@
 		</p>
 	</div>
 
-	<p>After scanning the QR code, or manually entering the secret key, your app will display a 6 digit passcode that you can enter below to verify that your authenticator app is setup correctly and enable two-factor authentication.</p>
-	<p>Once two-factor authentication has been enabled you will be required to provide a 6 digit passcode to verify your identity when logging in.</p>
+	<p>After scanning the QR code, or manually entering the secret key, your app will display a 6 digit passcode that you can enter below to verify that your authenticator app is setup correctly.</p>
 
 	<form action="{{Path "account.totp.setup.app.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
@@ -39,7 +38,7 @@
 		<p class="error">{{.Errors.Get "totp"}}</p>
 
 		<div class="bag push-inline-end">
-			<button type="submit">Enable two-factor authentication</button>
+			<button type="submit">Verify setup</button>
 		</div>
 	</form>
 </div>
