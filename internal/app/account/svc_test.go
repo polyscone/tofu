@@ -45,7 +45,7 @@ func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu 
 	user := account.NewUser(errors.Must(text.NewEmail(tu.Email)))
 	password := errors.Must(account.NewPassword(tu.Password))
 
-	errors.Must0(user.Register(password, hasher))
+	errors.Must0(user.SignUpWithPassword(password, hasher))
 
 	if tu.Activate {
 		errors.Must0(user.Activate())

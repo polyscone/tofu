@@ -101,6 +101,6 @@ func resetPasswordNewPasswordPost(svc *handler.Services) http.HandlerFunc {
 
 		svc.Flash(ctx, "Your password has been successfully changed.")
 
-		loginWithPassword(ctx, svc, w, r, email, input.NewPassword)
+		signInWithPassword(ctx, svc, w, r, email, input.NewPassword)
 	}
 }

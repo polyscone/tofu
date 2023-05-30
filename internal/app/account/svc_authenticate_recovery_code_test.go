@@ -21,9 +21,9 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 	activatedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, ActivateTOTP: true})
 
 	t.Run("success for valid user id and correct recovery code", func(t *testing.T) {
-		t.Run("last logged in should not update on password auth", func(t *testing.T) {
-			if !activatedTOTP.LastLoggedInAt.IsZero() {
-				t.Errorf("want last logged in at to be zero; got %v", activatedTOTP.LastLoggedInAt)
+		t.Run("last signed in should not update on password auth", func(t *testing.T) {
+			if !activatedTOTP.LastSignedInAt.IsZero() {
+				t.Errorf("want last signed in at to be zero; got %v", activatedTOTP.LastSignedInAt)
 			}
 
 			err := svc.AuthenticateWithPassword(ctx, activatedTOTP.Email, "password")
@@ -31,8 +31,8 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 				t.Errorf("want <nil>; got %q", err)
 			}
 
-			if !activatedTOTP.LastLoggedInAt.IsZero() {
-				t.Errorf("want last logged in at to be zero; got %v", activatedTOTP.LastLoggedInAt)
+			if !activatedTOTP.LastSignedInAt.IsZero() {
+				t.Errorf("want last signed in at to be zero; got %v", activatedTOTP.LastSignedInAt)
 			}
 		})
 
@@ -54,8 +54,8 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if activatedTOTP.LastLoggedInAt.IsZero() {
-			t.Error("want last logged in at to be populated; got zero")
+		if activatedTOTP.LastSignedInAt.IsZero() {
+			t.Error("want last signed in at to be populated; got zero")
 		}
 
 		if want, got := nRecoveryCodes-1, len(activatedTOTP.RecoveryCodes); want != got {

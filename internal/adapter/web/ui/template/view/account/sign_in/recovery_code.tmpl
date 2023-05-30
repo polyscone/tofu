@@ -1,0 +1,25 @@
+{{define "view"}}
+
+<div class="sign-in center">
+	<h1>Sign in with recovery code</h1>
+
+	<p>
+		Please verify your identity by entering one of your recovery codes.
+		Once a recovery code has been used it cannot be used again.
+	</p>
+
+	<form action="{{Path "account.sign_in.recovery_code.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<label for="sign-in__recovery-code">Recovery code</label>
+		<input id="sign-in__recovery-code" type="text" name="recovery-code" value="{{.Form.Get "recovery-code"}}" placeholder="ABCDEFGHIJKLM" autocomplete="off" autofocus required pattern="^[A-Z2-7]+$" minlength="13" maxlength="13">
+		<p class="error">{{.Errors.Get "recovery code"}}</p>
+
+		<div class="bag">
+			<a href="{{Path "account.sign_in.totp"}}">Use a passcode</a>
+			<button type="submit" class="push-inline-end">Sign in</button>
+		</div>
+	</form>
+</div>
+
+{{end}}

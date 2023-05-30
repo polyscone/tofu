@@ -178,9 +178,9 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			totp_period_ns,
 			totp_verified_at,
 			totp_activated_at,
-			registered_at,
+			signed_up_at,
 			activated_at,
-			last_logged_in_at,
+			last_signed_in_at,
 			COUNT(1) OVER () AS total
 		FROM account__users
 		`+whereSQL(where)+`
@@ -209,9 +209,9 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			&user.TOTPPeriod,
 			(*NullTime)(&user.TOTPVerifiedAt),
 			(*NullTime)(&user.TOTPActivatedAt),
-			(*Time)(&user.RegisteredAt),
+			(*Time)(&user.SignedUpAt),
 			(*NullTime)(&user.ActivatedAt),
-			(*NullTime)(&user.LastLoggedInAt),
+			(*NullTime)(&user.LastSignedInAt),
 			&total,
 		)
 		if err != nil {
@@ -406,9 +406,9 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 			totp_period_ns,
 			totp_verified_at,
 			totp_activated_at,
-			registered_at,
+			signed_up_at,
 			activated_at,
-			last_logged_in_at
+			last_signed_in_at
 		) VALUES (
 			:email,
 			:hashed_password,
@@ -420,9 +420,9 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 			:totp_period_ns,
 			:totp_verified_at,
 			:totp_activated_at,
-			:registered_at,
+			:signed_up_at,
 			:activated_at,
-			:last_logged_in_at
+			:last_signed_in_at
 		)
 	`,
 		sql.Named("email", u.Email),
@@ -435,9 +435,9 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 		sql.Named("totp_period_ns", u.TOTPPeriod),
 		sql.Named("totp_verified_at", NullTime(u.TOTPVerifiedAt.UTC())),
 		sql.Named("totp_activated_at", NullTime(u.TOTPActivatedAt.UTC())),
-		sql.Named("registered_at", Time(u.RegisteredAt.UTC())),
+		sql.Named("signed_up_at", Time(u.SignedUpAt.UTC())),
 		sql.Named("activated_at", NullTime(u.ActivatedAt.UTC())),
-		sql.Named("last_logged_in_at", NullTime(u.LastLoggedInAt.UTC())),
+		sql.Named("last_signed_in_at", NullTime(u.LastSignedInAt.UTC())),
 	)
 	if err != nil {
 		return errors.Tracef(err)
@@ -497,9 +497,9 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) err
 			totp_period_ns = :totp_period_ns,
 			totp_verified_at = :totp_verified_at,
 			totp_activated_at = :totp_activated_at,
-			registered_at = :registered_at,
+			signed_up_at = :signed_up_at,
 			activated_at = :activated_at,
-			last_logged_in_at = :last_logged_in_at,
+			last_signed_in_at = :last_signed_in_at,
 			updated_at = :updated_at
 		WHERE id = :id
 	`,
@@ -514,9 +514,9 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) err
 		sql.Named("totp_period_ns", u.TOTPPeriod),
 		sql.Named("totp_verified_at", NullTime(u.TOTPVerifiedAt.UTC())),
 		sql.Named("totp_activated_at", NullTime(u.TOTPActivatedAt.UTC())),
-		sql.Named("registered_at", Time(u.RegisteredAt.UTC())),
+		sql.Named("signed_up_at", Time(u.SignedUpAt.UTC())),
 		sql.Named("activated_at", NullTime(u.ActivatedAt.UTC())),
-		sql.Named("last_logged_in_at", NullTime(u.LastLoggedInAt.UTC())),
+		sql.Named("last_signed_in_at", NullTime(u.LastSignedInAt.UTC())),
 		sql.Named("updated_at", Time(time.Now().UTC())),
 	)
 	if err != nil {

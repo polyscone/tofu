@@ -25,9 +25,9 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 	activatedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "bob@jones.com", Password: password, ActivateTOTP: true})
 
 	t.Run("success for valid user id and correct totp", func(t *testing.T) {
-		t.Run("last logged in should not update on password auth", func(t *testing.T) {
-			if !activatedTOTP.LastLoggedInAt.IsZero() {
-				t.Errorf("want last logged in at to be zero; got %v", activatedTOTP.LastLoggedInAt)
+		t.Run("last signed in should not update on password auth", func(t *testing.T) {
+			if !activatedTOTP.LastSignedInAt.IsZero() {
+				t.Errorf("want last signed in at to be zero; got %v", activatedTOTP.LastSignedInAt)
 			}
 
 			err := svc.AuthenticateWithPassword(ctx, activatedTOTP.Email, "password")
@@ -40,8 +40,8 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if !activatedTOTP.LastLoggedInAt.IsZero() {
-				t.Errorf("want last logged in at to be zero; got %v", activatedTOTP.LastLoggedInAt)
+			if !activatedTOTP.LastSignedInAt.IsZero() {
+				t.Errorf("want last signed in at to be zero; got %v", activatedTOTP.LastSignedInAt)
 			}
 		})
 
@@ -66,8 +66,8 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if activatedTOTP.LastLoggedInAt.IsZero() {
-			t.Error("want last logged in at to be populated; got zero")
+		if activatedTOTP.LastSignedInAt.IsZero() {
+			t.Error("want last signed in at to be populated; got zero")
 		}
 	})
 

@@ -17,38 +17,38 @@ import (
 
 const lowRecoveryCodes = 2
 
-func Login(svc *handler.Services, mux *router.ServeMux) {
-	mux.Prefix("/login", func(mux *router.ServeMux) {
-		mux.Get("/", loginGet(svc), "account.login")
-		mux.Post("/", loginPost(svc), "account.login.post")
+func SignIn(svc *handler.Services, mux *router.ServeMux) {
+	mux.Prefix("/sign-in", func(mux *router.ServeMux) {
+		mux.Get("/", signInGet(svc), "account.sign_in")
+		mux.Post("/", signInPost(svc), "account.sign_in.post")
 
 		mux.Prefix("/totp", func(mux *router.ServeMux) {
-			mux.Get("/", loginTOTPGet(svc), "account.login.totp")
-			mux.Post("/", loginTOTPPost(svc), "account.login.totp.post")
+			mux.Get("/", signInTOTPGet(svc), "account.sign_in.totp")
+			mux.Post("/", signInTOTPPost(svc), "account.sign_in.totp.post")
 		})
 
 		mux.Prefix("/recovery-code", func(mux *router.ServeMux) {
-			mux.Get("/", loginRecoveryCodeGet(svc), "account.login.recovery_code")
-			mux.Post("/", loginRecoveryCodePost(svc), "account.login.recovery_code.post")
+			mux.Get("/", signInRecoveryCodeGet(svc), "account.sign_in.recovery_code")
+			mux.Post("/", signInRecoveryCodePost(svc), "account.sign_in.recovery_code.post")
 		})
 	})
 }
 
-func loginGet(svc *handler.Services) http.HandlerFunc {
+func signInGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		if svc.Sessions.GetBool(ctx, sess.IsAuthenticated) {
-			svc.View(w, r, http.StatusOK, "account/login/logout", nil)
+			svc.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
 
 			return
 		}
 
-		svc.View(w, r, http.StatusOK, "account/login/password", nil)
+		svc.View(w, r, http.StatusOK, "account/sign_in/password", nil)
 	}
 }
 
-func loginPost(svc *handler.Services) http.HandlerFunc {
+func signInPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Email    string
@@ -61,25 +61,25 @@ func loginPost(svc *handler.Services) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		loginWithPassword(ctx, svc, w, r, input.Email, input.Password)
+		signInWithPassword(ctx, svc, w, r, input.Email, input.Password)
 	}
 }
 
-func loginTOTPGet(svc *handler.Services) http.HandlerFunc {
+func signInTOTPGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		if svc.Sessions.GetBool(ctx, sess.IsAuthenticated) {
-			svc.View(w, r, http.StatusOK, "account/login/logout", nil)
+			svc.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
 
 			return
 		}
 
-		svc.View(w, r, http.StatusOK, "account/login/totp", nil)
+		svc.View(w, r, http.StatusOK, "account/sign_in/totp", nil)
 	}
 }
 
-func loginTOTPPost(svc *handler.Services) http.HandlerFunc {
+func signInTOTPPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			TOTP string
@@ -93,7 +93,7 @@ func loginTOTPPost(svc *handler.Services) http.HandlerFunc {
 
 		userID := svc.Sessions.GetInt(ctx, sess.UserID)
 		err = svc.Account.AuthenticateWithTOTP(ctx, userID, input.TOTP)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/login/totp", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "account/sign_in/totp", nil) {
 			return
 		}
 
@@ -119,25 +119,25 @@ func loginTOTPPost(svc *handler.Services) http.HandlerFunc {
 		svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
 		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
 
-		loginSuccessRedirect(svc, w, r)
+		signInSuccessRedirect(svc, w, r)
 	}
 }
 
-func loginRecoveryCodeGet(svc *handler.Services) http.HandlerFunc {
+func signInRecoveryCodeGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		if svc.Sessions.GetBool(ctx, sess.IsAuthenticated) {
-			svc.View(w, r, http.StatusOK, "account/login/logout", nil)
+			svc.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
 
 			return
 		}
 
-		svc.View(w, r, http.StatusOK, "account/login/recovery_code", nil)
+		svc.View(w, r, http.StatusOK, "account/sign_in/recovery_code", nil)
 	}
 }
 
-func loginRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
+func signInRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			RecoveryCode string
@@ -151,7 +151,7 @@ func loginRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
 
 		userID := svc.Sessions.GetInt(ctx, sess.UserID)
 		err = svc.Account.AuthenticateWithRecoveryCode(ctx, userID, input.RecoveryCode)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/login/recovery_code", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err), "account/sign_in/recovery_code", nil) {
 			return
 		}
 
@@ -186,14 +186,14 @@ func loginRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
 		svc.Sessions.Set(ctx, sess.IsAuthenticated, true)
 		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
 
-		loginSuccessRedirect(svc, w, r)
+		signInSuccessRedirect(svc, w, r)
 	}
 }
 
-func loginWithPassword(ctx context.Context, svc *handler.Services, w http.ResponseWriter, r *http.Request, email, password string) {
+func signInWithPassword(ctx context.Context, svc *handler.Services, w http.ResponseWriter, r *http.Request, email, password string) {
 	err := svc.Account.AuthenticateWithPassword(ctx, email, password)
 	if err != nil {
-		svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/login/password", func(data *handler.ViewData) {
+		svc.ErrorViewFunc(w, r, errors.Tracef(err), "account/sign_in/password", func(data *handler.ViewData) {
 			if errors.Is(err, app.ErrBadRequest) || errors.Is(err, repo.ErrNotFound) || errors.Is(err, account.ErrNotActivated) {
 				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
 			}
@@ -207,7 +207,7 @@ func loginWithPassword(ctx context.Context, svc *handler.Services, w http.Respon
 		return
 	}
 
-	err = loginSetSession(ctx, svc, w, r, email)
+	err = signInSetSession(ctx, svc, w, r, email)
 	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 		return
 	}
@@ -222,15 +222,15 @@ func loginWithPassword(ctx context.Context, svc *handler.Services, w http.Respon
 	}
 
 	if svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
-		http.Redirect(w, r, svc.Path("account.login.totp"), http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.sign_in.totp"), http.StatusSeeOther)
 
 		return
 	}
 
-	loginSuccessRedirect(svc, w, r)
+	signInSuccessRedirect(svc, w, r)
 }
 
-func loginSetSession(ctx context.Context, svc *handler.Services, w http.ResponseWriter, r *http.Request, email string) error {
+func signInSetSession(ctx context.Context, svc *handler.Services, w http.ResponseWriter, r *http.Request, email string) error {
 	user, err := svc.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return errors.Tracef(err)
@@ -246,7 +246,7 @@ func loginSetSession(ctx context.Context, svc *handler.Services, w http.Response
 	return nil
 }
 
-func loginSuccessRedirect(svc *handler.Services, w http.ResponseWriter, r *http.Request) {
+func signInSuccessRedirect(svc *handler.Services, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	knownBreachCount := svc.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount)

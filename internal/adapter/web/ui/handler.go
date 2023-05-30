@@ -32,12 +32,12 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	mux := router.NewServeMux()
 	svc := handler.NewServices(mux, tenant, templateFiles)
 	guard := handler.NewGuard(svc, func() string {
-		return svc.Path("account.login")
+		return svc.Path("account.sign_in")
 	})
 
 	tenant.Broker.Listen(accountAuthenticateWithPasswordHandler(tenant, svc))
 	tenant.Broker.Listen(accountDisabledTOTPHandler(tenant, svc))
-	tenant.Broker.Listen(accountRegisteredHandler(tenant, svc))
+	tenant.Broker.Listen(accountSignedUpHandler(tenant, svc))
 	tenant.Broker.Listen(webResetPasswordRequestedHandler(tenant, svc))
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
@@ -115,9 +115,9 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 		account.ChangePassword(svc, mux, guard)
 		account.Dashboard(svc, mux, guard)
 		account.ResetPassword(svc, mux)
-		account.Login(svc, mux)
-		account.Logout(svc, mux)
-		account.Register(svc, mux)
+		account.SignIn(svc, mux)
+		account.SignOut(svc, mux)
+		account.SignUp(svc, mux)
 		account.TOTP(svc, mux, guard)
 	})
 

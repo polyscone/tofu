@@ -32,7 +32,7 @@ func TestChangePassword(t *testing.T) {
 	validGuard := changePasswordGuard{value: true}
 	invalidGuard := changePasswordGuard{value: false}
 
-	t.Run("success with activated logged in user", func(t *testing.T) {
+	t.Run("success with activated signed in user", func(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 

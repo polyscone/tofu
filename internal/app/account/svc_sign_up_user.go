@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
-func (s *Service) RegisterUser(ctx context.Context, email, password, passwordCheck string) error {
+func (s *Service) SignUp(ctx context.Context, email, password, passwordCheck string) error {
 	var input struct {
 		email         text.Email
 		password      Password
@@ -36,7 +36,7 @@ func (s *Service) RegisterUser(ctx context.Context, email, password, passwordChe
 
 	user := NewUser(input.email)
 
-	if err := user.Register(input.password, s.hasher); err != nil {
+	if err := user.SignUpWithPassword(input.password, s.hasher); err != nil {
 		return errors.Tracef(err)
 	}
 

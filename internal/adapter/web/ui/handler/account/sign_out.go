@@ -8,11 +8,11 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Logout(svc *handler.Services, mux *router.ServeMux) {
-	mux.Post("/logout", logoutPost(svc), "account.logout.post")
+func SignOut(svc *handler.Services, mux *router.ServeMux) {
+	mux.Post("/sign-out", signOutPost(svc), "account.sign_out.post")
 }
 
-func logoutPost(svc *handler.Services) http.HandlerFunc {
+func signOutPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -23,7 +23,7 @@ func logoutPost(svc *handler.Services) http.HandlerFunc {
 
 		svc.Sessions.Destroy(r.Context())
 
-		http.Redirect(w, r, svc.Path("account.login"), http.StatusSeeOther)
+		http.Redirect(w, r, svc.Path("account.sign_in"), http.StatusSeeOther)
 	}
 
 }

@@ -55,13 +55,13 @@ func activatePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		err = loginSetSession(ctx, svc, w, r, email)
+		err = signInSetSession(ctx, svc, w, r, email)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
 		svc.Flash(ctx, "Your account has been successfully activated.")
 
-		loginSuccessRedirect(svc, w, r)
+		signInSuccessRedirect(svc, w, r)
 	}
 }

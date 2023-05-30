@@ -25,8 +25,8 @@ func TestAuthenticateWithPassword(t *testing.T) {
 
 		events.Expect(account.AuthenticatedWithPassword{Email: activated.Email})
 
-		if !activated.LastLoggedInAt.IsZero() {
-			t.Errorf("want last logged in at to be zero; got %v", activated.LastLoggedInAt)
+		if !activated.LastSignedInAt.IsZero() {
+			t.Errorf("want last signed in at to be zero; got %v", activated.LastSignedInAt)
 		}
 
 		err := svc.AuthenticateWithPassword(ctx, activated.Email, "password")
@@ -39,8 +39,8 @@ func TestAuthenticateWithPassword(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if activated.LastLoggedInAt.IsZero() {
-			t.Error("want last logged in at to be populated; got zero")
+		if activated.LastSignedInAt.IsZero() {
+			t.Error("want last signed in at to be populated; got zero")
 		}
 	})
 

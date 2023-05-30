@@ -10,7 +10,7 @@
 <table class="management">
 	<tr>
 		<th>Email</th>
-		<th>Last Login</th>
+		<th>Last sign in</th>
 		<th></th>
 	</tr>
 
@@ -18,8 +18,8 @@
 		<tr>
 			<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
 			<td>
-				{{if not .LastLoggedInAt.IsZero}}
-					<time datetime="{{FormatTime .LastLoggedInAt "RFC3339"}}" data-date="full">{{FormatTime .LastLoggedInAt "DateTime"}}</time>
+				{{if not .LastSignedInAt.IsZero}}
+					<time datetime="{{FormatTime .LastSignedInAt "RFC3339"}}" data-date="full">{{FormatTime .LastSignedInAt "DateTime"}}</time>
 				{{end}}
 			</td>
 			<td class="text-right"><a href="{{Path "admin.user.edit" ":userID" .ID}}{{$.URL.Query.String}}">Edit</a></td>

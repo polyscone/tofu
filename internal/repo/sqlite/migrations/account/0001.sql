@@ -10,9 +10,9 @@ CREATE TABLE account__users (
   totp_period_ns    INTEGER NOT NULL,
   totp_verified_at  DATETIME,
   totp_activated_at DATETIME,
-  registered_at     DATETIME NOT NULL,
+  signed_up_at      DATETIME NOT NULL,
   activated_at      DATETIME,
-  last_logged_in_at DATETIME,
+  last_signed_in_at DATETIME,
   created_at        DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', CURRENT_TIMESTAMP)),
   updated_at        DATETIME
 );

@@ -1,6 +1,6 @@
 package account
 
-type Registered struct {
+type SignedUp struct {
 	Email string
 }
 

@@ -27,9 +27,9 @@ type User struct {
 	TOTPPeriod      time.Duration
 	TOTPVerifiedAt  time.Time
 	TOTPActivatedAt time.Time
-	RegisteredAt    time.Time
+	SignedUpAt      time.Time
 	ActivatedAt     time.Time
-	LastLoggedInAt  time.Time
+	LastSignedInAt  time.Time
 	Roles           []*Role
 	RecoveryCodes   []*RecoveryCode
 }
@@ -55,14 +55,14 @@ func (u *User) HasActivatedTOTP() bool {
 	return !u.TOTPActivatedAt.IsZero()
 }
 
-func (u *User) Register(password Password, hasher password.Hasher) error {
+func (u *User) SignUpWithPassword(password Password, hasher password.Hasher) error {
 	if err := u.setPassword(password, hasher); err != nil {
 		return errors.Tracef(err)
 	}
 
-	u.RegisteredAt = time.Now()
+	u.SignedUpAt = time.Now()
 
-	u.Events.Enqueue(Registered{
+	u.Events.Enqueue(SignedUp{
 		Email: u.Email,
 	})
 
@@ -366,7 +366,7 @@ func (u *User) AuthenticateWithPassword(password Password, hasher password.Hashe
 	}
 
 	if !u.HasActivatedTOTP() {
-		u.LastLoggedInAt = time.Now()
+		u.LastSignedInAt = time.Now()
 	}
 
 	u.Events.Enqueue(AuthenticatedWithPassword{
@@ -389,7 +389,7 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 		return errors.Tracef(err)
 	}
 
-	u.LastLoggedInAt = time.Now()
+	u.LastSignedInAt = time.Now()
 
 	u.Events.Enqueue(AuthenticatedWithTOTP{
 		Email: u.Email,
@@ -410,7 +410,7 @@ func (u *User) AuthenticateWithRecoveryCode(code Code) error {
 	for i, rc := range u.RecoveryCodes {
 		if rc.Code == code.String() {
 			u.RecoveryCodes = append(u.RecoveryCodes[:i], u.RecoveryCodes[i+1:]...)
-			u.LastLoggedInAt = time.Now()
+			u.LastSignedInAt = time.Now()
 
 			u.Events.Enqueue(AuthenticatedWithRecoveryCode{
 				Email: u.Email,

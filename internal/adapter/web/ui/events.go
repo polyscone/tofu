@@ -47,8 +47,8 @@ func accountDisabledTOTPHandler(tenant *handler.Tenant, svc *handler.Services) a
 	}
 }
 
-func accountRegisteredHandler(tenant *handler.Tenant, svc *handler.Services) any {
-	return func(evt account.Registered) {
+func accountSignedUpHandler(tenant *handler.Tenant, svc *handler.Services) any {
+	return func(evt account.SignedUp) {
 		background.Go(func() {
 			ctx := context.Background()
 

@@ -13,14 +13,14 @@
 				<li><a href="{{Path "admin.dashboard"}}">Admin</a></li>
 				<li><a href="{{Path "account.dashboard"}}">Account</a></li>
 				<li>
-					<form action="{{Path "account.logout.post"}}" method="POST">
+					<form action="{{Path "account.sign_out.post"}}" method="POST">
 						<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
-						<button type="submit" class="btn--link">Logout</button>
+						<button type="submit" class="btn--link">Sign out</button>
 					</form>
 				</li>
 			{{else}}
-				<li><a href="{{Path "account.login"}}">Login</a></li>
+				<li><a href="{{Path "account.sign_in"}}">Sign in</a></li>
 			{{end}}
 		</ul>
 	</nav>

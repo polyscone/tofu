@@ -13,7 +13,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
-func TestRegisterUser(t *testing.T) {
+func TestSignUp(t *testing.T) {
 	ctx := context.Background()
 	svc, broker, store := NewTestEnv(ctx)
 
@@ -22,9 +22,9 @@ func TestRegisterUser(t *testing.T) {
 		defer events.Check(t)
 
 		execute := func(email text.Email, password, passwordCheck account.Password) error {
-			err := svc.RegisterUser(ctx, email.String(), password.String(), passwordCheck.String())
+			err := svc.SignUp(ctx, email.String(), password.String(), passwordCheck.String())
 			if err == nil {
-				events.Expect(account.Registered{Email: email.String()})
+				events.Expect(account.SignedUp{Email: email.String()})
 			}
 
 			return err
@@ -40,7 +40,7 @@ func TestRegisterUser(t *testing.T) {
 
 				user := errors.Must(store.FindUserByEmail(ctx, email.String()))
 
-				return !user.RegisteredAt.IsZero() && user.ActivatedAt.IsZero()
+				return !user.SignedUpAt.IsZero() && user.ActivatedAt.IsZero()
 			})
 		})
 
