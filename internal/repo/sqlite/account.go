@@ -82,7 +82,7 @@ func (r *AccountRepo) FindUserByEmail(ctx context.Context, email string) (*accou
 	return user, nil
 }
 
-func (r *AccountRepo) FindUsersByPage(ctx context.Context, search string, page, size int) ([]*account.User, int, error) {
+func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, search string, page, size int) ([]*account.User, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, errors.Tracef(err)

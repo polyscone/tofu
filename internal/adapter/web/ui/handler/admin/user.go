@@ -22,7 +22,7 @@ func userListGet(svc *handler.Services) http.HandlerFunc {
 
 		search := r.URL.Query().Get("search")
 		page, size := svc.Pagination(r)
-		users, total, err := svc.Repo.Account.FindUsersByPage(ctx, search, page, size)
+		users, total, err := svc.Repo.Account.FindUsersPageBySearch(ctx, search, page, size)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
