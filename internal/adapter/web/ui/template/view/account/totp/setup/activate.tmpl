@@ -8,7 +8,7 @@
 	<p>In the event that you lose access to your authentication device you can use the following recovery codes in place of a normal passcode.</p>
 
 	<div class="warning-banner">
-		<p>Before enabling two-factor authentication, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.</p>
+		<p>Before enabling two-factor authentication, please download, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.</p>
 		<p>
 			If possible, we recommend storing them in a password manager, such as
 			<a href="https://1password.com/" target="_blank" rel="noopener noreferrer">1Password</a>,
@@ -17,11 +17,7 @@
 		</p>
 	</div>
 
-	<ul class="totp__recovery-codes">
-		{{range .Vars.RecoveryCodes}}
-			<li>{{.Code}}</li>
-		{{end}}
-	</ul>
+	{{template "component_recovery_codes" .Vars.RecoveryCodes}}
 
 	<form action="{{Path "account.totp.setup.activate.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">

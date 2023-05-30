@@ -377,7 +377,6 @@
 		gap: 1rem;
 	}
 
-	.totp__recovery-codes,
 	.totp__qrcode {
 		font-family: monospace;
 	}
@@ -388,6 +387,23 @@
 
 	.totp__qrcode img {
 		display: inline-block;
+	}
+
+	.recovery-code-list {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		margin-block: 1rem;
+	}
+
+	.recovery-code-list__codes {
+		font-family: monospace;
+		margin-block: 0;
+		padding: 0;
+	}
+
+	.recovery-code-list__actions {
+		margin-block-start: 1rem;
 	}
 
 	@media screen and (min-width: 400px) {
