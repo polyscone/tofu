@@ -12,7 +12,7 @@
 
 		<form action="{{Path "account.activate.post"}}" method="POST" id="account-activate-form">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
-			<input type="hidden" name="token" value="{{.Query.Get "token"}}">
+			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
 			<button type="submit">Activate account</button>
 		</form>

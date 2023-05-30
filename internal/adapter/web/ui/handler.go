@@ -125,7 +125,7 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	guard.ProtectPrefix("/admin/")
 	mux.Prefix("/admin", func(mux *router.ServeMux) {
 		admin.Dashboard(svc, mux)
-		admin.UserManagement(svc, mux)
+		admin.Users(svc, mux)
 	})
 
 	// Public static file handler

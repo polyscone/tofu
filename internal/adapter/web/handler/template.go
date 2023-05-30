@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"context"
+	"encoding/base64"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -8,9 +10,104 @@ import (
 	"strings"
 	"time"
 
+	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
+
+type CSRF struct {
+	ctx context.Context
+}
+
+func (c CSRF) Token() string {
+	return base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(c.ctx))
+}
+
+type Query struct {
+	url.Values
+}
+
+func (q Query) String(pairs ...any) (template.URL, error) {
+	return tmplQueryString(q.Values, pairs...)
+}
+
+type Vars map[string]any
+
+func (v Vars) Merge(rhs Vars) Vars {
+	if rhs == nil {
+		return v
+	}
+
+	if v == nil {
+		v = make(Vars, len(rhs))
+	}
+
+	for key, value := range rhs {
+		v[key] = value
+	}
+
+	return v
+}
+
+type URL struct {
+	Scheme   string
+	Host     string
+	Hostname string
+	Port     string
+	Path     template.URL
+	Query    Query
+}
+
+type AppData struct {
+	Name        string
+	Description string
+}
+
+type SessionData struct {
+	// General session keys
+	Flash          template.HTML
+	FlashImportant bool
+	Redirect       string
+
+	// Account session keys
+	UserID                   int
+	Email                    string
+	TOTPMethod               string
+	HasActivatedTOTP         bool
+	IsAwaitingTOTP           bool
+	IsAuthenticated          bool
+	PasswordKnownBreachCount int
+}
+
+type ViewData struct {
+	View         string
+	Status       int
+	CSRF         CSRF
+	ErrorMessage string
+	Errors       errors.Map
+	Form         url.Values
+	URL          URL
+	App          AppData
+	Session      SessionData
+	Data         any
+	Vars         Vars
+}
+
+func (v ViewData) WithData(data any) ViewData {
+	v.Data = data
+
+	return v
+}
+
+type ViewDataFunc func(data *ViewData)
+
+type emailData struct {
+	URL  URL
+	App  AppData
+	Vars Vars
+}
+
+type emailDataFunc func(data *emailData)
 
 func tmplAdd(a, b int) int {
 	return a + b

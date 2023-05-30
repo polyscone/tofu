@@ -2,7 +2,7 @@
 
 <div class="recovery-codes center">
 	{{if .Vars.ShowRecoveryCodes}}
-		<p class="title">Regenerate Recovery Codes</p>
+		<p class="title">Your New Recovery Codes</p>
 
 		<div class="warning-banner">
 			<p>Your previous recovery codes are no longer valid.</p>
@@ -21,7 +21,7 @@
 			{{end}}
 		</ul>
 	{{else}}
-		<p class="title">Regenerate Recovery Codes</p>
+		<p class="title">Generate New Recovery Codes</p>
 
 		<p>You have {{len .Vars.RecoveryCodes}} recovery code{{if gt (len .Vars.RecoveryCodes) 1}}s{{end}} remaining.</p>
 		<p>If you would like to generate new recovery codes click the button below.</p>
@@ -38,7 +38,7 @@
 			<p class="error">{{.Errors.Get "totp"}}</p>
 
 			<div class="bag reverse">
-				<button type="submit">Regenerate Recovery Codes</button>
+				<button type="submit">Replace Recovery Codes</button>
 
 				{{if eq .Session.TOTPMethod "sms"}}
 					<button type="submit" formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt">Send passcode SMS</button>

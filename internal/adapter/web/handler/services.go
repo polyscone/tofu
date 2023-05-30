@@ -3,13 +3,11 @@ package handler
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"html/template"
 	"io/fs"
 	"net/http"
-	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -27,14 +25,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/session"
 )
 
-type CSRF struct {
-	ctx context.Context
-}
-
-func (c CSRF) Token() string {
-	return base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(c.ctx))
-}
-
 type emailContent struct {
 	Subject string
 	Plain   string
@@ -49,84 +39,7 @@ type EmailRecipients struct {
 	Bcc     []string
 }
 
-type Vars map[string]any
-
-func (v Vars) Merge(rhs Vars) Vars {
-	if rhs == nil {
-		return v
-	}
-
-	if v == nil {
-		v = make(Vars, len(rhs))
-	}
-
-	for key, value := range rhs {
-		v[key] = value
-	}
-
-	return v
-}
-
-type AddrData struct {
-	Scheme   string
-	Host     string
-	Hostname string
-	Port     string
-}
-
-type AppData struct {
-	Name        string
-	Description string
-}
-
-type SessionData struct {
-	// General session keys
-	Flash          template.HTML
-	FlashImportant bool
-	Redirect       string
-
-	// Account session keys
-	UserID                   int
-	Email                    string
-	TOTPMethod               string
-	HasActivatedTOTP         bool
-	IsAwaitingTOTP           bool
-	IsAuthenticated          bool
-	PasswordKnownBreachCount int
-}
-
-type ViewData struct {
-	View         string
-	Status       int
-	CSRF         CSRF
-	ErrorMessage string
-	Errors       errors.Map
-	Form         url.Values
-	Query        url.Values
-	Addr         AddrData
-	App          AppData
-	Session      SessionData
-	Data         any
-	Vars         Vars
-}
-
-func (v ViewData) WithData(data any) ViewData {
-	v.Data = data
-
-	return v
-}
-
-type ViewDataFunc func(data *ViewData)
-
 type ViewVarsFunc func(r *http.Request) Vars
-
-type emailData struct {
-	Addr AddrData
-	App  AppData
-	Vars Vars
-}
-
-type emailDataFunc func(data *emailData)
 
 type Services struct {
 	*Tenant
@@ -247,7 +160,7 @@ func (svc *Services) email(name string) *template.Template {
 
 func (svc *Services) emailContentFunc(name string, dataFunc emailDataFunc) (emailContent, error) {
 	data := emailData{
-		Addr: AddrData{
+		URL: URL{
 			Scheme:   svc.Tenant.Scheme,
 			Host:     svc.Tenant.Host,
 			Hostname: svc.Tenant.Hostname,
@@ -359,12 +272,13 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 		Status: status,
 		CSRF:   CSRF{ctx: ctx},
 		Form:   r.PostForm,
-		Query:  r.URL.Query(),
-		Addr: AddrData{
+		URL: URL{
 			Scheme:   svc.Tenant.Scheme,
 			Host:     svc.Tenant.Host,
 			Hostname: svc.Tenant.Hostname,
 			Port:     svc.Tenant.Port,
+			Path:     template.URL(r.URL.Path),
+			Query:    Query{Values: r.URL.Query()},
 		},
 		App: AppData{
 			Name:        app.Name,

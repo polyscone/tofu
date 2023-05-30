@@ -2,6 +2,6 @@
 
 <h1>Editing {{.Vars.User.Email}}</h1>
 
-<p><a href="{{Path "admin.user.list"}}{{QueryString .Query}}">Back</a></p>
+<p><a href="{{Path "admin.user.list"}}{{.URL.Query.String}}">Back</a></p>
 
 {{end}}

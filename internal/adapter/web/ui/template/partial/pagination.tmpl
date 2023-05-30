@@ -17,22 +17,22 @@
 	<ul class="pagination__links">
 		{{if and (len .Data.Page.Rows) (gt .Data.TotalPages 1)}}
 			{{if gt .Data.Page.Number 1}}
-				<li><a href="{{QueryString .Query "page" "1"}}">&laquo; First</a></li>
-				<li><a href="{{QueryString .Query "page" (Sub .Data.Page.Number 1)}}">&lt; Prev</a></li>
+				<li><a href="{{.URL.Query.String "page" "1"}}">&laquo; First</a></li>
+				<li><a href="{{.URL.Query.String "page" (Sub .Data.Page.Number 1)}}">&lt; Prev</a></li>
 			{{end}}
 
 			{{range $i := Ints (Sub .Data.Page.Number 2) (Add .Data.Page.Number 3)}}
 				{{if and (gt $i 0) (le $i $.Data.TotalPages)}}
-					<li><a href="{{QueryString $.Query "page" $i}}" data-locale-number>{{$i}}</a></li>
+					<li><a href="{{$.URL.Query.String "page" $i}}" data-locale-number>{{$i}}</a></li>
 				{{end}}
 			{{end}}
 
 			{{if lt .Data.Page.Number .Data.TotalPages}}
-				<li><a href="{{QueryString .Query "page" (Add .Data.Page.Number 1)}}">Next &gt;</a></li>
-				<li><a href="{{QueryString .Query "page" .Data.TotalPages}}">Last &raquo;</a></li>
+				<li><a href="{{.URL.Query.String "page" (Add .Data.Page.Number 1)}}">Next &gt;</a></li>
+				<li><a href="{{.URL.Query.String "page" .Data.TotalPages}}">Last &raquo;</a></li>
 			{{end}}
 		{{else if not (eq .Data.Page.Number 1)}}
-			<li><a href="{{QueryString .Query "page" "1"}}">Go to the first page</a></li>
+			<li><a href="{{.URL.Query.String "page" "1"}}">Go to the first page</a></li>
 		{{end}}
 	</ul>
 </nav>
