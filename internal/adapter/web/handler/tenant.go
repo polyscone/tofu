@@ -14,11 +14,11 @@ import (
 type AccountReader interface {
 	account.Reader
 
-	FindUsersByPage(ctx context.Context, search string, page, size int) ([]*account.User, int, error)
+	FindUsersPageBySearch(ctx context.Context, search string, page, size int) ([]*account.User, int, error)
 }
 
 type WebReadWriter interface {
-	session.Repo
+	session.ReadWriter
 
 	AddActivationToken(ctx context.Context, email string, ttl time.Duration) (string, error)
 	FindActivationTokenEmail(ctx context.Context, token string) (string, error)

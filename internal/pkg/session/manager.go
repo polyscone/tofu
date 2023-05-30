@@ -17,22 +17,31 @@ type Data map[string]any
 
 var ErrNotFound = errors.New("not found")
 
-// Repo represents the interface required by a session manager to
-// work with session data.
-type Repo interface {
+// Reader defines the interface for reading session data.
+type Reader interface {
 	FindSessionDataByID(ctx context.Context, id string) (Data, error)
+}
+
+// Reader defines the interface for writing session data.
+type Writer interface {
 	SaveSession(ctx context.Context, s Session) error
 	DestroySession(ctx context.Context, id string) error
 }
 
+// ReadWriter is the combination of the Reader and Writer interfaces.
+type ReadWriter interface {
+	Reader
+	Writer
+}
+
 // Manager loads, creates, and commits session data via contexts.
 type Manager struct {
-	repo Repo
+	repo ReadWriter
 }
 
 // NewManager creates a new session manager that will use the provided
 // repository to interact with session data.
-func NewManager(repo Repo) *Manager {
+func NewManager(repo ReadWriter) *Manager {
 	return &Manager{repo: repo}
 }
 
