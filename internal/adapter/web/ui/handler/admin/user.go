@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
+	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/repo"
@@ -36,7 +37,7 @@ func userListGet(svc *handler.Services) http.HandlerFunc {
 func userEditGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := router.URLParamAs[int](r, "userID")
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(httputil.ErrNotFound, err), "error", nil) {
 			return
 		}
 

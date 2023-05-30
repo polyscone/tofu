@@ -348,6 +348,12 @@ func (svc *Services) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err e
 
 	svc.ViewFunc(w, r, status, name, func(data *ViewData) {
 		switch {
+		case errors.Is(err, httputil.ErrNotFound):
+			data.ErrorMessage = "the page you were looking for could not be found"
+
+		case errors.Is(err, httputil.ErrMethodNotAllowed):
+			data.ErrorMessage = "method not allowed"
+
 		case errors.Is(err, http.ErrHandlerTimeout):
 			data.ErrorMessage = "the server took too long to respond"
 
