@@ -169,6 +169,7 @@ func (svc *Services) emailContentFunc(name string, dataFunc emailDataFunc) (emai
 		App: AppData{
 			Name:        app.Name,
 			Description: app.Description,
+			HasSMS:      svc.Tenant.SMS.IsConfigured,
 		},
 	}
 
@@ -283,6 +284,7 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 		App: AppData{
 			Name:        app.Name,
 			Description: app.Description,
+			HasSMS:      svc.Tenant.SMS.IsConfigured,
 		},
 		Session: SessionData{
 			// Global session keys

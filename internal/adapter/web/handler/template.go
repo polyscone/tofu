@@ -61,6 +61,7 @@ type URL struct {
 type AppData struct {
 	Name        string
 	Description string
+	HasSMS      bool
 }
 
 type SessionData struct {

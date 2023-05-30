@@ -85,8 +85,9 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 			Mailer: mailer,
 		},
 		SMS: handler.SMS{
-			From:     data.Twilio.From,
-			Messager: messager,
+			IsConfigured: data.Twilio.SID != "" && data.Twilio.Token != "" && data.Twilio.From != "",
+			From:         data.Twilio.From,
+			Messager:     messager,
 		},
 		Account: account.NewService(broker, accountRepo, hasher),
 		Repo: handler.Repo{

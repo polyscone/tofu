@@ -4,31 +4,43 @@
 	<h1>Setup two-factor authentication</h1>
 
 	<p>Two-factor authentication adds an additional layer of security to your account by requiring more than just your password to log in.</p>
-	<p>You can either use two-factor authentication through an application on your phone or computer, or you can use SMS.</p>
 
-	<div class="totp__methods">
-		<div>
-			<p>Use an application on your phone or computer to get passcodes when prompted (recommended).</p>
+	{{if .App.HasSMS}}
+		<p>You can either use two-factor authentication through an application on your phone or computer, or you can use SMS.</p>
 
-			<form action="{{Path "account.totp.setup.post"}}" method="POST">
-				<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
-				<input type="hidden" name="method" value="app">
+		<div class="totp__methods">
+			<div>
+				<p>Use an application on your phone or computer to get passcodes when prompted (recommended).</p>
 
-				<button type="submit">Set up using an app</button>
-			</form>
+				<form action="{{Path "account.totp.setup.post"}}" method="POST">
+					<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+					<input type="hidden" name="method" value="app">
+
+					<button type="submit">Setup using an app</button>
+				</form>
+			</div>
+
+			<div>
+				<p>We will send you an SMS message with a passcode when prompted (only recommended if you can't use an app).</p>
+
+				<form action="{{Path "account.totp.setup.post"}}" method="POST">
+					<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+					<input type="hidden" name="method" value="sms">
+
+					<button type="submit" class="btn--alt">Setup using SMS</button>
+				</form>
+			</div>
 		</div>
+	{{else}}
+		<p>You can use two-factor authentication through an application on your phone or computer.</p>
 
-		<div>
-			<p>We will send you an SMS message with a passcode when prompted (only recommended if you can't use an app).</p>
+		<form action="{{Path "account.totp.setup.post"}}" method="POST">
+			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+			<input type="hidden" name="method" value="app">
 
-			<form action="{{Path "account.totp.setup.post"}}" method="POST">
-				<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
-				<input type="hidden" name="method" value="sms">
-
-				<button type="submit" class="btn--alt">Set up using SMS</button>
-			</form>
-		</div>
-	</div>
+			<button type="submit">Start setup</button>
+		</form>
+	{{end}}
 </div>
 
 {{end}}

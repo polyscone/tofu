@@ -40,8 +40,9 @@ type Email struct {
 }
 
 type SMS struct {
-	From     string
-	Messager sms.Messager
+	IsConfigured bool
+	From         string
+	Messager     sms.Messager
 }
 
 type Tenant struct {
