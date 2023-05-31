@@ -1,13 +1,13 @@
 {{define "view"}}
 
-<div class="reset-password center">
+<div class="center">
 	<h1>Reset password</h1>
 
 	<form action="{{Path "account.reset_password.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
 		<label for="reset-password__email">Email</label>
-		<input id="reset-password__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
+		<input id="reset-password__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="ash@example.com" autocomplete="email" required pattern=".+?@.+?(\..+?)+" maxlength="100">
 		<p class="error">{{.Errors.Get "email"}}</p>
 
 		<div class="bag reverse">

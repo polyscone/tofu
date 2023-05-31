@@ -1,0 +1,17 @@
+{{define "view"}}
+
+<div class="center">
+	<h1>Editing {{.Vars.User.Email}}</h1>
+
+	<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<div class="bag reverse">
+			<button type="submit" class="push-inline-end">Update user</button>
+
+			<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+		</div>
+	</form>
+</div>
+
+{{end}}

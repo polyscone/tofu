@@ -228,3 +228,15 @@ func tmplFormatTime(t time.Time, format string) string {
 
 	return t.Format(format)
 }
+
+func tmplHasPrefix(value any, prefix string) bool {
+	str := fmt.Sprintf("%v", value)
+
+	return strings.HasPrefix(str, prefix)
+}
+
+func tmplHasSuffix(value any, suffix string) bool {
+	str := fmt.Sprintf("%v", value)
+
+	return strings.HasSuffix(str, suffix)
+}

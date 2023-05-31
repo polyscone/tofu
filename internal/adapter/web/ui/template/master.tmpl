@@ -17,6 +17,8 @@
 		{{template "header" .}}
 
 		<main id="main-content" class="main">
+			{{template "admin_nav" .}}
+
 			{{if and .ErrorMessage (ne .View "error")}}
 				<div class="error-banner center">
 					<p>Error: {{.ErrorMessage}}</p>

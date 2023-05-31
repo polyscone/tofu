@@ -1,6 +1,6 @@
 {{define "view"}}
 
-<div class="sign-up center">
+<div class="center">
 	<h1>Sign up</h1>
 
 	{{if .Vars.IsEmailInUse}}
@@ -13,7 +13,7 @@
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
 		<label for="sign-up__email">Email</label>
-		<input id="sign-up__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="ash@example.com" autocomplete="email" autofocus required pattern=".+?@.+?(\..+?)+" maxlength="100">
+		<input id="sign-up__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="ash@example.com" autocomplete="email" required pattern=".+?@.+?(\..+?)+" maxlength="100">
 		<p class="error">{{.Errors.Get "email"}}</p>
 
 		<label for="sign-up__password">Password</label>

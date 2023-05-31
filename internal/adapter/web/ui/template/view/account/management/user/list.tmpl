@@ -3,7 +3,7 @@
 <h1>User management</h1>
 
 <form class="bag">
-	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="Search" autofocus class="grow">
+	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="Search" class="grow">
 	<button>Search</button>
 </form>
 
@@ -22,7 +22,7 @@
 					<time datetime="{{FormatTime .LastSignedInAt "RFC3339"}}" data-date="full">{{FormatTime .LastSignedInAt "DateTime"}}</time>
 				{{end}}
 			</td>
-			<td class="text-right"><a href="{{Path "admin.user.edit" ":userID" .ID}}{{$.URL.Query.String}}">Edit</a></td>
+			<td class="text-right"><a href="{{Path "account.management.user.edit" ":userID" .ID}}{{$.URL.Query.String}}">Edit</a></td>
 		</tr>
 	{{else}}
 		<tr class="management__empty">

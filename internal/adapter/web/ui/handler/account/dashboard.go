@@ -8,7 +8,7 @@ import (
 )
 
 func Dashboard(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
-	mux.Get("/dashboard", dashboardGet(svc), "account.dashboard")
+	mux.Get("/", dashboardGet(svc), "account.dashboard")
 
 	guard.Protect(svc.Path("account.dashboard"))
 }

@@ -14,6 +14,7 @@ import (
 type AccountReader interface {
 	account.Reader
 
+	FindRolesPageBySearch(ctx context.Context, search string, page, size int) ([]*account.Role, int, error)
 	FindUsersPageBySearch(ctx context.Context, search string, page, size int) ([]*account.User, int, error)
 }
 

@@ -1,6 +1,6 @@
 {{define "view"}}
 
-<div class="change-password center">
+<div class="center">
 	{{if .Vars.NewPasswordKnownBreachCount}}
 		<h1>Confirm change password</h1>
 	{{else}}
@@ -33,7 +33,7 @@
 			<input type="hidden" name="insecure-password" value="{{.Form.Get "new-password"}}">
 
 			<label for="change-password__new-password">New password</label>
-			<input id="change-password__new-password" type="password" name="new-password" value="{{.Form.Get "new-password"}}" placeholder="new password" autocomplete="new-password" autofocus required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+			<input id="change-password__new-password" type="password" name="new-password" value="{{.Form.Get "new-password"}}" placeholder="new password" autocomplete="new-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
 			<p class="error">{{.Errors.Get "new password"}}</p>
 
 			<div class="bag reverse">
@@ -41,7 +41,7 @@
 			</div>
 		{{else}}
 			<label for="change-password__old-password">Old password</label>
-			<input id="change-password__old-password" type="password" name="old-password" value="{{.Form.Get "old-password"}}" placeholder="old password" autocomplete="current-password" autofocus required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+			<input id="change-password__old-password" type="password" name="old-password" value="{{.Form.Get "old-password"}}" placeholder="old password" autocomplete="current-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
 			<p class="error">{{.Errors.Get "old password"}}</p>
 
 			<label for="change-password__new-password">New password</label>

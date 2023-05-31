@@ -8,7 +8,7 @@ import (
 )
 
 func Dashboard(svc *handler.Services, mux *router.ServeMux) {
-	mux.Get("/dashboard", dashboardGet(svc), "admin.dashboard")
+	mux.Get("/", dashboardGet(svc), "admin.dashboard")
 }
 
 func dashboardGet(svc *handler.Services) http.HandlerFunc {

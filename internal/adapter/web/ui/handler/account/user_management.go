@@ -1,4 +1,4 @@
-package admin
+package account
 
 import (
 	"net/http"
@@ -10,10 +10,14 @@ import (
 	"github.com/polyscone/tofu/internal/repo"
 )
 
-func Users(svc *handler.Services, mux *router.ServeMux) {
+func UserManagement(svc *handler.Services, mux *router.ServeMux) {
 	mux.Prefix("/users", func(mux *router.ServeMux) {
-		mux.Get("/", userListGet(svc), "admin.user.list")
-		mux.Get("/:userID", userEditGet(svc), "admin.user.edit")
+		mux.Get("/", userListGet(svc), "account.management.user.list")
+
+		mux.Prefix("/:userID", func(mux *router.ServeMux) {
+			mux.Get("/", userEditGet(svc), "account.management.user.edit")
+			mux.Post("/", userEditPost(svc), "account.management.user.edit.post")
+		})
 	})
 }
 
@@ -28,7 +32,7 @@ func userListGet(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		svc.View(w, r, http.StatusOK, "admin/user/list", handler.Vars{
+		svc.View(w, r, http.StatusOK, "account/management/user/list", handler.Vars{
 			"Users": repo.NewBook(users, page, size, total),
 		})
 	}
@@ -37,7 +41,7 @@ func userListGet(svc *handler.Services) http.HandlerFunc {
 func userEditGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := router.URLParamAs[int](r, "userID")
-		if svc.ErrorView(w, r, errors.Tracef(httputil.ErrNotFound, err), "error", nil) {
+		if svc.ErrorView(w, r, errors.Tracef(err, httputil.ErrNotFound), "error", nil) {
 			return
 		}
 
@@ -48,7 +52,27 @@ func userEditGet(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		svc.View(w, r, http.StatusOK, "admin/user/edit", handler.Vars{
+		svc.View(w, r, http.StatusOK, "account/management/user/edit", handler.Vars{
+			"User": user,
+		})
+	}
+}
+
+func userEditPost(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := router.URLParamAs[int](r, "userID")
+		if svc.ErrorView(w, r, errors.Tracef(err, httputil.ErrNotFound), "error", nil) {
+			return
+		}
+
+		ctx := r.Context()
+
+		user, err := svc.Repo.Account.FindUserByID(ctx, userID)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		svc.View(w, r, http.StatusOK, "account/management/user/edit", handler.Vars{
 			"User": user,
 		})
 	}

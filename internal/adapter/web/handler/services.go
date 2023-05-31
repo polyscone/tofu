@@ -65,6 +65,8 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 		"Path":        tmplPath(mux),
 		"QueryString": tmplQueryString,
 		"FormatTime":  tmplFormatTime,
+		"HasPrefix":   tmplHasPrefix,
+		"HasSuffix":   tmplHasSuffix,
 	}
 
 	return &Services{
@@ -315,11 +317,8 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 	data.View = name
 
 	var buf bytes.Buffer
-	if err := svc.view(name).ExecuteTemplate(&buf, "master", data); err != nil {
-		httputil.LogError(r, errors.Tracef(err))
-
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-
+	err := svc.view(name).ExecuteTemplate(&buf, "master", data)
+	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 		return
 	}
 
