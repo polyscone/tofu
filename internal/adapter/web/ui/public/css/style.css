@@ -96,6 +96,10 @@
 		border-block: 1px solid var(--clr-black-200);
 	}
 
+	th {
+		text-align: left;
+	}
+
 	button, input {
 		min-height: 1.5rem;
 	}
@@ -312,6 +316,7 @@
 		width: 100%;
 		border-collapse: collapse;
 		table-layout: auto;
+		margin-block-start: 1rem;
 	}
 
 	.management tr:hover td {
@@ -319,7 +324,6 @@
 	}
 
 	.management th {
-		text-align: left;
 		border-bottom: 1px solid var(--clr-black-100);
 	}
 

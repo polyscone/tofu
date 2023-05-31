@@ -10,7 +10,7 @@
 <table class="management">
 	<tr>
 		<th>Name</th>
-		<th></th>
+		<th class="text-right"><a href="{{Path "account.management.role.new"}}{{$.URL.Query.String}}">New</a></th>
 	</tr>
 
 	{{range .Vars.Roles.Page.Rows}}

@@ -1,0 +1,21 @@
+{{define "view"}}
+
+<div class="center">
+	<h1>New role</h1>
+
+	<form action="{{Path "account.management.role.new.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<label for="role-edit__email">Name</label>
+		<input id="role-edit__email" type="text" name="name" value="{{.Form.Get "name"}}" placeholder="Staff" required maxlength="100">
+		<p class="error">{{.Errors.Get "name"}}</p>
+
+		<div class="bag reverse">
+			<button type="submit" class="push-inline-end">Add role</button>
+
+			<a href="{{Path "account.management.role.list"}}{{.URL.Query.String}}">Cancel</a>
+		</div>
+	</form>
+</div>
+
+{{end}}

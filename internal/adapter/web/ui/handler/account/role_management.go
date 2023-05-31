@@ -14,6 +14,11 @@ func RoleManagement(svc *handler.Services, mux *router.ServeMux) {
 	mux.Prefix("/roles", func(mux *router.ServeMux) {
 		mux.Get("/", roleListGet(svc), "account.management.role.list")
 
+		mux.Prefix("/new", func(mux *router.ServeMux) {
+			mux.Get("/", roleNewGet(svc), "account.management.role.new")
+			mux.Post("/", roleNewPost(svc), "account.management.role.new.post")
+		})
+
 		mux.Prefix("/:roleID", func(mux *router.ServeMux) {
 			mux.Get("/", roleEditGet(svc), "account.management.role.edit")
 			mux.Post("/", roleEditPost(svc), "account.management.role.edit.post")
@@ -35,6 +40,18 @@ func roleListGet(svc *handler.Services) http.HandlerFunc {
 		svc.View(w, r, http.StatusOK, "account/management/role/list", handler.Vars{
 			"Roles": repo.NewBook(roles, page, size, total),
 		})
+	}
+}
+
+func roleNewGet(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		svc.View(w, r, http.StatusOK, "account/management/role/new", nil)
+	}
+}
+
+func roleNewPost(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		svc.View(w, r, http.StatusOK, "account/management/role/new", nil)
 	}
 }
 
