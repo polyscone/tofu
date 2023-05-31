@@ -39,41 +39,33 @@ func userListGet(svc *handler.Services) http.HandlerFunc {
 }
 
 func userEditGet(svc *handler.Services) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	svc.SetViewVars("account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
 		userID, err := router.URLParamAs[int](r, "userID")
-		if svc.ErrorView(w, r, errors.Tracef(err, httputil.ErrNotFound), "error", nil) {
-			return
+		if err != nil {
+			return nil, errors.Tracef(err, httputil.ErrNotFound)
 		}
 
 		ctx := r.Context()
 
 		user, err := svc.Repo.Account.FindUserByID(ctx, userID)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
+		if err != nil {
+			return nil, errors.Tracef(err)
 		}
 
-		svc.View(w, r, http.StatusOK, "account/management/user/edit", handler.Vars{
+		vars := handler.Vars{
 			"User": user,
-		})
+		}
+
+		return vars, nil
+	})
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		svc.View(w, r, http.StatusOK, "account/management/user/edit", nil)
 	}
 }
 
 func userEditPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := router.URLParamAs[int](r, "userID")
-		if svc.ErrorView(w, r, errors.Tracef(err, httputil.ErrNotFound), "error", nil) {
-			return
-		}
-
-		ctx := r.Context()
-
-		user, err := svc.Repo.Account.FindUserByID(ctx, userID)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
-		}
-
-		svc.View(w, r, http.StatusOK, "account/management/user/edit", handler.Vars{
-			"User": user,
-		})
+		svc.View(w, r, http.StatusOK, "account/management/user/edit", nil)
 	}
 }

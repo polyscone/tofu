@@ -39,41 +39,33 @@ func roleListGet(svc *handler.Services) http.HandlerFunc {
 }
 
 func roleEditGet(svc *handler.Services) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	svc.SetViewVars("account/management/role/edit", func(r *http.Request) (handler.Vars, error) {
 		roleID, err := router.URLParamAs[int](r, "roleID")
-		if svc.ErrorView(w, r, errors.Tracef(err, httputil.ErrNotFound), "error", nil) {
-			return
+		if err != nil {
+			return nil, errors.Tracef(err, httputil.ErrNotFound)
 		}
 
 		ctx := r.Context()
 
 		role, err := svc.Repo.Account.FindRoleByID(ctx, roleID)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
+		if err != nil {
+			return nil, errors.Tracef(err)
 		}
 
-		svc.View(w, r, http.StatusOK, "account/management/role/edit", handler.Vars{
+		vars := handler.Vars{
 			"Role": role,
-		})
+		}
+
+		return vars, nil
+	})
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		svc.View(w, r, http.StatusOK, "account/management/role/edit", nil)
 	}
 }
 
 func roleEditPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		roleID, err := router.URLParamAs[int](r, "roleID")
-		if svc.ErrorView(w, r, errors.Tracef(err, httputil.ErrNotFound), "error", nil) {
-			return
-		}
-
-		ctx := r.Context()
-
-		role, err := svc.Repo.Account.FindRoleByID(ctx, roleID)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
-		}
-
-		svc.View(w, r, http.StatusOK, "account/management/role/edit", handler.Vars{
-			"Role": role,
-		})
+		svc.View(w, r, http.StatusOK, "account/management/role/edit", nil)
 	}
 }

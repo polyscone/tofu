@@ -121,13 +121,13 @@ func totpSetupPost(svc *handler.Services) http.HandlerFunc {
 }
 
 func totpSetupAppGet(svc *handler.Services) http.HandlerFunc {
-	svc.SetViewVars("account/totp/setup/app", func(r *http.Request) handler.Vars {
+	svc.SetViewVars("account/totp/setup/app", func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 
 		userID := svc.Sessions.GetInt(ctx, sess.UserID)
 		user, err := svc.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			return nil
+			return nil, errors.Tracef(err)
 		}
 
 		keyBase32 := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(user.TOTPKey)
@@ -145,24 +145,26 @@ func totpSetupAppGet(svc *handler.Services) http.HandlerFunc {
 			qr.Auto,
 		)
 		if err != nil {
-			return nil
+			return nil, errors.Tracef(err)
 		}
 
 		qrcode, err = barcode.Scale(qrcode, 200, 200)
 		if err != nil {
-			return nil
+			return nil, errors.Tracef(err)
 		}
 
 		var buf bytes.Buffer
 		err = jpeg.Encode(&buf, qrcode, nil)
 		if err != nil {
-			return nil
+			return nil, errors.Tracef(err)
 		}
 
-		return handler.Vars{
+		vars := handler.Vars{
 			"KeyBase32":    keyBase32,
 			"QRCodeBase64": template.URL("data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())),
 		}
+
+		return vars, nil
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -202,18 +204,20 @@ func totpSetupAppPost(svc *handler.Services) http.HandlerFunc {
 }
 
 func totpSetupSMSGet(svc *handler.Services) http.HandlerFunc {
-	svc.SetViewVars("account/totp/setup/sms", func(r *http.Request) handler.Vars {
+	svc.SetViewVars("account/totp/setup/sms", func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 
 		userID := svc.Sessions.GetInt(ctx, sess.UserID)
 		user, err := svc.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			return nil
+			return nil, errors.Tracef(err)
 		}
 
-		return handler.Vars{
+		vars := handler.Vars{
 			"TOTPTelephone": user.TOTPTelephone,
 		}
+
+		return vars, nil
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -442,19 +446,21 @@ func totpDisableSuccessGet(svc *handler.Services) http.HandlerFunc {
 }
 
 func totpRecoveryCodesGet(svc *handler.Services) http.HandlerFunc {
-	svc.SetViewVars("account/totp/recovery_codes/regenerate", func(r *http.Request) handler.Vars {
+	svc.SetViewVars("account/totp/recovery_codes/regenerate", func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 
 		userID := svc.Sessions.GetInt(ctx, sess.UserID)
 		user, err := svc.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			return nil
+			return nil, errors.Tracef(err)
 		}
 
-		return handler.Vars{
+		vars := handler.Vars{
 			"RecoveryCodes":     user.RecoveryCodes,
 			"ShowRecoveryCodes": false,
 		}
+
+		return vars, nil
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {

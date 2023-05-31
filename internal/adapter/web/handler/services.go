@@ -39,7 +39,7 @@ type EmailRecipients struct {
 	Bcc     []string
 }
 
-type ViewVarsFunc func(r *http.Request) Vars
+type ViewVarsFunc func(r *http.Request) (Vars, error)
 
 type Services struct {
 	*Tenant
@@ -306,7 +306,12 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 	}
 
 	if vars, ok := svc.viewVarsFuncs[name]; ok {
-		data.Vars = data.Vars.Merge(vars(r))
+		defaults, err := vars(r)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		data.Vars = data.Vars.Merge(defaults)
 	}
 
 	if dataFunc != nil {
