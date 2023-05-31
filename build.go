@@ -57,7 +57,6 @@ var opts struct {
 	debug             bool
 	race              bool
 	build             bool
-	upx               bool
 	clear             bool
 	cover             bool
 	vet               bool
@@ -91,7 +90,6 @@ func main() {
 	flag.BoolVar(&opts.debug, "debug", false, "Enable symbol table/DWARF generation and disable optimisations/inlining")
 	flag.BoolVar(&opts.race, "race", false, "Enable data race detection")
 	flag.BoolVar(&opts.build, "build", false, "Run go build")
-	flag.BoolVar(&opts.upx, "upx", false, "Enable compression for release binaries with UPX if available")
 	flag.BoolVar(&opts.clear, "clear", false, "Clear the terminal before build")
 	flag.BoolVar(&opts.cover, "cover", false, "Generate an HTML cover report (opened in the browser if watch is disabled)")
 	flag.BoolVar(&opts.vet, "vet", false, "Run go vet before build")
@@ -659,26 +657,6 @@ func build(pkg string) error {
 
 		if len(out) > 0 && opts.verbose {
 			fmt.Println(string(out))
-		}
-
-		if opts.upx {
-			upx, err := exec.LookPath("upx")
-			if err == nil {
-				fmt.Print("-> upx compression... ")
-
-				cmd := exec.Command(upx, "-9", "-q", binaryName)
-				if out, err := cmd.CombinedOutput(); err != nil {
-					fmt.Println("error")
-
-					if len(out) > 0 {
-						fmt.Println(string(out))
-					}
-
-					return err
-				} else {
-					fmt.Println("ok")
-				}
-			}
 		}
 	}
 
