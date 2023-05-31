@@ -84,24 +84,60 @@ func (t Trace) MarshalJSON() ([]byte, error) {
 
 // Tracef returns a new error that also holds information about where the error
 // occurred in the program.
-// The given format string and format arguments are used to describe the
-// traced error.
-// If the first argument passed is an error then that error will be used as the
-// kind of error in checks using errors.Is and the format string is considered
-// to start from the second argument.
-// In the case where an error is provided as the first argument the format
-// string is optional.
-func Tracef(format any, a ...any) error {
-	return tracef(2, format, a...)
+//
+// There are multiple ways to use this function based on the argument types.
+// The first argument must always be either an error or a string.
+// When the first argument is an error the second argument must also always be
+// either an error or a string.
+//
+// When the first argument is an error then it is always checked for nil.
+// If it is nil then no error is created, no work is done, and nil is returned.
+//
+// For (error), that error is used as both the kind of error in errors.Is checks
+// and as the error message.
+// If error is nil then nil is returned and no error is created.
+//
+// For (string, ...any), the string is used as a format string to always
+// create a new error.
+//
+// For (error, string, ...any), error is used as the kind of error in
+// errors.Is checks, and the string is used as a format string to always create
+// a new error.
+// If error is nil then nil is returned and no error is created.
+//
+// For (error, error), the first error is used as the error message and the
+// second is used as the kind of error in errors.Is checks.
+// In this case the second error must not be nil.
+// If the first error is nil then nil is returned and no error is created.
+//
+// For (error, error, string, ...any), the first error is used only to check for
+// nil, and the second is used as the kind of error in errors.Is checks.
+// In this case the second error must not be nil.
+// The string is used as a format string to create a new error when the first
+// error is not nil.
+// If the first error is nil then nil is returned and no error is created.
+func Tracef(errFormat any, a ...any) error {
+	return tracef(2, errFormat, a...)
 }
 
-func tracef(skip int, format any, a ...any) error {
-	if format == nil {
+func tracef(skip int, errFormat any, a ...any) error {
+	if errFormat == nil {
 		return nil
 	}
 
 	var kind error
-	if v, ok := format.(error); ok {
+	if v, ok := errFormat.(error); ok {
+		if len(a) != 0 {
+			switch err := a[0].(type) {
+			case nil:
+				panic("want second arg to be non-nil error or string value")
+
+			case error:
+				v = err
+				a = a[1:]
+			}
+		}
+
 		if trace, ok := v.(Trace); ok {
 			kind = trace.Kind
 		} else {
@@ -109,13 +145,13 @@ func tracef(skip int, format any, a ...any) error {
 		}
 
 		if len(a) != 0 {
-			format = a[0]
+			errFormat = a[0]
 			a = a[1:]
 		}
 	}
 
 	var err error
-	switch value := format.(type) {
+	switch value := errFormat.(type) {
 	case error:
 		err = value
 
@@ -123,7 +159,7 @@ func tracef(skip int, format any, a ...any) error {
 		err = fmt.Errorf(value, a...)
 
 	default:
-		panic("expected error or string value")
+		panic("want non-nil error or string value")
 	}
 
 	trace := Trace{
