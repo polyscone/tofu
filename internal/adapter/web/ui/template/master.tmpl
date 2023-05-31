@@ -17,7 +17,15 @@
 		{{template "header" .}}
 
 		<main id="main-content" class="main">
-			{{template "admin_nav" .}}
+			<div class="top-bar">
+				{{if HasPrefix .URL.Path "/admin/"}}
+					{{template "nav_admin" .}}
+				{{end}}
+
+				{{if HasPrefix .URL.Path "/account/"}}
+					{{template "nav_account" .}}
+				{{end}}
+			</div>
 
 			{{if and .ErrorMessage (ne .View "error")}}
 				<div class="error-banner center">

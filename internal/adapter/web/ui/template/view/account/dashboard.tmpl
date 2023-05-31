@@ -2,17 +2,6 @@
 
 <h1>Account</h1>
 
-<nav>
-	<ul>
-		<li><a href="{{Path "account.change_password"}}">Change password</a></li>
-
-		{{if .Session.HasActivatedTOTP}}
-			<li><a href="{{Path "account.totp.recovery_codes"}}">Generate new recovery codes</a></li>
-			<li><a href="{{Path "account.totp.disable"}}">Disable two-factor authentication</a></li>
-		{{else}}
-			<li><a href="{{Path "account.totp.setup"}}">Setup two-factor authentication</a></li>
-		{{end}}
-	</ul>
-</nav>
+{{template "nav_account" .}}
 
 {{end}}
