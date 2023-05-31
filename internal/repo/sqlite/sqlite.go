@@ -325,6 +325,8 @@ func limitOffsetSQL(limit, offset int) string {
 	return ""
 }
 
+const RFC3339NanoZero = "2006-01-02T15:04:05.000000000Z07:00"
+
 type Time time.Time
 
 func (t Time) String() string {
@@ -343,7 +345,7 @@ func (t *Time) Scan(value any) error {
 		*t = Time(*value)
 
 	case string:
-		parsed, err := time.Parse(time.RFC3339, value)
+		parsed, err := time.Parse(RFC3339NanoZero, value)
 		if err != nil {
 			return errors.Tracef(err)
 		}
@@ -359,10 +361,10 @@ func (t *Time) Scan(value any) error {
 
 func (t Time) Value() (driver.Value, error) {
 	if time.Time(t).IsZero() {
-		return time.Time{}.Format(time.RFC3339), nil
+		return time.Time{}.Format(RFC3339NanoZero), nil
 	}
 
-	return time.Time(t).Format(time.RFC3339), nil
+	return time.Time(t).Format(RFC3339NanoZero), nil
 }
 
 type NullTime time.Time
@@ -383,7 +385,7 @@ func (t *NullTime) Scan(value any) error {
 		*t = NullTime(*value)
 
 	case string:
-		parsed, err := time.Parse(time.RFC3339, value)
+		parsed, err := time.Parse(RFC3339NanoZero, value)
 		if err != nil {
 			return errors.Tracef(err)
 		}
@@ -402,7 +404,7 @@ func (t NullTime) Value() (driver.Value, error) {
 		return nil, nil
 	}
 
-	return time.Time(t).Format(time.RFC3339), nil
+	return time.Time(t).Format(RFC3339NanoZero), nil
 }
 
 func validateArg(arg any) error {
@@ -435,7 +437,7 @@ func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 		return nil, errors.Tracef(err)
 	}
 
-	return &Tx{Tx: tx}, nil
+	return &Tx{Tx: tx, now: time.Now().UTC()}, nil
 }
 
 func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
@@ -482,6 +484,7 @@ func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *R
 
 type Tx struct {
 	*sql.Tx
+	now time.Time
 }
 
 func (tx *Tx) Commit() error {
