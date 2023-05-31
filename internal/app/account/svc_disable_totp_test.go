@@ -34,7 +34,7 @@ func TestDisableTOTP(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.AuthenticatedWithPassword{Email: activatedTOTP.Email})
+		events.Expect(account.SignedInWithPassword{Email: activatedTOTP.Email})
 		events.Expect(account.DisabledTOTP{Email: activatedTOTP.Email})
 
 		err := svc.DisableTOTP(ctx, validGuard, activatedTOTP.ID, password)

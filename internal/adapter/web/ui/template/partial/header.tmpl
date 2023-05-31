@@ -9,7 +9,7 @@
 		<ul>
 			<li><a href="{{Path "page.home"}}">Home</a></li>
 
-			{{if .Session.IsAuthenticated}}
+			{{if .Session.IsSignedIn}}
 				<li><a href="{{Path "admin.dashboard"}}">Admin</a></li>
 				<li><a href="{{Path "account.dashboard"}}">Account</a></li>
 				<li>

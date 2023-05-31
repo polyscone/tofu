@@ -17,7 +17,7 @@
 		{{template "header" .}}
 
 		<main id="main-content" class="main">
-			{{if .Session.IsAuthenticated}}
+			{{if .Session.IsSignedIn}}
 				<div class="top-bar">
 					{{if HasPathPrefix .URL.Path (Path "admin.section")}}
 						{{template "nav_admin" .}}

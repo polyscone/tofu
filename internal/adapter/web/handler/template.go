@@ -76,7 +76,7 @@ type SessionData struct {
 	TOTPMethod               string
 	HasActivatedTOTP         bool
 	IsAwaitingTOTP           bool
-	IsAuthenticated          bool
+	IsSignedIn               bool
 	PasswordKnownBreachCount int
 }
 

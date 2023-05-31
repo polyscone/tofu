@@ -298,7 +298,7 @@ func (u *User) DisableTOTP(password Password, hasher password.Hasher) error {
 		return errors.Tracef(app.ErrBadRequest, "cannot disable an unactivated TOTP")
 	}
 
-	if _, err := u.AuthenticateWithPassword(password, hasher); err != nil {
+	if _, err := u.SignInWithPassword(password, hasher); err != nil {
 		return errors.Tracef(err)
 	}
 
@@ -320,7 +320,7 @@ func (u *User) DisableTOTP(password Password, hasher password.Hasher) error {
 }
 
 func (u *User) DisableTOTPWithRecoveryCode(code Code) error {
-	if err := u.AuthenticateWithRecoveryCode(code); err != nil {
+	if err := u.SignInWithRecoveryCode(code); err != nil {
 		return errors.Tracef(err)
 	}
 
@@ -355,7 +355,7 @@ func (u *User) verifyPassword(password Password, hasher password.Hasher) (bool, 
 	return false, nil
 }
 
-func (u *User) AuthenticateWithPassword(password Password, hasher password.Hasher) (bool, error) {
+func (u *User) SignInWithPassword(password Password, hasher password.Hasher) (bool, error) {
 	if u.ActivatedAt.IsZero() {
 		return false, errors.Tracef(app.ErrBadRequest, ErrNotActivated)
 	}
@@ -369,14 +369,14 @@ func (u *User) AuthenticateWithPassword(password Password, hasher password.Hashe
 		u.LastSignedInAt = time.Now().UTC()
 	}
 
-	u.Events.Enqueue(AuthenticatedWithPassword{
+	u.Events.Enqueue(SignedInWithPassword{
 		Email: u.Email,
 	})
 
 	return rehashed, nil
 }
 
-func (u *User) AuthenticateWithTOTP(totp TOTP) error {
+func (u *User) SignInWithTOTP(totp TOTP) error {
 	if !u.HasActivatedTOTP() {
 		return errors.Tracef(app.ErrBadRequest, "account does not have TOTP")
 	}
@@ -391,14 +391,14 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 
 	u.LastSignedInAt = time.Now().UTC()
 
-	u.Events.Enqueue(AuthenticatedWithTOTP{
+	u.Events.Enqueue(SignedInWithTOTP{
 		Email: u.Email,
 	})
 
 	return nil
 }
 
-func (u *User) AuthenticateWithRecoveryCode(code Code) error {
+func (u *User) SignInWithRecoveryCode(code Code) error {
 	if !u.HasActivatedTOTP() {
 		return errors.Tracef(app.ErrBadRequest, "account cannot use recovery codes")
 	}
@@ -412,7 +412,7 @@ func (u *User) AuthenticateWithRecoveryCode(code Code) error {
 			u.RecoveryCodes = append(u.RecoveryCodes[:i], u.RecoveryCodes[i+1:]...)
 			u.LastSignedInAt = time.Now().UTC()
 
-			u.Events.Enqueue(AuthenticatedWithRecoveryCode{
+			u.Events.Enqueue(SignedInWithRecoveryCode{
 				Email: u.Email,
 			})
 

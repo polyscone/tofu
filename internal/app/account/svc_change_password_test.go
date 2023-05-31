@@ -50,8 +50,8 @@ func TestChangePassword(t *testing.T) {
 
 		user := errors.Must(store.FindUserByID(ctx, user1.ID))
 
-		if _, err := user.AuthenticateWithPassword(newPassword, hasher); err != nil {
-			t.Errorf("want to be able to authenticate with new password; got %q", err)
+		if _, err := user.SignInWithPassword(newPassword, hasher); err != nil {
+			t.Errorf("want to be able to aign in with new password; got %q", err)
 		}
 	})
 

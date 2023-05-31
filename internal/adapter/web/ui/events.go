@@ -10,8 +10,8 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
-func accountAuthenticateWithPasswordHandler(tenant *handler.Tenant, svc *handler.Services) any {
-	return func(evt account.AuthenticatedWithPassword) {
+func accountSignedInWithPasswordHandler(tenant *handler.Tenant, svc *handler.Services) any {
+	return func(evt account.SignedInWithPassword) {
 		ctx := context.Background()
 
 		user, err := svc.Repo.Account.FindUserByEmail(ctx, evt.Email)

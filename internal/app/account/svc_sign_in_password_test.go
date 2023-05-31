@@ -12,7 +12,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
-func TestAuthenticateWithPassword(t *testing.T) {
+func TestSignInWithPassword(t *testing.T) {
 	ctx := context.Background()
 	svc, broker, store := NewTestEnv(ctx)
 
@@ -23,13 +23,13 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.AuthenticatedWithPassword{Email: activated.Email})
+		events.Expect(account.SignedInWithPassword{Email: activated.Email})
 
 		if !activated.LastSignedInAt.IsZero() {
 			t.Errorf("want last signed in at to be zero; got %v", activated.LastSignedInAt)
 		}
 
-		err := svc.AuthenticateWithPassword(ctx, activated.Email, "password")
+		err := svc.SignInWithPassword(ctx, activated.Email, "password")
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
@@ -66,7 +66,7 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.AuthenticateWithPassword(ctx, tc.email, tc.password)
+				err := svc.SignInWithPassword(ctx, tc.email, tc.password)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want %q; got %q", tc.want, err)
@@ -83,9 +83,9 @@ func TestAuthenticateWithPassword(t *testing.T) {
 		defer events.Check(t)
 
 		execute := func(email text.Email, password account.Password) error {
-			err := svc.AuthenticateWithPassword(ctx, email.String(), password.String())
+			err := svc.SignInWithPassword(ctx, email.String(), password.String())
 			if err == nil {
-				events.Expect(account.AuthenticatedWithPassword{Email: email.String()})
+				events.Expect(account.SignedInWithPassword{Email: email.String()})
 			}
 
 			return err

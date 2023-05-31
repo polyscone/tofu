@@ -33,8 +33,8 @@ func NewGuard(svc *Services, redirect RedirectFunc) *Guard {
 	}
 }
 
-func (g *Guard) isAuthenticated(passport passport.Passport) bool {
-	return passport.IsAuthenticated()
+func (g *Guard) isSignedIn(passport passport.Passport) bool {
+	return passport.IsSignedIn()
 }
 
 func (g *Guard) ProtectFunc(path string, isAuthorised IsAuthorisedFunc) {
@@ -42,7 +42,7 @@ func (g *Guard) ProtectFunc(path string, isAuthorised IsAuthorisedFunc) {
 }
 
 func (g *Guard) Protect(path string) {
-	g.ProtectFunc(path, g.isAuthenticated)
+	g.ProtectFunc(path, g.isSignedIn)
 }
 
 func (g *Guard) ProtectPrefixFunc(path string, isAuthorised IsAuthorisedFunc) {
@@ -62,7 +62,7 @@ func (g *Guard) ProtectPrefixFunc(path string, isAuthorised IsAuthorisedFunc) {
 }
 
 func (g *Guard) ProtectPrefix(path string) {
-	g.ProtectPrefixFunc(path, g.isAuthenticated)
+	g.ProtectPrefixFunc(path, g.isSignedIn)
 }
 
 func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {

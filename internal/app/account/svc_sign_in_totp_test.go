@@ -14,7 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/repo"
 )
 
-func TestAuthenticateWithTOTP(t *testing.T) {
+func TestSignInWithTOTP(t *testing.T) {
 	ctx := context.Background()
 	svc, broker, store := NewTestEnv(ctx)
 
@@ -30,7 +30,7 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 				t.Errorf("want last signed in at to be zero; got %v", activatedTOTP.LastSignedInAt)
 			}
 
-			err := svc.AuthenticateWithPassword(ctx, activatedTOTP.Email, "password")
+			err := svc.SignInWithPassword(ctx, activatedTOTP.Email, "password")
 			if err != nil {
 				t.Errorf("want <nil>; got %q", err)
 			}
@@ -48,7 +48,7 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.AuthenticatedWithTOTP{Email: activatedTOTP.Email})
+		events.Expect(account.SignedInWithTOTP{Email: activatedTOTP.Email})
 
 		alg := errors.Must(otp.NewAlgorithm(activatedTOTP.TOTPAlgorithm))
 		tb := errors.Must(otp.NewTimeBased(activatedTOTP.TOTPDigits, alg, time.Unix(0, 0), activatedTOTP.TOTPPeriod))
@@ -56,7 +56,7 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 
 		otp.CleanUsedTOTP(totp)
 
-		err := svc.AuthenticateWithTOTP(ctx, activatedTOTP.ID, totp)
+		err := svc.SignInWithTOTP(ctx, activatedTOTP.ID, totp)
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
@@ -97,7 +97,7 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 					totp = errors.Must(tb.Generate(tc.totpUser.TOTPKey, time.Now()))
 				}
 
-				err := svc.AuthenticateWithTOTP(ctx, tc.userID, totp)
+				err := svc.SignInWithTOTP(ctx, tc.userID, totp)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want %q; got %q", tc.want, err)
@@ -114,9 +114,9 @@ func TestAuthenticateWithTOTP(t *testing.T) {
 		defer events.Check(t)
 
 		execute := func(totp account.TOTP) error {
-			err := svc.AuthenticateWithTOTP(ctx, activatedTOTP.ID, totp.String())
+			err := svc.SignInWithTOTP(ctx, activatedTOTP.ID, totp.String())
 			if err == nil {
-				events.Expect(account.AuthenticatedWithTOTP{Email: activatedTOTP.Email})
+				events.Expect(account.SignedInWithTOTP{Email: activatedTOTP.Email})
 			}
 
 			return err

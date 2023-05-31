@@ -24,7 +24,7 @@ func signUpGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		if svc.Sessions.GetBool(ctx, sess.IsAuthenticated) {
+		if svc.Sessions.GetBool(ctx, sess.IsSignedIn) {
 			svc.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
 
 			return

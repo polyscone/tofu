@@ -36,7 +36,7 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 		return mux.Path("account.sign_in")
 	})
 
-	tenant.Broker.Listen(accountAuthenticateWithPasswordHandler(tenant, svc))
+	tenant.Broker.Listen(accountSignedInWithPasswordHandler(tenant, svc))
 	tenant.Broker.Listen(accountDisabledTOTPHandler(tenant, svc))
 	tenant.Broker.Listen(accountSignedUpHandler(tenant, svc))
 	tenant.Broker.Listen(webResetPasswordRequestedHandler(tenant, svc))

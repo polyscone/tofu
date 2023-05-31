@@ -7,10 +7,10 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
-func (s *Service) AuthenticateWithRecoveryCode(ctx context.Context, userID int, code string) error {
+func (s *Service) SignInWithTOTP(ctx context.Context, userID int, totp string) error {
 	var input struct {
 		userID int
-		code   Code
+		totp   TOTP
 	}
 	{
 		var err error
@@ -18,8 +18,8 @@ func (s *Service) AuthenticateWithRecoveryCode(ctx context.Context, userID int, 
 
 		input.userID = userID
 
-		if input.code, err = NewCode(code); err != nil {
-			errs.Set("recovery code", err)
+		if input.totp, err = NewTOTP(totp); err != nil {
+			errs.Set("totp", err)
 		}
 
 		if errs != nil {
@@ -32,7 +32,7 @@ func (s *Service) AuthenticateWithRecoveryCode(ctx context.Context, userID int, 
 		return errors.Tracef(err)
 	}
 
-	if err := user.AuthenticateWithRecoveryCode(input.code); err != nil {
+	if err := user.SignInWithTOTP(input.totp); err != nil {
 		return errors.Tracef(err)
 	}
 

@@ -12,7 +12,7 @@ import (
 	"github.com/polyscone/tofu/internal/repo"
 )
 
-func TestAuthenticateWithRecoveryCode(t *testing.T) {
+func TestSignInWithRecoveryCode(t *testing.T) {
 	ctx := context.Background()
 	svc, broker, store := NewTestEnv(ctx)
 
@@ -26,7 +26,7 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 				t.Errorf("want last signed in at to be zero; got %v", activatedTOTP.LastSignedInAt)
 			}
 
-			err := svc.AuthenticateWithPassword(ctx, activatedTOTP.Email, "password")
+			err := svc.SignInWithPassword(ctx, activatedTOTP.Email, "password")
 			if err != nil {
 				t.Errorf("want <nil>; got %q", err)
 			}
@@ -39,12 +39,12 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.AuthenticatedWithRecoveryCode{Email: activatedTOTP.Email})
+		events.Expect(account.SignedInWithRecoveryCode{Email: activatedTOTP.Email})
 
 		nRecoveryCodes := len(activatedTOTP.RecoveryCodes)
 		usedRecoveryCode := activatedTOTP.RecoveryCodes[0]
 
-		err := svc.AuthenticateWithRecoveryCode(ctx, activatedTOTP.ID, usedRecoveryCode.Code)
+		err := svc.SignInWithRecoveryCode(ctx, activatedTOTP.ID, usedRecoveryCode.Code)
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
@@ -88,7 +88,7 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.AuthenticateWithRecoveryCode(ctx, tc.userID, tc.recoveryCode)
+				err := svc.SignInWithRecoveryCode(ctx, tc.userID, tc.recoveryCode)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want %q; got %q", tc.want, err)
@@ -105,9 +105,9 @@ func TestAuthenticateWithRecoveryCode(t *testing.T) {
 		defer events.Check(t)
 
 		execute := func(code account.Code) error {
-			err := svc.AuthenticateWithRecoveryCode(ctx, activatedTOTP.ID, code.String())
+			err := svc.SignInWithRecoveryCode(ctx, activatedTOTP.ID, code.String())
 			if err == nil {
-				events.Expect(account.AuthenticatedWithRecoveryCode{Email: activatedTOTP.Email})
+				events.Expect(account.SignedInWithRecoveryCode{Email: activatedTOTP.Email})
 			}
 
 			return err

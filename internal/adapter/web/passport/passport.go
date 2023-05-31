@@ -26,8 +26,8 @@ func (p Passport) UserID() int {
 	return p.user.ID
 }
 
-func (p Passport) IsAuthenticated() bool {
-	return p.sessions.GetBool(p.ctx, sess.IsAuthenticated)
+func (p Passport) IsSignedIn() bool {
+	return p.sessions.GetBool(p.ctx, sess.IsSignedIn)
 }
 
 func (p Passport) CanChangePassword(userID int) bool {

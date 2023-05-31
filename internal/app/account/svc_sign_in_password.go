@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
-func (s *Service) AuthenticateWithPassword(ctx context.Context, email, password string) error {
+func (s *Service) SignInWithPassword(ctx context.Context, email, password string) error {
 	var input struct {
 		email    text.Email
 		password Password
@@ -40,7 +40,7 @@ func (s *Service) AuthenticateWithPassword(ctx context.Context, email, password 
 		return errors.Tracef(err)
 	}
 
-	_, err = user.AuthenticateWithPassword(input.password, s.hasher)
+	_, err = user.SignInWithPassword(input.password, s.hasher)
 	if err != nil {
 		return errors.Tracef(err)
 	}

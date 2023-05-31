@@ -8,15 +8,15 @@ type Activated struct {
 	Email string
 }
 
-type AuthenticatedWithPassword struct {
+type SignedInWithPassword struct {
 	Email string
 }
 
-type AuthenticatedWithTOTP struct {
+type SignedInWithTOTP struct {
 	Email string
 }
 
-type AuthenticatedWithRecoveryCode struct {
+type SignedInWithRecoveryCode struct {
 	Email string
 }
 

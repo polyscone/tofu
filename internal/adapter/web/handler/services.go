@@ -301,7 +301,7 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 			TOTPMethod:               svc.Sessions.GetString(ctx, sess.TOTPMethod),
 			HasActivatedTOTP:         svc.Sessions.GetBool(ctx, sess.HasActivatedTOTP),
 			IsAwaitingTOTP:           svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
-			IsAuthenticated:          svc.Sessions.GetBool(ctx, sess.IsAuthenticated),
+			IsSignedIn:               svc.Sessions.GetBool(ctx, sess.IsSignedIn),
 			PasswordKnownBreachCount: svc.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount),
 		},
 	}
