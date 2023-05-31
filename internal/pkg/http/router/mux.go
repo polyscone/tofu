@@ -193,6 +193,12 @@ func (mux *ServeMux) Prefix(prefix string, routeGroup func(mux *ServeMux)) {
 	mux.prefix = originalPrefix
 }
 
+func (mux *ServeMux) Name(name string) {
+	route := &Route{path: mux.prefix}
+
+	mux.nameRoute(route, name)
+}
+
 func (mux *ServeMux) Route(name string) *Route {
 	return mux.named[name]
 }
@@ -213,6 +219,22 @@ func (mux *ServeMux) Path(key string, paramArgPairs ...any) string {
 	}
 
 	return str
+}
+
+func (mux *ServeMux) nameRoute(route *Route, names ...string) {
+	if len(names) != 0 {
+		if mux.named == nil {
+			mux.named = make(map[string]*Route)
+		}
+
+		for _, name := range names {
+			if _, ok := mux.named[name]; ok {
+				panic(fmt.Sprintf("duplicate route name %q", name))
+			}
+
+			mux.named[name] = route
+		}
+	}
 }
 
 func (mux *ServeMux) route(method string, path string, handler http.Handler, names ...string) *Route {
@@ -251,19 +273,7 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 		route.handlers[method] = handler
 		route.methods = append(route.methods, method)
 
-		if len(names) != 0 {
-			if mux.named == nil {
-				mux.named = make(map[string]*Route)
-			}
-
-			for _, name := range names {
-				if _, ok := mux.named[name]; ok {
-					panic(fmt.Sprintf("duplicate route name %q", name))
-				}
-
-				mux.named[name] = route
-			}
-		}
+		mux.nameRoute(route, names...)
 
 		return route
 	}
@@ -290,15 +300,7 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 
 	mux.routes = append(mux.routes, route)
 
-	if len(names) != 0 {
-		if mux.named == nil {
-			mux.named = make(map[string]*Route)
-		}
-
-		for _, name := range names {
-			mux.named[name] = route
-		}
-	}
+	mux.nameRoute(route, names...)
 
 	return route
 }

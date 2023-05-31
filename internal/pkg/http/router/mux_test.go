@@ -70,6 +70,14 @@ func TestMux(t *testing.T) {
 		})
 	})
 
+	mux.Prefix("/name", func(mux *router.ServeMux) {
+		mux.Name("named")
+
+		mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("named"))
+		})
+	})
+
 	mux.Get("/url/:ignore/:status/qux", func(w http.ResponseWriter, r *http.Request) {
 		switch router.URLParam(r, "status") {
 		case "teapot":
@@ -195,6 +203,7 @@ func TestMux(t *testing.T) {
 
 		{"mux object path simple", http.MethodGet, mux.Path("simple"), "/aa/bb/cc/dd", http.StatusOK},
 		{"mux object path complex", http.MethodGet, mux.Path("complex", ":bb", "xx", ":dd", "yy"), "/aa/xx/cc/yy", http.StatusOK},
+		{"mux object path named prefix", http.MethodGet, mux.Path("named"), "named", http.StatusOK},
 
 		{"redirect get method ok", http.MethodGet, "/redirect/src", "redirected", http.StatusOK},
 		{"redirect with dynamic param", http.MethodGet, "/redirect/redirect/src/var", "redirected", http.StatusOK},
