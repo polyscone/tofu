@@ -14,3 +14,7 @@ type RoleFilter struct {
 	Limit  int
 	Offset int
 }
+
+func NewRole(name string) *Role {
+	return &Role{Name: name}
+}

@@ -142,6 +142,34 @@ func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, search string, 
 	return users, total, errors.Tracef(err)
 }
 
+func (r *AccountRepo) AddRole(ctx context.Context, role *account.Role) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	if err := r.addRole(ctx, tx, role); err != nil {
+		return errors.Tracef(err)
+	}
+
+	return errors.Tracef(tx.Commit())
+}
+
+func (r *AccountRepo) SaveRole(ctx context.Context, role *account.Role) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	if err := r.saveRole(ctx, tx, role); err != nil {
+		return errors.Tracef(err)
+	}
+
+	return errors.Tracef(tx.Commit())
+}
+
 func (r *AccountRepo) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([]*account.RecoveryCode, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -361,6 +389,57 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 	return roles, total, errors.Tracef(rows.Err())
 }
 
+func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) error {
+	var errs errors.Map
+
+	if strings.TrimSpace(role.Name) == "" {
+		errs.Set("name", "cannot be empty")
+	}
+
+	if errs != nil {
+		return errs.Tracef(repo.ErrInvalidInput)
+	}
+
+	res, err := tx.ExecContext(ctx, `
+		INSERT INTO account__roles (
+			name,
+			created_at
+		) VALUES (
+			:name,
+			:created_at
+		)
+	`,
+		sql.Named("name", role.Name),
+		sql.Named("created_at", Time(tx.now.UTC())),
+	)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	role.ID = int(id)
+
+	return nil
+}
+
+func (r *AccountRepo) saveRole(ctx context.Context, tx *Tx, role *account.Role) error {
+	_, err := tx.ExecContext(ctx, `
+		UPDATE account__roles SET
+			name = :name,
+			updated_at = :updated_at
+		WHERE id = :id
+	`,
+		sql.Named("id", role.ID),
+		sql.Named("name", role.Name),
+		sql.Named("updated_at", Time(tx.now.UTC())),
+	)
+
+	return errors.Tracef(err)
+}
+
 func (r *AccountRepo) findRecoveryCodes(ctx context.Context, tx *Tx, filter account.RecoveryCodeFilter) ([]*account.RecoveryCode, int, error) {
 	var where []string
 	var args []any
@@ -412,10 +491,10 @@ func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user 
 	return nil
 }
 
-func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) error {
+func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) error {
 	var errs errors.Map
 
-	if u.Email == "" {
+	if strings.TrimSpace(user.Email) == "" {
 		errs.Set("email", "cannot be empty")
 	}
 
@@ -456,19 +535,19 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 			:created_at
 		)
 	`,
-		sql.Named("email", u.Email),
-		sql.Named("hashed_password", u.HashedPassword),
-		sql.Named("totp_method", u.TOTPMethod),
-		sql.Named("totp_telephone", u.TOTPTelephone),
-		sql.Named("totp_key", u.TOTPKey),
-		sql.Named("totp_algorithm", u.TOTPAlgorithm),
-		sql.Named("totp_digits", u.TOTPDigits),
-		sql.Named("totp_period_ns", u.TOTPPeriod),
-		sql.Named("totp_verified_at", NullTime(u.TOTPVerifiedAt)),
-		sql.Named("totp_activated_at", NullTime(u.TOTPActivatedAt)),
-		sql.Named("signed_up_at", Time(u.SignedUpAt)),
-		sql.Named("activated_at", NullTime(u.ActivatedAt)),
-		sql.Named("last_signed_in_at", NullTime(u.LastSignedInAt)),
+		sql.Named("email", user.Email),
+		sql.Named("hashed_password", user.HashedPassword),
+		sql.Named("totp_method", user.TOTPMethod),
+		sql.Named("totp_telephone", user.TOTPTelephone),
+		sql.Named("totp_key", user.TOTPKey),
+		sql.Named("totp_algorithm", user.TOTPAlgorithm),
+		sql.Named("totp_digits", user.TOTPDigits),
+		sql.Named("totp_period_ns", user.TOTPPeriod),
+		sql.Named("totp_verified_at", NullTime(user.TOTPVerifiedAt)),
+		sql.Named("totp_activated_at", NullTime(user.TOTPActivatedAt)),
+		sql.Named("signed_up_at", Time(user.SignedUpAt)),
+		sql.Named("activated_at", NullTime(user.ActivatedAt)),
+		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
 		sql.Named("created_at", Time(tx.now.UTC())),
 	)
 	if err != nil {
@@ -479,9 +558,9 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 	if err != nil {
 		return errors.Tracef(err)
 	}
-	u.ID = int(id)
+	user.ID = int(id)
 
-	for _, rc := range u.RecoveryCodes {
+	for _, rc := range user.RecoveryCodes {
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO account__recovery_codes (
 				user_id,
@@ -493,7 +572,7 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 				:created_at
 			)
 		`,
-			sql.Named("user_id", u.ID),
+			sql.Named("user_id", user.ID),
 			sql.Named("code", rc.Code),
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
@@ -505,7 +584,7 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 	return nil
 }
 
-func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) error {
+func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, user *account.User) error {
 	_, err := tx.ExecContext(ctx, `
 		UPDATE account__users SET
 			email = :email,
@@ -524,20 +603,20 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) err
 			updated_at = :updated_at
 		WHERE id = :id
 	`,
-		sql.Named("id", u.ID),
-		sql.Named("email", u.Email),
-		sql.Named("hashed_password", u.HashedPassword),
-		sql.Named("totp_method", u.TOTPMethod),
-		sql.Named("totp_telephone", u.TOTPTelephone),
-		sql.Named("totp_key", u.TOTPKey),
-		sql.Named("totp_algorithm", u.TOTPAlgorithm),
-		sql.Named("totp_digits", u.TOTPDigits),
-		sql.Named("totp_period_ns", u.TOTPPeriod),
-		sql.Named("totp_verified_at", NullTime(u.TOTPVerifiedAt)),
-		sql.Named("totp_activated_at", NullTime(u.TOTPActivatedAt)),
-		sql.Named("signed_up_at", Time(u.SignedUpAt)),
-		sql.Named("activated_at", NullTime(u.ActivatedAt)),
-		sql.Named("last_signed_in_at", NullTime(u.LastSignedInAt)),
+		sql.Named("id", user.ID),
+		sql.Named("email", user.Email),
+		sql.Named("hashed_password", user.HashedPassword),
+		sql.Named("totp_method", user.TOTPMethod),
+		sql.Named("totp_telephone", user.TOTPTelephone),
+		sql.Named("totp_key", user.TOTPKey),
+		sql.Named("totp_algorithm", user.TOTPAlgorithm),
+		sql.Named("totp_digits", user.TOTPDigits),
+		sql.Named("totp_period_ns", user.TOTPPeriod),
+		sql.Named("totp_verified_at", NullTime(user.TOTPVerifiedAt)),
+		sql.Named("totp_activated_at", NullTime(user.TOTPActivatedAt)),
+		sql.Named("signed_up_at", Time(user.SignedUpAt)),
+		sql.Named("activated_at", NullTime(user.ActivatedAt)),
+		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
 		sql.Named("updated_at", Time(tx.now.UTC())),
 	)
 	if err != nil {
@@ -548,13 +627,13 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) err
 		DELETE FROM account__recovery_codes
 		WHERE user_id = :user_id
 	`,
-		sql.Named("user_id", u.ID),
+		sql.Named("user_id", user.ID),
 	)
 	if err != nil {
 		return errors.Tracef(err)
 	}
 
-	for _, rc := range u.RecoveryCodes {
+	for _, rc := range user.RecoveryCodes {
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO account__recovery_codes (
 				user_id,
@@ -566,7 +645,7 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) err
 				:created_at
 			)
 		`,
-			sql.Named("user_id", u.ID),
+			sql.Named("user_id", user.ID),
 			sql.Named("code", rc.Code),
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
