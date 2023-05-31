@@ -20,14 +20,6 @@ var (
 
 type Code string
 
-func NewCode(code string) (Code, error) {
-	if !validCode.MatchString(code) {
-		return "", errors.Tracef("contains invalid characters")
-	}
-
-	return Code(code), nil
-}
-
 func GenerateCode() (Code, error) {
 	code := make([]byte, 8)
 	if _, err := io.ReadFull(rand.Reader, code); err != nil {
@@ -37,6 +29,14 @@ func GenerateCode() (Code, error) {
 	encoded := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(code)
 
 	return Code(encoded), nil
+}
+
+func NewCode(code string) (Code, error) {
+	if !validCode.MatchString(code) {
+		return "", errors.Tracef("contains invalid characters")
+	}
+
+	return Code(code), nil
 }
 
 func (c Code) String() string {

@@ -19,7 +19,12 @@
 	{{else}}
 		<h1>Generate new recovery codes</h1>
 
-		<p>You have {{len .Vars.RecoveryCodes}} recovery code{{if gt (len .Vars.RecoveryCodes) 1}}s{{end}} remaining.</p>
+		{{if eq (len .Vars.RecoveryCodes) 1}}
+			<p>You have {{len .Vars.RecoveryCodes}} recovery code remaining.</p>
+		{{else}}
+			<p>You have {{len .Vars.RecoveryCodes}} recovery codes remaining.</p>
+		{{end}}
+
 		<p>If you would like to generate new recovery codes click the button below.</p>
 
 		<div class="warning-banner">

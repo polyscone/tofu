@@ -5,20 +5,17 @@ import (
 	"database/sql"
 	"io/fs"
 	"strings"
-	"time"
 
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/aesgcm"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/repo"
 )
 
 type AccountRepo struct {
-	db     *DB
-	secret []byte
+	db *DB
 }
 
-func NewAccountRepo(ctx context.Context, db *sql.DB, secret []byte) (*AccountRepo, error) {
+func NewAccountRepo(ctx context.Context, db *sql.DB) (*AccountRepo, error) {
 	migrations, err := fs.Sub(migrations, "migrations/account")
 	if err != nil {
 		return nil, errors.Tracef(err)
@@ -28,10 +25,7 @@ func NewAccountRepo(ctx context.Context, db *sql.DB, secret []byte) (*AccountRep
 		return nil, errors.Tracef(err)
 	}
 
-	r := AccountRepo{
-		db:     newDB(db),
-		secret: secret,
-	}
+	r := AccountRepo{db: newDB(db)}
 
 	return &r, nil
 }
@@ -255,15 +249,6 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			return nil, 0, errors.Tracef(err)
 		}
 
-		if len(user.TOTPKey) != 0 {
-			decryptedKey, err := aesgcm.Decrypt(r.secret, user.TOTPKey)
-			if err != nil {
-				return nil, 0, errors.Tracef(err)
-			}
-
-			user.TOTPKey = decryptedKey
-		}
-
 		users = append(users, &user)
 	}
 
@@ -410,13 +395,6 @@ func (r *AccountRepo) findRecoveryCodes(ctx context.Context, tx *Tx, filter acco
 			return nil, 0, errors.Tracef(err)
 		}
 
-		decrypted, err := aesgcm.Decrypt(r.secret, []byte(recoveryCode.Code))
-		if err != nil {
-			return nil, 0, errors.Tracef(err)
-		}
-
-		recoveryCode.Code = string(decrypted)
-
 		recoveryCodes = append(recoveryCodes, &recoveryCode)
 	}
 
@@ -435,13 +413,14 @@ func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user 
 }
 
 func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) error {
-	var encryptedTOTPKey []byte
-	if u.TOTPKey != nil {
-		var err error
-		encryptedTOTPKey, err = aesgcm.Encrypt(r.secret, u.TOTPKey)
-		if err != nil {
-			return errors.Tracef(err)
-		}
+	var errs errors.Map
+
+	if u.Email == "" {
+		errs.Set("email", "cannot be empty")
+	}
+
+	if errs != nil {
+		return errs.Tracef(repo.ErrInvalidInput)
 	}
 
 	res, err := tx.ExecContext(ctx, `
@@ -458,7 +437,8 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 			totp_activated_at,
 			signed_up_at,
 			activated_at,
-			last_signed_in_at
+			last_signed_in_at,
+			created_at
 		) VALUES (
 			:email,
 			:hashed_password,
@@ -472,22 +452,24 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 			:totp_activated_at,
 			:signed_up_at,
 			:activated_at,
-			:last_signed_in_at
+			:last_signed_in_at,
+			:created_at
 		)
 	`,
 		sql.Named("email", u.Email),
 		sql.Named("hashed_password", u.HashedPassword),
 		sql.Named("totp_method", u.TOTPMethod),
 		sql.Named("totp_telephone", u.TOTPTelephone),
-		sql.Named("totp_key", encryptedTOTPKey),
+		sql.Named("totp_key", u.TOTPKey),
 		sql.Named("totp_algorithm", u.TOTPAlgorithm),
 		sql.Named("totp_digits", u.TOTPDigits),
 		sql.Named("totp_period_ns", u.TOTPPeriod),
-		sql.Named("totp_verified_at", NullTime(u.TOTPVerifiedAt.UTC())),
-		sql.Named("totp_activated_at", NullTime(u.TOTPActivatedAt.UTC())),
-		sql.Named("signed_up_at", Time(u.SignedUpAt.UTC())),
-		sql.Named("activated_at", NullTime(u.ActivatedAt.UTC())),
-		sql.Named("last_signed_in_at", NullTime(u.LastSignedInAt.UTC())),
+		sql.Named("totp_verified_at", NullTime(u.TOTPVerifiedAt)),
+		sql.Named("totp_activated_at", NullTime(u.TOTPActivatedAt)),
+		sql.Named("signed_up_at", Time(u.SignedUpAt)),
+		sql.Named("activated_at", NullTime(u.ActivatedAt)),
+		sql.Named("last_signed_in_at", NullTime(u.LastSignedInAt)),
+		sql.Named("created_at", Time(tx.now.UTC())),
 	)
 	if err != nil {
 		return errors.Tracef(err)
@@ -500,22 +482,20 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 	u.ID = int(id)
 
 	for _, rc := range u.RecoveryCodes {
-		encrypted, err := aesgcm.Encrypt(r.secret, []byte(rc.Code))
-		if err != nil {
-			return errors.Tracef(err)
-		}
-
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO account__recovery_codes (
 				user_id,
-				code
+				code,
+				created_at
 			) VALUES (
 				:user_id,
-				:code
+				:code,
+				:created_at
 			)
 		`,
 			sql.Named("user_id", u.ID),
-			sql.Named("code", encrypted),
+			sql.Named("code", rc.Code),
+			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
 			return errors.Tracef(err)
@@ -526,15 +506,6 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, u *account.User) erro
 }
 
 func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) error {
-	var encryptedTOTPKey []byte
-	if u.TOTPKey != nil {
-		var err error
-		encryptedTOTPKey, err = aesgcm.Encrypt(r.secret, u.TOTPKey)
-		if err != nil {
-			return errors.Tracef(err)
-		}
-	}
-
 	_, err := tx.ExecContext(ctx, `
 		UPDATE account__users SET
 			email = :email,
@@ -558,16 +529,16 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) err
 		sql.Named("hashed_password", u.HashedPassword),
 		sql.Named("totp_method", u.TOTPMethod),
 		sql.Named("totp_telephone", u.TOTPTelephone),
-		sql.Named("totp_key", encryptedTOTPKey),
+		sql.Named("totp_key", u.TOTPKey),
 		sql.Named("totp_algorithm", u.TOTPAlgorithm),
 		sql.Named("totp_digits", u.TOTPDigits),
 		sql.Named("totp_period_ns", u.TOTPPeriod),
-		sql.Named("totp_verified_at", NullTime(u.TOTPVerifiedAt.UTC())),
-		sql.Named("totp_activated_at", NullTime(u.TOTPActivatedAt.UTC())),
-		sql.Named("signed_up_at", Time(u.SignedUpAt.UTC())),
-		sql.Named("activated_at", NullTime(u.ActivatedAt.UTC())),
-		sql.Named("last_signed_in_at", NullTime(u.LastSignedInAt.UTC())),
-		sql.Named("updated_at", Time(time.Now().UTC())),
+		sql.Named("totp_verified_at", NullTime(u.TOTPVerifiedAt)),
+		sql.Named("totp_activated_at", NullTime(u.TOTPActivatedAt)),
+		sql.Named("signed_up_at", Time(u.SignedUpAt)),
+		sql.Named("activated_at", NullTime(u.ActivatedAt)),
+		sql.Named("last_signed_in_at", NullTime(u.LastSignedInAt)),
+		sql.Named("updated_at", Time(tx.now.UTC())),
 	)
 	if err != nil {
 		return errors.Tracef(err)
@@ -584,22 +555,20 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, u *account.User) err
 	}
 
 	for _, rc := range u.RecoveryCodes {
-		encrypted, err := aesgcm.Encrypt(r.secret, []byte(rc.Code))
-		if err != nil {
-			return errors.Tracef(err)
-		}
-
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO account__recovery_codes (
 				user_id,
-				code
+				code,
+				created_at
 			) VALUES (
 				:user_id,
-				:code
+				:code,
+				:created_at
 			)
 		`,
 			sql.Named("user_id", u.ID),
-			sql.Named("code", encrypted),
+			sql.Named("code", rc.Code),
+			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
 			return errors.Tracef(err)

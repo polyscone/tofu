@@ -57,7 +57,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 	broker := event.NewMemoryBroker()
 
-	accountRepo, err := sqlite.NewAccountRepo(ctx, db, []byte(opts.secret))
+	accountRepo, err := sqlite.NewAccountRepo(ctx, db)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}

@@ -23,6 +23,10 @@ var (
 
 type Password []byte
 
+func GeneratePassword() Password {
+	return Password(passwordGenerator.Generate())
+}
+
 func NewPassword(password string) (Password, error) {
 	rc := utf8.RuneCountInString(password)
 	if rc < passwordMinLength {

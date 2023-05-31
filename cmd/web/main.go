@@ -34,7 +34,6 @@ var opts struct {
 	version bool
 	dev     bool
 	data    string
-	secret  string
 	tenants string
 
 	log struct {
@@ -50,7 +49,7 @@ var opts struct {
 }
 
 func main() {
-	requiredFlags := []string{"secret", "addr"}
+	requiredFlags := []string{"addr"}
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %v:\n", os.Args[0])
@@ -70,7 +69,6 @@ func main() {
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
 	flag.BoolVar(&opts.server.insecureHTTP, "insecure-http", false, "Run in secure mode but without HTTPS")
 	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
-	flag.StringVar(&opts.secret, "secret", "", "The secret to use for things like encrypting/decrypting data")
 	flag.StringVar(&opts.tenants, "tenants", "", "A path to a JSON file that describes the tenants of the program")
 	flag.Parse()
 

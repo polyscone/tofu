@@ -60,7 +60,7 @@ func (u *User) SignUpWithPassword(password Password, hasher password.Hasher) err
 		return errors.Tracef(err)
 	}
 
-	u.SignedUpAt = time.Now()
+	u.SignedUpAt = time.Now().UTC()
 
 	u.Events.Enqueue(SignedUp{
 		Email: u.Email,
@@ -74,7 +74,7 @@ func (u *User) Activate() error {
 		return errors.Tracef("already activated")
 	}
 
-	u.ActivatedAt = time.Now()
+	u.ActivatedAt = time.Now().UTC()
 
 	u.Events.Enqueue(Activated{
 		Email: u.Email,
@@ -192,7 +192,7 @@ func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) error {
 	}
 
 	u.TOTPMethod = method.String()
-	u.TOTPVerifiedAt = time.Now()
+	u.TOTPVerifiedAt = time.Now().UTC()
 
 	nCodes := 6
 	u.RecoveryCodes = make([]*RecoveryCode, nCodes)
@@ -218,7 +218,7 @@ func (u *User) ActivateTOTP() error {
 		return errors.Tracef(app.ErrBadRequest, "already activated")
 	}
 
-	u.TOTPActivatedAt = time.Now()
+	u.TOTPActivatedAt = time.Now().UTC()
 
 	return nil
 }
@@ -366,7 +366,7 @@ func (u *User) AuthenticateWithPassword(password Password, hasher password.Hashe
 	}
 
 	if !u.HasActivatedTOTP() {
-		u.LastSignedInAt = time.Now()
+		u.LastSignedInAt = time.Now().UTC()
 	}
 
 	u.Events.Enqueue(AuthenticatedWithPassword{
@@ -389,7 +389,7 @@ func (u *User) AuthenticateWithTOTP(totp TOTP) error {
 		return errors.Tracef(err)
 	}
 
-	u.LastSignedInAt = time.Now()
+	u.LastSignedInAt = time.Now().UTC()
 
 	u.Events.Enqueue(AuthenticatedWithTOTP{
 		Email: u.Email,
@@ -410,7 +410,7 @@ func (u *User) AuthenticateWithRecoveryCode(code Code) error {
 	for i, rc := range u.RecoveryCodes {
 		if rc.Code == code.String() {
 			u.RecoveryCodes = append(u.RecoveryCodes[:i], u.RecoveryCodes[i+1:]...)
-			u.LastSignedInAt = time.Now()
+			u.LastSignedInAt = time.Now().UTC()
 
 			u.Events.Enqueue(AuthenticatedWithRecoveryCode{
 				Email: u.Email,
