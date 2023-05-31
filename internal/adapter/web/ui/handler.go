@@ -33,7 +33,7 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	mux := router.NewServeMux()
 	svc := handler.NewServices(mux, tenant, templateFiles)
 	guard := handler.NewGuard(svc, func() string {
-		return svc.Path("account.sign_in")
+		return mux.Path("account.sign_in")
 	})
 
 	tenant.Broker.Listen(accountAuthenticateWithPasswordHandler(tenant, svc))
@@ -112,6 +112,8 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 
 	// Account
 	mux.Prefix("/account", func(mux *router.ServeMux) {
+		mux.Name("account.section")
+
 		account.Activate(svc, mux)
 		account.ChangePassword(svc, mux, guard)
 		account.Dashboard(svc, mux, guard)
@@ -123,8 +125,11 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	})
 
 	// Admin
-	guard.ProtectPrefix("/admin/")
 	mux.Prefix("/admin", func(mux *router.ServeMux) {
+		mux.Name("admin.section")
+
+		guard.ProtectPrefix(mux.Path("admin.section"))
+
 		admin.Dashboard(svc, mux)
 
 		mux.Prefix("/account", func(mux *router.ServeMux) {

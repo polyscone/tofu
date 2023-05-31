@@ -23,8 +23,11 @@ import (
 )
 
 func TOTP(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
-	guard.ProtectPrefix("/totp/")
 	mux.Prefix("/totp", func(mux *router.ServeMux) {
+		mux.Name("account.totp.section")
+
+		guard.ProtectPrefix(mux.Path("account.totp.section"))
+
 		mux.Prefix("/setup", func(mux *router.ServeMux) {
 			mux.Get("/", totpSetupGet(svc), "account.totp.setup")
 			mux.Post("/", totpSetupPost(svc), "account.totp.setup.post")

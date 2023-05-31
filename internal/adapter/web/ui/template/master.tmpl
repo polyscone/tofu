@@ -17,15 +17,17 @@
 		{{template "header" .}}
 
 		<main id="main-content" class="main">
-			<div class="top-bar">
-				{{if HasPrefix .URL.Path "/admin/"}}
-					{{template "nav_admin" .}}
-				{{end}}
+			{{if .Session.IsAuthenticated}}
+				<div class="top-bar">
+					{{if HasPathPrefix .URL.Path (Path "admin.section")}}
+						{{template "nav_admin" .}}
+					{{end}}
 
-				{{if HasPrefix .URL.Path "/account/"}}
-					{{template "nav_account" .}}
-				{{end}}
-			</div>
+					{{if HasPathPrefix .URL.Path (Path "account.section")}}
+						{{template "nav_account" .}}
+					{{end}}
+				</div>
+			{{end}}
 
 			{{if and .ErrorMessage (ne .View "error")}}
 				<div class="error-banner center">

@@ -12,8 +12,11 @@ import (
 )
 
 func ChangePassword(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
-	guard.ProtectPrefix("/change-password/")
 	mux.Prefix("/change-password", func(mux *router.ServeMux) {
+		mux.Name("account.change_password.section")
+
+		guard.ProtectPrefix(mux.Path("account.change_password.section"))
+
 		mux.Get("/", changePasswordGet(svc), "account.change_password")
 		mux.Post("/", changePasswordPost(svc), "account.change_password.post")
 

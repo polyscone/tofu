@@ -46,8 +46,12 @@ func (g *Guard) Protect(path string) {
 }
 
 func (g *Guard) ProtectPrefixFunc(path string, isAuthorised IsAuthorisedFunc) {
+	path = strings.TrimSuffix(path, "/")
+
+	g.ProtectFunc(path, isAuthorised)
+
 	g.prefixes = append(g.prefixes, prefixGuard{
-		path:         path,
+		path:         path + "/",
 		isAuthorised: isAuthorised,
 	})
 

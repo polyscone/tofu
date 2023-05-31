@@ -55,18 +55,19 @@ type Services struct {
 func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 	sessions := session.NewManager(tenant.Repo.Web)
 	funcs := template.FuncMap{
-		"Add":         tmplAdd,
-		"Sub":         tmplSub,
-		"Mul":         tmplMul,
-		"Div":         tmplDiv,
-		"Mod":         tmplMod,
-		"Ints":        tmplInts,
-		"StatusText":  tmplStatusText,
-		"Path":        tmplPath(mux),
-		"QueryString": tmplQueryString,
-		"FormatTime":  tmplFormatTime,
-		"HasPrefix":   tmplHasPrefix,
-		"HasSuffix":   tmplHasSuffix,
+		"Add":           tmplAdd,
+		"Sub":           tmplSub,
+		"Mul":           tmplMul,
+		"Div":           tmplDiv,
+		"Mod":           tmplMod,
+		"Ints":          tmplInts,
+		"StatusText":    tmplStatusText,
+		"Path":          tmplPath(mux),
+		"QueryString":   tmplQueryString,
+		"FormatTime":    tmplFormatTime,
+		"HasPrefix":     tmplHasPrefix,
+		"HasSuffix":     tmplHasSuffix,
+		"HasPathPrefix": tmplHasPathPrefix,
 	}
 
 	return &Services{

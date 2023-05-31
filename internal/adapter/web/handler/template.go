@@ -229,14 +229,24 @@ func tmplFormatTime(t time.Time, format string) string {
 	return t.Format(format)
 }
 
-func tmplHasPrefix(value any, prefix string) bool {
-	str := fmt.Sprintf("%v", value)
+func tmplHasPrefix(value, prefix any) bool {
+	v := fmt.Sprintf("%v", value)
+	p := fmt.Sprintf("%v", prefix)
 
-	return strings.HasPrefix(str, prefix)
+	return strings.HasPrefix(v, p)
 }
 
-func tmplHasSuffix(value any, suffix string) bool {
-	str := fmt.Sprintf("%v", value)
+func tmplHasSuffix(value, suffix any) bool {
+	v := fmt.Sprintf("%v", value)
+	s := fmt.Sprintf("%v", suffix)
 
-	return strings.HasSuffix(str, suffix)
+	return strings.HasSuffix(v, s)
+}
+
+func tmplHasPathPrefix(value, prefix any) bool {
+	v := fmt.Sprintf("%v", value)
+	p := fmt.Sprintf("%v", prefix)
+	p = strings.TrimSuffix(p, "/")
+
+	return v == p || strings.HasPrefix(v, p+"/")
 }
