@@ -19,11 +19,11 @@
 		<main id="main-content" class="main">
 			{{if .Session.IsSignedIn}}
 				<div class="top-bar">
-					{{if HasPathPrefix .URL.Path (Path "admin.section")}}
+					{{if HasPathPrefix .URL.Path "admin.section"}}
 						{{template "nav_admin" .}}
 					{{end}}
 
-					{{if HasPathPrefix .URL.Path (Path "account.section")}}
+					{{if HasPathPrefix .URL.Path "account.section"}}
 						{{template "nav_account" .}}
 					{{end}}
 				</div>

@@ -67,7 +67,7 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 		"FormatTime":    tmplFormatTime,
 		"HasPrefix":     tmplHasPrefix,
 		"HasSuffix":     tmplHasSuffix,
-		"HasPathPrefix": tmplHasPathPrefix,
+		"HasPathPrefix": tmplHasPathPrefix(mux),
 	}
 
 	return &Services{

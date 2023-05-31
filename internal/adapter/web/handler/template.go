@@ -243,10 +243,14 @@ func tmplHasSuffix(value, suffix any) bool {
 	return strings.HasSuffix(v, s)
 }
 
-func tmplHasPathPrefix(value, prefix any) bool {
-	v := fmt.Sprintf("%v", value)
-	p := fmt.Sprintf("%v", prefix)
-	p = strings.TrimSuffix(p, "/")
+type tmplHasPathPrefixFunc func(value any, name string, paramArgPairs ...any) bool
 
-	return v == p || strings.HasPrefix(v, p+"/")
+func tmplHasPathPrefix(mux *router.ServeMux) tmplHasPathPrefixFunc {
+	return func(value any, name string, paramArgPairs ...any) bool {
+		v := fmt.Sprintf("%v", value)
+		p := mux.Path(name, paramArgPairs...)
+		p = strings.TrimSuffix(p, "/")
+
+		return v == p || strings.HasPrefix(v, p+"/")
+	}
 }
