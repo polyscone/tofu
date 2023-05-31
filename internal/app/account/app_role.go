@@ -7,5 +7,10 @@ type Role struct {
 }
 
 type RoleFilter struct {
+	ID     *int
 	UserID *int
+	Search *string
+
+	Limit  int
+	Offset int
 }

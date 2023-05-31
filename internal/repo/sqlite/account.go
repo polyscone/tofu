@@ -99,6 +99,26 @@ func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, search string, 
 	return users, total, errors.Tracef(err)
 }
 
+func (r *AccountRepo) FindRoleByID(ctx context.Context, roleID int) (*account.Role, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{ID: &roleID})
+	if len(roles) == 0 {
+		return nil, errors.Tracef(repo.ErrNotFound)
+	}
+
+	role := roles[0]
+	if err := r.attachRolePermissions(ctx, tx, role); err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return role, nil
+}
+
 func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID int) ([]*account.Role, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -109,6 +129,23 @@ func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID int) ([]*acc
 	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{UserID: &userID})
 
 	return roles, errors.Tracef(err)
+}
+
+func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, search string, page, size int) ([]*account.Role, int, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, 0, errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	limit, offset := pageLimitOffset(page, size)
+	users, total, err := r.findRoles(ctx, tx, account.RoleFilter{
+		Search: &search,
+		Limit:  limit,
+		Offset: offset,
+	})
+
+	return users, total, errors.Tracef(err)
 }
 
 func (r *AccountRepo) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([]*account.RecoveryCode, error) {
@@ -276,12 +313,31 @@ func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter accoun
 	return permissions, total, errors.Tracef(rows.Err())
 }
 
+func (r *AccountRepo) attachRolePermissions(ctx context.Context, tx *Tx, role *account.Role) error {
+	permissions, _, err := r.findPermissions(ctx, tx, account.PermissionFilter{RoleID: &role.ID})
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	role.Permissions = permissions
+
+	return nil
+}
+
 func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.RoleFilter) ([]*account.Role, int, error) {
+	var joins []string
 	var where []string
 	var args []any
 
+	if v := filter.ID; v != nil {
+		where, args = append(where, "r.id = ?"), append(args, *v)
+	}
 	if v := filter.UserID; v != nil {
+		joins = append(joins, "INNER JOIN account__user_roles AS ur ON r.id = ur.role_id")
 		where, args = append(where, "ur.user_id = ?"), append(args, *v)
+	}
+	if v := filter.Search; v != nil && *v != "" {
+		where, args = append(where, "r.name LIKE ?"), append(args, "%"+*v+"%")
 	}
 
 	rows, err := tx.QueryContext(ctx, `
@@ -290,8 +346,9 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 			name,
 			COUNT(1) OVER () AS total
 		FROM account__roles AS r
-		INNER JOIN account__user_roles AS ur ON r.id = ur.role_id
-		WHERE `+strings.Join(where, " AND "),
+		`+strings.Join(joins, "\n")+`
+		`+whereSQL(where)+`
+		`+limitOffsetSQL(filter.Limit, filter.Offset),
 		args...,
 	)
 	if err != nil {
@@ -312,13 +369,6 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 		if err != nil {
 			return nil, 0, errors.Tracef(err)
 		}
-
-		permissions, _, err := r.findPermissions(ctx, tx, account.PermissionFilter{RoleID: &role.ID})
-		if err != nil {
-			return nil, 0, errors.Tracef(err)
-		}
-
-		role.Permissions = permissions
 
 		roles = append(roles, &role)
 	}

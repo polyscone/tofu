@@ -8,6 +8,7 @@ import (
 )
 
 type Reader interface {
+	FindRoleByID(ctx context.Context, id int) (*Role, error)
 	FindUserByID(ctx context.Context, id int) (*User, error)
 	FindUserByEmail(ctx context.Context, email string) (*User, error)
 }
