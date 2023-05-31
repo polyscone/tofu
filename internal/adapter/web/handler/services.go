@@ -322,8 +322,12 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 	data.View = name
 
 	var buf bytes.Buffer
-	err := svc.view(name).ExecuteTemplate(&buf, "master", data)
-	if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+
+	if err := svc.view(name).ExecuteTemplate(&buf, "master", data); err != nil {
+		httputil.LogError(r, err)
+
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+
 		return
 	}
 
