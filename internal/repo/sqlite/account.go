@@ -389,15 +389,19 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 	return roles, total, errors.Tracef(rows.Err())
 }
 
-func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) error {
+func (r *AccountRepo) validateRole(role *account.Role) error {
 	var errs errors.Map
 
 	if strings.TrimSpace(role.Name) == "" {
 		errs.Set("name", "cannot be empty")
 	}
 
-	if errs != nil {
-		return errs.Tracef(repo.ErrInvalidInput)
+	return errs.Tracef(repo.ErrInvalidInput)
+}
+
+func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) error {
+	if err := r.validateRole(role); err != nil {
+		return errors.Tracef(err)
 	}
 
 	res, err := tx.ExecContext(ctx, `
@@ -426,6 +430,10 @@ func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) e
 }
 
 func (r *AccountRepo) saveRole(ctx context.Context, tx *Tx, role *account.Role) error {
+	if err := r.validateRole(role); err != nil {
+		return errors.Tracef(err)
+	}
+
 	_, err := tx.ExecContext(ctx, `
 		UPDATE account__roles SET
 			name = :name,
@@ -491,15 +499,19 @@ func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user 
 	return nil
 }
 
-func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) error {
+func (r *AccountRepo) validateUser(user *account.User) error {
 	var errs errors.Map
 
 	if strings.TrimSpace(user.Email) == "" {
 		errs.Set("email", "cannot be empty")
 	}
 
-	if errs != nil {
-		return errs.Tracef(repo.ErrInvalidInput)
+	return errs.Tracef(repo.ErrInvalidInput)
+}
+
+func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) error {
+	if err := r.validateUser(user); err != nil {
+		return errors.Tracef(err)
 	}
 
 	res, err := tx.ExecContext(ctx, `
@@ -585,6 +597,10 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) e
 }
 
 func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, user *account.User) error {
+	if err := r.validateUser(user); err != nil {
+		return errors.Tracef(err)
+	}
+
 	_, err := tx.ExecContext(ctx, `
 		UPDATE account__users SET
 			email = :email,
