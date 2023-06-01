@@ -8,19 +8,22 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
+	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
-type IsAuthorisedFunc func(passport passport.Passport) bool
+var ErrRedirect = errors.New("redirect")
+
+type CheckAuthorisedFunc func(passport passport.Passport) error
 type RedirectFunc func() string
 
 type prefixGuard struct {
-	path         string
-	isAuthorised IsAuthorisedFunc
+	path            string
+	checkAuthorised CheckAuthorisedFunc
 }
 
 type Guard struct {
 	svc      *Services
-	exact    map[string]IsAuthorisedFunc
+	exact    map[string]CheckAuthorisedFunc
 	prefixes []prefixGuard
 	redirect RedirectFunc
 }
@@ -29,40 +32,44 @@ func NewGuard(svc *Services, redirect RedirectFunc) *Guard {
 	return &Guard{
 		svc:      svc,
 		redirect: redirect,
-		exact:    make(map[string]IsAuthorisedFunc),
+		exact:    make(map[string]CheckAuthorisedFunc),
 	}
 }
 
-func (g *Guard) isSignedIn(passport passport.Passport) bool {
-	return passport.IsSignedIn()
+func (g *Guard) isSignedIn(passport passport.Passport) error {
+	if !passport.IsSignedIn() {
+		return errors.Tracef(ErrRedirect)
+	}
+
+	return nil
 }
 
-func (g *Guard) ProtectFunc(path string, isAuthorised IsAuthorisedFunc) {
-	g.exact[path] = isAuthorised
+func (g *Guard) Protect(path string, checkAuthorised CheckAuthorisedFunc) {
+	g.exact[path] = checkAuthorised
 }
 
-func (g *Guard) Protect(path string) {
-	g.ProtectFunc(path, g.isSignedIn)
-}
-
-func (g *Guard) ProtectPrefixFunc(path string, isAuthorised IsAuthorisedFunc) {
+func (g *Guard) ProtectPrefix(path string, checkAuthorised CheckAuthorisedFunc) {
 	path = strings.TrimSuffix(path, "/")
 
-	g.ProtectFunc(path, isAuthorised)
+	g.Protect(path, checkAuthorised)
 
 	g.prefixes = append(g.prefixes, prefixGuard{
-		path:         path + "/",
-		isAuthorised: isAuthorised,
+		path:            path + "/",
+		checkAuthorised: checkAuthorised,
 	})
 
 	sort.Slice(g.prefixes, func(i, j int) bool {
-		// Reverse string length sort so the longest key comes first
+		// Reverse string length sort so the longest path comes first
 		return utf8.RuneCountInString(g.prefixes[j].path) < utf8.RuneCountInString(g.prefixes[i].path)
 	})
 }
 
-func (g *Guard) ProtectPrefix(path string) {
-	g.ProtectPrefixFunc(path, g.isSignedIn)
+func (g *Guard) RequireSignIn(path string) {
+	g.Protect(path, g.isSignedIn)
+}
+
+func (g *Guard) RequireSignInPrefix(path string) {
+	g.ProtectPrefix(path, g.isSignedIn)
 }
 
 func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
@@ -71,14 +78,18 @@ func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		// otherwise we look for the longest matching prefix guard
 		//
 		// This way we guarantee that only the best matching guard will be run
-		if isAuthorised, ok := g.exact[r.URL.Path]; ok {
+		if checkAuthorised, ok := g.exact[r.URL.Path]; ok {
 			ctx := r.Context()
 
 			passport := g.svc.Passport(ctx)
-			if !isAuthorised(passport) {
-				g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+			if err := checkAuthorised(passport); err != nil {
+				if errors.Is(err, ErrRedirect) {
+					g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
-				http.Redirect(w, r, g.redirect(), http.StatusSeeOther)
+					http.Redirect(w, r, g.redirect(), http.StatusSeeOther)
+				} else {
+					g.svc.ErrorView(w, r, errors.Tracef(err), "error", nil)
+				}
 
 				return
 			}
@@ -91,10 +102,14 @@ func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
 				ctx := r.Context()
 
 				passport := g.svc.Passport(ctx)
-				if !guard.isAuthorised(passport) {
-					g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+				if err := guard.checkAuthorised(passport); err != nil {
+					if errors.Is(err, ErrRedirect) {
+						g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
-					http.Redirect(w, r, g.redirect(), http.StatusSeeOther)
+						http.Redirect(w, r, g.redirect(), http.StatusSeeOther)
+					} else {
+						g.svc.ErrorView(w, r, errors.Tracef(err), "error", nil)
+					}
 
 					return
 				}

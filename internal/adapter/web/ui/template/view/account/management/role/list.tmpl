@@ -1,4 +1,4 @@
-{{define "view"}}
+{{define "view_head"}}
 
 <h1>Role management</h1>
 
@@ -7,16 +7,27 @@
 	<button>Search</button>
 </form>
 
+{{end}}
+
+{{define "view_body"}}
+
 <table class="management">
 	<tr>
 		<th>Name</th>
-		<th class="text-right"><a href="{{Path "account.management.role.new"}}{{$.URL.Query.String}}">New</a></th>
+		<th class="text-right">
+			{{if .Passport.CanCreateRoles}}
+				<a href="{{Path "account.management.role.new"}}{{$.URL.Query.String}}">Create role</a>
+			{{end}}
+		</th>
 	</tr>
 
 	{{range .Vars.Roles.Page.Rows}}
-		<tr>
+		<tr{{if eq .ID $.Vars.HighlightID}} class="management__highlight"{{end}}>
 			<td>{{.Name}}</td>
-			<td class="text-right"><a href="{{Path "account.management.role.edit" ":roleID" .ID}}{{$.URL.Query.String}}">Edit</a></td>
+			<td class="text-right">
+				<a href="{{Path "account.management.role.delete" ":roleID" .ID}}{{$.URL.Query.String}}">Delete</a>
+				<a href="{{Path "account.management.role.edit" ":roleID" .ID}}{{$.URL.Query.String}}">Edit</a>
+			</td>
 		</tr>
 	{{else}}
 		<tr class="management__empty">

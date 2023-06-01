@@ -10,7 +10,7 @@ import (
 func Dashboard(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
 	mux.Get("/", dashboardGet(svc), "account.dashboard")
 
-	guard.Protect(svc.Path("account.dashboard"))
+	guard.RequireSignIn(mux.Path("account.dashboard"))
 }
 
 func dashboardGet(svc *handler.Services) http.HandlerFunc {

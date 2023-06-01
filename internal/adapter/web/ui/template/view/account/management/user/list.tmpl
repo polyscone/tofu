@@ -1,4 +1,4 @@
-{{define "view"}}
+{{define "view_head"}}
 
 <h1>User management</h1>
 
@@ -6,6 +6,10 @@
 	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="Search" class="grow">
 	<button>Search</button>
 </form>
+
+{{end}}
+
+{{define "view_body"}}
 
 <table class="management">
 	<tr>
@@ -15,7 +19,7 @@
 	</tr>
 
 	{{range .Vars.Users.Page.Rows}}
-		<tr>
+		<tr{{if eq .ID $.Vars.HighlightID}} class="management__highlight"{{end}}>
 			<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
 			<td>
 				{{if not .LastSignedInAt.IsZero}}

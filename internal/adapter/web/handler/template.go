@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
@@ -90,6 +91,7 @@ type ViewData struct {
 	URL          URL
 	App          AppData
 	Session      SessionData
+	Passport     passport.Passport
 	Com          any
 	Vars         Vars
 }

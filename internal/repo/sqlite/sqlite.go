@@ -303,6 +303,14 @@ func whereSQL(where []string) string {
 	return "WHERE " + strings.Join(where, " AND ")
 }
 
+func orderBySQL(sorts []string) string {
+	if len(sorts) == 0 {
+		return ""
+	}
+
+	return "ORDER BY " + strings.Join(sorts, ", ")
+}
+
 func pageLimitOffset(page, size int) (int, int) {
 	limit := size
 	offset := (page - 1) * size

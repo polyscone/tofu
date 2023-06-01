@@ -24,9 +24,7 @@ import (
 
 func TOTP(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
 	mux.Prefix("/totp", func(mux *router.ServeMux) {
-		mux.Name("account.totp.section")
-
-		guard.ProtectPrefix(mux.Path("account.totp.section"))
+		guard.RequireSignInPrefix(mux.CurrentPath())
 
 		mux.Prefix("/setup", func(mux *router.ServeMux) {
 			mux.Get("/", totpSetupGet(svc), "account.totp.setup")

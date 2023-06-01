@@ -271,6 +271,8 @@ func (svc *Services) view(name string) *template.Template {
 func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int, name string, dataFunc ViewDataFunc) {
 	ctx := r.Context()
 
+	passport := svc.Passport(ctx)
+
 	data := ViewData{
 		View:   name,
 		Status: status,
@@ -304,6 +306,7 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 			IsSignedIn:               svc.Sessions.GetBool(ctx, sess.IsSignedIn),
 			PasswordKnownBreachCount: svc.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount),
 		},
+		Passport: passport,
 	}
 
 	if vars, ok := svc.viewVarsFuncs[name]; ok {
@@ -358,34 +361,38 @@ func (svc *Services) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err e
 	svc.ViewFunc(w, r, status, name, func(data *ViewData) {
 		switch {
 		case errors.Is(err, httputil.ErrNotFound):
-			data.ErrorMessage = "the page you were looking for could not be found"
+			data.ErrorMessage = "The page you were looking for could not be found."
 
 		case errors.Is(err, httputil.ErrMethodNotAllowed):
-			data.ErrorMessage = "method not allowed"
+			data.ErrorMessage = "Method not allowed."
 
 		case errors.Is(err, http.ErrHandlerTimeout):
-			data.ErrorMessage = "the server took too long to respond"
+			data.ErrorMessage = "The server took too long to respond."
+
+		case errors.Is(err, app.ErrUnauthorised):
+			data.ErrorMessage = "You do not have sufficient permissions."
 
 		case errors.Is(err, app.ErrMalformedInput),
-			errors.Is(err, app.ErrInvalidInput):
+			errors.Is(err, app.ErrInvalidInput),
+			errors.Is(err, app.ErrConflictingInput):
 
-			data.ErrorMessage = "invalid input"
+			data.ErrorMessage = "Invalid input."
 
 			if trace, ok := err.(errors.Trace); ok {
 				data.Errors = trace.Fields()
 			}
 
 		case errors.Is(err, csrf.ErrEmptyToken):
-			data.ErrorMessage = "empty CSRF token"
+			data.ErrorMessage = "Empty CSRF token."
 
 		case errors.Is(err, csrf.ErrInvalidToken):
-			data.ErrorMessage = "invalid CSRF token"
+			data.ErrorMessage = "Invalid CSRF token."
 
 		case errors.Is(err, rate.ErrInsufficientTokens):
-			data.ErrorMessage = "you have made too many consecutive requests"
+			data.ErrorMessage = "You have made too many consecutive requests."
 
 		default:
-			data.ErrorMessage = "an error has occurred"
+			data.ErrorMessage = "An error has occurred."
 		}
 
 		if dataFunc != nil {

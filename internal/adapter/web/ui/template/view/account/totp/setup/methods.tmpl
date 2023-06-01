@@ -1,8 +1,14 @@
-{{define "view"}}
+{{define "view_head"}}
 
 <div class="center">
 	<h1>Setup two-factor authentication</h1>
+</div>
 
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
 	<p>Two-factor authentication adds an additional layer of security to your account by requiring more than just your password to log in.</p>
 
 	{{if .App.HasSMS}}

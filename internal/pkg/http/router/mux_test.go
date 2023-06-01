@@ -18,15 +18,15 @@ func TestMux(t *testing.T) {
 		w.Write([]byte(r.URL.Path))
 	}
 
-	mux.Options("/", emptyHandler)
-	mux.Connect("/", emptyHandler)
-	mux.Trace("/", emptyHandler)
-	mux.Head("/", emptyHandler)
-	mux.Get("/", emptyHandler)
-	mux.Post("/", emptyHandler)
-	mux.Put("/", emptyHandler)
-	mux.Patch("/", emptyHandler)
-	mux.Delete("/", emptyHandler)
+	mux.Options("/", echoHandler)
+	mux.Connect("/", echoHandler)
+	mux.Trace("/", echoHandler)
+	mux.Head("/", echoHandler)
+	mux.Get("/", echoHandler)
+	mux.Post("/", echoHandler)
+	mux.Put("/", echoHandler)
+	mux.Patch("/", echoHandler)
+	mux.Delete("/", echoHandler)
 
 	mux.Prefix("/route", func(mux *router.ServeMux) {
 		mux.Prefix("/test", func(mux *router.ServeMux) {
@@ -45,6 +45,12 @@ func TestMux(t *testing.T) {
 	mux.Prefix("/get", func(mux *router.ServeMux) {
 		mux.Prefix("/only", func(mux *router.ServeMux) {
 			mux.Get("/", emptyHandler)
+
+			current := mux.CurrentPath()
+
+			mux.Get("/current", func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte(current))
+			})
 		})
 	})
 
@@ -91,7 +97,23 @@ func TestMux(t *testing.T) {
 		}
 	})
 
-	mux.Get("/cat/:first/dog/:rest", func(w http.ResponseWriter, r *http.Request) {
+	mux.Prefix("/overlap-prefix", func(mux *router.ServeMux) {
+		mux.Prefix("/:foo", func(mux *router.ServeMux) {
+			mux.Get("/", echoHandler)
+
+			mux.Prefix("/overlap-suffix", func(mux *router.ServeMux) {
+				mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte(router.URLParam(r, "foo")))
+				})
+			})
+		})
+	})
+
+	mux.Get("/lazy/:first/rest/:rest", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(router.URLParam(r, "first") + "/" + router.URLParam(r, "rest")))
+	})
+
+	mux.Get("/greedy/:first/rest/:rest*", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(router.URLParam(r, "first") + "/" + router.URLParam(r, "rest")))
 	})
 
@@ -136,15 +158,15 @@ func TestMux(t *testing.T) {
 		wantBody   string
 		wantStatus int
 	}{
-		{"options method ok", http.MethodOptions, "/", "", http.StatusOK},
-		{"connect method ok", http.MethodConnect, "/", "", http.StatusOK},
-		{"trace method ok", http.MethodTrace, "/", "", http.StatusOK},
+		{"options method ok", http.MethodOptions, "/", "/", http.StatusOK},
+		{"connect method ok", http.MethodConnect, "/", "/", http.StatusOK},
+		{"trace method ok", http.MethodTrace, "/", "/", http.StatusOK},
 		{"head method ok", http.MethodHead, "/", "", http.StatusOK},
-		{"get method ok", http.MethodGet, "/", "", http.StatusOK},
-		{"post method ok", http.MethodPost, "/", "", http.StatusOK},
-		{"put method ok", http.MethodPut, "/", "", http.StatusOK},
-		{"patch method ok", http.MethodPatch, "/", "", http.StatusOK},
-		{"delete method ok", http.MethodDelete, "/", "", http.StatusOK},
+		{"get method ok", http.MethodGet, "/", "/", http.StatusOK},
+		{"post method ok", http.MethodPost, "/", "/", http.StatusOK},
+		{"put method ok", http.MethodPut, "/", "/", http.StatusOK},
+		{"patch method ok", http.MethodPatch, "/", "/", http.StatusOK},
+		{"delete method ok", http.MethodDelete, "/", "/", http.StatusOK},
 
 		{"options method ok", http.MethodOptions, "/route/test", "", http.StatusOK},
 		{"connect method ok", http.MethodConnect, "/route/test", "", http.StatusOK},
@@ -193,9 +215,13 @@ func TestMux(t *testing.T) {
 		{"dynamic url param teapot", http.MethodGet, "/url/param/teapot/qux", "", http.StatusTeapot},
 		{"dynamic url param gone", http.MethodGet, "/url/param/gone/qux", "", http.StatusGone},
 		{"dynamic url bad request", http.MethodGet, "/url/param/foo/qux", "", http.StatusBadRequest},
-		{"dynamic url with rest", http.MethodGet, "/cat/foo/dog/baz/qux", "foo/baz/qux", http.StatusOK},
-		{"dynamic url with empty rest", http.MethodGet, "/cat/foo/dog/", "foo/", http.StatusOK},
-		{"dynamic url with rest no match", http.MethodGet, "/cat/foo/bar/dog/baz/qux", "", http.StatusNotFound},
+		{"dynamic url with lazy rest", http.MethodGet, "/lazy/foo/rest/baz", "foo/baz", http.StatusOK},
+		{"dynamic url with empty lazy rest", http.MethodGet, "/lazy/foo/rest/", "foo/", http.StatusOK},
+		{"dynamic url with lazy rest no match", http.MethodGet, "/lazy/foo/rest/baz/qux", "", http.StatusNotFound},
+		{"dynamic url with greedy rest", http.MethodGet, "/greedy/foo/rest/baz/qux", "foo/baz/qux", http.StatusOK},
+		{"dynamic url with empty greedy rest", http.MethodGet, "/greedy/foo/rest/", "foo/", http.StatusOK},
+		{"dynamic url with greedy rest no match", http.MethodGet, "/greedy/foo/bar/rest/baz/qux", "", http.StatusNotFound},
+		{"dynamic url overlap", http.MethodGet, "/overlap-prefix/bar/overlap-suffix", "bar", http.StatusOK},
 
 		{"route string param replacement", http.MethodGet, route.Replace(":b", "123", ":d", "456"), "/a/123/c/456", http.StatusOK},
 		{"mux object route string param replacement", http.MethodGet, mux.Route("foo.bar").Replace(":b", "x", ":d", "y"), "/a/x/c/y", http.StatusOK},
@@ -204,6 +230,7 @@ func TestMux(t *testing.T) {
 		{"mux object path simple", http.MethodGet, mux.Path("simple"), "/aa/bb/cc/dd", http.StatusOK},
 		{"mux object path complex", http.MethodGet, mux.Path("complex", ":bb", "xx", ":dd", "yy"), "/aa/xx/cc/yy", http.StatusOK},
 		{"mux object path named prefix", http.MethodGet, mux.Path("named"), "named", http.StatusOK},
+		{"mux object current path", http.MethodGet, "/get/only/current", "/get/only", http.StatusOK},
 
 		{"redirect get method ok", http.MethodGet, "/redirect/src", "redirected", http.StatusOK},
 		{"redirect with dynamic param", http.MethodGet, "/redirect/redirect/src/var", "redirected", http.StatusOK},

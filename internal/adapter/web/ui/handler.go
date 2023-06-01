@@ -126,14 +126,14 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 
 	// Admin
 	mux.Prefix("/admin", func(mux *router.ServeMux) {
-		mux.Name("admin.section")
+		guard.RequireSignInPrefix(mux.CurrentPath())
 
-		guard.ProtectPrefix(mux.Path("admin.section"))
+		mux.Name("admin.section")
 
 		admin.Dashboard(svc, mux)
 
 		mux.Prefix("/account", func(mux *router.ServeMux) {
-			account.RoleManagement(svc, mux)
+			account.RoleManagement(svc, mux, guard)
 			account.UserManagement(svc, mux)
 		})
 	})
@@ -141,7 +141,7 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	// Public static file handler
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)
-	mux.GetHandler("/:rest", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.GetHandler("/:rest*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		upath := r.URL.Path
 		if !strings.HasPrefix(upath, "/") {
 			upath = "/" + upath

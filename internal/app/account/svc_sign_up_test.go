@@ -22,7 +22,7 @@ func TestSignUp(t *testing.T) {
 		defer events.Check(t)
 
 		execute := func(email text.Email, password, passwordCheck account.Password) error {
-			err := svc.SignUp(ctx, email.String(), password.String(), passwordCheck.String())
+			_, err := svc.SignUp(ctx, email.String(), password.String(), passwordCheck.String())
 			if err == nil {
 				events.Expect(account.SignedUp{Email: email.String()})
 			}

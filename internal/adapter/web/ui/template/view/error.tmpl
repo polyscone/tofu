@@ -1,7 +1,11 @@
-{{define "view"}}
+{{define "view_head"}}
 
 <h2>{{StatusText .Status}}</h2>
 
-<p class="error-message">{{.ErrorMessage}}.</p>
+{{end}}
+
+{{define "view_body"}}
+
+<p class="error-message">{{.ErrorMessage}}</p>
 
 {{end}}

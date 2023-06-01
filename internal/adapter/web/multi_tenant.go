@@ -66,7 +66,7 @@ func (h *MultiTenantHandler) handler(r *http.Request) (http.Handler, error) {
 
 	mux := router.NewServeMux()
 
-	mux.AnyHandler("/:rest", ui.NewHandler(tenant))
+	mux.AnyHandler("/:rest*", ui.NewHandler(tenant))
 
 	h.handlers[hostname] = mux
 

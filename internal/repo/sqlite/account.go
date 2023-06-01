@@ -125,7 +125,7 @@ func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID int) ([]*acc
 	return roles, errors.Tracef(err)
 }
 
-func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, search string, page, size int) ([]*account.Role, int, error) {
+func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.Role, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, errors.Tracef(err)
@@ -134,9 +134,10 @@ func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, search string, 
 
 	limit, offset := pageLimitOffset(page, size)
 	users, total, err := r.findRoles(ctx, tx, account.RoleFilter{
-		Search: &search,
-		Limit:  limit,
-		Offset: offset,
+		Search:    &search,
+		SortTopID: sortTopID,
+		Limit:     limit,
+		Offset:    offset,
 	})
 
 	return users, total, errors.Tracef(err)
@@ -353,6 +354,11 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 		where, args = append(where, "r.name LIKE ?"), append(args, "%"+*v+"%")
 	}
 
+	var sorts []string
+	if filter.SortTopID != 0 {
+		sorts, args = append(sorts, "CASE r.id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
+	}
+
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
 			id,
@@ -361,6 +367,7 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 		FROM account__roles AS r
 		`+strings.Join(joins, "\n")+`
 		`+whereSQL(where)+`
+		`+orderBySQL(sorts)+`
 		`+limitOffsetSQL(filter.Limit, filter.Offset),
 		args...,
 	)

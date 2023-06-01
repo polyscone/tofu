@@ -1,8 +1,14 @@
-{{define "view"}}
+{{define "view_head"}}
 
 <div class="center">
 	<h1>Editing {{.Vars.User.Email}}</h1>
+</div>
 
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
 	<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 

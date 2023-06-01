@@ -29,9 +29,11 @@
 				</div>
 			{{end}}
 
+			{{block "view_head" .}}{{end}}
+
 			{{if and .ErrorMessage (ne .View "error")}}
 				<div class="error-banner center">
-					<p>Error: {{.ErrorMessage}}</p>
+					<p>{{.ErrorMessage}}</p>
 				</div>
 			{{end}}
 
@@ -41,7 +43,7 @@
 				</div>
 			{{end}}
 
-			{{template "view" .}}
+			{{block "view_body" .}}{{end}}
 		</main>
 
 		{{template "footer" .}}

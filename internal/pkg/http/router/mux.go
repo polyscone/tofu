@@ -193,6 +193,10 @@ func (mux *ServeMux) Prefix(prefix string, routeGroup func(mux *ServeMux)) {
 	mux.prefix = originalPrefix
 }
 
+func (mux *ServeMux) CurrentPath() string {
+	return mux.prefix
+}
+
 func (mux *ServeMux) Name(name string) {
 	route := &Route{path: mux.prefix}
 
@@ -249,13 +253,21 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 	method = strings.ToUpper(method)
 	path = mux.prefix + path
 	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
-	pattern := regexp.QuoteMeta(path)
 
-	if pattern == "" {
+	if path == "" {
 		panic("route must not be empty")
 	}
 
-	pattern = reLastParam.ReplaceAllString(pattern, `(?P<$1>.*?)`)
+	var restGroup string
+	if rest := reLastParam.FindString(path); strings.HasSuffix(rest, "*") {
+		path = strings.TrimSuffix(path, "*")
+		restGroup = `(?P<$1>.*?)`
+	} else {
+		restGroup = `(?P<$1>[^/]*?)`
+	}
+
+	pattern := regexp.QuoteMeta(path)
+	pattern = reLastParam.ReplaceAllString(pattern, restGroup)
 	pattern = reParams.ReplaceAllString(pattern, `(?P<$1>[^/]+?)`)
 	pattern = "^" + pattern + "$"
 

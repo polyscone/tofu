@@ -1,9 +1,19 @@
-{{define "view"}}
+{{define "view_head"}}
 
 <div class="center">
 	{{if .Vars.ShowRecoveryCodes}}
 		<h1>Your new recovery codes</h1>
+	{{else}}
+		<h1>Generate new recovery codes</h1>
+	{{end}}
+</div>
 
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
+	{{if .Vars.ShowRecoveryCodes}}
 		<div class="warning-banner">
 			<p>Your previous recovery codes are no longer valid.</p>
 			<p>Please download, print, copy, or photograph your new recovery codes and store them in a safe place separate from your authentication device.</p>
@@ -17,8 +27,6 @@
 
 		{{template "com_recovery_codes" .ComData .Vars.RecoveryCodes}}
 	{{else}}
-		<h1>Generate new recovery codes</h1>
-
 		{{if eq (len .Vars.RecoveryCodes) 1}}
 			<p>You have {{len .Vars.RecoveryCodes}} recovery code remaining.</p>
 		{{else}}

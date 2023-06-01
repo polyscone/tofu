@@ -6,9 +6,10 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
+	"github.com/polyscone/tofu/internal/repo"
 )
 
-func (s *Service) SignUp(ctx context.Context, email, password, passwordCheck string) error {
+func (s *Service) SignUp(ctx context.Context, email, password, passwordCheck string) (*User, error) {
 	var input struct {
 		email         text.Email
 		password      Password
@@ -30,21 +31,27 @@ func (s *Service) SignUp(ctx context.Context, email, password, passwordCheck str
 		}
 
 		if errs != nil {
-			return errs.Tracef(app.ErrMalformedInput)
+			return nil, errs.Tracef(app.ErrMalformedInput)
 		}
 	}
 
 	user := NewUser(input.email)
 
 	if err := user.SignUpWithPassword(input.password, s.hasher); err != nil {
-		return errors.Tracef(err)
+		return nil, errors.Tracef(err)
 	}
 
 	if err := s.repo.AddUser(ctx, user); err != nil {
-		return errors.Tracef(err)
+		if errors.Is(err, repo.ErrConflict) {
+			errs := errors.Map{"email": errors.New("already in use")}
+
+			return nil, errs.Tracef(app.ErrConflictingInput)
+		}
+
+		return nil, errors.Tracef(err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return user, nil
 }

@@ -1,4 +1,4 @@
-{{define "view"}}
+{{define "view_head"}}
 
 <div class="center">
 	{{if .Vars.NewPasswordKnownBreachCount}}
@@ -6,7 +6,13 @@
 	{{else}}
 		<h1>Change password</h1>
 	{{end}}
+</div>
 
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
 	{{if .Vars.NewPasswordKnownBreachCount}}
 		<div class="warning-banner">
 			<p>

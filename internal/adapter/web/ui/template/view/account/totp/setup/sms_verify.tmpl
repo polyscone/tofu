@@ -1,8 +1,14 @@
-{{define "view"}}
+{{define "view_head"}}
 
 <div class="center">
 	<h1>Setup using SMS</h1>
+</div>
 
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
 	<p>Enter the 6 digit passcode you received via SMS to verify that your phone number is setup correctly.</p>
 
 	<p><a href="{{Path "account.totp.setup.app"}}">Don't want to use SMS? Click here to use an app.</a></p>

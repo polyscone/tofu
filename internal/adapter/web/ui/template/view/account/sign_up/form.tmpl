@@ -1,8 +1,14 @@
-{{define "view"}}
+{{define "view_head"}}
 
 <div class="center">
 	<h1>Sign up</h1>
+</div>
 
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
 	{{if .Vars.IsEmailInUse}}
 		<div class="error-banner">
 			<p>This email address is already in use. Do you <a href="{{Path "account.sign_in"}}">already have an account</a>?</p>

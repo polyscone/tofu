@@ -6,9 +6,9 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/repo"
 )
 
 func SignUp(svc *handler.Services, mux *router.ServeMux) {
@@ -50,16 +50,12 @@ func signUpPost(svc *handler.Services) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		err = svc.Account.SignUp(ctx, input.Email, input.Password, input.PasswordCheck)
-		switch {
-		case errors.Is(err, repo.ErrConflict):
-			svc.View(w, r, http.StatusConflict, "account/sign_up/form", handler.Vars{
-				"IsEmailInUse": true,
+		_, err = svc.Account.SignUp(ctx, input.Email, input.Password, input.PasswordCheck)
+		if err != nil {
+			svc.ErrorView(w, r, errors.Tracef(err), "account/sign_up/form", handler.Vars{
+				"IsEmailInUse": errors.Is(err, app.ErrConflictingInput),
 			})
 
-			return
-
-		case svc.ErrorView(w, r, errors.Tracef(err), "error", nil):
 			return
 		}
 

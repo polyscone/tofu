@@ -1,8 +1,14 @@
-{{define "view"}}
+{{define "view_head"}}
 
 <div class="center">
 	<h1>Two-factor authentication already disabled</h1>
+</div>
 
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
 	<p>Two-factor authentication is already disabled for your account.</p>
 	<p><a href="{{Path "account.totp.setup"}}">Setup two-factor authentication.</a></p>
 </div>

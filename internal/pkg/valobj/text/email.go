@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
-const supportedEmailPattern = "" +
+const validEmailPattern = "" +
 	// Local part
 	`[\w+-](\.?[\w+-]|[\w+-]){0,60}` +
 	// Separator
@@ -21,8 +21,8 @@ const supportedEmailPattern = "" +
 	`\.[A-Za-z]{2,6}(\.[A-Za-z]{2,6})?`
 
 var (
-	supportedEmail = errors.Must(regexp.Compile(supportedEmailPattern))
-	emailGenerator = errors.Must(gen.NewPatternGenerator(supportedEmailPattern))
+	validEmail     = errors.Must(regexp.Compile(validEmailPattern))
+	emailGenerator = errors.Must(gen.NewPatternGenerator(validEmailPattern))
 )
 
 type Email string
@@ -59,13 +59,13 @@ func NewEmail(email string) (Email, error) {
 		return "", errors.Tracef("should not include a name")
 	}
 
-	if !supportedEmail.MatchString(addr.Address) {
+	if !validEmail.MatchString(addr.Address) {
 		_, end, _ := strings.Cut(addr.Address, "@")
 		if !strings.Contains(end, ".") {
 			return "", errors.Tracef("missing top-level domain")
 		}
 
-		return "", errors.Tracef("contains unsupported characters")
+		return "", errors.Tracef("contains invalid characters")
 	}
 
 	return Email(addr.Address), nil

@@ -30,8 +30,14 @@
 	--clr-warning-100: hsl(45 100% 95%);
 	--clr-warning-400: hsl(40 100% 50%);
 
+	--clr-danger-100: hsl(0 78% 95%);
+	--clr-danger-400: hsl(0 78% 45%);
+
 	--clr-error-100: hsl(0 100% 95%);
 	--clr-error-400: hsl(0 100% 50%);
+
+	--clr-highlight-100: hsl(43 100% 90%);
+	--clr-highlight-400: hsl(43 100% 85%);
 
 	--icon-external-link: url(
 		'data:image/svg+xml,\
@@ -266,13 +272,14 @@
 	}
 
 	.flash-banner {
+		background: var(--clr-accent-100);
 		border: 1px solid var(--clr-accent-400);
 		text-align: center;
 	}
 
 	.flash-banner--important {
-		border-color: red;
-		border-width: 2px;
+		background: var(--clr-danger-100);
+		border-color: var(--clr-danger-400);
 	}
 
 	.warning-banner {
@@ -291,8 +298,6 @@
 
 	.error-banner::first-letter,
 	.error-banner *::first-letter,
-	.error-message::first-letter,
-	.error-message *::first-letter,
 	.error::first-letter,
 	.error *::first-letter {
 		text-transform: capitalize;
@@ -341,6 +346,14 @@
 		font-weight: bold;
 	}
 
+	.management .management__highlight td {
+		background: var(--clr-highlight-100);
+	}
+
+	.management .management__highlight:hover td {
+		background: var(--clr-highlight-400);
+	}
+
 	.pagination {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
@@ -372,6 +385,10 @@
 		outline: 1px solid var(--clr-accent-400);
 	}
 
+	.btn--danger {
+		background: var(--clr-danger-400);
+	}
+
 	.btn--link {
 		display: inline;
 		padding: 0;
@@ -379,6 +396,10 @@
 		color: linktext;
 		cursor: pointer;
 		text-decoration: underline;
+	}
+
+	.btn--link.btn--danger {
+		color: var(--clr-danger-400);
 	}
 
 	.totp__methods {
@@ -389,9 +410,7 @@
 
 	.totp__qrcode {
 		font-family: monospace;
-	}
-
-	.totp__qrcode {
+		font-size: 1.2rem;
 		text-align: center;
 	}
 

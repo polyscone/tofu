@@ -9,11 +9,11 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
-const supportedTelephonePattern = `\+\d(\d| )+`
+const validTelephonePattern = `\+\d(\d| )+`
 
 var (
-	supportedTelephone = errors.Must(regexp.Compile(supportedTelephonePattern))
-	telephoneGenerator = errors.Must(gen.NewPatternGenerator(supportedTelephonePattern))
+	validTelephone     = errors.Must(regexp.Compile(validTelephonePattern))
+	telephoneGenerator = errors.Must(gen.NewPatternGenerator(validTelephonePattern))
 )
 
 type Telephone string
@@ -27,8 +27,8 @@ func NewTelephone(telephone string) (Telephone, error) {
 		return "", errors.Tracef("cannot be empty")
 	}
 
-	if !supportedTelephone.MatchString(telephone) {
-		return "", errors.Tracef("not a valid telephone number")
+	if !validTelephone.MatchString(telephone) {
+		return "", errors.Tracef("invalid telephone number")
 	}
 
 	return Telephone(telephone), nil

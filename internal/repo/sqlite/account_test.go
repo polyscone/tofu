@@ -14,5 +14,7 @@ func TestAccount(t *testing.T) {
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	repo := errors.Must(sqlite.NewAccountRepo(ctx, db))
 
-	repotest.Account(ctx, t, repo)
+	t.Run("sqlite", func(t *testing.T) {
+		repotest.Account(ctx, t, repo)
+	})
 }

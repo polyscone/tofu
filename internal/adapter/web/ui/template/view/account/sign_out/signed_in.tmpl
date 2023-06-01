@@ -1,8 +1,14 @@
-{{define "view"}}
+{{define "view_head"}}
 
 <div class="center">
 	<h1>Sign out</h1>
+</div>
 
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
 	<p>You are already signed in.</p>
 
 	<form action="{{Path "account.sign_out.post"}}" method="POST">
