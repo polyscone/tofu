@@ -29,7 +29,7 @@ func init() {
 		ConnectHook: func(conn *sqlite3.SQLiteConn) error {
 			_, err := conn.Exec(`
 				PRAGMA encoding = 'UTF-8';
-				PRAGMA busy_timeout = 10000;
+				PRAGMA busy_timeout = 30000;
 				PRAGMA temp_store = MEMORY;
 				PRAGMA cache_size = 50000;
 				PRAGMA journal_mode = WAL;
@@ -446,6 +446,54 @@ func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	}
 
 	return &Tx{Tx: tx, now: time.Now().UTC()}, nil
+}
+
+// BeginImmediateTx starts an immediate transaction with "BEGIN IMMEDIATE".
+//
+// This is a workaround for Go's sql package not providing a way to set
+// the transaction type per connection.
+//
+// References:
+// - https://github.com/golang/go/issues/19981
+// - https://github.com/mattn/go-sqlite3/issues/400
+func (db *DB) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
+	tx, err := db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	// The returned transaction is a connection from a connection pool, so we
+	// can rollback the (by default) "DEFERRED" transaction and start a new
+	// "IMMEDIATE" one
+	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN IMMEDIATE"); err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return tx, nil
+}
+
+// BeginExclusiveTx starts an exclusive transaction with "BEGIN EXCLUSIVE".
+//
+// This is a workaround for Go's sql package not providing a way to set
+// the transaction type per connection.
+//
+// References:
+// - https://github.com/golang/go/issues/19981
+// - https://github.com/mattn/go-sqlite3/issues/400
+func (db *DB) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
+	tx, err := db.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	// The returned transaction is a connection from a connection pool, so we
+	// can rollback the (by default) "DEFERRED" transaction and start a new
+	// "EXCLUSIVE" one
+	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN EXCLUSIVE"); err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return tx, nil
 }
 
 func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
