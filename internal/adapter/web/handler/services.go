@@ -306,7 +306,7 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 			IsSignedIn:               svc.Sessions.GetBool(ctx, sess.IsSignedIn),
 			PasswordKnownBreachCount: svc.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount),
 		},
-		Passport: passport,
+		Guard: passport,
 	}
 
 	if vars, ok := svc.viewVarsFuncs[name]; ok {

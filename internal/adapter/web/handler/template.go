@@ -91,7 +91,7 @@ type ViewData struct {
 	URL          URL
 	App          AppData
 	Session      SessionData
-	Passport     passport.Passport
+	Guard        passport.Passport
 	Com          any
 	Vars         Vars
 }
