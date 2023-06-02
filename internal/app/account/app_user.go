@@ -11,27 +11,30 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
+const SignInMethodWebsite = "Website"
+
 var ErrNotActivated = errors.New("account is not activated")
 
 type User struct {
 	aggregate.Root
 
-	ID              int
-	Email           string
-	HashedPassword  []byte
-	TOTPMethod      string
-	TOTPTelephone   string
-	TOTPKey         []byte
-	TOTPAlgorithm   string
-	TOTPDigits      int
-	TOTPPeriod      time.Duration
-	TOTPVerifiedAt  time.Time
-	TOTPActivatedAt time.Time
-	SignedUpAt      time.Time
-	ActivatedAt     time.Time
-	LastSignedInAt  time.Time
-	Roles           []*Role
-	RecoveryCodes   []*RecoveryCode
+	ID                 int
+	Email              string
+	HashedPassword     []byte
+	TOTPMethod         string
+	TOTPTelephone      string
+	TOTPKey            []byte
+	TOTPAlgorithm      string
+	TOTPDigits         int
+	TOTPPeriod         time.Duration
+	TOTPVerifiedAt     time.Time
+	TOTPActivatedAt    time.Time
+	SignedUpAt         time.Time
+	ActivatedAt        time.Time
+	LastSignedInAt     time.Time
+	LastSignedInMethod string
+	Roles              []*Role
+	RecoveryCodes      []*RecoveryCode
 }
 
 type UserFilter struct {
@@ -367,6 +370,7 @@ func (u *User) SignInWithPassword(password Password, hasher password.Hasher) (bo
 
 	if !u.HasActivatedTOTP() {
 		u.LastSignedInAt = time.Now().UTC()
+		u.LastSignedInMethod = SignInMethodWebsite
 	}
 
 	u.Events.Enqueue(SignedInWithPassword{

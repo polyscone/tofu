@@ -42,6 +42,9 @@ func TestSignInWithPassword(t *testing.T) {
 		if activated.LastSignedInAt.IsZero() {
 			t.Error("want last signed in at to be populated; got zero")
 		}
+		if want, got := account.SignInMethodWebsite, activated.LastSignedInMethod; want != got {
+			t.Errorf("want last signed in method to be %q; got %q", want, got)
+		}
 	})
 
 	t.Run("failure cases", func(t *testing.T) {

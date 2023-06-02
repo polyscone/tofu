@@ -1,8 +1,6 @@
 package account
 
-import (
-	"github.com/polyscone/tofu/internal/pkg/errors"
-)
+import "github.com/polyscone/tofu/internal/pkg/errors"
 
 const (
 	TOTPMethodNone TOTPMethod = ""

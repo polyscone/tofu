@@ -1,20 +1,21 @@
 CREATE TABLE account__users (
-  id                INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-  email             TEXT NOT NULL UNIQUE COLLATE NOCASE,
-  hashed_password   TEXT,
-  totp_method       TEXT NOT NULL,
-  totp_telephone    TEXT NOT NULL,
-  totp_key          TEXT,
-  totp_algorithm    TEXT NOT NULL,
-  totp_digits       INTEGER NOT NULL,
-  totp_period_ns    INTEGER NOT NULL,
-  totp_verified_at  DATETIME,
-  totp_activated_at DATETIME,
-  signed_up_at      DATETIME NOT NULL,
-  activated_at      DATETIME,
-  last_signed_in_at DATETIME,
-  created_at        DATETIME NOT NULL,
-  updated_at        DATETIME
+  id                    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  email                 TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  hashed_password       TEXT,
+  totp_method           TEXT NOT NULL,
+  totp_telephone        TEXT NOT NULL,
+  totp_key              TEXT,
+  totp_algorithm        TEXT NOT NULL,
+  totp_digits           INTEGER NOT NULL,
+  totp_period_ns        INTEGER NOT NULL,
+  totp_verified_at      DATETIME,
+  totp_activated_at     DATETIME,
+  signed_up_at          DATETIME NOT NULL,
+  activated_at          DATETIME,
+  last_signed_in_at     DATETIME,
+  last_signed_in_method TEXT NOT NULL,
+  created_at            DATETIME NOT NULL,
+  updated_at            DATETIME
 );
 CREATE INDEX idx_account__users_email ON account__users (email);
 

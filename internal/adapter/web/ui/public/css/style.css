@@ -124,8 +124,8 @@
 	}
 
 	:focus-visible:is(input, textarea) {
+		outline-width: 1px;
 		outline-style: solid;
-		outline-width: 0.1rem;
 		outline-color: transparent;
 	}
 

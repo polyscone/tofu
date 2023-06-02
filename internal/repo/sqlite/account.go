@@ -241,6 +241,7 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			signed_up_at,
 			activated_at,
 			last_signed_in_at,
+			last_signed_in_method,
 			COUNT(1) OVER () AS total
 		FROM account__users
 		`+whereSQL(where)+`
@@ -272,6 +273,7 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			(*Time)(&user.SignedUpAt),
 			(*NullTime)(&user.ActivatedAt),
 			(*NullTime)(&user.LastSignedInAt),
+			&user.LastSignedInMethod,
 			&total,
 		)
 		if err != nil {
@@ -536,6 +538,7 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) e
 			signed_up_at,
 			activated_at,
 			last_signed_in_at,
+			last_signed_in_method,
 			created_at
 		) VALUES (
 			:email,
@@ -551,6 +554,7 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) e
 			:signed_up_at,
 			:activated_at,
 			:last_signed_in_at,
+			:last_signed_in_method,
 			:created_at
 		)
 	`,
@@ -567,6 +571,7 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) e
 		sql.Named("signed_up_at", Time(user.SignedUpAt)),
 		sql.Named("activated_at", NullTime(user.ActivatedAt)),
 		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
+		sql.Named("last_signed_in_method", user.LastSignedInMethod),
 		sql.Named("created_at", Time(tx.now.UTC())),
 	)
 	if err != nil {
@@ -623,6 +628,7 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, user *account.User) 
 			signed_up_at = :signed_up_at,
 			activated_at = :activated_at,
 			last_signed_in_at = :last_signed_in_at,
+			last_signed_in_method = :last_signed_in_method,
 			updated_at = :updated_at
 		WHERE id = :id
 	`,
@@ -640,6 +646,7 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, user *account.User) 
 		sql.Named("signed_up_at", Time(user.SignedUpAt)),
 		sql.Named("activated_at", NullTime(user.ActivatedAt)),
 		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
+		sql.Named("last_signed_in_method", user.LastSignedInMethod),
 		sql.Named("updated_at", Time(tx.now.UTC())),
 	)
 	if err != nil {

@@ -24,6 +24,7 @@
 			<td>
 				{{if not .LastSignedInAt.IsZero}}
 					<time datetime="{{FormatTime .LastSignedInAt "RFC3339"}}" data-date="full">{{FormatTime .LastSignedInAt "DateTime"}}</time>
+					({{.LastSignedInMethod}})
 				{{end}}
 			</td>
 			<td class="text-right"><a href="{{Path "account.management.user.edit" ":userID" .ID}}{{$.URL.Query.String}}">Edit</a></td>

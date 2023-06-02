@@ -24,19 +24,20 @@ func Account(ctx context.Context, t *testing.T, store account.ReadWriter) {
 				{"minimal data whitespace", &account.User{Email: "    "}, repo.ErrInvalidInput},
 				{"minimal data", &account.User{Email: "Email 1"}, nil},
 				{"maximal data", &account.User{
-					Email:           "Email 2",
-					HashedPassword:  []byte("HashedPassword"),
-					TOTPMethod:      "TOTPMethod",
-					TOTPTelephone:   "TOTPTelephone",
-					TOTPKey:         []byte("TOTPKey"),
-					TOTPAlgorithm:   "TOTPAlgorithm",
-					TOTPDigits:      123,
-					TOTPPeriod:      456,
-					TOTPVerifiedAt:  time.Now(),
-					TOTPActivatedAt: time.Now(),
-					SignedUpAt:      time.Now(),
-					ActivatedAt:     time.Now(),
-					LastSignedInAt:  time.Now(),
+					Email:              "Email 2",
+					HashedPassword:     []byte("HashedPassword"),
+					TOTPMethod:         "TOTPMethod",
+					TOTPTelephone:      "TOTPTelephone",
+					TOTPKey:            []byte("TOTPKey"),
+					TOTPAlgorithm:      "TOTPAlgorithm",
+					TOTPDigits:         123,
+					TOTPPeriod:         456,
+					TOTPVerifiedAt:     time.Now(),
+					TOTPActivatedAt:    time.Now(),
+					SignedUpAt:         time.Now(),
+					ActivatedAt:        time.Now(),
+					LastSignedInAt:     time.Now(),
+					LastSignedInMethod: "Website",
 				}, nil},
 				{"conflicting email", &account.User{Email: "Email 1"}, repo.ErrConflict},
 				{"conflicting email with different casing", &account.User{Email: "EMAIL 1"}, repo.ErrConflict},
@@ -277,6 +278,9 @@ func accountUsersEqual(t *testing.T, want, got *account.User) {
 	}
 	if want, got := want.LastSignedInAt, got.LastSignedInAt; !want.Equal(got) {
 		t.Errorf("want last signed in at to be %v; got %v", want, got)
+	}
+	if want, got := want.LastSignedInMethod, got.LastSignedInMethod; want != got {
+		t.Errorf("want last signed in method to be %v; got %v", want, got)
 	}
 }
 
