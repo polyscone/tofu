@@ -431,12 +431,142 @@ func validateArg(arg any) error {
 	}
 }
 
+type Conn struct {
+	*sql.Conn
+}
+
+func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
+	tx, err := c.Conn.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return &Tx{Tx: tx, now: time.Now().UTC()}, nil
+}
+
+// BeginImmediateTx starts an immediate transaction with "BEGIN IMMEDIATE".
+//
+// This is a workaround for Go's database/sql package not providing a way to set
+// the transaction type per connection.
+//
+// References:
+// - https://github.com/golang/go/issues/19981
+// - https://github.com/mattn/go-sqlite3/issues/400
+func (c *Conn) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
+	tx, err := c.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	// The returned transaction is a connection from a connection pool, so we
+	// can rollback the (by default) "DEFERRED" transaction and start a new
+	// "IMMEDIATE" one
+	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN IMMEDIATE"); err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return tx, nil
+}
+
+// BeginExclusiveTx starts an exclusive transaction with "BEGIN EXCLUSIVE".
+//
+// This is a workaround for Go's database/sql package not providing a way to set
+// the transaction type per connection.
+//
+// References:
+// - https://github.com/golang/go/issues/19981
+// - https://github.com/mattn/go-sqlite3/issues/400
+func (c *Conn) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
+	tx, err := c.BeginTx(ctx, opts)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	// The returned transaction is a connection from a connection pool, so we
+	// can rollback the (by default) "DEFERRED" transaction and start a new
+	// "EXCLUSIVE" one
+	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN EXCLUSIVE"); err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return tx, nil
+}
+
+func (c *Conn) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
+	stmt, err := c.Conn.PrepareContext(ctx, query)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return &Stmt{Stmt: stmt}, nil
+}
+
+func (c *Conn) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	res, err := c.Conn.ExecContext(ctx, query, args...)
+	if err != nil {
+		return res, errors.Tracef(repoerr(err))
+	}
+
+	return res, nil
+}
+
+func (c *Conn) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	rows, err := c.Conn.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, errors.Tracef(repoerr(err))
+	}
+
+	return &Rows{rows: rows}, nil
+}
+
+func (c *Conn) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return &Row{err: errors.Tracef(err)}
+		}
+	}
+
+	row := c.Conn.QueryRowContext(ctx, query, args...)
+
+	return &Row{Row: row}
+}
+
 type DB struct {
 	*sql.DB
 }
 
 func newDB(db *sql.DB) *DB {
 	return &DB{DB: db}
+}
+
+func (db *DB) Conn(ctx context.Context) (*Conn, error) {
+	conn, err := db.DB.Conn(ctx)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return &Conn{Conn: conn}, nil
+}
+
+func (db *DB) Begin() (*Tx, error) {
+	tx, err := db.DB.Begin()
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return &Tx{Tx: tx, now: time.Now().UTC()}, nil
 }
 
 func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
@@ -450,7 +580,7 @@ func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 
 // BeginImmediateTx starts an immediate transaction with "BEGIN IMMEDIATE".
 //
-// This is a workaround for Go's sql package not providing a way to set
+// This is a workaround for Go's database/sql package not providing a way to set
 // the transaction type per connection.
 //
 // References:
@@ -474,7 +604,7 @@ func (db *DB) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, e
 
 // BeginExclusiveTx starts an exclusive transaction with "BEGIN EXCLUSIVE".
 //
-// This is a workaround for Go's sql package not providing a way to set
+// This is a workaround for Go's database/sql package not providing a way to set
 // the transaction type per connection.
 //
 // References:
@@ -496,6 +626,39 @@ func (db *DB) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, e
 	return tx, nil
 }
 
+func (db *DB) Prepare(query string) (*Stmt, error) {
+	stmt, err := db.DB.Prepare(query)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return &Stmt{Stmt: stmt}, nil
+}
+
+func (db *DB) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
+	stmt, err := db.DB.PrepareContext(ctx, query)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return &Stmt{Stmt: stmt}, nil
+}
+
+func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	res, err := db.DB.Exec(query, args...)
+	if err != nil {
+		return res, errors.Tracef(repoerr(err))
+	}
+
+	return res, nil
+}
+
 func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -509,6 +672,21 @@ func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 	}
 
 	return res, nil
+}
+
+func (db *DB) Query(query string, args ...any) (*Rows, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	rows, err := db.DB.Query(query, args...)
+	if err != nil {
+		return nil, errors.Tracef(repoerr(err))
+	}
+
+	return &Rows{rows: rows}, nil
 }
 
 func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
@@ -526,6 +704,18 @@ func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Row
 	return &Rows{rows: rows}, nil
 }
 
+func (db *DB) QueryRow(query string, args ...any) *Row {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return &Row{err: errors.Tracef(err)}
+		}
+	}
+
+	row := db.DB.QueryRow(query, args...)
+
+	return &Row{Row: row}
+}
+
 func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -534,6 +724,94 @@ func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *R
 	}
 
 	row := db.DB.QueryRowContext(ctx, query, args...)
+
+	return &Row{Row: row}
+}
+
+type Stmt struct {
+	*sql.Stmt
+}
+
+func (stmt *Stmt) Exec(args ...any) (sql.Result, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	res, err := stmt.Stmt.Exec(args...)
+	if err != nil {
+		return res, errors.Tracef(repoerr(err))
+	}
+
+	return res, nil
+}
+
+func (stmt *Stmt) ExecContext(ctx context.Context, args ...any) (sql.Result, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	res, err := stmt.Stmt.ExecContext(ctx, args...)
+	if err != nil {
+		return res, errors.Tracef(repoerr(err))
+	}
+
+	return res, nil
+}
+
+func (stmt *Stmt) Query(args ...any) (*Rows, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	rows, err := stmt.Stmt.Query(args...)
+	if err != nil {
+		return nil, errors.Tracef(repoerr(err))
+	}
+
+	return &Rows{rows: rows}, nil
+}
+
+func (stmt *Stmt) QueryContext(ctx context.Context, args ...any) (*Rows, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	rows, err := stmt.Stmt.QueryContext(ctx, args...)
+	if err != nil {
+		return nil, errors.Tracef(repoerr(err))
+	}
+
+	return &Rows{rows: rows}, nil
+}
+
+func (stmt *Stmt) QueryRow(args ...any) *Row {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return &Row{err: errors.Tracef(err)}
+		}
+	}
+
+	row := stmt.Stmt.QueryRow(args...)
+
+	return &Row{Row: row}
+}
+
+func (stmt *Stmt) QueryRowContext(ctx context.Context, args ...any) *Row {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return &Row{err: errors.Tracef(err)}
+		}
+	}
+
+	row := stmt.Stmt.QueryRowContext(ctx, args...)
 
 	return &Row{Row: row}
 }
@@ -551,6 +829,47 @@ func (tx *Tx) Rollback() error {
 	return tx.Tx.Rollback()
 }
 
+func (tx *Tx) Prepare(query string) (*Stmt, error) {
+	stmt, err := tx.Tx.Prepare(query)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return &Stmt{Stmt: stmt}, nil
+}
+
+func (tx *Tx) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
+	stmt, err := tx.Tx.PrepareContext(ctx, query)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return &Stmt{Stmt: stmt}, nil
+}
+
+func (tx *Tx) Stmt(stmt *Stmt) *Stmt {
+	return &Stmt{Stmt: tx.Tx.Stmt(stmt.Stmt)}
+}
+
+func (tx *Tx) StmtContext(ctx context.Context, stmt *Stmt) *Stmt {
+	return &Stmt{Stmt: tx.Tx.StmtContext(ctx, stmt.Stmt)}
+}
+
+func (tx *Tx) Exec(query string, args ...any) (sql.Result, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	res, err := tx.Tx.Exec(query, args...)
+	if err != nil {
+		return res, errors.Tracef(repoerr(err))
+	}
+
+	return res, nil
+}
+
 func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -566,6 +885,21 @@ func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 	return res, nil
 }
 
+func (tx *Tx) Query(query string, args ...any) (*Rows, error) {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	rows, err := tx.Tx.Query(query, args...)
+	if err != nil {
+		return nil, errors.Tracef(repoerr(err))
+	}
+
+	return &Rows{rows: rows}, nil
+}
+
 func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -579,6 +913,18 @@ func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Row
 	}
 
 	return &Rows{rows: rows}, nil
+}
+
+func (tx *Tx) QueryRow(query string, args ...any) *Row {
+	for _, arg := range args {
+		if err := validateArg(arg); err != nil {
+			return &Row{err: errors.Tracef(err)}
+		}
+	}
+
+	row := tx.Tx.QueryRow(query, args...)
+
+	return &Row{Row: row}
 }
 
 func (tx *Tx) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
