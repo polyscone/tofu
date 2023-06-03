@@ -366,11 +366,14 @@ func (svc *Services) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err e
 		case errors.Is(err, httputil.ErrMethodNotAllowed):
 			data.ErrorMessage = "Method not allowed."
 
+		case errors.Is(err, httputil.ErrForbidden):
+			data.ErrorMessage = "You do not have permission to access this resource."
+
 		case errors.Is(err, http.ErrHandlerTimeout):
 			data.ErrorMessage = "The server took too long to respond."
 
 		case errors.Is(err, app.ErrUnauthorised):
-			data.ErrorMessage = "You do not have sufficient permissions."
+			data.ErrorMessage = "You do not have sufficient permissions to access this resource."
 
 		case errors.Is(err, app.ErrMalformedInput),
 			errors.Is(err, app.ErrInvalidInput),

@@ -22,13 +22,18 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/size"
 )
 
+const (
+	publicDir   = "public"
+	templateDir = "template"
+)
+
 //go:embed "public"
 //go:embed "template"
 var files embed.FS
 
 func NewHandler(tenant *handler.Tenant) http.Handler {
-	publicFiles := fstack.New(dev.RelDirFS("public"), errors.Must(fs.Sub(files, "public")))
-	templateFiles := fstack.New(dev.RelDirFS("template"), errors.Must(fs.Sub(files, "template")))
+	publicFiles := fstack.New(dev.RelDirFS(publicDir), errors.Must(fs.Sub(files, publicDir)))
+	templateFiles := fstack.New(dev.RelDirFS(templateDir), errors.Must(fs.Sub(files, templateDir)))
 
 	mux := router.NewServeMux()
 	svc := handler.NewServices(mux, tenant, templateFiles)
@@ -117,9 +122,9 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 		account.ChangePassword(svc, mux, guard)
 		account.Dashboard(svc, mux, guard)
 		account.ResetPassword(svc, mux)
+		account.SignUp(svc, mux)
 		account.SignIn(svc, mux)
 		account.SignOut(svc, mux)
-		account.SignUp(svc, mux)
 		account.TOTP(svc, mux, guard)
 	})
 
@@ -148,20 +153,23 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 		}
 		upath = path.Clean(upath)
 
-		f, err := publicFilesRoot.Open(upath)
-		switch {
-		case errors.Is(err, fs.ErrNotExist):
-			svc.ErrorView(w, r, errors.Tracef(httputil.ErrNotFound, "%w: %v %v", err, r.Method, r.URL), "error", nil)
+		stat, err := fs.Stat(files, publicDir+upath)
+		if err != nil {
+			switch {
+			case errors.Is(err, fs.ErrNotExist):
+				svc.ErrorView(w, r, errors.Tracef(httputil.ErrNotFound, "%w: %v %v", err, r.Method, r.URL), "error", nil)
 
-			return
-
-		case err != nil:
-			svc.ErrorView(w, r, errors.Tracef(httputil.ErrInternalServerError, "%w: %v %v", err, r.Method, r.URL), "error", nil)
+			default:
+				svc.ErrorView(w, r, errors.Tracef(httputil.ErrInternalServerError, "%w: %v %v", err, r.Method, r.URL), "error", nil)
+			}
 
 			return
 		}
+		if stat.IsDir() {
+			svc.ErrorView(w, r, errors.Tracef("%w: %v %v", httputil.ErrForbidden, r.Method, r.URL), "error", nil)
 
-		f.Close()
+			return
+		}
 
 		fileServer.ServeHTTP(w, r)
 	}))

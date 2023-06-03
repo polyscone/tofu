@@ -11,6 +11,7 @@ import (
 
 var (
 	ErrNotFound            = errors.New("not found")
+	ErrForbidden           = errors.New("forbidden")
 	ErrMethodNotAllowed    = errors.New("method not allowed")
 	ErrInternalServerError = errors.New("internal server error")
 )
@@ -30,6 +31,9 @@ func ErrorStatus(err error) int {
 
 	case errors.Is(err, ErrNotFound):
 		return http.StatusNotFound
+
+	case errors.Is(err, ErrForbidden):
+		return http.StatusForbidden
 
 	case errors.Is(err, app.ErrUnauthorised):
 		return http.StatusUnauthorized
