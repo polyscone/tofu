@@ -28,6 +28,8 @@ func initPasswordHasher() error {
 	}
 
 	if params.IsValid() != nil {
+		logger.Info.Println("detecting new argon2 password hashing parameters...")
+
 		params, _ = argon2.DetectParams(1*time.Second, argon2.ID, 0, 0)
 		paramsJSON, err := json.Marshal(params)
 		if err != nil {
