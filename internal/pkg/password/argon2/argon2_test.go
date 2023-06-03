@@ -59,8 +59,8 @@ func TestArgon2(t *testing.T) {
 			// If this hard coded value is changed then all encoded hashes
 			// generated from the Argon2id function will be different and all
 			// tests will break
-			pass := argon2.Argon2{Rand: bytes.NewReader([]byte("0123456789012345"))}
-			hash, err := pass.EncodedHash([]byte(tc.password), argon2.Params{
+			reader := bytes.NewReader([]byte("0123456789012345"))
+			hash, err := argon2.EncodedHash(reader, []byte(tc.password), argon2.Params{
 				Variant:     tc.variant,
 				Iterations:  tc.iterations,
 				Memory:      tc.memory,
@@ -90,15 +90,14 @@ func TestArgon2CSPRNG(t *testing.T) {
 		variant argon2.Variant
 		samples int
 	}{
-		{"argon2i no duplicates: not setting the rand io.Reader should use crypto/rand", argon2.I, 50},
-		{"argon2id no duplicates: not setting the rand io.Reader should use crypto/rand", argon2.ID, 50},
+		{"argon2i no duplicates", argon2.I, 50},
+		{"argon2id no duplicates", argon2.ID, 50},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			seen := make(map[string]struct{})
 			for i := 0; i < tc.samples; i++ {
-				var pass argon2.Argon2
-				hash, err := pass.EncodedHash([]byte("correct horse battery staple"), argon2.Params{
+				hash, err := argon2.EncodedHash(nil, []byte("correct horse battery staple"), argon2.Params{
 					Variant:     tc.variant,
 					Iterations:  1,
 					Memory:      mebibyte,
@@ -172,8 +171,7 @@ func TestArgon2Verify(t *testing.T) {
 				params.KeyLength = 64
 			}
 
-			var pass argon2.Argon2
-			passed, rehash, err := pass.Verify([]byte(tc.password), []byte(tc.encoded), &params)
+			passed, rehash, err := argon2.Verify([]byte(tc.password), []byte(tc.encoded), &params)
 
 			if tc.wantError {
 				if err == nil {

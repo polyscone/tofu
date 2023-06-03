@@ -15,9 +15,6 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-// Default provides a default configuration of Argon2 for functions to use.
-var Default Argon2
-
 // Variant represents the variants of an Argon2 hash.
 type Variant string
 
@@ -77,23 +74,23 @@ type Params struct {
 //
 // The limits tested in this method are deliberately low so as
 // to provide maximum flexibility.
-func (a *Params) IsValid() error {
-	if a.Variant != I && a.Variant != ID {
-		return errors.Tracef("unknown variant %q", a.Variant)
+func (p *Params) IsValid() error {
+	if p.Variant != I && p.Variant != ID {
+		return errors.Tracef("unknown variant %q", p.Variant)
 	}
-	if want := uint32(1); a.Iterations < want {
+	if want := uint32(1); p.Iterations < want {
 		return errors.Tracef("iterations must be %d or above", want)
 	}
-	if want := uint32(size.Kibibyte); a.Memory < want {
+	if want := uint32(size.Kibibyte); p.Memory < want {
 		return errors.Tracef("memory must be %d or above", want)
 	}
-	if want := uint8(1); a.Parallelism < want {
+	if want := uint8(1); p.Parallelism < want {
 		return errors.Tracef("parallelism must be %d or above", want)
 	}
-	if want := uint32(8); a.SaltLength < want {
+	if want := uint32(8); p.SaltLength < want {
 		return errors.Tracef("salt length must be %d or above", want)
 	}
-	if want := uint32(16); a.KeyLength < want {
+	if want := uint32(16); p.KeyLength < want {
 		return errors.Tracef("key length must be %d or above", want)
 	}
 	return nil
@@ -125,18 +122,17 @@ func DetectParams(target time.Duration, variant Variant, maxMemory, parallelism 
 		panic(err)
 	}
 
-	var a Argon2
 detect:
 	for {
 		t := time.Now()
-		a.key(password, salt, params)
+		key(password, salt, params)
 		took := time.Since(t)
 
 		if took >= target {
 			// Double check the time taken just in case we need to bump up
 			// the param values more
 			t := time.Now()
-			a.key(password, salt, params)
+			key(password, salt, params)
 			if took := time.Since(t); took < target {
 				continue detect
 			}
@@ -152,16 +148,6 @@ detect:
 	}
 }
 
-// EncodedHash passes arguments through to the default configuration of Argon2.
-func EncodedHash(password []byte, p Params) ([]byte, error) {
-	return Default.EncodedHash(password, p)
-}
-
-// Verify passes arguments through to the default configuration of Argon2.
-func Verify(password, encodedHash []byte, preferred *Params) (bool, bool, error) {
-	return Default.Verify(password, encodedHash, preferred)
-}
-
 // Argon2 implements methods to generate and validate variants of Argon2 hashes.
 //
 // The Rand field is only provided as a means for things like unit tests to
@@ -175,7 +161,7 @@ type Argon2 struct {
 	Rand io.Reader
 }
 
-func (a *Argon2) key(password, salt []byte, p Params) {
+func key(password, salt []byte, p Params) {
 	switch p.Variant {
 	case I:
 		argon2.Key(password, salt, p.Iterations, p.Memory, p.Parallelism, p.KeyLength)
@@ -195,7 +181,7 @@ func (a *Argon2) key(password, salt []byte, p Params) {
 // $argon2x$v=19$m=65536,t=1,p=1$salt$key.
 //
 // The salt and key will be base64 encoded.
-func (a *Argon2) encodedHashWithSalt(password, salt []byte, p Params) ([]byte, error) {
+func encodedHashWithSalt(password, salt []byte, p Params) ([]byte, error) {
 	if err := p.IsValid(); err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -240,8 +226,7 @@ func (a *Argon2) encodedHashWithSalt(password, salt []byte, p Params) ([]byte, e
 //
 // The salt and key will be base64 encoded and the salt will be
 // generated using a CSrand.
-func (a *Argon2) EncodedHash(password []byte, p Params) ([]byte, error) {
-	r := a.Rand
+func EncodedHash(r io.Reader, password []byte, p Params) ([]byte, error) {
 	if r == nil {
 		r = rand.Reader
 	}
@@ -251,7 +236,7 @@ func (a *Argon2) EncodedHash(password []byte, p Params) ([]byte, error) {
 		return nil, errors.Tracef(err)
 	}
 
-	return a.encodedHashWithSalt(password, salt, p)
+	return encodedHashWithSalt(password, salt, p)
 }
 
 // Verify will verify whether the given password matches the given encoded
@@ -268,7 +253,7 @@ func (a *Argon2) EncodedHash(password []byte, p Params) ([]byte, error) {
 //
 // The rehash return value will only be set to anything other than false
 // on successful verification.
-func (a *Argon2) Verify(password, encodedHash []byte, preferred *Params) (bool, bool, error) {
+func Verify(password, encodedHash []byte, preferred *Params) (bool, bool, error) {
 	var isValid bool
 	var rehash bool
 
@@ -313,7 +298,7 @@ func (a *Argon2) Verify(password, encodedHash []byte, preferred *Params) (bool, 
 		return isValid, rehash, errors.Tracef(err)
 	}
 
-	encodedPassword, err := a.encodedHashWithSalt(password, salt, p)
+	encodedPassword, err := encodedHashWithSalt(password, salt, p)
 	if err != nil {
 		return isValid, rehash, errors.Tracef(err)
 	}

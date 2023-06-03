@@ -47,7 +47,7 @@ func initPasswordHasher() error {
 		return errors.Tracef(err)
 	}
 
-	hasher = argon2.NewHasher(params)
+	hasher = argon2.NewHasher(nil, params)
 
 	return nil
 }
