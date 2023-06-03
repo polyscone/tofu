@@ -6,7 +6,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
-	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/repo"
@@ -17,12 +16,8 @@ func RoleManagement(svc *handler.Services, mux *router.ServeMux, guard *handler.
 		mux.Get("/", roleListGet(svc), "account.management.role.list")
 
 		mux.Prefix("/new", func(mux *router.ServeMux) {
-			guard.ProtectPrefix(mux.CurrentPath(), func(passport passport.Passport) error {
-				if !passport.CanCreateRoles() {
-					return errors.Tracef(app.ErrUnauthorised)
-				}
-
-				return nil
+			guard.RequireAuthPrefix(mux.CurrentPath(), func(p passport.Passport) bool {
+				return p.CanCreateRoles()
 			})
 
 			mux.Get("/", roleNewGet(svc), "account.management.role.new")

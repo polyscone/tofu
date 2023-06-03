@@ -8,22 +8,24 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 var ErrRedirect = errors.New("redirect")
 
-type CheckAuthorisedFunc func(passport passport.Passport) error
+type CheckFunc func(p passport.Passport) error
+type PredicateFunc func(p passport.Passport) bool
 type RedirectFunc func() string
 
 type prefixGuard struct {
-	path            string
-	checkAuthorised CheckAuthorisedFunc
+	path  string
+	check CheckFunc
 }
 
 type Guard struct {
 	svc      *Services
-	exact    map[string]CheckAuthorisedFunc
+	exact    map[string]CheckFunc
 	prefixes []prefixGuard
 	redirect RedirectFunc
 }
@@ -32,30 +34,44 @@ func NewGuard(svc *Services, redirect RedirectFunc) *Guard {
 	return &Guard{
 		svc:      svc,
 		redirect: redirect,
-		exact:    make(map[string]CheckAuthorisedFunc),
+		exact:    make(map[string]CheckFunc),
 	}
 }
 
-func (g *Guard) isSignedIn(passport passport.Passport) error {
-	if !passport.IsSignedIn() {
+func (g *Guard) isSignedIn(p passport.Passport) error {
+	if !p.IsSignedIn() {
 		return errors.Tracef(ErrRedirect)
 	}
 
 	return nil
 }
 
-func (g *Guard) Protect(path string, checkAuthorised CheckAuthorisedFunc) {
-	g.exact[path] = checkAuthorised
+func (g *Guard) isAuthorised(isAuthorised PredicateFunc) CheckFunc {
+	return func(p passport.Passport) error {
+		if !p.IsSignedIn() {
+			return errors.Tracef(ErrRedirect)
+		}
+
+		if !isAuthorised(p) {
+			return app.ErrUnauthorised
+		}
+
+		return nil
+	}
 }
 
-func (g *Guard) ProtectPrefix(path string, checkAuthorised CheckAuthorisedFunc) {
+func (g *Guard) Protect(path string, check CheckFunc) {
+	g.exact[path] = check
+}
+
+func (g *Guard) ProtectPrefix(path string, check CheckFunc) {
 	path = strings.TrimSuffix(path, "/")
 
-	g.Protect(path, checkAuthorised)
+	g.Protect(path, check)
 
 	g.prefixes = append(g.prefixes, prefixGuard{
-		path:            path + "/",
-		checkAuthorised: checkAuthorised,
+		path:  path + "/",
+		check: check,
 	})
 
 	sort.Slice(g.prefixes, func(i, j int) bool {
@@ -72,17 +88,25 @@ func (g *Guard) RequireSignInPrefix(path string) {
 	g.ProtectPrefix(path, g.isSignedIn)
 }
 
+func (g *Guard) RequireAuth(path string, isAuthorised PredicateFunc) {
+	g.Protect(path, g.isAuthorised(isAuthorised))
+}
+
+func (g *Guard) RequireAuthPrefix(path string, isAuthorised PredicateFunc) {
+	g.ProtectPrefix(path, g.isAuthorised(isAuthorised))
+}
+
 func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// If a guard exists for an exact match on the path then we run that
 		// otherwise we look for the longest matching prefix guard
 		//
 		// This way we guarantee that only the best matching guard will be run
-		if checkAuthorised, ok := g.exact[r.URL.Path]; ok {
+		if check, ok := g.exact[r.URL.Path]; ok {
 			ctx := r.Context()
 
 			passport := g.svc.Passport(ctx)
-			if err := checkAuthorised(passport); err != nil {
+			if err := check(passport); err != nil {
 				if errors.Is(err, ErrRedirect) {
 					g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
@@ -102,7 +126,7 @@ func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
 				ctx := r.Context()
 
 				passport := g.svc.Passport(ctx)
-				if err := guard.checkAuthorised(passport); err != nil {
+				if err := guard.check(passport); err != nil {
 					if errors.Is(err, ErrRedirect) {
 						g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
