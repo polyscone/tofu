@@ -171,6 +171,20 @@ func (r *AccountRepo) SaveRole(ctx context.Context, role *account.Role) error {
 	return errors.Tracef(tx.Commit())
 }
 
+func (r *AccountRepo) RemoveRole(ctx context.Context, roleID int) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	if err := r.removeRole(ctx, tx, roleID); err != nil {
+		return errors.Tracef(err)
+	}
+
+	return errors.Tracef(tx.Commit())
+}
+
 func (r *AccountRepo) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([]*account.RecoveryCode, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -453,6 +467,12 @@ func (r *AccountRepo) saveRole(ctx context.Context, tx *Tx, role *account.Role) 
 		sql.Named("name", role.Name),
 		sql.Named("updated_at", Time(tx.now.UTC())),
 	)
+
+	return errors.Tracef(err)
+}
+
+func (r *AccountRepo) removeRole(ctx context.Context, tx *Tx, roleID int) error {
+	_, err := tx.ExecContext(ctx, "DELETE FROM account__roles WHERE id = :id", sql.Named("id", roleID))
 
 	return errors.Tracef(err)
 }

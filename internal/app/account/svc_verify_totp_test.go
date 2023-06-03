@@ -107,7 +107,7 @@ func TestVerifyTOTP(t *testing.T) {
 
 		tt := []struct {
 			name     string
-			guard    account.VerifyTOTPGuard
+			guard    verifyTOTPGuard
 			userID   int
 			totpUser *account.User
 			want     error

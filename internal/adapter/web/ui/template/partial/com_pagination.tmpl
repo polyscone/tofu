@@ -32,6 +32,7 @@
 				<li><a href="{{.URL.Query.String "page" .Com.TotalPages}}">Last &raquo;</a></li>
 			{{end}}
 		{{else if not (eq .Com.Page.Number 1)}}
+			<li><a href="{{.URL.Query.String "page" (Sub .Com.Page.Number 1)}}">&lt; Prev</a></li>
 			<li><a href="{{.URL.Query.String "page" "1"}}">Go to the first page</a></li>
 		{{end}}
 	</ul>

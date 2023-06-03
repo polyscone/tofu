@@ -79,7 +79,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 
 		tt := []struct {
 			name     string
-			guard    account.RegenerateRecoveryCodesGuard
+			guard    regenerateRecoveryCodesGuard
 			userID   int
 			totpUser *account.User
 			want     error

@@ -118,7 +118,7 @@ func TestSetupTOTP(t *testing.T) {
 
 		tt := []struct {
 			name   string
-			guard  account.SetupTOTPGuard
+			guard  setupTOTPGuard
 			userID int
 			want   error
 		}{

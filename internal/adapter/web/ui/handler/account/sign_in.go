@@ -120,7 +120,7 @@ func signInTOTPPost(svc *handler.Services) http.HandlerFunc {
 		}
 
 		if len(user.RecoveryCodes) <= lowRecoveryCodes {
-			svc.FlashImportant(ctx, `
+			svc.FlashfImportant(ctx, `
 				You are running low on recovery codes.<br>
 				We recommend
 				<a href="`+svc.Path("account.totp.recovery_codes")+`">generating new ones</a>
@@ -205,7 +205,7 @@ func signInRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
 			`
 		}
 
-		svc.FlashImportant(ctx, flash)
+		svc.FlashfImportant(ctx, flash)
 
 		svc.Sessions.Set(ctx, sess.IsSignedIn, true)
 		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)

@@ -9,12 +9,15 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/app/account"
+	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/repo"
 )
 
-func Account(ctx context.Context, t *testing.T, store account.ReadWriter) {
+func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWriter) {
 	t.Run("users", func(t *testing.T) {
 		t.Run("add and find", func(t *testing.T) {
+			store := newStore()
+
 			tt := []struct {
 				name string
 				user *account.User
@@ -70,6 +73,8 @@ func Account(ctx context.Context, t *testing.T, store account.ReadWriter) {
 		})
 
 		t.Run("generate new id on add", func(t *testing.T) {
+			store := newStore()
+
 			user1 := &account.User{Email: "User 1"}
 			user2 := &account.User{Email: "User 2"}
 
@@ -89,6 +94,8 @@ func Account(ctx context.Context, t *testing.T, store account.ReadWriter) {
 		})
 
 		t.Run("save and find", func(t *testing.T) {
+			store := newStore()
+
 			tt := []struct {
 				name string
 				user *account.User
@@ -133,6 +140,8 @@ func Account(ctx context.Context, t *testing.T, store account.ReadWriter) {
 
 	t.Run("roles", func(t *testing.T) {
 		t.Run("add and find", func(t *testing.T) {
+			store := newStore()
+
 			tt := []struct {
 				name string
 				role *account.Role
@@ -171,7 +180,26 @@ func Account(ctx context.Context, t *testing.T, store account.ReadWriter) {
 			}
 		})
 
+		t.Run("add and remove", func(t *testing.T) {
+			store := newStore()
+
+			role := &account.Role{Name: text.GenerateName().String()}
+			if err := store.AddRole(ctx, role); err != nil {
+				t.Fatal(err)
+			}
+
+			if err := store.RemoveRole(ctx, role.ID); err != nil {
+				t.Fatalf("want error: <nil>; got %v", err)
+			}
+
+			if _, err := store.FindRoleByID(ctx, role.ID); err == nil {
+				t.Errorf("want error: %v; got <nil>", repo.ErrNotFound)
+			}
+		})
+
 		t.Run("generate new id on add", func(t *testing.T) {
+			store := newStore()
+
 			role1 := &account.Role{Name: "Role 1"}
 			role2 := &account.Role{Name: "Role 2"}
 
@@ -191,6 +219,8 @@ func Account(ctx context.Context, t *testing.T, store account.ReadWriter) {
 		})
 
 		t.Run("save and find", func(t *testing.T) {
+			store := newStore()
+
 			tt := []struct {
 				name string
 				role *account.Role

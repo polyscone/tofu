@@ -57,7 +57,7 @@ func activatePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		svc.Flash(ctx, "Your account has been successfully activated.")
+		svc.Flashf(ctx, "Your account has been successfully activated.")
 
 		signInWithPassword(ctx, svc, w, r, email, input.Password)
 	}

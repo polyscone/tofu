@@ -61,7 +61,7 @@ func TestChangePassword(t *testing.T) {
 
 		tt := []struct {
 			name        string
-			guard       account.ChangePasswordGuard
+			guard       changePasswordGuard
 			userID      int
 			oldPassword string
 			newPassword string

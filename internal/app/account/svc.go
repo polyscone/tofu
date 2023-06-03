@@ -17,6 +17,7 @@ type Reader interface {
 type Writer interface {
 	AddRole(ctx context.Context, role *Role) error
 	SaveRole(ctx context.Context, role *Role) error
+	RemoveRole(ctx context.Context, roleID int) error
 
 	AddUser(ctx context.Context, user *User) error
 	SaveUser(ctx context.Context, user *User) error

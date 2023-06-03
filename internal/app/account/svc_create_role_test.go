@@ -29,13 +29,13 @@ func TestCreateRole(t *testing.T) {
 
 	tt := []struct {
 		name     string
-		guard    account.CreateRoleGuard
+		guard    createRoleGuard
 		roleName string
 		want     error
 	}{
 		{"unauthorised", invalidGuard, "", app.ErrUnauthorised},
 		{"empty name", validGuard, "", app.ErrMalformedInput},
-		{"whitespace name", validGuard, "", app.ErrMalformedInput},
+		{"whitespace name", validGuard, "     ", app.ErrMalformedInput},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {

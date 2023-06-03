@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
@@ -52,7 +51,7 @@ func TestActivateTOTP(t *testing.T) {
 
 		tt := []struct {
 			name   string
-			guard  account.ActivateTOTPGuard
+			guard  activateTOTPGuard
 			userID int
 			want   error
 		}{

@@ -124,6 +124,15 @@ func (svc *Services) Path(name string, paramArgPairs ...any) string {
 	return svc.mux.Path(name, paramArgPairs...)
 }
 
+func (svc *Services) PathQuery(r *http.Request, name string, paramArgPairs ...any) string {
+	q := r.URL.Query().Encode()
+	if q != "" && !strings.HasPrefix(q, "?") {
+		q = "?" + q
+	}
+
+	return svc.mux.Path(name, paramArgPairs...) + q
+}
+
 func (svc *Services) SetViewVars(name string, vars ViewVarsFunc) {
 	if _, ok := svc.viewVarsFuncs[name]; ok {
 		panic(fmt.Sprintf("default view vars already set for %q", name))
@@ -471,13 +480,14 @@ func (svc *Services) JSON(w http.ResponseWriter, r *http.Request, data any) bool
 	return !svc.ErrorJSON(w, r, errors.Tracef(json.NewEncoder(w).Encode(data)))
 }
 
-func (svc *Services) Flash(ctx context.Context, message string) {
-	svc.Sessions.Set(ctx, sess.Flash, message)
+func (svc *Services) Flashf(ctx context.Context, format string, a ...any) {
+	svc.Sessions.Set(ctx, sess.Flash, fmt.Sprintf(format, a...))
 }
 
-func (svc *Services) FlashImportant(ctx context.Context, message string) {
+func (svc *Services) FlashfImportant(ctx context.Context, format string, a ...any) {
 	svc.Sessions.Set(ctx, sess.FlashImportant, true)
-	svc.Flash(ctx, message)
+
+	svc.Flashf(ctx, format, a...)
 }
 
 func (svc *Services) Pagination(r *http.Request) (int, int) {

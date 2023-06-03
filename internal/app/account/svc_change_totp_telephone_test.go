@@ -72,7 +72,7 @@ func TestChangeTOTPTelephone(t *testing.T) {
 
 		tt := []struct {
 			name         string
-			guard        account.ChangeTOTPTelephoneGuard
+			guard        changeTOTPTelephoneGuard
 			userID       int
 			newTelephone string
 			want         error

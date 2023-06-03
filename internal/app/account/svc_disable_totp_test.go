@@ -81,7 +81,7 @@ func TestDisableTOTP(t *testing.T) {
 
 		tt := []struct {
 			name     string
-			guard    account.DisableTOTPGuard
+			guard    disableTOTPGuard
 			userID   int
 			password string
 			want     error

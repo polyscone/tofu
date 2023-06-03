@@ -66,6 +66,10 @@ func (p Passport) CanCreateRoles() bool {
 	return true
 }
 
+func (p Passport) CanDeleteRoles() bool {
+	return true
+}
+
 func (p Passport) is(query string) bool {
 	for _, role := range p.user.Roles {
 		if query == role.Name {

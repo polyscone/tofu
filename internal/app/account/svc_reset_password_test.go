@@ -55,7 +55,7 @@ func TestResetPassword(t *testing.T) {
 
 		tt := []struct {
 			name        string
-			guard       account.ResetPasswordGuard
+			guard       resetPasswordGuard
 			userID      int
 			newPassword string
 			want        error
