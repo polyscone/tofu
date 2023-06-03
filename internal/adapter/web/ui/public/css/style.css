@@ -343,7 +343,7 @@
 
 	.management .management__empty td {
 		text-align: center;
-		font-weight: bold;
+		font-style: italic;
 	}
 
 	.management .management__highlight td {
