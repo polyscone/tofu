@@ -72,29 +72,3 @@ func accountSignedUpHandler(tenant *handler.Tenant, svc *handler.Services) any {
 		})
 	}
 }
-
-func webResetPasswordRequestedHandler(tenant *handler.Tenant, svc *handler.Services) any {
-	return func(evt handler.ResetPasswordRequested) {
-		background.Go(func() {
-			ctx := context.Background()
-
-			tok, err := tenant.Repo.Web.AddResetPasswordToken(ctx, evt.Email, 2*time.Hour)
-			if err != nil {
-				logger.PrintError(err)
-
-				return
-			}
-
-			recipients := handler.EmailRecipients{
-				From: tenant.Email.From,
-				To:   []string{evt.Email},
-			}
-			vars := handler.Vars{
-				"Token": tok,
-			}
-			if err := svc.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
-				logger.PrintError(err)
-			}
-		})
-	}
-}

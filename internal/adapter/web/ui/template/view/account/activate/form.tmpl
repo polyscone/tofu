@@ -18,22 +18,18 @@
 	{{if .ErrorMessage}}
 		<p>Either the account you are trying to activate has already been activated or you have provided an invalid activation token.</p>
 	{{else if .URL.Query.Get "token"}}
-		<p>If you are not automatically redirected please click on the button below to activate your account.</p>
-
 		<form action="{{Path "account.activate.post"}}" method="POST" id="account-activate-form">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
-			<button type="submit">Activate account</button>
+			<label for="activate__password">Choose a password</label>
+			<input id="activate__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+			<p class="error">{{.Errors.Get "password"}}</p>
+
+			<div class="bag reverse">
+				<button type="submit">Use this password and activate account</button>
+			</div>
 		</form>
-
-		<script>
-			const form = document.getElementById("account-activate-form")
-
-			if (form) {
-				form.submit()
-			}
-		</script>
 	{{else}}
 		<p>An account cannot be activated without an activation token.</p>
 	{{end}}

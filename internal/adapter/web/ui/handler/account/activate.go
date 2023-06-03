@@ -25,7 +25,9 @@ func activateGet(svc *handler.Services) http.HandlerFunc {
 func activatePost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Token string
+			Token         string
+			Password      string
+			PasswordCheck string `form:"password"` // The UI doesn't include a check field
 		}
 		err := httputil.DecodeForm(&input, r)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
@@ -45,7 +47,7 @@ func activatePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		err = svc.Account.ActivateUser(ctx, email)
+		err = svc.Account.ActivateUser(ctx, email, input.Password, input.PasswordCheck)
 		if svc.ErrorView(w, r, errors.Tracef(err), "account/activate/form", nil) {
 			return
 		}
@@ -57,6 +59,6 @@ func activatePost(svc *handler.Services) http.HandlerFunc {
 
 		svc.Flash(ctx, "Your account has been successfully activated.")
 
-		http.Redirect(w, r, svc.Path("account.sign_in"), http.StatusSeeOther)
+		signInWithPassword(ctx, svc, w, r, email, input.Password)
 	}
 }

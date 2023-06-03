@@ -69,6 +69,12 @@ func signInTOTPGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		if !svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+			http.Redirect(w, r, svc.Path("account.sign_in"), http.StatusSeeOther)
+
+			return
+		}
+
 		if svc.Sessions.GetBool(ctx, sess.IsSignedIn) {
 			svc.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
 
@@ -90,6 +96,12 @@ func signInTOTPPost(svc *handler.Services) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+
+		if !svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+			http.Redirect(w, r, svc.Path("account.sign_in"), http.StatusSeeOther)
+
+			return
+		}
 
 		userID := svc.Sessions.GetInt(ctx, sess.UserID)
 		err = svc.Account.SignInWithTOTP(ctx, userID, input.TOTP)
@@ -127,6 +139,12 @@ func signInRecoveryCodeGet(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		if !svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+			http.Redirect(w, r, svc.Path("account.sign_in"), http.StatusSeeOther)
+
+			return
+		}
+
 		if svc.Sessions.GetBool(ctx, sess.IsSignedIn) {
 			svc.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
 
@@ -148,6 +166,12 @@ func signInRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+
+		if !svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+			http.Redirect(w, r, svc.Path("account.sign_in"), http.StatusSeeOther)
+
+			return
+		}
 
 		userID := svc.Sessions.GetInt(ctx, sess.UserID)
 		err = svc.Account.SignInWithRecoveryCode(ctx, userID, input.RecoveryCode)

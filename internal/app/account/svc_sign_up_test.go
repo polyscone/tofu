@@ -1,7 +1,6 @@
 package account_test
 
 import (
-	"bytes"
 	"context"
 	"testing"
 
@@ -22,7 +21,7 @@ func TestSignUp(t *testing.T) {
 		defer events.Check(t)
 
 		execute := func(email text.Email, password, passwordCheck account.Password) error {
-			_, err := svc.SignUp(ctx, email.String(), password.String(), passwordCheck.String())
+			_, err := svc.SignUp(ctx, email.String())
 			if err == nil {
 				events.Expect(account.SignedUp{Email: email.String()})
 			}
@@ -47,25 +46,6 @@ func TestSignUp(t *testing.T) {
 		t.Run("invalid email", func(t *testing.T) {
 			quick.Check(t, func(email quick.Invalid[text.Email], password account.Password) bool {
 				err := execute(email.Unwrap(), password, password)
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
-
-		t.Run("invalid password", func(t *testing.T) {
-			quick.Check(t, func(email text.Email, password quick.Invalid[account.Password]) bool {
-				err := execute(email, password.Unwrap(), password.Unwrap())
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
-
-		t.Run("mismatched password", func(t *testing.T) {
-			quick.Check(t, func(email text.Email, password account.Password) bool {
-				mismatch := bytes.Clone(password)
-				mismatch[0]++
-
-				err := execute(email, password, mismatch)
 
 				return errors.Is(err, app.ErrMalformedInput)
 			})

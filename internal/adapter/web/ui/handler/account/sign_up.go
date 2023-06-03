@@ -1,14 +1,18 @@
 package account
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
 func SignUp(svc *handler.Services, mux *router.ServeMux) {
@@ -30,18 +34,14 @@ func signUpGet(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		svc.View(w, r, http.StatusOK, "account/sign_up/form", handler.Vars{
-			"Email": svc.Sessions.PopString(ctx, "account.sign_up.email"),
-		})
+		svc.View(w, r, http.StatusOK, "account/sign_up/form", nil)
 	}
 }
 
 func signUpPost(svc *handler.Services) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Email         string
-			Password      string
-			PasswordCheck string `form:"password"` // The UI doesn't include a check field
+			Email string
 		}
 		err := httputil.DecodeForm(&input, r)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
@@ -50,13 +50,37 @@ func signUpPost(svc *handler.Services) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		_, err = svc.Account.SignUp(ctx, input.Email, input.Password, input.PasswordCheck)
+		_, err = svc.Account.SignUp(ctx, input.Email)
 		if err != nil {
-			svc.ErrorView(w, r, errors.Tracef(err), "account/sign_up/form", handler.Vars{
-				"IsEmailInUse": errors.Is(err, app.ErrConflictingInput),
-			})
+			switch {
+			case errors.Is(err, app.ErrConflictingInput):
+				background.Go(func() {
+					ctx := context.Background()
 
-			return
+					tok, err := svc.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
+					if err != nil {
+						logger.PrintError(err)
+
+						return
+					}
+
+					recipients := handler.EmailRecipients{
+						From: svc.Email.From,
+						To:   []string{input.Email},
+					}
+					vars := handler.Vars{
+						"Token": tok,
+					}
+					if err := svc.SendEmail(ctx, recipients, "sign_up_reset_password", vars); err != nil {
+						logger.PrintError(err)
+					}
+				})
+
+			default:
+				svc.ErrorView(w, r, errors.Tracef(err), "account/sign_up/form", nil)
+
+				return
+			}
 		}
 
 		svc.Sessions.Set(ctx, "account.sign_up.email", input.Email)

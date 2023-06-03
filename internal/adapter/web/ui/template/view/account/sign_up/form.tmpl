@@ -9,11 +9,7 @@
 {{define "view_body"}}
 
 <div class="center">
-	{{if .Vars.IsEmailInUse}}
-		<div class="error-banner">
-			<p>This email address is already in use. Do you <a href="{{Path "account.sign_in"}}">already have an account</a>?</p>
-		</div>
-	{{end}}
+	<p>You will be able to choose your password after verifying your email address.</p>
 
 	<form action="{{Path "account.sign_up.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
@@ -21,10 +17,6 @@
 		<label for="sign-up__email">Email</label>
 		<input id="sign-up__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="ash@example.com" autocomplete="email" required pattern=".+?@.+?(\..+?)+" maxlength="100">
 		<p class="error">{{.Errors.Get "email"}}</p>
-
-		<label for="sign-up__password">Password</label>
-		<input id="sign-up__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="new-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
-		<p class="error">{{.Errors.Get "password"}}</p>
 
 		<div class="bag reverse">
 			<button type="submit" class="push-inline-end">Sign up</button>

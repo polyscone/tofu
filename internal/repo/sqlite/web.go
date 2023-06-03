@@ -352,19 +352,6 @@ func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) 
 }
 
 func (r *WebRepo) addToken(ctx context.Context, tx *Tx, email string, ttl time.Duration, kind string) (string, error) {
-	_, err := tx.ExecContext(ctx, `
-		DELETE FROM web__tokens
-		WHERE
-			email = :email AND
-			kind = :kind
-	`,
-		sql.Named("email", email),
-		sql.Named("kind", kind),
-	)
-	if err != nil {
-		return "", errors.Tracef(err)
-	}
-
 	b := make([]byte, 16)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
 		return "", errors.Tracef(err)
@@ -379,7 +366,7 @@ func (r *WebRepo) addToken(ctx context.Context, tx *Tx, email string, ttl time.D
 
 	expiresAt := Time(tx.now.Add(ttl).UTC())
 
-	_, err = tx.ExecContext(ctx, `
+	_, err := tx.ExecContext(ctx, `
 		INSERT INTO web__tokens (
 			hash,
 			email,

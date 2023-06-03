@@ -9,25 +9,16 @@ import (
 	"github.com/polyscone/tofu/internal/repo"
 )
 
-func (s *Service) SignUp(ctx context.Context, email, password, passwordCheck string) (*User, error) {
+func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 	var input struct {
-		email         text.Email
-		password      Password
-		passwordCheck Password
+		email text.Email
 	}
 	{
 		var err error
 		var errs errors.Map
 
-		input.passwordCheck, _ = NewPassword(passwordCheck)
-
 		if input.email, err = text.NewEmail(email); err != nil {
 			errs.Set("email", err)
-		}
-		if input.password, err = NewPassword(password); err != nil {
-			errs.Set("password", err)
-		} else if !input.password.Equal(input.passwordCheck) {
-			errs.Set("password", "passwords do not match")
 		}
 
 		if errs != nil {
@@ -37,7 +28,7 @@ func (s *Service) SignUp(ctx context.Context, email, password, passwordCheck str
 
 	user := NewUser(input.email)
 
-	if err := user.SignUpWithPassword(input.password, s.hasher); err != nil {
+	if err := user.SignUp(); err != nil {
 		return nil, errors.Tracef(err)
 	}
 

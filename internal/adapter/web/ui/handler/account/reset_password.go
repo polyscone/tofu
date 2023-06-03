@@ -1,12 +1,16 @@
 package account
 
 import (
+	"context"
 	"net/http"
+	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
+	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
@@ -45,8 +49,26 @@ func resetPasswordPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		svc.Broker.Dispatch(handler.ResetPasswordRequested{
-			Email: input.Email,
+		background.Go(func() {
+			ctx := context.Background()
+
+			tok, err := svc.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
+			if err != nil {
+				logger.PrintError(err)
+
+				return
+			}
+
+			recipients := handler.EmailRecipients{
+				From: svc.Email.From,
+				To:   []string{input.Email},
+			}
+			vars := handler.Vars{
+				"Token": tok,
+			}
+			if err := svc.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
+				logger.PrintError(err)
+			}
 		})
 
 		http.Redirect(w, r, svc.Path("account.reset_password.email_sent"), http.StatusSeeOther)

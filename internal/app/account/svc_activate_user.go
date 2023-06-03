@@ -8,16 +8,25 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
-func (s *Service) ActivateUser(ctx context.Context, email string) error {
+func (s *Service) ActivateUser(ctx context.Context, email, password, passwordCheck string) error {
 	var input struct {
-		email text.Email
+		email         text.Email
+		password      Password
+		passwordCheck Password
 	}
 	{
 		var err error
 		var errs errors.Map
 
+		input.passwordCheck, _ = NewPassword(passwordCheck)
+
 		if input.email, err = text.NewEmail(email); err != nil {
 			errs.Set("email", err)
+		}
+		if input.password, err = NewPassword(password); err != nil {
+			errs.Set("password", err)
+		} else if !input.password.Equal(input.passwordCheck) {
+			errs.Set("password", "passwords do not match")
 		}
 
 		if errs != nil {
@@ -30,7 +39,7 @@ func (s *Service) ActivateUser(ctx context.Context, email string) error {
 		return errors.Tracef(err)
 	}
 
-	if err := user.Activate(); err != nil {
+	if err := user.Activate(input.password, s.hasher); err != nil {
 		return errors.Tracef(err)
 	}
 

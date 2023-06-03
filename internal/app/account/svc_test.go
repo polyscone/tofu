@@ -43,12 +43,13 @@ func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu 
 	tu.Activate = tu.Activate || tu.SetupTOTP || tu.VerifyTOTP
 
 	user := account.NewUser(errors.Must(text.NewEmail(tu.Email)))
-	password := errors.Must(account.NewPassword(tu.Password))
 
-	errors.Must0(user.SignUpWithPassword(password, hasher))
+	errors.Must0(user.SignUp())
 
 	if tu.Activate {
-		errors.Must0(user.Activate())
+		password := errors.Must(account.NewPassword(tu.Password))
+
+		errors.Must0(user.Activate(password, hasher))
 	}
 	if tu.SetupTOTP {
 		errors.Must0(user.SetupTOTP())

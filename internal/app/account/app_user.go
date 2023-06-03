@@ -58,11 +58,7 @@ func (u *User) HasActivatedTOTP() bool {
 	return !u.TOTPActivatedAt.IsZero()
 }
 
-func (u *User) SignUpWithPassword(password Password, hasher password.Hasher) error {
-	if err := u.setPassword(password, hasher); err != nil {
-		return errors.Tracef(err)
-	}
-
+func (u *User) SignUp() error {
 	u.SignedUpAt = time.Now().UTC()
 
 	u.Events.Enqueue(SignedUp{
@@ -72,9 +68,13 @@ func (u *User) SignUpWithPassword(password Password, hasher password.Hasher) err
 	return nil
 }
 
-func (u *User) Activate() error {
+func (u *User) Activate(password Password, hasher password.Hasher) error {
 	if !u.ActivatedAt.IsZero() {
 		return errors.Tracef("already activated")
+	}
+
+	if err := u.setPassword(password, hasher); err != nil {
+		return errors.Tracef(err)
 	}
 
 	u.ActivatedAt = time.Now().UTC()
