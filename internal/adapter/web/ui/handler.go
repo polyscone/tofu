@@ -56,7 +56,15 @@ func NewHandler(tenant *handler.Tenant) http.Handler {
 	mux.Use(middleware.MethodOverride)
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
 		Consume: func(r *http.Request) bool {
-			whitelist := []string{".css", ".js", ".gif", ".jpg", ".jpeg", ".png", ".ico"}
+			whitelist := []string{
+				".css",
+				".gif",
+				".ico",
+				".jpeg",
+				".jpg",
+				".js",
+				".png",
+			}
 
 			for _, ext := range whitelist {
 				if strings.HasSuffix(r.URL.Path, ext) {

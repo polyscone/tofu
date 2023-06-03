@@ -48,10 +48,6 @@ func (g *Guard) isSignedIn(p passport.Passport) error {
 
 func (g *Guard) isAuthorised(isAuthorised PredicateFunc) CheckFunc {
 	return func(p passport.Passport) error {
-		if !p.IsSignedIn() {
-			return errors.Tracef(ErrRedirect)
-		}
-
 		if !isAuthorised(p) {
 			return app.ErrUnauthorised
 		}
@@ -75,8 +71,8 @@ func (g *Guard) ProtectPrefix(path string, check CheckFunc) {
 	})
 
 	sort.Slice(g.prefixes, func(i, j int) bool {
-		// Reverse string length sort so the longest path comes first
-		return utf8.RuneCountInString(g.prefixes[j].path) < utf8.RuneCountInString(g.prefixes[i].path)
+		// Make sure the shortest strings come first
+		return utf8.RuneCountInString(g.prefixes[j].path) > utf8.RuneCountInString(g.prefixes[i].path)
 	})
 }
 
@@ -98,10 +94,27 @@ func (g *Guard) RequireAuthPrefix(path string, isAuthorised PredicateFunc) {
 
 func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// If a guard exists for an exact match on the path then we run that
-		// otherwise we look for the longest matching prefix guard
-		//
-		// This way we guarantee that only the best matching guard will be run
+		for _, guard := range g.prefixes {
+			if !strings.HasPrefix(r.URL.Path, guard.path) {
+				continue
+			}
+
+			ctx := r.Context()
+
+			passport := g.svc.Passport(ctx)
+			if err := guard.check(passport); err != nil {
+				if errors.Is(err, ErrRedirect) {
+					g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+
+					http.Redirect(w, r, g.redirect(), http.StatusSeeOther)
+				} else {
+					g.svc.ErrorView(w, r, errors.Tracef(err), "error", nil)
+				}
+
+				return
+			}
+		}
+
 		if check, ok := g.exact[r.URL.Path]; ok {
 			ctx := r.Context()
 
@@ -116,32 +129,6 @@ func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
 				}
 
 				return
-			}
-		} else {
-			for _, guard := range g.prefixes {
-				if !strings.HasPrefix(r.URL.Path, guard.path) {
-					continue
-				}
-
-				ctx := r.Context()
-
-				passport := g.svc.Passport(ctx)
-				if err := guard.check(passport); err != nil {
-					if errors.Is(err, ErrRedirect) {
-						g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
-
-						http.Redirect(w, r, g.redirect(), http.StatusSeeOther)
-					} else {
-						g.svc.ErrorView(w, r, errors.Tracef(err), "error", nil)
-					}
-
-					return
-				}
-
-				// We only want to apply the guard with the longest matching prefix
-				// so we break out of the loop here to prevent running more guards
-				// than we should
-				break
 			}
 		}
 
