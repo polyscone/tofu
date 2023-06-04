@@ -68,6 +68,7 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 		"HasPrefix":     tmplHasPrefix,
 		"HasSuffix":     tmplHasSuffix,
 		"HasPathPrefix": tmplHasPathPrefix(mux),
+		"UnescapeHTML":  tmplUnescapeHTML,
 	}
 
 	return &Services{
@@ -302,8 +303,8 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 		},
 		Session: SessionData{
 			// Global session keys
-			Flash:          template.HTML(svc.Sessions.PopString(ctx, sess.Flash)),
-			FlashImportant: svc.Sessions.PopBool(ctx, sess.FlashImportant),
+			Flash:          svc.Sessions.PopStrings(ctx, sess.Flash),
+			FlashImportant: svc.Sessions.PopStrings(ctx, sess.FlashImportant),
 			Redirect:       svc.Sessions.GetString(ctx, sess.Redirect),
 
 			// Account session keys
@@ -480,14 +481,20 @@ func (svc *Services) JSON(w http.ResponseWriter, r *http.Request, data any) bool
 	return !svc.ErrorJSON(w, r, errors.Tracef(json.NewEncoder(w).Encode(data)))
 }
 
-func (svc *Services) Flashf(ctx context.Context, format string, a ...any) {
-	svc.Sessions.Set(ctx, sess.Flash, fmt.Sprintf(format, a...))
+func (svc *Services) AddFlashf(ctx context.Context, format string, a ...any) {
+	flash := svc.Sessions.GetStrings(ctx, sess.Flash)
+
+	flash = append(flash, fmt.Sprintf(format, a...))
+
+	svc.Sessions.Set(ctx, sess.Flash, flash)
 }
 
-func (svc *Services) FlashfImportant(ctx context.Context, format string, a ...any) {
-	svc.Sessions.Set(ctx, sess.FlashImportant, true)
+func (svc *Services) AddFlashImportantf(ctx context.Context, format string, a ...any) {
+	flash := svc.Sessions.GetStrings(ctx, sess.FlashImportant)
 
-	svc.Flashf(ctx, format, a...)
+	flash = append(flash, fmt.Sprintf(format, a...))
+
+	svc.Sessions.Set(ctx, sess.FlashImportant, flash)
 }
 
 func (svc *Services) Pagination(r *http.Request) (int, int) {

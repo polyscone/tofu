@@ -37,9 +37,15 @@
 				</div>
 			{{end}}
 
-			{{if .Session.Flash}}
-				<div class="flash-banner{{if .Session.FlashImportant}} flash-banner--important{{end}} center">
-					<p>{{.Session.Flash}}</p>
+			{{range $flash := .Session.FlashImportant}}
+				<div class="flash-banner flash-banner--important center">
+					<p>{{UnescapeHTML $flash}}</p>
+				</div>
+			{{end}}
+
+			{{range $flash := .Session.Flash}}
+				<div class="flash-banner center">
+					<p>{{UnescapeHTML $flash}}</p>
 				</div>
 			{{end}}
 

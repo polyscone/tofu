@@ -66,6 +66,10 @@ func (p Passport) CanCreateRoles() bool {
 	return true
 }
 
+func (p Passport) CanEditRoles() bool {
+	return true
+}
+
 func (p Passport) CanDeleteRoles() bool {
 	return true
 }

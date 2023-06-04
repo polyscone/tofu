@@ -67,8 +67,8 @@ type AppData struct {
 
 type SessionData struct {
 	// General session keys
-	Flash          template.HTML
-	FlashImportant bool
+	Flash          []string
+	FlashImportant []string
 	Redirect       string
 
 	// Account session keys
@@ -255,4 +255,8 @@ func tmplHasPathPrefix(mux *router.ServeMux) tmplHasPathPrefixFunc {
 
 		return v == p || strings.HasPrefix(v, p+"/")
 	}
+}
+
+func tmplUnescapeHTML(s string) template.HTML {
+	return template.HTML(s)
 }

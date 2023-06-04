@@ -11,12 +11,17 @@ type DeleteRoleGuard interface {
 	CanDeleteRoles() bool
 }
 
-func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID int) error {
+func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID int) (*Role, error) {
 	if !guard.CanDeleteRoles() {
-		return errors.Tracef(app.ErrUnauthorised)
+		return nil, errors.Tracef(app.ErrUnauthorised)
 	}
 
-	err := s.repo.RemoveRole(ctx, roleID)
+	role, err := s.repo.FindRoleByID(ctx, roleID)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
 
-	return errors.Tracef(err)
+	err = s.repo.RemoveRole(ctx, roleID)
+
+	return role, errors.Tracef(err)
 }

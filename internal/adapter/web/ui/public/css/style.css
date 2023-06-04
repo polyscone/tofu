@@ -99,7 +99,7 @@
 	hr {
 		inline-size: 100%;
 		border: none;
-		border-block: 1px solid var(--clr-black-200);
+		border-block-start: 1px solid var(--clr-black-200);
 	}
 
 	th {

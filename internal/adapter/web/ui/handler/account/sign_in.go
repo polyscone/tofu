@@ -120,7 +120,7 @@ func signInTOTPPost(svc *handler.Services) http.HandlerFunc {
 		}
 
 		if len(user.RecoveryCodes) <= lowRecoveryCodes {
-			svc.FlashfImportant(ctx, `
+			svc.AddFlashImportantf(ctx, `
 				You are running low on recovery codes.<br>
 				We recommend
 				<a href="`+svc.Path("account.totp.recovery_codes")+`">generating new ones</a>
@@ -189,23 +189,19 @@ func signInRecoveryCodePost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		flash := `
+		svc.AddFlashImportantf(ctx, `
 			If you have lost your authentication device
-			<a href="` + svc.Path("account.totp.disable") + `">disable two-factor authentication</a>
+			<a href="`+svc.Path("account.totp.disable")+`">disable two-factor authentication</a>
 			to avoid getting locked out of your account.
-		`
+		`)
 
 		if len(user.RecoveryCodes) <= lowRecoveryCodes {
-			flash += `
-				<br>
-				<br>
-				You are also running low on recovery codes.<br>
+			svc.AddFlashImportantf(ctx, `
+				You are running low on recovery codes.<br>
 				If you still have your authentication device you can
-				<a href="` + svc.Path("account.totp.recovery_codes") + `">generate new recovery codes</a>.
-			`
+				<a href="`+svc.Path("account.totp.recovery_codes")+`">generate new recovery codes</a>.
+			`)
 		}
-
-		svc.FlashfImportant(ctx, flash)
 
 		svc.Sessions.Set(ctx, sess.IsSignedIn, true)
 		svc.Sessions.Delete(ctx, sess.IsAwaitingTOTP)

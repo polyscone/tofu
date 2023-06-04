@@ -39,7 +39,7 @@ func TestCreateRole(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			role, err := svc.CreateRole(ctx, tc.guard, tc.roleName)
+			created, err := svc.CreateRole(ctx, tc.guard, tc.roleName)
 			if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 				t.Fatalf("want error: %v; got %v", tc.want, err)
 			}
@@ -48,9 +48,9 @@ func TestCreateRole(t *testing.T) {
 				return
 			}
 
-			found := errors.Must(store.FindRoleByID(ctx, role.ID))
+			found := errors.Must(store.FindRoleByID(ctx, created.ID))
 
-			if want, got := role.Name, found.Name; want != got {
+			if want, got := created.Name, found.Name; want != got {
 				t.Errorf("want name to be %q; got %q", want, got)
 			}
 		})

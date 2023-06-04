@@ -48,7 +48,7 @@ func TestDeleteRole(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err = svc.DeleteRole(ctx, tc.guard, role.ID)
+			deleted, err := svc.DeleteRole(ctx, tc.guard, role.ID)
 			if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 				t.Fatalf("want error: %v; got %v", tc.want, err)
 			}
@@ -57,7 +57,7 @@ func TestDeleteRole(t *testing.T) {
 				return
 			}
 
-			if _, err := store.FindRoleByID(ctx, role.ID); err == nil {
+			if _, err := store.FindRoleByID(ctx, deleted.ID); err == nil {
 				t.Errorf("want error: %v; got <nil>", repo.ErrNotFound)
 			}
 		})

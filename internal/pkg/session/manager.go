@@ -329,6 +329,39 @@ func (m *Manager) PopString(ctx context.Context, key string) string {
 	return value
 }
 
+// GetString fetches a string slice from the session's data.
+// If the given key does not exist then the zero value is returned.
+func (m *Manager) GetStrings(ctx context.Context, key string) []string {
+	switch slice := m.Get(ctx, key).(type) {
+	case []string:
+		return slice
+
+	case []any:
+		value := make([]string, len(slice))
+		for i, v := range slice {
+			if s, ok := v.(string); ok {
+				value[i] = s
+			}
+		}
+
+		return value
+
+	default:
+		return nil
+	}
+}
+
+// PopString fetches a string slice from the session's data.
+// After fetching the value it is then deleted from the session.
+// If the given key does not exist then the zero value is returned.
+func (m *Manager) PopStrings(ctx context.Context, key string) []string {
+	value := m.GetStrings(ctx, key)
+
+	m.Delete(ctx, key)
+
+	return value
+}
+
 func getSession(ctx context.Context) *Session {
 	value := ctx.Value(ctxSession)
 	if value == nil {

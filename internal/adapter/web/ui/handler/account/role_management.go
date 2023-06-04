@@ -81,7 +81,7 @@ func roleNewPost(svc *handler.Services) http.HandlerFunc {
 			return
 		}
 
-		svc.Flashf(ctx, "Role %q created successfully.", role.Name)
+		svc.AddFlashf(ctx, "Role %q created successfully.", role.Name)
 
 		svc.Sessions.Set(ctx, "role.sort_top_id", role.ID)
 		svc.Sessions.Set(ctx, "role.highlight_id", role.ID)
@@ -91,7 +91,41 @@ func roleNewPost(svc *handler.Services) http.HandlerFunc {
 }
 
 func roleEditGet(svc *handler.Services) http.HandlerFunc {
+	svc.SetViewVars("account/management/role/edit", func(r *http.Request) (handler.Vars, error) {
+		roleID, err := router.URLParamAs[int](r, "roleID")
+		if err != nil {
+			return nil, errors.Tracef(err)
+		}
+
+		ctx := r.Context()
+
+		role, err := svc.Repo.Account.FindRoleByID(ctx, roleID)
+		if err != nil {
+			return nil, errors.Tracef(err)
+		}
+
+		vars := handler.Vars{
+			"Role": role,
+		}
+
+		return vars, nil
+	})
+
 	return func(w http.ResponseWriter, r *http.Request) {
+		svc.View(w, r, http.StatusOK, "account/management/role/edit", nil)
+	}
+}
+
+func roleEditPost(svc *handler.Services) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Name string
+		}
+		err := httputil.DecodeForm(&input, r)
+		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
 		roleID, err := router.URLParamAs[int](r, "roleID")
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
@@ -99,19 +133,15 @@ func roleEditGet(svc *handler.Services) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		role, err := svc.Repo.Account.FindRoleByID(ctx, roleID)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		passport := svc.Passport(ctx)
+
+		role, err := svc.Account.EditRole(ctx, passport, roleID, input.Name)
+		if svc.ErrorView(w, r, errors.Tracef(err), "account/management/role/edit", nil) {
 			return
 		}
 
-		svc.View(w, r, http.StatusOK, "account/management/role/edit", handler.Vars{
-			"Role": role,
-		})
-	}
-}
+		svc.AddFlashf(ctx, "Role %q updated successfully.", role.Name)
 
-func roleEditPost(svc *handler.Services) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, svc.PathQuery(r, "account.management.role.list"), http.StatusSeeOther)
 	}
 }
@@ -147,17 +177,12 @@ func roleDeletePost(svc *handler.Services) http.HandlerFunc {
 
 		passport := svc.Passport(ctx)
 
-		role, err := svc.Repo.Account.FindRoleByID(ctx, roleID)
+		role, err := svc.Account.DeleteRole(ctx, passport, roleID)
 		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
-		err = svc.Account.DeleteRole(ctx, passport, roleID)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
-			return
-		}
-
-		svc.Flashf(ctx, "Role %q deleted successfully.", role.Name)
+		svc.AddFlashf(ctx, "Role %q deleted successfully.", role.Name)
 
 		http.Redirect(w, r, svc.PathQuery(r, "account.management.role.list"), http.StatusSeeOther)
 	}

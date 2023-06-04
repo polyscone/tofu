@@ -85,7 +85,7 @@ func changePasswordPost(svc *handler.Services) http.HandlerFunc {
 
 		var redirect string
 		if r := svc.Sessions.PopString(ctx, sess.Redirect); r != "" {
-			svc.Flashf(ctx, "Your password has been successfully changed.")
+			svc.AddFlashf(ctx, "Your password has been successfully changed.")
 
 			redirect = r
 		} else {

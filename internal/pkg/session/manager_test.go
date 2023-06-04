@@ -152,6 +152,41 @@ func TestSessionManager(t *testing.T) {
 
 				errors.Must(sm.Commit(ctx))
 			})
+
+			t.Run("strings", func(t *testing.T) {
+				ctx = errors.Must(sm.Load(ctx, id))
+
+				sm.Set(ctx, "keyblah", []string{"Foo", "Bar", "Baz"})
+
+				errors.Must(sm.Commit(ctx))
+				ctx = errors.Must(sm.Load(ctx, id))
+
+				equal := func(s1, s2 []string) bool {
+					if len(s1) != len(s2) {
+						return false
+					}
+
+					for i, value := range s1 {
+						if value != s2[i] {
+							return false
+						}
+					}
+
+					return true
+				}
+
+				if want, got := []string{"Foo", "Bar", "Baz"}, sm.GetStrings(ctx, "keyblah"); !equal(want, got) {
+					t.Errorf("want %q; got %q", want, got)
+				}
+				if want, got := []string{"Foo", "Bar", "Baz"}, sm.PopStrings(ctx, "keyblah"); !equal(want, got) {
+					t.Errorf("want %q; got %q", want, got)
+				}
+				if want, got := []string(nil), sm.PopStrings(ctx, "keyblah"); !equal(want, got) {
+					t.Errorf("want %q; got %q", want, got)
+				}
+
+				errors.Must(sm.Commit(ctx))
+			})
 		})
 
 		t.Run("membership tests", func(t *testing.T) {
