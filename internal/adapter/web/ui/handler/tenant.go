@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/polyscone/tofu/internal/adapter/web/smtp"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/sms"
+	"github.com/polyscone/tofu/internal/pkg/smtp"
 )
 
 type AccountReader interface {

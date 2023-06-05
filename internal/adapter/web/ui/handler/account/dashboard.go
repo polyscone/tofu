@@ -3,18 +3,18 @@ package account
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/handler"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Dashboard(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
-	mux.Get("/", dashboardGet(svc), "account.dashboard")
+func Dashboard(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+	mux.Get("/", dashboardGet(h), "account.dashboard")
 
 	guard.RequireSignIn(mux.Path("account.dashboard"))
 }
 
-func dashboardGet(svc *handler.Services) http.HandlerFunc {
+func dashboardGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "account/dashboard", nil)
+		h.View(w, r, http.StatusOK, "account/dashboard", nil)
 	}
 }

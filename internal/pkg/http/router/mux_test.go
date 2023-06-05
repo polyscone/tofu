@@ -46,10 +46,17 @@ func TestMux(t *testing.T) {
 		mux.Prefix("/only", func(mux *router.ServeMux) {
 			mux.Get("/", emptyHandler)
 
-			current := mux.CurrentPath()
+			currentPrefix := mux.CurrentPrefix()
+			currentPath := mux.CurrentPath()
 
-			mux.Get("/current", func(w http.ResponseWriter, r *http.Request) {
-				w.Write([]byte(current))
+			mux.Prefix("/current", func(mux *router.ServeMux) {
+				mux.Get("/prefix", func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte(currentPrefix))
+				})
+
+				mux.Get("/path", func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte(currentPath))
+				})
 			})
 		})
 	})
@@ -230,7 +237,8 @@ func TestMux(t *testing.T) {
 		{"mux object path simple", http.MethodGet, mux.Path("simple"), "/aa/bb/cc/dd", http.StatusOK},
 		{"mux object path complex", http.MethodGet, mux.Path("complex", ":bb", "xx", ":dd", "yy"), "/aa/xx/cc/yy", http.StatusOK},
 		{"mux object path named prefix", http.MethodGet, mux.Path("named"), "named", http.StatusOK},
-		{"mux object current path", http.MethodGet, "/get/only/current", "/get/only", http.StatusOK},
+		{"mux object current prefix", http.MethodGet, "/get/only/current/prefix", "/get/only/", http.StatusOK},
+		{"mux object current path", http.MethodGet, "/get/only/current/path", "/get/only", http.StatusOK},
 
 		{"redirect get method ok", http.MethodGet, "/redirect/src", "redirected", http.StatusOK},
 		{"redirect with dynamic param", http.MethodGet, "/redirect/redirect/src/var", "redirected", http.StatusOK},

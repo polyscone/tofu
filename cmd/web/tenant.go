@@ -12,12 +12,12 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web"
-	"github.com/polyscone/tofu/internal/adapter/web/handler"
-	"github.com/polyscone/tofu/internal/adapter/web/smtp"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/sms"
+	"github.com/polyscone/tofu/internal/pkg/smtp"
 	"github.com/polyscone/tofu/internal/repo/sqlite"
 )
 

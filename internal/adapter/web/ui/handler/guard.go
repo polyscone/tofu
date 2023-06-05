@@ -24,15 +24,15 @@ type prefixGuard struct {
 }
 
 type Guard struct {
-	svc      *Services
+	h        *Handler
 	exact    map[string]CheckFunc
 	prefixes []prefixGuard
 	redirect RedirectFunc
 }
 
-func NewGuard(svc *Services, redirect RedirectFunc) *Guard {
+func NewGuard(h *Handler, redirect RedirectFunc) *Guard {
 	return &Guard{
-		svc:      svc,
+		h:        h,
 		redirect: redirect,
 		exact:    make(map[string]CheckFunc),
 	}
@@ -57,39 +57,30 @@ func (g *Guard) isAuthorised(isAuthorised PredicateFunc) CheckFunc {
 }
 
 func (g *Guard) Protect(path string, check CheckFunc) {
-	g.exact[path] = check
-}
-
-func (g *Guard) ProtectPrefix(path string, check CheckFunc) {
+	isPrefix := strings.HasSuffix(path, "/")
 	path = strings.TrimSuffix(path, "/")
 
-	g.Protect(path, check)
+	g.exact[path] = check
 
-	g.prefixes = append(g.prefixes, prefixGuard{
-		path:  path + "/",
-		check: check,
-	})
+	if isPrefix {
+		g.prefixes = append(g.prefixes, prefixGuard{
+			path:  path + "/",
+			check: check,
+		})
 
-	sort.Slice(g.prefixes, func(i, j int) bool {
-		// Make sure the shortest strings come first
-		return utf8.RuneCountInString(g.prefixes[j].path) > utf8.RuneCountInString(g.prefixes[i].path)
-	})
+		sort.Slice(g.prefixes, func(i, j int) bool {
+			// Make sure the shortest strings come first
+			return utf8.RuneCountInString(g.prefixes[j].path) > utf8.RuneCountInString(g.prefixes[i].path)
+		})
+	}
 }
 
 func (g *Guard) RequireSignIn(path string) {
 	g.Protect(path, g.isSignedIn)
 }
 
-func (g *Guard) RequireSignInPrefix(path string) {
-	g.ProtectPrefix(path, g.isSignedIn)
-}
-
 func (g *Guard) RequireAuth(path string, isAuthorised PredicateFunc) {
 	g.Protect(path, g.isAuthorised(isAuthorised))
-}
-
-func (g *Guard) RequireAuthPrefix(path string, isAuthorised PredicateFunc) {
-	g.ProtectPrefix(path, g.isAuthorised(isAuthorised))
 }
 
 func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
@@ -101,14 +92,14 @@ func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
 
 			ctx := r.Context()
 
-			passport := g.svc.Passport(ctx)
+			passport := g.h.Passport(ctx)
 			if err := guard.check(passport); err != nil {
 				if errors.Is(err, ErrRedirect) {
-					g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+					g.h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
 					http.Redirect(w, r, g.redirect(), http.StatusSeeOther)
 				} else {
-					g.svc.ErrorView(w, r, errors.Tracef(err), "error", nil)
+					g.h.ErrorView(w, r, errors.Tracef(err), "error", nil)
 				}
 
 				return
@@ -118,14 +109,14 @@ func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		if check, ok := g.exact[r.URL.Path]; ok {
 			ctx := r.Context()
 
-			passport := g.svc.Passport(ctx)
+			passport := g.h.Passport(ctx)
 			if err := check(passport); err != nil {
 				if errors.Is(err, ErrRedirect) {
-					g.svc.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+					g.h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
 					http.Redirect(w, r, g.redirect(), http.StatusSeeOther)
 				} else {
-					g.svc.ErrorView(w, r, errors.Tracef(err), "error", nil)
+					g.h.ErrorView(w, r, errors.Tracef(err), "error", nil)
 				}
 
 				return

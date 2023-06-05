@@ -3,16 +3,16 @@ package admin
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/handler"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Dashboard(svc *handler.Services, mux *router.ServeMux) {
-	mux.Get("/", dashboardGet(svc), "admin.dashboard")
+func Dashboard(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+	mux.Get("/", dashboardGet(h), "admin.dashboard")
 }
 
-func dashboardGet(svc *handler.Services) http.HandlerFunc {
+func dashboardGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "admin/dashboard", nil)
+		h.View(w, r, http.StatusOK, "admin/dashboard", nil)
 	}
 }

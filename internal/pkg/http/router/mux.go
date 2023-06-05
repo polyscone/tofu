@@ -193,6 +193,10 @@ func (mux *ServeMux) Prefix(prefix string, routeGroup func(mux *ServeMux)) {
 	mux.prefix = originalPrefix
 }
 
+func (mux *ServeMux) CurrentPrefix() string {
+	return mux.prefix + "/"
+}
+
 func (mux *ServeMux) CurrentPath() string {
 	return mux.prefix
 }

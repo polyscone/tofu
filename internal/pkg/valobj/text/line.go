@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
-const validLinePattern = `[^\n\r]+`
+const validLinePattern = `^[^\n\r]+$`
 
 var (
 	validLine     = errors.Must(regexp.Compile(validLinePattern))

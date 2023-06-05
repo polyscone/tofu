@@ -5,11 +5,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
 var ErrTenantNotFound = errors.New("tenant not found")
@@ -64,9 +63,9 @@ func (h *MultiTenantHandler) handler(r *http.Request) (http.Handler, error) {
 	tenant.Hostname = hostname
 	tenant.Port = port
 
-	mux := router.NewServeMux()
+	mux := http.NewServeMux()
 
-	mux.AnyHandler("/:rest*", ui.NewHandler(tenant))
+	mux.Handle("/", ui.NewRouter(tenant))
 
 	h.handlers[hostname] = mux
 

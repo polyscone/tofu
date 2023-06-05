@@ -3,16 +3,16 @@ package page
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/handler"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Home(svc *handler.Services, mux *router.ServeMux) {
-	mux.Get("/", homeGet(svc), "page.home")
+func Home(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+	mux.Get("/", homeGet(h), "page.home")
 }
 
-func homeGet(svc *handler.Services) http.HandlerFunc {
+func homeGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "page/home", nil)
+		h.View(w, r, http.StatusOK, "page/home", nil)
 	}
 }

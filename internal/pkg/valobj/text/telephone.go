@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
-const validTelephonePattern = `\+\d(\d| )+`
+const validTelephonePattern = `^\+\d(\d| )+$`
 
 var (
 	validTelephone     = errors.Must(regexp.Compile(validTelephonePattern))

@@ -8,14 +8,12 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
-	"github.com/polyscone/tofu/internal/adapter/web/smtp"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
@@ -23,6 +21,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/rate"
 	"github.com/polyscone/tofu/internal/pkg/session"
+	"github.com/polyscone/tofu/internal/pkg/smtp"
 )
 
 type emailContent struct {
@@ -41,7 +40,7 @@ type EmailRecipients struct {
 
 type ViewVarsFunc func(r *http.Request) (Vars, error)
 
-type Services struct {
+type Handler struct {
 	*Tenant
 	files         fs.FS
 	templatesMu   sync.RWMutex
@@ -52,7 +51,7 @@ type Services struct {
 	Sessions      *session.Manager
 }
 
-func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
+func New(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Handler {
 	sessions := session.NewManager(tenant.Repo.Web)
 	funcs := template.FuncMap{
 		"Add":           tmplAdd,
@@ -71,7 +70,7 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 		"UnescapeHTML":  tmplUnescapeHTML,
 	}
 
-	return &Services{
+	return &Handler{
 		Tenant:        tenant,
 		files:         files,
 		templates:     make(map[string]*template.Template),
@@ -82,107 +81,107 @@ func NewServices(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Services {
 	}
 }
 
-func (svc *Services) RenewSession(ctx context.Context) ([]byte, error) {
+func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 	if err := csrf.RenewToken(ctx); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
-	if err := svc.Sessions.Renew(ctx); err != nil {
+	if err := h.Sessions.Renew(ctx); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
 	return csrf.MaskedToken(ctx), nil
 }
 
-func (svc *Services) emptyPassport(ctx context.Context) passport.Passport {
-	return passport.New(ctx, svc.Sessions, &account.User{})
+func (h *Handler) emptyPassport(ctx context.Context) passport.Passport {
+	return passport.New(ctx, h.Sessions, &account.User{})
 }
 
-func (svc *Services) Passport(ctx context.Context) passport.Passport {
-	if svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
-		return svc.emptyPassport(ctx)
+func (h *Handler) Passport(ctx context.Context) passport.Passport {
+	if h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+		return h.emptyPassport(ctx)
 	}
 
-	userID := svc.Sessions.GetInt(ctx, sess.UserID)
-	user, err := svc.Repo.Account.FindUserByID(ctx, userID)
+	userID := h.Sessions.GetInt(ctx, sess.UserID)
+	user, err := h.Repo.Account.FindUserByID(ctx, userID)
 	if err != nil {
-		return svc.emptyPassport(ctx)
+		return h.emptyPassport(ctx)
 	}
 
-	return passport.New(ctx, svc.Sessions, user)
+	return passport.New(ctx, h.Sessions, user)
 }
 
-func (svc *Services) PassportByEmail(ctx context.Context, email string) (passport.Passport, error) {
-	user, err := svc.Repo.Account.FindUserByEmail(ctx, email)
+func (h *Handler) PassportByEmail(ctx context.Context, email string) (passport.Passport, error) {
+	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
-		return svc.emptyPassport(ctx), errors.Tracef(err)
+		return h.emptyPassport(ctx), errors.Tracef(err)
 	}
 
-	return passport.New(ctx, svc.Sessions, user), nil
+	return passport.New(ctx, h.Sessions, user), nil
 }
 
-func (svc *Services) Path(name string, paramArgPairs ...any) string {
-	return svc.mux.Path(name, paramArgPairs...)
+func (h *Handler) Path(name string, paramArgPairs ...any) string {
+	return h.mux.Path(name, paramArgPairs...)
 }
 
-func (svc *Services) PathQuery(r *http.Request, name string, paramArgPairs ...any) string {
+func (h *Handler) PathQuery(r *http.Request, name string, paramArgPairs ...any) string {
 	q := r.URL.Query().Encode()
 	if q != "" && !strings.HasPrefix(q, "?") {
 		q = "?" + q
 	}
 
-	return svc.mux.Path(name, paramArgPairs...) + q
+	return h.mux.Path(name, paramArgPairs...) + q
 }
 
-func (svc *Services) SetViewVars(name string, vars ViewVarsFunc) {
-	if _, ok := svc.viewVarsFuncs[name]; ok {
+func (h *Handler) SetViewVars(name string, vars ViewVarsFunc) {
+	if _, ok := h.viewVarsFuncs[name]; ok {
 		panic(fmt.Sprintf("default view vars already set for %q", name))
 	}
 
-	svc.viewVarsFuncs[name] = vars
+	h.viewVarsFuncs[name] = vars
 }
 
-func (svc *Services) template(name string, patterns ...string) *template.Template {
-	svc.templatesMu.RLock()
+func (h *Handler) template(name string, patterns ...string) *template.Template {
+	h.templatesMu.RLock()
 
-	if tmpl := svc.templates[name]; tmpl != nil && !svc.Tenant.Dev {
-		svc.templatesMu.RUnlock()
+	if tmpl := h.templates[name]; tmpl != nil && !h.Tenant.Dev {
+		h.templatesMu.RUnlock()
 
 		return tmpl
 	}
 
-	svc.templatesMu.RUnlock()
+	h.templatesMu.RUnlock()
 
-	svc.templatesMu.Lock()
-	defer svc.templatesMu.Unlock()
+	h.templatesMu.Lock()
+	defer h.templatesMu.Unlock()
 
-	tmpl := template.New(name).Option("missingkey=default").Funcs(svc.funcs)
+	tmpl := template.New(name).Option("missingkey=default").Funcs(h.funcs)
 
 	for _, pattern := range patterns {
-		tmpl = errors.Must(tmpl.ParseFS(svc.files, pattern))
+		tmpl = errors.Must(tmpl.ParseFS(h.files, pattern))
 	}
 
-	svc.templates[name] = tmpl
+	h.templates[name] = tmpl
 
 	return tmpl
 }
 
-func (svc *Services) email(name string) *template.Template {
-	return svc.template(name, "email/"+name+".tmpl")
+func (h *Handler) email(name string) *template.Template {
+	return h.template(name, "email/"+name+".tmpl")
 }
 
-func (svc *Services) emailContentFunc(name string, dataFunc emailDataFunc) (emailContent, error) {
+func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailContent, error) {
 	data := emailData{
 		URL: URL{
-			Scheme:   svc.Tenant.Scheme,
-			Host:     svc.Tenant.Host,
-			Hostname: svc.Tenant.Hostname,
-			Port:     svc.Tenant.Port,
+			Scheme:   h.Tenant.Scheme,
+			Host:     h.Tenant.Host,
+			Hostname: h.Tenant.Hostname,
+			Port:     h.Tenant.Port,
 		},
 		App: AppData{
 			Name:        app.Name,
 			Description: app.Description,
-			HasSMS:      svc.Tenant.SMS.IsConfigured,
+			HasSMS:      h.Tenant.SMS.IsConfigured,
 		},
 	}
 
@@ -190,7 +189,7 @@ func (svc *Services) emailContentFunc(name string, dataFunc emailDataFunc) (emai
 		dataFunc(&data)
 	}
 
-	email := svc.email(name)
+	email := h.email(name)
 
 	var content emailContent
 	var buf bytes.Buffer
@@ -222,14 +221,14 @@ func (svc *Services) emailContentFunc(name string, dataFunc emailDataFunc) (emai
 	return content, nil
 }
 
-func (svc *Services) emailContent(name string, vars Vars) (emailContent, error) {
-	return svc.emailContentFunc(name, func(data *emailData) {
+func (h *Handler) emailContent(name string, vars Vars) (emailContent, error) {
+	return h.emailContentFunc(name, func(data *emailData) {
 		data.Vars = data.Vars.Merge(vars)
 	})
 }
 
-func (svc *Services) SendEmail(ctx context.Context, recipients EmailRecipients, name string, vars Vars) error {
-	content, err := svc.emailContent(name, vars)
+func (h *Handler) SendEmail(ctx context.Context, recipients EmailRecipients, name string, vars Vars) error {
+	content, err := h.emailContent(name, vars)
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -245,17 +244,17 @@ func (svc *Services) SendEmail(ctx context.Context, recipients EmailRecipients, 
 		HTML:    content.HTML,
 	}
 
-	return errors.Tracef(svc.Tenant.Email.Mailer.Send(ctx, msg))
+	return errors.Tracef(h.Tenant.Email.Mailer.Send(ctx, msg))
 }
 
-func (svc *Services) SendSMS(ctx context.Context, to, body string) error {
-	return errors.Tracef(svc.Tenant.SMS.Messager.Send(ctx, svc.Tenant.SMS.From, to, body))
+func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
+	return errors.Tracef(h.Tenant.SMS.Messager.Send(ctx, h.Tenant.SMS.From, to, body))
 }
 
-func (svc *Services) SendTOTPSMS(email, telephone string) error {
+func (h *Handler) SendTOTPSMS(email, telephone string) error {
 	ctx := context.Background()
 
-	user, err := svc.Repo.Account.FindUserByEmail(ctx, email)
+	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -269,19 +268,19 @@ func (svc *Services) SendTOTPSMS(email, telephone string) error {
 		telephone = user.TOTPTelephone
 	}
 
-	err = svc.SendSMS(ctx, telephone, totp)
+	err = h.SendSMS(ctx, telephone, totp)
 
 	return errors.Tracef(err)
 }
 
-func (svc *Services) view(name string) *template.Template {
-	return svc.template(name, "partial/*.tmpl", "view/"+name+".tmpl", "master.tmpl")
+func (h *Handler) view(name string) *template.Template {
+	return h.template(name, "partial/*.tmpl", "view/"+name+".tmpl", "master.tmpl")
 }
 
-func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int, name string, dataFunc ViewDataFunc) {
+func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, name string, dataFunc ViewDataFunc) {
 	ctx := r.Context()
 
-	passport := svc.Passport(ctx)
+	passport := h.Passport(ctx)
 
 	data := ViewData{
 		View:   name,
@@ -289,39 +288,39 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 		CSRF:   CSRF{ctx: ctx},
 		Form:   r.PostForm,
 		URL: URL{
-			Scheme:   svc.Tenant.Scheme,
-			Host:     svc.Tenant.Host,
-			Hostname: svc.Tenant.Hostname,
-			Port:     svc.Tenant.Port,
+			Scheme:   h.Tenant.Scheme,
+			Host:     h.Tenant.Host,
+			Hostname: h.Tenant.Hostname,
+			Port:     h.Tenant.Port,
 			Path:     template.URL(r.URL.Path),
 			Query:    Query{Values: r.URL.Query()},
 		},
 		App: AppData{
 			Name:        app.Name,
 			Description: app.Description,
-			HasSMS:      svc.Tenant.SMS.IsConfigured,
+			HasSMS:      h.Tenant.SMS.IsConfigured,
 		},
 		Session: SessionData{
 			// Global session keys
-			Flash:          svc.Sessions.PopStrings(ctx, sess.Flash),
-			FlashImportant: svc.Sessions.PopStrings(ctx, sess.FlashImportant),
-			Redirect:       svc.Sessions.GetString(ctx, sess.Redirect),
+			Flash:          h.Sessions.PopStrings(ctx, sess.Flash),
+			FlashImportant: h.Sessions.PopStrings(ctx, sess.FlashImportant),
+			Redirect:       h.Sessions.GetString(ctx, sess.Redirect),
 
 			// Account session keys
-			UserID:                   svc.Sessions.GetInt(ctx, sess.UserID),
-			Email:                    svc.Sessions.GetString(ctx, sess.Email),
-			TOTPMethod:               svc.Sessions.GetString(ctx, sess.TOTPMethod),
-			HasActivatedTOTP:         svc.Sessions.GetBool(ctx, sess.HasActivatedTOTP),
-			IsAwaitingTOTP:           svc.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
-			IsSignedIn:               svc.Sessions.GetBool(ctx, sess.IsSignedIn),
-			PasswordKnownBreachCount: svc.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount),
+			UserID:                   h.Sessions.GetInt(ctx, sess.UserID),
+			Email:                    h.Sessions.GetString(ctx, sess.Email),
+			TOTPMethod:               h.Sessions.GetString(ctx, sess.TOTPMethod),
+			HasActivatedTOTP:         h.Sessions.GetBool(ctx, sess.HasActivatedTOTP),
+			IsAwaitingTOTP:           h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
+			IsSignedIn:               h.Sessions.GetBool(ctx, sess.IsSignedIn),
+			PasswordKnownBreachCount: h.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount),
 		},
 		Guard: passport,
 	}
 
-	if vars, ok := svc.viewVarsFuncs[name]; ok {
+	if vars, ok := h.viewVarsFuncs[name]; ok {
 		defaults, err := vars(r)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
@@ -337,7 +336,7 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 
 	var buf bytes.Buffer
 
-	if err := svc.view(name).ExecuteTemplate(&buf, "master", data); err != nil {
+	if err := h.view(name).ExecuteTemplate(&buf, "master", data); err != nil {
 		httputil.LogError(r, err)
 
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -353,13 +352,13 @@ func (svc *Services) ViewFunc(w http.ResponseWriter, r *http.Request, status int
 	}
 }
 
-func (svc *Services) View(w http.ResponseWriter, r *http.Request, status int, name string, vars Vars) {
-	svc.ViewFunc(w, r, status, name, func(data *ViewData) {
+func (h *Handler) View(w http.ResponseWriter, r *http.Request, status int, name string, vars Vars) {
+	h.ViewFunc(w, r, status, name, func(data *ViewData) {
 		data.Vars = data.Vars.Merge(vars)
 	})
 }
 
-func (svc *Services) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err error, name string, dataFunc ViewDataFunc) bool {
+func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err error, name string, dataFunc ViewDataFunc) bool {
 	if err == nil {
 		return false
 	}
@@ -368,7 +367,7 @@ func (svc *Services) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err e
 
 	status := httputil.ErrorStatus(err)
 
-	svc.ViewFunc(w, r, status, name, func(data *ViewData) {
+	h.ViewFunc(w, r, status, name, func(data *ViewData) {
 		switch {
 		case errors.Is(err, httputil.ErrNotFound):
 			data.ErrorMessage = "The page you were looking for could not be found."
@@ -416,13 +415,13 @@ func (svc *Services) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err e
 	return true
 }
 
-func (svc *Services) ErrorView(w http.ResponseWriter, r *http.Request, err error, name string, vars Vars) bool {
-	return svc.ErrorViewFunc(w, r, errors.Tracef(err), name, func(data *ViewData) {
+func (h *Handler) ErrorView(w http.ResponseWriter, r *http.Request, err error, name string, vars Vars) bool {
+	return h.ErrorViewFunc(w, r, errors.Tracef(err), name, func(data *ViewData) {
 		data.Vars = data.Vars.Merge(vars)
 	})
 }
 
-func (svc *Services) ErrorJSON(w http.ResponseWriter, r *http.Request, err error) bool {
+func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, err error) bool {
 	if err == nil {
 		return false
 	}
@@ -475,49 +474,24 @@ func (svc *Services) ErrorJSON(w http.ResponseWriter, r *http.Request, err error
 	return true
 }
 
-func (svc *Services) JSON(w http.ResponseWriter, r *http.Request, data any) bool {
+func (h *Handler) JSON(w http.ResponseWriter, r *http.Request, data any) bool {
 	w.Header().Set("content-type", "application/json")
 
-	return !svc.ErrorJSON(w, r, errors.Tracef(json.NewEncoder(w).Encode(data)))
+	return !h.ErrorJSON(w, r, errors.Tracef(json.NewEncoder(w).Encode(data)))
 }
 
-func (svc *Services) AddFlashf(ctx context.Context, format string, a ...any) {
-	flash := svc.Sessions.GetStrings(ctx, sess.Flash)
+func (h *Handler) AddFlashf(ctx context.Context, format string, a ...any) {
+	flash := h.Sessions.GetStrings(ctx, sess.Flash)
 
 	flash = append(flash, fmt.Sprintf(format, a...))
 
-	svc.Sessions.Set(ctx, sess.Flash, flash)
+	h.Sessions.Set(ctx, sess.Flash, flash)
 }
 
-func (svc *Services) AddFlashImportantf(ctx context.Context, format string, a ...any) {
-	flash := svc.Sessions.GetStrings(ctx, sess.FlashImportant)
+func (h *Handler) AddFlashImportantf(ctx context.Context, format string, a ...any) {
+	flash := h.Sessions.GetStrings(ctx, sess.FlashImportant)
 
 	flash = append(flash, fmt.Sprintf(format, a...))
 
-	svc.Sessions.Set(ctx, sess.FlashImportant, flash)
-}
-
-func (svc *Services) Pagination(r *http.Request) (int, int) {
-	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if err != nil {
-		page = 1
-	}
-	if page < 1 {
-		page = 1
-	}
-
-	const maxSize = 100
-
-	size, err := strconv.Atoi(r.URL.Query().Get("size"))
-	if err != nil {
-		size = 10
-	}
-	if size < 1 {
-		size = 1
-	}
-	if size > maxSize {
-		size = maxSize
-	}
-
-	return page, size
+	h.Sessions.Set(ctx, sess.FlashImportant, flash)
 }

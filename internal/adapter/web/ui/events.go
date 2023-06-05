@@ -4,17 +4,17 @@ import (
 	"context"
 	"time"
 
-	"github.com/polyscone/tofu/internal/adapter/web/handler"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
-func accountSignedInWithPasswordHandler(tenant *handler.Tenant, svc *handler.Services) any {
+func accountSignedInWithPasswordHandler(tenant *handler.Tenant, h *handler.Handler) any {
 	return func(evt account.SignedInWithPassword) {
 		ctx := context.Background()
 
-		user, err := svc.Repo.Account.FindUserByEmail(ctx, evt.Email)
+		user, err := h.Repo.Account.FindUserByEmail(ctx, evt.Email)
 		if err != nil {
 			logger.PrintError(err)
 
@@ -23,7 +23,7 @@ func accountSignedInWithPasswordHandler(tenant *handler.Tenant, svc *handler.Ser
 
 		if user.HasActivatedTOTP() && user.TOTPMethod == account.TOTPMethodSMS.String() {
 			background.Go(func() {
-				if err := svc.SendTOTPSMS(user.Email, user.TOTPTelephone); err != nil {
+				if err := h.SendTOTPSMS(user.Email, user.TOTPTelephone); err != nil {
 					logger.PrintError(err)
 				}
 			})
@@ -31,7 +31,7 @@ func accountSignedInWithPasswordHandler(tenant *handler.Tenant, svc *handler.Ser
 	}
 }
 
-func accountDisabledTOTPHandler(tenant *handler.Tenant, svc *handler.Services) any {
+func accountDisabledTOTPHandler(tenant *handler.Tenant, h *handler.Handler) any {
 	return func(evt account.DisabledTOTP) {
 		background.Go(func() {
 			ctx := context.Background()
@@ -40,14 +40,14 @@ func accountDisabledTOTPHandler(tenant *handler.Tenant, svc *handler.Services) a
 				From: tenant.Email.From,
 				To:   []string{evt.Email},
 			}
-			if err := svc.SendEmail(ctx, recipients, "disabled_totp", nil); err != nil {
+			if err := h.SendEmail(ctx, recipients, "disabled_totp", nil); err != nil {
 				logger.PrintError(err)
 			}
 		})
 	}
 }
 
-func accountSignedUpHandler(tenant *handler.Tenant, svc *handler.Services) any {
+func accountSignedUpHandler(tenant *handler.Tenant, h *handler.Handler) any {
 	return func(evt account.SignedUp) {
 		background.Go(func() {
 			ctx := context.Background()
@@ -66,7 +66,7 @@ func accountSignedUpHandler(tenant *handler.Tenant, svc *handler.Services) any {
 			vars := handler.Vars{
 				"Token": tok,
 			}
-			if err := svc.SendEmail(ctx, recipients, "activate_account", vars); err != nil {
+			if err := h.SendEmail(ctx, recipients, "activate_account", vars); err != nil {
 				logger.PrintError(err)
 			}
 		})

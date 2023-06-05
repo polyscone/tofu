@@ -14,7 +14,7 @@ import (
 const (
 	nameMinLength    = 1
 	nameMaxLength    = 100
-	validNamePattern = `[[:print:]]{1,100}` // [[:print:]] ≡ [ -~]
+	validNamePattern = `^[A-Za-z0-9!#&()*+,./:_\-\\]{1,100}$`
 )
 
 var (
@@ -35,6 +35,9 @@ func NewName(name string) (Name, error) {
 
 	if strings.ContainsAny(name, "\n\r") {
 		return nil, errors.Tracef("cannot contain line breaks")
+	}
+	if strings.ContainsAny(name, `"'`) {
+		return nil, errors.Tracef("cannot contain quotes")
 	}
 
 	rc := utf8.RuneCountInString(name)
@@ -65,5 +68,5 @@ func (n Name) Generate(rand *rand.Rand) any {
 }
 
 func (n Name) Invalidate(rand *rand.Rand, value any) any {
-	return Name(errors.Must(gen.Pattern(`(|[^ -~]{1,100}|a{101,})`)))
+	return Name(errors.Must(gen.Pattern(`(|[^A-Za-z0-9!#&()*+,./:_\-\\]{1,100}|a{101,})`)))
 }

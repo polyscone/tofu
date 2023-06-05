@@ -3,35 +3,35 @@ package account
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
 )
 
-func ChangePassword(svc *handler.Services, mux *router.ServeMux, guard *handler.Guard) {
+func ChangePassword(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
 	mux.Prefix("/change-password", func(mux *router.ServeMux) {
-		guard.RequireSignInPrefix(mux.CurrentPath())
+		guard.RequireSignIn(mux.CurrentPrefix())
 
-		mux.Get("/", changePasswordGet(svc), "account.change_password")
-		mux.Post("/", changePasswordPost(svc), "account.change_password.post")
+		mux.Get("/", changePasswordGet(h), "account.change_password")
+		mux.Post("/", changePasswordPost(h), "account.change_password.post")
 
-		mux.Get("/success", changePasswordSuccessGet(svc), "account.change_password.success")
+		mux.Get("/success", changePasswordSuccessGet(h), "account.change_password.success")
 	})
 
 	// Redirect to help password managers find the change password page
-	mux.Redirect(http.MethodGet, "/.well-known/change-password", svc.Path("account.change_password"), http.StatusSeeOther)
+	mux.Redirect(http.MethodGet, "/.well-known/change-password", h.Path("account.change_password"), http.StatusSeeOther)
 }
 
-func changePasswordGet(svc *handler.Services) http.HandlerFunc {
+func changePasswordGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "account/change_password/form", nil)
+		h.View(w, r, http.StatusOK, "account/change_password/form", nil)
 	}
 }
 
-func changePasswordPost(svc *handler.Services) http.HandlerFunc {
+func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			OldPassword      string
@@ -40,13 +40,13 @@ func changePasswordPost(svc *handler.Services) http.HandlerFunc {
 			InsecurePassword string
 		}
 		err := httputil.DecodeForm(&input, r)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
 		ctx := r.Context()
 
-		passport := svc.Passport(ctx)
+		passport := h.Passport(ctx)
 
 		knownBreachCount, err := pwned.PasswordKnownBreachCount(ctx, []byte(input.NewPassword))
 		if err != nil {
@@ -55,49 +55,49 @@ func changePasswordPost(svc *handler.Services) http.HandlerFunc {
 
 		if input.NewPassword == input.InsecurePassword {
 			if knownBreachCount > 0 {
-				svc.Sessions.Set(ctx, sess.PasswordKnownBreachCount, knownBreachCount)
+				h.Sessions.Set(ctx, sess.PasswordKnownBreachCount, knownBreachCount)
 			} else {
-				svc.Sessions.Delete(ctx, sess.PasswordKnownBreachCount)
+				h.Sessions.Delete(ctx, sess.PasswordKnownBreachCount)
 			}
 		} else if knownBreachCount > 0 {
-			svc.View(w, r, http.StatusOK, "account/change_password/form", handler.Vars{
+			h.View(w, r, http.StatusOK, "account/change_password/form", handler.Vars{
 				"NewPasswordKnownBreachCount": knownBreachCount,
 			})
 
 			return
 		}
 
-		err = svc.Account.ChangePassword(ctx,
+		err = h.Account.ChangePassword(ctx,
 			passport,
 			passport.UserID(),
 			input.OldPassword,
 			input.NewPassword,
 			input.NewPasswordCheck,
 		)
-		if svc.ErrorView(w, r, errors.Tracef(err), "account/change_password/form", nil) {
+		if h.ErrorView(w, r, errors.Tracef(err), "account/change_password/form", nil) {
 			return
 		}
 
-		_, err = svc.RenewSession(ctx)
-		if svc.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		_, err = h.RenewSession(ctx)
+		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
 
 		var redirect string
-		if r := svc.Sessions.PopString(ctx, sess.Redirect); r != "" {
-			svc.AddFlashf(ctx, "Your password has been successfully changed.")
+		if r := h.Sessions.PopString(ctx, sess.Redirect); r != "" {
+			h.AddFlashf(ctx, "Your password has been successfully changed.")
 
 			redirect = r
 		} else {
-			redirect = svc.Path("account.change_password.success")
+			redirect = h.Path("account.change_password.success")
 		}
 
 		http.Redirect(w, r, redirect, http.StatusSeeOther)
 	}
 }
 
-func changePasswordSuccessGet(svc *handler.Services) http.HandlerFunc {
+func changePasswordSuccessGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		svc.View(w, r, http.StatusOK, "account/change_password/success", nil)
+		h.View(w, r, http.StatusOK, "account/change_password/success", nil)
 	}
 }

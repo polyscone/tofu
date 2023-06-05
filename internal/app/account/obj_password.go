@@ -14,7 +14,7 @@ import (
 const (
 	passwordMinLength    = 8
 	passwordMaxLength    = 100
-	validPasswordPattern = `[[:print:]]{8,100}` // [[:print:]] ≡ [ -~]
+	validPasswordPattern = `^[[:print:]]{8,100}$` // [[:print:]] ≡ [ -~]
 )
 
 var (
