@@ -27,17 +27,25 @@
 
 		{{template "com_recovery_codes" .ComData .Vars.RecoveryCodes}}
 	{{else}}
-		{{if eq (len .Vars.RecoveryCodes) 1}}
-			<p>You have {{len .Vars.RecoveryCodes}} recovery code remaining.</p>
-		{{else}}
-			<p>You have {{len .Vars.RecoveryCodes}} recovery codes remaining.</p>
+		{{if ge (len .Vars.RecoveryCodes) 1}}
+			{{if eq (len .Vars.RecoveryCodes) 1}}
+				<p>You have {{len .Vars.RecoveryCodes}} recovery code remaining.</p>
+			{{else}}
+				<p>You have {{len .Vars.RecoveryCodes}} recovery codes remaining.</p>
+			{{end}}
+
+			<p>If you would like to generate new recovery codes click the button below.</p>
 		{{end}}
 
-		<p>If you would like to generate new recovery codes click the button below.</p>
-
-		<div class="warning-banner">
-			<p>If you choose to generate new recovery codes your previous ones will no longer be valid and you will not be able to use them.</p>
-		</div>
+		{{if eq (len .Vars.RecoveryCodes) 0}}
+			<div class="error-banner">
+				<p>You do not have any recovery codes. Please use the form below to generate new ones.</p>
+			</div>
+		{{else}}
+			<div class="warning-banner">
+				<p>If you choose to generate new recovery codes your previous ones will no longer be valid and you will not be able to use them.</p>
+			</div>
+		{{end}}
 
 		<form action="{{Path "account.totp.recovery_codes.post"}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
@@ -47,7 +55,11 @@
 			<p class="error">{{.Errors.Get "totp"}}</p>
 
 			<div class="bag reverse">
-				<button type="submit">Replace Recovery Codes</button>
+				{{if eq (len .Vars.RecoveryCodes) 0}}
+					<button type="submit">Generate Recovery Codes</button>
+				{{else}}
+					<button type="submit">Replace Recovery Codes</button>
+				{{end}}
 
 				{{if eq .Session.TOTPMethod "sms"}}
 					<button type="submit" formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt">Send passcode SMS</button>
