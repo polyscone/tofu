@@ -220,6 +220,10 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 				{"no data", &account.Role{}, repo.ErrInvalidInput},
 				{"minimal data whitespace", &account.Role{Name: "    "}, repo.ErrInvalidInput},
 				{"minimal data", &account.Role{Name: "Name 1"}, nil},
+				{"maximal data", &account.Role{
+					Name:        "With description",
+					Description: "This is a basic description.",
+				}, nil},
 				{"conflicting name", &account.Role{Name: "Name 1"}, repo.ErrConflict},
 				{"conflicting name with different casing", &account.Role{Name: "NAME 1"}, repo.ErrConflict},
 			}
@@ -392,5 +396,8 @@ func accountRolesEqual(t *testing.T, want, got *account.Role) {
 	}
 	if want, got := want.Name, got.Name; want != got {
 		t.Errorf("want name to be %v; got %v", want, got)
+	}
+	if want, got := want.Description, got.Description; want != got {
+		t.Errorf("want description to be %v; got %v", want, got)
 	}
 }

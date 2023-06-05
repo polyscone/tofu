@@ -9,39 +9,39 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
-const validTelephonePattern = `^\+\d(\d| )+$`
+const validTelPattern = `^\+\d(\d| )+$`
 
 var (
-	validTelephone     = errors.Must(regexp.Compile(validTelephonePattern))
-	telephoneGenerator = errors.Must(gen.NewPatternGenerator(validTelephonePattern))
+	validTel     = errors.Must(regexp.Compile(validTelPattern))
+	telGenerator = errors.Must(gen.NewPatternGenerator(validTelPattern))
 )
 
-type Telephone string
+type Tel string
 
-func GenerateTelephone() Telephone {
-	return Telephone(telephoneGenerator.Generate())
+func GenerateTel() Tel {
+	return Tel(telGenerator.Generate())
 }
 
-func NewTelephone(telephone string) (Telephone, error) {
-	if strings.TrimSpace(telephone) == "" {
+func NewTel(tel string) (Tel, error) {
+	if strings.TrimSpace(tel) == "" {
 		return "", errors.Tracef("cannot be empty")
 	}
 
-	if !validTelephone.MatchString(telephone) {
+	if !validTel.MatchString(tel) {
 		return "", errors.Tracef("invalid telephone number")
 	}
 
-	return Telephone(telephone), nil
+	return Tel(tel), nil
 }
 
-func (t Telephone) String() string {
+func (t Tel) String() string {
 	return string(t)
 }
 
-func (t Telephone) Generate(rand *rand.Rand) any {
-	return GenerateTelephone()
+func (t Tel) Generate(rand *rand.Rand) any {
+	return GenerateTel()
 }
 
-func (t Telephone) Invalidate(rand *rand.Rand, value any) any {
-	return Telephone(errors.Must(gen.Pattern(`(\d|\s|\w)*`)))
+func (t Tel) Invalidate(rand *rand.Rand, value any) any {
+	return Tel(errors.Must(gen.Pattern(`(\d|\s|\w)*`)))
 }

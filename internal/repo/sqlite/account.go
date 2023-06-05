@@ -379,6 +379,7 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 		SELECT
 			id,
 			name,
+			description,
 			COUNT(1) OVER () AS total
 		FROM account__roles AS r
 		`+strings.Join(joins, "\n")+`
@@ -400,6 +401,7 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 		err := rows.Scan(
 			&role.ID,
 			&role.Name,
+			&role.Description,
 			&total,
 		)
 		if err != nil {
@@ -430,13 +432,16 @@ func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) e
 	res, err := tx.ExecContext(ctx, `
 		INSERT INTO account__roles (
 			name,
+			description,
 			created_at
 		) VALUES (
 			:name,
+			:description,
 			:created_at
 		)
 	`,
 		sql.Named("name", role.Name),
+		sql.Named("description", role.Description),
 		sql.Named("created_at", Time(tx.now.UTC())),
 	)
 	if err != nil {
@@ -466,11 +471,13 @@ func (r *AccountRepo) saveRole(ctx context.Context, tx *Tx, role *account.Role) 
 	_, err := tx.ExecContext(ctx, `
 		UPDATE account__roles SET
 			name = :name,
+			description = :description,
 			updated_at = :updated_at
 		WHERE id = :id
 	`,
 		sql.Named("id", role.ID),
 		sql.Named("name", role.Name),
+		sql.Named("description", role.Description),
 		sql.Named("updated_at", Time(tx.now.UTC())),
 	)
 	if errors.Is(err, repo.ErrConflict) {

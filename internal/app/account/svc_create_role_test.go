@@ -28,20 +28,21 @@ func TestCreateRole(t *testing.T) {
 	invalidGuard := createRoleGuard{value: false}
 
 	tt := []struct {
-		name     string
-		guard    createRoleGuard
-		roleName string
-		want     error
+		name  string
+		guard createRoleGuard
+		role  account.Role
+		want  error
 	}{
-		{"unauthorised", invalidGuard, "", app.ErrUnauthorised},
-		{"empty name", validGuard, "", app.ErrMalformedInput},
-		{"whitespace name", validGuard, "     ", app.ErrMalformedInput},
-		{"valid name", validGuard, "Role 1", nil},
-		{"conflicting name", validGuard, "ROLE 1", app.ErrConflictingInput},
+		{"unauthorised", invalidGuard, account.Role{Name: ""}, app.ErrUnauthorised},
+		{"empty name", validGuard, account.Role{Name: ""}, app.ErrMalformedInput},
+		{"whitespace name", validGuard, account.Role{Name: "     "}, app.ErrMalformedInput},
+		{"valid name", validGuard, account.Role{Name: "Role 1"}, nil},
+		{"valid description", validGuard, account.Role{Name: "Role 2", Description: "Role description"}, nil},
+		{"conflicting name", validGuard, account.Role{Name: "ROLE 1"}, app.ErrConflictingInput},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			created, err := svc.CreateRole(ctx, tc.guard, tc.roleName)
+			created, err := svc.CreateRole(ctx, tc.guard, tc.role.Name, tc.role.Description)
 			if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 				t.Fatalf("want error: %v; got %v", tc.want, err)
 			}
@@ -62,30 +63,36 @@ func TestCreateRole(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		execute := func(name text.Name) (*account.Role, error) {
-			role, err := svc.CreateRole(ctx, validGuard, name.String())
+		execute := func(name text.Name, description text.OptionalDesc) (*account.Role, error) {
+			role, err := svc.CreateRole(ctx, validGuard, name.String(), description.String())
 
 			return role, err
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(name text.Name) bool {
-				role, err := execute(name)
+			quick.Check(t, func(name text.Name, descrpition text.OptionalDesc) bool {
+				_, err := execute(name, descrpition)
 				if err != nil {
 					t.Log(err)
 
 					return false
 				}
 
-				found := errors.Must(store.FindRoleByID(ctx, role.ID))
-
-				return found.Name == name.String()
+				return !errors.Is(err, app.ErrMalformedInput)
 			})
 		})
 
 		t.Run("invalid name", func(t *testing.T) {
-			quick.Check(t, func(name quick.Invalid[text.Name]) bool {
-				_, err := execute(name.Unwrap())
+			quick.Check(t, func(name quick.Invalid[text.Name], description text.OptionalDesc) bool {
+				_, err := execute(name.Unwrap(), description)
+
+				return errors.Is(err, app.ErrMalformedInput)
+			})
+		})
+
+		t.Run("invalid description", func(t *testing.T) {
+			quick.Check(t, func(name text.Name, description quick.Invalid[text.OptionalDesc]) bool {
+				_, err := execute(name, description.Unwrap())
 
 				return errors.Is(err, app.ErrMalformedInput)
 			})

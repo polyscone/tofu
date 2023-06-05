@@ -1,7 +1,6 @@
 package text
 
 import (
-	"bytes"
 	"math/rand"
 	"regexp"
 	"strings"
@@ -22,7 +21,7 @@ var (
 	nameGenerator = errors.Must(gen.NewPatternGenerator(validNamePattern))
 )
 
-type Name []byte
+type Name string
 
 func GenerateName() Name {
 	return Name(nameGenerator.Generate())
@@ -30,26 +29,26 @@ func GenerateName() Name {
 
 func NewName(name string) (Name, error) {
 	if strings.TrimSpace(name) == "" {
-		return nil, errors.Tracef("cannot be empty")
+		return "", errors.Tracef("cannot be empty")
 	}
 
 	if strings.ContainsAny(name, "\n\r") {
-		return nil, errors.Tracef("cannot contain line breaks")
+		return "", errors.Tracef("cannot contain line breaks")
 	}
 	if strings.ContainsAny(name, `"'`) {
-		return nil, errors.Tracef("cannot contain quotes")
+		return "", errors.Tracef("cannot contain quotes")
 	}
 
 	rc := utf8.RuneCountInString(name)
 	if rc < nameMinLength {
-		return nil, errors.Tracef("must be at least %v characters", nameMinLength)
+		return "", errors.Tracef("must be at least %v characters", nameMinLength)
 	}
 	if rc > nameMaxLength {
-		return nil, errors.Tracef("cannot be a over %v characters in length", nameMaxLength)
+		return "", errors.Tracef("cannot be a over %v characters in length", nameMaxLength)
 	}
 
 	if !validName.MatchString(name) {
-		return nil, errors.Tracef("contains invalid characters")
+		return "", errors.Tracef("contains invalid characters")
 	}
 
 	return Name(name), nil
@@ -60,7 +59,7 @@ func (n Name) String() string {
 }
 
 func (n Name) Equal(rhs Name) bool {
-	return bytes.Equal(n, rhs)
+	return n == rhs
 }
 
 func (n Name) Generate(rand *rand.Rand) any {

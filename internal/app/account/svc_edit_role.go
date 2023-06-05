@@ -13,9 +13,10 @@ type EditRoleGuard interface {
 	CanEditRoles() bool
 }
 
-func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int, name string) (*Role, error) {
+func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int, name, description string) (*Role, error) {
 	var input struct {
-		name text.Name
+		name        text.Name
+		description text.OptionalDesc
 	}
 	{
 		if !guard.CanEditRoles() {
@@ -27,6 +28,9 @@ func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int,
 
 		if input.name, err = text.NewName(name); err != nil {
 			errs.Set("name", err)
+		}
+		if input.description, err = text.NewOptionalDesc(description); err != nil {
+			errs.Set("description", err)
 		}
 
 		if errs != nil {
@@ -40,6 +44,7 @@ func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int,
 	}
 
 	role.Name = input.name.String()
+	role.Description = input.description.String()
 
 	err = s.repo.SaveRole(ctx, role)
 

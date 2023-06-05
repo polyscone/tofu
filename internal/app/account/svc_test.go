@@ -55,7 +55,7 @@ func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu 
 		errors.Must0(user.SetupTOTP())
 	}
 	if tu.SetupTOTPTelephone {
-		errors.Must0(user.ChangeTOTPTelephone(text.GenerateTelephone()))
+		errors.Must0(user.ChangeTOTPTelephone(text.GenerateTel()))
 	}
 	if tu.VerifyTOTP {
 		alg := errors.Must(otp.NewAlgorithm(user.TOTPAlgorithm))

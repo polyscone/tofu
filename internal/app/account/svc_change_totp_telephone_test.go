@@ -36,7 +36,7 @@ func TestChangeTOTPTelephone(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		newTelephone := errors.Must(text.NewTelephone("+81 70 0000 0000"))
+		newTelephone := errors.Must(text.NewTel("+81 70 0000 0000"))
 
 		events.Expect(account.TOTPTelephoneChanged{
 			Email:        unverifiedTOTP.Email,
@@ -102,7 +102,7 @@ func TestChangeTOTPTelephone(t *testing.T) {
 
 		oldTelephone := verifiedTOTP.TOTPTelephone
 
-		execute := func(newTelephone text.Telephone) error {
+		execute := func(newTelephone text.Tel) error {
 			err := svc.ChangeTOTPTelephone(ctx, validGuard, verifiedTOTP.ID, newTelephone.String())
 			if err == nil {
 				events.Expect(account.TOTPTelephoneChanged{
@@ -120,7 +120,7 @@ func TestChangeTOTPTelephone(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(newTelephone text.Telephone) bool {
+			quick.Check(t, func(newTelephone text.Tel) bool {
 				err := execute(newTelephone)
 
 				return !errors.Is(err, app.ErrMalformedInput)
@@ -128,7 +128,7 @@ func TestChangeTOTPTelephone(t *testing.T) {
 		})
 
 		t.Run("invalid new telephone", func(t *testing.T) {
-			quick.Check(t, func(newTelephone quick.Invalid[text.Telephone]) bool {
+			quick.Check(t, func(newTelephone quick.Invalid[text.Tel]) bool {
 				err := execute(newTelephone.Unwrap())
 
 				return errors.Is(err, app.ErrMalformedInput)

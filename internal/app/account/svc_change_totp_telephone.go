@@ -15,7 +15,7 @@ type ChangeTOTPTelephoneGuard interface {
 func (s *Service) ChangeTOTPTelephone(ctx context.Context, guard ChangeTOTPTelephoneGuard, userID int, newTelephone string) error {
 	var input struct {
 		userID       int
-		newTelephone text.Telephone
+		newTelephone text.Tel
 	}
 	{
 		if !guard.CanChangeTOTPTelephone(userID) {
@@ -27,7 +27,7 @@ func (s *Service) ChangeTOTPTelephone(ctx context.Context, guard ChangeTOTPTelep
 
 		input.userID = userID
 
-		if input.newTelephone, err = text.NewTelephone(newTelephone); err != nil {
+		if input.newTelephone, err = text.NewTel(newTelephone); err != nil {
 			errs.Set("new telephone", err)
 		}
 

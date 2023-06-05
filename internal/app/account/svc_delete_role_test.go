@@ -43,7 +43,9 @@ func TestDeleteRole(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			role, err := svc.CreateRole(ctx, tc.guard, text.GenerateName().String())
+			name := text.GenerateName().String()
+			description := text.GenerateDesc().String()
+			role, err := svc.CreateRole(ctx, tc.guard, name, description)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -106,8 +106,12 @@
 		text-align: left;
 	}
 
-	button, input {
+	button, input:not([type="checkbox"]) {
 		min-height: 1.5rem;
+	}
+
+	textarea {
+		resize: vertical;
 	}
 
 	input, textarea {
@@ -153,16 +157,17 @@
 		margin-inline-start: 0.2em;
 	}
 
-	form {
+	form,
+	.form {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
 	}
 
-	form label,
-	form input,
-	form textarea,
-	form button {
+	:is(form, .form) label,
+	:is(form, .form) input:not([type="checkbox"]),
+	:is(form, .form) textarea,
+	:is(form, .form) button {
 		display: block;
 	}
 
@@ -262,6 +267,12 @@
 		display: block;
 		padding-block: 1rem;
 		padding-inline: 1rem;
+	}
+
+	.halves {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 1rem;
 	}
 
 	.flash-banner,
@@ -474,7 +485,7 @@
 
 @layer utility {
 	.center {
-		max-width: 500px;
+		max-width: 550px;
 		margin-inline: auto;
 	}
 

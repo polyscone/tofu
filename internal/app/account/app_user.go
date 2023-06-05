@@ -226,7 +226,7 @@ func (u *User) ActivateTOTP() error {
 	return nil
 }
 
-func (u *User) ChangeTOTPTelephone(newTelephone text.Telephone) error {
+func (u *User) ChangeTOTPTelephone(newTelephone text.Tel) error {
 	if len(u.TOTPKey) == 0 {
 		return errors.Tracef(app.ErrBadRequest, "cannot change TOTP telephone without a key setup")
 	}

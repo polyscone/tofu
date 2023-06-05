@@ -13,9 +13,10 @@ type CreateRoleGuard interface {
 	CanCreateRoles() bool
 }
 
-func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name string) (*Role, error) {
+func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, description string) (*Role, error) {
 	var input struct {
-		name text.Name
+		name        text.Name
+		description text.OptionalDesc
 	}
 	{
 		if !guard.CanCreateRoles() {
@@ -28,13 +29,16 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name st
 		if input.name, err = text.NewName(name); err != nil {
 			errs.Set("name", err)
 		}
+		if input.description, err = text.NewOptionalDesc(description); err != nil {
+			errs.Set("description", err)
+		}
 
 		if errs != nil {
 			return nil, errs.Tracef(app.ErrMalformedInput)
 		}
 	}
 
-	role := NewRole(input.name)
+	role := NewRole(input.name, input.description)
 
 	if err := s.repo.AddRole(ctx, role); err != nil {
 		var conflicts *repo.ConflictError

@@ -65,7 +65,8 @@ func roleNewGet(h *handler.Handler) http.HandlerFunc {
 func roleNewPost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Name string
+			Name        string
+			Description string
 		}
 		err := httputil.DecodeForm(&input, r)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
@@ -76,7 +77,7 @@ func roleNewPost(h *handler.Handler) http.HandlerFunc {
 
 		passport := h.Passport(ctx)
 
-		role, err := h.Account.CreateRole(ctx, passport, input.Name)
+		role, err := h.Account.CreateRole(ctx, passport, input.Name, input.Description)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/management/role/new", nil) {
 			return
 		}
@@ -119,7 +120,8 @@ func roleEditGet(h *handler.Handler) http.HandlerFunc {
 func roleEditPost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Name string
+			Name        string
+			Description string
 		}
 		err := httputil.DecodeForm(&input, r)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
@@ -135,7 +137,7 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 
 		passport := h.Passport(ctx)
 
-		role, err := h.Account.EditRole(ctx, passport, roleID, input.Name)
+		role, err := h.Account.EditRole(ctx, passport, roleID, input.Name, input.Description)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/management/role/edit", nil) {
 			return
 		}

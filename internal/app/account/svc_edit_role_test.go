@@ -42,15 +42,22 @@ func TestEditRole(t *testing.T) {
 		{"authorised", validGuard, &account.Role{Name: "Foo"}, &account.Role{Name: "Bar"}, nil},
 		{"unauthorised", invalidGuard, &account.Role{Name: "Foo"}, &account.Role{Name: "Bar"}, app.ErrUnauthorised},
 		{"conflicting name", validGuard, &account.Role{Name: "Qux"}, &account.Role{Name: "Bar"}, app.ErrConflictingInput},
+		{"successful update", validGuard, &account.Role{
+			Name:        "Role 1",
+			Description: "Role 1 description",
+		}, &account.Role{
+			Name:        "Role 2",
+			Description: "Role 2 description",
+		}, nil},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			before, err := svc.CreateRole(ctx, tc.guard, tc.before.Name)
+			before, err := svc.CreateRole(ctx, tc.guard, tc.before.Name, tc.before.Description)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			edited, err := svc.EditRole(ctx, tc.guard, before.ID, tc.after.Name)
+			edited, err := svc.EditRole(ctx, tc.guard, before.ID, tc.after.Name, tc.after.Description)
 			if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 				t.Fatalf("want error: %v; got %v", tc.want, err)
 			}
@@ -66,6 +73,9 @@ func TestEditRole(t *testing.T) {
 
 			if want, got := tc.after.Name, after.Name; want != got {
 				t.Errorf("want name to be %q; got %q", want, got)
+			}
+			if want, got := tc.after.Description, after.Description; want != got {
+				t.Errorf("want description to be %q; got %q", want, got)
 			}
 		})
 	}

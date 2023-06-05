@@ -12,9 +12,28 @@
 	<form action="{{Path "account.management.role.edit.post" ":roleID" .Vars.Role.ID}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
-		<label for="role-edit__email">Name</label>
-		<input id="role-edit__email" type="text" name="name" value="{{or (.Form.Get "name") .Vars.Role.Name}}" placeholder="Staff" required maxlength="100">
-		<p class="error">{{.Errors.Get "name"}}</p>
+		<div class="halves">
+			<div class="form">
+				<label for="role-edit__name">Name</label>
+				<input id="role-edit__name" type="text" name="name" value="{{or (.Form.Get "name") .Vars.Role.Name}}" placeholder="Staff" required maxlength="100">
+				<p class="error">{{.Errors.Get "name"}}</p>
+
+				<label for="role-edit__description">Description</label>
+				<textarea id="role-edit__description" name="description" rows="5" placeholder="A role for members of staff." maxlength="500">{{or (.Form.Get "description") .Vars.Role.Description}}</textarea>
+				<p class="error">{{.Errors.Get "description"}}</p>
+			</div>
+
+			<div class="form">
+				<b>Account</b>
+
+				<label><input type="checkbox" name="view-roles"> View roles</label>
+				<label><input type="checkbox" name="create-roles"> Create roles</label>
+				<label><input type="checkbox" name="edit-roles"> Edit roles</label>
+				<label><input type="checkbox" name="delete-roles"> Delete roles</label>
+				<label><input type="checkbox" name="view-users"> View users</label>
+				<label><input type="checkbox" name="edit-users"> Edit users</label>
+			</div>
+		</div>
 
 		<div class="bag reverse">
 			<button type="submit" class="push-inline-end">Update role</button>

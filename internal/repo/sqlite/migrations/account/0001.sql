@@ -20,10 +20,11 @@ CREATE TABLE account__users (
 CREATE INDEX idx_account__users_email ON account__users (email);
 
 CREATE TABLE account__roles (
-  id         INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-  name       TEXT NOT NULL UNIQUE COLLATE NOCASE,
-  created_at DATETIME NOT NULL,
-  updated_at DATETIME
+  id          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+  name        TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  description TEXT NOT NULL,
+  created_at  DATETIME NOT NULL,
+  updated_at  DATETIME
 );
 
 CREATE TABLE account__permissions (
