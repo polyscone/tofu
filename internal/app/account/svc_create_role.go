@@ -37,10 +37,9 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name st
 	role := NewRole(input.name)
 
 	if err := s.repo.AddRole(ctx, role); err != nil {
-		if errors.Is(err, repo.ErrConflict) {
-			errs := errors.Map{"name": errors.New("already in use")}
-
-			return nil, errs.Tracef(app.ErrConflictingInput)
+		var conflicts *repo.ConflictError
+		if errors.As(err, &conflicts) {
+			return nil, conflicts.Tracef(app.ErrConflictingInput)
 		}
 
 		return nil, errors.Tracef(err)

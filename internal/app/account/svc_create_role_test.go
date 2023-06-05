@@ -36,6 +36,8 @@ func TestCreateRole(t *testing.T) {
 		{"unauthorised", invalidGuard, "", app.ErrUnauthorised},
 		{"empty name", validGuard, "", app.ErrMalformedInput},
 		{"whitespace name", validGuard, "     ", app.ErrMalformedInput},
+		{"valid name", validGuard, "Role 1", nil},
+		{"conflicting name", validGuard, "ROLE 1", app.ErrConflictingInput},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {

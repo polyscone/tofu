@@ -48,7 +48,7 @@ func (t Trace) Error() string {
 	return s
 }
 
-// Is implements checks for use with errors.IS
+// Is implements checks for use with errors.Is.
 func (t Trace) Is(target error) bool {
 	return t.Kind == target
 }
@@ -127,17 +127,6 @@ func tracef(skip int, errFormat any, a ...any) error {
 
 	var kind error
 	if v, ok := errFormat.(error); ok {
-		if len(a) != 0 {
-			switch err := a[0].(type) {
-			case nil:
-				panic("want second arg to be non-nil error or string value")
-
-			case error:
-				v = err
-				a = a[1:]
-			}
-		}
-
 		if trace, ok := v.(Trace); ok {
 			kind = trace.Kind
 		} else {
@@ -147,6 +136,10 @@ func tracef(skip int, errFormat any, a ...any) error {
 		if len(a) != 0 {
 			errFormat = a[0]
 			a = a[1:]
+
+			if errFormat == nil {
+				return nil
+			}
 		}
 	}
 

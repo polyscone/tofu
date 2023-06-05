@@ -6,6 +6,7 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
+	"github.com/polyscone/tofu/internal/repo"
 )
 
 type EditRoleGuard interface {
@@ -41,6 +42,11 @@ func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int,
 	role.Name = input.name.String()
 
 	err = s.repo.SaveRole(ctx, role)
+
+	var conflicts *repo.ConflictError
+	if errors.As(err, &conflicts) {
+		return nil, conflicts.Tracef(app.ErrConflictingInput)
+	}
 
 	return role, errors.Tracef(err)
 }

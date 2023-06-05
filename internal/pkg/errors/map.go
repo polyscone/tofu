@@ -41,14 +41,14 @@ func (m *Map) Set(key string, err any) {
 	(*m)[key] = tracef(2, err)
 }
 
-func (m *Map) String() string {
+func (m Map) String() string {
 	if m == nil {
 		return "<nil>"
 	}
 
-	pairs := make([]string, len(*m))
+	pairs := make([]string, len(m))
 	i := 0
-	for key, err := range *m {
+	for key, err := range m {
 		pairs[i] = fmt.Sprintf("%v: %v", key, err)
 
 		i++

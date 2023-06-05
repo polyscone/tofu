@@ -33,10 +33,9 @@ func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 	}
 
 	if err := s.repo.AddUser(ctx, user); err != nil {
-		if errors.Is(err, repo.ErrConflict) {
-			errs := errors.Map{"email": errors.New("already in use")}
-
-			return nil, errs.Tracef(app.ErrConflictingInput)
+		var conflicts *repo.ConflictError
+		if errors.As(err, &conflicts) {
+			return nil, conflicts.Tracef(app.ErrConflictingInput)
 		}
 
 		return nil, errors.Tracef(err)

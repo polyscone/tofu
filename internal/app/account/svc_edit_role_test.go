@@ -41,6 +41,7 @@ func TestEditRole(t *testing.T) {
 	}{
 		{"authorised", validGuard, &account.Role{Name: "Foo"}, &account.Role{Name: "Bar"}, nil},
 		{"unauthorised", invalidGuard, &account.Role{Name: "Foo"}, &account.Role{Name: "Bar"}, app.ErrUnauthorised},
+		{"conflicting name", validGuard, &account.Role{Name: "Qux"}, &account.Role{Name: "Bar"}, app.ErrConflictingInput},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {

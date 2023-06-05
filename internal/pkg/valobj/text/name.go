@@ -14,7 +14,7 @@ import (
 const (
 	nameMinLength    = 1
 	nameMaxLength    = 100
-	validNamePattern = `^[A-Za-z0-9!#&()*+,./:_\-\\]{1,100}$`
+	validNamePattern = `^[ a-zA-Z0-9!#&()*+,./:_\-\\]{1,100}$`
 )
 
 var (
@@ -64,9 +64,16 @@ func (n Name) Equal(rhs Name) bool {
 }
 
 func (n Name) Generate(rand *rand.Rand) any {
-	return Name(nameGenerator.GenerateLimit(nameMaxLength))
+	name, err := NewName(nameGenerator.GenerateLimit(nameMaxLength))
+	for {
+		if err == nil {
+			return name
+		}
+
+		name, err = NewName(nameGenerator.GenerateLimit(nameMaxLength))
+	}
 }
 
 func (n Name) Invalidate(rand *rand.Rand, value any) any {
-	return Name(errors.Must(gen.Pattern(`(|[^A-Za-z0-9!#&()*+,./:_\-\\]{1,100}|a{101,})`)))
+	return Name(errors.Must(gen.Pattern(`(|[^ a-zA-Z0-9!#&()*+,./:_\-\\]{1,100}|a{101,})`)))
 }

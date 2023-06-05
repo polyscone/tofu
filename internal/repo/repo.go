@@ -1,12 +1,22 @@
 package repo
 
-import "errors"
+import (
+	"github.com/polyscone/tofu/internal/pkg/errors"
+)
 
 var (
 	ErrNotFound     = errors.New("not found")
 	ErrConflict     = errors.New("conflict")
 	ErrInvalidInput = errors.New("invalid input")
 )
+
+type ConflictError struct {
+	errors.Map
+}
+
+func (c ConflictError) Error() string {
+	return c.Map.String()
+}
 
 type Page[T any] struct {
 	Number int

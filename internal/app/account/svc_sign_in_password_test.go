@@ -64,7 +64,7 @@ func TestSignInWithPassword(t *testing.T) {
 			{"non-existent email", "foo@bar.com", "password", nil},
 			{"short password", "joe@bloggs.com", "0123456", app.ErrMalformedInput},
 			{"incorrect password", activated.Email, "0123456789", app.ErrBadRequest},
-			{"unactivated user", unactivated.Email, "password", app.ErrBadRequest},
+			{"unactivated user bad request", unactivated.Email, "password", app.ErrBadRequest},
 			{"unactivated user", unactivated.Email, "password", account.ErrNotActivated},
 		}
 		for _, tc := range tt {

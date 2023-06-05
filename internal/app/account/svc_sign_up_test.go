@@ -14,9 +14,23 @@ import (
 
 func TestSignUp(t *testing.T) {
 	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
+
+	t.Run("errors", func(t *testing.T) {
+		svc, _, _ := NewTestEnv(ctx)
+
+		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
+			t.Fatal(err)
+		}
+
+		_, err := svc.SignUp(ctx, "foo@example.com")
+		if want := app.ErrConflictingInput; !errors.Is(err, want) {
+			t.Fatalf("want error: %T; got %T", want, err)
+		}
+	})
 
 	t.Run("properties", func(t *testing.T) {
+		svc, broker, store := NewTestEnv(ctx)
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 

@@ -3,18 +3,53 @@ package repotest
 import (
 	"bytes"
 	"context"
-	"errors"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/polyscone/tofu/internal/app/account"
+	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/repo"
 )
 
 func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWriter) {
 	t.Run("users", func(t *testing.T) {
+		t.Run("conflicts", func(t *testing.T) {
+			store := newStore()
+
+			user1 := &account.User{Email: "Foo"}
+			if err := store.AddUser(ctx, user1); err != nil {
+				t.Fatal(err)
+			}
+
+			user2 := &account.User{Email: "Bar"}
+			if err := store.AddUser(ctx, user2); err != nil {
+				t.Fatal(err)
+			}
+			user2.Email = user1.Email
+
+			tt := []struct {
+				name string
+				err  error
+			}{
+				{"add", store.AddUser(ctx, user1)},
+				{"save", store.SaveUser(ctx, user2)},
+			}
+			for _, tc := range tt {
+				t.Run(tc.name, func(t *testing.T) {
+					var conflicts *repo.ConflictError
+					if !errors.As(tc.err, &conflicts) {
+						t.Fatalf("want %T; got %T", conflicts, tc.err)
+					}
+
+					if conflicts.Get("email") == "" {
+						t.Error("want email conflict error; got empty string")
+					}
+				})
+			}
+		})
+
 		t.Run("add and find", func(t *testing.T) {
 			store := newStore()
 
@@ -139,6 +174,41 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 	})
 
 	t.Run("roles", func(t *testing.T) {
+		t.Run("conflicts", func(t *testing.T) {
+			store := newStore()
+
+			role1 := &account.Role{Name: "Foo"}
+			if err := store.AddRole(ctx, role1); err != nil {
+				t.Fatal(err)
+			}
+
+			role2 := &account.Role{Name: "Bar"}
+			if err := store.AddRole(ctx, role2); err != nil {
+				t.Fatal(err)
+			}
+			role2.Name = role1.Name
+
+			tt := []struct {
+				name string
+				err  error
+			}{
+				{"add", store.AddRole(ctx, role1)},
+				{"save", store.SaveRole(ctx, role2)},
+			}
+			for _, tc := range tt {
+				t.Run(tc.name, func(t *testing.T) {
+					var conflicts *repo.ConflictError
+					if !errors.As(tc.err, &conflicts) {
+						t.Fatalf("want %T; got %T", conflicts, tc.err)
+					}
+
+					if conflicts.Get("name") == "" {
+						t.Error("want name conflict error; got empty string")
+					}
+				})
+			}
+		})
+
 		t.Run("add and find", func(t *testing.T) {
 			store := newStore()
 

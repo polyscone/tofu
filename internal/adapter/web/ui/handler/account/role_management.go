@@ -94,7 +94,7 @@ func roleEditGet(h *handler.Handler) http.HandlerFunc {
 	h.SetViewVars("account/management/role/edit", func(r *http.Request) (handler.Vars, error) {
 		roleID, err := router.URLParamAs[int](r, "roleID")
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return nil, errors.Tracef(httputil.ErrNotFound, err)
 		}
 
 		ctx := r.Context()
@@ -142,6 +142,8 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 
 		h.AddFlashf(ctx, "Role %q updated successfully.", role.Name)
 
+		h.Sessions.Set(ctx, "role.highlight_id", role.ID)
+
 		http.Redirect(w, r, h.PathQuery(r, "account.management.role.list"), http.StatusSeeOther)
 	}
 }
@@ -149,6 +151,9 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 func roleDeleteGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roleID, err := router.URLParamAs[int](r, "roleID")
+		if err != nil {
+			err = errors.Tracef(httputil.ErrNotFound, err)
+		}
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}

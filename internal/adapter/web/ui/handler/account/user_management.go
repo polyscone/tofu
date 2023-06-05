@@ -42,7 +42,7 @@ func userEditGet(h *handler.Handler) http.HandlerFunc {
 	h.SetViewVars("account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
 		userID, err := router.URLParamAs[int](r, "userID")
 		if err != nil {
-			return nil, errors.Tracef(err, httputil.ErrNotFound)
+			return nil, errors.Tracef(httputil.ErrNotFound, err)
 		}
 
 		ctx := r.Context()

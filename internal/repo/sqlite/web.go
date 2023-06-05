@@ -233,7 +233,7 @@ func (r *WebRepo) findSessionDataByID(ctx context.Context, tx *Tx, id string) (s
 	).Scan(&data)
 	if err != nil {
 		if errors.Is(err, repo.ErrNotFound) {
-			err = errors.Tracef(err, session.ErrNotFound)
+			err = errors.Tracef(session.ErrNotFound, err)
 		}
 
 		return nil, errors.Tracef(err)

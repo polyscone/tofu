@@ -440,6 +440,12 @@ func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) e
 		sql.Named("created_at", Time(tx.now.UTC())),
 	)
 	if err != nil {
+		if errors.Is(err, repo.ErrConflict) {
+			return errors.Tracef(err, &repo.ConflictError{
+				Map: errors.Map{"name": errors.New("already in use")},
+			})
+		}
+
 		return errors.Tracef(err)
 	}
 
@@ -467,6 +473,11 @@ func (r *AccountRepo) saveRole(ctx context.Context, tx *Tx, role *account.Role) 
 		sql.Named("name", role.Name),
 		sql.Named("updated_at", Time(tx.now.UTC())),
 	)
+	if errors.Is(err, repo.ErrConflict) {
+		return errors.Tracef(err, &repo.ConflictError{
+			Map: errors.Map{"name": errors.New("already in use")},
+		})
+	}
 
 	return errors.Tracef(err)
 }
@@ -595,6 +606,12 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) e
 		sql.Named("created_at", Time(tx.now.UTC())),
 	)
 	if err != nil {
+		if errors.Is(err, repo.ErrConflict) {
+			return errors.Tracef(err, &repo.ConflictError{
+				Map: errors.Map{"email": errors.New("already in use")},
+			})
+		}
+
 		return errors.Tracef(err)
 	}
 
@@ -670,6 +687,12 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, user *account.User) 
 		sql.Named("updated_at", Time(tx.now.UTC())),
 	)
 	if err != nil {
+		if errors.Is(err, repo.ErrConflict) {
+			return errors.Tracef(err, &repo.ConflictError{
+				Map: errors.Map{"email": errors.New("already in use")},
+			})
+		}
+
 		return errors.Tracef(err)
 	}
 
