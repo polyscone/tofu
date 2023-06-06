@@ -2,6 +2,7 @@ package account_test
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
@@ -35,29 +36,41 @@ func TestEditRole(t *testing.T) {
 	tt := []struct {
 		name   string
 		guard  editRoleGuard
-		before *account.Role
-		after  *account.Role
+		before account.Role
+		after  account.Role
 		want   error
 	}{
-		{"authorised", validGuard, &account.Role{Name: "Foo"}, &account.Role{Name: "Bar"}, nil},
-		{"unauthorised", invalidGuard, &account.Role{Name: "Foo"}, &account.Role{Name: "Bar"}, app.ErrUnauthorised},
-		{"conflicting name", validGuard, &account.Role{Name: "Qux"}, &account.Role{Name: "Bar"}, app.ErrConflictingInput},
-		{"successful update", validGuard, &account.Role{
+		{"authorised", validGuard, account.Role{Name: "Foo"}, account.Role{Name: "Bar"}, nil},
+		{"unauthorised", invalidGuard, account.Role{Name: "Foo"}, account.Role{Name: "Bar"}, app.ErrUnauthorised},
+		{"conflicting name", validGuard, account.Role{Name: "Qux"}, account.Role{Name: "Bar"}, app.ErrConflictingInput},
+		{"empty name", validGuard, account.Role{Name: "Quxx"}, account.Role{Name: ""}, app.ErrMalformedInput},
+		{"empty permission update", validGuard, account.Role{
 			Name:        "Role 1",
 			Description: "Role 1 description",
-		}, &account.Role{
+			Permissions: []string{"1", "2"},
+		}, account.Role{
 			Name:        "Role 2",
 			Description: "Role 2 description",
+			Permissions: []string{"3", "", "6"},
+		}, app.ErrMalformedInput},
+		{"successful update", validGuard, account.Role{
+			Name:        "Role 3",
+			Description: "Role 3 description",
+			Permissions: []string{"1", "2"},
+		}, account.Role{
+			Name:        "Role 4",
+			Description: "Role 4 description",
+			Permissions: []string{"3", "1", "6"},
 		}, nil},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			before, err := svc.CreateRole(ctx, tc.guard, tc.before.Name, tc.before.Description)
+			before, err := svc.CreateRole(ctx, tc.guard, tc.before.Name, tc.before.Description, tc.before.Permissions)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			edited, err := svc.EditRole(ctx, tc.guard, before.ID, tc.after.Name, tc.after.Description)
+			edited, err := svc.EditRole(ctx, tc.guard, before.ID, tc.after.Name, tc.after.Description, tc.after.Permissions)
 			if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 				t.Fatalf("want error: %v; got %v", tc.want, err)
 			}
@@ -76,6 +89,20 @@ func TestEditRole(t *testing.T) {
 			}
 			if want, got := tc.after.Description, after.Description; want != got {
 				t.Errorf("want description to be %q; got %q", want, got)
+			}
+			if want, got := tc.after.Permissions, after.Permissions; len(want) != len(got) {
+				t.Errorf("want %v permissions; got %v", len(want), len(got))
+			} else {
+				sort.Strings(want)
+				sort.Strings(got)
+
+				for i, wantPermission := range want {
+					gotPermission := got[i]
+
+					if wantPermission != gotPermission {
+						t.Errorf("want permission %q; got %q", wantPermission, gotPermission)
+					}
+				}
 			}
 		})
 	}

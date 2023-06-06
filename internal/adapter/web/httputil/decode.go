@@ -8,9 +8,10 @@ import (
 
 	"github.com/polyscone/tofu/internal/pkg/casing"
 	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/size"
 )
 
-type DecodeValueFunc func(r *http.Request, fieldName, tagValue string) string
+type DecodeValueFunc func(r *http.Request, fieldName, tagValue string) []string
 
 func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc) error {
 	value := reflect.ValueOf(dst)
@@ -27,13 +28,18 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 		typeField := s.Type().Field(i)
 
 		tagValue := typeField.Tag.Get(tagName)
-		str := fn(r, typeField.Name, tagValue)
 		field := s.Field(i)
+
+		var str string
+		strs := fn(r, typeField.Name, tagValue)
+		if len(strs) != 0 {
+			str = strs[0]
+		}
 
 		var err error
 		switch typ := typeField.Type; typ.Kind() {
 		case reflect.Bool:
-			field.SetBool(str == "1" || str == "checked")
+			field.SetBool(str == "1" || str == "on")
 
 		case reflect.Float32:
 			var value float64
@@ -171,9 +177,14 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			field.SetString(str)
 
 		default:
-			if typ == reflect.TypeOf([]byte(nil)) {
+			switch typ {
+			case reflect.TypeOf([]byte(nil)):
 				field.SetBytes([]byte(str))
-			} else {
+
+			case reflect.TypeOf([]string(nil)):
+				field.Set(reflect.ValueOf(strs))
+
+			default:
 				panic(fmt.Sprintf("unsupported struct field type %v", typ))
 			}
 		}
@@ -183,21 +194,29 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 }
 
 func DecodeForm(dst any, r *http.Request) error {
-	return DecodeRequest(dst, r, "form", func(r *http.Request, fieldName, tagValue string) string {
-		if tagValue == "" {
-			tagValue = casing.ToKebab(fieldName)
+	return DecodeRequest(dst, r, "form", func(r *http.Request, fieldName, tagValue string) []string {
+		key := tagValue
+		if key == "" {
+			key = casing.ToKebab(fieldName)
 		}
 
-		return r.PostFormValue(tagValue)
+		const maxMemory = 32 * size.Megabyte
+
+		if r.PostForm == nil {
+			r.ParseMultipartForm(maxMemory)
+		}
+
+		return r.PostForm[key]
 	})
 }
 
 func DecodeQuery(dst any, r *http.Request) error {
-	return DecodeRequest(dst, r, "query", func(r *http.Request, fieldName, tagValue string) string {
-		if tagValue == "" {
-			tagValue = casing.ToKebab(fieldName)
+	return DecodeRequest(dst, r, "query", func(r *http.Request, fieldName, tagValue string) []string {
+		key := tagValue
+		if key == "" {
+			key = casing.ToKebab(fieldName)
 		}
 
-		return r.URL.Query().Get(tagValue)
+		return r.URL.Query()[key]
 	})
 }

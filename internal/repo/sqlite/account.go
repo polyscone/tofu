@@ -300,23 +300,15 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 	return users, total, errors.Tracef(rows.Err())
 }
 
-func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter account.PermissionFilter) ([]*account.Permission, int, error) {
-	var where []string
-	var args []any
-
-	if v := filter.RoleID; v != nil {
-		where, args = append(where, "rp.role_id = ?"), append(args, *v)
-	}
-
+func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, roleID int) ([]string, int, error) {
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
-			id,
 			name,
 			COUNT(1) OVER () AS total
 		FROM account__permissions AS p
 		INNER JOIN account__role_permissions AS rp ON p.id = rp.permission_id
-		WHERE `+strings.Join(where, " AND "),
-		args...,
+		WHERE rp.role_id = ?`,
+		roleID,
 	)
 	if err != nil {
 		return nil, 0, errors.Tracef(err)
@@ -324,27 +316,64 @@ func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter accoun
 	defer rows.Close()
 
 	var total int
-	var permissions []*account.Permission
+	var permissions []string
 	for rows.Next() {
-		var permission account.Permission
+		var permission string
 
 		err := rows.Scan(
-			&permission.ID,
-			&permission.Name,
+			&permission,
 			&total,
 		)
 		if err != nil {
 			return nil, 0, errors.Tracef(err)
 		}
 
-		permissions = append(permissions, &permission)
+		permissions = append(permissions, permission)
 	}
 
 	return permissions, total, errors.Tracef(rows.Err())
 }
 
+func (r *AccountRepo) addPermission(ctx context.Context, tx *Tx, name string) (int, error) {
+	var id int64
+	err := tx.QueryRowContext(ctx,
+		"SELECT id FROM account__permissions WHERE name = :name",
+		sql.Named("name", name),
+	).Scan(&id)
+	switch {
+	case err == nil:
+		return int(id), nil
+
+	case err != nil && !errors.Is(err, repo.ErrNotFound):
+		return 0, errors.Tracef(err)
+	}
+
+	res, err := tx.ExecContext(ctx, `
+		INSERT INTO account__permissions (
+			name,
+			created_at
+		) VALUES (
+			:name,
+			:created_at
+		)
+	`,
+		sql.Named("name", name),
+		sql.Named("created_at", Time(tx.now.UTC())),
+	)
+	if err != nil {
+		return 0, errors.Tracef(err)
+	}
+
+	id, err = res.LastInsertId()
+	if err != nil {
+		return 0, errors.Tracef(err)
+	}
+
+	return int(id), nil
+}
+
 func (r *AccountRepo) attachRolePermissions(ctx context.Context, tx *Tx, role *account.Role) error {
-	permissions, _, err := r.findPermissions(ctx, tx, account.PermissionFilter{RoleID: &role.ID})
+	permissions, _, err := r.findPermissions(ctx, tx, role.ID)
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -414,21 +443,7 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 	return roles, total, errors.Tracef(rows.Err())
 }
 
-func (r *AccountRepo) validateRole(role *account.Role) error {
-	var errs errors.Map
-
-	if strings.TrimSpace(role.Name) == "" {
-		errs.Set("name", "cannot be empty")
-	}
-
-	return errs.Tracef(repo.ErrInvalidInput)
-}
-
 func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) error {
-	if err := r.validateRole(role); err != nil {
-		return errors.Tracef(err)
-	}
-
 	res, err := tx.ExecContext(ctx, `
 		INSERT INTO account__roles (
 			name,
@@ -460,14 +475,33 @@ func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) e
 	}
 	role.ID = int(id)
 
+	for _, name := range role.Permissions {
+		permissionID, err := r.addPermission(ctx, tx, name)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__role_permissions (
+				role_id,
+				permission_id,
+				created_at
+			) VALUES (
+				:role_id,
+				:permission_id,
+				:created_at
+			)
+		`,
+			sql.Named("role_id", role.ID),
+			sql.Named("permission_id", permissionID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+	}
+
 	return nil
 }
 
 func (r *AccountRepo) saveRole(ctx context.Context, tx *Tx, role *account.Role) error {
-	if err := r.validateRole(role); err != nil {
-		return errors.Tracef(err)
-	}
-
 	_, err := tx.ExecContext(ctx, `
 		UPDATE account__roles SET
 			name = :name,
@@ -484,6 +518,37 @@ func (r *AccountRepo) saveRole(ctx context.Context, tx *Tx, role *account.Role) 
 		return errors.Tracef(err, &repo.ConflictError{
 			Map: errors.Map{"name": errors.New("already in use")},
 		})
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"DELETE FROM account__role_permissions WHERE role_id = :role_id",
+		sql.Named("role_id", role.ID),
+	)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	for _, name := range role.Permissions {
+		permissionID, err := r.addPermission(ctx, tx, name)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__role_permissions (
+				role_id,
+				permission_id,
+				created_at
+			) VALUES (
+				:role_id,
+				:permission_id,
+				:created_at
+			)
+		`,
+			sql.Named("role_id", role.ID),
+			sql.Named("permission_id", permissionID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
 	}
 
 	return errors.Tracef(err)
@@ -546,21 +611,7 @@ func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user 
 	return nil
 }
 
-func (r *AccountRepo) validateUser(user *account.User) error {
-	var errs errors.Map
-
-	if strings.TrimSpace(user.Email) == "" {
-		errs.Set("email", "cannot be empty")
-	}
-
-	return errs.Tracef(repo.ErrInvalidInput)
-}
-
 func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) error {
-	if err := r.validateUser(user); err != nil {
-		return errors.Tracef(err)
-	}
-
 	res, err := tx.ExecContext(ctx, `
 		INSERT INTO account__users (
 			email,
@@ -653,10 +704,6 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) e
 }
 
 func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, user *account.User) error {
-	if err := r.validateUser(user); err != nil {
-		return errors.Tracef(err)
-	}
-
 	_, err := tx.ExecContext(ctx, `
 		UPDATE account__users SET
 			email = :email,

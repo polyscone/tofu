@@ -67,6 +67,7 @@ func New(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Handler {
 		"HasPrefix":     tmplHasPrefix,
 		"HasSuffix":     tmplHasSuffix,
 		"HasPathPrefix": tmplHasPathPrefix(mux),
+		"HasString":     tmplHasString,
 		"UnescapeHTML":  tmplUnescapeHTML,
 	}
 

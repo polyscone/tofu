@@ -5,6 +5,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
+	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
@@ -40,8 +41,8 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		sortTopID := h.Sessions.PopInt(ctx, "role.sort_top_id")
-		highlightID := h.Sessions.PopInt(ctx, "role.highlight_id")
+		sortTopID := h.Sessions.PopInt(ctx, sess.SortTopID)
+		highlightID := h.Sessions.PopInt(ctx, sess.HighlightID)
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
 		roles, total, err := h.Repo.Account.FindRolesPageBySearch(ctx, sortTopID, search, page, size)
@@ -67,6 +68,7 @@ func roleNewPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			Name        string
 			Description string
+			Permissions []string
 		}
 		err := httputil.DecodeForm(&input, r)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
@@ -77,15 +79,15 @@ func roleNewPost(h *handler.Handler) http.HandlerFunc {
 
 		passport := h.Passport(ctx)
 
-		role, err := h.Account.CreateRole(ctx, passport, input.Name, input.Description)
+		role, err := h.Account.CreateRole(ctx, passport, input.Name, input.Description, input.Permissions)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/management/role/new", nil) {
 			return
 		}
 
 		h.AddFlashf(ctx, "Role %q created successfully.", role.Name)
 
-		h.Sessions.Set(ctx, "role.sort_top_id", role.ID)
-		h.Sessions.Set(ctx, "role.highlight_id", role.ID)
+		h.Sessions.Set(ctx, sess.SortTopID, role.ID)
+		h.Sessions.Set(ctx, sess.HighlightID, role.ID)
 
 		http.Redirect(w, r, h.Path("account.management.role.list"), http.StatusSeeOther)
 	}
@@ -122,6 +124,7 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			Name        string
 			Description string
+			Permissions []string
 		}
 		err := httputil.DecodeForm(&input, r)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
@@ -137,14 +140,14 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 
 		passport := h.Passport(ctx)
 
-		role, err := h.Account.EditRole(ctx, passport, roleID, input.Name, input.Description)
+		role, err := h.Account.EditRole(ctx, passport, roleID, input.Name, input.Description, input.Permissions)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/management/role/edit", nil) {
 			return
 		}
 
 		h.AddFlashf(ctx, "Role %q updated successfully.", role.Name)
 
-		h.Sessions.Set(ctx, "role.highlight_id", role.ID)
+		h.Sessions.Set(ctx, sess.HighlightID, role.ID)
 
 		http.Redirect(w, r, h.PathQuery(r, "account.management.role.list"), http.StatusSeeOther)
 	}

@@ -28,7 +28,7 @@ CREATE TABLE account__roles (
 );
 
 CREATE TABLE account__permissions (
-  id         TEXT NOT NULL PRIMARY KEY,
+  id         INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   name       TEXT NOT NULL UNIQUE COLLATE NOCASE,
   created_at DATETIME NOT NULL,
   updated_at DATETIME

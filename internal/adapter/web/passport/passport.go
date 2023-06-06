@@ -87,7 +87,7 @@ func (p Passport) is(query string) bool {
 func (p Passport) can(query string) bool {
 	for _, role := range p.user.Roles {
 		for _, permission := range role.Permissions {
-			if query == permission.ID {
+			if query == permission {
 				return true
 			}
 		}

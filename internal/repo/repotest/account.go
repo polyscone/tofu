@@ -3,6 +3,7 @@ package repotest
 import (
 	"bytes"
 	"context"
+	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -55,13 +56,12 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 
 			tt := []struct {
 				name string
-				user *account.User
+				user account.User
 				want error
 			}{
-				{"no data", &account.User{}, repo.ErrInvalidInput},
-				{"minimal data whitespace", &account.User{Email: "    "}, repo.ErrInvalidInput},
-				{"minimal data", &account.User{Email: "Email 1"}, nil},
-				{"maximal data", &account.User{
+				{"no data", account.User{}, nil},
+				{"minimal data", account.User{Email: "Email 1"}, nil},
+				{"maximal data", account.User{
 					Email:              "Email 2",
 					HashedPassword:     []byte("HashedPassword"),
 					TOTPMethod:         "TOTPMethod",
@@ -77,12 +77,12 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 					LastSignedInAt:     time.Now(),
 					LastSignedInMethod: "Website",
 				}, nil},
-				{"conflicting email", &account.User{Email: "Email 1"}, repo.ErrConflict},
-				{"conflicting email with different casing", &account.User{Email: "EMAIL 1"}, repo.ErrConflict},
+				{"conflicting email", account.User{Email: "Email 1"}, repo.ErrConflict},
+				{"conflicting email with different casing", account.User{Email: "EMAIL 1"}, repo.ErrConflict},
 			}
 			for _, tc := range tt {
 				t.Run(tc.name, func(t *testing.T) {
-					err := store.AddUser(ctx, tc.user)
+					err := store.AddUser(ctx, &tc.user)
 					if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 						t.Fatalf("want error: %v; got %v", tc.want, err)
 					}
@@ -102,7 +102,7 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 						return
 					}
 
-					accountUsersEqual(t, tc.user, found)
+					accountUsersEqual(t, &tc.user, found)
 				})
 			}
 		})
@@ -133,19 +133,18 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 
 			tt := []struct {
 				name string
-				user *account.User
+				user account.User
 				want error
 			}{
-				{"no data", &account.User{}, repo.ErrInvalidInput},
-				{"minimal data whitespace", &account.User{Email: "    "}, repo.ErrInvalidInput},
-				{"minimal data", &account.User{Email: "Save user 1"}, nil},
-				{"conflicting email", &account.User{Email: "Save user 1"}, repo.ErrConflict},
-				{"conflicting email with different casing", &account.User{Email: "SAVE USER 1"}, repo.ErrConflict},
+				{"no data", account.User{}, nil},
+				{"minimal data", account.User{Email: "Save user 1"}, nil},
+				{"conflicting email", account.User{Email: "Save user 1"}, repo.ErrConflict},
+				{"conflicting email with different casing", account.User{Email: "SAVE USER 1"}, repo.ErrConflict},
 			}
 			for i, tc := range tt {
 				t.Run(tc.name, func(t *testing.T) {
-					user := &account.User{Email: "New user " + strconv.Itoa(i)}
-					if err := store.AddUser(ctx, user); err != nil {
+					user := account.User{Email: "New user " + strconv.Itoa(i)}
+					if err := store.AddUser(ctx, &user); err != nil {
 						t.Fatal(err)
 					}
 
@@ -153,7 +152,7 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 						tc.user.ID = user.ID
 					}
 
-					err := store.SaveUser(ctx, tc.user)
+					err := store.SaveUser(ctx, &tc.user)
 					if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 						t.Fatalf("want error: %v; got %v", tc.want, err)
 					}
@@ -167,7 +166,7 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 						t.Fatal(err)
 					}
 
-					accountUsersEqual(t, tc.user, found)
+					accountUsersEqual(t, &tc.user, found)
 				})
 			}
 		})
@@ -214,22 +213,22 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 
 			tt := []struct {
 				name string
-				role *account.Role
+				role account.Role
 				want error
 			}{
-				{"no data", &account.Role{}, repo.ErrInvalidInput},
-				{"minimal data whitespace", &account.Role{Name: "    "}, repo.ErrInvalidInput},
-				{"minimal data", &account.Role{Name: "Name 1"}, nil},
-				{"maximal data", &account.Role{
+				{"no data", account.Role{}, nil},
+				{"minimal data", account.Role{Name: "Name 1"}, nil},
+				{"maximal data", account.Role{
 					Name:        "With description",
 					Description: "This is a basic description.",
+					Permissions: []string{"1", "2", "3"},
 				}, nil},
-				{"conflicting name", &account.Role{Name: "Name 1"}, repo.ErrConflict},
-				{"conflicting name with different casing", &account.Role{Name: "NAME 1"}, repo.ErrConflict},
+				{"conflicting name", account.Role{Name: "Name 1"}, repo.ErrConflict},
+				{"conflicting name with different casing", account.Role{Name: "NAME 1"}, repo.ErrConflict},
 			}
 			for _, tc := range tt {
 				t.Run(tc.name, func(t *testing.T) {
-					err := store.AddRole(ctx, tc.role)
+					err := store.AddRole(ctx, &tc.role)
 					if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 						t.Fatalf("want error: %v; got %v", tc.want, err)
 					}
@@ -249,7 +248,7 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 						return
 					}
 
-					accountRolesEqual(t, tc.role, found)
+					accountRolesEqual(t, &tc.role, found)
 				})
 			}
 		})
@@ -297,19 +296,19 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 
 			tt := []struct {
 				name string
-				role *account.Role
+				role account.Role
 				want error
 			}{
-				{"no data", &account.Role{}, repo.ErrInvalidInput},
-				{"minimal data whitespace", &account.Role{Name: "    "}, repo.ErrInvalidInput},
-				{"minimal data", &account.Role{Name: "Save name 1"}, nil},
-				{"conflicting name", &account.Role{Name: "Save name 1"}, repo.ErrConflict},
-				{"conflicting name with different casing", &account.Role{Name: "SAVE NAME 1"}, repo.ErrConflict},
+				{"no data", account.Role{}, nil},
+				{"minimal data", account.Role{Name: "Save name 1"}, nil},
+				{"conflicting name", account.Role{Name: "Save name 1"}, repo.ErrConflict},
+				{"conflicting name with different casing", account.Role{Name: "SAVE NAME 1"}, repo.ErrConflict},
+				{"with permissions", account.Role{Name: "Save name 2", Permissions: []string{"1", "2", "3"}}, nil},
 			}
 			for i, tc := range tt {
 				t.Run(tc.name, func(t *testing.T) {
-					role := &account.Role{Name: "New role " + strconv.Itoa(i)}
-					if err := store.AddRole(ctx, role); err != nil {
+					role := account.Role{Name: "New role " + strconv.Itoa(i)}
+					if err := store.AddRole(ctx, &role); err != nil {
 						t.Fatal(err)
 					}
 
@@ -317,7 +316,7 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 						tc.role.ID = role.ID
 					}
 
-					err := store.SaveRole(ctx, tc.role)
+					err := store.SaveRole(ctx, &tc.role)
 					if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 						t.Fatalf("want error: %v; got %v", tc.want, err)
 					}
@@ -331,7 +330,7 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 						t.Fatal(err)
 					}
 
-					accountRolesEqual(t, tc.role, found)
+					accountRolesEqual(t, &tc.role, found)
 				})
 			}
 		})
@@ -399,5 +398,19 @@ func accountRolesEqual(t *testing.T, want, got *account.Role) {
 	}
 	if want, got := want.Description, got.Description; want != got {
 		t.Errorf("want description to be %v; got %v", want, got)
+	}
+	if want, got := want.Permissions, got.Permissions; len(want) != len(got) {
+		t.Errorf("want %v permissions; got %v", len(want), len(got))
+	} else {
+		sort.Strings(want)
+		sort.Strings(got)
+
+		for i, wantPermission := range want {
+			gotPermission := got[i]
+
+			if wantPermission != gotPermission {
+				t.Errorf("want permission %q; got %q", wantPermission, gotPermission)
+			}
+		}
 	}
 }

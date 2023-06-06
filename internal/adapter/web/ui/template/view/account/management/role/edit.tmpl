@@ -14,24 +14,24 @@
 
 		<div class="halves">
 			<div class="form">
-				<label for="role-edit__name">Name</label>
-				<input id="role-edit__name" type="text" name="name" value="{{or (.Form.Get "name") .Vars.Role.Name}}" placeholder="Staff" required maxlength="100">
+				<label for="role__name">Name</label>
+				<input id="role__name" type="text" name="name" value="{{or (.Form.Get "name") .Vars.Role.Name}}" placeholder="Staff" required maxlength="100">
 				<p class="error">{{.Errors.Get "name"}}</p>
 
-				<label for="role-edit__description">Description</label>
-				<textarea id="role-edit__description" name="description" rows="5" placeholder="A role for members of staff." maxlength="500">{{or (.Form.Get "description") .Vars.Role.Description}}</textarea>
+				<label for="role__description">Description</label>
+				<textarea id="role__description" name="description" rows="5" placeholder="A role for members of staff." maxlength="500">{{or (.Form.Get "description") .Vars.Role.Description}}</textarea>
 				<p class="error">{{.Errors.Get "description"}}</p>
 			</div>
 
 			<div class="form">
 				<b>Account</b>
 
-				<label><input type="checkbox" name="view-roles"> View roles</label>
-				<label><input type="checkbox" name="create-roles"> Create roles</label>
-				<label><input type="checkbox" name="edit-roles"> Edit roles</label>
-				<label><input type="checkbox" name="delete-roles"> Delete roles</label>
-				<label><input type="checkbox" name="view-users"> View users</label>
-				<label><input type="checkbox" name="edit-users"> Edit users</label>
+				<label><input type="checkbox" name="permissions" value="account:roles:view"{{if HasString .Vars.Role.Permissions "account:roles:view"}} checked{{end}}> View roles</label>
+				<label><input type="checkbox" name="permissions" value="account:roles:create"{{if HasString .Vars.Role.Permissions "account:roles:create"}} checked{{end}}> Create roles</label>
+				<label><input type="checkbox" name="permissions" value="account:roles:edit"{{if HasString .Vars.Role.Permissions "account:roles:edit"}} checked{{end}}> Edit roles</label>
+				<label><input type="checkbox" name="permissions" value="account:roles:delete"{{if HasString .Vars.Role.Permissions "account:roles:delete"}} checked{{end}}> Delete roles</label>
+				<label><input type="checkbox" name="permissions" value="account:users:view"{{if HasString .Vars.Role.Permissions "account:users:view"}} checked{{end}}> View users</label>
+				<label><input type="checkbox" name="permissions" value="account:users:edit"{{if HasString .Vars.Role.Permissions "account:users:edit"}} checked{{end}}> Edit users</label>
 			</div>
 		</div>
 

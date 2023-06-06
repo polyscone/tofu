@@ -13,10 +13,11 @@ type EditRoleGuard interface {
 	CanEditRoles() bool
 }
 
-func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int, name, description string) (*Role, error) {
+func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int, name, description string, permissions []string) (*Role, error) {
 	var input struct {
 		name        text.Name
 		description text.OptionalDesc
+		permissions []Permission
 	}
 	{
 		if !guard.CanEditRoles() {
@@ -32,21 +33,31 @@ func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int,
 		if input.description, err = text.NewOptionalDesc(description); err != nil {
 			errs.Set("description", err)
 		}
+		if n := len(permissions); n != 0 {
+			input.permissions = make([]Permission, n)
+
+			for i, permission := range permissions {
+				input.permissions[i], err = NewPermission(permission)
+				if err != nil {
+					errs.Set("permissions", err)
+				}
+			}
+		}
 
 		if errs != nil {
 			return nil, errs.Tracef(app.ErrMalformedInput)
 		}
 	}
 
-	role, err := s.repo.FindRoleByID(ctx, roleID)
-	if err != nil {
+	if _, err := s.repo.FindRoleByID(ctx, roleID); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
-	role.Name = input.name.String()
-	role.Description = input.description.String()
+	role := NewRole(input.name, input.description, input.permissions)
 
-	err = s.repo.SaveRole(ctx, role)
+	role.ID = roleID
+
+	err := s.repo.SaveRole(ctx, role)
 
 	var conflicts *repo.ConflictError
 	if errors.As(err, &conflicts) {

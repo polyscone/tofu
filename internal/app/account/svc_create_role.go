@@ -13,10 +13,11 @@ type CreateRoleGuard interface {
 	CanCreateRoles() bool
 }
 
-func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, description string) (*Role, error) {
+func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, description string, permissions []string) (*Role, error) {
 	var input struct {
 		name        text.Name
 		description text.OptionalDesc
+		permissions []Permission
 	}
 	{
 		if !guard.CanCreateRoles() {
@@ -32,13 +33,23 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, d
 		if input.description, err = text.NewOptionalDesc(description); err != nil {
 			errs.Set("description", err)
 		}
+		if n := len(permissions); n != 0 {
+			input.permissions = make([]Permission, n)
+
+			for i, permission := range permissions {
+				input.permissions[i], err = NewPermission(permission)
+				if err != nil {
+					errs.Set("permissions", err)
+				}
+			}
+		}
 
 		if errs != nil {
 			return nil, errs.Tracef(app.ErrMalformedInput)
 		}
 	}
 
-	role := NewRole(input.name, input.description)
+	role := NewRole(input.name, input.description, input.permissions)
 
 	if err := s.repo.AddRole(ctx, role); err != nil {
 		var conflicts *repo.ConflictError

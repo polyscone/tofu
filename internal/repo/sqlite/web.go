@@ -259,14 +259,14 @@ func (r *WebRepo) saveSession(ctx context.Context, tx *Tx, s session.Session) er
 		INSERT INTO web__sessions (
 			id,
 			data,
-			updated_at,
-			created_at
+			created_at,
+			updated_at
 		) VALUES (
 			:id,
 			:data,
-			:updated_at,
-			:created_at
-		) ON CONFLICT(id) DO UPDATE SET
+			:created_at,
+			:updated_at
+		) ON CONFLICT DO UPDATE SET
 			data = :data,
 			updated_at = :updated_at
 	`,

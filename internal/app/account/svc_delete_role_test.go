@@ -45,7 +45,7 @@ func TestDeleteRole(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			name := text.GenerateName().String()
 			description := text.GenerateDesc().String()
-			role, err := svc.CreateRole(ctx, tc.guard, name, description)
+			role, err := svc.CreateRole(ctx, tc.guard, name, description, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

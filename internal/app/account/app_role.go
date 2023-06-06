@@ -6,7 +6,7 @@ type Role struct {
 	ID          int
 	Name        string
 	Description string
-	Permissions []*Permission
+	Permissions []string
 }
 
 type RoleFilter struct {
@@ -20,9 +20,19 @@ type RoleFilter struct {
 	Offset int
 }
 
-func NewRole(name text.Name, description text.OptionalDesc) *Role {
-	return &Role{
+func NewRole(name text.Name, description text.OptionalDesc, permissions []Permission) *Role {
+	role := Role{
 		Name:        name.String(),
 		Description: description.String(),
 	}
+
+	if n := len(permissions); n != 0 {
+		role.Permissions = make([]string, n)
+
+		for i, permission := range permissions {
+			role.Permissions[i] = permission.String()
+		}
+	}
+
+	return &role
 }

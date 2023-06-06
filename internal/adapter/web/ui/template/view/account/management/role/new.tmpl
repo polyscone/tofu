@@ -14,24 +14,24 @@
 
 		<div class="halves">
 			<div class="form">
-				<label for="role-edit__name">Name</label>
-				<input id="role-edit__name" type="text" name="name" value="{{.Form.Get "name"}}" placeholder="Staff" required maxlength="100">
+				<label for="role__name">Name</label>
+				<input id="role__name" type="text" name="name" value="{{.Form.Get "name"}}" placeholder="Staff" required maxlength="100">
 				<p class="error">{{.Errors.Get "name"}}</p>
 
-				<label for="role-edit__description">Description</label>
-				<textarea id="role-edit__description" name="description" rows="5" placeholder="A role for members of staff." maxlength="500">{{.Form.Get "description"}}</textarea>
+				<label for="role__description">Description</label>
+				<textarea id="role__description" name="description" rows="5" placeholder="A role for members of staff." maxlength="500">{{.Form.Get "description"}}</textarea>
 				<p class="error">{{.Errors.Get "description"}}</p>
 			</div>
 
 			<div class="form">
 				<b>Account</b>
 
-				<label><input type="checkbox" name="view-roles"> View roles</label>
-				<label><input type="checkbox" name="create-roles"> Create roles</label>
-				<label><input type="checkbox" name="edit-roles"> Edit roles</label>
-				<label><input type="checkbox" name="delete-roles"> Delete roles</label>
-				<label><input type="checkbox" name="view-users"> View users</label>
-				<label><input type="checkbox" name="edit-users"> Edit users</label>
+				<label><input type="checkbox" name="permissions" value="account:roles:view"> View roles</label>
+				<label><input type="checkbox" name="permissions" value="account:roles:create"> Create roles</label>
+				<label><input type="checkbox" name="permissions" value="account:roles:edit"> Edit roles</label>
+				<label><input type="checkbox" name="permissions" value="account:roles:delete"> Delete roles</label>
+				<label><input type="checkbox" name="permissions" value="account:users:view"> View users</label>
+				<label><input type="checkbox" name="permissions" value="account:users:edit"> Edit users</label>
 			</div>
 		</div>
 

@@ -576,7 +576,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 	var err error
 	switch typ := as.Type(); typ.Kind() {
 	case reflect.Bool:
-		as.SetBool(str == "1" || str == "checked")
+		as.SetBool(str == "1" || str == "on")
 
 	case reflect.Float32:
 		var value float64
@@ -714,9 +714,11 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		as.SetString(str)
 
 	default:
-		if typ == reflect.TypeOf([]byte(nil)) {
+		switch typ {
+		case reflect.TypeOf([]byte(nil)):
 			as.SetBytes([]byte(str))
-		} else {
+
+		default:
 			panic(fmt.Sprintf("unsupported conversion type %v", typ))
 		}
 	}

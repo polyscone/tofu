@@ -157,6 +157,16 @@ func tmplHasPathPrefix(mux *router.ServeMux) tmplHasPathPrefixFunc {
 	}
 }
 
+func tmplHasString(haystack []string, needle string) bool {
+	for _, value := range haystack {
+		if value == needle {
+			return true
+		}
+	}
+
+	return false
+}
+
 func tmplUnescapeHTML(s string) template.HTML {
 	return template.HTML(s)
 }

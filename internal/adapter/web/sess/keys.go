@@ -5,6 +5,8 @@ const (
 	Flash          = "global.flash"
 	FlashImportant = "global.flash_important"
 	Redirect       = "global.redirect"
+	SortTopID      = "global.sort_top_id"
+	HighlightID    = "global.highlight_id"
 
 	// Account session keys
 	UserID                   = "account.user_id"
