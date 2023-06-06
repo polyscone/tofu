@@ -14,7 +14,8 @@
 <table class="management">
 	<tr>
 		<th>Name</th>
-		<th class="text-right">
+		<th>Description</th>
+		<th class="text-right no-wrap">
 			{{if .Guard.CanCreateRoles}}
 				<a href="{{Path "account.management.role.new"}}{{$.URL.Query.String}}">Create role</a>
 			{{end}}
@@ -24,14 +25,15 @@
 	{{range .Vars.Roles.Page.Rows}}
 		<tr{{if eq .ID $.Vars.HighlightID}} class="management__highlight"{{end}}>
 			<td>{{.Name}}</td>
-			<td class="text-right">
+			<td>{{.Description}}</td>
+			<td class="text-right no-wrap">
 				<a href="{{Path "account.management.role.edit" ":roleID" .ID}}{{$.URL.Query.String}}">Edit</a>
 				<a href="{{Path "account.management.role.delete" ":roleID" .ID}}{{$.URL.Query.String}}">Delete</a>
 			</td>
 		</tr>
 	{{else}}
 		<tr class="management__empty">
-			<td colspan="2">No roles found</td>
+			<td colspan="3">No roles found</td>
 		</tr>
 	{{end}}
 </table>

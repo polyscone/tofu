@@ -1,6 +1,13 @@
 {{define "com_js"}}
 
 <script>
+	onMount("textarea", node => {
+		node.addEventListener('input', e => {
+			e.target.style.height = 'auto'
+			e.target.style.height = e.target.scrollHeight + 'px'
+		})
+	})
+
 	onMount("input, textarea", node => {
 		// Set a data-invalid attribute on forms when they're submitted with
 		// malformed inputs

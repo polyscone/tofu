@@ -1,7 +1,5 @@
 package account
 
-import "github.com/polyscone/tofu/internal/pkg/valobj/text"
-
 type Role struct {
 	ID          int
 	Name        string
@@ -20,7 +18,7 @@ type RoleFilter struct {
 	Offset int
 }
 
-func NewRole(name text.Name, description text.OptionalDesc, permissions []Permission) *Role {
+func NewRole(name RoleName, description RoleDesc, permissions []Permission) *Role {
 	role := Role{
 		Name:        name.String(),
 		Description: description.String(),

@@ -102,8 +102,24 @@
 		border-block-start: 1px solid var(--clr-black-200);
 	}
 
+	table {
+		border-spacing: 0;
+	}
+
 	th {
+		position: sticky;
+		top: 0;
+		background: var(--clr-white-400);
 		text-align: left;
+		vertical-align: bottom;
+	}
+
+	td {
+		vertical-align: top;
+	}
+
+	th, td {
+		padding: 0.5rem 1rem;
 	}
 
 	button, input:not([type="checkbox"]) {
@@ -330,8 +346,6 @@
 
 	.management {
 		width: 100%;
-		border-collapse: collapse;
-		table-layout: auto;
 		margin-block-start: 1rem;
 	}
 
@@ -341,15 +355,6 @@
 
 	.management th {
 		border-bottom: 1px solid var(--clr-black-100);
-	}
-
-	.management th,
-	.management td {
-		padding: 0.5rem 1rem;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		max-width: 1px;
 	}
 
 	.management .management__empty td {
@@ -491,6 +496,10 @@
 
 	.text-right {
 		text-align: right;
+	}
+
+	.no-wrap {
+		white-space: nowrap;
 	}
 
 	.push-inline-end {

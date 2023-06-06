@@ -10,7 +10,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/repo"
 )
 
@@ -256,7 +255,7 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 		t.Run("add and remove", func(t *testing.T) {
 			store := newStore()
 
-			role := &account.Role{Name: text.GenerateName().String()}
+			role := &account.Role{Name: account.GenerateRoleName().String()}
 			if err := store.AddRole(ctx, role); err != nil {
 				t.Fatal(err)
 			}

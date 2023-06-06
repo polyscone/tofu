@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"html/template"
 	"net/url"
 
@@ -17,6 +18,40 @@ type CSRF struct {
 
 func (c CSRF) Token() string {
 	return base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(c.ctx))
+}
+
+type Form struct {
+	url.Values
+}
+
+func (f Form) GetOr(key string, fallback any) string {
+	if f.Values == nil {
+		return fmt.Sprintf("%s", fallback)
+	}
+
+	return f.Get(key)
+}
+
+func (f Form) GetAll(key string) []string {
+	return f.Values[key]
+}
+
+func (f Form) GetAllOr(key string, fallback []string) []string {
+	if f.Values == nil {
+		return fallback
+	}
+
+	return f.Values[key]
+}
+
+func (f Form) HasValue(key string, needle string) bool {
+	for _, v := range f.Values[key] {
+		if v == needle {
+			return true
+		}
+	}
+
+	return false
 }
 
 type Query struct {
@@ -82,7 +117,7 @@ type ViewData struct {
 	CSRF         CSRF
 	ErrorMessage string
 	Errors       errors.Map
-	Form         url.Values
+	Form         Form
 	URL          URL
 	App          AppData
 	Session      SessionData

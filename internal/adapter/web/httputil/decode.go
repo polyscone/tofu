@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/size"
 )
 
-type DecodeValueFunc func(r *http.Request, fieldName, tagValue string) []string
+type DecodeValueFunc func(r *http.Request, fieldName, tagValue string) ([]string, error)
 
 func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc) error {
 	value := reflect.ValueOf(dst)
@@ -30,13 +30,16 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 		tagValue := typeField.Tag.Get(tagName)
 		field := s.Field(i)
 
+		strs, err := fn(r, typeField.Name, tagValue)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
 		var str string
-		strs := fn(r, typeField.Name, tagValue)
 		if len(strs) != 0 {
 			str = strs[0]
 		}
 
-		var err error
 		switch typ := typeField.Type; typ.Kind() {
 		case reflect.Bool:
 			field.SetBool(str == "1" || str == "on")
@@ -194,7 +197,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 }
 
 func DecodeForm(dst any, r *http.Request) error {
-	return DecodeRequest(dst, r, "form", func(r *http.Request, fieldName, tagValue string) []string {
+	return DecodeRequest(dst, r, "form", func(r *http.Request, fieldName, tagValue string) ([]string, error) {
 		key := tagValue
 		if key == "" {
 			key = casing.ToKebab(fieldName)
@@ -203,20 +206,23 @@ func DecodeForm(dst any, r *http.Request) error {
 		const maxMemory = 32 * size.Megabyte
 
 		if r.PostForm == nil {
-			r.ParseMultipartForm(maxMemory)
+			err := r.ParseMultipartForm(maxMemory)
+			if err != nil {
+				return nil, errors.Tracef(err)
+			}
 		}
 
-		return r.PostForm[key]
+		return r.PostForm[key], nil
 	})
 }
 
 func DecodeQuery(dst any, r *http.Request) error {
-	return DecodeRequest(dst, r, "query", func(r *http.Request, fieldName, tagValue string) []string {
+	return DecodeRequest(dst, r, "query", func(r *http.Request, fieldName, tagValue string) ([]string, error) {
 		key := tagValue
 		if key == "" {
 			key = casing.ToKebab(fieldName)
 		}
 
-		return r.URL.Query()[key]
+		return r.URL.Query()[key], nil
 	})
 }

@@ -58,6 +58,14 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 }
 
 func roleNewGet(h *handler.Handler) http.HandlerFunc {
+	h.SetViewVars("account/management/role/new", func(r *http.Request) (handler.Vars, error) {
+		vars := handler.Vars{
+			"PermissionGroups": passport.PermissionGroups,
+		}
+
+		return vars, nil
+	})
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		h.View(w, r, http.StatusOK, "account/management/role/new", nil)
 	}
@@ -108,7 +116,8 @@ func roleEditGet(h *handler.Handler) http.HandlerFunc {
 		}
 
 		vars := handler.Vars{
-			"Role": role,
+			"Role":             role,
+			"PermissionGroups": passport.PermissionGroups,
 		}
 
 		return vars, nil

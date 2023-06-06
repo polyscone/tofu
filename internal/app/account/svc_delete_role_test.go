@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/repo"
 )
 
@@ -43,8 +43,8 @@ func TestDeleteRole(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			name := text.GenerateName().String()
-			description := text.GenerateDesc().String()
+			name := account.GenerateRoleName().String()
+			description := account.GenerateRoleDesc().String()
 			role, err := svc.CreateRole(ctx, tc.guard, name, description, nil)
 			if err != nil {
 				t.Fatal(err)

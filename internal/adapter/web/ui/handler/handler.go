@@ -287,7 +287,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 		View:   name,
 		Status: status,
 		CSRF:   CSRF{ctx: ctx},
-		Form:   r.PostForm,
+		Form:   Form{Values: r.PostForm},
 		URL: URL{
 			Scheme:   h.Tenant.Scheme,
 			Host:     h.Tenant.Host,

@@ -10,7 +10,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
 type createRoleGuard struct {
@@ -83,7 +82,7 @@ func TestCreateRole(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		execute := func(name text.Name, description text.OptionalDesc, permission account.Permission) (*account.Role, error) {
+		execute := func(name account.RoleName, description account.RoleDesc, permission account.Permission) (*account.Role, error) {
 			permissions := []string{permission.String()}
 			role, err := svc.CreateRole(ctx, validGuard, name.String(), description.String(), permissions)
 
@@ -91,7 +90,7 @@ func TestCreateRole(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(name text.Name, descrpition text.OptionalDesc, permission account.Permission) bool {
+			quick.Check(t, func(name account.RoleName, descrpition account.RoleDesc, permission account.Permission) bool {
 				_, err := execute(name, descrpition, permission)
 				if err != nil {
 					t.Log(err)
@@ -104,7 +103,7 @@ func TestCreateRole(t *testing.T) {
 		})
 
 		t.Run("invalid name", func(t *testing.T) {
-			quick.Check(t, func(name quick.Invalid[text.Name], description text.OptionalDesc, permission account.Permission) bool {
+			quick.Check(t, func(name quick.Invalid[account.RoleName], description account.RoleDesc, permission account.Permission) bool {
 				_, err := execute(name.Unwrap(), description, permission)
 
 				return errors.Is(err, app.ErrMalformedInput)
@@ -112,7 +111,7 @@ func TestCreateRole(t *testing.T) {
 		})
 
 		t.Run("invalid description", func(t *testing.T) {
-			quick.Check(t, func(name text.Name, description quick.Invalid[text.OptionalDesc], permission account.Permission) bool {
+			quick.Check(t, func(name account.RoleName, description quick.Invalid[account.RoleDesc], permission account.Permission) bool {
 				_, err := execute(name, description.Unwrap(), permission)
 
 				return errors.Is(err, app.ErrMalformedInput)
@@ -120,7 +119,7 @@ func TestCreateRole(t *testing.T) {
 		})
 
 		t.Run("invalid permission", func(t *testing.T) {
-			quick.Check(t, func(name text.Name, description text.OptionalDesc, permission quick.Invalid[account.Permission]) bool {
+			quick.Check(t, func(name account.RoleName, description account.RoleDesc, permission quick.Invalid[account.Permission]) bool {
 				_, err := execute(name, description, permission.Unwrap())
 
 				return errors.Is(err, app.ErrMalformedInput)

@@ -5,7 +5,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/repo"
 )
 
@@ -15,8 +14,8 @@ type CreateRoleGuard interface {
 
 func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, description string, permissions []string) (*Role, error) {
 	var input struct {
-		name        text.Name
-		description text.OptionalDesc
+		name        RoleName
+		description RoleDesc
 		permissions []Permission
 	}
 	{
@@ -27,10 +26,10 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, d
 		var err error
 		var errs errors.Map
 
-		if input.name, err = text.NewName(name); err != nil {
+		if input.name, err = NewRoleName(name); err != nil {
 			errs.Set("name", err)
 		}
-		if input.description, err = text.NewOptionalDesc(description); err != nil {
+		if input.description, err = NewRoleDesc(description); err != nil {
 			errs.Set("description", err)
 		}
 		if n := len(permissions); n != 0 {
