@@ -173,8 +173,7 @@
 		margin-inline-start: 0.2em;
 	}
 
-	form,
-	.form {
+	form, .form {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
@@ -339,6 +338,7 @@
 
 	.top-bar ul {
 		display: flex;
+		justify-content: center;
 		padding: 0;
 		list-style: none;
 		gap: 1rem;
@@ -458,6 +458,10 @@
 
 		.nav {
 			margin-inline-start: auto;
+		}
+
+		.top-bar ul {
+			justify-content: flex-start;
 		}
 
 		.footer {
