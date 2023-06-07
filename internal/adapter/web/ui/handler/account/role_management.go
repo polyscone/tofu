@@ -17,9 +17,7 @@ func RoleManagement(h *handler.Handler, guard *handler.Guard, mux *router.ServeM
 		mux.Get("/", roleListGet(h), "account.management.role.list")
 
 		mux.Prefix("/new", func(mux *router.ServeMux) {
-			guard.RequireAuth(mux.CurrentPrefix(), func(p passport.Passport) bool {
-				return p.CanCreateRoles()
-			})
+			guard.RequireAuth(func(p passport.Passport) bool { return p.CanCreateRoles() })
 
 			mux.Get("/", roleNewGet(h), "account.management.role.new")
 			mux.Post("/", roleNewPost(h), "account.management.role.new.post")

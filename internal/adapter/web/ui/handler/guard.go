@@ -75,12 +75,24 @@ func (g *Guard) Protect(path string, check CheckFunc) {
 	}
 }
 
-func (g *Guard) RequireSignIn(path string) {
-	g.Protect(path, g.isSignedIn)
+func (g *Guard) RequireSignIn(pathNames ...string) {
+	if len(pathNames) == 0 {
+		g.Protect(g.h.mux.CurrentPrefix(), g.isSignedIn)
+	} else {
+		for _, name := range pathNames {
+			g.Protect(g.h.mux.Path(name), g.isSignedIn)
+		}
+	}
 }
 
-func (g *Guard) RequireAuth(path string, isAuthorised PredicateFunc) {
-	g.Protect(path, g.isAuthorised(isAuthorised))
+func (g *Guard) RequireAuth(isAuthorised PredicateFunc, pathNames ...string) {
+	if len(pathNames) == 0 {
+		g.Protect(g.h.mux.CurrentPrefix(), g.isAuthorised(isAuthorised))
+	} else {
+		for _, name := range pathNames {
+			g.Protect(g.h.mux.Path(name), g.isAuthorised(isAuthorised))
+		}
+	}
 }
 
 func (g *Guard) Middleware(next http.HandlerFunc) http.HandlerFunc {

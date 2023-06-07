@@ -13,7 +13,7 @@ import (
 
 func ChangePassword(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
 	mux.Prefix("/change-password", func(mux *router.ServeMux) {
-		guard.RequireSignIn(mux.CurrentPrefix())
+		guard.RequireSignIn()
 
 		mux.Get("/", changePasswordGet(h), "account.change_password")
 		mux.Post("/", changePasswordPost(h), "account.change_password.post")

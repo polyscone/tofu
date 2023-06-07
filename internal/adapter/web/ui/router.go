@@ -139,7 +139,7 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 	// Admin
 	mux.Prefix("/admin", func(mux *router.ServeMux) {
-		guard.RequireSignIn(mux.CurrentPrefix())
+		guard.RequireSignIn()
 
 		mux.Name("admin.section")
 
