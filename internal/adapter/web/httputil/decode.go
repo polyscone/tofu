@@ -181,6 +181,23 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 
 		default:
 			switch typ {
+			case reflect.TypeOf([]int(nil)):
+				var values []int
+				if strs != nil {
+					values = make([]int, len(strs))
+
+					for i, str := range strs {
+						value, err := strconv.ParseInt(str, 10, 64)
+						if err != nil {
+							return errors.Tracef(err)
+						}
+
+						values[i] = int(value)
+					}
+				}
+
+				field.Set(reflect.ValueOf(values))
+
 			case reflect.TypeOf([]byte(nil)):
 				field.SetBytes([]byte(str))
 

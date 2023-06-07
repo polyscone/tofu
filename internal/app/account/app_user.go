@@ -42,6 +42,8 @@ type UserFilter struct {
 	Email  *string
 	Search *string
 
+	SortTopID int
+
 	Limit  int
 	Offset int
 }
@@ -61,9 +63,7 @@ func (u *User) HasActivatedTOTP() bool {
 func (u *User) SignUp() error {
 	u.SignedUpAt = time.Now().UTC()
 
-	u.Events.Enqueue(SignedUp{
-		Email: u.Email,
-	})
+	u.Events.Enqueue(SignedUp{Email: u.Email})
 
 	return nil
 }
@@ -79,9 +79,7 @@ func (u *User) Activate(password Password, hasher password.Hasher) error {
 
 	u.ActivatedAt = time.Now().UTC()
 
-	u.Events.Enqueue(Activated{
-		Email: u.Email,
-	})
+	u.Events.Enqueue(Activated{Email: u.Email})
 
 	return nil
 }
@@ -112,9 +110,7 @@ func (u *User) ChangePassword(oldPassword, newPassword Password, hasher password
 		return errors.Tracef(err)
 	}
 
-	u.Events.Enqueue(PasswordChanged{
-		Email: u.Email,
-	})
+	u.Events.Enqueue(PasswordChanged{Email: u.Email})
 
 	return nil
 }
@@ -128,9 +124,7 @@ func (u *User) ResetPassword(newPassword Password, hasher password.Hasher) error
 		return errors.Tracef(err)
 	}
 
-	u.Events.Enqueue(PasswordReset{
-		Email: u.Email,
-	})
+	u.Events.Enqueue(PasswordReset{Email: u.Email})
 
 	return nil
 }
@@ -289,9 +283,7 @@ func (u *User) RegenerateRecoveryCodes(totp TOTP) error {
 		u.RecoveryCodes[i] = NewRecoveryCode(code)
 	}
 
-	u.Events.Enqueue(RecoveryCodesRegenerated{
-		Email: u.Email,
-	})
+	u.Events.Enqueue(RecoveryCodesRegenerated{Email: u.Email})
 
 	return nil
 }
@@ -315,9 +307,7 @@ func (u *User) DisableTOTP(password Password, hasher password.Hasher) error {
 	u.TOTPActivatedAt = time.Time{}
 	u.RecoveryCodes = nil
 
-	u.Events.Enqueue(DisabledTOTP{
-		Email: u.Email,
-	})
+	u.Events.Enqueue(DisabledTOTP{Email: u.Email})
 
 	return nil
 }
@@ -334,9 +324,7 @@ func (u *User) DisableTOTPWithRecoveryCode(code Code) error {
 	u.TOTPVerifiedAt = time.Time{}
 	u.RecoveryCodes = nil
 
-	u.Events.Enqueue(DisabledTOTP{
-		Email: u.Email,
-	})
+	u.Events.Enqueue(DisabledTOTP{Email: u.Email})
 
 	return nil
 }
@@ -373,9 +361,7 @@ func (u *User) SignInWithPassword(password Password, hasher password.Hasher) (bo
 		u.LastSignedInMethod = SignInMethodWebsite
 	}
 
-	u.Events.Enqueue(SignedInWithPassword{
-		Email: u.Email,
-	})
+	u.Events.Enqueue(SignedInWithPassword{Email: u.Email})
 
 	return rehashed, nil
 }
@@ -395,9 +381,7 @@ func (u *User) SignInWithTOTP(totp TOTP) error {
 
 	u.LastSignedInAt = time.Now().UTC()
 
-	u.Events.Enqueue(SignedInWithTOTP{
-		Email: u.Email,
-	})
+	u.Events.Enqueue(SignedInWithTOTP{Email: u.Email})
 
 	return nil
 }
@@ -416,9 +400,7 @@ func (u *User) SignInWithRecoveryCode(code Code) error {
 			u.RecoveryCodes = append(u.RecoveryCodes[:i], u.RecoveryCodes[i+1:]...)
 			u.LastSignedInAt = time.Now().UTC()
 
-			u.Events.Enqueue(SignedInWithRecoveryCode{
-				Email: u.Email,
-			})
+			u.Events.Enqueue(SignedInWithRecoveryCode{Email: u.Email})
 
 			return nil
 		}
@@ -427,4 +409,10 @@ func (u *User) SignInWithRecoveryCode(code Code) error {
 	errs := errors.Map{"recovery code": errors.New("invalid recovery code")}
 
 	return errs.Tracef(app.ErrInvalidInput)
+}
+
+func (u *User) ChangeRoles(roles ...*Role) {
+	u.Roles = roles
+
+	u.Events.Enqueue(RolesChanged{Email: u.Email})
 }

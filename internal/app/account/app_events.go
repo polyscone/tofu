@@ -41,3 +41,7 @@ type PasswordChanged struct {
 type PasswordReset struct {
 	Email string
 }
+
+type RolesChanged struct {
+	Email string
+}

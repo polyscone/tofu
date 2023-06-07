@@ -493,6 +493,10 @@
 }
 
 @layer utility {
+	.cols-2 {
+		columns: 1;
+	}
+
 	.center {
 		max-width: 550px;
 		margin-inline: auto;
@@ -512,5 +516,11 @@
 
 	.grow {
 		flex-grow: 1;
+	}
+
+	@media screen and (min-width: 400px) {
+		.cols-2 {
+			columns: 2;
+		}
 	}
 }

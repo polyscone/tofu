@@ -62,6 +62,10 @@ func (p Passport) CanChangeTOTPTelephone(userID int) bool {
 	return p.user.ID == userID
 }
 
+func (p Passport) CanChangeRoles(userID int) bool {
+	return p.user.ID == userID
+}
+
 func (p Passport) CanCreateRoles() bool {
 	return true
 }

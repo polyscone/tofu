@@ -383,7 +383,7 @@ func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err erro
 			data.ErrorMessage = "The server took too long to respond."
 
 		case errors.Is(err, app.ErrUnauthorised):
-			data.ErrorMessage = "You do not have sufficient permissions to access this resource."
+			data.ErrorMessage = "You do not have sufficient permissions."
 
 		case errors.Is(err, app.ErrMalformedInput),
 			errors.Is(err, app.ErrInvalidInput),

@@ -49,6 +49,9 @@ func (r *AccountRepo) FindUserByID(ctx context.Context, id int) (*account.User, 
 	if err := r.attachUserRecoveryCodes(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
+	if err := r.attachUserRoles(ctx, tx, user); err != nil {
+		return nil, errors.Tracef(err)
+	}
 
 	return user, nil
 }
@@ -72,11 +75,14 @@ func (r *AccountRepo) FindUserByEmail(ctx context.Context, email string) (*accou
 	if err := r.attachUserRecoveryCodes(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
+	if err := r.attachUserRoles(ctx, tx, user); err != nil {
+		return nil, errors.Tracef(err)
+	}
 
 	return user, nil
 }
 
-func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, search string, page, size int) ([]*account.User, int, error) {
+func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.User, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, errors.Tracef(err)
@@ -85,9 +91,10 @@ func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, search string, 
 
 	limit, offset := pageLimitOffset(page, size)
 	users, total, err := r.findUsers(ctx, tx, account.UserFilter{
-		Search: &search,
-		Limit:  limit,
-		Offset: offset,
+		Search:    &search,
+		SortTopID: sortTopID,
+		Limit:     limit,
+		Offset:    offset,
 	})
 
 	return users, total, errors.Tracef(err)
@@ -123,6 +130,18 @@ func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID int) ([]*acc
 	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{UserID: &userID})
 
 	return roles, errors.Tracef(err)
+}
+
+func (r *AccountRepo) FindRoles(ctx context.Context) ([]*account.Role, int, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, 0, errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	users, total, err := r.findRoles(ctx, tx, account.RoleFilter{})
+
+	return users, total, errors.Tracef(err)
 }
 
 func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.Role, int, error) {
@@ -239,6 +258,12 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 		where, args = append(where, "email LIKE ?"), append(args, "%"+*v+"%")
 	}
 
+	var sorts []string
+	if filter.SortTopID != 0 {
+		sorts, args = append(sorts, "CASE id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
+	}
+	sorts = append(sorts, "email ASC")
+
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
 			id,
@@ -259,6 +284,7 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			COUNT(1) OVER () AS total
 		FROM account__users
 		`+whereSQL(where)+`
+		`+orderBySQL(sorts)+`
 		`+limitOffsetSQL(filter.Limit, filter.Offset),
 		args...,
 	)
@@ -403,6 +429,7 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 	if filter.SortTopID != 0 {
 		sorts, args = append(sorts, "CASE r.id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
 	}
+	sorts = append(sorts, "name ASC")
 
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
@@ -496,6 +523,9 @@ func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) e
 			sql.Named("permission_id", permissionID),
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
+		if err != nil {
+			return errors.Tracef(err)
+		}
 	}
 
 	return nil
@@ -549,13 +579,19 @@ func (r *AccountRepo) saveRole(ctx context.Context, tx *Tx, role *account.Role) 
 			sql.Named("permission_id", permissionID),
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
+		if err != nil {
+			return errors.Tracef(err)
+		}
 	}
 
 	return errors.Tracef(err)
 }
 
 func (r *AccountRepo) removeRole(ctx context.Context, tx *Tx, roleID int) error {
-	_, err := tx.ExecContext(ctx, "DELETE FROM account__roles WHERE id = :id", sql.Named("id", roleID))
+	_, err := tx.ExecContext(ctx,
+		"DELETE FROM account__roles WHERE id = :id",
+		sql.Named("id", roleID),
+	)
 
 	return errors.Tracef(err)
 }
@@ -607,6 +643,17 @@ func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user 
 	}
 
 	user.RecoveryCodes = recoveryCodes
+
+	return nil
+}
+
+func (r *AccountRepo) attachUserRoles(ctx context.Context, tx *Tx, user *account.User) error {
+	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{UserID: &user.ID})
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	user.Roles = roles
 
 	return nil
 }
@@ -700,6 +747,27 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) e
 		}
 	}
 
+	for _, role := range user.Roles {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_roles (
+				user_id,
+				role_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:role_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("role_id", role.ID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+	}
+
 	return nil
 }
 
@@ -750,10 +818,8 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, user *account.User) 
 		return errors.Tracef(err)
 	}
 
-	_, err = tx.ExecContext(ctx, `
-		DELETE FROM account__recovery_codes
-		WHERE user_id = :user_id
-	`,
+	_, err = tx.ExecContext(ctx,
+		"DELETE FROM account__recovery_codes WHERE user_id = :user_id",
 		sql.Named("user_id", user.ID),
 	)
 	if err != nil {
@@ -774,6 +840,35 @@ func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, user *account.User) 
 		`,
 			sql.Named("user_id", user.ID),
 			sql.Named("code", rc.Code),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"DELETE FROM account__user_roles WHERE user_id = :user_id",
+		sql.Named("user_id", user.ID),
+	)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	for _, role := range user.Roles {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_roles (
+				user_id,
+				role_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:role_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("role_id", role.ID),
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {

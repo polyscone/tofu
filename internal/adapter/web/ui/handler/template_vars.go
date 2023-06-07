@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/url"
+	"strconv"
 
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
@@ -26,7 +27,7 @@ type Form struct {
 
 func (f Form) GetOr(key string, fallback any) string {
 	if f.Values == nil {
-		return fmt.Sprintf("%s", fallback)
+		return fmt.Sprintf("%v", fallback)
 	}
 
 	return f.Get(key)
@@ -36,22 +37,26 @@ func (f Form) GetAll(key string) []string {
 	return f.Values[key]
 }
 
-func (f Form) GetAllOr(key string, fallback []string) []string {
+func (f Form) GetAllOr(key string, fallback any) ([]string, error) {
 	if f.Values == nil {
-		return fallback
-	}
+		switch fallback := fallback.(type) {
+		case []int:
+			slice := make([]string, len(fallback))
+			for i, value := range fallback {
+				slice[i] = strconv.Itoa(value)
+			}
 
-	return f.Values[key]
-}
+			return slice, nil
 
-func (f Form) HasValue(key string, needle string) bool {
-	for _, v := range f.Values[key] {
-		if v == needle {
-			return true
+		case []string:
+			return fallback, nil
+
+		default:
+			return nil, errors.Tracef("unsupported fallback type %T", fallback)
 		}
 	}
 
-	return false
+	return f.Values[key], nil
 }
 
 type Query struct {

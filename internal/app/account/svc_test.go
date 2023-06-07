@@ -47,6 +47,10 @@ func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu 
 	errors.Must0(user.SignUp())
 
 	if tu.Activate {
+		if tu.Password == "" {
+			tu.Password = "password"
+		}
+
 		password := errors.Must(account.NewPassword(tu.Password))
 
 		errors.Must0(user.Activate(password, hasher))
@@ -73,4 +77,30 @@ func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu 
 	errors.Must0(repo.AddUser(ctx, user))
 
 	return user
+}
+
+type TestRole struct {
+	Name        string
+	Permissions []string
+}
+
+func MustAddRole(t *testing.T, ctx context.Context, repo account.ReadWriter, tr TestRole) *account.Role {
+	t.Helper()
+
+	name := errors.Must(account.NewRoleName(tr.Name))
+
+	var permissions []account.Permission
+	if tr.Permissions != nil {
+		permissions = make([]account.Permission, len(tr.Permissions))
+
+		for i, name := range tr.Permissions {
+			permissions[i] = errors.Must(account.NewPermission(name))
+		}
+	}
+
+	role := account.NewRole(name, "", permissions)
+
+	errors.Must0(repo.AddRole(ctx, role))
+
+	return role
 }

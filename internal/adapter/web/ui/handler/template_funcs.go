@@ -157,7 +157,9 @@ func tmplHasPathPrefix(mux *router.ServeMux) tmplHasPathPrefixFunc {
 	}
 }
 
-func tmplHasString(haystack []string, needle string) bool {
+func tmplHasString(haystack []string, value any) bool {
+	needle := fmt.Sprintf("%v", value)
+
 	for _, value := range haystack {
 		if value == needle {
 			return true

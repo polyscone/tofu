@@ -32,8 +32,8 @@ func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int,
 		if input.description, err = NewRoleDesc(description); err != nil {
 			errs.Set("description", err)
 		}
-		if n := len(permissions); n != 0 {
-			input.permissions = make([]Permission, n)
+		if permissions != nil {
+			input.permissions = make([]Permission, len(permissions))
 
 			for i, permission := range permissions {
 				input.permissions[i], err = NewPermission(permission)

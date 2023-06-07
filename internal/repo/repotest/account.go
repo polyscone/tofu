@@ -53,6 +53,16 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 		t.Run("add and find", func(t *testing.T) {
 			store := newStore()
 
+			role1 := &account.Role{Name: "Foo"}
+			if err := store.AddRole(ctx, role1); err != nil {
+				t.Fatal(err)
+			}
+
+			role2 := &account.Role{Name: "Bar"}
+			if err := store.AddRole(ctx, role2); err != nil {
+				t.Fatal(err)
+			}
+
 			tt := []struct {
 				name string
 				user account.User
@@ -75,6 +85,7 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 					ActivatedAt:        time.Now(),
 					LastSignedInAt:     time.Now(),
 					LastSignedInMethod: "Website",
+					Roles:              []*account.Role{role1, role2},
 				}, nil},
 				{"conflicting email", account.User{Email: "Email 1"}, repo.ErrConflict},
 				{"conflicting email with different casing", account.User{Email: "EMAIL 1"}, repo.ErrConflict},
@@ -130,6 +141,11 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 		t.Run("save and find", func(t *testing.T) {
 			store := newStore()
 
+			role1 := &account.Role{Name: "Foo"}
+			if err := store.AddRole(ctx, role1); err != nil {
+				t.Fatal(err)
+			}
+
 			tt := []struct {
 				name string
 				user account.User
@@ -137,7 +153,8 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 			}{
 				{"no data", account.User{}, nil},
 				{"minimal data", account.User{Email: "Save user 1"}, nil},
-				{"conflicting email", account.User{Email: "Save user 1"}, repo.ErrConflict},
+				{"with role", account.User{Email: "Save user 2", Roles: []*account.Role{role1}}, nil},
+				{"conflicting email", account.User{Email: "Save user 2"}, repo.ErrConflict},
 				{"conflicting email with different casing", account.User{Email: "SAVE USER 1"}, repo.ErrConflict},
 			}
 			for i, tc := range tt {
@@ -147,9 +164,7 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 						t.Fatal(err)
 					}
 
-					if tc.user.ID == 0 {
-						tc.user.ID = user.ID
-					}
+					tc.user.ID = user.ID
 
 					err := store.SaveUser(ctx, &tc.user)
 					if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
@@ -168,6 +183,49 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 					accountUsersEqual(t, &tc.user, found)
 				})
 			}
+		})
+
+		t.Run("save roles", func(t *testing.T) {
+			store := newStore()
+
+			role1 := &account.Role{Name: "Foo"}
+			if err := store.AddRole(ctx, role1); err != nil {
+				t.Fatal(err)
+			}
+
+			role2 := &account.Role{Name: "Bar"}
+			if err := store.AddRole(ctx, role2); err != nil {
+				t.Fatal(err)
+			}
+
+			user := account.User{Email: "Email 1"}
+			if err := store.AddUser(ctx, &user); err != nil {
+				t.Fatal(err)
+			}
+
+			user.Roles = []*account.Role{role1, role2}
+			if err := store.SaveUser(ctx, &user); err != nil {
+				t.Fatal(err)
+			}
+
+			found, err := store.FindUserByID(ctx, user.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			accountUsersEqual(t, &user, found)
+
+			user.Roles = []*account.Role{role1}
+			if err := store.SaveUser(ctx, &user); err != nil {
+				t.Fatal(err)
+			}
+
+			found, err = store.FindUserByID(ctx, user.ID)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			accountUsersEqual(t, &user, found)
 		})
 	})
 
@@ -383,6 +441,20 @@ func accountUsersEqual(t *testing.T, want, got *account.User) {
 	}
 	if want, got := want.LastSignedInMethod, got.LastSignedInMethod; want != got {
 		t.Errorf("want last signed in method to be %v; got %v", want, got)
+	}
+	if want, got := want.Roles, got.Roles; len(want) != len(got) {
+		t.Errorf("want %v roles; got %v", len(want), len(got))
+	} else {
+		sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
+		sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
+
+		for i, wantRole := range want {
+			gotRole := got[i]
+
+			if wantRole.ID != gotRole.ID {
+				t.Errorf("want role %q; got %q", wantRole.Name, gotRole.Name)
+			}
+		}
 	}
 }
 

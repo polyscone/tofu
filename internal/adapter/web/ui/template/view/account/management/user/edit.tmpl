@@ -12,6 +12,15 @@
 	<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
+		<b>Roles</b>
+
+		<div class="cols-2">
+			{{$rolesIDs := $.Form.GetAllOr "roles" .Vars.UserRoleIDs}}
+			{{range .Vars.Roles}}
+				<label><input type="checkbox" name="roles" value="{{.ID}}"{{if HasString $rolesIDs .ID}} checked{{end}}> {{.Name}}</label>
+			{{end}}
+		</div>
+
 		<div class="bag reverse">
 			<button type="submit" class="push-inline-end">Update user</button>
 

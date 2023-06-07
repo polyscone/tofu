@@ -24,8 +24,8 @@ func NewRole(name RoleName, description RoleDesc, permissions []Permission) *Rol
 		Description: description.String(),
 	}
 
-	if n := len(permissions); n != 0 {
-		role.Permissions = make([]string, n)
+	if permissions != nil {
+		role.Permissions = make([]string, len(permissions))
 
 		for i, permission := range permissions {
 			role.Permissions[i] = permission.String()
