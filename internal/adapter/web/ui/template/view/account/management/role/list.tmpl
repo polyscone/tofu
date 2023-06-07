@@ -27,8 +27,13 @@
 			<td>{{.Name}}</td>
 			<td>{{.Description}}</td>
 			<td class="text-right no-wrap">
-				<a href="{{Path "account.management.role.edit" ":roleID" .ID}}{{$.URL.Query.String}}">Edit</a>
-				<a href="{{Path "account.management.role.delete" ":roleID" .ID}}{{$.URL.Query.String}}">Delete</a>
+				{{if $.Guard.CanEditRoles}}
+					<a href="{{Path "account.management.role.edit" ":roleID" .ID}}{{$.URL.Query.String}}">Edit</a>
+				{{end}}
+
+				{{if $.Guard.CanDeleteRoles}}
+					<a href="{{Path "account.management.role.delete" ":roleID" .ID}}{{$.URL.Query.String}}">Delete</a>
+				{{end}}
 			</td>
 		</tr>
 	{{else}}

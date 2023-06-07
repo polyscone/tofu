@@ -1,20 +1,32 @@
 package passport
 
+const (
+	viewRoles   = "account:roles:view"
+	createRoles = "account:roles:create"
+	editRoles   = "account:roles:edit"
+	deleteRoles = "account:roles:delete"
+
+	viewUsers   = "account:users:view"
+	editUsers   = "account:users:edit"
+	changeRoles = "account:users:edit:roles"
+)
+
 var PermissionGroups = []PermissionGroup{
 	{
 		Name: "Account roles",
 		Permissions: []Permission{
-			{Name: "account:roles:view", DisplayName: "View roles"},
-			{Name: "account:roles:create", DisplayName: "Create roles"},
-			{Name: "account:roles:edit", DisplayName: "Edit roles"},
-			{Name: "account:roles:delete", DisplayName: "Delete roles"},
+			{Name: viewRoles, DisplayName: "View roles"},
+			{Name: createRoles, DisplayName: "Create roles"},
+			{Name: editRoles, DisplayName: "Edit roles"},
+			{Name: deleteRoles, DisplayName: "Delete roles"},
 		},
 	},
 	{
 		Name: "Account users",
 		Permissions: []Permission{
-			{Name: "account:users:view", DisplayName: "View users"},
-			{Name: "account:users:edit", DisplayName: "Edit users"},
+			{Name: viewUsers, DisplayName: "View users"},
+			{Name: editUsers, DisplayName: "Edit users"},
+			{Name: changeRoles, DisplayName: "Change user roles"},
 		},
 	},
 }

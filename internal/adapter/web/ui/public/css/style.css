@@ -20,6 +20,8 @@
 	--clr-accent-100: hsl(170 45% 97%);
 	--clr-accent-400: hsl(170 45% 30%);
 
+	--clr-disabled-400: hsl(240 6% 79%);
+
 	--clr-focus-400: hsl(59 100% 95%);
 
 	--clr-valid-400: transparent;
@@ -385,14 +387,17 @@
 		list-style: none;
 	}
 
-	button,
-	.btn {
+	:is(button, .btn) {
 		padding-block: 0.4rem;
 		padding-inline: 1rem;
 		background: var(--clr-accent-400);
 		color: var(--clr-white-400);
 		text-decoration: none;
 		cursor: default;
+	}
+
+	:is(button, .btn)[disabled] {
+		background: var(--clr-disabled-400);
 	}
 
 	.btn--alt {

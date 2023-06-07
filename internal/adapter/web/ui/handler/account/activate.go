@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Activate(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+func Activate(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/activate", func(mux *router.ServeMux) {
 		mux.Get("/", activateGet(h), "account.activate")
 		mux.Post("/", activatePost(h), "account.activate.post")

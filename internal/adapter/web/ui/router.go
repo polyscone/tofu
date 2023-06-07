@@ -36,10 +36,7 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 	templateFiles := fstack.New(dev.RelDirFS(templateDir), errors.Must(fs.Sub(files, templateDir)))
 
 	mux := router.NewServeMux()
-	h := handler.New(mux, tenant, templateFiles)
-	guard := handler.NewGuard(h, func() string {
-		return mux.Path("account.sign_in")
-	})
+	h := handler.New(mux, tenant, templateFiles, "account.sign_in")
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		h.ErrorView(w, r, errors.Tracef(err), "error", nil)
@@ -94,7 +91,6 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 		return 0
 	}))
-	mux.Use(guard.Middleware)
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -121,33 +117,33 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")
 
 	// Pages
-	page.Home(h, guard, mux)
+	page.Home(h, mux)
 
 	// Account
 	mux.Prefix("/account", func(mux *router.ServeMux) {
 		mux.Name("account.section")
 
-		account.Activate(h, guard, mux)
-		account.ChangePassword(h, guard, mux)
-		account.Dashboard(h, guard, mux)
-		account.ResetPassword(h, guard, mux)
-		account.SignUp(h, guard, mux)
-		account.SignIn(h, guard, mux)
-		account.SignOut(h, guard, mux)
-		account.TOTP(h, guard, mux)
+		account.Activate(h, mux)
+		account.ChangePassword(h, mux)
+		account.Dashboard(h, mux)
+		account.ResetPassword(h, mux)
+		account.SignUp(h, mux)
+		account.SignIn(h, mux)
+		account.SignOut(h, mux)
+		account.TOTP(h, mux)
 	})
 
 	// Admin
 	mux.Prefix("/admin", func(mux *router.ServeMux) {
-		guard.RequireSignIn()
+		mux.Before(h.RequireSignIn)
 
 		mux.Name("admin.section")
 
-		admin.Dashboard(h, guard, mux)
+		admin.Dashboard(h, mux)
 
 		mux.Prefix("/account", func(mux *router.ServeMux) {
-			account.RoleManagement(h, guard, mux)
-			account.UserManagement(h, guard, mux)
+			account.RoleManagement(h, mux)
+			account.UserManagement(h, mux)
 		})
 	})
 

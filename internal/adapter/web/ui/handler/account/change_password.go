@@ -11,9 +11,9 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
 )
 
-func ChangePassword(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+func ChangePassword(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/change-password", func(mux *router.ServeMux) {
-		guard.RequireSignIn()
+		mux.Before(h.RequireSignIn)
 
 		mux.Get("/", changePasswordGet(h), "account.change_password")
 		mux.Post("/", changePasswordPost(h), "account.change_password.post")

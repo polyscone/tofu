@@ -91,6 +91,54 @@ func TestMux(t *testing.T) {
 		})
 	})
 
+	mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
+		w.Write([]byte("abc"))
+
+		return false
+	}, "/before/hook/exact")
+
+	mux.Prefix("/before", func(mux *router.ServeMux) {
+		mux.Prefix("/hook", func(mux *router.ServeMux) {
+			mux.Prefix("/exact", func(mux *router.ServeMux) {
+				mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte(router.URLParam(r, "unreachable")))
+				})
+			})
+
+			mux.Prefix("/prefix", func(mux *router.ServeMux) {
+				mux.Prefix("/:foo", func(mux *router.ServeMux) {
+					mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
+						foo := router.URLParam(r, "foo")
+						if foo == "abc" {
+							w.Write([]byte("123"))
+
+							return false
+						}
+
+						return true
+					})
+
+					mux.Prefix("/bar", func(mux *router.ServeMux) {
+						mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
+							foo := router.URLParam(r, "foo")
+							if foo == "qux" {
+								w.Write([]byte("quxxxxx"))
+
+								return false
+							}
+
+							return true
+						})
+
+						mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+							w.Write([]byte(router.URLParam(r, "foo")))
+						})
+					})
+				})
+			})
+		})
+	})
+
 	mux.Get("/url/:ignore/:status/qux", func(w http.ResponseWriter, r *http.Request) {
 		switch router.URLParam(r, "status") {
 		case "teapot":
@@ -239,6 +287,12 @@ func TestMux(t *testing.T) {
 		{"mux object path named prefix", http.MethodGet, mux.Path("named"), "named", http.StatusOK},
 		{"mux object current prefix", http.MethodGet, "/get/only/current/prefix", "/get/only/", http.StatusOK},
 		{"mux object current path", http.MethodGet, "/get/only/current/path", "/get/only", http.StatusOK},
+
+		{"exact before hook", http.MethodGet, "/before/hook/exact", "abc", http.StatusOK},
+
+		{"prefix before hook no stop", http.MethodGet, "/before/hook/prefix/bar/bar", "bar", http.StatusOK},
+		{"prefix before hook stop abc", http.MethodGet, "/before/hook/prefix/abc/bar", "123", http.StatusOK},
+		{"prefix before hook stop qux", http.MethodGet, "/before/hook/prefix/qux/bar", "quxxxxx", http.StatusOK},
 
 		{"redirect get method ok", http.MethodGet, "/redirect/src", "redirected", http.StatusOK},
 		{"redirect with dynamic param", http.MethodGet, "/redirect/redirect/src/var", "redirected", http.StatusOK},

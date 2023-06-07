@@ -29,7 +29,15 @@
 					<b>{{.Name}}</b>
 
 					{{range .Permissions}}
-						<label><input type="checkbox" name="permissions" value="{{.Name}}"{{if HasString $permissions .Name}} checked{{end}}> {{.DisplayName}}</label>
+						<label>
+							<input
+								type="checkbox"
+								name="permissions"
+								value="{{.Name}}"
+								{{if HasString $permissions .Name}}checked{{end}}
+							>
+							{{.DisplayName}}
+						</label>
 					{{end}}
 				{{end}}
 			</div>

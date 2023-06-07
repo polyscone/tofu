@@ -17,7 +17,7 @@ import (
 
 const lowRecoveryCodes = 2
 
-func SignIn(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+func SignIn(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/sign-in", func(mux *router.ServeMux) {
 		mux.Get("/", signInGet(h), "account.sign_in")
 		mux.Post("/", signInPost(h), "account.sign_in.post")

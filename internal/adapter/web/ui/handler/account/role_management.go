@@ -12,22 +12,28 @@ import (
 	"github.com/polyscone/tofu/internal/repo"
 )
 
-func RoleManagement(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+func RoleManagement(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/roles", func(mux *router.ServeMux) {
+		mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanViewRoles() }))
+
 		mux.Get("/", roleListGet(h), "account.management.role.list")
 
 		mux.Prefix("/new", func(mux *router.ServeMux) {
-			guard.RequireAuth(func(p passport.Passport) bool { return p.CanCreateRoles() })
+			mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanCreateRoles() }))
 
 			mux.Get("/", roleNewGet(h), "account.management.role.new")
 			mux.Post("/", roleNewPost(h), "account.management.role.new.post")
 		})
 
 		mux.Prefix("/:roleID", func(mux *router.ServeMux) {
+			mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanEditRoles() }))
+
 			mux.Get("/", roleEditGet(h), "account.management.role.edit")
 			mux.Post("/", roleEditPost(h), "account.management.role.edit.post")
 
 			mux.Prefix("/delete", func(mux *router.ServeMux) {
+				mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanDeleteRoles() }))
+
 				mux.Get("/", roleDeleteGet(h), "account.management.role.delete")
 				mux.Post("/", roleDeletePost(h), "account.management.role.delete.post")
 			})

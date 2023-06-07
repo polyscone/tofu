@@ -14,7 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
-func ResetPassword(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+func ResetPassword(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/reset-password", func(mux *router.ServeMux) {
 		mux.Get("/", resetPasswordGet(h), "account.reset_password")
 		mux.Post("/", resetPasswordPost(h), "account.reset_password.post")

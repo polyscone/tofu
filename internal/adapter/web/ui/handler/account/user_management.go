@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/errors"
@@ -11,11 +12,15 @@ import (
 	"github.com/polyscone/tofu/internal/repo"
 )
 
-func UserManagement(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+func UserManagement(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/users", func(mux *router.ServeMux) {
+		mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanViewUsers() }))
+
 		mux.Get("/", userListGet(h), "account.management.user.list")
 
 		mux.Prefix("/:userID", func(mux *router.ServeMux) {
+			mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanEditUsers() }))
+
 			mux.Get("/", userEditGet(h), "account.management.user.edit")
 			mux.Post("/", userEditPost(h), "account.management.user.edit.post")
 		})

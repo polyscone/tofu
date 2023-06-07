@@ -42,16 +42,17 @@ type ViewVarsFunc func(r *http.Request) (Vars, error)
 
 type Handler struct {
 	*Tenant
-	files         fs.FS
-	templatesMu   sync.RWMutex
-	templates     map[string]*template.Template
-	funcs         template.FuncMap
-	viewVarsFuncs map[string]ViewVarsFunc
-	mux           *router.ServeMux
-	Sessions      *session.Manager
+	signInPathName string
+	files          fs.FS
+	templatesMu    sync.RWMutex
+	templates      map[string]*template.Template
+	funcs          template.FuncMap
+	viewVarsFuncs  map[string]ViewVarsFunc
+	mux            *router.ServeMux
+	Sessions       *session.Manager
 }
 
-func New(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Handler {
+func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName string) *Handler {
 	sessions := session.NewManager(tenant.Repo.Web)
 	funcs := template.FuncMap{
 		"Add":           tmplAdd,
@@ -68,17 +69,19 @@ func New(mux *router.ServeMux, tenant *Tenant, files fs.FS) *Handler {
 		"HasSuffix":     tmplHasSuffix,
 		"HasPathPrefix": tmplHasPathPrefix(mux),
 		"HasString":     tmplHasString,
+		"ToStrings":     tmplToStrings,
 		"UnescapeHTML":  tmplUnescapeHTML,
 	}
 
 	return &Handler{
-		Tenant:        tenant,
-		files:         files,
-		templates:     make(map[string]*template.Template),
-		funcs:         funcs,
-		viewVarsFuncs: make(map[string]ViewVarsFunc),
-		mux:           mux,
-		Sessions:      sessions,
+		Tenant:         tenant,
+		signInPathName: signInPathName,
+		files:          files,
+		templates:      make(map[string]*template.Template),
+		funcs:          funcs,
+		viewVarsFuncs:  make(map[string]ViewVarsFunc),
+		mux:            mux,
+		Sessions:       sessions,
 	}
 }
 
@@ -496,4 +499,36 @@ func (h *Handler) AddFlashImportantf(ctx context.Context, format string, a ...an
 	flash = append(flash, fmt.Sprintf(format, a...))
 
 	h.Sessions.Set(ctx, sess.FlashImportant, flash)
+}
+
+type PredicateFunc func(p passport.Passport) bool
+
+func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
+	ctx := r.Context()
+	passport := h.Passport(ctx)
+
+	if !passport.IsSignedIn() {
+		h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+
+		http.Redirect(w, r, h.mux.Path(h.signInPathName), http.StatusSeeOther)
+
+		return false
+	}
+
+	return true
+}
+
+func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
+	return func(w http.ResponseWriter, r *http.Request) bool {
+		ctx := r.Context()
+		passport := h.Passport(ctx)
+
+		if !check(passport) {
+			h.ErrorView(w, r, errors.Tracef(app.ErrUnauthorised), "error", nil)
+
+			return false
+		}
+
+		return true
+	}
 }

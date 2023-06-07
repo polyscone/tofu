@@ -7,7 +7,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Dashboard(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+func Dashboard(h *handler.Handler, mux *router.ServeMux) {
 	mux.Get("/", dashboardGet(h), "admin.dashboard")
 }
 

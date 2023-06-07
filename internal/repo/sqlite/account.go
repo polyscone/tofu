@@ -52,6 +52,11 @@ func (r *AccountRepo) FindUserByID(ctx context.Context, id int) (*account.User, 
 	if err := r.attachUserRoles(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
+	for _, role := range user.Roles {
+		if err := r.attachRolePermissions(ctx, tx, role); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
 
 	return user, nil
 }

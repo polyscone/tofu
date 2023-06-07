@@ -7,10 +7,10 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Dashboard(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+func Dashboard(h *handler.Handler, mux *router.ServeMux) {
 	mux.Get("/", dashboardGet(h), "account.dashboard")
 
-	guard.RequireSignIn("account.dashboard")
+	mux.Before(h.RequireSignIn, mux.Path("account.dashboard"))
 }
 
 func dashboardGet(h *handler.Handler) http.HandlerFunc {

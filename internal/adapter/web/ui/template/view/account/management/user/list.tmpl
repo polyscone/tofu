@@ -27,7 +27,11 @@
 					({{.LastSignedInMethod}})
 				{{end}}
 			</td>
-			<td class="text-right"><a href="{{Path "account.management.user.edit" ":userID" .ID}}{{$.URL.Query.String}}">Edit</a></td>
+			<td class="text-right">
+				{{if $.Guard.CanEditUsers}}
+					<a href="{{Path "account.management.user.edit" ":userID" .ID}}{{$.URL.Query.String}}">Edit</a>
+				{{end}}
+			</td>
 		</tr>
 	{{else}}
 		<tr class="management__empty">

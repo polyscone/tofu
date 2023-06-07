@@ -15,7 +15,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
-func SignUp(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+func SignUp(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/sign-up", func(mux *router.ServeMux) {
 		mux.Get("/", signUpGet(h), "account.sign_up")
 		mux.Post("/", signUpPost(h), "account.sign_up.post")

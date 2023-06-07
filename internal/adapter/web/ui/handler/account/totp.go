@@ -22,9 +22,9 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/sms"
 )
 
-func TOTP(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+func TOTP(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/totp", func(mux *router.ServeMux) {
-		guard.RequireSignIn()
+		mux.Before(h.RequireSignIn)
 
 		mux.Prefix("/setup", func(mux *router.ServeMux) {
 			mux.Get("/", totpSetupGet(h), "account.totp.setup")

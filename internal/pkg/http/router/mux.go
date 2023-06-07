@@ -24,6 +24,13 @@ type ctxKey int
 
 const ctxParams ctxKey = iota
 
+type BeforeHookFunc func(w http.ResponseWriter, r *http.Request) bool
+
+type BeforeHook struct {
+	pattern *regexp.Regexp
+	fn      BeforeHookFunc
+}
+
 // Route represents a registered route and handler.
 type Route struct {
 	key      string
@@ -107,6 +114,7 @@ type ServeMux struct {
 	prefix           string
 	middlewares      []middleware.Middleware
 	handler          http.Handler
+	befores          []*BeforeHook
 	routes           []*Route
 	named            map[string]*Route
 	notFound         http.Handler
@@ -154,8 +162,19 @@ func (mux *ServeMux) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		ctx := context.WithValue(r.Context(), ctxParams, params)
+		r := r.WithContext(ctx)
 
-		handler.ServeHTTP(w, r.WithContext(ctx))
+		for _, hook := range mux.befores {
+			if !hook.pattern.MatchString(r.URL.Path) {
+				continue
+			}
+
+			if ok := hook.fn(w, r); !ok {
+				return
+			}
+		}
+
+		handler.ServeHTTP(w, r)
 
 		return
 	}
@@ -180,6 +199,38 @@ func (mux *ServeMux) Use(mw middleware.Middleware) {
 	mux.middlewares = append(mux.middlewares, mw)
 
 	mux.handler = middleware.Apply(http.HandlerFunc(mux.serveHTTP), mux.middlewares...)
+}
+
+func (mux *ServeMux) Before(before BeforeHookFunc, paths ...string) {
+	if len(paths) == 0 {
+		if mux.prefix == "" {
+			panic("before hooks without exact paths must be registered in a non-empty prefix")
+		}
+
+		pattern := regexp.QuoteMeta(mux.prefix)
+		pattern = reParams.ReplaceAllString(pattern, `([^/]+)`)
+		pattern = "^" + pattern
+
+		compiled := regexp.MustCompile(pattern)
+
+		mux.befores = append(mux.befores, &BeforeHook{
+			pattern: compiled,
+			fn:      before,
+		})
+	} else {
+		for _, path := range paths {
+			pattern := regexp.QuoteMeta(path)
+			pattern = reParams.ReplaceAllString(pattern, `([^/]+)`)
+			pattern = "^" + pattern + "$"
+
+			compiled := regexp.MustCompile(pattern)
+
+			mux.befores = append(mux.befores, &BeforeHook{
+				pattern: compiled,
+				fn:      before,
+			})
+		}
+	}
 }
 
 // Prefix will automatically prefix any path patterns that are registered in
@@ -246,6 +297,8 @@ func (mux *ServeMux) nameRoute(route *Route, names ...string) {
 }
 
 func (mux *ServeMux) route(method string, path string, handler http.Handler, names ...string) *Route {
+	method = strings.ToUpper(method)
+
 	if path == "" {
 		panic("route path must not be empty")
 	}
@@ -254,7 +307,6 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 		path = ""
 	}
 
-	method = strings.ToUpper(method)
 	path = mux.prefix + path
 	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
 
@@ -265,15 +317,10 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 	var restGroup string
 	if rest := reLastParam.FindString(path); strings.HasSuffix(rest, "*") {
 		path = strings.TrimSuffix(path, "*")
-		restGroup = `(?P<$1>.*?)`
+		restGroup = `(?P<$1>.*)`
 	} else {
-		restGroup = `(?P<$1>[^/]*?)`
+		restGroup = `(?P<$1>[^/]*)`
 	}
-
-	pattern := regexp.QuoteMeta(path)
-	pattern = reLastParam.ReplaceAllString(pattern, restGroup)
-	pattern = reParams.ReplaceAllString(pattern, `(?P<$1>[^/]+?)`)
-	pattern = "^" + pattern + "$"
 
 	key := reParams.ReplaceAllString(path, "*")
 
@@ -293,6 +340,11 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 
 		return route
 	}
+
+	pattern := regexp.QuoteMeta(path)
+	pattern = reLastParam.ReplaceAllString(pattern, restGroup)
+	pattern = reParams.ReplaceAllString(pattern, `(?P<$1>[^/]+)`)
+	pattern = "^" + pattern + "$"
 
 	compiled := regexp.MustCompile(pattern)
 

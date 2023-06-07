@@ -63,19 +63,31 @@ func (p Passport) CanChangeTOTPTelephone(userID int) bool {
 }
 
 func (p Passport) CanChangeRoles(userID int) bool {
-	return p.user.ID == userID
+	return p.can(changeRoles)
+}
+
+func (p Passport) CanViewRoles() bool {
+	return p.can(viewRoles)
 }
 
 func (p Passport) CanCreateRoles() bool {
-	return true
+	return p.can(createRoles)
 }
 
 func (p Passport) CanEditRoles() bool {
-	return true
+	return p.can(editRoles)
 }
 
 func (p Passport) CanDeleteRoles() bool {
-	return true
+	return p.can(deleteRoles)
+}
+
+func (p Passport) CanViewUsers() bool {
+	return p.can(viewUsers)
+}
+
+func (p Passport) CanEditUsers() bool {
+	return p.can(editUsers)
 }
 
 func (p Passport) is(query string) bool {

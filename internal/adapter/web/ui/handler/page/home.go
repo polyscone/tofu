@@ -7,7 +7,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Home(h *handler.Handler, guard *handler.Guard, mux *router.ServeMux) {
+func Home(h *handler.Handler, mux *router.ServeMux) {
 	mux.Get("/", homeGet(h), "page.home")
 }
 

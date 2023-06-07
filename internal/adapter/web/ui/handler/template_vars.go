@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"net/url"
-	"strconv"
 
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
@@ -39,21 +38,7 @@ func (f Form) GetAll(key string) []string {
 
 func (f Form) GetAllOr(key string, fallback any) ([]string, error) {
 	if f.Values == nil {
-		switch fallback := fallback.(type) {
-		case []int:
-			slice := make([]string, len(fallback))
-			for i, value := range fallback {
-				slice[i] = strconv.Itoa(value)
-			}
-
-			return slice, nil
-
-		case []string:
-			return fallback, nil
-
-		default:
-			return nil, errors.Tracef("unsupported fallback type %T", fallback)
-		}
+		return tmplToStrings(fallback)
 	}
 
 	return f.Values[key], nil

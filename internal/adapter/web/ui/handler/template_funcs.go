@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -43,7 +44,7 @@ func tmplInts(start, end int) []int {
 }
 
 func tmplStatusText(code int) string {
-	return http.StatusText(code)
+	return strings.ReplaceAll(http.StatusText(code), "z", "s")
 }
 
 type tmplPathFunc func(name string, paramArgPairs ...any) template.URL
@@ -167,6 +168,24 @@ func tmplHasString(haystack []string, value any) bool {
 	}
 
 	return false
+}
+
+func tmplToStrings(value any) ([]string, error) {
+	switch value := value.(type) {
+	case []int:
+		slice := make([]string, len(value))
+		for i, value := range value {
+			slice[i] = strconv.Itoa(value)
+		}
+
+		return slice, nil
+
+	case []string:
+		return value, nil
+
+	default:
+		return nil, errors.Tracef("unsupported value type %T", value)
+	}
 }
 
 func tmplUnescapeHTML(s string) template.HTML {

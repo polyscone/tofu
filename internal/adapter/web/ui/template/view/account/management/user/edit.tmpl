@@ -8,6 +8,9 @@
 
 {{define "view_body"}}
 
+{{$canChangeRoles := .Guard.CanChangeRoles $.Vars.User.ID}}
+{{$canUpdate := $canChangeRoles}}
+
 <div class="center">
 	<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
@@ -15,14 +18,27 @@
 		<b>Roles</b>
 
 		<div class="cols-2">
-			{{$rolesIDs := $.Form.GetAllOr "roles" .Vars.UserRoleIDs}}
+			{{$roleIDs := $.Form.GetAllOr "roles" .Vars.UserRoleIDs}}
+			{{if not ($canChangeRoles)}}
+				{{$roleIDs = ToStrings .Vars.UserRoleIDs}}
+			{{end}}
+
 			{{range .Vars.Roles}}
-				<label><input type="checkbox" name="roles" value="{{.ID}}"{{if HasString $rolesIDs .ID}} checked{{end}}> {{.Name}}</label>
+				<label>
+					<input
+						type="checkbox"
+						name="roles"
+						value="{{.ID}}"
+						{{if HasString $roleIDs .ID}}checked{{end}}
+						{{if not ($canChangeRoles)}}disabled{{end}}
+					>
+					{{.Name}}
+				</label>
 			{{end}}
 		</div>
 
 		<div class="bag reverse">
-			<button type="submit" class="push-inline-end">Update user</button>
+			<button type="submit" class="push-inline-end"{{if not $canUpdate}} disabled{{end}}>Update user</button>
 
 			<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
 		</div>
