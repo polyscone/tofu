@@ -105,6 +105,7 @@ type SessionData struct {
 	Flash          []string
 	FlashImportant []string
 	Redirect       string
+	HighlightID    int
 
 	// Account session keys
 	UserID                   int

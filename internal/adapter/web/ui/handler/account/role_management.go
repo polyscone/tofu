@@ -40,7 +40,6 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		sortTopID := h.Sessions.PopInt(ctx, sess.SortTopID)
-		highlightID := h.Sessions.PopInt(ctx, sess.HighlightID)
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
 		roles, total, err := h.Repo.Account.FindRolesPageBySearch(ctx, sortTopID, search, page, size)
@@ -49,8 +48,7 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 		}
 
 		h.View(w, r, http.StatusOK, "account/management/role/list", handler.Vars{
-			"HighlightID": highlightID,
-			"Roles":       repo.NewBook(roles, page, size, total),
+			"Roles": repo.NewBook(roles, page, size, total),
 		})
 	}
 }

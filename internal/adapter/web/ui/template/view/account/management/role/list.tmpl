@@ -23,7 +23,7 @@
 	</tr>
 
 	{{range .Vars.Roles.Page.Rows}}
-		<tr{{if eq .ID $.Vars.HighlightID}} class="management__highlight"{{end}}>
+		<tr{{if eq .ID $.Session.HighlightID}} class="management__highlight"{{end}}>
 			<td>{{.Name}}</td>
 			<td>{{.Description}}</td>
 			<td class="text-right no-wrap">

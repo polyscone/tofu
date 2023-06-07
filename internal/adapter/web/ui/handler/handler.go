@@ -306,6 +306,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 			Flash:          h.Sessions.PopStrings(ctx, sess.Flash),
 			FlashImportant: h.Sessions.PopStrings(ctx, sess.FlashImportant),
 			Redirect:       h.Sessions.GetString(ctx, sess.Redirect),
+			HighlightID:    h.Sessions.PopInt(ctx, sess.HighlightID),
 
 			// Account session keys
 			UserID:                   h.Sessions.GetInt(ctx, sess.UserID),
