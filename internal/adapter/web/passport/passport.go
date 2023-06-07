@@ -4,26 +4,26 @@ import (
 	"context"
 
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
-	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/session"
 )
 
 type Passport struct {
-	ctx      context.Context
-	sessions *session.Manager
-	user     *account.User
+	ctx         context.Context
+	sessions    *session.Manager
+	userID      int
+	permissions []string
 }
 
-func New(ctx context.Context, sessions *session.Manager, user *account.User) Passport {
+func New(ctx context.Context, sessions *session.Manager, userID int, permissions []string) Passport {
 	return Passport{
-		ctx:      ctx,
-		sessions: sessions,
-		user:     user,
+		ctx:         ctx,
+		sessions:    sessions,
+		permissions: permissions,
 	}
 }
 
 func (p Passport) UserID() int {
-	return p.user.ID
+	return p.userID
 }
 
 func (p Passport) IsSignedIn() bool {
@@ -31,35 +31,35 @@ func (p Passport) IsSignedIn() bool {
 }
 
 func (p Passport) CanChangePassword(userID int) bool {
-	return p.user.ID == userID
+	return p.userID == userID
 }
 
 func (p Passport) CanResetPassword(userID int) bool {
-	return p.user.ID == userID
+	return p.userID == userID
 }
 
 func (p Passport) CanDisableTOTP(userID int) bool {
-	return p.user.ID == userID
+	return p.userID == userID
 }
 
 func (p Passport) CanRegenerateRecoveryCodes(userID int) bool {
-	return p.user.ID == userID
+	return p.userID == userID
 }
 
 func (p Passport) CanSetupTOTP(userID int) bool {
-	return p.user.ID == userID
+	return p.userID == userID
 }
 
 func (p Passport) CanVerifyTOTP(userID int) bool {
-	return p.user.ID == userID
+	return p.userID == userID
 }
 
 func (p Passport) CanActivateTOTP(userID int) bool {
-	return p.user.ID == userID
+	return p.userID == userID
 }
 
 func (p Passport) CanChangeTOTPTelephone(userID int) bool {
-	return p.user.ID == userID
+	return p.userID == userID
 }
 
 func (p Passport) CanChangeRoles(userID int) bool {
@@ -90,22 +90,10 @@ func (p Passport) CanEditUsers() bool {
 	return p.can(editUsers)
 }
 
-func (p Passport) is(query string) bool {
-	for _, role := range p.user.Roles {
-		if query == role.Name {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (p Passport) can(query string) bool {
-	for _, role := range p.user.Roles {
-		for _, permission := range role.Permissions {
-			if query == permission {
-				return true
-			}
+	for _, permission := range p.permissions {
+		if query == permission {
+			return true
 		}
 	}
 

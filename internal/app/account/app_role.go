@@ -10,6 +10,7 @@ type Role struct {
 type RoleFilter struct {
 	ID     *int
 	UserID *int
+	Name   *string
 	Search *string
 
 	SortTopID int

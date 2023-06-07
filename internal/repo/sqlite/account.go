@@ -125,6 +125,26 @@ func (r *AccountRepo) FindRoleByID(ctx context.Context, roleID int) (*account.Ro
 	return role, nil
 }
 
+func (r *AccountRepo) FindRoleByName(ctx context.Context, name string) (*account.Role, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{Name: &name})
+	if len(roles) == 0 {
+		return nil, errors.Tracef(repo.ErrNotFound)
+	}
+
+	role := roles[0]
+	if err := r.attachRolePermissions(ctx, tx, role); err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	return role, nil
+}
+
 func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID int) ([]*account.Role, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -137,14 +157,14 @@ func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID int) ([]*acc
 	return roles, errors.Tracef(err)
 }
 
-func (r *AccountRepo) FindRoles(ctx context.Context) ([]*account.Role, int, error) {
+func (r *AccountRepo) FindRoles(ctx context.Context, sortTopID int) ([]*account.Role, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	users, total, err := r.findRoles(ctx, tx, account.RoleFilter{})
+	users, total, err := r.findRoles(ctx, tx, account.RoleFilter{SortTopID: sortTopID})
 
 	return users, total, errors.Tracef(err)
 }
@@ -425,6 +445,9 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 	if v := filter.UserID; v != nil {
 		joins = append(joins, "INNER JOIN account__user_roles AS ur ON r.id = ur.role_id")
 		where, args = append(where, "ur.user_id = ?"), append(args, *v)
+	}
+	if v := filter.Name; v != nil && *v != "" {
+		where, args = append(where, "r.name = ?"), append(args, *v)
 	}
 	if v := filter.Search; v != nil && *v != "" {
 		where, args = append(where, "r.name LIKE ?"), append(args, "%"+*v+"%")

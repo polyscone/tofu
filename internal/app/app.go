@@ -9,6 +9,7 @@ const (
 
 var (
 	ErrBadRequest       = errors.New("bad request")
+	ErrForbidden        = errors.New("forbidden")
 	ErrUnauthorised     = errors.New("unauthorised")
 	ErrMalformedInput   = errors.New("malformed input")
 	ErrInvalidInput     = errors.New("invalid input")

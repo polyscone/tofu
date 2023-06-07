@@ -20,7 +20,7 @@ func NewTestEnv(ctx context.Context) (*account.Service, event.Broker, account.Re
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	repo := errors.Must(sqlite.NewAccountRepo(ctx, db))
-	svc := account.NewService(broker, repo, hasher)
+	svc := errors.Must(account.NewService(broker, repo, hasher))
 
 	return svc, broker, repo
 }

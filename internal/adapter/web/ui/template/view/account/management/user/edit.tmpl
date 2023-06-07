@@ -8,7 +8,7 @@
 
 {{define "view_body"}}
 
-{{$canChangeRoles := .Guard.CanChangeRoles $.Vars.User.ID}}
+{{$canChangeRoles := .Passport.CanChangeRoles $.Vars.User.ID}}
 {{$canUpdate := $canChangeRoles}}
 
 <div class="center">

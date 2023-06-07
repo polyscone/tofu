@@ -7,6 +7,8 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
+	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/repo"
@@ -46,6 +48,10 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		sortTopID := h.Sessions.PopInt(ctx, sess.SortTopID)
+		if sortTopID == 0 {
+			sortTopID = account.SuperRole.ID
+		}
+
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
 		roles, total, err := h.Repo.Account.FindRolesPageBySearch(ctx, sortTopID, search, page, size)
@@ -55,6 +61,7 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 
 		h.View(w, r, http.StatusOK, "account/management/role/list", handler.Vars{
 			"Roles": repo.NewBook(roles, page, size, total),
+			"Super": account.SuperRole,
 		})
 	}
 }
@@ -110,6 +117,10 @@ func roleEditGet(h *handler.Handler) http.HandlerFunc {
 			return nil, errors.Tracef(httputil.ErrNotFound, err)
 		}
 
+		if roleID == account.SuperRole.ID {
+			return nil, errors.Tracef(app.ErrForbidden)
+		}
+
 		ctx := r.Context()
 
 		role, err := h.Repo.Account.FindRoleByID(ctx, roleID)
@@ -147,6 +158,12 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
+		if roleID == account.SuperRole.ID {
+			h.ErrorView(w, r, errors.Tracef(app.ErrForbidden), "error", nil)
+
+			return
+		}
+
 		ctx := r.Context()
 
 		passport := h.Passport(ctx)
@@ -174,6 +191,12 @@ func roleDeleteGet(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
+		if roleID == account.SuperRole.ID {
+			h.ErrorView(w, r, errors.Tracef(app.ErrForbidden), "error", nil)
+
+			return
+		}
+
 		ctx := r.Context()
 
 		role, err := h.Repo.Account.FindRoleByID(ctx, roleID)
@@ -191,6 +214,12 @@ func roleDeletePost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roleID, err := router.URLParamAs[int](r, "roleID")
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		if roleID == account.SuperRole.ID {
+			h.ErrorView(w, r, errors.Tracef(app.ErrForbidden), "error", nil)
+
 			return
 		}
 

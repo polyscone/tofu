@@ -32,7 +32,9 @@ func ErrorStatus(err error) int {
 	case errors.Is(err, ErrNotFound):
 		return http.StatusNotFound
 
-	case errors.Is(err, ErrForbidden):
+	case errors.Is(err, ErrForbidden),
+		errors.Is(err, app.ErrForbidden):
+
 		return http.StatusForbidden
 
 	case errors.Is(err, app.ErrUnauthorised):

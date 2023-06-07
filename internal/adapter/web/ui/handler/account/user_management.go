@@ -7,6 +7,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/repo"
@@ -68,7 +69,7 @@ func userEditGet(h *handler.Handler) http.HandlerFunc {
 			}
 		}
 
-		roles, _, err := h.Repo.Account.FindRoles(ctx)
+		roles, _, err := h.Repo.Account.FindRoles(ctx, account.SuperRole.ID)
 
 		vars := handler.Vars{
 			"User":        user,

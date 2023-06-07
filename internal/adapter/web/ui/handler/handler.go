@@ -15,7 +15,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
@@ -98,7 +97,7 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 }
 
 func (h *Handler) emptyPassport(ctx context.Context) passport.Passport {
-	return passport.New(ctx, h.Sessions, &account.User{})
+	return passport.New(ctx, h.Sessions, 0, nil)
 }
 
 func (h *Handler) Passport(ctx context.Context) passport.Passport {
@@ -112,7 +111,12 @@ func (h *Handler) Passport(ctx context.Context) passport.Passport {
 		return h.emptyPassport(ctx)
 	}
 
-	return passport.New(ctx, h.Sessions, user)
+	var permissions []string
+	for _, role := range user.Roles {
+		permissions = append(permissions, role.Permissions...)
+	}
+
+	return passport.New(ctx, h.Sessions, user.ID, permissions)
 }
 
 func (h *Handler) PassportByEmail(ctx context.Context, email string) (passport.Passport, error) {
@@ -121,7 +125,12 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (passport.P
 		return h.emptyPassport(ctx), errors.Tracef(err)
 	}
 
-	return passport.New(ctx, h.Sessions, user), nil
+	var permissions []string
+	for _, role := range user.Roles {
+		permissions = append(permissions, role.Permissions...)
+	}
+
+	return passport.New(ctx, h.Sessions, user.ID, permissions), nil
 }
 
 func (h *Handler) Path(name string, paramArgPairs ...any) string {
@@ -320,7 +329,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 			IsSignedIn:               h.Sessions.GetBool(ctx, sess.IsSignedIn),
 			PasswordKnownBreachCount: h.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount),
 		},
-		Guard: passport,
+		Passport: passport,
 	}
 
 	if vars, ok := h.viewVarsFuncs[name]; ok {
@@ -380,7 +389,9 @@ func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err erro
 		case errors.Is(err, httputil.ErrMethodNotAllowed):
 			data.ErrorMessage = "Method not allowed."
 
-		case errors.Is(err, httputil.ErrForbidden):
+		case errors.Is(err, httputil.ErrForbidden),
+			errors.Is(err, app.ErrForbidden):
+
 			data.ErrorMessage = "You do not have permission to access this resource."
 
 		case errors.Is(err, http.ErrHandlerTimeout):

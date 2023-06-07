@@ -75,6 +75,11 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	client := http.Client{Timeout: 10 * time.Second}
 	messager := sms.NewTwilioClient(&client, data.Twilio.SID, data.Twilio.Token)
 
+	accountService, err := account.NewService(broker, accountRepo, hasher)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
 	tenant := handler.Tenant{
 		Dev:      opts.dev,
 		Insecure: opts.server.insecure,
@@ -89,7 +94,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 			From:         data.Twilio.From,
 			Messager:     messager,
 		},
-		Account: account.NewService(broker, accountRepo, hasher),
+		Account: accountService,
 		Repo: handler.Repo{
 			Account: accountRepo,
 			Web:     webRepo,

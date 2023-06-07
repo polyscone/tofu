@@ -3,12 +3,18 @@ package account
 import (
 	"context"
 
+	"github.com/polyscone/tofu/internal/adapter/web/passport"
+	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/password"
+	"github.com/polyscone/tofu/internal/repo"
 )
+
+var SuperRole *Role
 
 type Reader interface {
 	FindRoleByID(ctx context.Context, id int) (*Role, error)
+	FindRoleByName(ctx context.Context, name string) (*Role, error)
 
 	FindUserByID(ctx context.Context, id int) (*User, error)
 	FindUserByEmail(ctx context.Context, email string) (*User, error)
@@ -34,10 +40,45 @@ type Service struct {
 	hasher password.Hasher
 }
 
-func NewService(broker event.Broker, repo ReadWriter, hasher password.Hasher) *Service {
-	return &Service{
+func NewService(broker event.Broker, store ReadWriter, hasher password.Hasher) (*Service, error) {
+	var permissions []Permission
+	for _, group := range passport.PermissionGroups {
+		for _, p := range group.Permissions {
+			permission, err := NewPermission(p.Name)
+			if err != nil {
+				return nil, errors.Tracef(err)
+			}
+
+			permissions = append(permissions, permission)
+		}
+	}
+
+	SuperRole = NewRole("Super", "Can do everything.", permissions)
+
+	ctx := context.Background()
+	role, err := store.FindRoleByName(ctx, SuperRole.Name)
+	switch {
+	case err == nil:
+		SuperRole.ID = role.ID
+
+		if err := store.SaveRole(ctx, SuperRole); err != nil {
+			return nil, errors.Tracef(err)
+		}
+
+	case errors.Is(err, repo.ErrNotFound):
+		if err := store.AddRole(ctx, SuperRole); err != nil {
+			return nil, errors.Tracef(err)
+		}
+
+	default:
+		return nil, errors.Tracef(err)
+	}
+
+	svc := Service{
 		broker: broker,
-		repo:   repo,
+		repo:   store,
 		hasher: hasher,
 	}
+
+	return &svc, nil
 }
