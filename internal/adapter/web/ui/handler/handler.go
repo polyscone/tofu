@@ -97,7 +97,7 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 }
 
 func (h *Handler) emptyPassport(ctx context.Context) passport.Passport {
-	return passport.New(ctx, h.Sessions, 0, nil)
+	return passport.New(passport.User{})
 }
 
 func (h *Handler) Passport(ctx context.Context) passport.Passport {
@@ -116,7 +116,11 @@ func (h *Handler) Passport(ctx context.Context) passport.Passport {
 		permissions = append(permissions, role.Permissions...)
 	}
 
-	return passport.New(ctx, h.Sessions, user.ID, permissions)
+	return passport.New(passport.User{
+		ID:          user.ID,
+		IsSignedIn:  h.Sessions.GetBool(ctx, sess.IsSignedIn),
+		Permissions: permissions,
+	})
 }
 
 func (h *Handler) PassportByEmail(ctx context.Context, email string) (passport.Passport, error) {
@@ -130,7 +134,13 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (passport.P
 		permissions = append(permissions, role.Permissions...)
 	}
 
-	return passport.New(ctx, h.Sessions, user.ID, permissions), nil
+	p := passport.New(passport.User{
+		ID:          user.ID,
+		IsSignedIn:  h.Sessions.GetBool(ctx, sess.IsSignedIn),
+		Permissions: permissions,
+	})
+
+	return p, nil
 }
 
 func (h *Handler) Path(name string, paramArgPairs ...any) string {
@@ -533,6 +543,14 @@ func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
 	return func(w http.ResponseWriter, r *http.Request) bool {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
+
+		if !passport.IsSignedIn() {
+			h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+
+			http.Redirect(w, r, h.mux.Path(h.signInPathName), http.StatusSeeOther)
+
+			return false
+		}
 
 		if !check(passport) {
 			h.ErrorView(w, r, errors.Tracef(app.ErrUnauthorised), "error", nil)

@@ -1,24 +1,22 @@
 package passport
 
-import (
-	"context"
-
-	"github.com/polyscone/tofu/internal/adapter/web/sess"
-	"github.com/polyscone/tofu/internal/pkg/session"
-)
-
 type Passport struct {
-	ctx         context.Context
-	sessions    *session.Manager
 	userID      int
+	isSignedIn  bool
 	permissions []string
 }
 
-func New(ctx context.Context, sessions *session.Manager, userID int, permissions []string) Passport {
+type User struct {
+	ID          int
+	IsSignedIn  bool
+	Permissions []string
+}
+
+func New(user User) Passport {
 	return Passport{
-		ctx:         ctx,
-		sessions:    sessions,
-		permissions: permissions,
+		userID:      user.ID,
+		isSignedIn:  user.IsSignedIn,
+		permissions: user.Permissions,
 	}
 }
 
@@ -27,7 +25,7 @@ func (p Passport) UserID() int {
 }
 
 func (p Passport) IsSignedIn() bool {
-	return p.sessions.GetBool(p.ctx, sess.IsSignedIn)
+	return p.isSignedIn
 }
 
 func (p Passport) CanChangePassword(userID int) bool {
