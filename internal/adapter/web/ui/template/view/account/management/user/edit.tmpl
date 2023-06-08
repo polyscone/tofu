@@ -15,6 +15,13 @@
 {{$canUpdate := $canChangeRoles}}
 
 <div class="center">
+	{{if eq .Vars.User.ID .Session.UserID}}
+		<div class="warning-banner">
+			<p>You are currently editing yourself.</p>
+			<p>Any changes you make here may affect your current browsing session, so avoid making any changes you are unsure of.</p>
+		</div>
+	{{end}}
+
 	<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
