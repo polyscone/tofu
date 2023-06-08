@@ -143,7 +143,6 @@ func (h *Handler) Passport(ctx context.Context) passport.Passport {
 
 	return passport.New(h.passportStore, passport.User{
 		ID:          user.ID,
-		IsSignedIn:  h.Sessions.GetBool(ctx, sess.IsSignedIn),
 		IsSuper:     user.IsSuper(),
 		Permissions: permissions,
 	})
@@ -162,7 +161,6 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (passport.P
 
 	p := passport.New(h.passportStore, passport.User{
 		ID:          user.ID,
-		IsSignedIn:  h.Sessions.GetBool(ctx, sess.IsSignedIn),
 		IsSuper:     user.IsSuper(),
 		Permissions: permissions,
 	})
@@ -553,9 +551,9 @@ type PredicateFunc func(p passport.Passport) bool
 
 func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
 	ctx := r.Context()
-	passport := h.Passport(ctx)
+	isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
 
-	if !passport.IsSignedIn() {
+	if !isSignedIn {
 		h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
 		http.Redirect(w, r, h.mux.Path(h.signInPathName), http.StatusSeeOther)
@@ -569,9 +567,9 @@ func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
 func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
 	return func(w http.ResponseWriter, r *http.Request) bool {
 		ctx := r.Context()
-		passport := h.Passport(ctx)
+		isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
 
-		if !passport.IsSignedIn() {
+		if !isSignedIn {
 			h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
 			http.Redirect(w, r, h.mux.Path(h.signInPathName), http.StatusSeeOther)
@@ -579,6 +577,7 @@ func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
 			return false
 		}
 
+		passport := h.Passport(ctx)
 		if !check(passport) {
 			h.ErrorView(w, r, errors.Tracef(app.ErrUnauthorised), "error", nil)
 

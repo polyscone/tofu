@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errors"
@@ -111,7 +112,9 @@ func resetPasswordNewPasswordPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Account.ResetPassword(ctx, passport, passport.UserID(), input.NewPassword, input.NewPasswordCheck)
+		userID := h.Sessions.GetInt(ctx, sess.UserID)
+
+		err = h.Account.ResetPassword(ctx, passport, userID, input.NewPassword, input.NewPasswordCheck)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/reset_password/new_password", nil) {
 			return
 		}

@@ -102,8 +102,9 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		passport := h.Passport(ctx)
+		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
-		err = h.Account.SetupTOTP(ctx, passport, passport.UserID())
+		err = h.Account.SetupTOTP(ctx, passport, userID)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -194,8 +195,9 @@ func totpSetupAppPost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		passport := h.Passport(ctx)
+		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
-		err = h.Account.VerifyTOTP(ctx, passport, passport.UserID(), input.TOTP, "app")
+		err = h.Account.VerifyTOTP(ctx, passport, userID, input.TOTP, "app")
 		if h.ErrorView(w, r, errors.Tracef(err), "account/totp/setup/app", nil) {
 			return
 		}
@@ -269,7 +271,7 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Account.ChangeTOTPTelephone(ctx, passport, passport.UserID(), input.Telephone)
+		err = h.Account.ChangeTOTPTelephone(ctx, passport, userID, input.Telephone)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/totp/setup/sms", nil) {
 			return
 		}
@@ -305,8 +307,9 @@ func totpSetupSMSVerifyPost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		passport := h.Passport(ctx)
+		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
-		err = h.Account.VerifyTOTP(ctx, passport, passport.UserID(), input.TOTP, "sms")
+		err = h.Account.VerifyTOTP(ctx, passport, userID, input.TOTP, "sms")
 		if h.ErrorView(w, r, errors.Tracef(err), "account/totp/setup/sms_verify", nil) {
 			return
 		}
@@ -371,7 +374,7 @@ func totpSetupActivatePost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Account.ActivateTOTP(ctx, passport, passport.UserID())
+		err = h.Account.ActivateTOTP(ctx, passport, userID)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -416,8 +419,9 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		passport := h.Passport(ctx)
+		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
-		err = h.Account.DisableTOTP(ctx, passport, passport.UserID(), input.Password)
+		err = h.Account.DisableTOTP(ctx, passport, userID, input.Password)
 		if err != nil {
 			h.ErrorViewFunc(w, r, errors.Tracef(err), "account/totp/disable/verify", func(data *handler.ViewData) {
 				if errors.Is(err, app.ErrBadRequest) {
@@ -490,8 +494,9 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		passport := h.Passport(ctx)
+		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
-		err = h.Account.RegenerateRecoveryCodes(ctx, passport, passport.UserID(), input.TOTP)
+		err = h.Account.RegenerateRecoveryCodes(ctx, passport, userID, input.TOTP)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/totp/recovery_codes/regenerate", nil) {
 			return
 		}
