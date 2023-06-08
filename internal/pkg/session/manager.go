@@ -36,13 +36,13 @@ type ReadWriter interface {
 
 // Manager loads, creates, and commits session data via contexts.
 type Manager struct {
-	repo ReadWriter
+	store ReadWriter
 }
 
 // NewManager creates a new session manager that will use the provided
 // repository to interact with session data.
-func NewManager(repo ReadWriter) *Manager {
-	return &Manager{repo: repo}
+func NewManager(store ReadWriter) *Manager {
+	return &Manager{store: store}
 }
 
 // Load attempts to load a session using the given id into the given context.
@@ -54,7 +54,7 @@ func NewManager(repo ReadWriter) *Manager {
 func (m *Manager) Load(ctx context.Context, id string) (context.Context, error) {
 	s := Session{ID: id}
 
-	data, err := m.repo.FindSessionDataByID(ctx, id)
+	data, err := m.store.FindSessionDataByID(ctx, id)
 	switch {
 	case errors.Is(err, ErrNotFound):
 		data = nil
@@ -83,7 +83,7 @@ func (m *Manager) Commit(ctx context.Context) (string, error) {
 	s := getSession(ctx)
 
 	if s.originalID != "" {
-		if err := m.repo.DestroySession(ctx, s.originalID); err != nil {
+		if err := m.store.DestroySession(ctx, s.originalID); err != nil {
 			return "", errors.Tracef(err)
 		}
 
@@ -92,12 +92,12 @@ func (m *Manager) Commit(ctx context.Context) (string, error) {
 
 	switch s.Status {
 	case Unchanged, Accessed, Modified:
-		if err := m.repo.SaveSession(ctx, *s); err != nil {
+		if err := m.store.SaveSession(ctx, *s); err != nil {
 			return "", errors.Tracef(err)
 		}
 
 	case Destroyed:
-		if err := m.repo.DestroySession(ctx, s.ID); err != nil {
+		if err := m.store.DestroySession(ctx, s.ID); err != nil {
 			return "", errors.Tracef(err)
 		}
 	}

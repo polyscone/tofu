@@ -35,7 +35,7 @@ func userListGet(h *handler.Handler) http.HandlerFunc {
 		sortTopID := h.Sessions.GetInt(ctx, sess.UserID)
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
-		users, total, err := h.Repo.Account.FindUsersPageBySearch(ctx, sortTopID, search, page, size)
+		users, total, err := h.Store.Account.FindUsersPageBySearch(ctx, sortTopID, search, page, size)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -55,7 +55,7 @@ func userEditGet(h *handler.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			return nil, errors.Tracef(err)
 		}
@@ -69,7 +69,7 @@ func userEditGet(h *handler.Handler) http.HandlerFunc {
 			}
 		}
 
-		roles, _, err := h.Repo.Account.FindRoles(ctx, account.SuperRole.ID)
+		roles, _, err := h.Store.Account.FindRoles(ctx, account.SuperRole.ID)
 
 		vars := handler.Vars{
 			"User":        user,
@@ -104,7 +104,7 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 
 		passport := h.Passport(ctx)
 
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}

@@ -114,7 +114,7 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -193,7 +193,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -270,7 +270,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 }
 
 func signInSetSession(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email string) error {
-	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
+	user, err := h.Store.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return errors.Tracef(err)
 	}

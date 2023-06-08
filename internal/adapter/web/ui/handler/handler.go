@@ -52,7 +52,7 @@ type Handler struct {
 }
 
 func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName string) *Handler {
-	sessions := session.NewManager(tenant.Repo.Web)
+	sessions := session.NewManager(tenant.Store.Web)
 	funcs := template.FuncMap{
 		"Add":           tmplAdd,
 		"Sub":           tmplSub,
@@ -106,7 +106,7 @@ func (h *Handler) Passport(ctx context.Context) passport.Passport {
 	}
 
 	userID := h.Sessions.GetInt(ctx, sess.UserID)
-	user, err := h.Repo.Account.FindUserByID(ctx, userID)
+	user, err := h.Store.Account.FindUserByID(ctx, userID)
 	if err != nil {
 		return h.emptyPassport(ctx)
 	}
@@ -124,7 +124,7 @@ func (h *Handler) Passport(ctx context.Context) passport.Passport {
 }
 
 func (h *Handler) PassportByEmail(ctx context.Context, email string) (passport.Passport, error) {
-	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
+	user, err := h.Store.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return h.emptyPassport(ctx), errors.Tracef(err)
 	}
@@ -277,7 +277,7 @@ func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
 func (h *Handler) SendTOTPSMS(email, telephone string) error {
 	ctx := context.Background()
 
-	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
+	user, err := h.Store.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return errors.Tracef(err)
 	}

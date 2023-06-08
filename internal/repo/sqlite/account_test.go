@@ -16,9 +16,9 @@ func TestAccount(t *testing.T) {
 
 		repotest.Account(ctx, t, func() account.ReadWriter {
 			db := sqlite.OpenInMemoryTestDatabase(ctx)
-			repo := errors.Must(sqlite.NewAccountRepo(ctx, db))
+			store := errors.Must(sqlite.NewAccountStore(ctx, db))
 
-			return repo
+			return store
 		})
 	})
 }

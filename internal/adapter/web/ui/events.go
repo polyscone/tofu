@@ -14,7 +14,7 @@ func accountSignedInWithPasswordHandler(tenant *handler.Tenant, h *handler.Handl
 	return func(evt account.SignedInWithPassword) {
 		ctx := context.Background()
 
-		user, err := h.Repo.Account.FindUserByEmail(ctx, evt.Email)
+		user, err := h.Store.Account.FindUserByEmail(ctx, evt.Email)
 		if err != nil {
 			logger.PrintError(err)
 
@@ -52,7 +52,7 @@ func accountSignedUpHandler(tenant *handler.Tenant, h *handler.Handler) any {
 		background.Go(func() {
 			ctx := context.Background()
 
-			tok, err := tenant.Repo.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
+			tok, err := tenant.Store.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
 			if err != nil {
 				logger.PrintError(err)
 

@@ -34,7 +34,7 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 		}
 	}
 
-	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
+	user, err := s.store.FindUserByEmail(ctx, input.email.String())
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -43,7 +43,7 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 		return errors.Tracef(err)
 	}
 
-	if err := s.repo.SaveUser(ctx, user); err != nil {
+	if err := s.store.SaveUser(ctx, user); err != nil {
 		return errors.Tracef(err)
 	}
 

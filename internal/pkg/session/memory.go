@@ -8,27 +8,27 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
-// JSONMemoryRepo implements an in-memory repo for use with a session manager.
+// JSONMemoryStore implements an in-memory repo for use with a session manager.
 // The intended use of this repo is developer tests.
 //
 // We want to test against JSON here to make sure we handle numbers correctly,
 // which is why we map to a byte slice
-type JSONMemoryRepo struct {
+type JSONMemoryStore struct {
 	useNumber bool
 	data      map[string][]byte
 }
 
-// NewJSONMemoryRepo returns a new in-memory session repo, intended
+// NewJSONMemoryStore returns a new in-memory session repo, intended
 // for use in developer tests.
-func NewJSONMemoryRepo(useNumber bool) *JSONMemoryRepo {
-	return &JSONMemoryRepo{
+func NewJSONMemoryStore(useNumber bool) *JSONMemoryStore {
+	return &JSONMemoryStore{
 		useNumber: useNumber,
 		data:      make(map[string][]byte),
 	}
 }
 
 // FindByID attempts to find session data using the given id.
-func (r *JSONMemoryRepo) FindSessionDataByID(ctx context.Context, id string) (Data, error) {
+func (r *JSONMemoryStore) FindSessionDataByID(ctx context.Context, id string) (Data, error) {
 	if data, ok := r.data[id]; ok {
 		d := json.NewDecoder(bytes.NewReader(data))
 
@@ -46,7 +46,7 @@ func (r *JSONMemoryRepo) FindSessionDataByID(ctx context.Context, id string) (Da
 }
 
 // Save persists the given session in-memory.
-func (r *JSONMemoryRepo) SaveSession(ctx context.Context, s Session) error {
+func (r *JSONMemoryStore) SaveSession(ctx context.Context, s Session) error {
 	b, err := json.Marshal(s.Data)
 	if err != nil {
 		return errors.Tracef(err)
@@ -58,7 +58,7 @@ func (r *JSONMemoryRepo) SaveSession(ctx context.Context, s Session) error {
 }
 
 // Destroy deletes a session by the given id from memory.
-func (r *JSONMemoryRepo) DestroySession(ctx context.Context, id string) error {
+func (r *JSONMemoryStore) DestroySession(ctx context.Context, id string) error {
 	delete(r.data, id)
 
 	return nil

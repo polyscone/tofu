@@ -50,7 +50,7 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, d
 
 	role := NewRole(input.name, input.description, input.permissions)
 
-	if err := s.repo.AddRole(ctx, role); err != nil {
+	if err := s.store.AddRole(ctx, role); err != nil {
 		var conflicts *repo.ConflictError
 		if errors.As(err, &conflicts) {
 			return nil, conflicts.Tracef(app.ErrConflictingInput)

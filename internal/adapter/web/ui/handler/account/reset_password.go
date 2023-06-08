@@ -52,7 +52,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 		background.Go(func() {
 			ctx := context.Background()
 
-			tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
+			tok, err := h.Store.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 			if err != nil {
 				logger.PrintError(err)
 
@@ -101,7 +101,7 @@ func resetPasswordNewPasswordPost(h *handler.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		email, err := h.Repo.Web.FindResetPasswordTokenEmail(ctx, input.Token)
+		email, err := h.Store.Web.FindResetPasswordTokenEmail(ctx, input.Token)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -116,7 +116,7 @@ func resetPasswordNewPasswordPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Repo.Web.ConsumeResetPasswordToken(ctx, input.Token)
+		err = h.Store.Web.ConsumeResetPasswordToken(ctx, input.Token)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}

@@ -32,7 +32,7 @@ func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 		return nil, errors.Tracef(err)
 	}
 
-	if err := s.repo.AddUser(ctx, user); err != nil {
+	if err := s.store.AddUser(ctx, user); err != nil {
 		var conflicts *repo.ConflictError
 		if errors.As(err, &conflicts) {
 			return nil, conflicts.Tracef(app.ErrConflictingInput)

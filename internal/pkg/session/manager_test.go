@@ -11,7 +11,7 @@ import (
 func TestSessionManager(t *testing.T) {
 	for _, useNumber := range []bool{false, true} {
 		t.Run("initial session setup", func(t *testing.T) {
-			sm := session.NewManager(session.NewJSONMemoryRepo(useNumber))
+			sm := session.NewManager(session.NewJSONMemoryStore(useNumber))
 			ctx := context.Background()
 
 			initID := "qux"
@@ -42,7 +42,7 @@ func TestSessionManager(t *testing.T) {
 		})
 
 		t.Run("get, set, and pop", func(t *testing.T) {
-			sm := session.NewManager(session.NewJSONMemoryRepo(useNumber))
+			sm := session.NewManager(session.NewJSONMemoryStore(useNumber))
 			ctx := context.Background()
 
 			ctx = errors.Must(sm.Load(ctx, ""))
@@ -190,7 +190,7 @@ func TestSessionManager(t *testing.T) {
 		})
 
 		t.Run("membership tests", func(t *testing.T) {
-			sm := session.NewManager(session.NewJSONMemoryRepo(useNumber))
+			sm := session.NewManager(session.NewJSONMemoryStore(useNumber))
 			ctx := context.Background()
 
 			ctx, err := sm.Load(ctx, "")
@@ -215,7 +215,7 @@ func TestSessionManager(t *testing.T) {
 		})
 
 		t.Run("loading an existing session", func(t *testing.T) {
-			sm := session.NewManager(session.NewJSONMemoryRepo(useNumber))
+			sm := session.NewManager(session.NewJSONMemoryStore(useNumber))
 			ctx := context.Background()
 
 			ctx, err := sm.Load(ctx, "")
@@ -248,7 +248,7 @@ func TestSessionManager(t *testing.T) {
 		})
 
 		t.Run("renew a session id", func(t *testing.T) {
-			sm := session.NewManager(session.NewJSONMemoryRepo(useNumber))
+			sm := session.NewManager(session.NewJSONMemoryStore(useNumber))
 			ctx := context.Background()
 
 			ctx, err := sm.Load(ctx, "")
@@ -275,7 +275,7 @@ func TestSessionManager(t *testing.T) {
 		})
 
 		t.Run("destroying an existing session", func(t *testing.T) {
-			sm := session.NewManager(session.NewJSONMemoryRepo(useNumber))
+			sm := session.NewManager(session.NewJSONMemoryStore(useNumber))
 			ctx := context.Background()
 
 			ctx, err := sm.Load(ctx, "")

@@ -19,10 +19,10 @@ var hasher = testutil.NewPasswordHasher()
 func NewTestEnv(ctx context.Context) (*account.Service, event.Broker, account.ReadWriter) {
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	repo := errors.Must(sqlite.NewAccountRepo(ctx, db))
-	svc := errors.Must(account.NewService(broker, repo, hasher))
+	store := errors.Must(sqlite.NewAccountStore(ctx, db))
+	svc := errors.Must(account.NewService(broker, store, hasher))
 
-	return svc, broker, repo
+	return svc, broker, store
 }
 
 type TestUser struct {
@@ -35,7 +35,7 @@ type TestUser struct {
 	ActivateTOTP       bool
 }
 
-func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu TestUser) *account.User {
+func MustAddUser(t *testing.T, ctx context.Context, store account.ReadWriter, tu TestUser) *account.User {
 	t.Helper()
 
 	tu.VerifyTOTP = tu.VerifyTOTP || tu.ActivateTOTP
@@ -74,7 +74,7 @@ func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu 
 		errors.Must0(user.ActivateTOTP())
 	}
 
-	errors.Must0(repo.AddUser(ctx, user))
+	errors.Must0(store.AddUser(ctx, user))
 
 	return user
 }
@@ -84,7 +84,7 @@ type TestRole struct {
 	Permissions []string
 }
 
-func MustAddRole(t *testing.T, ctx context.Context, repo account.ReadWriter, tr TestRole) *account.Role {
+func MustAddRole(t *testing.T, ctx context.Context, store account.ReadWriter, tr TestRole) *account.Role {
 	t.Helper()
 
 	name := errors.Must(account.NewRoleName(tr.Name))
@@ -100,7 +100,7 @@ func MustAddRole(t *testing.T, ctx context.Context, repo account.ReadWriter, tr 
 
 	role := account.NewRole(name, "", permissions)
 
-	errors.Must0(repo.AddRole(ctx, role))
+	errors.Must0(store.AddRole(ctx, role))
 
 	return role
 }

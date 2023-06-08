@@ -26,7 +26,7 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		input.roleIDs = roleIDs
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.store.FindUserByID(ctx, input.userID)
 	if err != nil {
 		if errors.Is(err, repo.ErrNotFound) {
 			return errors.Tracef(app.ErrMalformedInput, err)
@@ -40,7 +40,7 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		roles = make([]*Role, len(roleIDs))
 
 		for i, roleID := range roleIDs {
-			role, err := s.repo.FindRoleByID(ctx, roleID)
+			role, err := s.store.FindRoleByID(ctx, roleID)
 			if err != nil {
 				if errors.Is(err, repo.ErrNotFound) {
 					return errors.Tracef(app.ErrMalformedInput, err)
@@ -55,7 +55,7 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 
 	user.ChangeRoles(roles...)
 
-	if err := s.repo.SaveUser(ctx, user); err != nil {
+	if err := s.store.SaveUser(ctx, user); err != nil {
 		return errors.Tracef(err)
 	}
 

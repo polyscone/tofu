@@ -27,7 +27,7 @@ func (s *Service) SignInWithTOTP(ctx context.Context, userID int, totp string) e
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.store.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -36,7 +36,7 @@ func (s *Service) SignInWithTOTP(ctx context.Context, userID int, totp string) e
 		return errors.Tracef(err)
 	}
 
-	if err := s.repo.SaveUser(ctx, user); err != nil {
+	if err := s.store.SaveUser(ctx, user); err != nil {
 		return errors.Tracef(err)
 	}
 

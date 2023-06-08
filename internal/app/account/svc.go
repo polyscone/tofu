@@ -36,7 +36,7 @@ type ReadWriter interface {
 
 type Service struct {
 	broker event.Broker
-	repo   ReadWriter
+	store  ReadWriter
 	hasher password.Hasher
 }
 
@@ -76,7 +76,7 @@ func NewService(broker event.Broker, store ReadWriter, hasher password.Hasher) (
 
 	svc := Service{
 		broker: broker,
-		repo:   store,
+		store:  store,
 		hasher: hasher,
 	}
 

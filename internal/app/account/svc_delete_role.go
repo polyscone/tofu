@@ -16,12 +16,12 @@ func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID 
 		return nil, errors.Tracef(app.ErrUnauthorised)
 	}
 
-	role, err := s.repo.FindRoleByID(ctx, roleID)
+	role, err := s.store.FindRoleByID(ctx, roleID)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
 
-	err = s.repo.RemoveRole(ctx, roleID)
+	err = s.store.RemoveRole(ctx, roleID)
 
 	return role, errors.Tracef(err)
 }

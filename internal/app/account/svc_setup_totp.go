@@ -23,7 +23,7 @@ func (s *Service) SetupTOTP(ctx context.Context, guard SetupTOTPGuard, userID in
 		input.userID = userID
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.store.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -32,7 +32,7 @@ func (s *Service) SetupTOTP(ctx context.Context, guard SetupTOTPGuard, userID in
 		return errors.Tracef(err)
 	}
 
-	if err := s.repo.SaveUser(ctx, user); err != nil {
+	if err := s.store.SaveUser(ctx, user); err != nil {
 		return errors.Tracef(err)
 	}
 

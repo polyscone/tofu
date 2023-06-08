@@ -57,12 +57,12 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 	broker := event.NewMemoryBroker()
 
-	accountRepo, err := sqlite.NewAccountRepo(ctx, db)
+	accountStore, err := sqlite.NewAccountStore(ctx, db)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
 
-	webRepo, err := sqlite.NewWebRepo(ctx, db, 2*time.Hour)
+	webStore, err := sqlite.NewWebStore(ctx, db, 2*time.Hour)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -75,7 +75,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	client := http.Client{Timeout: 10 * time.Second}
 	messager := sms.NewTwilioClient(&client, data.Twilio.SID, data.Twilio.Token)
 
-	accountService, err := account.NewService(broker, accountRepo, hasher)
+	accountService, err := account.NewService(broker, accountStore, hasher)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -95,9 +95,9 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 			Messager:     messager,
 		},
 		Account: accountService,
-		Repo: handler.Repo{
-			Account: accountRepo,
-			Web:     webRepo,
+		Store: handler.Store{
+			Account: accountStore,
+			Web:     webStore,
 		},
 	}
 

@@ -12,7 +12,7 @@ import (
 )
 
 func TestSession(t *testing.T) {
-	sm := session.NewManager(session.NewJSONMemoryRepo(false))
+	sm := session.NewManager(session.NewJSONMemoryStore(false))
 
 	mux := router.NewServeMux()
 

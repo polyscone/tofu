@@ -48,7 +48,7 @@ func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int,
 		}
 	}
 
-	if _, err := s.repo.FindRoleByID(ctx, roleID); err != nil {
+	if _, err := s.store.FindRoleByID(ctx, roleID); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
@@ -56,7 +56,7 @@ func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int,
 
 	role.ID = roleID
 
-	err := s.repo.SaveRole(ctx, role)
+	err := s.store.SaveRole(ctx, role)
 
 	var conflicts *repo.ConflictError
 	if errors.As(err, &conflicts) {

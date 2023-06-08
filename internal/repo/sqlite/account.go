@@ -11,11 +11,11 @@ import (
 	"github.com/polyscone/tofu/internal/repo"
 )
 
-type AccountRepo struct {
+type AccountStore struct {
 	db *DB
 }
 
-func NewAccountRepo(ctx context.Context, db *sql.DB) (*AccountRepo, error) {
+func NewAccountStore(ctx context.Context, db *sql.DB) (*AccountStore, error) {
 	migrations, err := fs.Sub(migrations, "migrations/account")
 	if err != nil {
 		return nil, errors.Tracef(err)
@@ -25,19 +25,19 @@ func NewAccountRepo(ctx context.Context, db *sql.DB) (*AccountRepo, error) {
 		return nil, errors.Tracef(err)
 	}
 
-	r := AccountRepo{db: newDB(db)}
+	s := AccountStore{db: newDB(db)}
 
-	return &r, nil
+	return &s, nil
 }
 
-func (r *AccountRepo) FindUserByID(ctx context.Context, id int) (*account.User, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) FindUserByID(ctx context.Context, id int) (*account.User, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	users, _, err := r.findUsers(ctx, tx, account.UserFilter{ID: &id})
+	users, _, err := s.findUsers(ctx, tx, account.UserFilter{ID: &id})
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -46,14 +46,14 @@ func (r *AccountRepo) FindUserByID(ctx context.Context, id int) (*account.User, 
 	}
 
 	user := users[0]
-	if err := r.attachUserRecoveryCodes(ctx, tx, user); err != nil {
+	if err := s.attachUserRecoveryCodes(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
-	if err := r.attachUserRoles(ctx, tx, user); err != nil {
+	if err := s.attachUserRoles(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
 	for _, role := range user.Roles {
-		if err := r.attachRolePermissions(ctx, tx, role); err != nil {
+		if err := s.attachRolePermissions(ctx, tx, role); err != nil {
 			return nil, errors.Tracef(err)
 		}
 	}
@@ -61,14 +61,14 @@ func (r *AccountRepo) FindUserByID(ctx context.Context, id int) (*account.User, 
 	return user, nil
 }
 
-func (r *AccountRepo) FindUserByEmail(ctx context.Context, email string) (*account.User, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) FindUserByEmail(ctx context.Context, email string) (*account.User, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	users, _, err := r.findUsers(ctx, tx, account.UserFilter{Email: &email})
+	users, _, err := s.findUsers(ctx, tx, account.UserFilter{Email: &email})
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -77,25 +77,25 @@ func (r *AccountRepo) FindUserByEmail(ctx context.Context, email string) (*accou
 	}
 
 	user := users[0]
-	if err := r.attachUserRecoveryCodes(ctx, tx, user); err != nil {
+	if err := s.attachUserRecoveryCodes(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
-	if err := r.attachUserRoles(ctx, tx, user); err != nil {
+	if err := s.attachUserRoles(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
 	return user, nil
 }
 
-func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.User, int, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) FindUsersPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.User, int, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
 	limit, offset := pageLimitOffset(page, size)
-	users, total, err := r.findUsers(ctx, tx, account.UserFilter{
+	users, total, err := s.findUsers(ctx, tx, account.UserFilter{
 		Search:    &search,
 		SortTopID: sortTopID,
 		Limit:     limit,
@@ -105,79 +105,79 @@ func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, sortTopID int, 
 	return users, total, errors.Tracef(err)
 }
 
-func (r *AccountRepo) FindRoleByID(ctx context.Context, roleID int) (*account.Role, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) FindRoleByID(ctx context.Context, roleID int) (*account.Role, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{ID: &roleID})
+	roles, _, err := s.findRoles(ctx, tx, account.RoleFilter{ID: &roleID})
 	if len(roles) == 0 {
 		return nil, errors.Tracef(repo.ErrNotFound)
 	}
 
 	role := roles[0]
-	if err := r.attachRolePermissions(ctx, tx, role); err != nil {
+	if err := s.attachRolePermissions(ctx, tx, role); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
 	return role, nil
 }
 
-func (r *AccountRepo) FindRoleByName(ctx context.Context, name string) (*account.Role, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) FindRoleByName(ctx context.Context, name string) (*account.Role, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{Name: &name})
+	roles, _, err := s.findRoles(ctx, tx, account.RoleFilter{Name: &name})
 	if len(roles) == 0 {
 		return nil, errors.Tracef(repo.ErrNotFound)
 	}
 
 	role := roles[0]
-	if err := r.attachRolePermissions(ctx, tx, role); err != nil {
+	if err := s.attachRolePermissions(ctx, tx, role); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
 	return role, nil
 }
 
-func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID int) ([]*account.Role, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) FindRolesByUserID(ctx context.Context, userID int) ([]*account.Role, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{UserID: &userID})
+	roles, _, err := s.findRoles(ctx, tx, account.RoleFilter{UserID: &userID})
 
 	return roles, errors.Tracef(err)
 }
 
-func (r *AccountRepo) FindRoles(ctx context.Context, sortTopID int) ([]*account.Role, int, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) FindRoles(ctx context.Context, sortTopID int) ([]*account.Role, int, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	users, total, err := r.findRoles(ctx, tx, account.RoleFilter{SortTopID: sortTopID})
+	users, total, err := s.findRoles(ctx, tx, account.RoleFilter{SortTopID: sortTopID})
 
 	return users, total, errors.Tracef(err)
 }
 
-func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.Role, int, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) FindRolesPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.Role, int, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
 	limit, offset := pageLimitOffset(page, size)
-	users, total, err := r.findRoles(ctx, tx, account.RoleFilter{
+	users, total, err := s.findRoles(ctx, tx, account.RoleFilter{
 		Search:    &search,
 		SortTopID: sortTopID,
 		Limit:     limit,
@@ -187,89 +187,89 @@ func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, sortTopID int, 
 	return users, total, errors.Tracef(err)
 }
 
-func (r *AccountRepo) AddRole(ctx context.Context, role *account.Role) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) AddRole(ctx context.Context, role *account.Role) error {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	if err := r.addRole(ctx, tx, role); err != nil {
+	if err := s.addRole(ctx, tx, role); err != nil {
 		return errors.Tracef(err)
 	}
 
 	return errors.Tracef(tx.Commit())
 }
 
-func (r *AccountRepo) SaveRole(ctx context.Context, role *account.Role) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) SaveRole(ctx context.Context, role *account.Role) error {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	if err := r.saveRole(ctx, tx, role); err != nil {
+	if err := s.saveRole(ctx, tx, role); err != nil {
 		return errors.Tracef(err)
 	}
 
 	return errors.Tracef(tx.Commit())
 }
 
-func (r *AccountRepo) RemoveRole(ctx context.Context, roleID int) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) RemoveRole(ctx context.Context, roleID int) error {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	if err := r.removeRole(ctx, tx, roleID); err != nil {
+	if err := s.removeRole(ctx, tx, roleID); err != nil {
 		return errors.Tracef(err)
 	}
 
 	return errors.Tracef(tx.Commit())
 }
 
-func (r *AccountRepo) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([]*account.RecoveryCode, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([]*account.RecoveryCode, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	recoveryCodes, _, err := r.findRecoveryCodes(ctx, tx, account.RecoveryCodeFilter{UserID: &userID})
+	recoveryCodes, _, err := s.findRecoveryCodes(ctx, tx, account.RecoveryCodeFilter{UserID: &userID})
 
 	return recoveryCodes, errors.Tracef(err)
 }
 
-func (r *AccountRepo) AddUser(ctx context.Context, user *account.User) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) AddUser(ctx context.Context, user *account.User) error {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	if err := r.addUser(ctx, tx, user); err != nil {
+	if err := s.addUser(ctx, tx, user); err != nil {
 		return errors.Tracef(err)
 	}
 
 	return errors.Tracef(tx.Commit())
 }
 
-func (r *AccountRepo) SaveUser(ctx context.Context, user *account.User) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (s *AccountStore) SaveUser(ctx context.Context, user *account.User) error {
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	if err := r.saveUser(ctx, tx, user); err != nil {
+	if err := s.saveUser(ctx, tx, user); err != nil {
 		return errors.Tracef(err)
 	}
 
 	return errors.Tracef(tx.Commit())
 }
 
-func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.UserFilter) ([]*account.User, int, error) {
+func (s *AccountStore) findUsers(ctx context.Context, tx *Tx, filter account.UserFilter) ([]*account.User, int, error) {
 	var where []string
 	var args []any
 
@@ -351,7 +351,7 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 	return users, total, errors.Tracef(rows.Err())
 }
 
-func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, roleID int) ([]string, int, error) {
+func (s *AccountStore) findPermissions(ctx context.Context, tx *Tx, roleID int) ([]string, int, error) {
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
 			name,
@@ -385,7 +385,7 @@ func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, roleID int) (
 	return permissions, total, errors.Tracef(rows.Err())
 }
 
-func (r *AccountRepo) addPermission(ctx context.Context, tx *Tx, name string) (int, error) {
+func (s *AccountStore) addPermission(ctx context.Context, tx *Tx, name string) (int, error) {
 	var id int64
 	err := tx.QueryRowContext(ctx,
 		"SELECT id FROM account__permissions WHERE name = :name",
@@ -423,8 +423,8 @@ func (r *AccountRepo) addPermission(ctx context.Context, tx *Tx, name string) (i
 	return int(id), nil
 }
 
-func (r *AccountRepo) attachRolePermissions(ctx context.Context, tx *Tx, role *account.Role) error {
-	permissions, _, err := r.findPermissions(ctx, tx, role.ID)
+func (s *AccountStore) attachRolePermissions(ctx context.Context, tx *Tx, role *account.Role) error {
+	permissions, _, err := s.findPermissions(ctx, tx, role.ID)
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -434,7 +434,7 @@ func (r *AccountRepo) attachRolePermissions(ctx context.Context, tx *Tx, role *a
 	return nil
 }
 
-func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.RoleFilter) ([]*account.Role, int, error) {
+func (s *AccountStore) findRoles(ctx context.Context, tx *Tx, filter account.RoleFilter) ([]*account.Role, int, error) {
 	var joins []string
 	var where []string
 	var args []any
@@ -498,7 +498,7 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 	return roles, total, errors.Tracef(rows.Err())
 }
 
-func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) error {
+func (s *AccountStore) addRole(ctx context.Context, tx *Tx, role *account.Role) error {
 	res, err := tx.ExecContext(ctx, `
 		INSERT INTO account__roles (
 			name,
@@ -531,7 +531,7 @@ func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) e
 	role.ID = int(id)
 
 	for _, name := range role.Permissions {
-		permissionID, err := r.addPermission(ctx, tx, name)
+		permissionID, err := s.addPermission(ctx, tx, name)
 		if err != nil {
 			return errors.Tracef(err)
 		}
@@ -559,7 +559,7 @@ func (r *AccountRepo) addRole(ctx context.Context, tx *Tx, role *account.Role) e
 	return nil
 }
 
-func (r *AccountRepo) saveRole(ctx context.Context, tx *Tx, role *account.Role) error {
+func (s *AccountStore) saveRole(ctx context.Context, tx *Tx, role *account.Role) error {
 	_, err := tx.ExecContext(ctx, `
 		UPDATE account__roles SET
 			name = :name,
@@ -587,7 +587,7 @@ func (r *AccountRepo) saveRole(ctx context.Context, tx *Tx, role *account.Role) 
 	}
 
 	for _, name := range role.Permissions {
-		permissionID, err := r.addPermission(ctx, tx, name)
+		permissionID, err := s.addPermission(ctx, tx, name)
 		if err != nil {
 			return errors.Tracef(err)
 		}
@@ -615,7 +615,7 @@ func (r *AccountRepo) saveRole(ctx context.Context, tx *Tx, role *account.Role) 
 	return errors.Tracef(err)
 }
 
-func (r *AccountRepo) removeRole(ctx context.Context, tx *Tx, roleID int) error {
+func (s *AccountStore) removeRole(ctx context.Context, tx *Tx, roleID int) error {
 	_, err := tx.ExecContext(ctx,
 		"DELETE FROM account__roles WHERE id = :id",
 		sql.Named("id", roleID),
@@ -624,7 +624,7 @@ func (r *AccountRepo) removeRole(ctx context.Context, tx *Tx, roleID int) error 
 	return errors.Tracef(err)
 }
 
-func (r *AccountRepo) findRecoveryCodes(ctx context.Context, tx *Tx, filter account.RecoveryCodeFilter) ([]*account.RecoveryCode, int, error) {
+func (s *AccountStore) findRecoveryCodes(ctx context.Context, tx *Tx, filter account.RecoveryCodeFilter) ([]*account.RecoveryCode, int, error) {
 	var where []string
 	var args []any
 
@@ -664,8 +664,8 @@ func (r *AccountRepo) findRecoveryCodes(ctx context.Context, tx *Tx, filter acco
 	return recoveryCodes, total, errors.Tracef(rows.Err())
 }
 
-func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user *account.User) error {
-	recoveryCodes, _, err := r.findRecoveryCodes(ctx, tx, account.RecoveryCodeFilter{UserID: &user.ID})
+func (s *AccountStore) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user *account.User) error {
+	recoveryCodes, _, err := s.findRecoveryCodes(ctx, tx, account.RecoveryCodeFilter{UserID: &user.ID})
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -675,8 +675,8 @@ func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user 
 	return nil
 }
 
-func (r *AccountRepo) attachUserRoles(ctx context.Context, tx *Tx, user *account.User) error {
-	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{UserID: &user.ID})
+func (s *AccountStore) attachUserRoles(ctx context.Context, tx *Tx, user *account.User) error {
+	roles, _, err := s.findRoles(ctx, tx, account.RoleFilter{UserID: &user.ID})
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -686,7 +686,7 @@ func (r *AccountRepo) attachUserRoles(ctx context.Context, tx *Tx, user *account
 	return nil
 }
 
-func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) error {
+func (s *AccountStore) addUser(ctx context.Context, tx *Tx, user *account.User) error {
 	res, err := tx.ExecContext(ctx, `
 		INSERT INTO account__users (
 			email,
@@ -799,7 +799,7 @@ func (r *AccountRepo) addUser(ctx context.Context, tx *Tx, user *account.User) e
 	return nil
 }
 
-func (r *AccountRepo) saveUser(ctx context.Context, tx *Tx, user *account.User) error {
+func (s *AccountStore) saveUser(ctx context.Context, tx *Tx, user *account.User) error {
 	_, err := tx.ExecContext(ctx, `
 		UPDATE account__users SET
 			email = :email,

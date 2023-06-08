@@ -126,7 +126,7 @@ func totpSetupAppGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			return nil, errors.Tracef(err)
 		}
@@ -209,7 +209,7 @@ func totpSetupSMSGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			return nil, errors.Tracef(err)
 		}
@@ -249,7 +249,7 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -320,7 +320,7 @@ func totpSendSMSPost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -348,7 +348,7 @@ func totpSetupActivateGet(h *handler.Handler) http.HandlerFunc {
 		}
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -366,7 +366,7 @@ func totpSetupActivatePost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -451,7 +451,7 @@ func totpRecoveryCodesGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			return nil, errors.Tracef(err)
 		}

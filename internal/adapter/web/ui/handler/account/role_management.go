@@ -54,7 +54,7 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
-		roles, total, err := h.Repo.Account.FindRolesPageBySearch(ctx, sortTopID, search, page, size)
+		roles, total, err := h.Store.Account.FindRolesPageBySearch(ctx, sortTopID, search, page, size)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
@@ -123,7 +123,7 @@ func roleEditGet(h *handler.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		role, err := h.Repo.Account.FindRoleByID(ctx, roleID)
+		role, err := h.Store.Account.FindRoleByID(ctx, roleID)
 		if err != nil {
 			return nil, errors.Tracef(err)
 		}
@@ -199,7 +199,7 @@ func roleDeleteGet(h *handler.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		role, err := h.Repo.Account.FindRoleByID(ctx, roleID)
+		role, err := h.Store.Account.FindRoleByID(ctx, roleID)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
 			return
 		}
