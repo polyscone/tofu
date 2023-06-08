@@ -144,6 +144,7 @@ func (h *Handler) Passport(ctx context.Context) passport.Passport {
 	return passport.New(h.passportStore, passport.User{
 		ID:          user.ID,
 		IsSignedIn:  h.Sessions.GetBool(ctx, sess.IsSignedIn),
+		IsSuper:     user.IsSuper(),
 		Permissions: permissions,
 	})
 }
@@ -162,6 +163,7 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (passport.P
 	p := passport.New(h.passportStore, passport.User{
 		ID:          user.ID,
 		IsSignedIn:  h.Sessions.GetBool(ctx, sess.IsSignedIn),
+		IsSuper:     user.IsSuper(),
 		Permissions: permissions,
 	})
 

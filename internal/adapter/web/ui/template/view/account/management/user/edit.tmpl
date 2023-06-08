@@ -8,7 +8,8 @@
 
 {{define "view_body"}}
 
-{{$isSuperUser := .Vars.User.IsSuper}}
+{{$isEditUserSuper := .Vars.User.IsSuper}}
+{{$canAssignSuperRole := .Passport.CanAssignSuperRole $.Vars.User.ID}}
 {{$canChangeRoles := .Passport.CanChangeRoles $.Vars.User.ID}}
 {{$cannotChangeRoles := not $canChangeRoles}}
 {{$canUpdate := $canChangeRoles}}
@@ -17,7 +18,7 @@
 	<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
-		{{if $isSuperUser}}
+		{{if $isEditUserSuper}}
 			<input type="hidden" name="roles" value="{{.Vars.SuperRole.ID}}">
 		{{end}}
 
@@ -47,7 +48,7 @@
 			{{end}}
 		</div>
 
-		{{if not $isSuperUser}}
+		{{if and $canAssignSuperRole (not $isEditUserSuper)}}
 			<details>
 				<summary>I want to give this user the "super" role</summary>
 

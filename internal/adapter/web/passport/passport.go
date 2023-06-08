@@ -7,6 +7,7 @@ type Reader interface {
 type User struct {
 	ID          int
 	IsSignedIn  bool
+	IsSuper     bool
 	Permissions []string
 }
 
@@ -14,6 +15,7 @@ type Passport struct {
 	store       Reader
 	userID      int
 	isSignedIn  bool
+	isSuper     bool
 	permissions []string
 }
 
@@ -22,6 +24,7 @@ func New(store Reader, user User) Passport {
 		store:       store,
 		userID:      user.ID,
 		isSignedIn:  user.IsSignedIn,
+		isSuper:     user.IsSuper,
 		permissions: user.Permissions,
 	}
 }
@@ -68,6 +71,10 @@ func (p Passport) CanChangeTOTPTelephone(userID int) bool {
 
 func (p Passport) CanChangeRoles(userID int) bool {
 	return p.can(changeRoles)
+}
+
+func (p Passport) CanAssignSuperRole(userID int) bool {
+	return p.isSuper
 }
 
 func (p Passport) CanViewRoles() bool {

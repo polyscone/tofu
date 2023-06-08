@@ -12,16 +12,22 @@ import (
 )
 
 type setRolesGuard struct {
-	value bool
+	canChangeRoles     bool
+	canAssignSuperRole bool
 }
 
 func (g setRolesGuard) CanChangeRoles(userID int) bool {
-	return g.value
+	return g.canChangeRoles
+}
+
+func (g setRolesGuard) CanAssignSuperRole(userID int) bool {
+	return g.canAssignSuperRole
 }
 
 func TestChangeRoles(t *testing.T) {
-	validGuard := setRolesGuard{value: true}
-	invalidGuard := setRolesGuard{value: false}
+	validSuperGuard := setRolesGuard{canChangeRoles: true, canAssignSuperRole: true}
+	validGuard := setRolesGuard{canChangeRoles: true}
+	invalidGuard := setRolesGuard{}
 
 	t.Run("success with activated signed in user", func(t *testing.T) {
 		ctx := context.Background()
@@ -39,7 +45,7 @@ func TestChangeRoles(t *testing.T) {
 		events.Expect(account.RolesChanged{Email: user.Email})
 		events.Expect(account.RolesChanged{Email: user.Email})
 
-		err := svc.ChangeRoles(ctx, validGuard, user.ID, role1.ID, role2.ID, superRole.ID)
+		err := svc.ChangeRoles(ctx, validSuperGuard, user.ID, role1.ID, role2.ID, superRole.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -62,7 +68,7 @@ func TestChangeRoles(t *testing.T) {
 		}
 
 		// Change roles without removing super
-		err = svc.ChangeRoles(ctx, validGuard, user.ID, superRole.ID)
+		err = svc.ChangeRoles(ctx, validSuperGuard, user.ID, superRole.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,7 +85,7 @@ func TestChangeRoles(t *testing.T) {
 		role2 := MustAddRole(t, ctx, store, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 		superRole := errors.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
 
-		errors.Must0(svc.ChangeRoles(ctx, validGuard, super.ID, superRole.ID))
+		errors.Must0(svc.ChangeRoles(ctx, validSuperGuard, super.ID, superRole.ID))
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -94,6 +100,7 @@ func TestChangeRoles(t *testing.T) {
 			{"unauthorised", invalidGuard, 0, nil, app.ErrUnauthorised},
 			{"non-existent user id", validGuard, 0, []int{role1.ID, role2.ID}, app.ErrMalformedInput},
 			{"non-existent role ids", validGuard, user.ID, []int{-1, 0}, app.ErrMalformedInput},
+			{"unauthorised assignment of super role", validGuard, user.ID, []int{superRole.ID}, app.ErrUnauthorised},
 			{"removing super role", validGuard, super.ID, nil, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
