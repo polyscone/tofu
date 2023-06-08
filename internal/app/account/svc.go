@@ -53,7 +53,7 @@ func NewService(broker event.Broker, store ReadWriter, hasher password.Hasher) (
 		}
 	}
 
-	SuperRole = NewRole("Super", "Can do everything.", permissions)
+	SuperRole = NewRole("Super", "Has full access to the system; cannot be edited or deleted.", permissions)
 
 	ctx := context.Background()
 	role, err := store.FindRoleByName(ctx, SuperRole.Name)

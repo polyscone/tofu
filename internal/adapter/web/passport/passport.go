@@ -1,9 +1,7 @@
 package passport
 
-type Passport struct {
-	userID      int
-	isSignedIn  bool
-	permissions []string
+type Reader interface {
+	IsUserSuper(userID int) bool
 }
 
 type User struct {
@@ -12,8 +10,16 @@ type User struct {
 	Permissions []string
 }
 
-func New(user User) Passport {
+type Passport struct {
+	store       Reader
+	userID      int
+	isSignedIn  bool
+	permissions []string
+}
+
+func New(store Reader, user User) Passport {
 	return Passport{
+		store:       store,
 		userID:      user.ID,
 		isSignedIn:  user.IsSignedIn,
 		permissions: user.Permissions,

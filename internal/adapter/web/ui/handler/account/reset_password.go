@@ -54,7 +54,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 
 			tok, err := h.Store.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 			if err != nil {
-				logger.PrintError(err)
+				logger.PrintError(errors.Tracef(err))
 
 				return
 			}
@@ -67,7 +67,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 				"Token": tok,
 			}
 			if err := h.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
-				logger.PrintError(err)
+				logger.PrintError(errors.Tracef(err))
 			}
 		})
 

@@ -59,7 +59,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 
 					tok, err := h.Store.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 					if err != nil {
-						logger.PrintError(err)
+						logger.PrintError(errors.Tracef(err))
 
 						return
 					}
@@ -72,7 +72,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 						"Token": tok,
 					}
 					if err := h.SendEmail(ctx, recipients, "sign_up_reset_password", vars); err != nil {
-						logger.PrintError(err)
+						logger.PrintError(errors.Tracef(err))
 					}
 				})
 

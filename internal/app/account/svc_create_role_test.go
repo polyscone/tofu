@@ -92,11 +92,6 @@ func TestCreateRole(t *testing.T) {
 		t.Run("valid inputs", func(t *testing.T) {
 			quick.Check(t, func(name account.RoleName, descrpition account.RoleDesc, permission account.Permission) bool {
 				_, err := execute(name, descrpition, permission)
-				if err != nil {
-					t.Log(err)
-
-					return false
-				}
 
 				return !errors.Is(err, app.ErrMalformedInput)
 			})

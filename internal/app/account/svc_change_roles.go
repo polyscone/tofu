@@ -53,7 +53,9 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		}
 	}
 
-	user.ChangeRoles(roles...)
+	if err := user.ChangeRoles(roles...); err != nil {
+		return errors.Tracef(err)
+	}
 
 	if err := s.store.SaveUser(ctx, user); err != nil {
 		return errors.Tracef(err)

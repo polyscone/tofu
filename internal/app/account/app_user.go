@@ -52,6 +52,16 @@ func NewUser(email text.Email) *User {
 	return &User{Email: email.String()}
 }
 
+func (u *User) IsSuper() bool {
+	for _, role := range u.Roles {
+		if role.ID == SuperRole.ID {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (u *User) HasVerifiedTOTP() bool {
 	return !u.TOTPVerifiedAt.IsZero()
 }
@@ -411,8 +421,25 @@ func (u *User) SignInWithRecoveryCode(code Code) error {
 	return errs.Tracef(app.ErrInvalidInput)
 }
 
-func (u *User) ChangeRoles(roles ...*Role) {
+func (u *User) ChangeRoles(roles ...*Role) error {
+	if u.IsSuper() {
+		var containsSuper bool
+		for _, role := range roles {
+			if role.ID == SuperRole.ID {
+				containsSuper = true
+
+				break
+			}
+		}
+
+		if !containsSuper {
+			return errors.Tracef(app.ErrBadRequest, "cannot remove super role")
+		}
+	}
+
 	u.Roles = roles
 
 	u.Events.Enqueue(RolesChanged{Email: u.Email})
+
+	return nil
 }

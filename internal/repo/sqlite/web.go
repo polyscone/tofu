@@ -46,7 +46,7 @@ func NewWebStore(ctx context.Context, db *sql.DB, sessionLifespan time.Duration)
 
 		for range time.Tick(sessionLifespan) {
 			if err := s.DestroyExpiredSessions(ctx, sessionLifespan); err != nil {
-				logger.PrintError(err)
+				logger.PrintError(errors.Tracef(err))
 			}
 		}
 	})
@@ -57,7 +57,7 @@ func NewWebStore(ctx context.Context, db *sql.DB, sessionLifespan time.Duration)
 
 		for range time.Tick(5 * time.Minute) {
 			if err := s.DeleteExpiredTokens(ctx); err != nil {
-				logger.PrintError(err)
+				logger.PrintError(errors.Tracef(err))
 			}
 		}
 	})

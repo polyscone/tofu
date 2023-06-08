@@ -153,26 +153,26 @@ func main() {
 	}
 
 	if err := os.MkdirAll(opts.data, 0666); err != nil {
-		logger.PrintError(err)
+		logger.PrintError(errors.Tracef(err))
 
 		os.Exit(1)
 	}
 
 	if err := initPasswordHasher(); err != nil {
-		logger.PrintError(err)
+		logger.PrintError(errors.Tracef(err))
 
 		os.Exit(1)
 	}
 
 	if err := initTenants(); err != nil {
-		logger.PrintError(err)
+		logger.PrintError(errors.Tracef(err))
 	}
 
 	httputil.TrustedProxies = opts.server.proxies
 
 	listener, err := opts.server.addr.Listener()
 	if err != nil {
-		logger.PrintError(err)
+		logger.PrintError(errors.Tracef(err))
 
 		os.Exit(1)
 	}

@@ -15,13 +15,36 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/rate"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
 )
+
+type PassportStore struct {
+	AccountReader
+}
+
+func (s *PassportStore) IsUserSuper(userID int) bool {
+	user, err := s.FindUserByID(context.Background(), userID)
+	if err != nil {
+		logger.PrintError(errors.Tracef(err))
+
+		return false
+	}
+
+	for _, role := range user.Roles {
+		if role.ID == account.SuperRole.ID {
+			return true
+		}
+	}
+
+	return false
+}
 
 type emailContent struct {
 	Subject string
@@ -48,6 +71,7 @@ type Handler struct {
 	funcs          template.FuncMap
 	viewVarsFuncs  map[string]ViewVarsFunc
 	mux            *router.ServeMux
+	passportStore  *PassportStore
 	Sessions       *session.Manager
 }
 
@@ -80,6 +104,7 @@ func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName strin
 		funcs:          funcs,
 		viewVarsFuncs:  make(map[string]ViewVarsFunc),
 		mux:            mux,
+		passportStore:  &PassportStore{AccountReader: tenant.Store.Account},
 		Sessions:       sessions,
 	}
 }
@@ -97,7 +122,7 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 }
 
 func (h *Handler) emptyPassport(ctx context.Context) passport.Passport {
-	return passport.New(passport.User{})
+	return passport.New(h.passportStore, passport.User{})
 }
 
 func (h *Handler) Passport(ctx context.Context) passport.Passport {
@@ -116,7 +141,7 @@ func (h *Handler) Passport(ctx context.Context) passport.Passport {
 		permissions = append(permissions, role.Permissions...)
 	}
 
-	return passport.New(passport.User{
+	return passport.New(h.passportStore, passport.User{
 		ID:          user.ID,
 		IsSignedIn:  h.Sessions.GetBool(ctx, sess.IsSignedIn),
 		Permissions: permissions,
@@ -134,7 +159,7 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (passport.P
 		permissions = append(permissions, role.Permissions...)
 	}
 
-	p := passport.New(passport.User{
+	p := passport.New(h.passportStore, passport.User{
 		ID:          user.ID,
 		IsSignedIn:  h.Sessions.GetBool(ctx, sess.IsSignedIn),
 		Permissions: permissions,

@@ -8,12 +8,18 @@
 
 {{define "view_body"}}
 
+{{$isSuperUser := .Vars.User.IsSuper}}
 {{$canChangeRoles := .Passport.CanChangeRoles $.Vars.User.ID}}
+{{$cannotChangeRoles := not $canChangeRoles}}
 {{$canUpdate := $canChangeRoles}}
 
 <div class="center">
 	<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		{{if $isSuperUser}}
+			<input type="hidden" name="roles" value="{{.Vars.SuperRole.ID}}">
+		{{end}}
 
 		<b>Roles</b>
 
@@ -24,18 +30,40 @@
 			{{end}}
 
 			{{range .Vars.Roles}}
+				{{$isSuperRole := eq .ID $.Vars.SuperRole.ID}}
+				{{$isChecked := HasString $roleIDs .ID}}
+				{{$isDisabled := or $cannotChangeRoles $isSuperRole}}
+
 				<label>
 					<input
 						type="checkbox"
 						name="roles"
 						value="{{.ID}}"
-						{{if HasString $roleIDs .ID}}checked{{end}}
-						{{if not ($canChangeRoles)}}disabled{{end}}
+						{{if $isChecked}}checked{{end}}
+						{{if $isDisabled}}disabled{{end}}
 					>
 					{{.Name}}
 				</label>
 			{{end}}
 		</div>
+
+		{{if not $isSuperUser}}
+			<details>
+				<summary>I want to give this user the "super" role</summary>
+
+				<div class="warning-box">
+					<p>Once a user has been given the "super" role it <i>cannot be removed</i>.</p>
+					<p>Please think carefully about whether this is actually what you need to do, or whether another role would be more appropriate.</p>
+
+					<p>
+						<label>
+							<input type="checkbox" name="roles" value="{{.Vars.SuperRole.ID}}">
+							I understand this <b>cannot be undone</b>, give this user the "super" role
+						</label>
+					</p>
+				</div>
+			</details>
+		{{end}}
 
 		<div class="bag reverse">
 			<button type="submit" class="push-inline-end"{{if not $canUpdate}} disabled{{end}}>Update user</button>

@@ -31,20 +31,22 @@ func TestChangeRoles(t *testing.T) {
 
 		role1 := MustAddRole(t, ctx, store, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 		role2 := MustAddRole(t, ctx, store, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
+		superRole := errors.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
 		events.Expect(account.RolesChanged{Email: user.Email})
+		events.Expect(account.RolesChanged{Email: user.Email})
 
-		err := svc.ChangeRoles(ctx, validGuard, user.ID, role1.ID, role2.ID)
+		err := svc.ChangeRoles(ctx, validGuard, user.ID, role1.ID, role2.ID, superRole.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		user = errors.Must(store.FindUserByID(ctx, user.ID))
 
-		if want, got := []*account.Role{role1, role2}, user.Roles; len(want) != len(got) {
+		if want, got := []*account.Role{role1, role2, superRole}, user.Roles; len(want) != len(got) {
 			t.Errorf("want %v roles; got %v", len(want), len(got))
 		} else {
 			sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
@@ -58,6 +60,12 @@ func TestChangeRoles(t *testing.T) {
 				}
 			}
 		}
+
+		// Change roles without removing super
+		err = svc.ChangeRoles(ctx, validGuard, user.ID, superRole.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
 	})
 
 	t.Run("error cases", func(t *testing.T) {
@@ -65,9 +73,13 @@ func TestChangeRoles(t *testing.T) {
 		svc, broker, store := NewTestEnv(ctx)
 
 		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+		super := MustAddUser(t, ctx, store, TestUser{Email: "super@bloggs.com", Activate: true})
 
 		role1 := MustAddRole(t, ctx, store, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 		role2 := MustAddRole(t, ctx, store, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
+		superRole := errors.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
+
+		errors.Must0(svc.ChangeRoles(ctx, validGuard, super.ID, superRole.ID))
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -82,6 +94,7 @@ func TestChangeRoles(t *testing.T) {
 			{"unauthorised", invalidGuard, 0, nil, app.ErrUnauthorised},
 			{"non-existent user id", validGuard, 0, []int{role1.ID, role2.ID}, app.ErrMalformedInput},
 			{"non-existent role ids", validGuard, user.ID, []int{-1, 0}, app.ErrMalformedInput},
+			{"removing super role", validGuard, super.ID, nil, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

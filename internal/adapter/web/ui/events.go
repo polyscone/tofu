@@ -7,6 +7,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/background"
+	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
@@ -16,7 +17,7 @@ func accountSignedInWithPasswordHandler(tenant *handler.Tenant, h *handler.Handl
 
 		user, err := h.Store.Account.FindUserByEmail(ctx, evt.Email)
 		if err != nil {
-			logger.PrintError(err)
+			logger.PrintError(errors.Tracef(err))
 
 			return
 		}
@@ -24,7 +25,7 @@ func accountSignedInWithPasswordHandler(tenant *handler.Tenant, h *handler.Handl
 		if user.HasActivatedTOTP() && user.TOTPMethod == account.TOTPMethodSMS.String() {
 			background.Go(func() {
 				if err := h.SendTOTPSMS(user.Email, user.TOTPTelephone); err != nil {
-					logger.PrintError(err)
+					logger.PrintError(errors.Tracef(err))
 				}
 			})
 		}
@@ -41,7 +42,7 @@ func accountDisabledTOTPHandler(tenant *handler.Tenant, h *handler.Handler) any 
 				To:   []string{evt.Email},
 			}
 			if err := h.SendEmail(ctx, recipients, "disabled_totp", nil); err != nil {
-				logger.PrintError(err)
+				logger.PrintError(errors.Tracef(err))
 			}
 		})
 	}
@@ -54,7 +55,7 @@ func accountSignedUpHandler(tenant *handler.Tenant, h *handler.Handler) any {
 
 			tok, err := tenant.Store.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
 			if err != nil {
-				logger.PrintError(err)
+				logger.PrintError(errors.Tracef(err))
 
 				return
 			}
@@ -67,7 +68,7 @@ func accountSignedUpHandler(tenant *handler.Tenant, h *handler.Handler) any {
 				"Token": tok,
 			}
 			if err := h.SendEmail(ctx, recipients, "activate_account", vars); err != nil {
-				logger.PrintError(err)
+				logger.PrintError(errors.Tracef(err))
 			}
 		})
 	}

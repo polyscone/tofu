@@ -75,6 +75,7 @@ func userEditGet(h *handler.Handler) http.HandlerFunc {
 			"User":        user,
 			"UserRoleIDs": userRoleIDs,
 			"Roles":       roles,
+			"SuperRole":   account.SuperRole,
 		}
 
 		return vars, nil
