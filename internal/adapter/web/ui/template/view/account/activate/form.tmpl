@@ -16,8 +16,20 @@
 
 <div class="center">
 	{{if .ErrorMessage}}
-		<p>Either the account you are trying to activate has already been activated or you have provided an invalid activation token.</p>
+		<p>Either the account you're trying to activate has already been activated or you've provided an invalid activation token.</p>
 	{{else if .URL.Query.Get "token"}}
+		<p>You just need to choose a password and then we can activate your account.</p>
+
+		<details>
+			<summary>How do I choose a good password?</summary>
+
+			<p>
+				A good pass<u>word</u> should be long, but even better is a long pass<u>phrase</u>.
+				Passphrases can be normal sentences, making them easier for you to remember, but making it hard for other people to guess.
+			</p>
+			<p>It's okay to use spaces in the form below, so why not try coming up with a memorable passphrase to use now?</p>
+		</details>
+
 		<form action="{{Path "account.activate.post"}}" method="POST" id="account-activate-form">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
@@ -31,7 +43,7 @@
 			</div>
 		</form>
 	{{else}}
-		<p>An account cannot be activated without an activation token.</p>
+		<p>An account can't be activated without an activation token.</p>
 	{{end}}
 </div>
 

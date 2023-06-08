@@ -1,7 +1,7 @@
 {{define "view_head"}}
 
 <div class="center">
-	<h1>Setup using SMS</h1>
+	<h1>Verify your setup</h1>
 </div>
 
 {{end}}
@@ -9,9 +9,12 @@
 {{define "view_body"}}
 
 <div class="center">
-	<p>Enter the 6 digit passcode you received via SMS to verify that your phone number is setup correctly.</p>
+	<div class="warning-banner">
+		<p>Using SMS for two-factor authentication is only recommended when you can't use an authenticator app on your phone.</p>
+		<p><a href="{{Path "account.totp.setup.app"}}">Don't want to use SMS? Click here to use an app.</a></p>
+	</div>
 
-	<p><a href="{{Path "account.totp.setup.app"}}">Don't want to use SMS? Click here to use an app.</a></p>
+	<p>Enter the 6 digit passcode you received via SMS to verify that phone number is setup correctly.</p>
 
 	<form action="{{Path "account.totp.setup.sms.verify.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">

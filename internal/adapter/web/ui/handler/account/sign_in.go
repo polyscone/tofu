@@ -122,7 +122,7 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 		switch {
 		case len(user.RecoveryCodes) == 0:
 			h.AddFlashImportantf(ctx, `
-				You have run out of recovery codes.<br>
+				You've run out of recovery codes.<br>
 				We recommend
 				<a href="`+h.Path("account.totp.recovery_codes")+`">generating new ones</a>
 				as soon as you can.
@@ -130,7 +130,7 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 
 		case len(user.RecoveryCodes) <= lowRecoveryCodes:
 			h.AddFlashImportantf(ctx, `
-				You are running low on recovery codes.<br>
+				You're running low on recovery codes.<br>
 				We recommend
 				<a href="`+h.Path("account.totp.recovery_codes")+`">generating new ones</a>
 				as soon as you can.
@@ -199,7 +199,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		h.AddFlashImportantf(ctx, `
-			If you have lost your authentication device
+			If you've lost your authentication device
 			<a href="`+h.Path("account.totp.disable")+`">disable two-factor authentication</a>
 			to avoid getting locked out of your account.
 		`)
@@ -207,7 +207,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 		switch {
 		case len(user.RecoveryCodes) == 0:
 			h.AddFlashImportantf(ctx, `
-				You have run out of recovery codes.<br>
+				You've run out of recovery codes.<br>
 				We recommend
 				<a href="`+h.Path("account.totp.recovery_codes")+`">generating new ones</a>
 				as soon as you can.
@@ -215,7 +215,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 
 		case len(user.RecoveryCodes) <= lowRecoveryCodes:
 			h.AddFlashImportantf(ctx, `
-				You are running low on recovery codes.<br>
+				You're running low on recovery codes.<br>
 				We recommend
 				<a href="`+h.Path("account.totp.recovery_codes")+`">generating new ones</a>
 				as soon as you can.

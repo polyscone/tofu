@@ -12,11 +12,11 @@
 	<p>Two-factor authentication adds an additional layer of security to your account by requiring more than just your password to log in.</p>
 
 	{{if .App.HasSMS}}
-		<p>You can either use two-factor authentication through an application on your phone or computer, or you can use SMS.</p>
+		<p>You can either use two-factor authentication through an app on your phone or computer, or you can use SMS.</p>
 
 		<div class="halves">
 			<div>
-				<p>Use an application on your phone or computer to get passcodes when prompted (recommended).</p>
+				<p>Use an app on your phone or computer to get passcodes when prompted (recommended).</p>
 
 				<form action="{{Path "account.totp.setup.post"}}" method="POST">
 					<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
@@ -27,7 +27,7 @@
 			</div>
 
 			<div>
-				<p>We will send you an SMS message with a passcode when prompted (only recommended if you can't use an app).</p>
+				<p>We'll send you an SMS message with a passcode when prompted (only recommended if you can't use an app).</p>
 
 				<form action="{{Path "account.totp.setup.post"}}" method="POST">
 					<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
@@ -38,7 +38,7 @@
 			</div>
 		</div>
 	{{else}}
-		<p>You can use two-factor authentication through an application on your phone or computer.</p>
+		<p>You can use two-factor authentication through an app on your phone or computer.</p>
 
 		<form action="{{Path "account.totp.setup.post"}}" method="POST">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">

@@ -17,19 +17,29 @@
 		<div class="warning-banner">
 			<p>
 				Your password has not been changed yet because it appears <span data-locale-number>{{.Vars.NewPasswordKnownBreachCount}}</span> {{if gt .Vars.NewPasswordKnownBreachCount 1}}times{{else}}time{{end}}
-				in a <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer">database of security breaches</a> and is not considered to be secure.
+				in a <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer">database of security breaches</a> and isn't considered to be secure.
 			</p>
 		</div>
 		<p>You can continue and use this password, but we recommend that you choose a more secure one.</p>
 	{{else if .Session.PasswordKnownBreachCount}}
 		<div class="warning-banner">
 			<p>
-				The password you are currently using appears <span data-locale-number>{{.Session.PasswordKnownBreachCount}}</span> {{if gt .Session.PasswordKnownBreachCount 1}}times{{else}}time{{end}}
-				in a <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer">database of security breaches</a> and is not considered to be secure.
+				The password you're currently using appears <span data-locale-number>{{.Session.PasswordKnownBreachCount}}</span> {{if gt .Session.PasswordKnownBreachCount 1}}times{{else}}time{{end}}
+				in a <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer">database of security breaches</a> and isn't considered to be secure.
 			</p>
 			<p>We recommend that you change this password to a more secure one as soon as possible.</p>
 		</div>
 	{{end}}
+
+	<details>
+		<summary>How do I choose a good password?</summary>
+
+		<p>
+			A good pass<u>word</u> should be long, but even better is a long pass<u>phrase</u>.
+			Passphrases can be normal sentences, making them easier for you to remember, but making it hard for other people to guess.
+		</p>
+		<p>It's okay to use spaces in the form below, so why not try coming up with a memorable passphrase to use now?</p>
+	</details>
 
 	<form action="{{Path "account.change_password.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">

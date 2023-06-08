@@ -104,6 +104,10 @@
 		border-block-start: 1px solid var(--clr-black-200);
 	}
 
+	details {
+		margin-block: 1rem;
+	}
+
 	summary {
 		cursor: pointer;
 	}
@@ -182,7 +186,7 @@
 	form, .form {
 		display: flex;
 		flex-direction: column;
-		gap: 0.3rem;
+		gap: 0.4rem;
 	}
 
 	:is(form, .form) input:not([type="checkbox"]),
