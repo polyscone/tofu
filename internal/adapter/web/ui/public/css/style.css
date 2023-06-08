@@ -32,8 +32,8 @@
 	--clr-warning-100: hsl(45 100% 95%);
 	--clr-warning-400: hsl(40 100% 50%);
 
-	--clr-danger-100: hsl(0 78% 95%);
-	--clr-danger-400: hsl(0 78% 45%);
+	--clr-danger-100: hsl(0 45% 95%);
+	--clr-danger-400: hsl(0 45% 54%);
 
 	--clr-error-100: hsl(0 100% 95%);
 	--clr-error-400: hsl(0 100% 50%);
@@ -182,10 +182,9 @@
 	form, .form {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
+		gap: 0.3rem;
 	}
 
-	:is(form, .form) label,
 	:is(form, .form) input:not([type="checkbox"]),
 	:is(form, .form) textarea,
 	:is(form, .form) button {
@@ -292,14 +291,13 @@
 
 	.halves {
 		display: grid;
-		grid-template-columns: repeat(2, 1fr);
 		gap: 1rem;
 	}
 
 	.warning-box {
 		padding-inline: 1rem;
-		background: var(--clr-danger-100);
-		border: 1px solid var(--clr-danger-400);
+		background: var(--clr-warning-100);
+		border: 1px solid var(--clr-warning-400);
 	}
 
 	details .warning-box {
@@ -437,12 +435,6 @@
 		color: var(--clr-danger-400);
 	}
 
-	.totp__methods {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: 1rem;
-	}
-
 	.totp__qrcode {
 		font-family: monospace;
 		font-size: 1.2rem;
@@ -470,6 +462,28 @@
 		margin-block-start: 1rem;
 	}
 
+	[data-tooltip] {
+		position: relative;
+		cursor: help;
+	}
+
+	[data-tooltip]::after {
+		content: attr(data-tooltip);
+		pointer-events: none;
+		position: absolute;
+		left: 0;
+		bottom: calc(100% + 0.1rem);
+		max-width: 300px;
+		background: var(--clr-accent-100);
+		border: 1px solid var(--clr-accent-400);
+		padding: 0.5rem;
+		opacity: 0;
+	}
+
+	[data-tooltip]:hover::after {
+		opacity: 1;
+	}
+
 	@media screen and (min-width: 400px) {
 		.header {
 			flex-direction: row;
@@ -491,7 +505,7 @@
 			text-align: right;
 		}
 
-		.totp-methods {
+		.halves {
 			grid-template-columns: repeat(2, 1fr);
 		}
 	}
@@ -512,10 +526,6 @@
 }
 
 @layer utility {
-	.cols-2 {
-		columns: 1;
-	}
-
 	.center {
 		max-width: 550px;
 		margin-inline: auto;
@@ -535,11 +545,5 @@
 
 	.grow {
 		flex-grow: 1;
-	}
-
-	@media screen and (min-width: 400px) {
-		.cols-2 {
-			columns: 2;
-		}
 	}
 }

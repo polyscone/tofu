@@ -10,8 +10,8 @@
 			<li><a href="{{Path "page.home"}}">Home</a></li>
 
 			{{if .Session.IsSignedIn}}
-				<li><a href="{{Path "admin.dashboard"}}">Admin</a></li>
 				<li><a href="{{Path "account.dashboard"}}">Account</a></li>
+				<li><a href="{{Path "admin.dashboard"}}">Admin</a></li>
 				<li>
 					<form action="{{Path "account.sign_out.post"}}" method="POST">
 						<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">

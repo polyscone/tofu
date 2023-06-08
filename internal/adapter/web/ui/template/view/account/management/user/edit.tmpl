@@ -31,42 +31,40 @@
 
 		<b>Roles</b>
 
-		<div class="cols-2">
-			{{$roleIDs := $.Form.GetAllOr "roles" .Vars.UserRoleIDs}}
-			{{if $cannotChangeRoles}}
-				{{$roleIDs = ToStrings .Vars.UserRoleIDs}}
-			{{end}}
+		{{$roleIDs := $.Form.GetAllOr "roles" .Vars.UserRoleIDs}}
+		{{if $cannotChangeRoles}}
+			{{$roleIDs = ToStrings .Vars.UserRoleIDs}}
+		{{end}}
 
-			{{range .Vars.Roles}}
-				{{$isSuperRole := eq .ID $.Vars.SuperRole.ID}}
-				{{$isChecked := HasString $roleIDs .ID}}
-				{{$isDisabled := or $cannotChangeRoles $isSuperRole}}
+		{{range .Vars.Roles}}
+			{{$isSuperRole := eq .ID $.Vars.SuperRole.ID}}
+			{{$isChecked := HasString $roleIDs .ID}}
+			{{$isDisabled := or $cannotChangeRoles $isSuperRole}}
 
-				<label>
-					<input
-						type="checkbox"
-						name="roles"
-						value="{{.ID}}"
-						{{if $isChecked}}checked{{end}}
-						{{if $isDisabled}}disabled{{end}}
-					>
-					{{.Name}}
-				</label>
-			{{end}}
-		</div>
+			<label{{if $isSuperRole}} data-tooltip="Super is a permanent role that can only be assigned by other super users."{{end}}>
+				<input
+					type="checkbox"
+					name="roles"
+					value="{{.ID}}"
+					{{if $isChecked}}checked{{end}}
+					{{if $isDisabled}}disabled{{end}}
+				>
+				{{.Name}}
+			</label>
+		{{end}}
 
 		{{if and $canAssignSuperRole (not $isEditUserSuper)}}
 			<details>
-				<summary>I want to give this user the "super" role</summary>
+				<summary>I want to give this user the super role</summary>
 
 				<div class="warning-box">
-					<p>Once a user has been given the "super" role it <i>cannot be removed</i>.</p>
+					<p>Once a user has been given the super role it <i>cannot be removed</i>.</p>
 					<p>Please think carefully about whether this is actually what you need to do, or whether another role would be more appropriate.</p>
 
 					<p>
 						<label>
 							<input type="checkbox" name="roles" value="{{.Vars.SuperRole.ID}}">
-							I understand this <b>cannot be undone</b>, give this user the "super" role
+							I understand this <b>cannot be undone</b>, give this user the super role
 						</label>
 					</p>
 				</div>
