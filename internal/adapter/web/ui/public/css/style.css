@@ -399,7 +399,7 @@
 		list-style: none;
 	}
 
-	:is(button, .btn) {
+	button, .btn {
 		padding-block: 0.4rem;
 		padding-inline: 1rem;
 		background: var(--clr-accent-400);
@@ -460,6 +460,10 @@
 
 	.recovery-code-list__actions {
 		margin-block-start: 1rem;
+	}
+
+	[data-implied-permissions] {
+		margin-inline-start: 2rem;
 	}
 
 	[data-tooltip] {

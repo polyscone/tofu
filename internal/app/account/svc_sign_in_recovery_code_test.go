@@ -39,8 +39,6 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.SignedInWithRecoveryCode{Email: activatedTOTP.Email})
-
 		nRecoveryCodes := len(activatedTOTP.RecoveryCodes)
 		usedRecoveryCode := activatedTOTP.RecoveryCodes[0]
 
@@ -48,6 +46,8 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
+
+		events.Expect(account.SignedInWithRecoveryCode{Email: activatedTOTP.Email})
 
 		activatedTOTP, err = store.FindUserByID(ctx, activatedTOTP.ID)
 		if err != nil {

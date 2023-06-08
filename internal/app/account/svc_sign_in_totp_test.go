@@ -48,8 +48,6 @@ func TestSignInWithTOTP(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.SignedInWithTOTP{Email: activatedTOTP.Email})
-
 		alg := errors.Must(otp.NewAlgorithm(activatedTOTP.TOTPAlgorithm))
 		tb := errors.Must(otp.NewTimeBased(activatedTOTP.TOTPDigits, alg, time.Unix(0, 0), activatedTOTP.TOTPPeriod))
 		totp := errors.Must(tb.Generate(activatedTOTP.TOTPKey, time.Now()))
@@ -60,6 +58,8 @@ func TestSignInWithTOTP(t *testing.T) {
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
+
+		events.Expect(account.SignedInWithTOTP{Email: activatedTOTP.Email})
 
 		activatedTOTP, err = store.FindUserByID(ctx, activatedTOTP.ID)
 		if err != nil {

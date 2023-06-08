@@ -1,4 +1,4 @@
-package passport
+package guard
 
 type Reader interface {
 	IsUserSuper(userID int) bool

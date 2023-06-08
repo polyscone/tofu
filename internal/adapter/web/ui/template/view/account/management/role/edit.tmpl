@@ -35,6 +35,7 @@
 								name="permissions"
 								value="{{.Name}}"
 								{{if HasString $permissions .Name}}checked{{end}}
+								{{if .Implies}}data-implied-permissions="{{Join .Implies "|"}}"{{end}}
 							>
 							{{.DisplayName}}
 						</label>

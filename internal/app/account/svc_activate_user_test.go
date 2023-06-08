@@ -14,35 +14,66 @@ import (
 )
 
 func TestActivateUser(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
-	password := "password"
-	user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com"})
-
 	t.Run("success with existing user", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		password := "password"
+		user1 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com"})
+		user2 := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com"})
+		superRole := errors.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.Activated{Email: user.Email})
-		events.Expect(account.SignedInWithPassword{Email: user.Email})
+		superUserCount := errors.Must(store.CountUsersByRoleID(ctx, superRole.ID))
+		if want, got := 0, superUserCount; want != got {
+			t.Fatalf("want super user count to be %v; got %v", want, got)
+		}
 
-		if err := svc.ActivateUser(ctx, user.Email, password, password); err != nil {
+		if err := svc.ActivateUser(ctx, user1.Email, password, password); err != nil {
 			t.Fatal(err)
 		}
 
-		user := errors.Must(store.FindUserByEmail(ctx, user.Email))
+		events.Expect(account.RolesChanged{Email: user1.Email})
+		events.Expect(account.Activated{Email: user1.Email})
 
-		if user.ActivatedAt.IsZero() {
+		user1 = errors.Must(store.FindUserByEmail(ctx, user1.Email))
+
+		if user1.ActivatedAt.IsZero() {
 			t.Error("want non-zero activated at; got zero")
 		}
 
-		if err := svc.SignInWithPassword(ctx, user.Email, password); err != nil {
+		if err := svc.SignInWithPassword(ctx, user1.Email, password); err != nil {
 			t.Errorf("want to be able to sign in with chosen password; got error: %v", err)
+		}
+
+		events.Expect(account.SignedInWithPassword{Email: user1.Email})
+
+		superUserCount = errors.Must(store.CountUsersByRoleID(ctx, superRole.ID))
+		if want, got := 1, superUserCount; want != got {
+			t.Fatalf("want super user count to be %v; got %v", want, got)
+		}
+
+		if err := svc.ActivateUser(ctx, user2.Email, password, password); err != nil {
+			t.Fatal(err)
+		}
+
+		events.Expect(account.Activated{Email: user2.Email})
+
+		superUserCount = errors.Must(store.CountUsersByRoleID(ctx, superRole.ID))
+		if want, got := 1, superUserCount; want != got {
+			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
 	})
 
 	t.Run("fail activating an already activated user", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		password := "password"
+		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -52,6 +83,9 @@ func TestActivateUser(t *testing.T) {
 	})
 
 	t.Run("properties", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, _ := NewTestEnv(ctx)
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 

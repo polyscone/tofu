@@ -36,13 +36,13 @@ func TestChangePassword(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.PasswordChanged{Email: user1.Email})
-
 		newPassword := errors.Must(account.NewPassword("password123"))
 		err := svc.ChangePassword(ctx, validGuard, user1.ID, user1Password, newPassword.String(), newPassword.String())
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		events.Expect(account.PasswordChanged{Email: user1.Email})
 
 		// Keep the old password up to date with the latest password
 		// change so subsequent tests don't fail

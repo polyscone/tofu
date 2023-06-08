@@ -11,8 +11,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
@@ -93,6 +93,7 @@ func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName strin
 		"HasPathPrefix": tmplHasPathPrefix(mux),
 		"HasString":     tmplHasString,
 		"ToStrings":     tmplToStrings,
+		"Join":          tmplJoin,
 		"UnescapeHTML":  tmplUnescapeHTML,
 	}
 
@@ -121,11 +122,11 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 	return csrf.MaskedToken(ctx), nil
 }
 
-func (h *Handler) emptyPassport(ctx context.Context) passport.Passport {
-	return passport.New(h.passportStore, passport.User{})
+func (h *Handler) emptyPassport(ctx context.Context) guard.Passport {
+	return guard.New(h.passportStore, guard.User{})
 }
 
-func (h *Handler) Passport(ctx context.Context) passport.Passport {
+func (h *Handler) Passport(ctx context.Context) guard.Passport {
 	if h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
 		return h.emptyPassport(ctx)
 	}
@@ -141,14 +142,14 @@ func (h *Handler) Passport(ctx context.Context) passport.Passport {
 		permissions = append(permissions, role.Permissions...)
 	}
 
-	return passport.New(h.passportStore, passport.User{
+	return guard.New(h.passportStore, guard.User{
 		ID:          user.ID,
 		IsSuper:     user.IsSuper(),
 		Permissions: permissions,
 	})
 }
 
-func (h *Handler) PassportByEmail(ctx context.Context, email string) (passport.Passport, error) {
+func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Passport, error) {
 	user, err := h.Store.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return h.emptyPassport(ctx), errors.Tracef(err)
@@ -159,7 +160,7 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (passport.P
 		permissions = append(permissions, role.Permissions...)
 	}
 
-	p := passport.New(h.passportStore, passport.User{
+	p := guard.New(h.passportStore, guard.User{
 		ID:          user.ID,
 		IsSuper:     user.IsSuper(),
 		Permissions: permissions,
@@ -327,7 +328,6 @@ func (h *Handler) view(name string) *template.Template {
 
 func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, name string, dataFunc ViewDataFunc) {
 	ctx := r.Context()
-
 	passport := h.Passport(ctx)
 
 	data := ViewData{
@@ -547,7 +547,7 @@ func (h *Handler) AddFlashImportantf(ctx context.Context, format string, a ...an
 	h.Sessions.Set(ctx, sess.FlashImportant, flash)
 }
 
-type PredicateFunc func(p passport.Passport) bool
+type PredicateFunc func(p guard.Passport) bool
 
 func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
 	ctx := r.Context()

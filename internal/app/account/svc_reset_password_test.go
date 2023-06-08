@@ -34,13 +34,13 @@ func TestResetPassword(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.PasswordReset{Email: user.Email})
-
 		newPassword := errors.Must(account.NewPassword("password123"))
 		err := svc.ResetPassword(ctx, validGuard, user.ID, newPassword.String(), newPassword.String())
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		events.Expect(account.PasswordReset{Email: user.Email})
 
 		user := errors.Must(store.FindUserByID(ctx, user.ID))
 

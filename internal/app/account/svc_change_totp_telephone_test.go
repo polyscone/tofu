@@ -38,16 +38,16 @@ func TestChangeTOTPTelephone(t *testing.T) {
 
 		newTelephone := errors.Must(text.NewTel("+81 70 0000 0000"))
 
+		err := svc.ChangeTOTPTelephone(ctx, validGuard, unverifiedTOTP.ID, newTelephone.String())
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		events.Expect(account.TOTPTelephoneChanged{
 			Email:        unverifiedTOTP.Email,
 			OldTelephone: unverifiedTOTP.TOTPTelephone,
 			NewTelephone: newTelephone.String(),
 		})
-
-		err := svc.ChangeTOTPTelephone(ctx, validGuard, unverifiedTOTP.ID, newTelephone.String())
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		unverifiedTOTP = errors.Must(store.FindUserByID(ctx, unverifiedTOTP.ID))
 

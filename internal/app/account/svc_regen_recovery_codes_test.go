@@ -35,8 +35,6 @@ func TestRegenRecoveryCodes(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.RecoveryCodesRegenerated{Email: activatedTOTP.Email})
-
 		originals := activatedTOTP.RecoveryCodes
 
 		alg := errors.Must(otp.NewAlgorithm(activatedTOTP.TOTPAlgorithm))
@@ -47,6 +45,8 @@ func TestRegenRecoveryCodes(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		events.Expect(account.RecoveryCodesRegenerated{Email: activatedTOTP.Email})
 
 		user := errors.Must(store.FindUserByID(ctx, activatedTOTP.ID))
 

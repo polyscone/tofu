@@ -25,7 +25,7 @@
 		const actions = node.querySelector(".recovery-code-list__actions")
 
 		if (codeList) {
-			actions.style.display = ''
+			actions.style.display = ""
 		}
 
 		const codes = Array.from(codeList.querySelectorAll("li")).map(li => li.innerText.trim()).filter(code => !!code)

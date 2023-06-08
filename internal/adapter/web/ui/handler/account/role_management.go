@@ -3,8 +3,8 @@ package account
 import (
 	"net/http"
 
+	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app"
@@ -16,25 +16,25 @@ import (
 
 func RoleManagement(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/roles", func(mux *router.ServeMux) {
-		mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanViewRoles() }))
+		mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanViewRoles() }))
 
 		mux.Get("/", roleListGet(h), "account.management.role.list")
 
 		mux.Prefix("/new", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanCreateRoles() }))
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanCreateRoles() }))
 
 			mux.Get("/", roleNewGet(h), "account.management.role.new")
 			mux.Post("/", roleNewPost(h), "account.management.role.new.post")
 		})
 
 		mux.Prefix("/:roleID", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanEditRoles() }))
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanEditRoles() }))
 
 			mux.Get("/", roleEditGet(h), "account.management.role.edit")
 			mux.Post("/", roleEditPost(h), "account.management.role.edit.post")
 
 			mux.Prefix("/delete", func(mux *router.ServeMux) {
-				mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanDeleteRoles() }))
+				mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanDeleteRoles() }))
 
 				mux.Get("/", roleDeleteGet(h), "account.management.role.delete")
 				mux.Post("/", roleDeletePost(h), "account.management.role.delete.post")
@@ -69,7 +69,7 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 func roleNewGet(h *handler.Handler) http.HandlerFunc {
 	h.SetViewVars("account/management/role/new", func(r *http.Request) (handler.Vars, error) {
 		vars := handler.Vars{
-			"PermissionGroups": passport.PermissionGroups,
+			"PermissionGroups": guard.PermissionGroups,
 		}
 
 		return vars, nil
@@ -93,10 +93,10 @@ func roleNewPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
+		permissions := guard.ExpandPermissions(input.Permissions)
 
-		role, err := h.Account.CreateRole(ctx, passport, input.Name, input.Description, input.Permissions)
+		role, err := h.Account.CreateRole(ctx, passport, input.Name, input.Description, permissions)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/management/role/new", nil) {
 			return
 		}
@@ -130,7 +130,7 @@ func roleEditGet(h *handler.Handler) http.HandlerFunc {
 
 		vars := handler.Vars{
 			"Role":             role,
-			"PermissionGroups": passport.PermissionGroups,
+			"PermissionGroups": guard.PermissionGroups,
 		}
 
 		return vars, nil
@@ -165,10 +165,10 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
+		permissions := guard.ExpandPermissions(input.Permissions)
 
-		role, err := h.Account.EditRole(ctx, passport, roleID, input.Name, input.Description, input.Permissions)
+		role, err := h.Account.EditRole(ctx, passport, roleID, input.Name, input.Description, permissions)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/management/role/edit", nil) {
 			return
 		}
@@ -230,7 +230,6 @@ func roleDeletePost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
 
 		role, err := h.Account.DeleteRole(ctx, passport, roleID)

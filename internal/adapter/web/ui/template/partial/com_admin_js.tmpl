@@ -1,0 +1,37 @@
+{{define "com_admin_js"}}
+
+<script>
+	onMount("[data-implied-permissions]", node => {
+		const implied = node.dataset.impliedPermissions.split("|")
+
+		for (const name of implied) {
+			const checkboxes = Array.from(document.querySelectorAll(`input[value="${name}"]`))
+
+			for (const checkbox of checkboxes) {
+				checkbox.addEventListener("change", e => {
+					if (checkbox.checked) {
+						return
+					}
+
+					node.checked = false
+				})
+			}
+		}
+
+		node.addEventListener("change", e => {
+			if (!node.checked) {
+				return
+			}
+
+			for (const name of implied) {
+				const checkboxes = Array.from(document.querySelectorAll(`input[value="${name}"]`))
+
+				for (const checkbox of checkboxes) {
+					checkbox.checked = true
+				}
+			}
+		})
+	})
+</script>
+
+{{end}}

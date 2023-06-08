@@ -23,8 +23,6 @@ func TestSignInWithPassword(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.SignedInWithPassword{Email: activated.Email})
-
 		if !activated.LastSignedInAt.IsZero() {
 			t.Errorf("want last signed in at to be zero; got %v", activated.LastSignedInAt)
 		}
@@ -33,6 +31,8 @@ func TestSignInWithPassword(t *testing.T) {
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
+
+		events.Expect(account.SignedInWithPassword{Email: activated.Email})
 
 		activated, err = store.FindUserByID(ctx, activated.ID)
 		if err != nil {

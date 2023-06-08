@@ -2,9 +2,9 @@
 
 <script>
 	onMount("textarea", node => {
-		node.addEventListener('input', e => {
-			e.target.style.height = 'auto'
-			e.target.style.height = e.target.scrollHeight + 'px'
+		node.addEventListener("input", e => {
+			node.style.height = "auto"
+			node.style.height = node.scrollHeight + "px"
 		})
 	})
 
@@ -15,7 +15,7 @@
 		// This is to allow for styling invalid form elements after submittal
 		// in a more persistent way than is allowed with CSS only
 		node.addEventListener("invalid", e => {
-			const form = e.target.closest("form")
+			const form = node.closest("form")
 
 			if (form) {
 				form.dataset.invalid = true

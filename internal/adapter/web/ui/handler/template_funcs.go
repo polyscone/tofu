@@ -188,6 +188,10 @@ func tmplToStrings(value any) ([]string, error) {
 	}
 }
 
+func tmplJoin(strs []string, sep string) string {
+	return strings.Join(strs, sep)
+}
+
 func tmplUnescapeHTML(s string) template.HTML {
 	return template.HTML(s)
 }

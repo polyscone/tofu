@@ -3,8 +3,8 @@ package account
 import (
 	"net/http"
 
+	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/passport"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app/account"
@@ -15,12 +15,12 @@ import (
 
 func UserManagement(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/users", func(mux *router.ServeMux) {
-		mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanViewUsers() }))
+		mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanViewUsers() }))
 
 		mux.Get("/", userListGet(h), "account.management.user.list")
 
 		mux.Prefix("/:userID", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p passport.Passport) bool { return p.CanEditUsers() }))
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanEditUsers() }))
 
 			mux.Get("/", userEditGet(h), "account.management.user.edit")
 			mux.Post("/", userEditPost(h), "account.management.user.edit.post")
@@ -102,7 +102,6 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
 
 		user, err := h.Store.Account.FindUserByID(ctx, userID)

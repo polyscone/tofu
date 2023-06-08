@@ -7,7 +7,7 @@ import (
 	"html/template"
 	"net/url"
 
-	"github.com/polyscone/tofu/internal/adapter/web/passport"
+	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 )
@@ -112,7 +112,7 @@ type ViewData struct {
 	URL          URL
 	App          AppData
 	Session      SessionData
-	Passport     passport.Passport
+	Passport     guard.Passport
 	Com          any
 	Vars         Vars
 }

@@ -3,7 +3,7 @@ package account
 import (
 	"context"
 
-	"github.com/polyscone/tofu/internal/adapter/web/passport"
+	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/password"
@@ -16,6 +16,7 @@ type Reader interface {
 	FindRoleByID(ctx context.Context, id int) (*Role, error)
 	FindRoleByName(ctx context.Context, name string) (*Role, error)
 
+	CountUsersByRoleID(ctx context.Context, roleID int) (int, error)
 	FindUserByID(ctx context.Context, id int) (*User, error)
 	FindUserByEmail(ctx context.Context, email string) (*User, error)
 }
@@ -42,7 +43,7 @@ type Service struct {
 
 func NewService(broker event.Broker, store ReadWriter, hasher password.Hasher) (*Service, error) {
 	var permissions []Permission
-	for _, group := range passport.PermissionGroups {
+	for _, group := range guard.PermissionGroups {
 		for _, p := range group.Permissions {
 			permission, err := NewPermission(p.Name)
 			if err != nil {

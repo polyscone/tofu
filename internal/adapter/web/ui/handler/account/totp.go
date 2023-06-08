@@ -100,7 +100,6 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
@@ -193,7 +192,6 @@ func totpSetupAppPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
@@ -247,7 +245,6 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
@@ -305,7 +302,6 @@ func totpSetupSMSVerifyPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
@@ -365,7 +361,6 @@ func totpSetupActivateGet(h *handler.Handler) http.HandlerFunc {
 func totpSetupActivatePost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
@@ -417,7 +412,6 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
@@ -492,7 +486,6 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 

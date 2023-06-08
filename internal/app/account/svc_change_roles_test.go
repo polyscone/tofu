@@ -42,13 +42,12 @@ func TestChangeRoles(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		events.Expect(account.RolesChanged{Email: user.Email})
-		events.Expect(account.RolesChanged{Email: user.Email})
-
 		err := svc.ChangeRoles(ctx, validSuperGuard, user.ID, role1.ID, role2.ID, superRole.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		events.Expect(account.RolesChanged{Email: user.Email})
 
 		user = errors.Must(store.FindUserByID(ctx, user.ID))
 
@@ -72,6 +71,8 @@ func TestChangeRoles(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+
+		events.Expect(account.RolesChanged{Email: user.Email})
 	})
 
 	t.Run("error cases", func(t *testing.T) {

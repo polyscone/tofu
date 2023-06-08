@@ -45,7 +45,6 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
