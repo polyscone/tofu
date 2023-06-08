@@ -204,8 +204,14 @@ func roleDeleteGet(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
+		userCount, err := h.Store.Account.CountUsersByRoleID(ctx, roleID)
+		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
 		h.View(w, r, http.StatusOK, "account/management/role/delete", handler.Vars{
-			"Role": role,
+			"Role":      role,
+			"UserCount": userCount,
 		})
 	}
 }

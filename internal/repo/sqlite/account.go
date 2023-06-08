@@ -87,6 +87,18 @@ func (s *AccountStore) FindUserByEmail(ctx context.Context, email string) (*acco
 	return user, nil
 }
 
+func (s *AccountStore) CountUsersByRoleID(ctx context.Context, roleID int) (int, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, errors.Tracef(err)
+	}
+	defer tx.Rollback()
+
+	_, total, err := s.findUsers(ctx, tx, account.UserFilter{RoleID: &roleID})
+
+	return total, errors.Tracef(err)
+}
+
 func (s *AccountStore) FindUsersPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.User, int, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -270,17 +282,22 @@ func (s *AccountStore) SaveUser(ctx context.Context, user *account.User) error {
 }
 
 func (s *AccountStore) findUsers(ctx context.Context, tx *Tx, filter account.UserFilter) ([]*account.User, int, error) {
+	var joins []string
 	var where []string
 	var args []any
 
 	if v := filter.ID; v != nil {
-		where, args = append(where, "id = ?"), append(args, *v)
+		where, args = append(where, "u.id = ?"), append(args, *v)
 	}
 	if v := filter.Email; v != nil {
-		where, args = append(where, "email = ?"), append(args, *v)
+		where, args = append(where, "u.email = ?"), append(args, *v)
 	}
 	if v := filter.Search; v != nil && *v != "" {
-		where, args = append(where, "email LIKE ?"), append(args, "%"+*v+"%")
+		where, args = append(where, "u.email LIKE ?"), append(args, "%"+*v+"%")
+	}
+	if v := filter.RoleID; v != nil {
+		joins = append(joins, "INNER JOIN account__user_roles AS ur ON u.id = ur.user_id")
+		where, args = append(where, "ur.role_id = ?"), append(args, *v)
 	}
 
 	var sorts []string
@@ -291,23 +308,24 @@ func (s *AccountStore) findUsers(ctx context.Context, tx *Tx, filter account.Use
 
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
-			id,
-			email,
-			hashed_password,
-			totp_method,
-			totp_telephone,
-			totp_key,
-			totp_algorithm,
-			totp_digits,
-			totp_period_ns,
-			totp_verified_at,
-			totp_activated_at,
-			signed_up_at,
-			activated_at,
-			last_signed_in_at,
-			last_signed_in_method,
+			u.id,
+			u.email,
+			u.hashed_password,
+			u.totp_method,
+			u.totp_telephone,
+			u.totp_key,
+			u.totp_algorithm,
+			u.totp_digits,
+			u.totp_period_ns,
+			u.totp_verified_at,
+			u.totp_activated_at,
+			u.signed_up_at,
+			u.activated_at,
+			u.last_signed_in_at,
+			u.last_signed_in_method,
 			COUNT(1) OVER () AS total
-		FROM account__users
+		FROM account__users AS u
+		`+strings.Join(joins, "\n")+`
 		`+whereSQL(where)+`
 		`+orderBySQL(sorts)+`
 		`+limitOffsetSQL(filter.Limit, filter.Offset),

@@ -41,6 +41,7 @@ type UserFilter struct {
 	ID     *int
 	Email  *string
 	Search *string
+	RoleID *int
 
 	SortTopID int
 

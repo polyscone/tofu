@@ -9,6 +9,16 @@
 {{define "view_body"}}
 
 <div class="center">
+	{{if ge .Vars.UserCount 1}}
+		<div class="warning-banner">
+			{{if eq .Vars.UserCount 1}}
+				<p>{{.Vars.UserCount}} user currently has this role; deleting will remove it from them.</p>
+			{{else}}
+				<p>{{.Vars.UserCount}} users currently have this role; deleting will remove it from all of them.</p>
+			{{end}}
+		</div>
+	{{end}}
+
 	<p>Are you sure you want to permanently delete the role {{printf "%q" .Vars.Role.Name}}?</p>
 
 	<form action="{{Path "account.management.role.delete.post" ":roleID" .Vars.Role.ID}}{{.URL.Query.String}}" method="POST">
