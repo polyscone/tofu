@@ -14,7 +14,7 @@
 		<p><a href="{{Path "account.totp.setup.app"}}">Don't want to use SMS? Click here to use an app.</a></p>
 	</div>
 
-	<p>Enter the phone number that you would like to use below and we'll send you a passcode to verify your phone number has been entered correctly.</p>
+	<p>Enter the phone number that you'd like to use below and we'll send you a passcode to verify your phone number has been entered correctly.</p>
 
 	<form action="{{Path "account.totp.setup.sms.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
