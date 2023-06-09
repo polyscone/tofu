@@ -29,7 +29,7 @@ func TestVerifyTOTP(t *testing.T) {
 	password := "password"
 	activated := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, Activate: true})
 	unverifiedAppTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", Password: password, SetupTOTP: true})
-	unverifiedSMSTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "baz@qux.com", Password: password, SetupTOTPTelephone: true})
+	unverifiedSMSTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "baz@qux.com", Password: password, SetupTOTPTel: true})
 	activatedAppTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", Password: password, ActivateTOTP: true})
 
 	validGuard := verifyTOTPGuard{value: true}

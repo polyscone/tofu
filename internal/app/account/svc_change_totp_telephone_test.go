@@ -9,18 +9,17 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
-type changeTOTPTelephoneGuard struct {
+type changeTOTPTelGuard struct {
 	value bool
 }
 
-func (g changeTOTPTelephoneGuard) CanChangeTOTPTelephone(userID int) bool {
+func (g changeTOTPTelGuard) CanChangeTOTPTel(userID int) bool {
 	return g.value
 }
 
-func TestChangeTOTPTelephone(t *testing.T) {
+func TestChangeTOTPTel(t *testing.T) {
 	ctx := context.Background()
 	svc, broker, store := NewTestEnv(ctx)
 
@@ -29,29 +28,29 @@ func TestChangeTOTPTelephone(t *testing.T) {
 	unverifiedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", Password: password, SetupTOTP: true})
 	verifiedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, VerifyTOTP: true})
 
-	validGuard := changeTOTPTelephoneGuard{value: true}
-	invalidGuard := changeTOTPTelephoneGuard{value: false}
+	validGuard := changeTOTPTelGuard{value: true}
+	invalidGuard := changeTOTPTelGuard{value: false}
 
 	t.Run("success with unverified TOTP user", func(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		newTelephone := errors.Must(text.NewTel("+81 70 0000 0000"))
+		newTel := errors.Must(account.NewTel("+81 70 0000 0000"))
 
-		err := svc.ChangeTOTPTelephone(ctx, validGuard, unverifiedTOTP.ID, newTelephone.String())
+		err := svc.ChangeTOTPTel(ctx, validGuard, unverifiedTOTP.ID, newTel.String())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.TOTPTelephoneChanged{
-			Email:        unverifiedTOTP.Email,
-			OldTelephone: unverifiedTOTP.TOTPTelephone,
-			NewTelephone: newTelephone.String(),
+		events.Expect(account.TOTPTelChanged{
+			Email:  unverifiedTOTP.Email,
+			OldTel: unverifiedTOTP.TOTPTel,
+			NewTel: newTel.String(),
 		})
 
 		unverifiedTOTP = errors.Must(store.FindUserByID(ctx, unverifiedTOTP.ID))
 
-		if want, got := newTelephone.String(), unverifiedTOTP.TOTPTelephone; want != got {
+		if want, got := newTel.String(), unverifiedTOTP.TOTPTel; want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 	})
@@ -60,7 +59,7 @@ func TestChangeTOTPTelephone(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.ChangeTOTPTelephone(ctx, validGuard, unverifiedTOTP.ID, unverifiedTOTP.TOTPTelephone)
+		err := svc.ChangeTOTPTel(ctx, validGuard, unverifiedTOTP.ID, unverifiedTOTP.TOTPTel)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -71,20 +70,20 @@ func TestChangeTOTPTelephone(t *testing.T) {
 		defer events.Check(t)
 
 		tt := []struct {
-			name         string
-			guard        changeTOTPTelephoneGuard
-			userID       int
-			newTelephone string
-			want         error
+			name   string
+			guard  changeTOTPTelGuard
+			userID int
+			newTel string
+			want   error
 		}{
 			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
-			{"empty new telephone", validGuard, verifiedTOTP.ID, "", app.ErrMalformedInput},
-			{"new telephone missing country code", validGuard, verifiedTOTP.ID, "070 0000 0001", app.ErrMalformedInput},
+			{"empty new phone", validGuard, verifiedTOTP.ID, "", app.ErrMalformedInput},
+			{"new phone missing country code", validGuard, verifiedTOTP.ID, "070 0000 0001", app.ErrMalformedInput},
 			{"activated user without TOTP setup", validGuard, activated.ID, "+81 70 0000 0003", app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.ChangeTOTPTelephone(ctx, tc.guard, tc.userID, tc.newTelephone)
+				err := svc.ChangeTOTPTel(ctx, tc.guard, tc.userID, tc.newTel)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want %q; got %q", tc.want, err)
@@ -100,36 +99,36 @@ func TestChangeTOTPTelephone(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		oldTelephone := verifiedTOTP.TOTPTelephone
+		oldTel := verifiedTOTP.TOTPTel
 
-		execute := func(newTelephone text.Tel) error {
-			err := svc.ChangeTOTPTelephone(ctx, validGuard, verifiedTOTP.ID, newTelephone.String())
+		execute := func(newTel account.Tel) error {
+			err := svc.ChangeTOTPTel(ctx, validGuard, verifiedTOTP.ID, newTel.String())
 			if err == nil {
-				events.Expect(account.TOTPTelephoneChanged{
-					Email:        verifiedTOTP.Email,
-					OldTelephone: oldTelephone,
-					NewTelephone: newTelephone.String(),
+				events.Expect(account.TOTPTelChanged{
+					Email:  verifiedTOTP.Email,
+					OldTel: oldTel,
+					NewTel: newTel.String(),
 				})
 
-				// Keep the old telephone up to date with the latest telephone
+				// Keep the old phone up to date with the latest phone
 				// change so subsequent tests compare on the correct value
-				oldTelephone = newTelephone.String()
+				oldTel = newTel.String()
 			}
 
 			return err
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(newTelephone text.Tel) bool {
-				err := execute(newTelephone)
+			quick.Check(t, func(newTel account.Tel) bool {
+				err := execute(newTel)
 
 				return !errors.Is(err, app.ErrMalformedInput)
 			})
 		})
 
-		t.Run("invalid new telephone", func(t *testing.T) {
-			quick.Check(t, func(newTelephone quick.Invalid[text.Tel]) bool {
-				err := execute(newTelephone.Unwrap())
+		t.Run("invalid new phone", func(t *testing.T) {
+			quick.Check(t, func(newTel quick.Invalid[account.Tel]) bool {
+				err := execute(newTel.Unwrap())
 
 				return errors.Is(err, app.ErrMalformedInput)
 			})

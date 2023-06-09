@@ -3,7 +3,7 @@ CREATE TABLE account__users (
   email                 TEXT NOT NULL UNIQUE COLLATE NOCASE,
   hashed_password       TEXT,
   totp_method           TEXT NOT NULL,
-  totp_telephone        TEXT NOT NULL,
+  totp_tel              TEXT NOT NULL,
   totp_key              TEXT,
   totp_algorithm        TEXT NOT NULL,
   totp_digits           INTEGER NOT NULL,

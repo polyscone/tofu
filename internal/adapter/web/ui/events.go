@@ -24,7 +24,7 @@ func accountSignedInWithPasswordHandler(tenant *handler.Tenant, h *handler.Handl
 
 		if user.HasActivatedTOTP() && user.TOTPMethod == account.TOTPMethodSMS.String() {
 			background.Go(func() {
-				if err := h.SendTOTPSMS(user.Email, user.TOTPTelephone); err != nil {
+				if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
 					logger.PrintError(errors.Tracef(err))
 				}
 			})

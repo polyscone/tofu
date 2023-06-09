@@ -1,4 +1,4 @@
-package text
+package account
 
 import (
 	"math/rand"
@@ -28,7 +28,7 @@ func NewTel(tel string) (Tel, error) {
 	}
 
 	if !validTel.MatchString(tel) {
-		return "", errors.Tracef("invalid telephone number")
+		return "", errors.Tracef("invalid phone number")
 	}
 
 	return Tel(tel), nil

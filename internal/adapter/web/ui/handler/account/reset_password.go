@@ -8,11 +8,11 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/logger"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
 func ResetPassword(h *handler.Handler, mux *router.ServeMux) {
@@ -42,7 +42,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		if _, err := text.NewEmail(input.Email); err != nil {
+		if _, err := account.NewEmail(input.Email); err != nil {
 			h.ErrorViewFunc(w, r, errors.Tracef(err), "account/reset_password/request", func(data *handler.ViewData) {
 				data.Errors = errors.Map{"email": err}
 			})

@@ -8,7 +8,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/password"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
 const SignInMethodWebsite = "Website"
@@ -22,7 +21,7 @@ type User struct {
 	Email              string
 	HashedPassword     []byte
 	TOTPMethod         string
-	TOTPTelephone      string
+	TOTPTel            string
 	TOTPKey            []byte
 	TOTPAlgorithm      string
 	TOTPDigits         int
@@ -49,7 +48,7 @@ type UserFilter struct {
 	Offset int
 }
 
-func NewUser(email text.Email) *User {
+func NewUser(email Email) *User {
 	return &User{Email: email.String()}
 }
 
@@ -231,23 +230,23 @@ func (u *User) ActivateTOTP() error {
 	return nil
 }
 
-func (u *User) ChangeTOTPTelephone(newTelephone text.Tel) error {
+func (u *User) ChangeTOTPTel(newTel Tel) error {
 	if len(u.TOTPKey) == 0 {
-		return errors.Tracef(app.ErrBadRequest, "cannot change TOTP telephone without a key setup")
+		return errors.Tracef(app.ErrBadRequest, "cannot change TOTP phone without a key setup")
 	}
 
-	if u.TOTPTelephone == newTelephone.String() {
+	if u.TOTPTel == newTel.String() {
 		return nil
 	}
 
-	oldTelephone := u.TOTPTelephone
+	oldTel := u.TOTPTel
 
-	u.TOTPTelephone = newTelephone.String()
+	u.TOTPTel = newTel.String()
 
-	u.Events.Enqueue(TOTPTelephoneChanged{
-		Email:        u.Email,
-		OldTelephone: oldTelephone,
-		NewTelephone: u.TOTPTelephone,
+	u.Events.Enqueue(TOTPTelChanged{
+		Email:  u.Email,
+		OldTel: oldTel,
+		NewTel: u.TOTPTel,
 	})
 
 	return nil
@@ -309,7 +308,7 @@ func (u *User) DisableTOTP(password Password, hasher password.Hasher) error {
 	}
 
 	u.TOTPMethod = TOTPMethodNone.String()
-	u.TOTPTelephone = ""
+	u.TOTPTel = ""
 	u.TOTPKey = nil
 	u.TOTPAlgorithm = ""
 	u.TOTPDigits = 0

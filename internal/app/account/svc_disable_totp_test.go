@@ -24,8 +24,8 @@ func TestDisableTOTP(t *testing.T) {
 	svc, broker, store := NewTestEnv(ctx)
 
 	password := "password"
-	verifiedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, SetupTOTPTelephone: true, VerifyTOTP: true})
-	activatedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", Password: password, SetupTOTPTelephone: true, ActivateTOTP: true})
+	verifiedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, SetupTOTPTel: true, VerifyTOTP: true})
+	activatedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", Password: password, SetupTOTPTel: true, ActivateTOTP: true})
 
 	validGuard := disableTOTPGuard{value: true}
 	invalidGuard := disableTOTPGuard{value: false}
@@ -49,8 +49,8 @@ func TestDisableTOTP(t *testing.T) {
 		if user.TOTPMethod != account.TOTPMethodNone.String() {
 			t.Error("want TOTP method to be cleared")
 		}
-		if user.TOTPTelephone != "" {
-			t.Error("want TOTP telephone to be cleared")
+		if user.TOTPTel != "" {
+			t.Error("want TOTP tel to be cleared")
 		}
 		if user.TOTPKey != nil {
 			t.Error("want TOTP key to be cleared")

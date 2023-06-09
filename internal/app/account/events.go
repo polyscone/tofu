@@ -28,10 +28,10 @@ type RecoveryCodesRegenerated struct {
 	Email string
 }
 
-type TOTPTelephoneChanged struct {
-	Email        string
-	OldTelephone string
-	NewTelephone string
+type TOTPTelChanged struct {
+	Email  string
+	OldTel string
+	NewTel string
 }
 
 type PasswordChanged struct {

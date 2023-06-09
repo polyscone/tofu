@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/session"
-	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type ctxKey byte

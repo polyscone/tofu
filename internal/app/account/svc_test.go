@@ -10,7 +10,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/repo/sqlite"
 )
 
@@ -26,23 +25,23 @@ func NewTestEnv(ctx context.Context) (*account.Service, event.Broker, account.Re
 }
 
 type TestUser struct {
-	Email              string
-	Password           string
-	Activate           bool
-	SetupTOTP          bool
-	SetupTOTPTelephone bool
-	VerifyTOTP         bool
-	ActivateTOTP       bool
+	Email        string
+	Password     string
+	Activate     bool
+	SetupTOTP    bool
+	SetupTOTPTel bool
+	VerifyTOTP   bool
+	ActivateTOTP bool
 }
 
 func MustAddUser(t *testing.T, ctx context.Context, store account.ReadWriter, tu TestUser) *account.User {
 	t.Helper()
 
 	tu.VerifyTOTP = tu.VerifyTOTP || tu.ActivateTOTP
-	tu.SetupTOTP = tu.SetupTOTP || tu.SetupTOTPTelephone || tu.VerifyTOTP || tu.ActivateTOTP
+	tu.SetupTOTP = tu.SetupTOTP || tu.SetupTOTPTel || tu.VerifyTOTP || tu.ActivateTOTP
 	tu.Activate = tu.Activate || tu.SetupTOTP || tu.VerifyTOTP
 
-	user := account.NewUser(errors.Must(text.NewEmail(tu.Email)))
+	user := account.NewUser(errors.Must(account.NewEmail(tu.Email)))
 
 	errors.Must0(user.SignUp())
 
@@ -58,8 +57,8 @@ func MustAddUser(t *testing.T, ctx context.Context, store account.ReadWriter, tu
 	if tu.SetupTOTP {
 		errors.Must0(user.SetupTOTP())
 	}
-	if tu.SetupTOTPTelephone {
-		errors.Must0(user.ChangeTOTPTelephone(text.GenerateTel()))
+	if tu.SetupTOTPTel {
+		errors.Must0(user.ChangeTOTPTel(account.GenerateTel()))
 	}
 	if tu.VerifyTOTP {
 		alg := errors.Must(otp.NewAlgorithm(user.TOTPAlgorithm))

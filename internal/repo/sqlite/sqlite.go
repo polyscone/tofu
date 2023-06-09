@@ -15,7 +15,7 @@ import (
 
 	"github.com/mattn/go-sqlite3"
 	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 	"github.com/polyscone/tofu/internal/repo"
 )
 

@@ -215,7 +215,7 @@ func totpSetupSMSGet(h *handler.Handler) http.HandlerFunc {
 		}
 
 		vars := handler.Vars{
-			"TOTPTelephone": user.TOTPTelephone,
+			"TOTPTel": user.TOTPTel,
 		}
 
 		return vars, nil
@@ -237,7 +237,7 @@ func totpSetupSMSGet(h *handler.Handler) http.HandlerFunc {
 func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Telephone string
+			Tel string
 		}
 		err := httputil.DecodeForm(&input, r)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
@@ -254,11 +254,11 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		// We try to send the TOTP SMS first because we don't want to save
-		// a telephone number that the SMS provider thinks is invalid
-		err = h.SendTOTPSMS(user.Email, input.Telephone)
+		// a phone number that the SMS provider thinks is invalid
+		err = h.SendTOTPSMS(user.Email, input.Tel)
 		if err != nil {
 			if errors.Is(err, sms.ErrInvalidNumber) {
-				errs := errors.Map{"new telephone": errors.New("invalid phone number")}
+				errs := errors.Map{"new phone": errors.New("invalid phone number")}
 
 				err = errs.Tracef(app.ErrInvalidInput)
 			}
@@ -268,7 +268,7 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Account.ChangeTOTPTelephone(ctx, passport, userID, input.Telephone)
+		err = h.Account.ChangeTOTPTel(ctx, passport, userID, input.Tel)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/totp/setup/sms", nil) {
 			return
 		}
@@ -325,7 +325,7 @@ func totpSendSMSPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		background.Go(func() {
-			if err := h.SendTOTPSMS(user.Email, user.TOTPTelephone); err != nil {
+			if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
 				logger.PrintError(errors.Tracef(err))
 			}
 		})

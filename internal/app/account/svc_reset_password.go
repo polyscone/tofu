@@ -5,7 +5,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
 type ResetPasswordGuard interface {
@@ -15,7 +14,7 @@ type ResetPasswordGuard interface {
 func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, userID int, newPassword, newPasswordCheck string) error {
 	var input struct {
 		userID           int
-		email            text.Email
+		email            Email
 		newPassword      Password
 		newPasswordCheck Password
 	}

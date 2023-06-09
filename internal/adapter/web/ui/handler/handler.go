@@ -300,7 +300,7 @@ func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
 	return errors.Tracef(h.Tenant.SMS.Messager.Send(ctx, h.Tenant.SMS.From, to, body))
 }
 
-func (h *Handler) SendTOTPSMS(email, telephone string) error {
+func (h *Handler) SendTOTPSMS(email, tel string) error {
 	ctx := context.Background()
 
 	user, err := h.Store.Account.FindUserByEmail(ctx, email)
@@ -313,11 +313,11 @@ func (h *Handler) SendTOTPSMS(email, telephone string) error {
 		return errors.Tracef(err)
 	}
 
-	if telephone == "" {
-		telephone = user.TOTPTelephone
+	if tel == "" {
+		tel = user.TOTPTel
 	}
 
-	err = h.SendSMS(ctx, telephone, totp)
+	err = h.SendSMS(ctx, tel, totp)
 
 	return errors.Tracef(err)
 }

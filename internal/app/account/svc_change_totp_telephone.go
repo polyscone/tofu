@@ -5,20 +5,19 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
-type ChangeTOTPTelephoneGuard interface {
-	CanChangeTOTPTelephone(userID int) bool
+type ChangeTOTPTelGuard interface {
+	CanChangeTOTPTel(userID int) bool
 }
 
-func (s *Service) ChangeTOTPTelephone(ctx context.Context, guard ChangeTOTPTelephoneGuard, userID int, newTelephone string) error {
+func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, userID int, newTel string) error {
 	var input struct {
-		userID       int
-		newTelephone text.Tel
+		userID int
+		newTel Tel
 	}
 	{
-		if !guard.CanChangeTOTPTelephone(userID) {
+		if !guard.CanChangeTOTPTel(userID) {
 			return errors.Tracef(app.ErrUnauthorised)
 		}
 
@@ -27,8 +26,8 @@ func (s *Service) ChangeTOTPTelephone(ctx context.Context, guard ChangeTOTPTelep
 
 		input.userID = userID
 
-		if input.newTelephone, err = text.NewTel(newTelephone); err != nil {
-			errs.Set("new telephone", err)
+		if input.newTel, err = NewTel(newTel); err != nil {
+			errs.Set("new phone", err)
 		}
 
 		if errs != nil {
@@ -41,7 +40,7 @@ func (s *Service) ChangeTOTPTelephone(ctx context.Context, guard ChangeTOTPTelep
 		return errors.Tracef(err)
 	}
 
-	if err := user.ChangeTOTPTelephone(input.newTelephone); err != nil {
+	if err := user.ChangeTOTPTel(input.newTel); err != nil {
 		return errors.Tracef(err)
 	}
 

@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/polyscone/tofu/internal/pkg/valobj/uuid"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 const (

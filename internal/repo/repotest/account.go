@@ -74,7 +74,7 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 					Email:              "Email 2",
 					HashedPassword:     []byte("HashedPassword"),
 					TOTPMethod:         "TOTPMethod",
-					TOTPTelephone:      "TOTPTelephone",
+					TOTPTel:            "TOTPTel",
 					TOTPKey:            []byte("TOTPKey"),
 					TOTPAlgorithm:      "TOTPAlgorithm",
 					TOTPDigits:         123,
@@ -411,8 +411,8 @@ func accountUsersEqual(t *testing.T, want, got *account.User) {
 	if want, got := want.TOTPMethod, got.TOTPMethod; want != got {
 		t.Errorf("want totp method to be %v; got %v", want, got)
 	}
-	if want, got := want.TOTPTelephone, got.TOTPTelephone; want != got {
-		t.Errorf("want totp telephone to be %v; got %v", want, got)
+	if want, got := want.TOTPTel, got.TOTPTel; want != got {
+		t.Errorf("want totp tel to be %v; got %v", want, got)
 	}
 	if want, got := want.TOTPKey, got.TOTPKey; !bytes.Equal(want, got) {
 		t.Errorf("want totp key to be %v; got %v", want, got)

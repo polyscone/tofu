@@ -54,7 +54,7 @@ func (p Passport) CanActivateTOTP(userID int) bool {
 	return p.userID == userID
 }
 
-func (p Passport) CanChangeTOTPTelephone(userID int) bool {
+func (p Passport) CanChangeTOTPTel(userID int) bool {
 	return p.userID == userID
 }
 

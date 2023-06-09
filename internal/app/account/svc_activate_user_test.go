@@ -10,7 +10,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
 func TestActivateUser(t *testing.T) {
@@ -89,7 +88,7 @@ func TestActivateUser(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		execute := func(email text.Email, password, passwordCheck account.Password) error {
+		execute := func(email account.Email, password, passwordCheck account.Password) error {
 			err := svc.ActivateUser(ctx, email.String(), password.String(), passwordCheck.String())
 			if err == nil {
 				events.Expect(account.Activated{Email: email.String()})
@@ -99,7 +98,7 @@ func TestActivateUser(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(email text.Email, password account.Password) bool {
+			quick.Check(t, func(email account.Email, password account.Password) bool {
 				err := execute(email, password, password)
 
 				return !errors.Is(err, app.ErrMalformedInput)
@@ -107,7 +106,7 @@ func TestActivateUser(t *testing.T) {
 		})
 
 		t.Run("invalid email", func(t *testing.T) {
-			quick.Check(t, func(email quick.Invalid[text.Email], password account.Password) bool {
+			quick.Check(t, func(email quick.Invalid[account.Email], password account.Password) bool {
 				err := execute(email.Unwrap(), password, password)
 
 				return errors.Is(err, app.ErrMalformedInput)
@@ -115,7 +114,7 @@ func TestActivateUser(t *testing.T) {
 		})
 
 		t.Run("invalid password", func(t *testing.T) {
-			quick.Check(t, func(email text.Email, password quick.Invalid[account.Password]) bool {
+			quick.Check(t, func(email account.Email, password quick.Invalid[account.Password]) bool {
 				err := execute(email, password.Unwrap(), password.Unwrap())
 
 				return errors.Is(err, app.ErrMalformedInput)
@@ -123,7 +122,7 @@ func TestActivateUser(t *testing.T) {
 		})
 
 		t.Run("mismatched password", func(t *testing.T) {
-			quick.Check(t, func(email text.Email, password account.Password) bool {
+			quick.Check(t, func(email account.Email, password account.Password) bool {
 				mismatch := bytes.Clone(password)
 				mismatch[0]++
 

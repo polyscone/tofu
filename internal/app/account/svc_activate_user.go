@@ -5,12 +5,11 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 )
 
 func (s *Service) ActivateUser(ctx context.Context, email, password, passwordCheck string) error {
 	var input struct {
-		email         text.Email
+		email         Email
 		password      Password
 		passwordCheck Password
 	}
@@ -20,7 +19,7 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 
 		input.passwordCheck, _ = NewPassword(passwordCheck)
 
-		if input.email, err = text.NewEmail(email); err != nil {
+		if input.email, err = NewEmail(email); err != nil {
 			errs.Set("email", err)
 		}
 		if input.password, err = NewPassword(password); err != nil {

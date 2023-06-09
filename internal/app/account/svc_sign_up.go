@@ -5,19 +5,18 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/pkg/valobj/text"
 	"github.com/polyscone/tofu/internal/repo"
 )
 
 func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 	var input struct {
-		email text.Email
+		email Email
 	}
 	{
 		var err error
 		var errs errors.Map
 
-		if input.email, err = text.NewEmail(email); err != nil {
+		if input.email, err = NewEmail(email); err != nil {
 			errs.Set("email", err)
 		}
 
