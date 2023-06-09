@@ -20,27 +20,24 @@ func (g setupTOTPGuard) CanSetupTOTP(userID int) bool {
 }
 
 func TestSetupTOTP(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
-	password := "password"
-	activated := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Password: password, Activate: true})
-	verifiedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "lisa@jones.com", Password: password, VerifyTOTP: true})
-	activatedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, ActivateTOTP: true})
-
 	validGuard := setupTOTPGuard{value: true}
 	invalidGuard := setupTOTPGuard{value: false}
 
 	t.Run("success with activated user", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.SetupTOTP(ctx, validGuard, activated.ID)
+		err := svc.SetupTOTP(ctx, validGuard, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		user := errors.Must(store.FindUserByID(ctx, activated.ID))
+		user = errors.Must(store.FindUserByID(ctx, user.ID))
 
 		if len(user.TOTPKey) == 0 {
 			t.Error("want TOTP key to be populated")
@@ -66,12 +63,12 @@ func TestSetupTOTP(t *testing.T) {
 
 		oldTOTPKey := user.TOTPKey
 
-		err = svc.SetupTOTP(ctx, validGuard, activated.ID)
+		err = svc.SetupTOTP(ctx, validGuard, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		user = errors.Must(store.FindUserByID(ctx, activated.ID))
+		user = errors.Must(store.FindUserByID(ctx, user.ID))
 
 		if bytes.Equal(oldTOTPKey, user.TOTPKey) {
 			t.Error("want TOTP key to change")
@@ -79,15 +76,20 @@ func TestSetupTOTP(t *testing.T) {
 	})
 
 	t.Run("success with activated user and verified TOTP", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "lisa@jones.com", VerifyTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.SetupTOTP(ctx, validGuard, verifiedTOTP.ID)
+		err := svc.SetupTOTP(ctx, validGuard, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		user := errors.Must(store.FindUserByID(ctx, verifiedTOTP.ID))
+		user = errors.Must(store.FindUserByID(ctx, user.ID))
 
 		if len(user.TOTPKey) == 0 {
 			t.Error("want TOTP key to be populated")
@@ -113,6 +115,11 @@ func TestSetupTOTP(t *testing.T) {
 	})
 
 	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -123,7 +130,7 @@ func TestSetupTOTP(t *testing.T) {
 			want   error
 		}{
 			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
-			{"TOTP already setup and activated", validGuard, activatedTOTP.ID, app.ErrBadRequest},
+			{"TOTP already setup and activated", validGuard, user.ID, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

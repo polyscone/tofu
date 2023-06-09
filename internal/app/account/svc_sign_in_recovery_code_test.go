@@ -13,55 +13,51 @@ import (
 )
 
 func TestSignInWithRecoveryCode(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
-	password := "password"
-	activated := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Password: password, Activate: true})
-	activatedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, ActivateTOTP: true})
-
 	t.Run("success for valid user id and correct recovery code", func(t *testing.T) {
-		t.Run("last signed in should not update on password auth", func(t *testing.T) {
-			if !activatedTOTP.LastSignedInAt.IsZero() {
-				t.Errorf("want last signed in at to be zero; got %v", activatedTOTP.LastSignedInAt)
-			}
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
 
-			err := svc.SignInWithPassword(ctx, activatedTOTP.Email, "password")
-			if err != nil {
-				t.Errorf("want <nil>; got %q", err)
-			}
+		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
-			if !activatedTOTP.LastSignedInAt.IsZero() {
-				t.Errorf("want last signed in at to be zero; got %v", activatedTOTP.LastSignedInAt)
-			}
-		})
+		if !user.LastSignedInAt.IsZero() {
+			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
+		}
 
-		events := testutil.NewEventLog(broker)
-		defer events.Check(t)
-
-		nRecoveryCodes := len(activatedTOTP.RecoveryCodes)
-		usedRecoveryCode := activatedTOTP.RecoveryCodes[0]
-
-		err := svc.SignInWithRecoveryCode(ctx, activatedTOTP.ID, usedRecoveryCode)
+		err := svc.SignInWithPassword(ctx, user.Email, "password")
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
-		events.Expect(account.SignedInWithRecoveryCode{Email: activatedTOTP.Email})
+		if !user.LastSignedInAt.IsZero() {
+			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
+		}
 
-		activatedTOTP, err = store.FindUserByID(ctx, activatedTOTP.ID)
+		events := testutil.NewEventLog(broker)
+		defer events.Check(t)
+
+		nRecoveryCodes := len(user.RecoveryCodes)
+		usedRecoveryCode := user.RecoveryCodes[0]
+
+		err = svc.SignInWithRecoveryCode(ctx, user.ID, usedRecoveryCode)
+		if err != nil {
+			t.Errorf("want <nil>; got %q", err)
+		}
+
+		events.Expect(account.SignedInWithRecoveryCode{Email: user.Email})
+
+		user, err = store.FindUserByID(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if activatedTOTP.LastSignedInAt.IsZero() {
+		if user.LastSignedInAt.IsZero() {
 			t.Error("want last signed in at to be populated; got zero")
 		}
 
-		if want, got := nRecoveryCodes-1, len(activatedTOTP.RecoveryCodes); want != got {
+		if want, got := nRecoveryCodes-1, len(user.RecoveryCodes); want != got {
 			t.Errorf("want %v recovery codes; got %v", want, got)
 		} else {
-			for _, rc := range activatedTOTP.RecoveryCodes {
+			for _, rc := range user.RecoveryCodes {
 				if rc == usedRecoveryCode {
 					t.Error("want used recovery code to be removed")
 				}
@@ -70,6 +66,12 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 	})
 
 	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user1 := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -81,10 +83,10 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			recoveryCode string
 			want         error
 		}{
-			{"empty user id correct recovery code", 0, activatedTOTP.RecoveryCodes[1], repo.ErrNotFound},
+			{"empty user id correct recovery code", 0, user2.RecoveryCodes[1], repo.ErrNotFound},
 			{"empty user id incorrect recovery code", 0, incorrectCode, repo.ErrNotFound},
-			{"activated user id incorrect recovery code", activatedTOTP.ID, incorrectCode, app.ErrInvalidInput},
-			{"activated user id without TOTP setup", activated.ID, incorrectCode, app.ErrBadRequest},
+			{"activated user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
+			{"activated user id without TOTP setup", user1.ID, incorrectCode, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -101,13 +103,18 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 	})
 
 	t.Run("properties", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
 		execute := func(code account.RecoveryCode) error {
-			err := svc.SignInWithRecoveryCode(ctx, activatedTOTP.ID, code.String())
+			err := svc.SignInWithRecoveryCode(ctx, user.ID, code.String())
 			if err == nil {
-				events.Expect(account.SignedInWithRecoveryCode{Email: activatedTOTP.Email})
+				events.Expect(account.SignedInWithRecoveryCode{Email: user.Email})
 			}
 
 			return err

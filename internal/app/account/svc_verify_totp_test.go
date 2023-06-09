@@ -23,44 +23,40 @@ func (g verifyTOTPGuard) CanVerifyTOTP(userID int) bool {
 }
 
 func TestVerifyTOTP(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
-	password := "password"
-	activated := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, Activate: true})
-	unverifiedAppTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", Password: password, SetupTOTP: true})
-	unverifiedSMSTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "baz@qux.com", Password: password, SetupTOTPTel: true})
-	activatedAppTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", Password: password, ActivateTOTP: true})
-
 	validGuard := verifyTOTPGuard{value: true}
 	invalidGuard := verifyTOTPGuard{value: false}
 
 	t.Run("success with activated user with app TOTP setup", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", SetupTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		alg := errors.Must(otp.NewAlgorithm(unverifiedAppTOTPUser.TOTPAlgorithm))
-		tb := errors.Must(otp.NewTimeBased(unverifiedAppTOTPUser.TOTPDigits, alg, time.Unix(0, 0), unverifiedAppTOTPUser.TOTPPeriod))
-		totp := errors.Must(tb.Generate(unverifiedAppTOTPUser.TOTPKey, time.Now()))
+		alg := errors.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
+		tb := errors.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
+		totp := errors.Must(tb.Generate(user.TOTPKey, time.Now()))
 
 		// Deliberately set the method to SMS so we can check it's changed by the service
-		unverifiedAppTOTPUser.TOTPMethod = account.TOTPMethodSMS.String()
+		user.TOTPMethod = account.TOTPMethodSMS.String()
 
-		err := svc.VerifyTOTP(ctx, validGuard, unverifiedAppTOTPUser.ID, totp, account.TOTPMethodApp.String())
+		err := svc.VerifyTOTP(ctx, validGuard, user.ID, totp, account.TOTPMethodApp.String())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		unverifiedAppTOTPUser = errors.Must(store.FindUserByID(ctx, unverifiedAppTOTPUser.ID))
+		user = errors.Must(store.FindUserByID(ctx, user.ID))
 
-		if want, got := account.TOTPMethodApp.String(), unverifiedAppTOTPUser.TOTPMethod; want != got {
+		if want, got := account.TOTPMethodApp.String(), user.TOTPMethod; want != got {
 			t.Errorf("want TOTP method to be %q; got %q", want, got)
 		}
 
-		if len(unverifiedAppTOTPUser.RecoveryCodes) == 0 {
+		if len(user.RecoveryCodes) == 0 {
 			t.Error("want at least one recovery code; got none")
 		} else {
-			for _, rc := range unverifiedAppTOTPUser.RecoveryCodes {
+			for _, rc := range user.RecoveryCodes {
 				if len(rc) == 0 {
 					t.Fatal("want code; got empty string")
 				}
@@ -69,31 +65,36 @@ func TestVerifyTOTP(t *testing.T) {
 	})
 
 	t.Run("success with activated user with SMS TOTP setup", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "baz@qux.com", SetupTOTPTel: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		alg := errors.Must(otp.NewAlgorithm(unverifiedSMSTOTPUser.TOTPAlgorithm))
-		tb := errors.Must(otp.NewTimeBased(unverifiedSMSTOTPUser.TOTPDigits, alg, time.Unix(0, 0), unverifiedSMSTOTPUser.TOTPPeriod))
-		totp := errors.Must(tb.Generate(unverifiedSMSTOTPUser.TOTPKey, time.Now()))
+		alg := errors.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
+		tb := errors.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
+		totp := errors.Must(tb.Generate(user.TOTPKey, time.Now()))
 
 		// Deliberately set the method to app so we can check it's changed by the service
-		unverifiedSMSTOTPUser.TOTPMethod = account.TOTPMethodSMS.String()
+		user.TOTPMethod = account.TOTPMethodSMS.String()
 
-		err := svc.VerifyTOTP(ctx, validGuard, unverifiedSMSTOTPUser.ID, totp, account.TOTPMethodApp.String())
+		err := svc.VerifyTOTP(ctx, validGuard, user.ID, totp, account.TOTPMethodApp.String())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		unverifiedSMSTOTPUser = errors.Must(store.FindUserByID(ctx, unverifiedSMSTOTPUser.ID))
+		user = errors.Must(store.FindUserByID(ctx, user.ID))
 
-		if want, got := account.TOTPMethodApp.String(), unverifiedSMSTOTPUser.TOTPMethod; want != got {
+		if want, got := account.TOTPMethodApp.String(), user.TOTPMethod; want != got {
 			t.Errorf("want TOTP method to be %q; got %q", want, got)
 		}
 
-		if len(unverifiedSMSTOTPUser.RecoveryCodes) == 0 {
+		if len(user.RecoveryCodes) == 0 {
 			t.Error("want at least one recovery code; got none")
 		} else {
-			for _, rc := range unverifiedSMSTOTPUser.RecoveryCodes {
+			for _, rc := range user.RecoveryCodes {
 				if len(rc) == 0 {
 					t.Fatal("want code; got empty string")
 				}
@@ -102,6 +103,13 @@ func TestVerifyTOTP(t *testing.T) {
 	})
 
 	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user1 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", SetupTOTP: true})
+		user3 := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", ActivateTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -113,10 +121,10 @@ func TestVerifyTOTP(t *testing.T) {
 			want     error
 		}{
 			{"unauthorised", invalidGuard, 0, nil, app.ErrUnauthorised},
-			{"empty user id correct TOTP", validGuard, 0, unverifiedAppTOTPUser, repo.ErrNotFound},
+			{"empty user id correct TOTP", validGuard, 0, user2, repo.ErrNotFound},
 			{"empty user id incorrect TOTP", validGuard, 0, nil, repo.ErrNotFound},
-			{"no TOTP user id correct TOTP", validGuard, activated.ID, unverifiedAppTOTPUser, nil},
-			{"already activated TOTP", validGuard, activatedAppTOTPUser.ID, activatedAppTOTPUser, app.ErrBadRequest},
+			{"no TOTP user id correct TOTP", validGuard, user1.ID, user2, nil},
+			{"already activated TOTP", validGuard, user3.ID, user3, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -140,11 +148,16 @@ func TestVerifyTOTP(t *testing.T) {
 	})
 
 	t.Run("properties", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
 		execute := func(totp account.TOTP) error {
-			return svc.VerifyTOTP(ctx, validGuard, activated.ID, totp.String(), account.TOTPMethodApp.String())
+			return svc.VerifyTOTP(ctx, validGuard, user.ID, totp.String(), account.TOTPMethodApp.String())
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {

@@ -34,7 +34,6 @@ func TestChangeRoles(t *testing.T) {
 		svc, broker, store := NewTestEnv(ctx)
 
 		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
-
 		role1 := MustAddRole(t, ctx, store, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 		role2 := MustAddRole(t, ctx, store, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 		superRole := errors.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
@@ -115,7 +114,6 @@ func TestChangeRoles(t *testing.T) {
 
 		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
 		super := MustAddUser(t, ctx, store, TestUser{Email: "super@bloggs.com", Activate: true})
-
 		role1 := MustAddRole(t, ctx, store, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 		role2 := MustAddRole(t, ctx, store, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 		superRole := errors.Must(store.FindRoleByName(ctx, account.SuperRole.Name))

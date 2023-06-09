@@ -21,64 +21,72 @@ func (g createRoleGuard) CanCreateRoles() bool {
 }
 
 func TestCreateRole(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
 	validGuard := createRoleGuard{value: true}
 	invalidGuard := createRoleGuard{value: false}
 
-	tt := []struct {
-		name  string
-		guard createRoleGuard
-		role  account.Role
-		want  error
-	}{
-		{"unauthorised", invalidGuard, account.Role{Name: ""}, app.ErrUnauthorised},
-		{"empty name", validGuard, account.Role{Name: ""}, app.ErrMalformedInput},
-		{"whitespace name", validGuard, account.Role{Name: "     "}, app.ErrMalformedInput},
-		{"valid name", validGuard, account.Role{Name: "Role 1"}, nil},
-		{"valid description", validGuard, account.Role{Name: "Role 2", Description: "Role description"}, nil},
-		{"conflicting name", validGuard, account.Role{Name: "ROLE 1"}, app.ErrConflictingInput},
-		{"with permissions", validGuard, account.Role{Name: "Role 3", Permissions: []string{"1", "2", "3"}}, nil},
-		{"with empty permission", validGuard, account.Role{Name: "Role 3", Permissions: []string{"1", "", "3"}}, app.ErrMalformedInput},
-	}
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			created, err := svc.CreateRole(ctx, tc.guard, tc.role.Name, tc.role.Description, tc.role.Permissions)
-			if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
-				t.Fatalf("want error: %v; got %v", tc.want, err)
-			}
+	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
 
-			if tc.want != nil {
-				return
-			}
+		events := testutil.NewEventLog(broker)
+		defer events.Check(t)
 
-			found := errors.Must(store.FindRoleByID(ctx, created.ID))
+		tt := []struct {
+			name  string
+			guard createRoleGuard
+			role  account.Role
+			want  error
+		}{
+			{"unauthorised", invalidGuard, account.Role{Name: ""}, app.ErrUnauthorised},
+			{"empty name", validGuard, account.Role{Name: ""}, app.ErrMalformedInput},
+			{"whitespace name", validGuard, account.Role{Name: "     "}, app.ErrMalformedInput},
+			{"valid name", validGuard, account.Role{Name: "Role 1"}, nil},
+			{"valid description", validGuard, account.Role{Name: "Role 2", Description: "Role description"}, nil},
+			{"conflicting name", validGuard, account.Role{Name: "ROLE 1"}, app.ErrConflictingInput},
+			{"with permissions", validGuard, account.Role{Name: "Role 3", Permissions: []string{"1", "2", "3"}}, nil},
+			{"with empty permission", validGuard, account.Role{Name: "Role 3", Permissions: []string{"1", "", "3"}}, app.ErrMalformedInput},
+		}
+		for _, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				created, err := svc.CreateRole(ctx, tc.guard, tc.role.Name, tc.role.Description, tc.role.Permissions)
+				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
+					t.Fatalf("want error: %v; got %v", tc.want, err)
+				}
 
-			if want, got := created.Name, found.Name; want != got {
-				t.Errorf("want name to be %q; got %q", want, got)
-			}
-			if want, got := created.Description, found.Description; want != got {
-				t.Errorf("want description to be %q; got %q", want, got)
-			}
-			if want, got := created.Permissions, found.Permissions; len(want) != len(got) {
-				t.Errorf("want %v permissions; got %v", len(want), len(got))
-			} else {
-				sort.Strings(want)
-				sort.Strings(got)
+				if tc.want != nil {
+					return
+				}
 
-				for i, wantPermission := range want {
-					gotPermission := got[i]
+				found := errors.Must(store.FindRoleByID(ctx, created.ID))
 
-					if wantPermission != gotPermission {
-						t.Errorf("want permission %q; got %q", wantPermission, gotPermission)
+				if want, got := created.Name, found.Name; want != got {
+					t.Errorf("want name to be %q; got %q", want, got)
+				}
+				if want, got := created.Description, found.Description; want != got {
+					t.Errorf("want description to be %q; got %q", want, got)
+				}
+				if want, got := created.Permissions, found.Permissions; len(want) != len(got) {
+					t.Errorf("want %v permissions; got %v", len(want), len(got))
+				} else {
+					sort.Strings(want)
+					sort.Strings(got)
+
+					for i, wantPermission := range want {
+						gotPermission := got[i]
+
+						if wantPermission != gotPermission {
+							t.Errorf("want permission %q; got %q", wantPermission, gotPermission)
+						}
 					}
 				}
-			}
-		})
-	}
+			})
+		}
+	})
 
 	t.Run("properties", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, _ := NewTestEnv(ctx)
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 

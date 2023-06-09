@@ -17,7 +17,6 @@ func TestActivateUser(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, store := NewTestEnv(ctx)
 
-		password := "password"
 		user1 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com"})
 		user2 := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com"})
 		superRole := errors.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
@@ -30,7 +29,7 @@ func TestActivateUser(t *testing.T) {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
 
-		if err := svc.ActivateUser(ctx, user1.Email, password, password); err != nil {
+		if err := svc.ActivateUser(ctx, user1.Email, "password", "password"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -43,7 +42,7 @@ func TestActivateUser(t *testing.T) {
 			t.Error("want non-zero activated at; got zero")
 		}
 
-		if err := svc.SignInWithPassword(ctx, user1.Email, password); err != nil {
+		if err := svc.SignInWithPassword(ctx, user1.Email, "password"); err != nil {
 			t.Errorf("want to be able to sign in with chosen password; got error: %v", err)
 		}
 
@@ -54,7 +53,7 @@ func TestActivateUser(t *testing.T) {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
 
-		if err := svc.ActivateUser(ctx, user2.Email, password, password); err != nil {
+		if err := svc.ActivateUser(ctx, user2.Email, "password", "password"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -70,13 +69,12 @@ func TestActivateUser(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, store := NewTestEnv(ctx)
 
-		password := "password"
 		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		if err := svc.ActivateUser(ctx, user.Email, password, password); err == nil {
+		if err := svc.ActivateUser(ctx, user.Email, "password", "password"); err == nil {
 			t.Error("want error; got <nil>")
 		}
 	})

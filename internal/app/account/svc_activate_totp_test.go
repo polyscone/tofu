@@ -18,27 +18,24 @@ func (g activateTOTPGuard) CanActivateTOTP(userID int) bool {
 }
 
 func TestActivateTOTP(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
-	password := "password"
-	unverifiedTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", Password: password, SetupTOTP: true})
-	verifiedTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", Password: password, VerifyTOTP: true})
-	activatedTOTPUser := MustAddUser(t, ctx, store, TestUser{Email: "qux@quxx.com", Password: password, ActivateTOTP: true})
-
 	validGuard := activateTOTPGuard{value: true}
 	invalidGuard := activateTOTPGuard{value: false}
 
 	t.Run("success with verified TOTP", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", VerifyTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.ActivateTOTP(ctx, validGuard, verifiedTOTPUser.ID)
+		err := svc.ActivateTOTP(ctx, validGuard, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		user := errors.Must(store.FindUserByID(ctx, verifiedTOTPUser.ID))
+		user = errors.Must(store.FindUserByID(ctx, user.ID))
 
 		if user.ActivatedAt.IsZero() {
 			t.Error("want TOTP activated at to be populated; got zero")
@@ -46,6 +43,12 @@ func TestActivateTOTP(t *testing.T) {
 	})
 
 	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user1 := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", SetupTOTP: true})
+		user2 := MustAddUser(t, ctx, store, TestUser{Email: "qux@quxx.com", ActivateTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -56,8 +59,8 @@ func TestActivateTOTP(t *testing.T) {
 			want   error
 		}{
 			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
-			{"unverified TOTP", validGuard, unverifiedTOTPUser.ID, app.ErrBadRequest},
-			{"already activated TOTP", validGuard, activatedTOTPUser.ID, app.ErrBadRequest},
+			{"unverified TOTP", validGuard, user1.ID, app.ErrBadRequest},
+			{"already activated TOTP", validGuard, user2.ID, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

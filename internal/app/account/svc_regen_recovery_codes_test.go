@@ -21,34 +21,32 @@ func (g regenerateRecoveryCodesGuard) CanRegenerateRecoveryCodes(userID int) boo
 }
 
 func TestRegenRecoveryCodes(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
-	password := "password"
-	activated := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Password: password, Activate: true})
-	activatedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, ActivateTOTP: true})
-
 	validGuard := regenerateRecoveryCodesGuard{value: true}
 	invalidGuard := regenerateRecoveryCodesGuard{value: false}
 
 	t.Run("success with user with verified TOTP", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		originals := activatedTOTP.RecoveryCodes
+		originals := user.RecoveryCodes
 
-		alg := errors.Must(otp.NewAlgorithm(activatedTOTP.TOTPAlgorithm))
-		tb := errors.Must(otp.NewTimeBased(activatedTOTP.TOTPDigits, alg, time.Unix(0, 0), activatedTOTP.TOTPPeriod))
-		totp := errors.Must(tb.Generate(activatedTOTP.TOTPKey, time.Now()))
+		alg := errors.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
+		tb := errors.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
+		totp := errors.Must(tb.Generate(user.TOTPKey, time.Now()))
 
-		err := svc.RegenerateRecoveryCodes(ctx, validGuard, activatedTOTP.ID, totp)
+		err := svc.RegenerateRecoveryCodes(ctx, validGuard, user.ID, totp)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.RecoveryCodesRegenerated{Email: activatedTOTP.Email})
+		events.Expect(account.RecoveryCodesRegenerated{Email: user.Email})
 
-		user := errors.Must(store.FindUserByID(ctx, activatedTOTP.ID))
+		user = errors.Must(store.FindUserByID(ctx, user.ID))
 
 		if len(user.RecoveryCodes) == 0 {
 			t.Error("want at least one recovery code; got none")
@@ -74,6 +72,12 @@ func TestRegenRecoveryCodes(t *testing.T) {
 	})
 
 	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user1 := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -84,8 +88,8 @@ func TestRegenRecoveryCodes(t *testing.T) {
 			totpUser *account.User
 			want     error
 		}{
-			{"unauthorised", invalidGuard, 0, activatedTOTP, app.ErrUnauthorised},
-			{"TOTP not setup or verified", validGuard, activated.ID, nil, app.ErrBadRequest},
+			{"unauthorised", invalidGuard, 0, user2, app.ErrUnauthorised},
+			{"TOTP not setup or verified", validGuard, user1.ID, nil, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

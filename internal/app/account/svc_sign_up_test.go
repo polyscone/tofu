@@ -15,11 +15,16 @@ func TestSignUp(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("errors", func(t *testing.T) {
-		svc, _, _ := NewTestEnv(ctx)
+		svc, broker, _ := NewTestEnv(ctx)
+
+		events := testutil.NewEventLog(broker)
+		defer events.Check(t)
 
 		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
 			t.Fatal(err)
 		}
+
+		events.Expect(account.SignedUp{Email: "foo@example.com"})
 
 		_, err := svc.SignUp(ctx, "foo@example.com")
 		if want := app.ErrConflictingInput; !errors.Is(err, want) {

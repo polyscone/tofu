@@ -24,44 +24,46 @@ func (g deleteRoleGuard) CanDeleteRoles() bool {
 }
 
 func TestDeleteRole(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
 	validGuard := deleteRoleGuard{value: true}
 	invalidGuard := deleteRoleGuard{value: false}
 
-	events := testutil.NewEventLog(broker)
-	defer events.Check(t)
+	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
 
-	tt := []struct {
-		name  string
-		guard deleteRoleGuard
-		want  error
-	}{
-		{"authorised", validGuard, nil},
-		{"unauthorised", invalidGuard, app.ErrUnauthorised},
-	}
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			name := account.GenerateRoleName().String()
-			description := account.GenerateRoleDesc().String()
-			role, err := svc.CreateRole(ctx, tc.guard, name, description, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
+		events := testutil.NewEventLog(broker)
+		defer events.Check(t)
 
-			deleted, err := svc.DeleteRole(ctx, tc.guard, role.ID)
-			if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
-				t.Fatalf("want error: %v; got %v", tc.want, err)
-			}
+		tt := []struct {
+			name  string
+			guard deleteRoleGuard
+			want  error
+		}{
+			{"authorised", validGuard, nil},
+			{"unauthorised", invalidGuard, app.ErrUnauthorised},
+		}
+		for _, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				name := account.GenerateRoleName().String()
+				description := account.GenerateRoleDesc().String()
+				role, err := svc.CreateRole(ctx, tc.guard, name, description, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			if tc.want != nil {
-				return
-			}
+				deleted, err := svc.DeleteRole(ctx, tc.guard, role.ID)
+				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
+					t.Fatalf("want error: %v; got %v", tc.want, err)
+				}
 
-			if _, err := store.FindRoleByID(ctx, deleted.ID); err == nil {
-				t.Errorf("want error: %v; got <nil>", repo.ErrNotFound)
-			}
-		})
-	}
+				if tc.want != nil {
+					return
+				}
+
+				if _, err := store.FindRoleByID(ctx, deleted.ID); err == nil {
+					t.Errorf("want error: %v; got <nil>", repo.ErrNotFound)
+				}
+			})
+		}
+	})
 }

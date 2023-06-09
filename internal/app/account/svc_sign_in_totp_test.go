@@ -15,63 +15,65 @@ import (
 )
 
 func TestSignInWithTOTP(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
-	password := "password"
-	activated := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Password: password, Activate: true})
-	unverifiedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", Password: password, SetupTOTP: true})
-	verifiedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, VerifyTOTP: true})
-	activatedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "bob@jones.com", Password: password, ActivateTOTP: true})
-
 	t.Run("success for valid user id and correct totp", func(t *testing.T) {
-		t.Run("last signed in should not update on password auth", func(t *testing.T) {
-			if !activatedTOTP.LastSignedInAt.IsZero() {
-				t.Errorf("want last signed in at to be zero; got %v", activatedTOTP.LastSignedInAt)
-			}
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
 
-			err := svc.SignInWithPassword(ctx, activatedTOTP.Email, "password")
-			if err != nil {
-				t.Errorf("want <nil>; got %q", err)
-			}
+		user := MustAddUser(t, ctx, store, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
 
-			activatedTOTP, err = store.FindUserByID(ctx, activatedTOTP.ID)
-			if err != nil {
-				t.Fatal(err)
-			}
+		if !user.LastSignedInAt.IsZero() {
+			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
+		}
 
-			if !activatedTOTP.LastSignedInAt.IsZero() {
-				t.Errorf("want last signed in at to be zero; got %v", activatedTOTP.LastSignedInAt)
-			}
-		})
-
-		events := testutil.NewEventLog(broker)
-		defer events.Check(t)
-
-		alg := errors.Must(otp.NewAlgorithm(activatedTOTP.TOTPAlgorithm))
-		tb := errors.Must(otp.NewTimeBased(activatedTOTP.TOTPDigits, alg, time.Unix(0, 0), activatedTOTP.TOTPPeriod))
-		totp := errors.Must(tb.Generate(activatedTOTP.TOTPKey, time.Now()))
-
-		otp.CleanUsedTOTP(totp)
-
-		err := svc.SignInWithTOTP(ctx, activatedTOTP.ID, totp)
+		err := svc.SignInWithPassword(ctx, user.Email, "password")
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
-		events.Expect(account.SignedInWithTOTP{Email: activatedTOTP.Email})
-
-		activatedTOTP, err = store.FindUserByID(ctx, activatedTOTP.ID)
+		user, err = store.FindUserByID(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if activatedTOTP.LastSignedInAt.IsZero() {
+		if !user.LastSignedInAt.IsZero() {
+			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
+		}
+
+		events := testutil.NewEventLog(broker)
+		defer events.Check(t)
+
+		alg := errors.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
+		tb := errors.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
+		totp := errors.Must(tb.Generate(user.TOTPKey, time.Now()))
+
+		otp.CleanUsedTOTP(totp)
+
+		err = svc.SignInWithTOTP(ctx, user.ID, totp)
+		if err != nil {
+			t.Errorf("want <nil>; got %q", err)
+		}
+
+		events.Expect(account.SignedInWithTOTP{Email: user.Email})
+
+		user, err = store.FindUserByID(ctx, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if user.LastSignedInAt.IsZero() {
 			t.Error("want last signed in at to be populated; got zero")
 		}
 	})
 
 	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user1 := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", SetupTOTP: true})
+		user3 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
+		user4 := MustAddUser(t, ctx, store, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -81,12 +83,12 @@ func TestSignInWithTOTP(t *testing.T) {
 			totpUser *account.User
 			want     error
 		}{
-			{"empty user id correct TOTP", 0, activatedTOTP, repo.ErrNotFound},
+			{"empty user id correct TOTP", 0, user4, repo.ErrNotFound},
 			{"empty user id incorrect TOTP", 0, nil, repo.ErrNotFound},
-			{"activated user id incorrect TOTP", activatedTOTP.ID, nil, app.ErrInvalidInput},
-			{"activated user id unverified correct TOTP", unverifiedTOTP.ID, unverifiedTOTP, app.ErrBadRequest},
-			{"activated user id without TOTP setup", activated.ID, nil, app.ErrBadRequest},
-			{"activated user id without TOTP activated", verifiedTOTP.ID, verifiedTOTP, app.ErrBadRequest},
+			{"activated user id incorrect TOTP", user4.ID, nil, app.ErrInvalidInput},
+			{"activated user id unverified correct TOTP", user2.ID, user2, app.ErrBadRequest},
+			{"activated user id without TOTP setup", user1.ID, nil, app.ErrBadRequest},
+			{"activated user id without TOTP activated", user3.ID, user3, app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -110,13 +112,18 @@ func TestSignInWithTOTP(t *testing.T) {
 	})
 
 	t.Run("properties", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
 		execute := func(totp account.TOTP) error {
-			err := svc.SignInWithTOTP(ctx, activatedTOTP.ID, totp.String())
+			err := svc.SignInWithTOTP(ctx, user.ID, totp.String())
 			if err == nil {
-				events.Expect(account.SignedInWithTOTP{Email: activatedTOTP.Email})
+				events.Expect(account.SignedInWithTOTP{Email: user.Email})
 			}
 
 			return err

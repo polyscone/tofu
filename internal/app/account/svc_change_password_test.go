@@ -21,34 +21,27 @@ func (g changePasswordGuard) CanChangePassword(userID int) bool {
 }
 
 func TestChangePassword(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
-	user1Password := "password"
-	user2Password := "password"
-	user1 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: user1Password, Activate: true})
-	user2 := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", Password: user2Password, Activate: true})
-
 	validGuard := changePasswordGuard{value: true}
 	invalidGuard := changePasswordGuard{value: false}
 
-	t.Run("success with activated signed in user", func(t *testing.T) {
+	t.Run("success with activated", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
 		newPassword := errors.Must(account.NewPassword("password123"))
-		err := svc.ChangePassword(ctx, validGuard, user1.ID, user1Password, newPassword.String(), newPassword.String())
+		err := svc.ChangePassword(ctx, validGuard, user.ID, "password", newPassword.String(), newPassword.String())
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.PasswordChanged{Email: user1.Email})
+		events.Expect(account.PasswordChanged{Email: user.Email})
 
-		// Keep the old password up to date with the latest password
-		// change so subsequent tests don't fail
-		user1Password = newPassword.String()
-
-		user := errors.Must(store.FindUserByID(ctx, user1.ID))
+		user = errors.Must(store.FindUserByID(ctx, user.ID))
 
 		if _, err := user.SignInWithPassword(newPassword, hasher); err != nil {
 			t.Errorf("want to be able to aign in with new password; got %q", err)
@@ -56,6 +49,11 @@ func TestChangePassword(t *testing.T) {
 	})
 
 	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", Activate: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -68,9 +66,9 @@ func TestChangePassword(t *testing.T) {
 			want        error
 		}{
 			{"unauthorised", invalidGuard, 0, "", "", app.ErrUnauthorised},
-			{"empty new password", validGuard, user2.ID, user2Password, "", app.ErrMalformedInput},
-			{"empty old password", validGuard, user2.ID, "", user2Password, app.ErrMalformedInput},
-			{"incorrect old password", validGuard, user2.ID, "password___", user2Password, app.ErrInvalidInput},
+			{"empty new password", validGuard, user.ID, "password", "", app.ErrMalformedInput},
+			{"empty old password", validGuard, user.ID, "", "password", app.ErrMalformedInput},
+			{"incorrect old password", validGuard, user.ID, "password___", "password", app.ErrInvalidInput},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -87,19 +85,24 @@ func TestChangePassword(t *testing.T) {
 	})
 
 	t.Run("properties", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", Activate: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
 		execute := func(oldPassword, newPassword, newPasswordCheck account.Password) error {
-			err := svc.ChangePassword(ctx, validGuard, user1.ID, oldPassword.String(), newPassword.String(), newPasswordCheck.String())
+			err := svc.ChangePassword(ctx, validGuard, user.ID, oldPassword.String(), newPassword.String(), newPasswordCheck.String())
 			if err == nil {
-				events.Expect(account.PasswordChanged{Email: user1.Email})
+				events.Expect(account.PasswordChanged{Email: user.Email})
 			}
 
 			return err
 		}
 
-		oldPassword := account.Password(user1Password)
+		oldPassword := account.Password("password")
 
 		t.Run("valid inputs", func(t *testing.T) {
 			quick.Check(t, func(newPassword account.Password) bool {

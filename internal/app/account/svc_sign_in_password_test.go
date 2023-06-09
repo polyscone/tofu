@@ -12,41 +12,46 @@ import (
 )
 
 func TestSignInWithPassword(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
-	unactivated := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", Password: "password"})
-	activated := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: "password", Activate: true})
-
 	t.Run("success for matching email and password", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		if !activated.LastSignedInAt.IsZero() {
-			t.Errorf("want last signed in at to be zero; got %v", activated.LastSignedInAt)
+		if !user.LastSignedInAt.IsZero() {
+			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
 		}
 
-		err := svc.SignInWithPassword(ctx, activated.Email, "password")
+		err := svc.SignInWithPassword(ctx, user.Email, "password")
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
-		events.Expect(account.SignedInWithPassword{Email: activated.Email})
+		events.Expect(account.SignedInWithPassword{Email: user.Email})
 
-		activated, err = store.FindUserByID(ctx, activated.ID)
+		user, err = store.FindUserByID(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if activated.LastSignedInAt.IsZero() {
+		if user.LastSignedInAt.IsZero() {
 			t.Error("want last signed in at to be populated; got zero")
 		}
-		if want, got := account.SignInMethodWebsite, activated.LastSignedInMethod; want != got {
+		if want, got := account.SignInMethodWebsite, user.LastSignedInMethod; want != got {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 	})
 
-	t.Run("failure cases", func(t *testing.T) {
+	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user1 := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com"})
+		user2 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -62,9 +67,9 @@ func TestSignInWithPassword(t *testing.T) {
 			{"email without @ sign", "joebloggs.com", "password", app.ErrMalformedInput},
 			{"non-existent email", "foo@bar.com", "password", nil},
 			{"short password", "joe@bloggs.com", "0123456", app.ErrMalformedInput},
-			{"incorrect password", activated.Email, "0123456789", app.ErrBadRequest},
-			{"unactivated user bad request", unactivated.Email, "password", app.ErrBadRequest},
-			{"unactivated user", unactivated.Email, "password", account.ErrNotActivated},
+			{"incorrect password", user2.Email, "0123456789", app.ErrBadRequest},
+			{"unactivated user bad request", user1.Email, "password", app.ErrBadRequest},
+			{"unactivated user", user1.Email, "password", account.ErrNotActivated},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -81,6 +86,9 @@ func TestSignInWithPassword(t *testing.T) {
 	})
 
 	t.Run("properties", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, _ := NewTestEnv(ctx)
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 

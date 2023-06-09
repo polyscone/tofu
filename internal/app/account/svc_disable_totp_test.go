@@ -20,29 +20,27 @@ func (g disableTOTPGuard) CanDisableTOTP(userID int) bool {
 }
 
 func TestDisableTOTP(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
-	password := "password"
-	verifiedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Password: password, SetupTOTPTel: true, VerifyTOTP: true})
-	activatedTOTP := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", Password: password, SetupTOTPTel: true, ActivateTOTP: true})
-
 	validGuard := disableTOTPGuard{value: true}
 	invalidGuard := disableTOTPGuard{value: false}
 
 	t.Run("success with correct password", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", SetupTOTPTel: true, ActivateTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.DisableTOTP(ctx, validGuard, activatedTOTP.ID, password)
+		err := svc.DisableTOTP(ctx, validGuard, user.ID, "password")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.SignedInWithPassword{Email: activatedTOTP.Email})
-		events.Expect(account.DisabledTOTP{Email: activatedTOTP.Email})
+		events.Expect(account.SignedInWithPassword{Email: user.Email})
+		events.Expect(account.DisabledTOTP{Email: user.Email})
 
-		user := errors.Must(store.FindUserByID(ctx, activatedTOTP.ID))
+		user = errors.Must(store.FindUserByID(ctx, user.ID))
 		if want, got := []byte(nil), user.TOTPKey; !bytes.Equal(want, got) {
 			t.Errorf("want %q; got %q", want, got)
 		}
@@ -76,6 +74,12 @@ func TestDisableTOTP(t *testing.T) {
 	})
 
 	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user1 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", SetupTOTPTel: true, VerifyTOTP: true})
+		user2 := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", SetupTOTPTel: true, ActivateTOTP: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -87,8 +91,8 @@ func TestDisableTOTP(t *testing.T) {
 			want     error
 		}{
 			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
-			{"incorrect password", validGuard, activatedTOTP.ID, "12345678", app.ErrBadRequest},
-			{"unactivated TOTP", validGuard, verifiedTOTP.ID, password, app.ErrBadRequest},
+			{"incorrect password", validGuard, user2.ID, "12345678", app.ErrBadRequest},
+			{"unactivated TOTP", validGuard, user1.ID, "password", app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

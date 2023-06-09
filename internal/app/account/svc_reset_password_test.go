@@ -21,16 +21,15 @@ func (g resetPasswordGuard) CanResetPassword(userID int) bool {
 }
 
 func TestResetPassword(t *testing.T) {
-	ctx := context.Background()
-	svc, broker, store := NewTestEnv(ctx)
-
-	password := "password"
-	user := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Password: password, Activate: true})
-
 	validGuard := resetPasswordGuard{value: true}
 	invalidGuard := resetPasswordGuard{value: false}
 
 	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -42,7 +41,7 @@ func TestResetPassword(t *testing.T) {
 
 		events.Expect(account.PasswordReset{Email: user.Email})
 
-		user := errors.Must(store.FindUserByID(ctx, user.ID))
+		user = errors.Must(store.FindUserByID(ctx, user.ID))
 
 		if _, err := user.SignInWithPassword(newPassword, hasher); err != nil {
 			t.Errorf("want to be able to sign in with new password; got %q", err)
@@ -50,6 +49,11 @@ func TestResetPassword(t *testing.T) {
 	})
 
 	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
@@ -78,6 +82,11 @@ func TestResetPassword(t *testing.T) {
 	})
 
 	t.Run("properties", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
