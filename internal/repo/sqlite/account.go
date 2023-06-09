@@ -233,7 +233,7 @@ func (s *AccountStore) AddRole(ctx context.Context, role *account.Role) error {
 	}
 	defer tx.Rollback()
 
-	if err := s.addRole(ctx, tx, role); err != nil {
+	if err := s.createRole(ctx, tx, role); err != nil {
 		return errors.Tracef(err)
 	}
 
@@ -247,7 +247,7 @@ func (s *AccountStore) SaveRole(ctx context.Context, role *account.Role) error {
 	}
 	defer tx.Rollback()
 
-	if err := s.saveRole(ctx, tx, role); err != nil {
+	if err := s.updateRole(ctx, tx, role); err != nil {
 		return errors.Tracef(err)
 	}
 
@@ -261,7 +261,7 @@ func (s *AccountStore) RemoveRole(ctx context.Context, roleID int) error {
 	}
 	defer tx.Rollback()
 
-	if err := s.removeRole(ctx, tx, roleID); err != nil {
+	if err := s.deleteRole(ctx, tx, roleID); err != nil {
 		return errors.Tracef(err)
 	}
 
@@ -287,7 +287,7 @@ func (s *AccountStore) AddUser(ctx context.Context, user *account.User) error {
 	}
 	defer tx.Rollback()
 
-	if err := s.addUser(ctx, tx, user); err != nil {
+	if err := s.createUser(ctx, tx, user); err != nil {
 		return errors.Tracef(err)
 	}
 
@@ -301,7 +301,7 @@ func (s *AccountStore) SaveUser(ctx context.Context, user *account.User) error {
 	}
 	defer tx.Rollback()
 
-	if err := s.saveUser(ctx, tx, user); err != nil {
+	if err := s.updateUser(ctx, tx, user); err != nil {
 		return errors.Tracef(err)
 	}
 
@@ -453,7 +453,7 @@ func (s *AccountStore) findPermissions(ctx context.Context, tx *Tx, filter permi
 	return permissions, total, errors.Tracef(rows.Err())
 }
 
-func (s *AccountStore) addPermission(ctx context.Context, tx *Tx, name string) (int, error) {
+func (s *AccountStore) upsertPermission(ctx context.Context, tx *Tx, name string) (int, error) {
 	var id int
 	err := tx.QueryRowContext(ctx, `
 		INSERT INTO account__permissions (
@@ -553,7 +553,7 @@ func (s *AccountStore) findRoles(ctx context.Context, tx *Tx, filter account.Rol
 	return roles, total, errors.Tracef(rows.Err())
 }
 
-func (s *AccountStore) addRole(ctx context.Context, tx *Tx, role *account.Role) error {
+func (s *AccountStore) createRole(ctx context.Context, tx *Tx, role *account.Role) error {
 	res, err := tx.ExecContext(ctx, `
 		INSERT INTO account__roles (
 			name,
@@ -586,7 +586,7 @@ func (s *AccountStore) addRole(ctx context.Context, tx *Tx, role *account.Role) 
 	role.ID = int(id)
 
 	for _, name := range role.Permissions {
-		permissionID, err := s.addPermission(ctx, tx, name)
+		permissionID, err := s.upsertPermission(ctx, tx, name)
 		if err != nil {
 			return errors.Tracef(err)
 		}
@@ -614,7 +614,7 @@ func (s *AccountStore) addRole(ctx context.Context, tx *Tx, role *account.Role) 
 	return nil
 }
 
-func (s *AccountStore) saveRole(ctx context.Context, tx *Tx, role *account.Role) error {
+func (s *AccountStore) updateRole(ctx context.Context, tx *Tx, role *account.Role) error {
 	_, err := tx.ExecContext(ctx, `
 		UPDATE account__roles SET
 			name = :name,
@@ -642,7 +642,7 @@ func (s *AccountStore) saveRole(ctx context.Context, tx *Tx, role *account.Role)
 	}
 
 	for _, name := range role.Permissions {
-		permissionID, err := s.addPermission(ctx, tx, name)
+		permissionID, err := s.upsertPermission(ctx, tx, name)
 		if err != nil {
 			return errors.Tracef(err)
 		}
@@ -670,7 +670,7 @@ func (s *AccountStore) saveRole(ctx context.Context, tx *Tx, role *account.Role)
 	return errors.Tracef(err)
 }
 
-func (s *AccountStore) removeRole(ctx context.Context, tx *Tx, roleID int) error {
+func (s *AccountStore) deleteRole(ctx context.Context, tx *Tx, roleID int) error {
 	_, err := tx.ExecContext(ctx,
 		"DELETE FROM account__roles WHERE id = :id",
 		sql.Named("id", roleID),
@@ -763,7 +763,7 @@ func (s *AccountStore) attachUserDenials(ctx context.Context, tx *Tx, user *acco
 	return nil
 }
 
-func (s *AccountStore) addUser(ctx context.Context, tx *Tx, user *account.User) error {
+func (s *AccountStore) createUser(ctx context.Context, tx *Tx, user *account.User) error {
 	res, err := tx.ExecContext(ctx, `
 		INSERT INTO account__users (
 			email,
@@ -874,7 +874,7 @@ func (s *AccountStore) addUser(ctx context.Context, tx *Tx, user *account.User) 
 	}
 
 	for _, grant := range user.Grants {
-		permissionID, err := s.addPermission(ctx, tx, grant)
+		permissionID, err := s.upsertPermission(ctx, tx, grant)
 		if err != nil {
 			return errors.Tracef(err)
 		}
@@ -900,7 +900,7 @@ func (s *AccountStore) addUser(ctx context.Context, tx *Tx, user *account.User) 
 	}
 
 	for _, denial := range user.Denials {
-		permissionID, err := s.addPermission(ctx, tx, denial)
+		permissionID, err := s.upsertPermission(ctx, tx, denial)
 		if err != nil {
 			return errors.Tracef(err)
 		}
@@ -928,7 +928,7 @@ func (s *AccountStore) addUser(ctx context.Context, tx *Tx, user *account.User) 
 	return nil
 }
 
-func (s *AccountStore) saveUser(ctx context.Context, tx *Tx, user *account.User) error {
+func (s *AccountStore) updateUser(ctx context.Context, tx *Tx, user *account.User) error {
 	_, err := tx.ExecContext(ctx, `
 		UPDATE account__users SET
 			email = :email,
@@ -1042,7 +1042,7 @@ func (s *AccountStore) saveUser(ctx context.Context, tx *Tx, user *account.User)
 	}
 
 	for _, grant := range user.Grants {
-		permissionID, err := s.addPermission(ctx, tx, grant)
+		permissionID, err := s.upsertPermission(ctx, tx, grant)
 		if err != nil {
 			return errors.Tracef(err)
 		}
@@ -1076,7 +1076,7 @@ func (s *AccountStore) saveUser(ctx context.Context, tx *Tx, user *account.User)
 	}
 
 	for _, denial := range user.Denials {
-		permissionID, err := s.addPermission(ctx, tx, denial)
+		permissionID, err := s.upsertPermission(ctx, tx, denial)
 		if err != nil {
 			return errors.Tracef(err)
 		}

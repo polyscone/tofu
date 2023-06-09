@@ -84,7 +84,7 @@ func (s *WebStore) SaveSession(ctx context.Context, sess session.Session) error 
 	}
 	defer tx.Rollback()
 
-	err = s.saveSession(ctx, tx, sess)
+	err = s.upsertSession(ctx, tx, sess)
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -153,7 +153,7 @@ func (s *WebStore) AddActivationToken(ctx context.Context, email string, ttl tim
 	}
 	defer tx.Rollback()
 
-	token, err := s.addToken(ctx, tx, email, ttl, webTokenKindActivation)
+	token, err := s.createToken(ctx, tx, email, ttl, webTokenKindActivation)
 	if err != nil {
 		return "", errors.Tracef(err)
 	}
@@ -168,7 +168,7 @@ func (s *WebStore) AddResetPasswordToken(ctx context.Context, email string, ttl 
 	}
 	defer tx.Rollback()
 
-	token, err := s.addToken(ctx, tx, email, ttl, webTokenKindResetPassword)
+	token, err := s.createToken(ctx, tx, email, ttl, webTokenKindResetPassword)
 	if err != nil {
 		return "", errors.Tracef(err)
 	}
@@ -249,7 +249,7 @@ func (s *WebStore) findSessionDataByID(ctx context.Context, tx *Tx, id string) (
 	return res, errors.Tracef(err)
 }
 
-func (s *WebStore) saveSession(ctx context.Context, tx *Tx, sess session.Session) error {
+func (s *WebStore) upsertSession(ctx context.Context, tx *Tx, sess session.Session) error {
 	b, err := json.Marshal(sess.Data)
 	if err != nil {
 		return errors.Tracef(err)
@@ -353,7 +353,7 @@ func (s *WebStore) consumeToken(ctx context.Context, tx *Tx, token, kind string)
 	return nil
 }
 
-func (s *WebStore) addToken(ctx context.Context, tx *Tx, email string, ttl time.Duration, kind string) (string, error) {
+func (s *WebStore) createToken(ctx context.Context, tx *Tx, email string, ttl time.Duration, kind string) (string, error) {
 	b := make([]byte, 16)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
 		return "", errors.Tracef(err)
