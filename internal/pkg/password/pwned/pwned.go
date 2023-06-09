@@ -18,7 +18,7 @@ var client = http.Client{Timeout: 10 * time.Second}
 
 var ErrEmptyPassword = errors.New("no password was provided")
 
-func PasswordKnownBreachCount(ctx context.Context, password []byte) (int, error) {
+func KnownPasswordBreachCount(ctx context.Context, password []byte) (int, error) {
 	if len(bytes.TrimSpace(password)) == 0 {
 		return 0, errors.Tracef(ErrEmptyPassword)
 	}
