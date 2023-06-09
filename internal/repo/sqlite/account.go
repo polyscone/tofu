@@ -454,20 +454,8 @@ func (s *AccountStore) findPermissions(ctx context.Context, tx *Tx, filter permi
 }
 
 func (s *AccountStore) addPermission(ctx context.Context, tx *Tx, name string) (int, error) {
-	var id int64
-	err := tx.QueryRowContext(ctx,
-		"SELECT id FROM account__permissions WHERE name = :name",
-		sql.Named("name", name),
-	).Scan(&id)
-	switch {
-	case err == nil:
-		return int(id), nil
-
-	case err != nil && !errors.Is(err, repo.ErrNotFound):
-		return 0, errors.Tracef(err)
-	}
-
-	res, err := tx.ExecContext(ctx, `
+	var id int
+	err := tx.QueryRowContext(ctx, `
 		INSERT INTO account__permissions (
 			name,
 			created_at
@@ -475,20 +463,19 @@ func (s *AccountStore) addPermission(ctx context.Context, tx *Tx, name string) (
 			:name,
 			:created_at
 		)
+		ON CONFLICT DO
+			UPDATE SET
+				name = :name
+		RETURNING id
 	`,
 		sql.Named("name", name),
 		sql.Named("created_at", Time(tx.now.UTC())),
-	)
+	).Scan(&id)
 	if err != nil {
 		return 0, errors.Tracef(err)
 	}
 
-	id, err = res.LastInsertId()
-	if err != nil {
-		return 0, errors.Tracef(err)
-	}
-
-	return int(id), nil
+	return id, nil
 }
 
 func (s *AccountStore) attachRolePermissions(ctx context.Context, tx *Tx, role *account.Role) error {

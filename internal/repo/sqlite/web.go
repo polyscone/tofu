@@ -266,9 +266,11 @@ func (s *WebStore) saveSession(ctx context.Context, tx *Tx, sess session.Session
 			:data,
 			:created_at,
 			:updated_at
-		) ON CONFLICT DO UPDATE SET
-			data = :data,
-			updated_at = :updated_at
+		)
+		ON CONFLICT DO
+			UPDATE SET
+				data = :data,
+				updated_at = :updated_at
 	`,
 		sql.Named("id", sess.ID),
 		sql.Named("data", b),
