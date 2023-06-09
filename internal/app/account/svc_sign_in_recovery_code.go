@@ -10,7 +10,7 @@ import (
 func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, code string) error {
 	var input struct {
 		userID int
-		code   Code
+		code   RecoveryCode
 	}
 	{
 		var err error
@@ -18,7 +18,7 @@ func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, code s
 
 		input.userID = userID
 
-		if input.code, err = NewCode(code); err != nil {
+		if input.code, err = NewRecoveryCode(code); err != nil {
 			errs.Set("recovery code", err)
 		}
 

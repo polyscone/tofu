@@ -241,14 +241,14 @@ func (s *AccountStore) RemoveRole(ctx context.Context, roleID int) error {
 	return errors.Tracef(tx.Commit())
 }
 
-func (s *AccountStore) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([]*account.RecoveryCode, error) {
+func (s *AccountStore) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([]account.RecoveryCode, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
 	defer tx.Rollback()
 
-	recoveryCodes, _, err := s.findRecoveryCodes(ctx, tx, account.RecoveryCodeFilter{UserID: &userID})
+	recoveryCodes, _, err := s.findRecoveryCodes(ctx, tx, userID)
 
 	return recoveryCodes, errors.Tracef(err)
 }
@@ -642,21 +642,15 @@ func (s *AccountStore) removeRole(ctx context.Context, tx *Tx, roleID int) error
 	return errors.Tracef(err)
 }
 
-func (s *AccountStore) findRecoveryCodes(ctx context.Context, tx *Tx, filter account.RecoveryCodeFilter) ([]*account.RecoveryCode, int, error) {
-	var where []string
-	var args []any
-
-	if v := filter.UserID; v != nil {
-		where, args = append(where, "user_id = ?"), append(args, *v)
-	}
-
+func (s *AccountStore) findRecoveryCodes(ctx context.Context, tx *Tx, userID int) ([]account.RecoveryCode, int, error) {
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
 			code,
 			COUNT(1) OVER () AS total
 		FROM account__recovery_codes
-		WHERE `+strings.Join(where, " AND "),
-		args...,
+		WHERE user_id = :user_id
+	`,
+		sql.Named("user_id", userID),
 	)
 	if err != nil {
 		return nil, 0, errors.Tracef(err)
@@ -664,31 +658,37 @@ func (s *AccountStore) findRecoveryCodes(ctx context.Context, tx *Tx, filter acc
 	defer rows.Close()
 
 	var total int
-	var recoveryCodes []*account.RecoveryCode
+	var recoveryCodes []account.RecoveryCode
 	for rows.Next() {
 		var recoveryCode account.RecoveryCode
 
 		err := rows.Scan(
-			&recoveryCode.Code,
+			&recoveryCode,
 			&total,
 		)
 		if err != nil {
 			return nil, 0, errors.Tracef(err)
 		}
 
-		recoveryCodes = append(recoveryCodes, &recoveryCode)
+		recoveryCodes = append(recoveryCodes, recoveryCode)
 	}
 
 	return recoveryCodes, total, errors.Tracef(rows.Err())
 }
 
 func (s *AccountStore) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user *account.User) error {
-	recoveryCodes, _, err := s.findRecoveryCodes(ctx, tx, account.RecoveryCodeFilter{UserID: &user.ID})
+	recoveryCodes, _, err := s.findRecoveryCodes(ctx, tx, user.ID)
 	if err != nil {
 		return errors.Tracef(err)
 	}
 
-	user.RecoveryCodes = recoveryCodes
+	if recoveryCodes != nil {
+		user.RecoveryCodes = make([]string, len(recoveryCodes))
+
+		for i, rc := range recoveryCodes {
+			user.RecoveryCodes[i] = rc.String()
+		}
+	}
 
 	return nil
 }
@@ -785,7 +785,7 @@ func (s *AccountStore) addUser(ctx context.Context, tx *Tx, user *account.User) 
 			)
 		`,
 			sql.Named("user_id", user.ID),
-			sql.Named("code", rc.Code),
+			sql.Named("code", rc),
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
@@ -885,7 +885,7 @@ func (s *AccountStore) saveUser(ctx context.Context, tx *Tx, user *account.User)
 			)
 		`,
 			sql.Named("user_id", user.ID),
-			sql.Named("code", rc.Code),
+			sql.Named("code", rc),
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {

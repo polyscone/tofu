@@ -33,8 +33,8 @@ type User struct {
 	ActivatedAt        time.Time
 	LastSignedInAt     time.Time
 	LastSignedInMethod string
+	RecoveryCodes      []string
 	Roles              []*Role
-	RecoveryCodes      []*RecoveryCode
 }
 
 type UserFilter struct {
@@ -203,15 +203,15 @@ func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) error {
 	u.TOTPVerifiedAt = time.Now().UTC()
 
 	nCodes := 6
-	u.RecoveryCodes = make([]*RecoveryCode, nCodes)
+	u.RecoveryCodes = make([]string, nCodes)
 
 	for i := 0; i < nCodes; i++ {
-		code, err := GenerateCode()
+		code, err := GenerateRecoveryCode()
 		if err != nil {
 			return errors.Tracef(err)
 		}
 
-		u.RecoveryCodes[i] = NewRecoveryCode(code)
+		u.RecoveryCodes[i] = code.String()
 	}
 
 	return nil
@@ -283,15 +283,15 @@ func (u *User) RegenerateRecoveryCodes(totp TOTP) error {
 	}
 
 	nCodes := 6
-	u.RecoveryCodes = make([]*RecoveryCode, nCodes)
+	u.RecoveryCodes = make([]string, nCodes)
 
 	for i := 0; i < nCodes; i++ {
-		code, err := GenerateCode()
+		code, err := GenerateRecoveryCode()
 		if err != nil {
 			return errors.Tracef(err)
 		}
 
-		u.RecoveryCodes[i] = NewRecoveryCode(code)
+		u.RecoveryCodes[i] = code.String()
 	}
 
 	u.Events.Enqueue(RecoveryCodesRegenerated{Email: u.Email})
@@ -323,7 +323,7 @@ func (u *User) DisableTOTP(password Password, hasher password.Hasher) error {
 	return nil
 }
 
-func (u *User) DisableTOTPWithRecoveryCode(code Code) error {
+func (u *User) DisableTOTPWithRecoveryCode(code RecoveryCode) error {
 	if err := u.SignInWithRecoveryCode(code); err != nil {
 		return errors.Tracef(err)
 	}
@@ -397,7 +397,7 @@ func (u *User) SignInWithTOTP(totp TOTP) error {
 	return nil
 }
 
-func (u *User) SignInWithRecoveryCode(code Code) error {
+func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
 	if !u.HasActivatedTOTP() {
 		return errors.Tracef(app.ErrBadRequest, "account cannot use recovery codes")
 	}
@@ -407,7 +407,7 @@ func (u *User) SignInWithRecoveryCode(code Code) error {
 	}
 
 	for i, rc := range u.RecoveryCodes {
-		if rc.Code == code.String() {
+		if rc == code.String() {
 			u.RecoveryCodes = append(u.RecoveryCodes[:i], u.RecoveryCodes[i+1:]...)
 			u.LastSignedInAt = time.Now().UTC()
 

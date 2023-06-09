@@ -42,7 +42,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		nRecoveryCodes := len(activatedTOTP.RecoveryCodes)
 		usedRecoveryCode := activatedTOTP.RecoveryCodes[0]
 
-		err := svc.SignInWithRecoveryCode(ctx, activatedTOTP.ID, usedRecoveryCode.Code)
+		err := svc.SignInWithRecoveryCode(ctx, activatedTOTP.ID, usedRecoveryCode)
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
@@ -62,7 +62,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			t.Errorf("want %v recovery codes; got %v", want, got)
 		} else {
 			for _, rc := range activatedTOTP.RecoveryCodes {
-				if rc.Code == usedRecoveryCode.Code {
+				if rc == usedRecoveryCode {
 					t.Error("want used recovery code to be removed")
 				}
 			}
@@ -73,7 +73,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		incorrectCode := errors.Must(account.GenerateCode()).String()
+		incorrectCode := errors.Must(account.GenerateRecoveryCode()).String()
 
 		tt := []struct {
 			name         string
@@ -81,7 +81,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			recoveryCode string
 			want         error
 		}{
-			{"empty user id correct recovery code", 0, activatedTOTP.RecoveryCodes[1].Code, repo.ErrNotFound},
+			{"empty user id correct recovery code", 0, activatedTOTP.RecoveryCodes[1], repo.ErrNotFound},
 			{"empty user id incorrect recovery code", 0, incorrectCode, repo.ErrNotFound},
 			{"activated user id incorrect recovery code", activatedTOTP.ID, incorrectCode, app.ErrInvalidInput},
 			{"activated user id without TOTP setup", activated.ID, incorrectCode, app.ErrBadRequest},
@@ -104,7 +104,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		execute := func(code account.Code) error {
+		execute := func(code account.RecoveryCode) error {
 			err := svc.SignInWithRecoveryCode(ctx, activatedTOTP.ID, code.String())
 			if err == nil {
 				events.Expect(account.SignedInWithRecoveryCode{Email: activatedTOTP.Email})
@@ -114,7 +114,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		}
 
 		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(code account.Code) bool {
+			quick.Check(t, func(code account.RecoveryCode) bool {
 				err := execute(code)
 
 				return !errors.Is(err, app.ErrMalformedInput)
@@ -122,7 +122,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		})
 
 		t.Run("invalid recovery code input", func(t *testing.T) {
-			quick.Check(t, func(code quick.Invalid[account.Code]) bool {
+			quick.Check(t, func(code quick.Invalid[account.RecoveryCode]) bool {
 				err := execute(code.Unwrap())
 
 				return errors.Is(err, app.ErrMalformedInput)

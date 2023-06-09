@@ -61,7 +61,7 @@ func TestVerifyTOTP(t *testing.T) {
 			t.Error("want at least one recovery code; got none")
 		} else {
 			for _, rc := range unverifiedAppTOTPUser.RecoveryCodes {
-				if len(rc.Code) == 0 {
+				if len(rc) == 0 {
 					t.Fatal("want code; got empty string")
 				}
 			}
@@ -94,7 +94,7 @@ func TestVerifyTOTP(t *testing.T) {
 			t.Error("want at least one recovery code; got none")
 		} else {
 			for _, rc := range unverifiedSMSTOTPUser.RecoveryCodes {
-				if len(rc.Code) == 0 {
+				if len(rc) == 0 {
 					t.Fatal("want code; got empty string")
 				}
 			}

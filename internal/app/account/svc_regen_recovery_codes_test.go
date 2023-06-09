@@ -54,7 +54,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 			t.Error("want at least one recovery code; got none")
 		} else {
 			for _, rc := range user.RecoveryCodes {
-				if len(rc.Code) == 0 {
+				if len(rc) == 0 {
 					t.Fatal("want code; got empty string")
 				}
 			}
@@ -65,8 +65,8 @@ func TestRegenRecoveryCodes(t *testing.T) {
 		} else {
 			for _, original := range originals {
 				for _, rc := range user.RecoveryCodes {
-					if original.Code == rc.Code {
-						t.Errorf("want different codes; got %q and %q", original.Code, rc.Code)
+					if original == rc {
+						t.Errorf("want different codes; got %q and %q", original, rc)
 					}
 				}
 			}

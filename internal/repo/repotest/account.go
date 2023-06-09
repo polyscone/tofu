@@ -85,6 +85,7 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 					ActivatedAt:        time.Now(),
 					LastSignedInAt:     time.Now(),
 					LastSignedInMethod: "Website",
+					RecoveryCodes:      []string{"1", "2", "3", "4"},
 					Roles:              []*account.Role{role1, role2},
 				}, nil},
 				{"conflicting email", account.User{Email: "Email 1"}, repo.ErrConflict},
@@ -153,9 +154,10 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 			}{
 				{"no data", account.User{}, nil},
 				{"minimal data", account.User{Email: "Save user 1"}, nil},
-				{"with role", account.User{Email: "Save user 2", Roles: []*account.Role{role1}}, nil},
-				{"conflicting email", account.User{Email: "Save user 2"}, repo.ErrConflict},
-				{"conflicting email with different casing", account.User{Email: "SAVE USER 1"}, repo.ErrConflict},
+				{"with recovery codes", account.User{Email: "Save user 2", RecoveryCodes: []string{"1", "2", "3", "4"}}, nil},
+				{"with role", account.User{Email: "Save user 3", Roles: []*account.Role{role1}}, nil},
+				{"conflicting email", account.User{Email: "Save user 3"}, repo.ErrConflict},
+				{"conflicting email with different casing", account.User{Email: "SAVE USER 3"}, repo.ErrConflict},
 			}
 			for i, tc := range tt {
 				t.Run(tc.name, func(t *testing.T) {
