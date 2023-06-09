@@ -23,7 +23,7 @@
 		</p>
 	</div>
 
-	{{template "com_recovery_codes" .ComData .Vars.RecoveryCodes}}
+	{{template "com_recovery_codes" .WithComData .Vars.RecoveryCodes}}
 
 	<form action="{{Path "account.totp.setup.activate.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">

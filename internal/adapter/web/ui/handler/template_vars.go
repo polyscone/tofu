@@ -113,12 +113,12 @@ type ViewData struct {
 	App          AppData
 	Session      SessionData
 	Passport     guard.Passport
-	Com          any
+	ComData      any
 	Vars         Vars
 }
 
-func (v ViewData) ComData(data any) ViewData {
-	v.Com = data
+func (v ViewData) WithComData(data any) ViewData {
+	v.ComData = data
 
 	return v
 }

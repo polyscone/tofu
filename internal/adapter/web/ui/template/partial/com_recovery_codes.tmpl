@@ -2,8 +2,8 @@
 
 <div class="recovery-code-list">
 	<ul class="recovery-code-list__codes">
-		{{range .Com}}
-			<li>{{.Code}}</li>
+		{{range $code := .ComData}}
+			<li>{{$code}}</li>
 		{{end}}
 	</ul>
 
