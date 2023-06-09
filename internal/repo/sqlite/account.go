@@ -46,9 +46,11 @@ func (s *AccountStore) FindUserByID(ctx context.Context, id int) (*account.User,
 	}
 
 	user := users[0]
+
 	if err := s.attachUserRecoveryCodes(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
+
 	if err := s.attachUserRoles(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -56,6 +58,14 @@ func (s *AccountStore) FindUserByID(ctx context.Context, id int) (*account.User,
 		if err := s.attachRolePermissions(ctx, tx, role); err != nil {
 			return nil, errors.Tracef(err)
 		}
+	}
+
+	if err := s.attachUserGrants(ctx, tx, user); err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	if err := s.attachUserDenials(ctx, tx, user); err != nil {
+		return nil, errors.Tracef(err)
 	}
 
 	return user, nil
@@ -77,10 +87,25 @@ func (s *AccountStore) FindUserByEmail(ctx context.Context, email string) (*acco
 	}
 
 	user := users[0]
+
 	if err := s.attachUserRecoveryCodes(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
+
 	if err := s.attachUserRoles(ctx, tx, user); err != nil {
+		return nil, errors.Tracef(err)
+	}
+	for _, role := range user.Roles {
+		if err := s.attachRolePermissions(ctx, tx, role); err != nil {
+			return nil, errors.Tracef(err)
+		}
+	}
+
+	if err := s.attachUserGrants(ctx, tx, user); err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	if err := s.attachUserDenials(ctx, tx, user); err != nil {
 		return nil, errors.Tracef(err)
 	}
 
@@ -130,6 +155,7 @@ func (s *AccountStore) FindRoleByID(ctx context.Context, roleID int) (*account.R
 	}
 
 	role := roles[0]
+
 	if err := s.attachRolePermissions(ctx, tx, role); err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -150,6 +176,7 @@ func (s *AccountStore) FindRoleByName(ctx context.Context, name string) (*accoun
 	}
 
 	role := roles[0]
+
 	if err := s.attachRolePermissions(ctx, tx, role); err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -369,15 +396,38 @@ func (s *AccountStore) findUsers(ctx context.Context, tx *Tx, filter account.Use
 	return users, total, errors.Tracef(rows.Err())
 }
 
-func (s *AccountStore) findPermissions(ctx context.Context, tx *Tx, roleID int) ([]string, int, error) {
+type permissionFilter struct {
+	roleID        *int
+	grantsUserID  *int
+	denialsUserID *int
+}
+
+func (s *AccountStore) findPermissions(ctx context.Context, tx *Tx, filter permissionFilter) ([]string, int, error) {
+	var joins []string
+	var where []string
+	var args []any
+
+	if v := filter.roleID; v != nil {
+		joins = append(joins, "INNER JOIN account__role_permissions AS rp ON p.id = rp.permission_id")
+		where, args = append(where, "rp.role_id = ?"), append(args, *v)
+	}
+	if v := filter.grantsUserID; v != nil {
+		joins = append(joins, "INNER JOIN account__user_grants AS ug ON p.id = ug.permission_id")
+		where, args = append(where, "ug.user_id = ?"), append(args, *v)
+	}
+	if v := filter.denialsUserID; v != nil {
+		joins = append(joins, "INNER JOIN account__user_denials AS ud ON p.id = ud.permission_id")
+		where, args = append(where, "ud.user_id = ?"), append(args, *v)
+	}
+
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
 			name,
 			COUNT(1) OVER () AS total
 		FROM account__permissions AS p
-		INNER JOIN account__role_permissions AS rp ON p.id = rp.permission_id
-		WHERE rp.role_id = ?`,
-		roleID,
+		`+strings.Join(joins, "\n")+`
+		`+whereSQL(where),
+		args...,
 	)
 	if err != nil {
 		return nil, 0, errors.Tracef(err)
@@ -442,7 +492,7 @@ func (s *AccountStore) addPermission(ctx context.Context, tx *Tx, name string) (
 }
 
 func (s *AccountStore) attachRolePermissions(ctx context.Context, tx *Tx, role *account.Role) error {
-	permissions, _, err := s.findPermissions(ctx, tx, role.ID)
+	permissions, _, err := s.findPermissions(ctx, tx, permissionFilter{roleID: &role.ID})
 	if err != nil {
 		return errors.Tracef(err)
 	}
@@ -704,6 +754,28 @@ func (s *AccountStore) attachUserRoles(ctx context.Context, tx *Tx, user *accoun
 	return nil
 }
 
+func (s *AccountStore) attachUserGrants(ctx context.Context, tx *Tx, user *account.User) error {
+	grants, _, err := s.findPermissions(ctx, tx, permissionFilter{grantsUserID: &user.ID})
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	user.Grants = grants
+
+	return nil
+}
+
+func (s *AccountStore) attachUserDenials(ctx context.Context, tx *Tx, user *account.User) error {
+	denials, _, err := s.findPermissions(ctx, tx, permissionFilter{denialsUserID: &user.ID})
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	user.Denials = denials
+
+	return nil
+}
+
 func (s *AccountStore) addUser(ctx context.Context, tx *Tx, user *account.User) error {
 	res, err := tx.ExecContext(ctx, `
 		INSERT INTO account__users (
@@ -814,6 +886,58 @@ func (s *AccountStore) addUser(ctx context.Context, tx *Tx, user *account.User) 
 		}
 	}
 
+	for _, grant := range user.Grants {
+		permissionID, err := s.addPermission(ctx, tx, grant)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_grants (
+				user_id,
+				permission_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:permission_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("permission_id", permissionID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+	}
+
+	for _, denial := range user.Denials {
+		permissionID, err := s.addPermission(ctx, tx, denial)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_denials (
+				user_id,
+				permission_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:permission_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("permission_id", permissionID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+	}
+
 	return nil
 }
 
@@ -915,6 +1039,74 @@ func (s *AccountStore) saveUser(ctx context.Context, tx *Tx, user *account.User)
 		`,
 			sql.Named("user_id", user.ID),
 			sql.Named("role_id", role.ID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"DELETE FROM account__user_grants WHERE user_id = :user_id",
+		sql.Named("user_id", user.ID),
+	)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	for _, grant := range user.Grants {
+		permissionID, err := s.addPermission(ctx, tx, grant)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_grants (
+				user_id,
+				permission_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:permission_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("permission_id", permissionID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"DELETE FROM account__user_denials WHERE user_id = :user_id",
+		sql.Named("user_id", user.ID),
+	)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	for _, denial := range user.Denials {
+		permissionID, err := s.addPermission(ctx, tx, denial)
+		if err != nil {
+			return errors.Tracef(err)
+		}
+
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_denials (
+				user_id,
+				permission_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:permission_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("permission_id", permissionID),
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {

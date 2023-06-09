@@ -54,6 +54,26 @@ CREATE TABLE account__user_roles (
   PRIMARY KEY (user_id, role_id)
 );
 
+CREATE TABLE account__user_grants (
+  user_id       INTEGER NOT NULL,
+  permission_id INTEGER NOT NULL,
+  created_at    DATETIME NOT NULL,
+  updated_at    DATETIME,
+  FOREIGN KEY (user_id) REFERENCES account__users (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (permission_id) REFERENCES account__permissions (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  PRIMARY KEY (user_id, permission_id)
+);
+
+CREATE TABLE account__user_denials (
+  user_id       INTEGER NOT NULL,
+  permission_id INTEGER NOT NULL,
+  created_at    DATETIME NOT NULL,
+  updated_at    DATETIME,
+  FOREIGN KEY (user_id) REFERENCES account__users (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (permission_id) REFERENCES account__permissions (id) ON DELETE CASCADE ON UPDATE CASCADE,
+  PRIMARY KEY (user_id, permission_id)
+);
+
 CREATE TABLE account__recovery_codes (
   user_id    INTEGER NOT NULL,
   code       TEXT NOT NULL,

@@ -42,7 +42,10 @@ func TestChangeRoles(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.ChangeRoles(ctx, validSuperGuard, user.ID, role1.ID, role2.ID, superRole.ID)
+		roleIDs := []int{role1.ID, role2.ID, superRole.ID}
+		grants := []string{"a", "b", "c"}
+		denials := []string{"b", "c", "d"}
+		err := svc.ChangeRoles(ctx, validSuperGuard, user.ID, roleIDs, grants, denials)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -66,8 +69,39 @@ func TestChangeRoles(t *testing.T) {
 			}
 		}
 
+		if want, got := []string{"a"}, user.Grants; len(want) != len(got) {
+			t.Errorf("want %v grants; got %v", len(want), len(got))
+		} else {
+			sort.Strings(want)
+			sort.Strings(got)
+
+			for i, wantGrant := range want {
+				gotGrant := got[i]
+
+				if wantGrant != gotGrant {
+					t.Errorf("want grant %q; got %q", wantGrant, gotGrant)
+				}
+			}
+		}
+
+		if want, got := []string{"b", "c", "d"}, user.Denials; len(want) != len(got) {
+			t.Errorf("want %v denials; got %v", len(want), len(got))
+		} else {
+			sort.Strings(want)
+			sort.Strings(got)
+
+			for i, wantDenial := range want {
+				gotDenial := got[i]
+
+				if wantDenial != gotDenial {
+					t.Errorf("want denial %q; got %q", wantDenial, gotDenial)
+				}
+			}
+		}
+
 		// Change roles without removing super
-		err = svc.ChangeRoles(ctx, validSuperGuard, user.ID, superRole.ID)
+		roleIDs = []int{superRole.ID}
+		err = svc.ChangeRoles(ctx, validSuperGuard, user.ID, roleIDs, nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -86,7 +120,8 @@ func TestChangeRoles(t *testing.T) {
 		role2 := MustAddRole(t, ctx, store, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 		superRole := errors.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
 
-		errors.Must0(svc.ChangeRoles(ctx, validSuperGuard, super.ID, superRole.ID))
+		roleIDs := []int{superRole.ID}
+		errors.Must0(svc.ChangeRoles(ctx, validSuperGuard, super.ID, roleIDs, nil, nil))
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -106,7 +141,7 @@ func TestChangeRoles(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.ChangeRoles(ctx, tc.guard, tc.userID, tc.roleIDs...)
+				err := svc.ChangeRoles(ctx, tc.guard, tc.userID, tc.roleIDs, nil, nil)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want %q; got %q", tc.want, err)

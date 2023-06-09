@@ -72,10 +72,11 @@ func userEditGet(h *handler.Handler) http.HandlerFunc {
 		roles, _, err := h.Store.Account.FindRoles(ctx, account.SuperRole.ID)
 
 		vars := handler.Vars{
-			"User":        user,
-			"UserRoleIDs": userRoleIDs,
-			"Roles":       roles,
-			"SuperRole":   account.SuperRole,
+			"User":             user,
+			"UserRoleIDs":      userRoleIDs,
+			"Roles":            roles,
+			"SuperRole":        account.SuperRole,
+			"PermissionGroups": guard.PermissionGroups,
 		}
 
 		return vars, nil
@@ -90,6 +91,8 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			RoleIDs []int `form:"roles"`
+			Grants  []string
+			Denials []string
 		}
 		err := httputil.DecodeForm(&input, r)
 		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
@@ -109,7 +112,7 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Account.ChangeRoles(ctx, passport, userID, input.RoleIDs...)
+		err = h.Account.ChangeRoles(ctx, passport, userID, input.RoleIDs, input.Grants, input.Denials)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/management/user/edit", nil) {
 			return
 		}

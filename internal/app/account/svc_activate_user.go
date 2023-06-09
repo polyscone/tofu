@@ -43,7 +43,7 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 		return errors.Tracef(err)
 	}
 	if superUserCount == 0 {
-		if err := user.ChangeRoles(SuperRole); err != nil {
+		if err := user.ChangeRoles([]*Role{SuperRole}, nil, nil); err != nil {
 			return errors.Tracef(err)
 		}
 	}

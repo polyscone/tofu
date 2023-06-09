@@ -34,6 +34,8 @@ type User struct {
 	LastSignedInMethod string
 	RecoveryCodes      []string
 	Roles              []*Role
+	Grants             []string
+	Denials            []string
 }
 
 type UserFilter struct {
@@ -60,6 +62,36 @@ func (u *User) IsSuper() bool {
 	}
 
 	return false
+}
+
+func (u *User) Permissions() []string {
+	var permissions []string
+
+	for _, role := range u.Roles {
+	PermissionLoop:
+		for _, permission := range role.Permissions {
+			for _, denial := range u.Denials {
+				if permission == denial {
+					continue PermissionLoop
+				}
+			}
+
+			permissions = append(permissions, permission)
+		}
+	}
+
+GrantLoop:
+	for _, grant := range u.Grants {
+		for _, denial := range u.Denials {
+			if grant == denial {
+				continue GrantLoop
+			}
+		}
+
+		permissions = append(permissions, grant)
+	}
+
+	return permissions
 }
 
 func (u *User) HasVerifiedTOTP() bool {
@@ -421,7 +453,7 @@ func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
 	return errs.Tracef(app.ErrInvalidInput)
 }
 
-func (u *User) ChangeRoles(roles ...*Role) error {
+func (u *User) ChangeRoles(roles []*Role, grants, denials []Permission) error {
 	if u.IsSuper() {
 		var containsSuper bool
 		for _, role := range roles {
@@ -438,6 +470,29 @@ func (u *User) ChangeRoles(roles ...*Role) error {
 	}
 
 	u.Roles = roles
+
+	u.Grants = nil
+	if grants != nil {
+	GrantLoop:
+		for _, grant := range grants {
+			for _, denial := range denials {
+				if grant == denial {
+					continue GrantLoop
+				}
+			}
+
+			u.Grants = append(u.Grants, grant.String())
+		}
+	}
+
+	u.Denials = nil
+	if denials != nil {
+		u.Denials = make([]string, len(denials))
+
+		for i, denial := range denials {
+			u.Denials[i] = denial.String()
+		}
+	}
 
 	u.Events.Enqueue(RolesChanged{Email: u.Email})
 

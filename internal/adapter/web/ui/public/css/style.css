@@ -105,7 +105,7 @@
 	}
 
 	details {
-		margin-block: 1rem;
+		margin-block: 0.5rem;
 	}
 
 	summary {
@@ -293,7 +293,7 @@
 		padding-inline: 1rem;
 	}
 
-	.halves {
+	.cols-50-50 {
 		display: grid;
 		gap: 1rem;
 	}
@@ -466,10 +466,6 @@
 		margin-block-start: 1rem;
 	}
 
-	[data-implied-permissions] {
-		margin-inline-start: 1.5rem;
-	}
-
 	[data-tooltip] {
 		position: relative;
 		cursor: help;
@@ -513,7 +509,7 @@
 			text-align: right;
 		}
 
-		.halves {
+		.cols-50-50 {
 			grid-template-columns: repeat(2, 1fr);
 		}
 	}

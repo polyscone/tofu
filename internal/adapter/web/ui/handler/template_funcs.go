@@ -172,6 +172,9 @@ func tmplHasString(haystack []string, value any) bool {
 
 func tmplToStrings(value any) ([]string, error) {
 	switch value := value.(type) {
+	case nil:
+		return nil, nil
+
 	case []int:
 		slice := make([]string, len(value))
 		for i, value := range value {

@@ -12,10 +12,6 @@
 	<body>
 		{{template "com_js" .}}
 
-		{{if HasPathPrefix .URL.Path "admin.section"}}
-			{{template "com_admin_js" .}}
-		{{end}}
-
 		<a href="#main-content" class="skip-nav-link">Skip navigation</a>
 
 		{{template "header" .}}

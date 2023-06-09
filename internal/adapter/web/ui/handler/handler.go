@@ -137,15 +137,10 @@ func (h *Handler) Passport(ctx context.Context) guard.Passport {
 		return h.emptyPassport(ctx)
 	}
 
-	var permissions []string
-	for _, role := range user.Roles {
-		permissions = append(permissions, role.Permissions...)
-	}
-
 	return guard.New(h.passportStore, guard.User{
 		ID:          user.ID,
 		IsSuper:     user.IsSuper(),
-		Permissions: permissions,
+		Permissions: user.Permissions(),
 	})
 }
 
@@ -155,15 +150,10 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Pass
 		return h.emptyPassport(ctx), errors.Tracef(err)
 	}
 
-	var permissions []string
-	for _, role := range user.Roles {
-		permissions = append(permissions, role.Permissions...)
-	}
-
 	p := guard.New(h.passportStore, guard.User{
 		ID:          user.ID,
 		IsSuper:     user.IsSuper(),
-		Permissions: permissions,
+		Permissions: user.Permissions(),
 	})
 
 	return p, nil

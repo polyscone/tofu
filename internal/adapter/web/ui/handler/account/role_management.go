@@ -94,9 +94,8 @@ func roleNewPost(h *handler.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 		passport := h.Passport(ctx)
-		permissions := guard.ExpandPermissions(input.Permissions)
 
-		role, err := h.Account.CreateRole(ctx, passport, input.Name, input.Description, permissions)
+		role, err := h.Account.CreateRole(ctx, passport, input.Name, input.Description, input.Permissions)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/management/role/new", nil) {
 			return
 		}
@@ -166,9 +165,8 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 		passport := h.Passport(ctx)
-		permissions := guard.ExpandPermissions(input.Permissions)
 
-		role, err := h.Account.EditRole(ctx, passport, roleID, input.Name, input.Description, permissions)
+		role, err := h.Account.EditRole(ctx, passport, roleID, input.Name, input.Description, input.Permissions)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/management/role/edit", nil) {
 			return
 		}

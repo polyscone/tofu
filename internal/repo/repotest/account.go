@@ -87,6 +87,8 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 					LastSignedInMethod: "Website",
 					RecoveryCodes:      []string{"1", "2", "3", "4"},
 					Roles:              []*account.Role{role1, role2},
+					Grants:             []string{"a", "b"},
+					Denials:            []string{"b", "c", "d"},
 				}, nil},
 				{"conflicting email", account.User{Email: "Email 1"}, repo.ErrConflict},
 				{"conflicting email with different casing", account.User{Email: "EMAIL 1"}, repo.ErrConflict},
@@ -155,9 +157,11 @@ func Account(ctx context.Context, t *testing.T, newStore func() account.ReadWrit
 				{"no data", account.User{}, nil},
 				{"minimal data", account.User{Email: "Save user 1"}, nil},
 				{"with recovery codes", account.User{Email: "Save user 2", RecoveryCodes: []string{"1", "2", "3", "4"}}, nil},
-				{"with role", account.User{Email: "Save user 3", Roles: []*account.Role{role1}}, nil},
-				{"conflicting email", account.User{Email: "Save user 3"}, repo.ErrConflict},
-				{"conflicting email with different casing", account.User{Email: "SAVE USER 3"}, repo.ErrConflict},
+				{"with role", account.User{Email: "Save user roles", Roles: []*account.Role{role1}}, nil},
+				{"with grants", account.User{Email: "Save user grants", Grants: []string{"abc"}}, nil},
+				{"with denials", account.User{Email: "Save user denials", Denials: []string{"123"}}, nil},
+				{"conflicting email", account.User{Email: "Save user 1"}, repo.ErrConflict},
+				{"conflicting email with different casing", account.User{Email: "SAVE USER 1"}, repo.ErrConflict},
 			}
 			for i, tc := range tt {
 				t.Run(tc.name, func(t *testing.T) {
@@ -455,6 +459,34 @@ func accountUsersEqual(t *testing.T, want, got *account.User) {
 
 			if wantRole.ID != gotRole.ID {
 				t.Errorf("want role %q; got %q", wantRole.Name, gotRole.Name)
+			}
+		}
+	}
+	if want, got := want.Grants, got.Grants; len(want) != len(got) {
+		t.Errorf("want %v grants; got %v", len(want), len(got))
+	} else {
+		sort.Strings(want)
+		sort.Strings(got)
+
+		for i, wantGrant := range want {
+			gotGrant := got[i]
+
+			if wantGrant != gotGrant {
+				t.Errorf("want grant %q; got %q", wantGrant, gotGrant)
+			}
+		}
+	}
+	if want, got := want.Denials, got.Denials; len(want) != len(got) {
+		t.Errorf("want %v denials; got %v", len(want), len(got))
+	} else {
+		sort.Strings(want)
+		sort.Strings(got)
+
+		for i, wantDenial := range want {
+			gotDenial := got[i]
+
+			if wantDenial != gotDenial {
+				t.Errorf("want denial %q; got %q", wantDenial, gotDenial)
 			}
 		}
 	}

@@ -20,7 +20,7 @@
 		<input id="role__description" type="text" name="description" value="{{.Form.GetOr "description" .Vars.Role.Description}}" placeholder="A role description." required maxlength="100">
 		<p class="error">{{.Errors.Get "description"}}</p>
 
-		<div class="halves">
+		<div class="cols-50-50">
 			{{$permissions := $.Form.GetAllOr "permissions" .Vars.Role.Permissions}}
 			{{range .Vars.PermissionGroups}}
 				<div class="form">
@@ -33,7 +33,6 @@
 								name="permissions"
 								value="{{.Name}}"
 								{{if HasString $permissions .Name}}checked{{end}}
-								{{if .Implies}}data-implied-permissions="{{Join .Implies "|"}}"{{end}}
 							>
 							{{.DisplayName}}
 						</label>
