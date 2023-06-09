@@ -29,7 +29,76 @@ func TestChangeRoles(t *testing.T) {
 	validGuard := setRolesGuard{canChangeRoles: true}
 	invalidGuard := setRolesGuard{}
 
-	t.Run("success with activated signed in user", func(t *testing.T) {
+	t.Run("success with activated user", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, store := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+		role1 := MustAddRole(t, ctx, store, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
+		role2 := MustAddRole(t, ctx, store, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
+
+		events := testutil.NewEventLog(broker)
+		defer events.Check(t)
+
+		roleIDs := []int{role1.ID, role2.ID}
+		grants := []string{"a", "b", "c"}
+		denials := []string{"b", "c", "d"}
+		err := svc.ChangeRoles(ctx, validSuperGuard, user.ID, roleIDs, grants, denials)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		events.Expect(account.RolesChanged{Email: user.Email})
+
+		user = errors.Must(store.FindUserByID(ctx, user.ID))
+
+		if want, got := []*account.Role{role1, role2}, user.Roles; len(want) != len(got) {
+			t.Errorf("want %v roles; got %v", len(want), len(got))
+		} else {
+			sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
+			sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
+
+			for i, wantRole := range want {
+				gotRole := got[i]
+
+				if wantRole.ID != gotRole.ID {
+					t.Errorf("want role %q; got %q", wantRole.Name, gotRole.Name)
+				}
+			}
+		}
+
+		if want, got := []string{"a"}, user.Grants; len(want) != len(got) {
+			t.Errorf("want %v grants; got %v", len(want), len(got))
+		} else {
+			sort.Strings(want)
+			sort.Strings(got)
+
+			for i, wantGrant := range want {
+				gotGrant := got[i]
+
+				if wantGrant != gotGrant {
+					t.Errorf("want grant %q; got %q", wantGrant, gotGrant)
+				}
+			}
+		}
+
+		if want, got := []string{"b", "c", "d"}, user.Denials; len(want) != len(got) {
+			t.Errorf("want %v denials; got %v", len(want), len(got))
+		} else {
+			sort.Strings(want)
+			sort.Strings(got)
+
+			for i, wantDenial := range want {
+				gotDenial := got[i]
+
+				if wantDenial != gotDenial {
+					t.Errorf("want denial %q; got %q", wantDenial, gotDenial)
+				}
+			}
+		}
+	})
+
+	t.Run("success with super role", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, store := NewTestEnv(ctx)
 
@@ -68,7 +137,7 @@ func TestChangeRoles(t *testing.T) {
 			}
 		}
 
-		if want, got := []string{"a"}, user.Grants; len(want) != len(got) {
+		if want, got := []string{}, user.Grants; len(want) != len(got) {
 			t.Errorf("want %v grants; got %v", len(want), len(got))
 		} else {
 			sort.Strings(want)
@@ -83,7 +152,7 @@ func TestChangeRoles(t *testing.T) {
 			}
 		}
 
-		if want, got := []string{"b", "c", "d"}, user.Denials; len(want) != len(got) {
+		if want, got := []string{}, user.Denials; len(want) != len(got) {
 			t.Errorf("want %v denials; got %v", len(want), len(got))
 		} else {
 			sort.Strings(want)

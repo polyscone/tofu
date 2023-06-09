@@ -466,28 +466,6 @@
 		margin-block-start: 1rem;
 	}
 
-	[data-tooltip] {
-		position: relative;
-		cursor: help;
-	}
-
-	[data-tooltip]::after {
-		content: attr(data-tooltip);
-		pointer-events: none;
-		position: absolute;
-		left: 0;
-		bottom: calc(100% + 0.1rem);
-		max-width: 300px;
-		background: var(--clr-accent-100);
-		border: 1px solid var(--clr-accent-400);
-		padding: 0.5rem;
-		opacity: 0;
-	}
-
-	[data-tooltip]:hover::after {
-		opacity: 1;
-	}
-
 	@media screen and (min-width: 400px) {
 		.header {
 			flex-direction: row;

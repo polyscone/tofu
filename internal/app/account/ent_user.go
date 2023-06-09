@@ -454,19 +454,22 @@ func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
 }
 
 func (u *User) ChangeRoles(roles []*Role, grants, denials []Permission) error {
-	if u.IsSuper() {
-		var containsSuper bool
-		for _, role := range roles {
-			if role.ID == SuperRole.ID {
-				containsSuper = true
+	var containsSuper bool
+	for _, role := range roles {
+		if role.ID == SuperRole.ID {
+			containsSuper = true
 
-				break
-			}
+			break
 		}
+	}
 
-		if !containsSuper {
-			return errors.Tracef(app.ErrBadRequest, "cannot remove super role")
-		}
+	if u.IsSuper() && !containsSuper {
+		return errors.Tracef(app.ErrBadRequest, "cannot remove super role")
+	}
+
+	if containsSuper {
+		grants = nil
+		denials = nil
 	}
 
 	u.Roles = roles
