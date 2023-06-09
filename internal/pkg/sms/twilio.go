@@ -11,6 +11,8 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
+const codeInvalidToNumber = 21211
+
 // Client represents the data required to interact with the Twilio API.
 type Client struct {
 	client   *http.Client
@@ -118,7 +120,7 @@ func (c *Client) Send(ctx context.Context, from, to, body string) error {
 		}
 
 		switch data.Code {
-		case 21211: // Invalid "to" phone number
+		case codeInvalidToNumber:
 			if from == to {
 				return errors.Tracef(ErrInvalidNumber, "the from and to numbers cannot be the same")
 			}
