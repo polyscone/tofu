@@ -117,6 +117,38 @@
 					</div>
 				{{end}}
 			</div>
+
+			<script>
+				onMount("input[name='denials']", node => {
+					node.addEventListener("change", e => {
+						if (!node.checked) {
+							return
+						}
+
+						const denial = node.value
+						const checkboxes = Array.from(document.querySelectorAll(`input[name="grants"][value="${denial}"]`))
+
+						for (const checkbox of checkboxes) {
+							checkbox.checked = false
+						}
+					})
+				})
+
+				onMount("input[name='grants']", node => {
+					node.addEventListener("change", e => {
+						if (!node.checked) {
+							return
+						}
+
+						const grant = node.value
+						const checkboxes = Array.from(document.querySelectorAll(`input[name="denials"][value="${grant}"]`))
+
+						for (const checkbox of checkboxes) {
+							checkbox.checked = false
+						}
+					})
+				})
+			</script>
 		</div>
 
 		<div class="bag reverse">
