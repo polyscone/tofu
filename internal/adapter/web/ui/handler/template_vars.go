@@ -99,7 +99,7 @@ type SessionData struct {
 	HasActivatedTOTP         bool
 	IsAwaitingTOTP           bool
 	IsSignedIn               bool
-	PasswordKnownBreachCount int
+	KnownPasswordBreachCount int
 }
 
 type ViewData struct {

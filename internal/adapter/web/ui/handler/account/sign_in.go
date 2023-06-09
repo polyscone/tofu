@@ -251,13 +251,13 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 		return
 	}
 
-	knownBreachCount, err := pwned.PasswordKnownBreachCount(ctx, []byte(password))
+	knownBreachCount, err := pwned.KnownPasswordBreachCount(ctx, []byte(password))
 	if err != nil {
 		httputil.LogError(r, err)
 	}
 
 	if knownBreachCount > 0 {
-		h.Sessions.Set(ctx, sess.PasswordKnownBreachCount, knownBreachCount)
+		h.Sessions.Set(ctx, sess.KnownPasswordBreachCount, knownBreachCount)
 	}
 
 	if h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
@@ -288,7 +288,7 @@ func signInSetSession(ctx context.Context, h *handler.Handler, w http.ResponseWr
 func signInSuccessRedirect(h *handler.Handler, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	knownBreachCount := h.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount)
+	knownBreachCount := h.Sessions.GetInt(ctx, sess.KnownPasswordBreachCount)
 
 	var redirect string
 	if knownBreachCount > 0 {

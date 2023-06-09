@@ -48,20 +48,20 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
-		knownBreachCount, err := pwned.PasswordKnownBreachCount(ctx, []byte(input.NewPassword))
+		knownBreachCount, err := pwned.KnownPasswordBreachCount(ctx, []byte(input.NewPassword))
 		if err != nil {
 			httputil.LogError(r, err)
 		}
 
 		if input.NewPassword == input.InsecurePassword {
 			if knownBreachCount > 0 {
-				h.Sessions.Set(ctx, sess.PasswordKnownBreachCount, knownBreachCount)
+				h.Sessions.Set(ctx, sess.KnownPasswordBreachCount, knownBreachCount)
 			} else {
-				h.Sessions.Delete(ctx, sess.PasswordKnownBreachCount)
+				h.Sessions.Delete(ctx, sess.KnownPasswordBreachCount)
 			}
 		} else if knownBreachCount > 0 {
 			h.View(w, r, http.StatusOK, "account/change_password/form", handler.Vars{
-				"NewPasswordKnownBreachCount": knownBreachCount,
+				"NewKnownPasswordBreachCount": knownBreachCount,
 			})
 
 			return

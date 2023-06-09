@@ -1,7 +1,7 @@
 {{define "view_head"}}
 
 <div class="center">
-	{{if .Vars.NewPasswordKnownBreachCount}}
+	{{if .Vars.NewKnownPasswordBreachCount}}
 		<h1>Confirm change password</h1>
 	{{else}}
 		<h1>Change password</h1>
@@ -13,18 +13,18 @@
 {{define "view_body"}}
 
 <div class="center">
-	{{if .Vars.NewPasswordKnownBreachCount}}
+	{{if .Vars.NewKnownPasswordBreachCount}}
 		<div class="warning-banner">
 			<p>
-				Your password has not been changed yet because it appears <span data-locale-number>{{.Vars.NewPasswordKnownBreachCount}}</span> {{if gt .Vars.NewPasswordKnownBreachCount 1}}times{{else}}time{{end}}
+				Your password has not been changed yet because it appears <span data-locale-number>{{.Vars.NewKnownPasswordBreachCount}}</span> {{if gt .Vars.NewKnownPasswordBreachCount 1}}times{{else}}time{{end}}
 				in a <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer">database of security breaches</a> and isn't considered to be secure.
 			</p>
 		</div>
 		<p>You can continue and use this password, but we recommend that you choose a more secure one.</p>
-	{{else if .Session.PasswordKnownBreachCount}}
+	{{else if .Session.KnownPasswordBreachCount}}
 		<div class="warning-banner">
 			<p>
-				The password you're currently using appears <span data-locale-number>{{.Session.PasswordKnownBreachCount}}</span> {{if gt .Session.PasswordKnownBreachCount 1}}times{{else}}time{{end}}
+				The password you're currently using appears <span data-locale-number>{{.Session.KnownPasswordBreachCount}}</span> {{if gt .Session.KnownPasswordBreachCount 1}}times{{else}}time{{end}}
 				in a <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer">database of security breaches</a> and isn't considered to be secure.
 			</p>
 			<p>We recommend that you change this password to a more secure one as soon as possible.</p>
@@ -44,7 +44,7 @@
 	<form action="{{Path "account.change_password.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
-		{{if .Vars.NewPasswordKnownBreachCount}}
+		{{if .Vars.NewKnownPasswordBreachCount}}
 			<input type="hidden" name="old-password" value="{{.Form.Get "old-password"}}">
 			<input type="hidden" name="insecure-password" value="{{.Form.Get "new-password"}}">
 

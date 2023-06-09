@@ -362,7 +362,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 			HasActivatedTOTP:         h.Sessions.GetBool(ctx, sess.HasActivatedTOTP),
 			IsAwaitingTOTP:           h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
 			IsSignedIn:               h.Sessions.GetBool(ctx, sess.IsSignedIn),
-			PasswordKnownBreachCount: h.Sessions.GetInt(ctx, sess.PasswordKnownBreachCount),
+			KnownPasswordBreachCount: h.Sessions.GetInt(ctx, sess.KnownPasswordBreachCount),
 		},
 		Passport: passport,
 	}
