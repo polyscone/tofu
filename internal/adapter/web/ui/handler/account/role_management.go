@@ -48,10 +48,6 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		sortTopID := h.Sessions.PopInt(ctx, sess.SortTopID)
-		if sortTopID == 0 {
-			sortTopID = account.SuperRole.ID
-		}
-
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
 		roles, total, err := h.Store.Account.FindRolesPageBySearch(ctx, sortTopID, search, page, size)
