@@ -7,27 +7,27 @@ type User struct {
 }
 
 type Passport struct {
-	isConfigSetup bool
-	userID        int
-	isSuper       bool
-	permissions   []string
+	requireConfigSetup bool
+	userID             int
+	isSuper            bool
+	permissions        []string
 }
 
-func NewPassport(isConfigSetup bool, user User) Passport {
+func NewPassport(requireConfigSetup bool, user User) Passport {
 	return Passport{
-		isConfigSetup: isConfigSetup,
-		userID:        user.ID,
-		isSuper:       user.IsSuper,
-		permissions:   user.Permissions,
+		requireConfigSetup: requireConfigSetup,
+		userID:             user.ID,
+		isSuper:            user.IsSuper,
+		permissions:        user.Permissions,
 	}
 }
 
 func (p Passport) CanViewConfig() bool {
-	return !p.isConfigSetup || p.can(viewConfig)
+	return p.requireConfigSetup || p.can(viewConfig)
 }
 
 func (p Passport) CanUpdateConfig() bool {
-	return !p.isConfigSetup || p.can(updateConfig)
+	return p.requireConfigSetup || p.can(updateConfig)
 }
 
 func (p Passport) CanChangePassword(userID int) bool {

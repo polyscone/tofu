@@ -9,7 +9,7 @@ type Config struct {
 	TwilioSID     string
 	TwilioToken   string
 	TwilioFromTel string
-	IsSetup       bool
+	RequiresSetup bool
 }
 
 func (c *Config) HasSMS() bool {

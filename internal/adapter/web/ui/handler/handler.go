@@ -21,7 +21,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/rate"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/sms"
@@ -110,8 +109,25 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		passport := guard.NewPassport(config.RequiresSetup, guard.User{})
+		if !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+			userID := h.Sessions.GetInt(ctx, sess.UserID)
+			user, err := h.Store.Account.FindUserByID(ctx, userID)
+			if err == nil {
+				passport = guard.NewPassport(config.RequiresSetup, guard.User{
+					ID:          user.ID,
+					IsSuper:     user.IsSuper(),
+					Permissions: user.Permissions(),
+				})
+			}
+		}
+
+		ctx = context.WithValue(ctx, ctxSystemConfig, config)
+		ctx = context.WithValue(ctx, ctxPassport, passport)
+		r = r.WithContext(ctx)
+
 		systemConfigPath := h.mux.Path(h.systemConfigPathName)
-		if r.Method == http.MethodGet && !config.IsSetup && r.URL.Path != systemConfigPath && filepath.Ext(r.URL.Path) == "" {
+		if r.Method == http.MethodGet && config.RequiresSetup && r.URL.Path != systemConfigPath && filepath.Ext(r.URL.Path) == "" {
 			http.Redirect(w, r, systemConfigPath, http.StatusSeeOther)
 
 			return
@@ -140,49 +156,42 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 }
 
 func (h *Handler) Config(ctx context.Context) *system.Config {
-	config, err := h.Store.System.FindConfig(ctx)
-	if err != nil {
-		logger.PrintError(err)
+	value := ctx.Value(ctxSystemConfig)
+	if value == nil {
+		panic("attempt to access system config before it has been initialised")
+	}
+
+	config, ok := value.(*system.Config)
+	if !ok {
+		panic(fmt.Sprintf("could not assert system config as %T", config))
 	}
 
 	return config
 }
 
-func (h *Handler) emptyPassport(ctx context.Context) guard.Passport {
-	config := h.Config(ctx)
-
-	return guard.NewPassport(config.IsSetup, guard.User{})
-}
-
 func (h *Handler) Passport(ctx context.Context) guard.Passport {
-	if h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
-		return h.emptyPassport(ctx)
+	value := ctx.Value(ctxPassport)
+	if value == nil {
+		panic("attempt to access passport before it has been initialised")
 	}
 
-	userID := h.Sessions.GetInt(ctx, sess.UserID)
-	user, err := h.Store.Account.FindUserByID(ctx, userID)
-	if err != nil {
-		return h.emptyPassport(ctx)
+	passport, ok := value.(guard.Passport)
+	if !ok {
+		panic(fmt.Sprintf("could not assert system passport as %T", passport))
 	}
 
-	config := h.Config(ctx)
-
-	return guard.NewPassport(config.IsSetup, guard.User{
-		ID:          user.ID,
-		IsSuper:     user.IsSuper(),
-		Permissions: user.Permissions(),
-	})
+	return passport
 }
 
 func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Passport, error) {
 	user, err := h.Store.Account.FindUserByEmail(ctx, email)
 	if err != nil {
-		return h.emptyPassport(ctx), errors.Tracef(err)
+		return guard.NewPassport(false, guard.User{}), errors.Tracef(err)
 	}
 
 	config := h.Config(ctx)
 
-	p := guard.NewPassport(config.IsSetup, guard.User{
+	p := guard.NewPassport(config.RequiresSetup, guard.User{
 		ID:          user.ID,
 		IsSuper:     user.IsSuper(),
 		Permissions: user.Permissions(),

@@ -76,8 +76,7 @@ func (s *SystemStore) findConfig(ctx context.Context, tx *Tx) (*system.Config, e
 		return nil, errors.Tracef(err)
 	}
 
-	// If we find a row then we'll assume it's setup
-	config.IsSetup = err == nil
+	config.RequiresSetup = errors.Is(err, repo.ErrNotFound)
 
 	return &config, nil
 }

@@ -1,10 +1,10 @@
 {{define "view_head"}}
 
 <div class="center">
-	{{if .Config.IsSetup}}
-		<h1>System configuration</h1>
-	{{else}}
+	{{if .Config.RequiresSetup}}
 		<h1>Initial system configuration</h1>
+	{{else}}
+		<h1>System configuration</h1>
 	{{end}}
 </div>
 
@@ -35,10 +35,10 @@
 		<p class="error">{{.Errors.Get "twilio from tel"}}</p>
 
 		<div class="bag reverse">
-			{{if .Config.IsSetup}}
-				<button type="submit" class="push-inline-end"{{if $disable}} disabled{{end}}>Update configuration</button>
-			{{else}}
+			{{if .Config.RequiresSetup}}
 				<button type="submit" class="push-inline-end">Finish setup</button>
+			{{else}}
+				<button type="submit" class="push-inline-end"{{if $disable}} disabled{{end}}>Update configuration</button>
 			{{end}}
 		</div>
 	</form>
