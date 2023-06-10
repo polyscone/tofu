@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/app/account"
+	"github.com/polyscone/tofu/internal/app/system"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/session"
-	"github.com/polyscone/tofu/internal/pkg/sms"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
 )
 
@@ -34,18 +34,12 @@ type WebReadWriter interface {
 
 type Store struct {
 	Account AccountReader
+	System  system.Reader
 	Web     WebReadWriter
 }
 
 type Email struct {
-	From   string
 	Mailer smtp.Mailer
-}
-
-type SMS struct {
-	IsConfigured bool
-	From         string
-	Messager     sms.Messager
 }
 
 type Tenant struct {
@@ -58,9 +52,9 @@ type Tenant struct {
 	Proxies  []string
 	Broker   event.Broker
 	Email    Email
-	SMS      SMS
 
 	Account *account.Service
+	System  *system.Service
 
 	Store Store
 }

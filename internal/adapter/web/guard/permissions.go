@@ -3,12 +3,15 @@ package guard
 const (
 	viewRoles   = "account:roles:view"
 	createRoles = "account:roles:create"
-	editRoles   = "account:roles:edit"
+	updateRoles = "account:roles:update"
 	deleteRoles = "account:roles:delete"
 
 	viewUsers   = "account:users:view"
-	editUsers   = "account:users:edit"
-	changeRoles = "account:users:edit:roles"
+	editUsers   = "account:users:update"
+	changeRoles = "account:users:update:roles"
+
+	viewConfig   = "web:config:view"
+	updateConfig = "web:config:update"
 )
 
 var PermissionGroups = []PermissionGroup{
@@ -17,7 +20,7 @@ var PermissionGroups = []PermissionGroup{
 		Permissions: []Permission{
 			{DisplayName: "View roles", Name: viewRoles},
 			{DisplayName: "Create roles", Name: createRoles},
-			{DisplayName: "Edit roles", Name: editRoles},
+			{DisplayName: "Edit roles", Name: updateRoles},
 			{DisplayName: "Delete roles", Name: deleteRoles},
 		},
 	},
@@ -27,6 +30,13 @@ var PermissionGroups = []PermissionGroup{
 			{DisplayName: "View users", Name: viewUsers},
 			{DisplayName: "Edit users", Name: editUsers},
 			{DisplayName: "Change user roles", Name: changeRoles},
+		},
+	},
+	{
+		Name: "System",
+		Permissions: []Permission{
+			{DisplayName: "View system config", Name: viewConfig},
+			{DisplayName: "Edit system config", Name: updateConfig},
 		},
 	},
 }

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
@@ -14,9 +13,9 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app/account"
+	"github.com/polyscone/tofu/internal/app/system"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
-	"github.com/polyscone/tofu/internal/pkg/sms"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
 	"github.com/polyscone/tofu/internal/repo/sqlite"
 )
@@ -62,6 +61,11 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		return nil, errors.Tracef(err)
 	}
 
+	systemStore, err := sqlite.NewSystemStore(ctx, db)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
 	webStore, err := sqlite.NewWebStore(ctx, db, 2*time.Hour)
 	if err != nil {
 		return nil, errors.Tracef(err)
@@ -72,10 +76,12 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		return nil, errors.Tracef(err)
 	}
 
-	client := http.Client{Timeout: 10 * time.Second}
-	messager := sms.NewTwilioClient(&client, data.Twilio.SID, data.Twilio.Token)
-
 	accountService, err := account.NewService(broker, accountStore, hasher)
+	if err != nil {
+		return nil, errors.Tracef(err)
+	}
+
+	systemService, err := system.NewService(broker, systemStore)
 	if err != nil {
 		return nil, errors.Tracef(err)
 	}
@@ -86,17 +92,13 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		Proxies:  opts.server.proxies,
 		Broker:   broker,
 		Email: handler.Email{
-			From:   data.Email.From,
 			Mailer: mailer,
 		},
-		SMS: handler.SMS{
-			IsConfigured: data.Twilio.SID != "" && data.Twilio.Token != "" && data.Twilio.From != "",
-			From:         data.Twilio.From,
-			Messager:     messager,
-		},
 		Account: accountService,
+		System:  systemService,
 		Store: handler.Store{
 			Account: accountStore,
+			System:  systemStore,
 			Web:     webStore,
 		},
 	}
@@ -104,21 +106,9 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	return &tenant, nil
 }
 
-type Email struct {
-	From string `json:"from"`
-}
-
-type Twilio struct {
-	SID   string `json:"sid"`
-	Token string `json:"token"`
-	From  string `json:"from"`
-}
-
 type Tenant struct {
 	Alias      string   `json:",omitempty"`
 	Hostnames  []string `json:"hostnames"`
-	Email      Email    `json:"email"`
-	Twilio     Twilio   `json:"twilio"`
 	IsDisabled bool     `json:"isDisabled"`
 }
 
@@ -142,15 +132,7 @@ func initTenants() error {
 		if info.Size() == 0 {
 			example := map[string]Tenant{
 				"example": {
-					Hostnames: []string{"localhost", "local.example.com"},
-					Email: Email{
-						From: "noreply@example.com",
-					},
-					Twilio: Twilio{
-						SID:   "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-						Token: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-						From:  "+00 0000 000000",
-					},
+					Hostnames:  []string{"localhost", "local.example.com"},
 					IsDisabled: true,
 				},
 			}
@@ -184,9 +166,6 @@ func initTenants() error {
 	for alias, tenant := range data {
 		if len(tenant.Hostnames) == 0 {
 			errs.Set(alias+".hostnames", "must be populated with at least one hostname")
-		}
-		if tenant.Email.From == "" {
-			errs.Set(alias+".email.from", "cannot be empty")
 		}
 
 		if alias == "" && len(tenant.Hostnames) != 0 {

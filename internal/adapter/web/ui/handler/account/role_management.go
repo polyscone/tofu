@@ -28,7 +28,7 @@ func RoleManagement(h *handler.Handler, mux *router.ServeMux) {
 		})
 
 		mux.Prefix("/:roleID", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanEditRoles() }))
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanUpdateRoles() }))
 
 			mux.Get("/", roleEditGet(h), "account.management.role.edit")
 			mux.Post("/", roleEditPost(h), "account.management.role.edit.post")
@@ -162,7 +162,7 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		role, err := h.Account.EditRole(ctx, passport, roleID, input.Name, input.Description, input.Permissions)
+		role, err := h.Account.UpdateRole(ctx, passport, roleID, input.Name, input.Description, input.Permissions)
 		if h.ErrorView(w, r, errors.Tracef(err), "account/management/role/edit", nil) {
 			return
 		}

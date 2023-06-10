@@ -23,28 +23,28 @@ func TestMessages(t *testing.T) {
 		body    string
 		wantErr bool
 	}{
-		{"success", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "+818000000001", "+818000000002", "Test Body", false},
-		{"success with longest body", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "+818000000001", "+818000000002", strings.Repeat("X", 1600), false},
+		{"success", "AC0123456789abcdef0123456789abcdef", "token123", "+818000000001", "+818000000002", "Test Body", false},
+		{"success with longest body", "AC0123456789abcdef0123456789abcdef", "token123", "+818000000001", "+818000000002", strings.Repeat("X", 1600), false},
 
 		{"invalid empty sid", "", "token123", "+818000000001", "+818000000002", "Test Body", true},
 		{"invalid empty sid with spaces", "      ", "token123", "+818000000001", "+818000000002", "Test Body", true},
-		{"invalid sid format prefix", "ABXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "+818000000001", "+818000000002", "Test Body", true},
+		{"invalid sid format prefix", "AB0123456789abcdef0123456789abcdef", "token123", "+818000000001", "+818000000002", "Test Body", true},
 		{"invalid sid format length", "ACXX", "token123", "+818000000001", "+818000000002", "Test Body", true},
 
-		{"invalid empty token", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "", "+818000000001", "+818000000002", "Test Body", true},
-		{"invalid empty token with spaces", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "    ", "+818000000001", "+818000000002", "Test Body", true},
+		{"invalid empty token", "AC0123456789abcdef0123456789abcdef", "", "+818000000001", "+818000000002", "Test Body", true},
+		{"invalid empty token with spaces", "AC0123456789abcdef0123456789abcdef", "    ", "+818000000001", "+818000000002", "Test Body", true},
 
-		{"invalid empty to", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "+818000000001", "", "Test Body", true},
-		{"invalid empty to with spaces", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "+818000000001", "     ", "Test Body", true},
-		{"invalid to without + prefix", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "+818000000001", "818000000002", "Test Body", true},
+		{"invalid empty to", "AC0123456789abcdef0123456789abcdef", "token123", "+818000000001", "", "Test Body", true},
+		{"invalid empty to with spaces", "AC0123456789abcdef0123456789abcdef", "token123", "+818000000001", "     ", "Test Body", true},
+		{"invalid to without + prefix", "AC0123456789abcdef0123456789abcdef", "token123", "+818000000001", "818000000002", "Test Body", true},
 
-		{"invalid empty from", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "", "+818000000002", "Test Body", true},
-		{"invalid empty from with spaces", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "     ", "+818000000002", "Test Body", true},
-		{"invalid from without + prefix", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "818000000001", "+818000000002", "Test Body", true},
+		{"invalid empty from", "AC0123456789abcdef0123456789abcdef", "token123", "", "+818000000002", "Test Body", true},
+		{"invalid empty from with spaces", "AC0123456789abcdef0123456789abcdef", "token123", "     ", "+818000000002", "Test Body", true},
+		{"invalid from without + prefix", "AC0123456789abcdef0123456789abcdef", "token123", "818000000001", "+818000000002", "Test Body", true},
 
-		{"invalid empty body", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "+818000000001", "+818000000002", "", true},
-		{"invalid empty body with spaces", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "+818000000001", "+818000000002", "      ", true},
-		{"invalid body too long", "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX", "token123", "+818000000001", "+818000000002", strings.Repeat("X", 1601), true},
+		{"invalid empty body", "AC0123456789abcdef0123456789abcdef", "token123", "+818000000001", "+818000000002", "", true},
+		{"invalid empty body with spaces", "AC0123456789abcdef0123456789abcdef", "token123", "+818000000001", "+818000000002", "      ", true},
+		{"invalid body too long", "AC0123456789abcdef0123456789abcdef", "token123", "+818000000001", "+818000000002", strings.Repeat("X", 1601), true},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {

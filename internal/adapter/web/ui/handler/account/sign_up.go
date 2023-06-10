@@ -56,6 +56,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 			case errors.Is(err, app.ErrConflictingInput):
 				background.Go(func() {
 					ctx := context.Background()
+					config := h.Config(ctx)
 
 					tok, err := h.Store.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 					if err != nil {
@@ -65,7 +66,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 					}
 
 					recipients := handler.EmailRecipients{
-						From: h.Email.From,
+						From: config.SystemEmail,
 						To:   []string{input.Email},
 					}
 					vars := handler.Vars{

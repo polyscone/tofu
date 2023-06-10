@@ -1,9 +1,5 @@
 package guard
 
-type Reader interface {
-	IsUserSuper(userID int) bool
-}
-
 type User struct {
 	ID          int
 	IsSuper     bool
@@ -11,19 +7,27 @@ type User struct {
 }
 
 type Passport struct {
-	store       Reader
-	userID      int
-	isSuper     bool
-	permissions []string
+	isConfigSetup bool
+	userID        int
+	isSuper       bool
+	permissions   []string
 }
 
-func New(store Reader, user User) Passport {
+func NewPassport(isConfigSetup bool, user User) Passport {
 	return Passport{
-		store:       store,
-		userID:      user.ID,
-		isSuper:     user.IsSuper,
-		permissions: user.Permissions,
+		isConfigSetup: isConfigSetup,
+		userID:        user.ID,
+		isSuper:       user.IsSuper,
+		permissions:   user.Permissions,
 	}
+}
+
+func (p Passport) CanViewConfig() bool {
+	return !p.isConfigSetup || p.can(viewConfig)
+}
+
+func (p Passport) CanUpdateConfig() bool {
+	return !p.isConfigSetup || p.can(updateConfig)
 }
 
 func (p Passport) CanChangePassword(userID int) bool {
@@ -74,8 +78,8 @@ func (p Passport) CanCreateRoles() bool {
 	return p.can(createRoles)
 }
 
-func (p Passport) CanEditRoles() bool {
-	return p.can(editRoles)
+func (p Passport) CanUpdateRoles() bool {
+	return p.can(updateRoles)
 }
 
 func (p Passport) CanDeleteRoles() bool {

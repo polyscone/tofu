@@ -14,7 +14,7 @@ go run build.go -help
 
 To run the project with Go vet, tests, and file watching run:
 ```
-go run build.go -debug -watch -clear -after "./web -dev -addr :8080 -tenants .data/tenants.json -log-style text"
+go run build.go -debug -watch -clear -after "./web -dev -addr :8080 -log-style text"
 ```
 
 Omitting the `-debug` flag will build the project in "release" mode which does things like stripping debug symbols, among other things.
@@ -23,13 +23,8 @@ The `-tenants` flag points to a JSON file that describes the tenants of the prog
 
 ```json
 {
-  "app": {
-    "hostnames": ["localhost"],
-    "twilio": {
-      "sid": "",
-      "token": "",
-      "from": ""
-    }
-  }
+	"app1": { "hostnames": ["localhost"] },
+	"app2": { "hostnames": ["local.example.com", "foo.example.com"] }
 }
 ```
+If the flag is omitted then it will default to using `tenants.json` in the `-data` directory.

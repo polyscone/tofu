@@ -8,43 +8,34 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/app/account"
+	"github.com/polyscone/tofu/internal/app/system"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/rate"
 	"github.com/polyscone/tofu/internal/pkg/session"
+	"github.com/polyscone/tofu/internal/pkg/sms"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
 )
 
-type PassportStore struct {
-	AccountReader
-}
+type ctxKey int
 
-func (s *PassportStore) IsUserSuper(userID int) bool {
-	user, err := s.FindUserByID(context.Background(), userID)
-	if err != nil {
-		logger.PrintError(errors.Tracef(err))
+const (
+	ctxSystemConfig ctxKey = iota
+	ctxPassport
+)
 
-		return false
-	}
-
-	for _, role := range user.Roles {
-		if role.ID == account.SuperRole.ID {
-			return true
-		}
-	}
-
-	return false
-}
+var httpClient = http.Client{Timeout: 10 * time.Second}
 
 type emailContent struct {
 	Subject string
@@ -64,18 +55,18 @@ type ViewVarsFunc func(r *http.Request) (Vars, error)
 
 type Handler struct {
 	*Tenant
-	signInPathName string
-	files          fs.FS
-	templatesMu    sync.RWMutex
-	templates      map[string]*template.Template
-	funcs          template.FuncMap
-	viewVarsFuncs  map[string]ViewVarsFunc
-	mux            *router.ServeMux
-	passportStore  *PassportStore
-	Sessions       *session.Manager
+	signInPathName       string
+	systemConfigPathName string
+	files                fs.FS
+	templatesMu          sync.RWMutex
+	templates            map[string]*template.Template
+	funcs                template.FuncMap
+	viewVarsFuncs        map[string]ViewVarsFunc
+	mux                  *router.ServeMux
+	Sessions             *session.Manager
 }
 
-func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName string) *Handler {
+func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName, systemConfigPathName string) *Handler {
 	sessions := session.NewManager(tenant.Store.Web)
 	funcs := template.FuncMap{
 		"Add":           tmplAdd,
@@ -98,15 +89,41 @@ func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName strin
 	}
 
 	return &Handler{
-		Tenant:         tenant,
-		signInPathName: signInPathName,
-		files:          files,
-		templates:      make(map[string]*template.Template),
-		funcs:          funcs,
-		viewVarsFuncs:  make(map[string]ViewVarsFunc),
-		mux:            mux,
-		passportStore:  &PassportStore{AccountReader: tenant.Store.Account},
-		Sessions:       sessions,
+		Tenant:               tenant,
+		signInPathName:       signInPathName,
+		systemConfigPathName: systemConfigPathName,
+		files:                files,
+		templates:            make(map[string]*template.Template),
+		funcs:                funcs,
+		viewVarsFuncs:        make(map[string]ViewVarsFunc),
+		mux:                  mux,
+		Sessions:             sessions,
+	}
+}
+
+func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		config, err := h.Store.System.FindConfig(ctx)
+		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			return
+		}
+
+		systemConfigPath := h.mux.Path(h.systemConfigPathName)
+		if r.Method == http.MethodGet && !config.IsSetup && r.URL.Path != systemConfigPath && filepath.Ext(r.URL.Path) == "" {
+			http.Redirect(w, r, systemConfigPath, http.StatusSeeOther)
+
+			return
+		}
+
+		// The redirect key in the session is supposed to be a one-time temporary
+		// redirect target, so we ensure it's deleted if we're visiting the target
+		if h.Sessions.GetString(ctx, sess.Redirect) == r.URL.String() {
+			h.Sessions.Delete(ctx, sess.Redirect)
+		}
+
+		next(w, r)
 	}
 }
 
@@ -122,8 +139,19 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 	return csrf.MaskedToken(ctx), nil
 }
 
+func (h *Handler) Config(ctx context.Context) *system.Config {
+	config, err := h.Store.System.FindConfig(ctx)
+	if err != nil {
+		logger.PrintError(err)
+	}
+
+	return config
+}
+
 func (h *Handler) emptyPassport(ctx context.Context) guard.Passport {
-	return guard.New(h.passportStore, guard.User{})
+	config := h.Config(ctx)
+
+	return guard.NewPassport(config.IsSetup, guard.User{})
 }
 
 func (h *Handler) Passport(ctx context.Context) guard.Passport {
@@ -137,7 +165,9 @@ func (h *Handler) Passport(ctx context.Context) guard.Passport {
 		return h.emptyPassport(ctx)
 	}
 
-	return guard.New(h.passportStore, guard.User{
+	config := h.Config(ctx)
+
+	return guard.NewPassport(config.IsSetup, guard.User{
 		ID:          user.ID,
 		IsSuper:     user.IsSuper(),
 		Permissions: user.Permissions(),
@@ -150,7 +180,9 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Pass
 		return h.emptyPassport(ctx), errors.Tracef(err)
 	}
 
-	p := guard.New(h.passportStore, guard.User{
+	config := h.Config(ctx)
+
+	p := guard.NewPassport(config.IsSetup, guard.User{
 		ID:          user.ID,
 		IsSuper:     user.IsSuper(),
 		Permissions: user.Permissions(),
@@ -210,6 +242,14 @@ func (h *Handler) email(name string) *template.Template {
 }
 
 func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailContent, error) {
+	var content emailContent
+
+	ctx := context.Background()
+	config, err := h.Store.System.FindConfig(ctx)
+	if err != nil {
+		return content, errors.Tracef(err)
+	}
+
 	data := emailData{
 		URL: URL{
 			Scheme:   h.Tenant.Scheme,
@@ -220,7 +260,7 @@ func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailCo
 		App: AppData{
 			Name:        app.Name,
 			Description: app.Description,
-			HasSMS:      h.Tenant.SMS.IsConfigured,
+			HasSMS:      config.HasSMS(),
 		},
 	}
 
@@ -230,7 +270,6 @@ func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailCo
 
 	email := h.email(name)
 
-	var content emailContent
 	var buf bytes.Buffer
 
 	for _, name := range []string{"subject", "plain", "html"} {
@@ -287,7 +326,15 @@ func (h *Handler) SendEmail(ctx context.Context, recipients EmailRecipients, nam
 }
 
 func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
-	return errors.Tracef(h.Tenant.SMS.Messager.Send(ctx, h.Tenant.SMS.From, to, body))
+	config, err := h.Store.System.FindConfig(ctx)
+	if err != nil {
+		return errors.Tracef(err)
+	}
+
+	// TODO: Reuse client for as long as Twilio config hasn't changed
+	messager := sms.NewTwilioClient(&httpClient, config.TwilioSID, config.TwilioToken)
+
+	return errors.Tracef(messager.Send(ctx, config.TwilioFromTel, to, body))
 }
 
 func (h *Handler) SendTOTPSMS(email, tel string) error {
@@ -318,6 +365,7 @@ func (h *Handler) view(name string) *template.Template {
 
 func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, name string, dataFunc ViewDataFunc) {
 	ctx := r.Context()
+	config := h.Config(ctx)
 	passport := h.Passport(ctx)
 
 	data := ViewData{
@@ -336,7 +384,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 		App: AppData{
 			Name:        app.Name,
 			Description: app.Description,
-			HasSMS:      h.Tenant.SMS.IsConfigured,
+			HasSMS:      config.HasSMS(),
 		},
 		Session: SessionData{
 			// Global session keys
@@ -354,6 +402,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 			IsSignedIn:               h.Sessions.GetBool(ctx, sess.IsSignedIn),
 			KnownPasswordBreachCount: h.Sessions.GetInt(ctx, sess.KnownPasswordBreachCount),
 		},
+		Config:   config,
 		Passport: passport,
 	}
 

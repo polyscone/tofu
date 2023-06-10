@@ -28,7 +28,7 @@
 			<td>{{.Description}}</td>
 			<td class="text-right no-wrap">
 				{{if not (eq .ID $.Vars.Super.ID)}}
-					{{if $.Passport.CanEditRoles}}
+					{{if $.Passport.CanUpdateRoles}}
 						<a href="{{Path "account.management.role.edit" ":roleID" .ID}}{{$.URL.Query.String}}">Edit</a>
 					{{end}}
 

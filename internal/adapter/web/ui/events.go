@@ -37,8 +37,15 @@ func accountDisabledTOTPHandler(tenant *handler.Tenant, h *handler.Handler) any 
 		background.Go(func() {
 			ctx := context.Background()
 
+			config, err := h.Store.System.FindConfig(ctx)
+			if err != nil {
+				logger.PrintError(errors.Tracef(err))
+
+				return
+			}
+
 			recipients := handler.EmailRecipients{
-				From: tenant.Email.From,
+				From: config.SystemEmail,
 				To:   []string{evt.Email},
 			}
 			if err := h.SendEmail(ctx, recipients, "disabled_totp", nil); err != nil {
@@ -60,8 +67,15 @@ func accountSignedUpHandler(tenant *handler.Tenant, h *handler.Handler) any {
 				return
 			}
 
+			config, err := h.Store.System.FindConfig(ctx)
+			if err != nil {
+				logger.PrintError(errors.Tracef(err))
+
+				return
+			}
+
 			recipients := handler.EmailRecipients{
-				From: tenant.Email.From,
+				From: config.SystemEmail,
 				To:   []string{evt.Email},
 			}
 			vars := handler.Vars{

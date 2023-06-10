@@ -8,18 +8,18 @@ import (
 	"github.com/polyscone/tofu/internal/repo"
 )
 
-type EditRoleGuard interface {
-	CanEditRoles() bool
+type UpdateRoleGuard interface {
+	CanUpdateRoles() bool
 }
 
-func (s *Service) EditRole(ctx context.Context, guard EditRoleGuard, roleID int, name, description string, permissions []string) (*Role, error) {
+func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID int, name, description string, permissions []string) (*Role, error) {
 	var input struct {
 		name        RoleName
 		description RoleDesc
 		permissions []Permission
 	}
 	{
-		if !guard.CanEditRoles() {
+		if !guard.CanUpdateRoles() {
 			return nil, errors.Tracef(app.ErrUnauthorised)
 		}
 

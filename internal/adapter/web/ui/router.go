@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/account"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/admin"
@@ -36,7 +35,7 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 	templateFiles := fstack.New(dev.RelDirFS(templateDir), errors.Must(fs.Sub(files, templateDir)))
 
 	mux := router.NewServeMux()
-	h := handler.New(mux, tenant, templateFiles, "account.sign_in")
+	h := handler.New(mux, tenant, templateFiles, "account.sign_in", "system.config")
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		h.ErrorView(w, r, errors.Tracef(err), "error", nil)
@@ -91,19 +90,7 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 		return 0
 	}))
-	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			// The redirect key in the session is supposed to be a one-time temporary
-			// redirect target, so we ensure it's deleted if we're visiting the target
-			if h.Sessions.GetString(ctx, sess.Redirect) == r.URL.String() {
-				h.Sessions.Delete(ctx, sess.Redirect)
-			}
-
-			next(w, r)
-		}
-	})
+	mux.Use(h.Middleware)
 
 	// Event listeners
 	tenant.Broker.Listen(accountSignedInWithPasswordHandler(tenant, h))
@@ -135,15 +122,19 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 	// Admin
 	mux.Prefix("/admin", func(mux *router.ServeMux) {
-		mux.Before(h.RequireSignIn)
-
 		mux.Name("admin.section")
 
 		admin.Dashboard(h, mux)
 
 		mux.Prefix("/account", func(mux *router.ServeMux) {
+			mux.Before(h.RequireSignIn)
+
 			account.RoleManagement(h, mux)
 			account.UserManagement(h, mux)
+		})
+
+		mux.Prefix("/system", func(mux *router.ServeMux) {
+			admin.SystemConfig(h, mux)
 		})
 	})
 

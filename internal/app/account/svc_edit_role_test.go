@@ -11,21 +11,21 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
-type editRoleGuard struct {
+type updateRoleGuard struct {
 	value bool
 }
 
-func (g editRoleGuard) CanCreateRoles() bool {
+func (g updateRoleGuard) CanCreateRoles() bool {
 	return true
 }
 
-func (g editRoleGuard) CanEditRoles() bool {
+func (g updateRoleGuard) CanUpdateRoles() bool {
 	return g.value
 }
 
-func TestEditRole(t *testing.T) {
-	validGuard := editRoleGuard{value: true}
-	invalidGuard := editRoleGuard{value: false}
+func TestUpdateRole(t *testing.T) {
+	validGuard := updateRoleGuard{value: true}
+	invalidGuard := updateRoleGuard{value: false}
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
@@ -36,7 +36,7 @@ func TestEditRole(t *testing.T) {
 
 		tt := []struct {
 			name   string
-			guard  editRoleGuard
+			guard  updateRoleGuard
 			before account.Role
 			after  account.Role
 			want   error
@@ -71,7 +71,7 @@ func TestEditRole(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				edited, err := svc.EditRole(ctx, tc.guard, before.ID, tc.after.Name, tc.after.Description, tc.after.Permissions)
+				edited, err := svc.UpdateRole(ctx, tc.guard, before.ID, tc.after.Name, tc.after.Description, tc.after.Permissions)
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
 				}

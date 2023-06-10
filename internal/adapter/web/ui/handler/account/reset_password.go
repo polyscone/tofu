@@ -52,6 +52,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 
 		background.Go(func() {
 			ctx := context.Background()
+			config := h.Config(ctx)
 
 			tok, err := h.Store.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 			if err != nil {
@@ -61,7 +62,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 			}
 
 			recipients := handler.EmailRecipients{
-				From: h.Email.From,
+				From: config.SystemEmail,
 				To:   []string{input.Email},
 			}
 			vars := handler.Vars{

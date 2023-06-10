@@ -1,6 +1,6 @@
 {{define "nav_admin"}}
 
-{{if or .Passport.CanViewUsers .Passport.CanViewRoles}}
+{{if or .Passport.CanViewConfig .Passport.CanViewUsers .Passport.CanViewRoles}}
 	<nav>
 		<ul>
 			{{if .Passport.CanViewUsers}}
@@ -9,6 +9,10 @@
 
 			{{if .Passport.CanViewRoles}}
 				<li><a href="{{Path "account.management.role.list"}}">Role management</a></li>
+			{{end}}
+
+			{{if .Passport.CanViewConfig}}
+				<li><a href="{{Path "system.config"}}">System configuration</a></li>
 			{{end}}
 		</ul>
 	</nav>

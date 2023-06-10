@@ -20,7 +20,7 @@
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
 		<label for="totp__tel">Phone number <small>Full number with country code</small></label>
-		<input id="totp__tel" type="tel" name="tel" value="{{or (.Form.Get "tel") .Vars.TOTPTel}}" placeholder="+00 00 0000 0000 " autocomplete="tel" required pattern="\+\d(\d| )+" minlength="4" maxlength="25">
+		<input id="totp__tel" type="tel" name="tel" value="{{.Form.GetOr "tel" .Vars.TOTPTel}}" placeholder="+00 00 0000 0000 " autocomplete="tel" required pattern="\+\d(\d| )+" minlength="4" maxlength="25">
 		<p class="error">{{.Errors.Get "new phone"}}</p>
 
 		<div class="bag reverse">
