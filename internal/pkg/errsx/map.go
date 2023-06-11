@@ -1,26 +1,13 @@
-package errors
+package errsx
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
 
 // Map represents a collection of errors keyed by name.
 type Map map[string]error
-
-// Tracef returns nil if the map is nil.
-// If the map is not nil then a traced error is created using the given error or
-// format string.
-func (m Map) Tracef(format any, a ...any) error {
-	if m == nil {
-		return nil
-	}
-
-	trace := tracef(2, format, a...).(Trace)
-	trace.fields = m
-
-	return trace
-}
 
 // Get will return the error string for the given key.
 func (m Map) Get(key string) string {
@@ -33,15 +20,31 @@ func (m Map) Get(key string) string {
 
 // Set associates the given error with the given key.
 // The map is lazily instantiated if it is nil.
-func (m *Map) Set(key string, err any) {
+func (m *Map) Set(key string, msg any) {
 	if *m == nil {
 		*m = make(Map)
 	}
 
-	(*m)[key] = tracef(2, err)
+	var err error
+	switch msg := msg.(type) {
+	case error:
+		if msg == nil {
+			return
+		}
+
+		err = msg
+
+	case string:
+		err = errors.New(msg)
+
+	default:
+		panic("want error or string message")
+	}
+
+	(*m)[key] = err
 }
 
-func (m Map) String() string {
+func (m Map) Error() string {
 	if m == nil {
 		return "<nil>"
 	}
@@ -55,6 +58,10 @@ func (m Map) String() string {
 	}
 
 	return strings.Join(pairs, "; ")
+}
+
+func (m Map) String() string {
+	return m.Error()
 }
 
 // MarshalJSON implements the json.Marshaler interface.

@@ -1,6 +1,6 @@
 package logger
 
-import "github.com/polyscone/tofu/internal/pkg/errors"
+import "errors"
 
 const (
 	Text Style = "text"
@@ -23,7 +23,7 @@ func (s *Style) isValid() bool {
 func (s *Style) Set(value string) error {
 	style := Style(value)
 	if !style.isValid() {
-		return errors.Tracef(`style must be one of "text", or "json"`)
+		return errors.New(`style must be one of "text", or "json"`)
 	}
 
 	*s = style

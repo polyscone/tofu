@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
@@ -57,12 +56,12 @@ func tmplPath(mux *router.ServeMux) tmplPathFunc {
 
 func tmplQueryReplace(q url.Values, pairs ...any) (url.Values, error) {
 	if len(pairs)%2 == 1 {
-		return nil, errors.Tracef("QueryString expects pairs of key value replacements")
+		return nil, fmt.Errorf("QueryReplace: want pairs of key value replacements")
 	}
 
 	u, err := url.Parse("?" + q.Encode())
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("QueryReplace: parse URL: %w", err)
 	}
 
 	q = u.Query()
@@ -99,7 +98,7 @@ func tmplQueryURL(q url.Values) template.URL {
 func tmplQueryString(q url.Values, pairs ...any) (template.URL, error) {
 	q, err := tmplQueryReplace(q, pairs...)
 	if err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("QueryString: %w", err)
 	}
 
 	for key, values := range q {
@@ -187,7 +186,7 @@ func tmplToStrings(value any) ([]string, error) {
 		return value, nil
 
 	default:
-		return nil, errors.Tracef("unsupported value type %T", value)
+		return nil, fmt.Errorf("unsupported value type %T", value)
 	}
 }
 

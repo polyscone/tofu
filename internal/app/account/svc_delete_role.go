@@ -2,9 +2,9 @@ package account
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 type DeleteRoleGuard interface {
@@ -13,15 +13,18 @@ type DeleteRoleGuard interface {
 
 func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID int) (*Role, error) {
 	if !guard.CanDeleteRoles() {
-		return nil, errors.Tracef(app.ErrUnauthorised)
+		return nil, app.ErrUnauthorised
 	}
 
 	role, err := s.store.FindRoleByID(ctx, roleID)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("find role by id: %w", err)
 	}
 
 	err = s.store.RemoveRole(ctx, roleID)
+	if err != nil {
+		return nil, fmt.Errorf("remove role: %w", err)
+	}
 
-	return role, errors.Tracef(err)
+	return role, nil
 }

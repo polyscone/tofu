@@ -1,6 +1,10 @@
 package repo
 
-import "github.com/polyscone/tofu/internal/pkg/errors"
+import (
+	"errors"
+
+	"github.com/polyscone/tofu/internal/pkg/errsx"
+)
 
 var (
 	ErrNotFound     = errors.New("not found")
@@ -9,7 +13,7 @@ var (
 )
 
 type ConflictError struct {
-	errors.Map
+	errsx.Map
 }
 
 func (c ConflictError) Error() string {

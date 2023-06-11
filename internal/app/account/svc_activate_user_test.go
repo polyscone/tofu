@@ -3,11 +3,12 @@ package account_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 )
@@ -19,12 +20,12 @@ func TestActivateUser(t *testing.T) {
 
 		user1 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com"})
 		user2 := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com"})
-		superRole := errors.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
+		superRole := errsx.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		superUserCount := errors.Must(store.CountUsersByRoleID(ctx, superRole.ID))
+		superUserCount := errsx.Must(store.CountUsersByRoleID(ctx, superRole.ID))
 		if want, got := 0, superUserCount; want != got {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
@@ -36,7 +37,7 @@ func TestActivateUser(t *testing.T) {
 		events.Expect(account.RolesChanged{Email: user1.Email})
 		events.Expect(account.Activated{Email: user1.Email})
 
-		user1 = errors.Must(store.FindUserByEmail(ctx, user1.Email))
+		user1 = errsx.Must(store.FindUserByEmail(ctx, user1.Email))
 
 		if user1.ActivatedAt.IsZero() {
 			t.Error("want non-zero activated at; got zero")
@@ -48,7 +49,7 @@ func TestActivateUser(t *testing.T) {
 
 		events.Expect(account.SignedInWithPassword{Email: user1.Email})
 
-		superUserCount = errors.Must(store.CountUsersByRoleID(ctx, superRole.ID))
+		superUserCount = errsx.Must(store.CountUsersByRoleID(ctx, superRole.ID))
 		if want, got := 1, superUserCount; want != got {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
@@ -59,7 +60,7 @@ func TestActivateUser(t *testing.T) {
 
 		events.Expect(account.Activated{Email: user2.Email})
 
-		superUserCount = errors.Must(store.CountUsersByRoleID(ctx, superRole.ID))
+		superUserCount = errsx.Must(store.CountUsersByRoleID(ctx, superRole.ID))
 		if want, got := 1, superUserCount; want != got {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}

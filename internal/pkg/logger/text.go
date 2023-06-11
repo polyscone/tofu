@@ -12,7 +12,7 @@ import (
 type TextFormatter struct{}
 
 // Format implements the Formatter interface to be used in a log writer.
-func (f *TextFormatter) Format(message, newline string, at time.Time, funcName, file string, line int) string {
+func (f *TextFormatter) Format(message, newline string, at time.Time) string {
 	var value any
 	if err := json.Unmarshal([]byte(message), &value); err == nil {
 		b, err := json.MarshalIndent(value, "", "\t")
@@ -23,8 +23,5 @@ func (f *TextFormatter) Format(message, newline string, at time.Time, funcName, 
 
 	message = strings.TrimRight(message, "\n\r\t")
 
-	funcParts := strings.Split(funcName, "/")
-	funcName = funcParts[len(funcParts)-1]
-
-	return fmt.Sprintf("[%v:%v] (%v) @ %v\n%s%v\n", file, line, funcName, at.Format("15:04:05 MST"), message, newline)
+	return fmt.Sprintf("[%v] %s\n", at.Format("15:04:05 MST"), message)
 }

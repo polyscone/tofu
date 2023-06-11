@@ -2,9 +2,11 @@ package account
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/repo"
 )
 
@@ -20,11 +22,11 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, d
 	}
 	{
 		if !guard.CanCreateRoles() {
-			return nil, errors.Tracef(app.ErrUnauthorised)
+			return nil, app.ErrUnauthorised
 		}
 
 		var err error
-		var errs errors.Map
+		var errs errsx.Map
 
 		if input.name, err = NewRoleName(name); err != nil {
 			errs.Set("name", err)
@@ -44,7 +46,7 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, d
 		}
 
 		if errs != nil {
-			return nil, errs.Tracef(app.ErrMalformedInput)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
@@ -53,10 +55,10 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, d
 	if err := s.store.AddRole(ctx, role); err != nil {
 		var conflicts *repo.ConflictError
 		if errors.As(err, &conflicts) {
-			return nil, conflicts.Tracef(app.ErrConflictingInput)
+			return nil, fmt.Errorf("add role: %w: %w", app.ErrConflictingInput, conflicts)
 		}
 
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("add role: %w", err)
 	}
 
 	return role, nil

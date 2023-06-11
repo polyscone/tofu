@@ -1,12 +1,14 @@
 package account
 
 import (
+	"errors"
+	"fmt"
 	"math/rand"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
@@ -17,8 +19,8 @@ const (
 )
 
 var (
-	validRoleName     = errors.Must(regexp.Compile(validRoleNamePattern))
-	roleNameGenerator = errors.Must(gen.NewPatternGenerator(validRoleNamePattern))
+	validRoleName     = errsx.Must(regexp.Compile(validRoleNamePattern))
+	roleNameGenerator = errsx.Must(gen.NewPatternGenerator(validRoleNamePattern))
 )
 
 type RoleName string
@@ -34,26 +36,26 @@ func GenerateRoleName() RoleName {
 
 func NewRoleName(name string) (RoleName, error) {
 	if strings.TrimSpace(name) == "" {
-		return "", errors.Tracef("cannot be empty")
+		return "", errors.New("cannot be empty")
 	}
 
 	if strings.ContainsAny(name, "\n\r") {
-		return "", errors.Tracef("cannot contain line breaks")
+		return "", errors.New("cannot contain line breaks")
 	}
 	if strings.ContainsAny(name, `"'`) {
-		return "", errors.Tracef("cannot contain quotes")
+		return "", errors.New("cannot contain quotes")
 	}
 
 	rc := utf8.RuneCountInString(name)
 	if rc < roleNameMinLength {
-		return "", errors.Tracef("must be at least %v characters", roleNameMinLength)
+		return "", fmt.Errorf("must be at least %v characters", roleNameMinLength)
 	}
 	if rc > roleNameMaxLength {
-		return "", errors.Tracef("cannot be a over %v characters in length", roleNameMaxLength)
+		return "", fmt.Errorf("cannot be a over %v characters in length", roleNameMaxLength)
 	}
 
 	if !validRoleName.MatchString(name) {
-		return "", errors.Tracef("contains invalid characters")
+		return "", errors.New("contains invalid characters")
 	}
 
 	return RoleName(name), nil
@@ -72,5 +74,5 @@ func (n RoleName) Generate(rand *rand.Rand) any {
 }
 
 func (n RoleName) Invalidate(rand *rand.Rand, value any) any {
-	return RoleName(errors.Must(gen.Pattern(`(|[^ a-zA-Z0-9!#&()*+,./:_\-\\]{1,30}|a{31,})`)))
+	return RoleName(errsx.Must(gen.Pattern(`(|[^ a-zA-Z0-9!#&()*+,./:_\-\\]{1,30}|a{31,})`)))
 }

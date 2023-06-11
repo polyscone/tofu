@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
@@ -69,15 +69,15 @@ func TestRemoveTrailingSlash(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			req := errors.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
+			req := errsx.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
 
 			req.Header.Set("content-type", "application/x-www-form-urlencoded")
 
-			res := errors.Must(ts.Client().Do(req))
+			res := errsx.Must(ts.Client().Do(req))
 
 			defer res.Body.Close()
 
-			got := string(errors.Must(io.ReadAll(res.Body)))
+			got := string(errsx.Must(io.ReadAll(res.Body)))
 			if want := tc.want; want != got {
 				t.Errorf("want %v; got %v", want, got)
 			}

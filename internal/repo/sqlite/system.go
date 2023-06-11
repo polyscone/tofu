@@ -3,10 +3,11 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"io/fs"
 
 	"github.com/polyscone/tofu/internal/app/system"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/repo"
 )
 
@@ -17,11 +18,11 @@ type SystemStore struct {
 func NewSystemStore(ctx context.Context, db *sql.DB) (*SystemStore, error) {
 	migrations, err := fs.Sub(migrations, "migrations/system")
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("initialise system migrations FS: %w", err)
 	}
 
 	if err := migrateFS(ctx, db, "system", migrations); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("migrate system: %w", err)
 	}
 
 	s := SystemStore{db: newDB(db)}
@@ -32,28 +33,29 @@ func NewSystemStore(ctx context.Context, db *sql.DB) (*SystemStore, error) {
 func (s *SystemStore) FindConfig(ctx context.Context) (*system.Config, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	config, err := s.findConfig(ctx, tx)
-
-	return config, errors.Tracef(err)
+	return s.findConfig(ctx, tx)
 }
 
 func (s *SystemStore) SaveConfig(ctx context.Context, config *system.Config) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	err = s.upsertConfig(ctx, tx, config)
-	if err != nil {
-		return errors.Tracef(err)
+	if err := s.upsertConfig(ctx, tx, config); err != nil {
+		return fmt.Errorf("upsert config: %w", err)
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *SystemStore) findConfig(ctx context.Context, tx *Tx) (*system.Config, error) {
@@ -73,7 +75,7 @@ func (s *SystemStore) findConfig(ctx context.Context, tx *Tx) (*system.Config, e
 		&config.TwilioFromTel,
 	)
 	if err != nil && !errors.Is(err, repo.ErrNotFound) {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	config.RequiresSetup = errors.Is(err, repo.ErrNotFound)
@@ -115,5 +117,5 @@ func (s *SystemStore) upsertConfig(ctx context.Context, tx *Tx, config *system.C
 		sql.Named("updated_at", Time(tx.now.UTC())),
 	)
 
-	return errors.Tracef(err)
+	return err
 }

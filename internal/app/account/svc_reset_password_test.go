@@ -3,11 +3,12 @@ package account_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 )
@@ -33,7 +34,7 @@ func TestResetPassword(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		newPassword := errors.Must(account.NewPassword("password123"))
+		newPassword := errsx.Must(account.NewPassword("password123"))
 		err := svc.ResetPassword(ctx, validGuard, user.ID, newPassword.String(), newPassword.String())
 		if err != nil {
 			t.Fatal(err)
@@ -41,7 +42,7 @@ func TestResetPassword(t *testing.T) {
 
 		events.Expect(account.PasswordReset{Email: user.Email})
 
-		user = errors.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(store.FindUserByID(ctx, user.ID))
 
 		if _, err := user.SignInWithPassword(newPassword, hasher); err != nil {
 			t.Errorf("want to be able to sign in with new password; got %q", err)

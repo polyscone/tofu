@@ -2,9 +2,10 @@ package account
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, code string) error {
@@ -14,7 +15,7 @@ func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, code s
 	}
 	{
 		var err error
-		var errs errors.Map
+		var errs errsx.Map
 
 		input.userID = userID
 
@@ -23,21 +24,21 @@ func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, code s
 		}
 
 		if errs != nil {
-			return errs.Tracef(app.ErrMalformedInput)
+			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.store.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find user by id: %w", err)
 	}
 
 	if err := user.SignInWithRecoveryCode(input.code); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("sign in with recovery code: %w", err)
 	}
 
 	if err := s.store.SaveUser(ctx, user); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)

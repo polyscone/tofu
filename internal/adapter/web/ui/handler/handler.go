@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -19,7 +20,7 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/system"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/rate"
 	"github.com/polyscone/tofu/internal/pkg/session"
@@ -105,7 +106,9 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		ctx := r.Context()
 
 		config, err := h.Store.System.FindConfig(ctx)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find config: %w", err), "error", nil)
+
 			return
 		}
 
@@ -145,11 +148,11 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 
 func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 	if err := csrf.RenewToken(ctx); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("renew CSRF token: %w", err)
 	}
 
 	if err := h.Sessions.Renew(ctx); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return csrf.MaskedToken(ctx), nil
@@ -158,7 +161,7 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 func (h *Handler) Config(ctx context.Context) *system.Config {
 	value := ctx.Value(ctxSystemConfig)
 	if value == nil {
-		panic("attempt to access system config before it has been initialised")
+		return &system.Config{}
 	}
 
 	config, ok := value.(*system.Config)
@@ -172,7 +175,7 @@ func (h *Handler) Config(ctx context.Context) *system.Config {
 func (h *Handler) Passport(ctx context.Context) guard.Passport {
 	value := ctx.Value(ctxPassport)
 	if value == nil {
-		panic("attempt to access passport before it has been initialised")
+		return guard.Passport{}
 	}
 
 	passport, ok := value.(guard.Passport)
@@ -186,7 +189,7 @@ func (h *Handler) Passport(ctx context.Context) guard.Passport {
 func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Passport, error) {
 	user, err := h.Store.Account.FindUserByEmail(ctx, email)
 	if err != nil {
-		return guard.NewPassport(false, guard.User{}), errors.Tracef(err)
+		return guard.Passport{}, fmt.Errorf("find user by email: %w", err)
 	}
 
 	config := h.Config(ctx)
@@ -238,7 +241,7 @@ func (h *Handler) template(name string, patterns ...string) *template.Template {
 	tmpl := template.New(name).Option("missingkey=default").Funcs(h.funcs)
 
 	for _, pattern := range patterns {
-		tmpl = errors.Must(tmpl.ParseFS(h.files, pattern))
+		tmpl = errsx.Must(tmpl.ParseFS(h.files, pattern))
 	}
 
 	h.templates[name] = tmpl
@@ -256,7 +259,7 @@ func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailCo
 	ctx := context.Background()
 	config, err := h.Store.System.FindConfig(ctx)
 	if err != nil {
-		return content, errors.Tracef(err)
+		return content, fmt.Errorf("find config: %w", err)
 	}
 
 	data := emailData{
@@ -290,7 +293,7 @@ func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailCo
 		buf.Reset()
 
 		if err := tmpl.Execute(&buf, data); err != nil {
-			return content, errors.Tracef(err)
+			return content, fmt.Errorf("execute email template: %w", err)
 		}
 
 		switch name {
@@ -317,7 +320,7 @@ func (h *Handler) emailContent(name string, vars Vars) (emailContent, error) {
 func (h *Handler) SendEmail(ctx context.Context, recipients EmailRecipients, name string, vars Vars) error {
 	content, err := h.emailContent(name, vars)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("get email content: %w", err)
 	}
 
 	msg := smtp.Msg{
@@ -331,19 +334,19 @@ func (h *Handler) SendEmail(ctx context.Context, recipients EmailRecipients, nam
 		HTML:    content.HTML,
 	}
 
-	return errors.Tracef(h.Tenant.Email.Mailer.Send(ctx, msg))
+	return h.Tenant.Email.Mailer.Send(ctx, msg)
 }
 
 func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
 	config, err := h.Store.System.FindConfig(ctx)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find config: %w", err)
 	}
 
 	// TODO: Reuse client for as long as Twilio config hasn't changed
 	messager := sms.NewTwilioClient(&httpClient, config.TwilioSID, config.TwilioToken)
 
-	return errors.Tracef(messager.Send(ctx, config.TwilioFromTel, to, body))
+	return messager.Send(ctx, config.TwilioFromTel, to, body)
 }
 
 func (h *Handler) SendTOTPSMS(email, tel string) error {
@@ -351,21 +354,19 @@ func (h *Handler) SendTOTPSMS(email, tel string) error {
 
 	user, err := h.Store.Account.FindUserByEmail(ctx, email)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find user by email: %w", err)
 	}
 
 	totp, err := user.GenerateTOTP()
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("generate TOTP: %w", err)
 	}
 
 	if tel == "" {
 		tel = user.TOTPTel
 	}
 
-	err = h.SendSMS(ctx, tel, totp)
-
-	return errors.Tracef(err)
+	return h.SendSMS(ctx, tel, totp)
 }
 
 func (h *Handler) view(name string) *template.Template {
@@ -417,7 +418,9 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 
 	if vars, ok := h.viewVarsFuncs[name]; ok {
 		defaults, err := vars(r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("vars: %w", err), "error", nil)
+
 			return
 		}
 
@@ -434,7 +437,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 	var buf bytes.Buffer
 
 	if err := h.view(name).ExecuteTemplate(&buf, "master", data); err != nil {
-		httputil.LogError(r, err)
+		httputil.LogError(r, fmt.Errorf("execute view template: %w", err))
 
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 
@@ -445,7 +448,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 	w.WriteHeader(status)
 
 	if _, err := buf.WriteTo(w); err != nil {
-		httputil.LogError(r, errors.Tracef(err))
+		httputil.LogError(r, fmt.Errorf("handler: write view template response: %w", err))
 	}
 }
 
@@ -455,12 +458,8 @@ func (h *Handler) View(w http.ResponseWriter, r *http.Request, status int, name 
 	})
 }
 
-func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err error, name string, dataFunc ViewDataFunc) bool {
-	if err == nil {
-		return false
-	}
-
-	httputil.LogError(r, errors.Tracef(err))
+func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err error, name string, dataFunc ViewDataFunc) {
+	httputil.LogError(r, err)
 
 	status := httputil.ErrorStatus(err)
 
@@ -489,8 +488,9 @@ func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err erro
 
 			data.ErrorMessage = "Invalid input."
 
-			if trace, ok := err.(errors.Trace); ok {
-				data.Errors = trace.Fields()
+			var errs errsx.Map
+			if errors.As(err, &errs) {
+				data.Errors = errs
 			}
 
 		case errors.Is(err, csrf.ErrEmptyToken):
@@ -510,22 +510,16 @@ func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err erro
 			dataFunc(data)
 		}
 	})
-
-	return true
 }
 
-func (h *Handler) ErrorView(w http.ResponseWriter, r *http.Request, err error, name string, vars Vars) bool {
-	return h.ErrorViewFunc(w, r, errors.Tracef(err), name, func(data *ViewData) {
+func (h *Handler) ErrorView(w http.ResponseWriter, r *http.Request, err error, name string, vars Vars) {
+	h.ErrorViewFunc(w, r, err, name, func(data *ViewData) {
 		data.Vars = data.Vars.Merge(vars)
 	})
 }
 
-func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, err error) bool {
-	if err == nil {
-		return false
-	}
-
-	httputil.LogError(r, errors.Tracef(err))
+func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, err error) {
+	httputil.LogError(r, err)
 
 	var displayOK bool
 	status := httputil.ErrorStatus(err)
@@ -557,26 +551,27 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, err error) b
 	if displayOK && 400 <= status && status <= 499 {
 		detail["error"] = err.Error()
 
-		if trace, ok := err.(errors.Trace); ok {
-			fields := trace.Fields()
-
-			if fields != nil {
-				detail["fields"] = fields
-			}
+		var errs errsx.Map
+		if errors.As(err, &errs) {
+			detail["fields"] = errs
 		}
 	}
 
 	if err := json.NewEncoder(w).Encode(detail); err != nil {
-		httputil.LogError(r, errors.Tracef(err))
+		httputil.LogError(r, fmt.Errorf("handler: write JSON response: %w", err))
 	}
-
-	return true
 }
 
 func (h *Handler) JSON(w http.ResponseWriter, r *http.Request, data any) bool {
 	w.Header().Set("content-type", "application/json")
 
-	return !h.ErrorJSON(w, r, errors.Tracef(json.NewEncoder(w).Encode(data)))
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		h.ErrorJSON(w, r, fmt.Errorf("encode JSON: %w", err))
+
+		return false
+	}
+
+	return true
 }
 
 func (h *Handler) AddFlashf(ctx context.Context, format string, a ...any) {
@@ -627,7 +622,7 @@ func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
 
 		passport := h.Passport(ctx)
 		if !check(passport) {
-			h.ErrorView(w, r, errors.Tracef(app.ErrUnauthorised), "error", nil)
+			h.ErrorView(w, r, app.ErrUnauthorised, "error", nil)
 
 			return false
 		}

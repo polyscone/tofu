@@ -1,10 +1,9 @@
 package rate
 
 import (
+	"errors"
 	"sync"
 	"time"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 var ErrInsufficientTokens = errors.New("insufficient tokens")
@@ -62,7 +61,7 @@ func (tb *TokenBucket) Leak(n float64, t time.Time) (int, error) {
 	}
 
 	if tb.tokens < n {
-		return int(tb.tokens), errors.Tracef(ErrInsufficientTokens)
+		return int(tb.tokens), ErrInsufficientTokens
 	}
 
 	if n > 0 {

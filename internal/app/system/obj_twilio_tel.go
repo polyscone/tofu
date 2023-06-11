@@ -1,14 +1,15 @@
 package system
 
 import (
+	"errors"
 	"regexp"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 const validTwilioTelPattern = `^\+\d(\d| )+$`
 
-var validTwilioTel = errors.Must(regexp.Compile(validTwilioTelPattern))
+var validTwilioTel = errsx.Must(regexp.Compile(validTwilioTelPattern))
 
 type TwilioTel string
 
@@ -18,7 +19,7 @@ func NewTwilioTel(tel string) (TwilioTel, error) {
 	}
 
 	if !validTwilioTel.MatchString(tel) {
-		return "", errors.Tracef("invalid phone number")
+		return "", errors.New("invalid phone number")
 	}
 
 	return TwilioTel(tel), nil

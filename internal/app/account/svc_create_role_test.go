@@ -2,12 +2,13 @@ package account_test
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 )
@@ -57,7 +58,7 @@ func TestCreateRole(t *testing.T) {
 					return
 				}
 
-				found := errors.Must(store.FindRoleByID(ctx, created.ID))
+				found := errsx.Must(store.FindRoleByID(ctx, created.ID))
 
 				if want, got := created.Name, found.Name; want != got {
 					t.Errorf("want name to be %q; got %q", want, got)

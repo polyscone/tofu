@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
@@ -41,7 +40,7 @@ func ETag(next http.HandlerFunc) http.HandlerFunc {
 			}
 
 			if _, err := buf.WriteTo(w); err != nil {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("etag: write response: %w", err)
 			}
 		}
 	}

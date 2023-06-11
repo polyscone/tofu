@@ -1,12 +1,13 @@
 package middleware_test
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
@@ -63,8 +64,8 @@ func TestMaxBytes(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			req := errors.Must(http.NewRequest(tc.method, ts.URL+tc.path, strings.NewReader(tc.body)))
-			res := errors.Must(ts.Client().Do(req))
+			req := errsx.Must(http.NewRequest(tc.method, ts.URL+tc.path, strings.NewReader(tc.body)))
+			res := errsx.Must(ts.Client().Do(req))
 
 			defer res.Body.Close()
 

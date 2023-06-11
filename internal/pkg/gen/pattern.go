@@ -6,8 +6,6 @@ import (
 	"regexp/syntax"
 	"strings"
 	"sync"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 const codepointsRangeEnd = 0x10ffff
@@ -33,7 +31,7 @@ func Pattern(pattern string) (string, error) {
 
 	pg, err := NewPatternGenerator(pattern)
 	if err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("new pattern generator: %w", err)
 	}
 
 	generators.data[pattern] = pg
@@ -57,7 +55,7 @@ type PatternGenerator struct {
 func NewPatternGenerator(pattern string) (*PatternGenerator, error) {
 	re, err := syntax.Parse(pattern, syntax.Perl)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("parse pattern: %w", err)
 	}
 
 	pg := PatternGenerator{

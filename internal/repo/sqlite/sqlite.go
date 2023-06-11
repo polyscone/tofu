@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -14,7 +15,7 @@ import (
 	"time"
 
 	"github.com/mattn/go-sqlite3"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/uuid"
 	"github.com/polyscone/tofu/internal/repo"
 )
@@ -38,7 +39,7 @@ func init() {
 				PRAGMA synchronous = NORMAL;
 			`, nil)
 
-			return errors.Tracef(err)
+			return err
 		},
 	})
 }
@@ -61,7 +62,7 @@ func Open(ctx context.Context, kind Kind, filename string) (*sql.DB, error) {
 	case KindFile:
 		dir := filepath.Dir(filename)
 		if err := os.MkdirAll(dir, 0755); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("make directory: %w", err)
 		}
 		dsn = filename
 
@@ -127,11 +128,11 @@ func Open(ctx context.Context, kind Kind, filename string) (*sql.DB, error) {
 
 	db, err := sql.Open(driverName, dsn)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	if err := db.PingContext(ctx); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("ping: %w", err)
 	}
 
 	databases.data[dsn] = db
@@ -140,9 +141,9 @@ func Open(ctx context.Context, kind Kind, filename string) (*sql.DB, error) {
 }
 
 func OpenInMemoryTestDatabase(ctx context.Context) *sql.DB {
-	randomName := errors.Must(uuid.NewV4()).String() + ".sqlite"
+	randomName := errsx.Must(uuid.NewV4()).String() + ".sqlite"
 
-	return errors.Must(Open(ctx, KindMemory, randomName))
+	return errsx.Must(Open(ctx, KindMemory, randomName))
 }
 
 func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) error {
@@ -162,23 +163,23 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 	`
 	args := []any{sql.Named("name", name)}
 	if _, err := tx.ExecContext(ctx, stmt, args...); err != nil {
-		return errors.Tracef(err)
+		return err
 	}
 
 	var count int
 	if err := tx.QueryRowContext(ctx, "SELECT COUNT(1) FROM _migrations;").Scan(&count); err != nil {
-		return errors.Tracef(err)
+		return err
 	}
 
 	var version int
 	stmt = "SELECT version FROM _migrations WHERE name = :name;"
 	args = []any{sql.Named("name", name)}
 	if err := tx.QueryRowContext(ctx, stmt, args...).Scan(&version); err != nil {
-		return errors.Tracef(err)
+		return err
 	}
 
 	if version < 0 {
-		return errors.Tracef("want current migration to be version 0 or more; got %v", version)
+		return fmt.Errorf("want current migration to be version 0 or more; got %v", version)
 	}
 	migration := version
 	nm := len(migrations)
@@ -186,7 +187,7 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 	// If the number of migration strings is less than the version then we must have
 	// lost some migrations and the data cannot be trusted
 	if nm < version {
-		return errors.Tracef("want at least %v migration strings; got %v", version, nm)
+		return fmt.Errorf("want at least %v migration strings; got %v", version, nm)
 	}
 
 	// If the version is the same as the number of migration strings then we must be up to date
@@ -195,7 +196,7 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 	}
 
 	if _, err := tx.ExecContext(ctx, "PRAGMA foreign_keys = OFF;"); err != nil {
-		return errors.Tracef(err)
+		return err
 	}
 
 	for i, stmt := range migrations {
@@ -209,7 +210,7 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 			continue
 		}
 		if _, err := tx.ExecContext(ctx, stmt); err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 
 		migration++
@@ -231,25 +232,25 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 			sql.Named("name", name),
 		}
 		if _, err := tx.ExecContext(ctx, stmt, args...); err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 	}
 
 	_, err := tx.ExecContext(ctx, "PRAGMA foreign_keys = ON;")
 
-	return errors.Tracef(err)
+	return err
 }
 
 func migrateFS(ctx context.Context, db *sql.DB, name string, fsys fs.FS) error {
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	files, err := fs.ReadDir(fsys, ".")
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("read migration directory: %w", err)
 	}
 
 	queries := make([]string, len(files))
@@ -257,26 +258,30 @@ func migrateFS(ctx context.Context, db *sql.DB, name string, fsys fs.FS) error {
 		filename := f.Name()
 
 		if f.IsDir() {
-			return errors.Tracef("want file; got directory %q", filename)
+			return fmt.Errorf("want file; got directory %q", filename)
 		}
 
 		if filename[:4] != fmt.Sprintf("%04d", i+1) {
-			return errors.Tracef("want file beginning with %04d; got %q", i+1, filename)
+			return fmt.Errorf("want file beginning with %04d; got %q", i+1, filename)
 		}
 
 		b, err := fs.ReadFile(fsys, filename)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("read migration file: %w", err)
 		}
 
 		queries[i] = string(b)
 	}
 
 	if err := migrate(ctx, tx, name, queries); err != nil {
-		return errors.Tracef(err)
+		return err
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func repoerr(err error) error {
@@ -355,13 +360,13 @@ func (t *Time) Scan(value any) error {
 	case string:
 		parsed, err := time.Parse(RFC3339NanoZero, value)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("parse RFC3339 nano with trailing zeros: %w", err)
 		}
 
 		*t = Time(parsed)
 
 	default:
-		return errors.Tracef("%T: cannot scan to time.Time: %T", Time{}, value)
+		return fmt.Errorf("%T: cannot scan to time.Time: %T", Time{}, value)
 	}
 
 	return nil
@@ -395,13 +400,13 @@ func (t *NullTime) Scan(value any) error {
 	case string:
 		parsed, err := time.Parse(RFC3339NanoZero, value)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("parse RFC3339 nano with trailing zeros: %w", err)
 		}
 
 		*t = NullTime(parsed)
 
 	default:
-		return errors.Tracef("%T: cannot scan to time.Time: %T", NullTime{}, value)
+		return fmt.Errorf("%T: cannot scan to time.Time: %T", NullTime{}, value)
 	}
 
 	return nil
@@ -418,7 +423,7 @@ func (t NullTime) Value() (driver.Value, error) {
 func validateArg(arg any) error {
 	switch arg := arg.(type) {
 	case time.Time, *time.Time, **time.Time:
-		return errors.Tracef(
+		return fmt.Errorf(
 			"cannot use %T as an arg; convert to one of: %T, %T, %T, or %T instead",
 			arg, Time{}, &Time{}, NullTime{}, &NullTime{},
 		)
@@ -438,7 +443,7 @@ type Conn struct {
 func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	tx, err := c.Conn.BeginTx(ctx, opts)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return &Tx{Tx: tx, now: time.Now().UTC()}, nil
@@ -455,14 +460,14 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 func (c *Conn) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	tx, err := c.BeginTx(ctx, opts)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	// The returned transaction is a connection from a connection pool, so we
 	// can rollback the (by default) "DEFERRED" transaction and start a new
 	// "IMMEDIATE" one
 	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN IMMEDIATE"); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return tx, nil
@@ -479,14 +484,14 @@ func (c *Conn) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, 
 func (c *Conn) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	tx, err := c.BeginTx(ctx, opts)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	// The returned transaction is a connection from a connection pool, so we
 	// can rollback the (by default) "DEFERRED" transaction and start a new
 	// "EXCLUSIVE" one
 	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN EXCLUSIVE"); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return tx, nil
@@ -495,7 +500,7 @@ func (c *Conn) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, 
 func (c *Conn) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
 	stmt, err := c.Conn.PrepareContext(ctx, query)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return &Stmt{Stmt: stmt}, nil
@@ -504,13 +509,13 @@ func (c *Conn) PrepareContext(ctx context.Context, query string) (*Stmt, error) 
 func (c *Conn) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	res, err := c.Conn.ExecContext(ctx, query, args...)
 	if err != nil {
-		return res, errors.Tracef(repoerr(err))
+		return res, repoerr(err)
 	}
 
 	return res, nil
@@ -519,13 +524,13 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args ...any) (sql.
 func (c *Conn) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	rows, err := c.Conn.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, errors.Tracef(repoerr(err))
+		return nil, repoerr(err)
 	}
 
 	return &Rows{rows: rows}, nil
@@ -534,7 +539,7 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args ...any) (*Ro
 func (c *Conn) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return &Row{err: errors.Tracef(err)}
+			return &Row{err: err}
 		}
 	}
 
@@ -554,7 +559,7 @@ func newDB(db *sql.DB) *DB {
 func (db *DB) Conn(ctx context.Context) (*Conn, error) {
 	conn, err := db.DB.Conn(ctx)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return &Conn{Conn: conn}, nil
@@ -563,7 +568,7 @@ func (db *DB) Conn(ctx context.Context) (*Conn, error) {
 func (db *DB) Begin() (*Tx, error) {
 	tx, err := db.DB.Begin()
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return &Tx{Tx: tx, now: time.Now().UTC()}, nil
@@ -572,7 +577,7 @@ func (db *DB) Begin() (*Tx, error) {
 func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	tx, err := db.DB.BeginTx(ctx, opts)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return &Tx{Tx: tx, now: time.Now().UTC()}, nil
@@ -589,14 +594,14 @@ func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 func (db *DB) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	tx, err := db.BeginTx(ctx, opts)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	// The returned transaction is a connection from a connection pool, so we
 	// can rollback the (by default) "DEFERRED" transaction and start a new
 	// "IMMEDIATE" one
 	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN IMMEDIATE"); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return tx, nil
@@ -613,14 +618,14 @@ func (db *DB) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, e
 func (db *DB) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	tx, err := db.BeginTx(ctx, opts)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	// The returned transaction is a connection from a connection pool, so we
 	// can rollback the (by default) "DEFERRED" transaction and start a new
 	// "EXCLUSIVE" one
 	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN EXCLUSIVE"); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return tx, nil
@@ -629,7 +634,7 @@ func (db *DB) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, e
 func (db *DB) Prepare(query string) (*Stmt, error) {
 	stmt, err := db.DB.Prepare(query)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return &Stmt{Stmt: stmt}, nil
@@ -638,7 +643,7 @@ func (db *DB) Prepare(query string) (*Stmt, error) {
 func (db *DB) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
 	stmt, err := db.DB.PrepareContext(ctx, query)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return &Stmt{Stmt: stmt}, nil
@@ -647,13 +652,13 @@ func (db *DB) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
 func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	res, err := db.DB.Exec(query, args...)
 	if err != nil {
-		return res, errors.Tracef(repoerr(err))
+		return res, repoerr(err)
 	}
 
 	return res, nil
@@ -662,13 +667,13 @@ func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
 func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	res, err := db.DB.ExecContext(ctx, query, args...)
 	if err != nil {
-		return res, errors.Tracef(repoerr(err))
+		return res, repoerr(err)
 	}
 
 	return res, nil
@@ -677,13 +682,13 @@ func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 func (db *DB) Query(query string, args ...any) (*Rows, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	rows, err := db.DB.Query(query, args...)
 	if err != nil {
-		return nil, errors.Tracef(repoerr(err))
+		return nil, repoerr(err)
 	}
 
 	return &Rows{rows: rows}, nil
@@ -692,13 +697,13 @@ func (db *DB) Query(query string, args ...any) (*Rows, error) {
 func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	rows, err := db.DB.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, errors.Tracef(repoerr(err))
+		return nil, repoerr(err)
 	}
 
 	return &Rows{rows: rows}, nil
@@ -707,7 +712,7 @@ func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Row
 func (db *DB) QueryRow(query string, args ...any) *Row {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return &Row{err: errors.Tracef(err)}
+			return &Row{err: err}
 		}
 	}
 
@@ -719,7 +724,7 @@ func (db *DB) QueryRow(query string, args ...any) *Row {
 func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return &Row{err: errors.Tracef(err)}
+			return &Row{err: err}
 		}
 	}
 
@@ -735,13 +740,13 @@ type Stmt struct {
 func (stmt *Stmt) Exec(args ...any) (sql.Result, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	res, err := stmt.Stmt.Exec(args...)
 	if err != nil {
-		return res, errors.Tracef(repoerr(err))
+		return res, repoerr(err)
 	}
 
 	return res, nil
@@ -750,13 +755,13 @@ func (stmt *Stmt) Exec(args ...any) (sql.Result, error) {
 func (stmt *Stmt) ExecContext(ctx context.Context, args ...any) (sql.Result, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	res, err := stmt.Stmt.ExecContext(ctx, args...)
 	if err != nil {
-		return res, errors.Tracef(repoerr(err))
+		return res, repoerr(err)
 	}
 
 	return res, nil
@@ -765,13 +770,13 @@ func (stmt *Stmt) ExecContext(ctx context.Context, args ...any) (sql.Result, err
 func (stmt *Stmt) Query(args ...any) (*Rows, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	rows, err := stmt.Stmt.Query(args...)
 	if err != nil {
-		return nil, errors.Tracef(repoerr(err))
+		return nil, repoerr(err)
 	}
 
 	return &Rows{rows: rows}, nil
@@ -780,13 +785,13 @@ func (stmt *Stmt) Query(args ...any) (*Rows, error) {
 func (stmt *Stmt) QueryContext(ctx context.Context, args ...any) (*Rows, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	rows, err := stmt.Stmt.QueryContext(ctx, args...)
 	if err != nil {
-		return nil, errors.Tracef(repoerr(err))
+		return nil, repoerr(err)
 	}
 
 	return &Rows{rows: rows}, nil
@@ -795,7 +800,7 @@ func (stmt *Stmt) QueryContext(ctx context.Context, args ...any) (*Rows, error) 
 func (stmt *Stmt) QueryRow(args ...any) *Row {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return &Row{err: errors.Tracef(err)}
+			return &Row{err: err}
 		}
 	}
 
@@ -807,7 +812,7 @@ func (stmt *Stmt) QueryRow(args ...any) *Row {
 func (stmt *Stmt) QueryRowContext(ctx context.Context, args ...any) *Row {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return &Row{err: errors.Tracef(err)}
+			return &Row{err: err}
 		}
 	}
 
@@ -832,7 +837,7 @@ func (tx *Tx) Rollback() error {
 func (tx *Tx) Prepare(query string) (*Stmt, error) {
 	stmt, err := tx.Tx.Prepare(query)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return &Stmt{Stmt: stmt}, nil
@@ -841,7 +846,7 @@ func (tx *Tx) Prepare(query string) (*Stmt, error) {
 func (tx *Tx) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
 	stmt, err := tx.Tx.PrepareContext(ctx, query)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return &Stmt{Stmt: stmt}, nil
@@ -858,13 +863,13 @@ func (tx *Tx) StmtContext(ctx context.Context, stmt *Stmt) *Stmt {
 func (tx *Tx) Exec(query string, args ...any) (sql.Result, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	res, err := tx.Tx.Exec(query, args...)
 	if err != nil {
-		return res, errors.Tracef(repoerr(err))
+		return res, repoerr(err)
 	}
 
 	return res, nil
@@ -873,13 +878,13 @@ func (tx *Tx) Exec(query string, args ...any) (sql.Result, error) {
 func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	res, err := tx.Tx.ExecContext(ctx, query, args...)
 	if err != nil {
-		return res, errors.Tracef(repoerr(err))
+		return res, repoerr(err)
 	}
 
 	return res, nil
@@ -888,13 +893,13 @@ func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 func (tx *Tx) Query(query string, args ...any) (*Rows, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	rows, err := tx.Tx.Query(query, args...)
 	if err != nil {
-		return nil, errors.Tracef(repoerr(err))
+		return nil, repoerr(err)
 	}
 
 	return &Rows{rows: rows}, nil
@@ -903,13 +908,13 @@ func (tx *Tx) Query(query string, args ...any) (*Rows, error) {
 func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 
 	rows, err := tx.Tx.QueryContext(ctx, query, args...)
 	if err != nil {
-		return nil, errors.Tracef(repoerr(err))
+		return nil, repoerr(err)
 	}
 
 	return &Rows{rows: rows}, nil
@@ -918,7 +923,7 @@ func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Row
 func (tx *Tx) QueryRow(query string, args ...any) *Row {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return &Row{err: errors.Tracef(err)}
+			return &Row{err: err}
 		}
 	}
 
@@ -930,7 +935,7 @@ func (tx *Tx) QueryRow(query string, args ...any) *Row {
 func (tx *Tx) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
-			return &Row{err: errors.Tracef(err)}
+			return &Row{err: err}
 		}
 	}
 
@@ -946,18 +951,18 @@ type Row struct {
 
 func (r *Row) Err() error {
 	if r.err != nil {
-		return errors.Tracef(r.err)
+		return r.err
 	}
 
-	return errors.Tracef(repoerr(r.Row.Err()))
+	return repoerr(r.Row.Err())
 }
 
 func (r *Row) Scan(dst ...any) error {
 	if r.err != nil {
-		return errors.Tracef(r.err)
+		return r.err
 	}
 
-	return errors.Tracef(repoerr(r.Row.Scan(dst...)))
+	return repoerr(r.Row.Scan(dst...))
 }
 
 type Rows struct {
@@ -965,11 +970,11 @@ type Rows struct {
 }
 
 func (rs *Rows) Close() error {
-	return errors.Tracef(repoerr(rs.rows.Close()))
+	return repoerr(rs.rows.Close())
 }
 
 func (rs *Rows) Err() error {
-	return errors.Tracef(repoerr(rs.rows.Err()))
+	return repoerr(rs.rows.Err())
 }
 
 func (rs *Rows) Next() bool {
@@ -977,5 +982,5 @@ func (rs *Rows) Next() bool {
 }
 
 func (rs *Rows) Scan(dst ...any) error {
-	return errors.Tracef(repoerr(rs.rows.Scan(dst...)))
+	return repoerr(rs.rows.Scan(dst...))
 }

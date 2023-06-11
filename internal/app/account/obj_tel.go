@@ -1,19 +1,20 @@
 package account
 
 import (
+	"errors"
 	"math/rand"
 	"regexp"
 	"strings"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
 const validTelPattern = `^\+\d(\d| )+$`
 
 var (
-	validTel     = errors.Must(regexp.Compile(validTelPattern))
-	telGenerator = errors.Must(gen.NewPatternGenerator(validTelPattern))
+	validTel     = errsx.Must(regexp.Compile(validTelPattern))
+	telGenerator = errsx.Must(gen.NewPatternGenerator(validTelPattern))
 )
 
 type Tel string
@@ -24,11 +25,11 @@ func GenerateTel() Tel {
 
 func NewTel(tel string) (Tel, error) {
 	if strings.TrimSpace(tel) == "" {
-		return "", errors.Tracef("cannot be empty")
+		return "", errors.New("cannot be empty")
 	}
 
 	if !validTel.MatchString(tel) {
-		return "", errors.Tracef("invalid phone number")
+		return "", errors.New("invalid phone number")
 	}
 
 	return Tel(tel), nil
@@ -43,5 +44,5 @@ func (t Tel) Generate(rand *rand.Rand) any {
 }
 
 func (t Tel) Invalidate(rand *rand.Rand, value any) any {
-	return Tel(errors.Must(gen.Pattern(`(\d|\s|\w)*`)))
+	return Tel(errsx.Must(gen.Pattern(`(\d|\s|\w)*`)))
 }

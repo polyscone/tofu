@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
@@ -53,7 +53,7 @@ func TestPatternGenerator(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			re := regexp.MustCompile(tc.pattern)
-			pg := errors.Must(gen.NewPatternGenerator(tc.pattern))
+			pg := errsx.Must(gen.NewPatternGenerator(tc.pattern))
 			s := pg.Generate()
 
 			switch tc.pattern {

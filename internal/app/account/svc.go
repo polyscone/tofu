@@ -2,9 +2,10 @@ package account
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/password"
 	"github.com/polyscone/tofu/internal/repo"
@@ -47,7 +48,7 @@ func NewService(broker event.Broker, store ReadWriter, hasher password.Hasher) (
 		for _, p := range group.Permissions {
 			permission, err := NewPermission(p.Name)
 			if err != nil {
-				return nil, errors.Tracef(err)
+				return nil, fmt.Errorf("new permission: %w", err)
 			}
 
 			permissions = append(permissions, permission)
@@ -63,16 +64,16 @@ func NewService(broker event.Broker, store ReadWriter, hasher password.Hasher) (
 		SuperRole.ID = role.ID
 
 		if err := store.SaveRole(ctx, SuperRole); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("save super role: %w", err)
 		}
 
 	case errors.Is(err, repo.ErrNotFound):
 		if err := store.AddRole(ctx, SuperRole); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("add super role: %w", err)
 		}
 
 	default:
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("find role by name: %w", err)
 	}
 
 	svc := Service{

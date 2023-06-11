@@ -3,12 +3,12 @@ package sms
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 const codeInvalidToNumber = 21211
@@ -32,16 +32,16 @@ func NewTwilioClient(client *http.Client, sid, token string) *Client {
 
 func (c *Client) isValid() error {
 	if strings.TrimSpace(c.sid) == "" {
-		return errors.Tracef("sid must be populated")
+		return errors.New("sid must be populated")
 	}
 	if want := "AC"; !strings.HasPrefix(c.sid, want) {
-		return errors.Tracef("sid must be prefixed with the string %q", want)
+		return fmt.Errorf("sid must be prefixed with the string %q", want)
 	}
 	if want := 34; len(c.sid) != want {
-		return errors.Tracef("sid must be %d characters in length", want)
+		return fmt.Errorf("sid must be %d characters in length", want)
 	}
 	if strings.TrimSpace(c.token) == "" {
-		return errors.Tracef("token must be populated")
+		return errors.New("token must be populated")
 	}
 	return nil
 }
@@ -49,31 +49,31 @@ func (c *Client) isValid() error {
 // Send will use the Twilio API to send an SMS message using the given data.
 func (c *Client) Send(ctx context.Context, from, to, body string) error {
 	if err := c.isValid(); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("invalid client: %w", err)
 	}
 
 	from = strings.TrimSpace(from)
 	if from == "" {
-		return errors.Tracef("from must be populated")
+		return errors.New("from must be populated")
 	}
 	if !strings.HasPrefix(from, "+") {
-		return errors.Tracef("from must be prefixed with a +")
+		return errors.New("from must be prefixed with a +")
 	}
 
 	to = strings.TrimSpace(to)
 	if to == "" {
-		return errors.Tracef("to must be populated")
+		return errors.New("to must be populated")
 	}
 	if !strings.HasPrefix(to, "+") {
-		return errors.Tracef("to must be prefixed with a +")
+		return errors.New("to must be prefixed with a +")
 	}
 
 	body = strings.TrimSpace(body)
 	if body == "" {
-		return errors.Tracef("body must be populated")
+		return errors.New("body must be populated")
 	}
 	if maxLen := 1600; len(body) > maxLen {
-		return errors.Tracef("body is too long, want max length %d, got %d", maxLen, len(body))
+		return fmt.Errorf("body is too long, want max length %d, got %d", maxLen, len(body))
 	}
 
 	endpoint := c.Endpoint
@@ -93,7 +93,7 @@ func (c *Client) Send(ctx context.Context, from, to, body string) error {
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(data.Encode()))
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("new API request: %w", err)
 	}
 
 	req.Header.Set("content-type", "application/x-www-form-urlencoded")
@@ -101,14 +101,14 @@ func (c *Client) Send(ctx context.Context, from, to, body string) error {
 
 	res, err := c.client.Do(req)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("do API request: %w", err)
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		b, err := io.ReadAll(res.Body)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("read API response body: %w", err)
 		}
 
 		var data struct {
@@ -116,19 +116,19 @@ func (c *Client) Send(ctx context.Context, from, to, body string) error {
 			Message string
 		}
 		if err := json.Unmarshal(b, &data); err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("unmarshal API response data: %w", err)
 		}
 
 		switch data.Code {
 		case codeInvalidToNumber:
 			if from == to {
-				return errors.Tracef(ErrInvalidNumber, "the from and to numbers cannot be the same")
+				return fmt.Errorf("%w: the from and to numbers cannot be the same", ErrInvalidNumber)
 			}
 
-			return errors.Tracef(ErrInvalidNumber, "%v is an invalid number", to)
+			return fmt.Errorf("%w: %v is an invalid number", ErrInvalidNumber, to)
 
 		default:
-			return errors.Tracef("error %v: %v", data.Code, data.Message)
+			return fmt.Errorf("API responded with code %v: %v", data.Code, data.Message)
 		}
 	}
 

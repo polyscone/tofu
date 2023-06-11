@@ -2,9 +2,10 @@ package account
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 type VerifyTOTPGuard interface {
@@ -19,11 +20,11 @@ func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID 
 	}
 	{
 		if !guard.CanVerifyTOTP(userID) {
-			return errors.Tracef(app.ErrUnauthorised)
+			return app.ErrUnauthorised
 		}
 
 		var err error
-		var errs errors.Map
+		var errs errsx.Map
 
 		input.userID = userID
 
@@ -35,21 +36,21 @@ func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID 
 		}
 
 		if errs != nil {
-			return errs.Tracef(app.ErrMalformedInput)
+			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.store.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find user by id: %w", err)
 	}
 
 	if err := user.VerifyTOTP(input.totp, input.totpMethod); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("verify TOTP: %w", err)
 	}
 
 	if err := s.store.SaveUser(ctx, user); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)

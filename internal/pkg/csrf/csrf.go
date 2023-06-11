@@ -4,10 +4,9 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
+	"errors"
 	"fmt"
 	"io"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 type ctxKey byte
@@ -53,7 +52,7 @@ func MaskedToken(ctx context.Context) []byte {
 func RenewToken(ctx context.Context) error {
 	token, err := newToken()
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("new token: %w", err)
 	}
 
 	data := getCSRF(ctx)
@@ -73,18 +72,18 @@ func SetToken(ctx context.Context, masked []byte) (context.Context, error) {
 	if masked == nil {
 		token, err := newToken()
 		if err != nil {
-			return ctx, errors.Tracef(err)
+			return ctx, fmt.Errorf("new token: %w", err)
 		}
 
 		unmasked = token
 	} else {
 		if want, got := tokenLength*2, len(masked); want != got {
-			return ctx, errors.Tracef("masked token must be %v bytes in length; got %v", want, got)
+			return ctx, fmt.Errorf("masked token must be %v bytes in length; got %v", want, got)
 		}
 
 		token, err := unmask(masked)
 		if err != nil {
-			return ctx, errors.Tracef(err)
+			return ctx, fmt.Errorf("unmask: %w", err)
 		}
 
 		unmasked = token
@@ -102,21 +101,21 @@ func SetToken(ctx context.Context, masked []byte) (context.Context, error) {
 // If the tokens match then it returns nil.
 func Verify(ctx context.Context, maskedCmp []byte) error {
 	if maskedCmp == nil {
-		return errors.Tracef(ErrEmptyToken)
+		return ErrEmptyToken
 	}
 
 	unmasked, err := unmask(MaskedToken(ctx))
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("unmask: %w", err)
 	}
 
 	unmaskedCmp, err := unmask(maskedCmp)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("unmask comparison: %w", err)
 	}
 
 	if subtle.ConstantTimeCompare(unmasked, unmaskedCmp) != 1 {
-		return errors.Tracef(ErrInvalidToken)
+		return ErrInvalidToken
 	}
 
 	return nil
@@ -148,7 +147,7 @@ func mask(token []byte) ([]byte, error) {
 	data := masked[n:]
 
 	if _, err := rand.Read(key); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("read random bytes: %w", err)
 	}
 
 	for i, b := range token {
@@ -160,7 +159,7 @@ func mask(token []byte) ([]byte, error) {
 
 func unmask(masked []byte) ([]byte, error) {
 	if len(masked)%2 != 0 {
-		return nil, errors.Tracef("masked token must be an even length")
+		return nil, errors.New("masked token must be an even length")
 	}
 
 	n := len(masked) / 2
@@ -177,7 +176,9 @@ func unmask(masked []byte) ([]byte, error) {
 
 func newToken() ([]byte, error) {
 	b := make([]byte, tokenLength)
-	_, err := io.ReadFull(rand.Reader, b)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return nil, fmt.Errorf("read random bytes: %w", err)
+	}
 
-	return b, errors.Tracef(err)
+	return b, nil
 }

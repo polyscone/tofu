@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/polyscone/tofu/internal/pkg/casing"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/size"
 )
 
@@ -32,7 +31,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 
 		strs, err := fn(r, typeField.Name, tagValue)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("get request value: %w", err)
 		}
 
 		var str string
@@ -49,7 +48,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseFloat(str, 32)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse float32: %w", err)
 				}
 			}
 
@@ -60,7 +59,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseFloat(str, 64)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse float64: %w", err)
 				}
 			}
 
@@ -71,7 +70,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseInt(str, 10, 8)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse int8: %w", err)
 				}
 			}
 
@@ -82,7 +81,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseInt(str, 10, 16)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse int16: %w", err)
 				}
 			}
 
@@ -93,7 +92,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseInt(str, 10, 32)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse int32: %w", err)
 				}
 			}
 
@@ -104,7 +103,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseInt(str, 10, 64)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse int64: %w", err)
 				}
 			}
 
@@ -115,7 +114,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseInt(str, 10, 64)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse int: %w", err)
 				}
 			}
 
@@ -126,7 +125,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseUint(str, 10, 8)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse uint8: %w", err)
 				}
 			}
 
@@ -137,7 +136,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseUint(str, 10, 16)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse uint16: %w", err)
 				}
 			}
 
@@ -148,7 +147,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseUint(str, 10, 32)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse uint32: %w", err)
 				}
 			}
 
@@ -159,7 +158,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseUint(str, 10, 64)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse uint64: %w", err)
 				}
 			}
 
@@ -170,7 +169,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 			if str != "" {
 				value, err = strconv.ParseUint(str, 10, 64)
 				if err != nil {
-					return errors.Tracef(err)
+					return fmt.Errorf("parse uint: %w", err)
 				}
 			}
 
@@ -189,7 +188,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 					for i, str := range strs {
 						value, err := strconv.ParseInt(str, 10, 64)
 						if err != nil {
-							return errors.Tracef(err)
+							return fmt.Errorf("parse %T element: %w", values, err)
 						}
 
 						values[i] = int(value)
@@ -225,7 +224,7 @@ func DecodeForm(dst any, r *http.Request) error {
 		if r.PostForm == nil {
 			err := r.ParseMultipartForm(maxMemory)
 			if err != nil {
-				return nil, errors.Tracef(err)
+				return nil, fmt.Errorf("parse multipart form: %w", err)
 			}
 		}
 

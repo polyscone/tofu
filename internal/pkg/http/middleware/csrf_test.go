@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/polyscone/tofu/internal/pkg/csrf"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
@@ -55,8 +55,8 @@ func TestCSRF(t *testing.T) {
 				ts := testutil.NewServer(t, mux)
 				defer ts.Close()
 
-				req := errors.Must(http.NewRequest(tc.method, ts.URL+"/", nil))
-				res := errors.Must(ts.Client().Do(req))
+				req := errsx.Must(http.NewRequest(tc.method, ts.URL+"/", nil))
+				res := errsx.Must(ts.Client().Do(req))
 
 				defer res.Body.Close()
 
@@ -86,8 +86,8 @@ func TestCSRF(t *testing.T) {
 
 				// Make sure a token cookie is set
 				{
-					req := errors.Must(http.NewRequest(http.MethodGet, ts.URL+"/", nil))
-					res := errors.Must(ts.Client().Do(req))
+					req := errsx.Must(http.NewRequest(http.MethodGet, ts.URL+"/", nil))
+					res := errsx.Must(ts.Client().Do(req))
 
 					defer res.Body.Close()
 
@@ -101,11 +101,11 @@ func TestCSRF(t *testing.T) {
 
 				csrfCookie := ts.FindCookie(t, ts.URL+"/", middleware.CSRFTokenCookieName)
 
-				req := errors.Must(http.NewRequest(tc.method, ts.URL+"/", nil))
+				req := errsx.Must(http.NewRequest(tc.method, ts.URL+"/", nil))
 
 				req.Header.Set("x-csrf-token", csrfCookie.Value)
 
-				res := errors.Must(ts.Client().Do(req))
+				res := errsx.Must(ts.Client().Do(req))
 
 				defer res.Body.Close()
 
@@ -136,8 +136,8 @@ func TestCSRF(t *testing.T) {
 
 				// Make sure a token cookie is set
 				{
-					req := errors.Must(http.NewRequest(http.MethodGet, ts.URL+"/", nil))
-					res := errors.Must(ts.Client().Do(req))
+					req := errsx.Must(http.NewRequest(http.MethodGet, ts.URL+"/", nil))
+					res := errsx.Must(ts.Client().Do(req))
 
 					defer res.Body.Close()
 
@@ -152,11 +152,11 @@ func TestCSRF(t *testing.T) {
 				csrfCookie := ts.FindCookie(t, ts.URL+"/", middleware.CSRFTokenCookieName)
 
 				form := strings.NewReader(url.Values{"_csrf": {csrfCookie.Value}}.Encode())
-				req := errors.Must(http.NewRequest(tc.method, ts.URL+"/", form))
+				req := errsx.Must(http.NewRequest(tc.method, ts.URL+"/", form))
 
 				req.Header.Set("content-type", "application/x-www-form-urlencoded")
 
-				res := errors.Must(ts.Client().Do(req))
+				res := errsx.Must(ts.Client().Do(req))
 
 				defer res.Body.Close()
 
@@ -176,8 +176,8 @@ func TestCSRF(t *testing.T) {
 
 		// Make sure a token cookie is set
 		{
-			req := errors.Must(http.NewRequest(http.MethodGet, ts.URL+"/", nil))
-			res := errors.Must(ts.Client().Do(req))
+			req := errsx.Must(http.NewRequest(http.MethodGet, ts.URL+"/", nil))
+			res := errsx.Must(ts.Client().Do(req))
 
 			defer res.Body.Close()
 
@@ -191,11 +191,11 @@ func TestCSRF(t *testing.T) {
 
 		csrfCookie := ts.FindCookie(t, ts.URL+"/", middleware.CSRFTokenCookieName)
 
-		req := errors.Must(http.NewRequest(http.MethodPost, ts.URL+"/renew", nil))
+		req := errsx.Must(http.NewRequest(http.MethodPost, ts.URL+"/renew", nil))
 
 		req.Header.Set("x-csrf-token", csrfCookie.Value)
 
-		res := errors.Must(ts.Client().Do(req))
+		res := errsx.Must(ts.Client().Do(req))
 
 		defer res.Body.Close()
 

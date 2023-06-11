@@ -1,11 +1,11 @@
 package realip
 
 import (
+	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 var ErrTooManyAddresses = errors.New("too many addresses")
@@ -23,7 +23,7 @@ func FromRequest(r *http.Request, proxies ...string) (string, error) {
 	if strings.Contains(remoteAddr, ":") {
 		ip, _, err := net.SplitHostPort(remoteAddr)
 		if err != nil {
-			return "", errors.Tracef(err)
+			return "", fmt.Errorf("split host port: %w", err)
 		}
 
 		remoteAddr = ip
@@ -39,7 +39,7 @@ func FromRequest(r *http.Request, proxies ...string) (string, error) {
 
 	const max = 50
 	if len(addrs) > max {
-		return "", errors.Tracef(ErrTooManyAddresses)
+		return "", ErrTooManyAddresses
 	}
 
 	for i := len(addrs) - 1; i >= 0; i-- {

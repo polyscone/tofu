@@ -3,11 +3,12 @@ package account_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
@@ -37,10 +38,9 @@ func TestDisableTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.SignedInWithPassword{Email: user.Email})
 		events.Expect(account.DisabledTOTP{Email: user.Email})
 
-		user = errors.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(store.FindUserByID(ctx, user.ID))
 		if want, got := []byte(nil), user.TOTPKey; !bytes.Equal(want, got) {
 			t.Errorf("want %q; got %q", want, got)
 		}

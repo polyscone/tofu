@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
@@ -74,12 +73,12 @@ func Timeout(dt time.Duration, errorHandler ErrorHandler) Middleware {
 
 				switch err := ctx.Err(); err {
 				case context.DeadlineExceeded:
-					errorHandler(w, r, errors.Tracef(http.ErrHandlerTimeout))
+					errorHandler(w, r, http.ErrHandlerTimeout)
 
 					tw.err = http.ErrHandlerTimeout
 
 				default:
-					errorHandler(w, r, errors.Tracef(err))
+					errorHandler(w, r, err)
 
 					tw.err = err
 				}

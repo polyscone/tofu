@@ -3,9 +3,8 @@ package session
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 type ctxKey int
@@ -61,11 +60,11 @@ func (m *Manager) Load(ctx context.Context, id string) (context.Context, error) 
 
 		s, err = newSession()
 		if err != nil {
-			return ctx, errors.Tracef(err)
+			return ctx, fmt.Errorf("new session: %w", err)
 		}
 
 	case err != nil:
-		return ctx, errors.Tracef(err)
+		return ctx, fmt.Errorf("find session data by id: %w", err)
 	}
 
 	s.Data = data
@@ -84,7 +83,7 @@ func (m *Manager) Commit(ctx context.Context) (string, error) {
 
 	if s.originalID != "" {
 		if err := m.store.DestroySession(ctx, s.originalID); err != nil {
-			return "", errors.Tracef(err)
+			return "", fmt.Errorf("destroy session: %w", err)
 		}
 
 		s.originalID = ""
@@ -93,12 +92,12 @@ func (m *Manager) Commit(ctx context.Context) (string, error) {
 	switch s.Status {
 	case Unchanged, Accessed, Modified:
 		if err := m.store.SaveSession(ctx, *s); err != nil {
-			return "", errors.Tracef(err)
+			return "", fmt.Errorf("save session: %w", err)
 		}
 
 	case Destroyed:
 		if err := m.store.DestroySession(ctx, s.ID); err != nil {
-			return "", errors.Tracef(err)
+			return "", fmt.Errorf("destroy session: %w", err)
 		}
 	}
 
@@ -112,7 +111,7 @@ func (m *Manager) Commit(ctx context.Context) (string, error) {
 func (m *Manager) Renew(ctx context.Context) error {
 	id, err := newID()
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("new id: %w", err)
 	}
 
 	s := getSession(ctx)

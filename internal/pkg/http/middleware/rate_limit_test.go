@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 )
 
@@ -35,7 +35,7 @@ func TestRateLimit(t *testing.T) {
 						wantStatus = tc.wantStatus
 					}
 
-					req := errors.Must(http.NewRequest(http.MethodGet, "/", nil))
+					req := errsx.Must(http.NewRequest(http.MethodGet, "/", nil))
 
 					req.RemoteAddr = tc.ip
 
@@ -108,7 +108,7 @@ func TestRateLimit(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				for _, r := range tc.requests {
 					wantStatus := r.want
-					req := errors.Must(http.NewRequest(http.MethodGet, r.path, nil))
+					req := errsx.Must(http.NewRequest(http.MethodGet, r.path, nil))
 
 					req.RemoteAddr = tc.ip
 
@@ -143,7 +143,7 @@ func TestRateLimit(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				req := errors.Must(http.NewRequest(http.MethodGet, "/", nil))
+				req := errsx.Must(http.NewRequest(http.MethodGet, "/", nil))
 
 				req.RemoteAddr = tc.ip
 
@@ -185,7 +185,7 @@ func TestRateLimit(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				req := errors.Must(http.NewRequest(http.MethodGet, "/", nil))
+				req := errsx.Must(http.NewRequest(http.MethodGet, "/", nil))
 
 				req.RemoteAddr = tc.ip
 

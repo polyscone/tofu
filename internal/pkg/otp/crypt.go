@@ -2,9 +2,9 @@ package otp
 
 import (
 	"crypto/rand"
+	"errors"
+	"fmt"
 	"io"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 const (
@@ -24,7 +24,7 @@ func NewAlgorithm(algorithm string) (Algorithm, error) {
 		return SHA512, nil
 
 	default:
-		return Invalid, errors.Tracef("invalid algorithm %q", algorithm)
+		return Invalid, fmt.Errorf("invalid algorithm %q", algorithm)
 	}
 }
 
@@ -57,7 +57,7 @@ func NewKey(r io.Reader, alg Algorithm) ([]byte, error) {
 		n = 64
 
 	default:
-		return nil, errors.Tracef("new key requires a valid algorithm")
+		return nil, errors.New("new key requires a valid algorithm")
 	}
 
 	if r == nil {
@@ -65,7 +65,9 @@ func NewKey(r io.Reader, alg Algorithm) ([]byte, error) {
 	}
 
 	b := make([]byte, n)
-	_, err := io.ReadFull(r, b)
+	if _, err := io.ReadFull(r, b); err != nil {
+		return nil, fmt.Errorf("read random bytes: %w", err)
+	}
 
-	return b, errors.Tracef(err)
+	return b, nil
 }

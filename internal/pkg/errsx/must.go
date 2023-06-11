@@ -1,4 +1,4 @@
-package errors
+package errsx
 
 // Must0 accepts any function call that returns an error.
 // If error is not nil then it panics.

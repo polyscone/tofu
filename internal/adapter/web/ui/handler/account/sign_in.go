@@ -2,6 +2,8 @@ package account
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
@@ -9,7 +11,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
 	"github.com/polyscone/tofu/internal/repo"
@@ -54,8 +55,9 @@ func signInPost(h *handler.Handler) http.HandlerFunc {
 			Email    string
 			Password string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
@@ -90,8 +92,9 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
@@ -104,18 +107,24 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		err = h.Account.SignInWithTOTP(ctx, userID, input.TOTP)
-		if h.ErrorView(w, r, errors.Tracef(err), "account/sign_in/totp", nil) {
+		err := h.Account.SignInWithTOTP(ctx, userID, input.TOTP)
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("sign in with TOTP: %w", err), "account/sign_in/totp", nil)
+
 			return
 		}
 
 		_, err = h.RenewSession(ctx)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
+
 			return
 		}
 
 		user, err := h.Store.Account.FindUserByID(ctx, userID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
+
 			return
 		}
 
@@ -169,8 +178,9 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			RecoveryCode string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
@@ -183,18 +193,24 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		err = h.Account.SignInWithRecoveryCode(ctx, userID, input.RecoveryCode)
-		if h.ErrorView(w, r, errors.Tracef(err), "account/sign_in/recovery_code", nil) {
+		err := h.Account.SignInWithRecoveryCode(ctx, userID, input.RecoveryCode)
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("sign in with recovery code: %w", err), "account/sign_in/recovery_code", nil)
+
 			return
 		}
 
 		_, err = h.RenewSession(ctx)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
+
 			return
 		}
 
 		user, err := h.Store.Account.FindUserByID(ctx, userID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
+
 			return
 		}
 
@@ -232,8 +248,12 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 func signInWithPassword(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email, password string) {
 	err := h.Account.SignInWithPassword(ctx, email, password)
 	if err != nil {
-		h.ErrorViewFunc(w, r, errors.Tracef(err), "account/sign_in/password", func(data *handler.ViewData) {
-			if errors.Is(err, app.ErrBadRequest) || errors.Is(err, repo.ErrNotFound) || errors.Is(err, account.ErrNotActivated) {
+		h.ErrorViewFunc(w, r, fmt.Errorf("sign in with password: %w", err), "account/sign_in/password", func(data *handler.ViewData) {
+			switch {
+			case errors.Is(err, app.ErrBadRequest),
+				errors.Is(err, repo.ErrNotFound),
+				errors.Is(err, account.ErrNotActivated):
+
 				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
 			}
 		})
@@ -242,12 +262,16 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 	}
 
 	_, err = h.RenewSession(ctx)
-	if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+	if err != nil {
+		h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
+
 		return
 	}
 
 	err = signInSetSession(ctx, h, w, r, email)
-	if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+	if err != nil {
+		h.ErrorView(w, r, fmt.Errorf("sign in set session: %w", err), "error", nil)
+
 		return
 	}
 
@@ -272,7 +296,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 func signInSetSession(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email string) error {
 	user, err := h.Store.Account.FindUserByEmail(ctx, email)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find user by email: %w", err)
 	}
 
 	h.Sessions.Set(ctx, sess.UserID, user.ID)

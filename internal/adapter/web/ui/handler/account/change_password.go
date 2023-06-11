@@ -1,12 +1,12 @@
 package account
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
 )
@@ -39,8 +39,9 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 			InsecurePassword string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
@@ -74,12 +75,16 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 			input.NewPassword,
 			input.NewPasswordCheck,
 		)
-		if h.ErrorView(w, r, errors.Tracef(err), "account/change_password/form", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("change password: %w", err), "account/change_password/form", nil)
+
 			return
 		}
 
 		_, err = h.RenewSession(ctx)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
+
 			return
 		}
 

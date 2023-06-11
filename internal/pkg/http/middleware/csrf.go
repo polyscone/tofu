@@ -3,11 +3,11 @@ package middleware
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/polyscone/tofu/internal/pkg/csrf"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/size"
 )
 
@@ -32,13 +32,13 @@ func CSRF(config *CSRFConfig) Middleware {
 			var cookieToken []byte
 			cookie, err := r.Cookie(CSRFTokenCookieName)
 			if !errors.Is(err, http.ErrNoCookie) {
-				if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
+				if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 					return
 				}
 			}
 			if err == nil {
 				decoded, err := base64.RawURLEncoding.DecodeString(cookie.Value)
-				if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
+				if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 					return
 				}
 
@@ -47,7 +47,7 @@ func CSRF(config *CSRFConfig) Middleware {
 
 			ctx := r.Context()
 			ctx, err = csrf.SetToken(ctx, cookieToken)
-			if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
+			if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 				return
 			}
 
@@ -59,7 +59,7 @@ func CSRF(config *CSRFConfig) Middleware {
 				if r.PostForm == nil {
 					err := r.ParseMultipartForm(32 * size.Megabyte)
 					if err != nil && !errors.Is(err, http.ErrNotMultipart) {
-						handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError)
+						handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError)
 
 						return
 					}
@@ -70,18 +70,18 @@ func CSRF(config *CSRFConfig) Middleware {
 					sentToken = r.PostFormValue(CSRFTokenFieldName)
 				}
 				if sentToken == "" {
-					handleError(w, r, errors.Tracef(csrf.ErrEmptyToken), config.ErrorHandler, http.StatusBadRequest)
+					handleError(w, r, csrf.ErrEmptyToken, config.ErrorHandler, http.StatusBadRequest)
 
 					return
 				}
 
 				decoded, err := base64.RawURLEncoding.DecodeString(sentToken)
-				if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
+				if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 					return
 				}
 
 				err = csrf.Verify(ctx, decoded)
-				if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
+				if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 					return
 				}
 			}

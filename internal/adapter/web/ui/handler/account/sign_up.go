@@ -2,6 +2,8 @@ package account
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,7 +12,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/background"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
@@ -43,24 +44,27 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			Email string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
 		ctx := r.Context()
+		config := h.Config(ctx)
 
-		_, err = h.Account.SignUp(ctx, input.Email)
+		_, err := h.Account.SignUp(ctx, input.Email)
 		if err != nil {
 			switch {
 			case errors.Is(err, app.ErrConflictingInput):
-				background.Go(func() {
-					ctx := context.Background()
-					config := h.Config(ctx)
+				// We can't use the request context here because it will have already
+				// been cancelled after the main request handler finished
+				ctx := context.Background()
 
+				background.Go(func() {
 					tok, err := h.Store.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 					if err != nil {
-						logger.PrintError(errors.Tracef(err))
+						logger.PrintErrorf("sign up: add reset password token: %w", err)
 
 						return
 					}
@@ -73,12 +77,12 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 						"Token": tok,
 					}
 					if err := h.SendEmail(ctx, recipients, "sign_up_reset_password", vars); err != nil {
-						logger.PrintError(errors.Tracef(err))
+						logger.PrintErrorf("sign up: send email: %w", err)
 					}
 				})
 
 			default:
-				h.ErrorView(w, r, errors.Tracef(err), "account/sign_up/form", nil)
+				h.ErrorView(w, r, fmt.Errorf("sign up: %w", err), "account/sign_up/form", nil)
 
 				return
 			}

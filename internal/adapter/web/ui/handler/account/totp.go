@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/base32"
 	"encoding/base64"
+	"errors"
+	"fmt"
 	"html/template"
 	"image/jpeg"
 	"net/http"
@@ -16,7 +18,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/background"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/sms"
@@ -88,13 +90,14 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			Method string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
 		if input.Method != "app" && input.Method != "sms" {
-			h.ErrorView(w, r, errors.Tracef(app.ErrBadRequest), "error", nil)
+			h.ErrorView(w, r, app.ErrBadRequest, "error", nil)
 
 			return
 		}
@@ -103,8 +106,10 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
-		err = h.Account.SetupTOTP(ctx, passport, userID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		err := h.Account.SetupTOTP(ctx, passport, userID)
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("setup TOTP: %w", err), "error", nil)
+
 			return
 		}
 
@@ -116,7 +121,7 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 			http.Redirect(w, r, h.Path("account.totp.setup.sms"), http.StatusSeeOther)
 
 		default:
-			h.ErrorView(w, r, errors.Tracef(app.ErrBadRequest), "error", nil)
+			h.ErrorView(w, r, app.ErrBadRequest, "error", nil)
 		}
 	}
 }
@@ -128,7 +133,7 @@ func totpSetupAppGet(h *handler.Handler) http.HandlerFunc {
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("find user by id: %w", err)
 		}
 
 		keyBase32 := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(user.TOTPKey)
@@ -146,18 +151,18 @@ func totpSetupAppGet(h *handler.Handler) http.HandlerFunc {
 			qr.Auto,
 		)
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 
 		qrcode, err = barcode.Scale(qrcode, 200, 200)
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("scale QR code: %w", err)
 		}
 
 		var buf bytes.Buffer
 		err = jpeg.Encode(&buf, qrcode, nil)
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("encode QR code as JPEG: %w", err)
 		}
 
 		vars := handler.Vars{
@@ -186,8 +191,9 @@ func totpSetupAppPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
@@ -195,8 +201,10 @@ func totpSetupAppPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
-		err = h.Account.VerifyTOTP(ctx, passport, userID, input.TOTP, "app")
-		if h.ErrorView(w, r, errors.Tracef(err), "account/totp/setup/app", nil) {
+		err := h.Account.VerifyTOTP(ctx, passport, userID, input.TOTP, "app")
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("verify TOTP: %w", err), "account/totp/setup/app", nil)
+
 			return
 		}
 
@@ -211,7 +219,7 @@ func totpSetupSMSGet(h *handler.Handler) http.HandlerFunc {
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("find user by id: %w", err)
 		}
 
 		vars := handler.Vars{
@@ -239,8 +247,9 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			Tel string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
@@ -249,7 +258,9 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 		user, err := h.Store.Account.FindUserByID(ctx, userID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
+
 			return
 		}
 
@@ -258,18 +269,20 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 		err = h.SendTOTPSMS(user.Email, input.Tel)
 		if err != nil {
 			if errors.Is(err, sms.ErrInvalidNumber) {
-				errs := errors.Map{"new phone": errors.New("invalid phone number")}
-
-				err = errs.Tracef(app.ErrInvalidInput)
+				err = fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
+					"new phone": errors.New("invalid phone number"),
+				})
 			}
 
-			h.ErrorView(w, r, errors.Tracef(err), "account/totp/setup/sms", nil)
+			h.ErrorView(w, r, fmt.Errorf("send TOTP SMS: %w", err), "account/totp/setup/sms", nil)
 
 			return
 		}
 
 		err = h.Account.ChangeTOTPTel(ctx, passport, userID, input.Tel)
-		if h.ErrorView(w, r, errors.Tracef(err), "account/totp/setup/sms", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("change TOTP tel: %w", err), "account/totp/setup/sms", nil)
+
 			return
 		}
 
@@ -296,8 +309,9 @@ func totpSetupSMSVerifyPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
@@ -305,8 +319,10 @@ func totpSetupSMSVerifyPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
-		err = h.Account.VerifyTOTP(ctx, passport, userID, input.TOTP, "sms")
-		if h.ErrorView(w, r, errors.Tracef(err), "account/totp/setup/sms_verify", nil) {
+		err := h.Account.VerifyTOTP(ctx, passport, userID, input.TOTP, "sms")
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("verify TOTP: %w", err), "account/totp/setup/sms_verify", nil)
+
 			return
 		}
 
@@ -320,13 +336,15 @@ func totpSendSMSPost(h *handler.Handler) http.HandlerFunc {
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 		user, err := h.Store.Account.FindUserByID(ctx, userID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
+
 			return
 		}
 
 		background.Go(func() {
 			if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("TOTP send SMS: send SMS: %w", err)
 			}
 		})
 
@@ -348,7 +366,9 @@ func totpSetupActivateGet(h *handler.Handler) http.HandlerFunc {
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 		user, err := h.Store.Account.FindUserByID(ctx, userID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
+
 			return
 		}
 
@@ -365,12 +385,16 @@ func totpSetupActivatePost(h *handler.Handler) http.HandlerFunc {
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 		user, err := h.Store.Account.FindUserByID(ctx, userID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
+
 			return
 		}
 
 		err = h.Account.ActivateTOTP(ctx, passport, userID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("activate TOTP: %w", err), "error", nil)
+
 			return
 		}
 
@@ -406,8 +430,9 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			Password string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
@@ -415,19 +440,23 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
-		err = h.Account.DisableTOTP(ctx, passport, userID, input.Password)
+		err := h.Account.DisableTOTP(ctx, passport, userID, input.Password)
 		if err != nil {
-			h.ErrorViewFunc(w, r, errors.Tracef(err), "account/totp/disable/verify", func(data *handler.ViewData) {
-				if errors.Is(err, app.ErrBadRequest) {
-					data.Errors.Set("password", "invalid password")
-				}
-			})
+			if errors.Is(err, app.ErrBadRequest) {
+				err = fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
+					"password": errors.New("invalid password"),
+				})
+			}
+
+			h.ErrorViewFunc(w, r, fmt.Errorf("disable TOTP: %w", err), "account/totp/disable/verify", nil)
 
 			return
 		}
 
 		_, err = h.RenewSession(ctx)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
+
 			return
 		}
 
@@ -451,7 +480,7 @@ func totpRecoveryCodesGet(h *handler.Handler) http.HandlerFunc {
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("find user by id: %w", err)
 		}
 
 		vars := handler.Vars{
@@ -480,8 +509,9 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
@@ -489,8 +519,10 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
-		err = h.Account.RegenerateRecoveryCodes(ctx, passport, userID, input.TOTP)
-		if h.ErrorView(w, r, errors.Tracef(err), "account/totp/recovery_codes/regenerate", nil) {
+		err := h.Account.RegenerateRecoveryCodes(ctx, passport, userID, input.TOTP)
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("regenerate recovery codes: %w", err), "account/totp/recovery_codes/regenerate", nil)
+
 			return
 		}
 

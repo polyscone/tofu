@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 )
 
@@ -30,26 +30,26 @@ func TestTOTPErrors(t *testing.T) {
 		t.Error("want min time step (30s) error")
 	}
 
-	key := errors.Must(timeBasedKey(20))
-	tb := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), defaultStep))
+	key := errsx.Must(timeBasedKey(20))
+	tb := errsx.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), defaultStep))
 	if _, err := tb.Generate(key, time.Time{}); err == nil {
 		t.Error("want time not set error")
 	}
 
-	key = errors.Must(timeBasedKey(20))
-	tb = errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), defaultStep))
+	key = errsx.Must(timeBasedKey(20))
+	tb = errsx.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), defaultStep))
 	if _, err := tb.Generate(key, time.Date(1880, time.November, 10, 23, 0, 0, 0, time.UTC)); err == nil {
 		t.Error("want invalid time set (before unix epoch) error")
 	}
 
-	key = errors.Must(timeBasedKey(64))
-	tb = errors.Must(otp.NewTimeBased(6, otp.SHA512, time.Unix(0, 0), defaultStep))
+	key = errsx.Must(timeBasedKey(64))
+	tb = errsx.Must(otp.NewTimeBased(6, otp.SHA512, time.Unix(0, 0), defaultStep))
 	if _, err := tb.Generate(key, time.Time{}); err == nil {
 		t.Error("want time not set error")
 	}
 
-	key = errors.Must(timeBasedKey(64))
-	tb = errors.Must(otp.NewTimeBased(6, otp.SHA512, time.Unix(0, 0), defaultStep))
+	key = errsx.Must(timeBasedKey(64))
+	tb = errsx.Must(otp.NewTimeBased(6, otp.SHA512, time.Unix(0, 0), defaultStep))
 	if _, err := tb.Generate(key, time.Date(1880, time.November, 10, 23, 0, 0, 0, time.UTC)); err == nil {
 		t.Error("want invalid time set (before unix epoch) error")
 	}
@@ -94,14 +94,14 @@ func TestTOTP(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			tb := errors.Must(otp.NewTimeBased(tc.digits, tc.alg, time.Unix(0, 0), tc.step))
+			tb := errsx.Must(otp.NewTimeBased(tc.digits, tc.alg, time.Unix(0, 0), tc.step))
 
 			key := []byte("12345678901234567890") // SHA1 key
 			if tc.alg == otp.SHA512 {
 				key = []byte("1234567890123456789012345678901234567890123456789012345678901234") // SHA512 key
 			}
 
-			totp := errors.Must(tb.Generate(key, tc.time))
+			totp := errsx.Must(tb.Generate(key, tc.time))
 
 			if want, got := tc.totp, totp; want != got {
 				t.Errorf("want %q; got %q", want, got)
@@ -119,8 +119,8 @@ func TestTOTPDefaultVerifyErrors(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			key := errors.Must(timeBasedKey(20))
-			totp := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
+			key := errsx.Must(timeBasedKey(20))
+			totp := errsx.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
 			if _, err := totp.Verify(key, time.Now(), tc.delaySteps, ""); err == nil {
 				t.Error("expected error")
 			}
@@ -145,11 +145,11 @@ func TestTOTPDefaultVerify(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			key := errors.Must(timeBasedKey(20))
-			totp := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
-			pass := errors.Must(totp.Generate(key, tc.time))
+			key := errsx.Must(timeBasedKey(20))
+			totp := errsx.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
+			pass := errsx.Must(totp.Generate(key, tc.time))
 
-			ok := errors.Must(totp.Verify(key, now, tc.delaySteps, pass))
+			ok := errsx.Must(totp.Verify(key, now, tc.delaySteps, pass))
 
 			if want, got := tc.expected, ok; want != got {
 				t.Errorf("want %v; got %v", want, got)
@@ -161,10 +161,10 @@ func TestTOTPDefaultVerify(t *testing.T) {
 func TestTOTPDefaultVerifyDuplicatePasscodes(t *testing.T) {
 	key := []byte("12345678901234567890")
 	now := time.Now()
-	totp := errors.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
-	pass := errors.Must(totp.Generate(key, now))
+	totp := errsx.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
+	pass := errsx.Must(totp.Generate(key, now))
 
-	ok := errors.Must(totp.Verify(key, now, 1, pass))
+	ok := errsx.Must(totp.Verify(key, now, 1, pass))
 
 	// Initial verify should be fine
 	if want, got := true, ok; want != got {
@@ -186,7 +186,9 @@ func timeBasedKey(n int) ([]byte, error) {
 	}
 
 	b := make([]byte, n)
-	_, err := io.ReadFull(rand.Reader, b)
+	if _, err := io.ReadFull(rand.Reader, b); err != nil {
+		return nil, fmt.Errorf("time based test: read random bytes: %w", err)
+	}
 
-	return b, errors.Tracef(err)
+	return b, nil
 }

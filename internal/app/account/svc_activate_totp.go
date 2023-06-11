@@ -2,9 +2,9 @@ package account
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 type ActivateTOTPGuard interface {
@@ -17,7 +17,7 @@ func (s *Service) ActivateTOTP(ctx context.Context, guard ActivateTOTPGuard, use
 	}
 	{
 		if !guard.CanActivateTOTP(userID) {
-			return errors.Tracef(app.ErrUnauthorised)
+			return app.ErrUnauthorised
 		}
 
 		input.userID = userID
@@ -25,15 +25,15 @@ func (s *Service) ActivateTOTP(ctx context.Context, guard ActivateTOTPGuard, use
 
 	user, err := s.store.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find user by id: %w", err)
 	}
 
 	if err := user.ActivateTOTP(); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("activate TOTP: %w", err)
 	}
 
 	if err := s.store.SaveUser(ctx, user); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)

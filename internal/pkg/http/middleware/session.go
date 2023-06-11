@@ -2,11 +2,12 @@ package middleware
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/session"
 )
 
@@ -25,12 +26,12 @@ func Session(sm *session.Manager, config *SessionConfig) Middleware {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			cookieSessionID, err := getSessionCookieID(r)
-			if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
+			if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 				return
 			}
 
 			ctx, err := sm.Load(r.Context(), cookieSessionID)
-			if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
+			if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 				return
 			}
 
@@ -101,7 +102,7 @@ func (w *sessionResponseWriter) commit() {
 	w.committed = true
 
 	id, err := w.sm.Commit(w.ctx)
-	if handleError(w, w.request, errors.Tracef(err), w.config.ErrorHandler, http.StatusInternalServerError) {
+	if handleError(w, w.request, err, w.config.ErrorHandler, http.StatusInternalServerError) {
 		return
 	}
 
@@ -137,7 +138,7 @@ func getSessionCookieID(r *http.Request) (string, error) {
 		return "", nil
 	}
 	if err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("get session cookie id: %w", err)
 	}
 
 	return cookie.Value, nil

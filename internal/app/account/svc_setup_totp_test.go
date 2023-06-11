@@ -3,11 +3,12 @@ package account_test
 import (
 	"bytes"
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
@@ -37,7 +38,7 @@ func TestSetupTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		user = errors.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(store.FindUserByID(ctx, user.ID))
 
 		if len(user.TOTPKey) == 0 {
 			t.Error("want TOTP key to be populated")
@@ -68,7 +69,7 @@ func TestSetupTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		user = errors.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(store.FindUserByID(ctx, user.ID))
 
 		if bytes.Equal(oldTOTPKey, user.TOTPKey) {
 			t.Error("want TOTP key to change")
@@ -89,7 +90,7 @@ func TestSetupTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		user = errors.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(store.FindUserByID(ctx, user.ID))
 
 		if len(user.TOTPKey) == 0 {
 			t.Error("want TOTP key to be populated")

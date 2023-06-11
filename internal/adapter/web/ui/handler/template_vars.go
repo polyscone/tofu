@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/app/system"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 type CSRF struct {
@@ -108,7 +108,7 @@ type ViewData struct {
 	Status       int
 	CSRF         CSRF
 	ErrorMessage string
-	Errors       errors.Map
+	Errors       errsx.Map
 	Form         Form
 	URL          URL
 	App          AppData

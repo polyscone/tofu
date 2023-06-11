@@ -2,11 +2,11 @@ package httputil
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 var (
@@ -16,7 +16,7 @@ var (
 
 func DecodeJSON(dst any, r *http.Request) error {
 	if !strings.HasPrefix(r.Header.Get("content-type"), "application/json") {
-		return errors.Tracef(ErrExpectedJSON)
+		return ErrExpectedJSON
 	}
 
 	d := json.NewDecoder(r.Body)
@@ -34,32 +34,32 @@ func DecodeJSON(dst any, r *http.Request) error {
 			panic(err)
 
 		case errors.Is(err, io.EOF):
-			return errors.Tracef(ErrBadJSON, "body must not be empty")
+			return fmt.Errorf("%w: body must not be empty", ErrBadJSON)
 
 		case errors.As(err, &syntaxErr):
-			return errors.Tracef(ErrBadJSON, "malformed JSON at offset %v", syntaxErr.Offset)
+			return fmt.Errorf("%w: malformed JSON at offset %v", ErrBadJSON, syntaxErr.Offset)
 
 		case errors.Is(err, io.ErrUnexpectedEOF):
-			return errors.Tracef(ErrBadJSON, "malformed JSON")
+			return fmt.Errorf("%w: malformed JSON", ErrBadJSON)
 
 		case errors.As(err, &unmarshalTypeErr):
-			return errors.Tracef(ErrBadJSON, "invalid value for %q at offset %v", unmarshalTypeErr.Field, unmarshalTypeErr.Offset)
+			return fmt.Errorf("%w: invalid value for %q at offset %v", ErrBadJSON, unmarshalTypeErr.Field, unmarshalTypeErr.Offset)
 
 		case strings.HasPrefix(err.Error(), "json: unknown field "):
 			fieldName := strings.TrimPrefix(err.Error(), "json: unknown field ")
 
-			return errors.Tracef(ErrBadJSON, "unknown field %v", fieldName)
+			return fmt.Errorf("%w: unknown field %v", ErrBadJSON, fieldName)
 
 		case errors.As(err, &maxBytesError):
-			return errors.Tracef(ErrBadJSON, "request body must be no larger than %v bytes", maxBytesError.Limit)
+			return fmt.Errorf("%w: request body must be no larger than %v bytes", ErrBadJSON, maxBytesError.Limit)
 
 		default:
-			return errors.Tracef(ErrBadJSON, err)
+			return fmt.Errorf("%w: %w", ErrBadJSON, err)
 		}
 	}
 
 	if err := d.Decode(&struct{}{}); err != io.EOF {
-		return errors.Tracef(ErrBadJSON, "unexpected additional JSON")
+		return fmt.Errorf("%w: unexpected additional JSON", ErrBadJSON)
 	}
 
 	return nil

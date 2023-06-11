@@ -5,11 +5,10 @@ import (
 	"crypto/sha1"
 	"crypto/sha512"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"hash"
 	"math"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 // HMACBased implements an "HMAC-based One Time Password" (HOTP) in accordance
@@ -33,11 +32,11 @@ func NewHMACBased(digits int, alg Algorithm) (HMACBased, error) {
 		otp.minKeyLen = 64
 
 	default:
-		return otp, errors.Tracef("invalid algorithm provided")
+		return otp, errors.New("invalid algorithm provided")
 	}
 
 	if min := 6; digits < min {
-		return otp, errors.Tracef("digits must be at least %v; got %v", min, digits)
+		return otp, fmt.Errorf("digits must be at least %v; got %v", min, digits)
 	}
 
 	otp.digits = digits
@@ -47,12 +46,12 @@ func NewHMACBased(digits int, alg Algorithm) (HMACBased, error) {
 
 func (otp HMACBased) Generate(key []byte, count uint64) (string, error) {
 	if len(key) < otp.minKeyLen {
-		return "", errors.Tracef("key must be at least %d bytes; got %d", otp.minKeyLen, key)
+		return "", fmt.Errorf("key must be at least %d bytes; got %d", otp.minKeyLen, key)
 	}
 
 	h := hmac.New(otp.newHash, key)
 	if err := binary.Write(h, binary.BigEndian, count); err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("write binary: %w", err)
 	}
 
 	hs := h.Sum(nil)

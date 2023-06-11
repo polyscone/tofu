@@ -1,25 +1,26 @@
 package account
 
 import (
+	"errors"
 	"math/rand"
 	"regexp"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
 const validTOTPPattern = `^\d{6}$`
 
 var (
-	validTOTP     = errors.Must(regexp.Compile(validTOTPPattern))
-	totpGenerator = errors.Must(gen.NewPatternGenerator(validTOTPPattern))
+	validTOTP     = errsx.Must(regexp.Compile(validTOTPPattern))
+	totpGenerator = errsx.Must(gen.NewPatternGenerator(validTOTPPattern))
 )
 
 type TOTP string
 
 func NewTOTP(totp string) (TOTP, error) {
 	if !validTOTP.MatchString(totp) {
-		return "", errors.Tracef("must be 6 digits")
+		return "", errors.New("must be 6 digits")
 	}
 
 	return TOTP(totp), nil
@@ -37,5 +38,5 @@ func (t TOTP) Generate(rand *rand.Rand) any {
 }
 
 func (t TOTP) Invalidate(rand *rand.Rand, value any) any {
-	return TOTP(errors.Must(gen.Pattern(`([^\d]{6}|\w{6}|\d{0,5}|\d{7,}|.{0,5}|.{7,})`)))
+	return TOTP(errsx.Must(gen.Pattern(`([^\d]{6}|\w{6}|\d{0,5}|\d{7,}|.{0,5}|.{7,})`)))
 }

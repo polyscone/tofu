@@ -2,11 +2,12 @@ package account_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 )
@@ -55,7 +56,7 @@ func TestSignUp(t *testing.T) {
 					return false
 				}
 
-				user := errors.Must(store.FindUserByEmail(ctx, email.String()))
+				user := errsx.Must(store.FindUserByEmail(ctx, email.String()))
 
 				return !user.SignedUpAt.IsZero() && user.ActivatedAt.IsZero()
 			})

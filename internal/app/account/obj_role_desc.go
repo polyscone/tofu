@@ -1,11 +1,13 @@
 package account
 
 import (
+	"errors"
+	"fmt"
 	"math/rand"
 	"regexp"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
@@ -15,8 +17,8 @@ const (
 )
 
 var (
-	validRoleDesc     = errors.Must(regexp.Compile(validRoleDescPattern))
-	roleDescGenerator = errors.Must(gen.NewPatternGenerator(validRoleDescPattern))
+	validRoleDesc     = errsx.Must(regexp.Compile(validRoleDescPattern))
+	roleDescGenerator = errsx.Must(gen.NewPatternGenerator(validRoleDescPattern))
 )
 
 type RoleDesc string
@@ -28,11 +30,11 @@ func GenerateRoleDesc() RoleDesc {
 func NewRoleDesc(desc string) (RoleDesc, error) {
 	rc := utf8.RuneCountInString(desc)
 	if rc > roleDescMaxLength {
-		return "", errors.Tracef("cannot be a over %v characters in length", roleDescMaxLength)
+		return "", fmt.Errorf("cannot be a over %v characters in length", roleDescMaxLength)
 	}
 
 	if !validRoleDesc.MatchString(desc) {
-		return "", errors.Tracef("contains invalid characters")
+		return "", errors.New("contains invalid characters")
 	}
 
 	return RoleDesc(desc), nil
@@ -51,5 +53,5 @@ func (d RoleDesc) Generate(rand *rand.Rand) any {
 }
 
 func (d RoleDesc) Invalidate(rand *rand.Rand, value any) any {
-	return RoleDesc(errors.Must(gen.Pattern(`([^[:print:]\r\n]{1,100}|a{101,})`)))
+	return RoleDesc(errsx.Must(gen.Pattern(`([^[:print:]\r\n]{1,100}|a{101,})`)))
 }

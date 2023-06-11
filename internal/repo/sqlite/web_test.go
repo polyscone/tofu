@@ -3,20 +3,20 @@ package sqlite_test
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/repo/repotest"
+	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/repo/sqlite"
 )
 
-func TestAccount(t *testing.T) {
+func TestWebSession(t *testing.T) {
 	t.Run("sqlite", func(t *testing.T) {
 		ctx := context.Background()
 
-		repotest.Account(ctx, t, func() account.ReadWriter {
+		session.TestManager(t, func() session.ReadWriter {
 			db := sqlite.OpenInMemoryTestDatabase(ctx)
-			store := errsx.Must(sqlite.NewAccountStore(ctx, db))
+			store := errsx.Must(sqlite.NewWebStore(ctx, db, 10*time.Minute))
 
 			return store
 		})

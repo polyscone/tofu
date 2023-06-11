@@ -1,9 +1,8 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 func NoContent(next http.HandlerFunc) http.HandlerFunc {
@@ -36,12 +35,14 @@ func (w *noContentResponseWriter) Push(target string, opts *http.PushOptions) er
 
 func (w *noContentResponseWriter) Write(b []byte) (int, error) {
 	i, err := w.ResponseWriter.Write(b)
-
+	if err != nil {
+		err = fmt.Errorf("no content: write response: %w", err)
+	}
 	if i > 0 {
 		w.body = true
 	}
 
-	return i, errors.Tracef(err)
+	return i, err
 }
 
 func (w *noContentResponseWriter) WriteHeader(statusCode int) {

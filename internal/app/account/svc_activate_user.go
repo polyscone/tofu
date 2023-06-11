@@ -2,9 +2,10 @@ package account
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 func (s *Service) ActivateUser(ctx context.Context, email, password, passwordCheck string) error {
@@ -15,7 +16,7 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 	}
 	{
 		var err error
-		var errs errors.Map
+		var errs errsx.Map
 
 		input.passwordCheck, _ = NewPassword(passwordCheck)
 
@@ -29,31 +30,31 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 		}
 
 		if errs != nil {
-			return errs.Tracef(app.ErrMalformedInput)
+			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.store.FindUserByEmail(ctx, input.email.String())
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find user by email: %w", err)
 	}
 
 	superUserCount, err := s.store.CountUsersByRoleID(ctx, SuperRole.ID)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("count users by role id: %w", err)
 	}
 	if superUserCount == 0 {
 		if err := user.ChangeRoles([]*Role{SuperRole}, nil, nil); err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("add super role to initial user: %w", err)
 		}
 	}
 
 	if err := user.Activate(input.password, s.hasher); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("activate user: %w", err)
 	}
 
 	if err := s.store.SaveUser(ctx, user); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)

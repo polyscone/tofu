@@ -1,13 +1,13 @@
 package admin
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
@@ -24,7 +24,7 @@ func systemConfigGet(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		if !passport.CanViewConfig() {
-			h.ErrorView(w, r, errors.Tracef(app.ErrUnauthorised), "error", nil)
+			h.ErrorView(w, r, app.ErrUnauthorised, "error", nil)
 
 			return
 		}
@@ -41,8 +41,9 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 			TwilioToken   string
 			TwilioFromTel string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
@@ -50,18 +51,20 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		if !passport.CanUpdateConfig() {
-			h.ErrorView(w, r, errors.Tracef(app.ErrUnauthorised), "error", nil)
+			h.ErrorView(w, r, app.ErrUnauthorised, "error", nil)
 
 			return
 		}
 
-		_, err = h.System.UpdateConfig(ctx, passport,
+		_, err := h.System.UpdateConfig(ctx, passport,
 			input.SystemEmail,
 			input.TwilioSID,
 			input.TwilioToken,
 			input.TwilioFromTel,
 		)
-		if h.ErrorView(w, r, errors.Tracef(err), "admin/system_config", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("update config: %w", err), "admin/system_config", nil)
+
 			return
 		}
 

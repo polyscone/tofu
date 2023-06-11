@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
@@ -18,8 +18,8 @@ func TestSecurityHeaders(t *testing.T) {
 	ts := testutil.NewServer(t, mux)
 	defer ts.Close()
 
-	req := errors.Must(http.NewRequest(http.MethodGet, ts.URL, nil))
-	res := errors.Must(ts.Client().Do(req))
+	req := errsx.Must(http.NewRequest(http.MethodGet, ts.URL, nil))
+	res := errsx.Must(ts.Client().Do(req))
 
 	defer res.Body.Close()
 

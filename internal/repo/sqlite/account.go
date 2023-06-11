@@ -3,11 +3,13 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"io/fs"
 	"strings"
 
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/repo"
 )
 
@@ -18,11 +20,11 @@ type AccountStore struct {
 func NewAccountStore(ctx context.Context, db *sql.DB) (*AccountStore, error) {
 	migrations, err := fs.Sub(migrations, "migrations/account")
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("initialise account migrations FS: %w", err)
 	}
 
 	if err := migrateFS(ctx, db, "account", migrations); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("migrate account: %w", err)
 	}
 
 	s := AccountStore{db: newDB(db)}
@@ -33,39 +35,39 @@ func NewAccountStore(ctx context.Context, db *sql.DB) (*AccountStore, error) {
 func (s *AccountStore) FindUserByID(ctx context.Context, id int) (*account.User, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	users, _, err := s.findUsers(ctx, tx, account.UserFilter{ID: &id})
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 	if len(users) == 0 {
-		return nil, errors.Tracef(repo.ErrNotFound)
+		return nil, repo.ErrNotFound
 	}
 
 	user := users[0]
 
 	if err := s.attachUserRecoveryCodes(ctx, tx, user); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("attach user recovery codes: %w", err)
 	}
 
 	if err := s.attachUserRoles(ctx, tx, user); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("attach user roles: %w", err)
 	}
 	for _, role := range user.Roles {
 		if err := s.attachRolePermissions(ctx, tx, role); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("attach role permissions: %w", err)
 		}
 	}
 
 	if err := s.attachUserGrants(ctx, tx, user); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("attach user grants: %w", err)
 	}
 
 	if err := s.attachUserDenials(ctx, tx, user); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("attach user denials: %w", err)
 	}
 
 	return user, nil
@@ -74,39 +76,39 @@ func (s *AccountStore) FindUserByID(ctx context.Context, id int) (*account.User,
 func (s *AccountStore) FindUserByEmail(ctx context.Context, email string) (*account.User, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	users, _, err := s.findUsers(ctx, tx, account.UserFilter{Email: &email})
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 	if len(users) == 0 {
-		return nil, errors.Tracef(repo.ErrNotFound)
+		return nil, repo.ErrNotFound
 	}
 
 	user := users[0]
 
 	if err := s.attachUserRecoveryCodes(ctx, tx, user); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("attach user recovery codes: %w", err)
 	}
 
 	if err := s.attachUserRoles(ctx, tx, user); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("attach user roles: %w", err)
 	}
 	for _, role := range user.Roles {
 		if err := s.attachRolePermissions(ctx, tx, role); err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("attach role permissions: %w", err)
 		}
 	}
 
 	if err := s.attachUserGrants(ctx, tx, user); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("attach user grants: %w", err)
 	}
 
 	if err := s.attachUserDenials(ctx, tx, user); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("attach user denials: %w", err)
 	}
 
 	return user, nil
@@ -115,49 +117,48 @@ func (s *AccountStore) FindUserByEmail(ctx context.Context, email string) (*acco
 func (s *AccountStore) CountUsersByRoleID(ctx context.Context, roleID int) (int, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return 0, errors.Tracef(err)
+		return 0, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	_, total, err := s.findUsers(ctx, tx, account.UserFilter{RoleID: &roleID})
 
-	return total, errors.Tracef(err)
+	return total, err
 }
 
 func (s *AccountStore) FindUsersPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.User, int, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, 0, errors.Tracef(err)
+		return nil, 0, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	limit, offset := pageLimitOffset(page, size)
-	users, total, err := s.findUsers(ctx, tx, account.UserFilter{
+
+	return s.findUsers(ctx, tx, account.UserFilter{
 		Search:    &search,
 		SortTopID: sortTopID,
 		Limit:     limit,
 		Offset:    offset,
 	})
-
-	return users, total, errors.Tracef(err)
 }
 
 func (s *AccountStore) FindRoleByID(ctx context.Context, roleID int) (*account.Role, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	roles, _, err := s.findRoles(ctx, tx, account.RoleFilter{ID: &roleID})
 	if len(roles) == 0 {
-		return nil, errors.Tracef(repo.ErrNotFound)
+		return nil, repo.ErrNotFound
 	}
 
 	role := roles[0]
 
 	if err := s.attachRolePermissions(ctx, tx, role); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("attach role permissions: %w", err)
 	}
 
 	return role, nil
@@ -166,19 +167,19 @@ func (s *AccountStore) FindRoleByID(ctx context.Context, roleID int) (*account.R
 func (s *AccountStore) FindRoleByName(ctx context.Context, name string) (*account.Role, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	roles, _, err := s.findRoles(ctx, tx, account.RoleFilter{Name: &name})
 	if len(roles) == 0 {
-		return nil, errors.Tracef(repo.ErrNotFound)
+		return nil, repo.ErrNotFound
 	}
 
 	role := roles[0]
 
 	if err := s.attachRolePermissions(ctx, tx, role); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("attach role permissions: %w", err)
 	}
 
 	return role, nil
@@ -187,125 +188,142 @@ func (s *AccountStore) FindRoleByName(ctx context.Context, name string) (*accoun
 func (s *AccountStore) FindRolesByUserID(ctx context.Context, userID int) ([]*account.Role, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	roles, _, err := s.findRoles(ctx, tx, account.RoleFilter{UserID: &userID})
 
-	return roles, errors.Tracef(err)
+	return roles, err
 }
 
 func (s *AccountStore) FindRoles(ctx context.Context, sortTopID int) ([]*account.Role, int, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, 0, errors.Tracef(err)
+		return nil, 0, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	users, total, err := s.findRoles(ctx, tx, account.RoleFilter{SortTopID: sortTopID})
-
-	return users, total, errors.Tracef(err)
+	return s.findRoles(ctx, tx, account.RoleFilter{SortTopID: sortTopID})
 }
 
 func (s *AccountStore) FindRolesPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.Role, int, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, 0, errors.Tracef(err)
+		return nil, 0, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	limit, offset := pageLimitOffset(page, size)
-	users, total, err := s.findRoles(ctx, tx, account.RoleFilter{
+
+	return s.findRoles(ctx, tx, account.RoleFilter{
 		Search:    &search,
 		SortTopID: sortTopID,
 		Limit:     limit,
 		Offset:    offset,
 	})
-
-	return users, total, errors.Tracef(err)
 }
 
 func (s *AccountStore) AddRole(ctx context.Context, role *account.Role) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	if err := s.createRole(ctx, tx, role); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("create role: %w", err)
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *AccountStore) SaveRole(ctx context.Context, role *account.Role) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	if err := s.updateRole(ctx, tx, role); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("update role: %w", err)
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *AccountStore) RemoveRole(ctx context.Context, roleID int) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	if err := s.deleteRole(ctx, tx, roleID); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("delete role: %w", err)
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *AccountStore) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([]account.RecoveryCode, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	recoveryCodes, _, err := s.findRecoveryCodes(ctx, tx, userID)
 
-	return recoveryCodes, errors.Tracef(err)
+	return recoveryCodes, err
 }
 
 func (s *AccountStore) AddUser(ctx context.Context, user *account.User) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	if err := s.createUser(ctx, tx, user); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("create user: %w", err)
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *AccountStore) SaveUser(ctx context.Context, user *account.User) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	if err := s.updateUser(ctx, tx, user); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("update user: %w", err)
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *AccountStore) findUsers(ctx context.Context, tx *Tx, filter account.UserFilter) ([]*account.User, int, error) {
@@ -359,7 +377,7 @@ func (s *AccountStore) findUsers(ctx context.Context, tx *Tx, filter account.Use
 		args...,
 	)
 	if err != nil {
-		return nil, 0, errors.Tracef(err)
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -387,13 +405,16 @@ func (s *AccountStore) findUsers(ctx context.Context, tx *Tx, filter account.Use
 			&total,
 		)
 		if err != nil {
-			return nil, 0, errors.Tracef(err)
+			return nil, 0, err
 		}
 
 		users = append(users, &user)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("rows: %w", err)
+	}
 
-	return users, total, errors.Tracef(rows.Err())
+	return users, total, nil
 }
 
 type permissionFilter struct {
@@ -430,7 +451,7 @@ func (s *AccountStore) findPermissions(ctx context.Context, tx *Tx, filter permi
 		args...,
 	)
 	if err != nil {
-		return nil, 0, errors.Tracef(err)
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -444,13 +465,16 @@ func (s *AccountStore) findPermissions(ctx context.Context, tx *Tx, filter permi
 			&total,
 		)
 		if err != nil {
-			return nil, 0, errors.Tracef(err)
+			return nil, 0, err
 		}
 
 		permissions = append(permissions, permission)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("rows: %w", err)
+	}
 
-	return permissions, total, errors.Tracef(rows.Err())
+	return permissions, total, nil
 }
 
 func (s *AccountStore) upsertPermission(ctx context.Context, tx *Tx, name string) (int, error) {
@@ -471,17 +495,14 @@ func (s *AccountStore) upsertPermission(ctx context.Context, tx *Tx, name string
 		sql.Named("name", name),
 		sql.Named("created_at", Time(tx.now.UTC())),
 	).Scan(&id)
-	if err != nil {
-		return 0, errors.Tracef(err)
-	}
 
-	return id, nil
+	return id, err
 }
 
 func (s *AccountStore) attachRolePermissions(ctx context.Context, tx *Tx, role *account.Role) error {
 	permissions, _, err := s.findPermissions(ctx, tx, permissionFilter{roleID: &role.ID})
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find permissions: %w", err)
 	}
 
 	role.Permissions = permissions
@@ -528,7 +549,7 @@ func (s *AccountStore) findRoles(ctx context.Context, tx *Tx, filter account.Rol
 		args...,
 	)
 	if err != nil {
-		return nil, 0, errors.Tracef(err)
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -544,13 +565,16 @@ func (s *AccountStore) findRoles(ctx context.Context, tx *Tx, filter account.Rol
 			&total,
 		)
 		if err != nil {
-			return nil, 0, errors.Tracef(err)
+			return nil, 0, err
 		}
 
 		roles = append(roles, &role)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("rows: %w", err)
+	}
 
-	return roles, total, errors.Tracef(rows.Err())
+	return roles, total, nil
 }
 
 func (s *AccountStore) createRole(ctx context.Context, tx *Tx, role *account.Role) error {
@@ -571,24 +595,24 @@ func (s *AccountStore) createRole(ctx context.Context, tx *Tx, role *account.Rol
 	)
 	if err != nil {
 		if errors.Is(err, repo.ErrConflict) {
-			return errors.Tracef(err, &repo.ConflictError{
-				Map: errors.Map{"name": errors.New("already in use")},
+			return fmt.Errorf("%w: %w", err, &repo.ConflictError{
+				Map: errsx.Map{"name": errors.New("already in use")},
 			})
 		}
 
-		return errors.Tracef(err)
+		return err
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("last insert id: %w", err)
 	}
 	role.ID = int(id)
 
 	for _, name := range role.Permissions {
 		permissionID, err := s.upsertPermission(ctx, tx, name)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("upsert permission: %w", err)
 		}
 
 		_, err = tx.ExecContext(ctx, `
@@ -607,7 +631,7 @@ func (s *AccountStore) createRole(ctx context.Context, tx *Tx, role *account.Rol
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 	}
 
@@ -628,8 +652,8 @@ func (s *AccountStore) updateRole(ctx context.Context, tx *Tx, role *account.Rol
 		sql.Named("updated_at", Time(tx.now.UTC())),
 	)
 	if errors.Is(err, repo.ErrConflict) {
-		return errors.Tracef(err, &repo.ConflictError{
-			Map: errors.Map{"name": errors.New("already in use")},
+		return fmt.Errorf("%w: %w", err, &repo.ConflictError{
+			Map: errsx.Map{"name": errors.New("already in use")},
 		})
 	}
 
@@ -638,13 +662,13 @@ func (s *AccountStore) updateRole(ctx context.Context, tx *Tx, role *account.Rol
 		sql.Named("role_id", role.ID),
 	)
 	if err != nil {
-		return errors.Tracef(err)
+		return err
 	}
 
 	for _, name := range role.Permissions {
 		permissionID, err := s.upsertPermission(ctx, tx, name)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("upsert permission: %w", err)
 		}
 
 		_, err = tx.ExecContext(ctx, `
@@ -663,11 +687,11 @@ func (s *AccountStore) updateRole(ctx context.Context, tx *Tx, role *account.Rol
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 	}
 
-	return errors.Tracef(err)
+	return nil
 }
 
 func (s *AccountStore) deleteRole(ctx context.Context, tx *Tx, roleID int) error {
@@ -676,7 +700,7 @@ func (s *AccountStore) deleteRole(ctx context.Context, tx *Tx, roleID int) error
 		sql.Named("id", roleID),
 	)
 
-	return errors.Tracef(err)
+	return err
 }
 
 func (s *AccountStore) findRecoveryCodes(ctx context.Context, tx *Tx, userID int) ([]account.RecoveryCode, int, error) {
@@ -690,7 +714,7 @@ func (s *AccountStore) findRecoveryCodes(ctx context.Context, tx *Tx, userID int
 		sql.Named("user_id", userID),
 	)
 	if err != nil {
-		return nil, 0, errors.Tracef(err)
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -704,19 +728,22 @@ func (s *AccountStore) findRecoveryCodes(ctx context.Context, tx *Tx, userID int
 			&total,
 		)
 		if err != nil {
-			return nil, 0, errors.Tracef(err)
+			return nil, 0, err
 		}
 
 		recoveryCodes = append(recoveryCodes, recoveryCode)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("rows: %w", err)
+	}
 
-	return recoveryCodes, total, errors.Tracef(rows.Err())
+	return recoveryCodes, total, nil
 }
 
 func (s *AccountStore) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user *account.User) error {
 	recoveryCodes, _, err := s.findRecoveryCodes(ctx, tx, user.ID)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find recovery codes: %w", err)
 	}
 
 	if recoveryCodes != nil {
@@ -733,7 +760,7 @@ func (s *AccountStore) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user
 func (s *AccountStore) attachUserRoles(ctx context.Context, tx *Tx, user *account.User) error {
 	roles, _, err := s.findRoles(ctx, tx, account.RoleFilter{UserID: &user.ID})
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find roles: %w", err)
 	}
 
 	user.Roles = roles
@@ -744,7 +771,7 @@ func (s *AccountStore) attachUserRoles(ctx context.Context, tx *Tx, user *accoun
 func (s *AccountStore) attachUserGrants(ctx context.Context, tx *Tx, user *account.User) error {
 	grants, _, err := s.findPermissions(ctx, tx, permissionFilter{grantsUserID: &user.ID})
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find permissions: %w", err)
 	}
 
 	user.Grants = grants
@@ -755,7 +782,7 @@ func (s *AccountStore) attachUserGrants(ctx context.Context, tx *Tx, user *accou
 func (s *AccountStore) attachUserDenials(ctx context.Context, tx *Tx, user *account.User) error {
 	denials, _, err := s.findPermissions(ctx, tx, permissionFilter{denialsUserID: &user.ID})
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find permissions: %w", err)
 	}
 
 	user.Denials = denials
@@ -817,17 +844,17 @@ func (s *AccountStore) createUser(ctx context.Context, tx *Tx, user *account.Use
 	)
 	if err != nil {
 		if errors.Is(err, repo.ErrConflict) {
-			return errors.Tracef(err, &repo.ConflictError{
-				Map: errors.Map{"email": errors.New("already in use")},
+			return fmt.Errorf("%w: %w", err, &repo.ConflictError{
+				Map: errsx.Map{"email": errors.New("already in use")},
 			})
 		}
 
-		return errors.Tracef(err)
+		return err
 	}
 
 	id, err := res.LastInsertId()
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("last insert id: %w", err)
 	}
 	user.ID = int(id)
 
@@ -848,7 +875,7 @@ func (s *AccountStore) createUser(ctx context.Context, tx *Tx, user *account.Use
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 	}
 
@@ -869,14 +896,14 @@ func (s *AccountStore) createUser(ctx context.Context, tx *Tx, user *account.Use
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 	}
 
 	for _, grant := range user.Grants {
 		permissionID, err := s.upsertPermission(ctx, tx, grant)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("upsert permission: %w", err)
 		}
 
 		_, err = tx.ExecContext(ctx, `
@@ -895,14 +922,14 @@ func (s *AccountStore) createUser(ctx context.Context, tx *Tx, user *account.Use
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 	}
 
 	for _, denial := range user.Denials {
 		permissionID, err := s.upsertPermission(ctx, tx, denial)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("upsert permission: %w", err)
 		}
 
 		_, err = tx.ExecContext(ctx, `
@@ -921,7 +948,7 @@ func (s *AccountStore) createUser(ctx context.Context, tx *Tx, user *account.Use
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 	}
 
@@ -967,12 +994,12 @@ func (s *AccountStore) updateUser(ctx context.Context, tx *Tx, user *account.Use
 	)
 	if err != nil {
 		if errors.Is(err, repo.ErrConflict) {
-			return errors.Tracef(err, &repo.ConflictError{
-				Map: errors.Map{"email": errors.New("already in use")},
+			return fmt.Errorf("%w: %w", err, &repo.ConflictError{
+				Map: errsx.Map{"email": errors.New("already in use")},
 			})
 		}
 
-		return errors.Tracef(err)
+		return err
 	}
 
 	_, err = tx.ExecContext(ctx,
@@ -980,7 +1007,7 @@ func (s *AccountStore) updateUser(ctx context.Context, tx *Tx, user *account.Use
 		sql.Named("user_id", user.ID),
 	)
 	if err != nil {
-		return errors.Tracef(err)
+		return err
 	}
 
 	for _, rc := range user.RecoveryCodes {
@@ -1000,7 +1027,7 @@ func (s *AccountStore) updateUser(ctx context.Context, tx *Tx, user *account.Use
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 	}
 
@@ -1009,7 +1036,7 @@ func (s *AccountStore) updateUser(ctx context.Context, tx *Tx, user *account.Use
 		sql.Named("user_id", user.ID),
 	)
 	if err != nil {
-		return errors.Tracef(err)
+		return err
 	}
 
 	for _, role := range user.Roles {
@@ -1029,7 +1056,7 @@ func (s *AccountStore) updateUser(ctx context.Context, tx *Tx, user *account.Use
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 	}
 
@@ -1038,13 +1065,13 @@ func (s *AccountStore) updateUser(ctx context.Context, tx *Tx, user *account.Use
 		sql.Named("user_id", user.ID),
 	)
 	if err != nil {
-		return errors.Tracef(err)
+		return err
 	}
 
 	for _, grant := range user.Grants {
 		permissionID, err := s.upsertPermission(ctx, tx, grant)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("upsert permission: %w", err)
 		}
 
 		_, err = tx.ExecContext(ctx, `
@@ -1063,7 +1090,7 @@ func (s *AccountStore) updateUser(ctx context.Context, tx *Tx, user *account.Use
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 	}
 
@@ -1072,13 +1099,13 @@ func (s *AccountStore) updateUser(ctx context.Context, tx *Tx, user *account.Use
 		sql.Named("user_id", user.ID),
 	)
 	if err != nil {
-		return errors.Tracef(err)
+		return err
 	}
 
 	for _, denial := range user.Denials {
 		permissionID, err := s.upsertPermission(ctx, tx, denial)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("upsert permission: %w", err)
 		}
 
 		_, err = tx.ExecContext(ctx, `
@@ -1097,7 +1124,7 @@ func (s *AccountStore) updateUser(ctx context.Context, tx *Tx, user *account.Use
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
-			return errors.Tracef(err)
+			return err
 		}
 	}
 

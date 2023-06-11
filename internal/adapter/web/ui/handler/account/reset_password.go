@@ -2,15 +2,16 @@ package account
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/background"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
@@ -38,25 +39,33 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			Email string
 		}
-		if h.ErrorView(w, r, errors.Tracef(httputil.DecodeForm(&input, r)), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
 		if _, err := account.NewEmail(input.Email); err != nil {
-			h.ErrorViewFunc(w, r, errors.Tracef(err), "account/reset_password/request", func(data *handler.ViewData) {
-				data.Errors = errors.Map{"email": err}
+			err = fmt.Errorf("%w: %w", app.ErrMalformedInput, errsx.Map{
+				"email": err,
 			})
+
+			h.ErrorView(w, r, err, "account/reset_password/request", nil)
 
 			return
 		}
 
+		ctx := r.Context()
+		config := h.Config(ctx)
+
 		background.Go(func() {
+			// We can't use the request context here because it will have already
+			// been cancelled after the main request handler finished
 			ctx := context.Background()
-			config := h.Config(ctx)
 
 			tok, err := h.Store.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 			if err != nil {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("reset password: add reset password token: %w", err)
 
 				return
 			}
@@ -69,7 +78,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 				"Token": tok,
 			}
 			if err := h.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("reset password: send email: %w", err)
 			}
 		})
 
@@ -96,32 +105,46 @@ func resetPasswordNewPasswordPost(h *handler.Handler) http.HandlerFunc {
 			NewPassword      string
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
 		ctx := r.Context()
 
 		email, err := h.Store.Web.FindResetPasswordTokenEmail(ctx, input.Token)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find reset password token email: %w", err), "error", nil)
+
+			return
+		}
+
+		user, err := h.Store.Account.FindUserByEmail(ctx, email)
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find user by email: %w", err), "error", nil)
+
 			return
 		}
 
 		passport, err := h.PassportByEmail(ctx, email)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("passport by email: %w", err), "error", nil)
+
 			return
 		}
 
-		userID := h.Sessions.GetInt(ctx, sess.UserID)
+		err = h.Account.ResetPassword(ctx, passport, user.ID, input.NewPassword, input.NewPasswordCheck)
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("reset password: %w", err), "account/reset_password/new_password", nil)
 
-		err = h.Account.ResetPassword(ctx, passport, userID, input.NewPassword, input.NewPasswordCheck)
-		if h.ErrorView(w, r, errors.Tracef(err), "account/reset_password/new_password", nil) {
 			return
 		}
 
 		err = h.Store.Web.ConsumeResetPasswordToken(ctx, input.Token)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("consume reset password token: %w", err), "error", nil)
+
 			return
 		}
 

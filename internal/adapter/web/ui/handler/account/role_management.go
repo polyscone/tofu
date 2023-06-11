@@ -1,6 +1,7 @@
 package account
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
@@ -9,7 +10,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/repo"
 )
@@ -51,7 +51,9 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
 		roles, total, err := h.Store.Account.FindRolesPageBySearch(ctx, sortTopID, search, page, size)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find roles page by search: %w", err), "error", nil)
+
 			return
 		}
 
@@ -83,8 +85,9 @@ func roleNewPost(h *handler.Handler) http.HandlerFunc {
 			Description string
 			Permissions []string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
@@ -92,7 +95,9 @@ func roleNewPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		role, err := h.Account.CreateRole(ctx, passport, input.Name, input.Description, input.Permissions)
-		if h.ErrorView(w, r, errors.Tracef(err), "account/management/role/new", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("create role: %w", err), "account/management/role/new", nil)
+
 			return
 		}
 
@@ -109,18 +114,18 @@ func roleEditGet(h *handler.Handler) http.HandlerFunc {
 	h.SetViewVars("account/management/role/edit", func(r *http.Request) (handler.Vars, error) {
 		roleID, err := router.URLParamAs[int](r, "roleID")
 		if err != nil {
-			return nil, errors.Tracef(httputil.ErrNotFound, err)
+			return nil, fmt.Errorf("URL param as: %w", err)
 		}
 
 		if roleID == account.SuperRole.ID {
-			return nil, errors.Tracef(app.ErrForbidden)
+			return nil, app.ErrForbidden
 		}
 
 		ctx := r.Context()
 
 		role, err := h.Store.Account.FindRoleByID(ctx, roleID)
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("find role by id: %w", err)
 		}
 
 		vars := handler.Vars{
@@ -143,18 +148,21 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 			Description string
 			Permissions []string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
 		roleID, err := router.URLParamAs[int](r, "roleID")
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("URL param as: %w", err), "error", nil)
+
 			return
 		}
 
 		if roleID == account.SuperRole.ID {
-			h.ErrorView(w, r, errors.Tracef(app.ErrForbidden), "error", nil)
+			h.ErrorView(w, r, app.ErrForbidden, "error", nil)
 
 			return
 		}
@@ -163,7 +171,9 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		role, err := h.Account.UpdateRole(ctx, passport, roleID, input.Name, input.Description, input.Permissions)
-		if h.ErrorView(w, r, errors.Tracef(err), "account/management/role/edit", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("update role: %w", err), "account/management/role/edit", nil)
+
 			return
 		}
 
@@ -179,14 +189,13 @@ func roleDeleteGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roleID, err := router.URLParamAs[int](r, "roleID")
 		if err != nil {
-			err = errors.Tracef(httputil.ErrNotFound, err)
-		}
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+			h.ErrorView(w, r, fmt.Errorf("URL param as: %w", err), "error", nil)
+
 			return
 		}
 
 		if roleID == account.SuperRole.ID {
-			h.ErrorView(w, r, errors.Tracef(app.ErrForbidden), "error", nil)
+			h.ErrorView(w, r, app.ErrForbidden, "error", nil)
 
 			return
 		}
@@ -194,12 +203,16 @@ func roleDeleteGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		role, err := h.Store.Account.FindRoleByID(ctx, roleID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find role by id: %w", err), "error", nil)
+
 			return
 		}
 
 		userCount, err := h.Store.Account.CountUsersByRoleID(ctx, roleID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("count users by role id: %w", err), "error", nil)
+
 			return
 		}
 
@@ -213,12 +226,14 @@ func roleDeleteGet(h *handler.Handler) http.HandlerFunc {
 func roleDeletePost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roleID, err := router.URLParamAs[int](r, "roleID")
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("URL param as: %w", err), "error", nil)
+
 			return
 		}
 
 		if roleID == account.SuperRole.ID {
-			h.ErrorView(w, r, errors.Tracef(app.ErrForbidden), "error", nil)
+			h.ErrorView(w, r, app.ErrForbidden, "error", nil)
 
 			return
 		}
@@ -227,7 +242,9 @@ func roleDeletePost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		role, err := h.Account.DeleteRole(ctx, passport, roleID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("delete role: %w", err), "error", nil)
+
 			return
 		}
 

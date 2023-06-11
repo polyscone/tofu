@@ -1,6 +1,6 @@
 package account
 
-import "github.com/polyscone/tofu/internal/pkg/errors"
+import "fmt"
 
 const (
 	TOTPMethodNone TOTPMethod = ""
@@ -16,7 +16,7 @@ func NewTOTPMethod(method string) (TOTPMethod, error) {
 		return TOTPMethod(method), nil
 	}
 
-	return "", errors.Tracef("invalid TOTP method %q", method)
+	return "", fmt.Errorf("invalid TOTP method %q", method)
 }
 
 func (t TOTPMethod) String() string {

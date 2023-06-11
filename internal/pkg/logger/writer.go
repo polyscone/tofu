@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 const (
@@ -21,8 +21,8 @@ const (
 )
 
 var (
-	exedir    = filepath.ToSlash(filepath.Dir(errors.Must(os.Executable())))
-	info      = errors.MustOK(debug.ReadBuildInfo())
+	exedir    = filepath.ToSlash(filepath.Dir(errsx.Must(os.Executable())))
+	info      = errsx.MustOK(debug.ReadBuildInfo())
 	skipRules = []skipRule{}
 )
 
@@ -47,7 +47,7 @@ func AddSkipRule(value string, kind SkipRuleKind) {
 // Formatter represents a formatter that can be used by a
 // logger to format messages.
 type Formatter interface {
-	Format(message, newline string, at time.Time, funcName, file string, line int) string
+	Format(message, newline string, at time.Time) string
 }
 
 // Writer implements a simple log writer that can output
@@ -87,7 +87,7 @@ func (w *Writer) Write(b []byte) (int, error) {
 
 	at := time.Now()
 	skip := 3
-	pc, file, line, _ := runtime.Caller(skip)
+	pc, file, _, _ := runtime.Caller(skip)
 	funcName := runtime.FuncForPC(pc).Name()
 
 skipLoop:
@@ -97,7 +97,7 @@ skipLoop:
 			rule.kind == SkipFunc && strings.Contains(funcName, rule.value):
 
 			skip++
-			pc, file, line, _ = runtime.Caller(skip)
+			pc, file, _, _ = runtime.Caller(skip)
 			funcName = runtime.FuncForPC(pc).Name()
 
 			goto skipLoop
@@ -105,7 +105,7 @@ skipLoop:
 	}
 
 	message := string(b)
-	message = w.f.Format(message, newline, at, funcName, file, line)
+	message = w.f.Format(message, newline, at)
 	message = strings.ReplaceAll(message, info.Main.Path+"/", "")
 	message = strings.ReplaceAll(message, exedir+"/", "")
 

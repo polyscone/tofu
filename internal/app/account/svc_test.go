@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
@@ -18,8 +18,8 @@ var hasher = testutil.NewPasswordHasher()
 func NewTestEnv(ctx context.Context) (*account.Service, event.Broker, account.ReadWriter) {
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	store := errors.Must(sqlite.NewAccountStore(ctx, db))
-	svc := errors.Must(account.NewService(broker, store, hasher))
+	store := errsx.Must(sqlite.NewAccountStore(ctx, db))
+	svc := errsx.Must(account.NewService(broker, store, hasher))
 
 	return svc, broker, store
 }
@@ -41,39 +41,39 @@ func MustAddUser(t *testing.T, ctx context.Context, store account.ReadWriter, tu
 	tu.SetupTOTP = tu.SetupTOTP || tu.SetupTOTPTel || tu.VerifyTOTP || tu.ActivateTOTP
 	tu.Activate = tu.Activate || tu.SetupTOTP || tu.VerifyTOTP
 
-	user := account.NewUser(errors.Must(account.NewEmail(tu.Email)))
+	user := account.NewUser(errsx.Must(account.NewEmail(tu.Email)))
 
-	errors.Must0(user.SignUp())
+	errsx.Must0(user.SignUp())
 
 	if tu.Activate {
 		if tu.Password == "" {
 			tu.Password = "password"
 		}
 
-		password := errors.Must(account.NewPassword(tu.Password))
+		password := errsx.Must(account.NewPassword(tu.Password))
 
-		errors.Must0(user.Activate(password, hasher))
+		errsx.Must0(user.Activate(password, hasher))
 	}
 	if tu.SetupTOTP {
-		errors.Must0(user.SetupTOTP())
+		errsx.Must0(user.SetupTOTP())
 	}
 	if tu.SetupTOTPTel {
-		errors.Must0(user.ChangeTOTPTel(account.GenerateTel()))
+		errsx.Must0(user.ChangeTOTPTel(account.GenerateTel()))
 	}
 	if tu.VerifyTOTP {
-		alg := errors.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
-		tb := errors.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
-		totp := errors.Must(account.NewTOTP(errors.Must(tb.Generate(user.TOTPKey, time.Now()))))
+		alg := errsx.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
+		tb := errsx.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
+		totp := errsx.Must(account.NewTOTP(errsx.Must(tb.Generate(user.TOTPKey, time.Now()))))
 
-		errors.Must0(user.VerifyTOTP(totp, "app"))
+		errsx.Must0(user.VerifyTOTP(totp, "app"))
 
 		otp.CleanUsedTOTP(totp.String())
 	}
 	if tu.ActivateTOTP {
-		errors.Must0(user.ActivateTOTP())
+		errsx.Must0(user.ActivateTOTP())
 	}
 
-	errors.Must0(store.AddUser(ctx, user))
+	errsx.Must0(store.AddUser(ctx, user))
 
 	return user
 }
@@ -86,20 +86,20 @@ type TestRole struct {
 func MustAddRole(t *testing.T, ctx context.Context, store account.ReadWriter, tr TestRole) *account.Role {
 	t.Helper()
 
-	name := errors.Must(account.NewRoleName(tr.Name))
+	name := errsx.Must(account.NewRoleName(tr.Name))
 
 	var permissions []account.Permission
 	if tr.Permissions != nil {
 		permissions = make([]account.Permission, len(tr.Permissions))
 
 		for i, name := range tr.Permissions {
-			permissions[i] = errors.Must(account.NewPermission(name))
+			permissions[i] = errsx.Must(account.NewPermission(name))
 		}
 	}
 
 	role := account.NewRole(name, "", permissions)
 
-	errors.Must0(store.AddRole(ctx, role))
+	errsx.Must0(store.AddRole(ctx, role))
 
 	return role
 }

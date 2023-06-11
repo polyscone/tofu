@@ -3,9 +3,8 @@ package session
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"io"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 type Status int
@@ -32,7 +31,7 @@ func newSessionPlaceholder() *Session {
 func newSession() (Session, error) {
 	id, err := newID()
 	if err != nil {
-		return Session{}, errors.Tracef(err)
+		return Session{}, fmt.Errorf("new id: %w", err)
 	}
 
 	s := Session{ID: id}
@@ -69,7 +68,7 @@ func (s *Session) setStatus(status Status) {
 func newID() (string, error) {
 	b := make([]byte, 32)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("read random bytes: %w", err)
 	}
 
 	return base64.RawURLEncoding.EncodeToString(b), nil

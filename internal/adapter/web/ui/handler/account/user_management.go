@@ -1,6 +1,7 @@
 package account
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
@@ -8,7 +9,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/repo"
 )
@@ -36,7 +36,9 @@ func userListGet(h *handler.Handler) http.HandlerFunc {
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
 		users, total, err := h.Store.Account.FindUsersPageBySearch(ctx, sortTopID, search, page, size)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find users page by search: %w", err), "error", nil)
+
 			return
 		}
 
@@ -50,14 +52,14 @@ func userEditGet(h *handler.Handler) http.HandlerFunc {
 	h.SetViewVars("account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
 		userID, err := router.URLParamAs[int](r, "userID")
 		if err != nil {
-			return nil, errors.Tracef(httputil.ErrNotFound, err)
+			return nil, fmt.Errorf("URL param as: %w", err)
 		}
 
 		ctx := r.Context()
 
 		user, err := h.Store.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("find user by id: %w", err)
 		}
 
 		var userRoleIDs []int
@@ -94,13 +96,16 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 			Grants  []string
 			Denials []string
 		}
-		err := httputil.DecodeForm(&input, r)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err := httputil.DecodeForm(&input, r); err != nil {
+			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+
 			return
 		}
 
 		userID, err := router.URLParamAs[int](r, "userID")
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("URL param as: %w", err), "error", nil)
+
 			return
 		}
 
@@ -108,12 +113,16 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		user, err := h.Store.Account.FindUserByID(ctx, userID)
-		if h.ErrorView(w, r, errors.Tracef(err), "error", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
+
 			return
 		}
 
 		err = h.Account.ChangeRoles(ctx, passport, userID, input.RoleIDs, input.Grants, input.Denials)
-		if h.ErrorView(w, r, errors.Tracef(err), "account/management/user/edit", nil) {
+		if err != nil {
+			h.ErrorView(w, r, fmt.Errorf("change roles: %w", err), "account/management/user/edit", nil)
+
 			return
 		}
 

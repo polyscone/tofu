@@ -1,13 +1,14 @@
 package account
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/mail"
 	"regexp"
 	"strings"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
@@ -23,8 +24,8 @@ const validEmailPattern = "" +
 	`$`
 
 var (
-	validEmail     = errors.Must(regexp.Compile(validEmailPattern))
-	emailGenerator = errors.Must(gen.NewPatternGenerator(validEmailPattern))
+	validEmail     = errsx.Must(regexp.Compile(validEmailPattern))
+	emailGenerator = errsx.Must(gen.NewPatternGenerator(validEmailPattern))
 )
 
 type Email string
@@ -35,7 +36,7 @@ func GenerateEmail() Email {
 
 func NewEmail(email string) (Email, error) {
 	if strings.TrimSpace(email) == "" {
-		return "", errors.Tracef("cannot be empty")
+		return "", errors.New("cannot be empty")
 	}
 
 	addr, err := mail.ParseAddress(email)
@@ -45,29 +46,29 @@ func NewEmail(email string) (Email, error) {
 
 		switch {
 		case strings.Contains(msg, "missing '@'"):
-			return "", errors.Tracef("missing @ sign")
+			return "", errors.New("missing @ sign")
 
 		case strings.HasPrefix(email, "@"):
-			return "", errors.Tracef("missing part before @ sign")
+			return "", errors.New("missing part before @ sign")
 
 		case strings.HasSuffix(email, "@"):
-			return "", errors.Tracef("missing part after @ sign")
+			return "", errors.New("missing part after @ sign")
 		}
 
-		return "", errors.Tracef(msg)
+		return "", errors.New(msg)
 	}
 
 	if addr.Name != "" {
-		return "", errors.Tracef("should not include a name")
+		return "", errors.New("should not include a name")
 	}
 
 	if !validEmail.MatchString(addr.Address) {
 		_, end, _ := strings.Cut(addr.Address, "@")
 		if !strings.Contains(end, ".") {
-			return "", errors.Tracef("missing top-level domain")
+			return "", errors.New("missing top-level domain")
 		}
 
-		return "", errors.Tracef("contains invalid characters")
+		return "", errors.New("contains invalid characters")
 	}
 
 	return Email(addr.Address), nil
@@ -92,23 +93,23 @@ func (e Email) Invalidate(rand *rand.Rand, value any) any {
 
 	case 1:
 		// Mulitple @ signs
-		ats := errors.Must(gen.Pattern("@{2,}"))
+		ats := errsx.Must(gen.Pattern("@{2,}"))
 		invalid = strings.ReplaceAll(valid, "@", ats)
 
 	case 2:
 		// Add a name
-		name := errors.Must(gen.Pattern(`[A-Z][0-9A-Za-z ]*[a-z]`))
+		name := errsx.Must(gen.Pattern(`[A-Z][0-9A-Za-z ]*[a-z]`))
 		invalid = fmt.Sprintf("%v <%v>", name, valid)
 
 	case 3:
 		// Special characters without quotation
-		special := errors.Must(gen.Pattern(`[(),:;<>\[\]\\]+`))
+		special := errsx.Must(gen.Pattern(`[(),:;<>\[\]\\]+`))
 		invalid = strings.ReplaceAll(valid, "@", special+"@")
 
 	case 4:
 		// No TLD
 		local, _, _ := strings.Cut(valid, "@")
-		domain := errors.Must(gen.Pattern(`[a-z]+`))
+		domain := errsx.Must(gen.Pattern(`[a-z]+`))
 		invalid = fmt.Sprintf("%v@%v", local, domain)
 
 	case 5:
@@ -119,7 +120,7 @@ func (e Email) Invalidate(rand *rand.Rand, value any) any {
 	case 6:
 		// IPv4 domain
 		local, _, _ := strings.Cut(valid, "@")
-		ip := errors.Must(gen.Pattern(`[1-9]{3}\.[1-9]{3}\.[1-9]{3}\.[1-9]{3}`))
+		ip := errsx.Must(gen.Pattern(`[1-9]{3}\.[1-9]{3}\.[1-9]{3}\.[1-9]{3}`))
 		invalid = fmt.Sprintf(`%v@[%v]`, local, ip)
 	}
 

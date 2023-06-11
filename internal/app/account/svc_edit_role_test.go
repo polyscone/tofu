@@ -2,12 +2,12 @@ package account_test
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 

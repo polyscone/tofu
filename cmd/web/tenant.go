@@ -14,7 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/app/system"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
 	"github.com/polyscone/tofu/internal/repo/sqlite"
@@ -32,10 +32,10 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 	data, ok := tenants[hostname]
 	if !ok {
-		return nil, errors.Tracef(web.ErrTenantNotFound, "tenant %q not found", hostname)
+		return nil, fmt.Errorf("find tenant %v: %w", hostname, web.ErrTenantNotFound)
 	}
 	if data.Alias == "" {
-		return nil, errors.Tracef("alias name for the tenant %q is empty", hostname)
+		return nil, fmt.Errorf("alias name for the tenant %v is empty", hostname)
 	}
 
 	databases.mu.Lock()
@@ -46,7 +46,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		p := filepath.Join(opts.data, data.Alias, "main.sqlite")
 		db, err = sqlite.Open(ctx, sqlite.KindFile, p)
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return nil, fmt.Errorf("open database: %w", err)
 		}
 
 		databases.data[data.Alias] = db
@@ -58,32 +58,32 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 	accountStore, err := sqlite.NewAccountStore(ctx, db)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("new account store: %w", err)
 	}
 
 	systemStore, err := sqlite.NewSystemStore(ctx, db)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("new system store: %w", err)
 	}
 
 	webStore, err := sqlite.NewWebStore(ctx, db, 2*time.Hour)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("new web store: %w", err)
 	}
 
 	mailer, err := smtp.NewMailClient("localhost", 25)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("new SMTP client: %w", err)
 	}
 
 	accountService, err := account.NewService(broker, accountStore, hasher)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("new account service: %w", err)
 	}
 
 	systemService, err := system.NewService(broker, systemStore)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("new system service: %w", err)
 	}
 
 	tenant := handler.Tenant{
@@ -107,7 +107,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 }
 
 type Tenant struct {
-	Alias      string   `json:",omitempty"`
+	Alias      string   `json:"-"`
 	Hostnames  []string `json:"hostnames"`
 	IsDisabled bool     `json:"isDisabled"`
 }
@@ -118,7 +118,7 @@ func initTenants() error {
 
 	f, err := os.OpenFile(value, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("open tenants file: %w", err)
 	}
 
 	err = func() error {
@@ -126,7 +126,7 @@ func initTenants() error {
 
 		info, err := f.Stat()
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("get tenants file info: %w", err)
 		}
 
 		if info.Size() == 0 {
@@ -139,18 +139,18 @@ func initTenants() error {
 
 			b, err := json.MarshalIndent(example, "", "\t")
 			if err != nil {
-				return errors.Tracef(err)
+				return fmt.Errorf("marshal example tenant file data: %w", err)
 			}
 
 			if _, err := f.Write(b); err != nil {
-				return errors.Tracef(err)
+				return fmt.Errorf("write example tenant file data: %w", err)
 			}
 		}
 
 		return nil
 	}()
 	if err != nil {
-		return errors.Tracef(err)
+		return err
 	}
 
 	if b, err := os.ReadFile(value); err == nil {
@@ -159,10 +159,10 @@ func initTenants() error {
 
 	data := make(map[string]Tenant)
 	if err := json.Unmarshal([]byte(value), &data); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("unmarshal tenant data: %w", err)
 	}
 
-	var errs errors.Map
+	var errs errsx.Map
 	for alias, tenant := range data {
 		if len(tenant.Hostnames) == 0 {
 			errs.Set(alias+".hostnames", "must be populated with at least one hostname")
@@ -188,6 +188,9 @@ func initTenants() error {
 			}
 		}
 	}
+	if errs != nil {
+		return fmt.Errorf("tenant configuration errors: %w", errs)
+	}
 
-	return errs.Tracef("tenant configuration errors")
+	return nil
 }

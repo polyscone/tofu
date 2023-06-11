@@ -23,7 +23,7 @@ func LogError(r *http.Request, err error) {
 		logger.Error.Println(_err)
 	}
 
-	text := logger.SprintError(err)
+	text := logger.SprintErrorf(err)
 	td := getTraceData(r.Context())
 	request := fmt.Sprintf("%v %v", r.Method, r.URL)
 

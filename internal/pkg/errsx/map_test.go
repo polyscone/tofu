@@ -1,13 +1,14 @@
-package errors_test
+package errsx_test
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 func TestMap(t *testing.T) {
-	var errs errors.Map
+	var errs errsx.Map
 	if errs != nil {
 		t.Errorf("want <nil>; got %v", errs)
 	}

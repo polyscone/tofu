@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
@@ -61,7 +61,7 @@ func TestMethodOverride(t *testing.T) {
 				form = strings.NewReader(url.Values{"_method": {tc.form}}.Encode())
 			}
 
-			req := errors.Must(http.NewRequest(http.MethodPost, ts.URL+"/?want="+tc.want, form))
+			req := errsx.Must(http.NewRequest(http.MethodPost, ts.URL+"/?want="+tc.want, form))
 
 			req.Header.Set("content-type", "application/x-www-form-urlencoded")
 
@@ -69,11 +69,11 @@ func TestMethodOverride(t *testing.T) {
 				req.Header.Set("x-http-method-override", tc.header)
 			}
 
-			res := errors.Must(ts.Client().Do(req))
+			res := errsx.Must(ts.Client().Do(req))
 
 			defer res.Body.Close()
 
-			got := string(errors.Must(io.ReadAll(res.Body)))
+			got := string(errsx.Must(io.ReadAll(res.Body)))
 			if want := tc.want; want != got {
 				t.Errorf("want %v; got %v", want, got)
 			}

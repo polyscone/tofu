@@ -3,13 +3,13 @@ package repotest
 import (
 	"bytes"
 	"context"
+	"errors"
 	"sort"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/repo"
 )
 

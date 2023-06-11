@@ -2,10 +2,10 @@ package account
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 type ChangeRolesGuard interface {
@@ -22,17 +22,17 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 	}
 	{
 		if !guard.CanChangeRoles(userID) {
-			return errors.Tracef(app.ErrUnauthorised)
+			return app.ErrUnauthorised
 		}
 
 		for _, roleID := range roleIDs {
 			if roleID == SuperRole.ID && !guard.CanAssignSuperRole(userID) {
-				return errors.Tracef(app.ErrUnauthorised)
+				return app.ErrUnauthorised
 			}
 		}
 
 		var err error
-		var errs errors.Map
+		var errs errsx.Map
 
 		input.userID = userID
 		input.roleIDs = roleIDs
@@ -59,17 +59,13 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		}
 
 		if errs != nil {
-			return errs.Tracef(app.ErrMalformedInput)
+			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.store.FindUserByID(ctx, input.userID)
 	if err != nil {
-		if errors.Is(err, repo.ErrNotFound) {
-			return errors.Tracef(app.ErrMalformedInput, err)
-		}
-
-		return errors.Tracef(err)
+		return fmt.Errorf("find user by id: %w", err)
 	}
 
 	var roles []*Role
@@ -79,11 +75,7 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		for i, roleID := range roleIDs {
 			role, err := s.store.FindRoleByID(ctx, roleID)
 			if err != nil {
-				if errors.Is(err, repo.ErrNotFound) {
-					return errors.Tracef(app.ErrMalformedInput, err)
-				}
-
-				return errors.Tracef(err)
+				return fmt.Errorf("find role by id: %w", err)
 			}
 
 			roles[i] = role
@@ -91,11 +83,11 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 	}
 
 	if err := user.ChangeRoles(roles, input.grants, input.denials); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("change roles: %w", err)
 	}
 
 	if err := s.store.SaveUser(ctx, user); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)

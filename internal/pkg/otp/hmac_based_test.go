@@ -3,7 +3,7 @@ package otp_test
 import (
 	"testing"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 )
 
@@ -20,12 +20,12 @@ func TestHOTPErrors(t *testing.T) {
 		t.Error("want invalid algorithm error")
 	}
 
-	hb := errors.Must(otp.NewHMACBased(6, otp.SHA1))
+	hb := errsx.Must(otp.NewHMACBased(6, otp.SHA1))
 	if _, err := hb.Generate([]byte("1234567890123456789"), 0); err == nil {
 		t.Error("want short key error")
 	}
 
-	hb = errors.Must(otp.NewHMACBased(6, otp.SHA512))
+	hb = errsx.Must(otp.NewHMACBased(6, otp.SHA512))
 	if _, err := hb.Generate([]byte("123456789012345678901234567890123456789012345678901234567890123"), 0); err == nil {
 		t.Error("want short key error")
 	}
@@ -63,14 +63,14 @@ func TestHOTP(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			hb := errors.Must(otp.NewHMACBased(tc.digits, tc.alg))
+			hb := errsx.Must(otp.NewHMACBased(tc.digits, tc.alg))
 
 			key := []byte("12345678901234567890") // SHA1 key
 			if tc.alg == otp.SHA512 {
 				key = []byte("1234567890123456789012345678901234567890123456789012345678901234") // SHA512 key
 			}
 
-			hotp := errors.Must(hb.Generate(key, tc.count))
+			hotp := errsx.Must(hb.Generate(key, tc.count))
 			if want, got := tc.hotp, hotp; want != got {
 				t.Errorf("want %q; got %q", want, got)
 			}

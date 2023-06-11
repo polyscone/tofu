@@ -2,12 +2,13 @@ package account_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
@@ -42,9 +43,9 @@ func TestSignInWithTOTP(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		alg := errors.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
-		tb := errors.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
-		totp := errors.Must(tb.Generate(user.TOTPKey, time.Now()))
+		alg := errsx.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
+		tb := errsx.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
+		totp := errsx.Must(tb.Generate(user.TOTPKey, time.Now()))
 
 		otp.CleanUsedTOTP(totp)
 
@@ -94,9 +95,9 @@ func TestSignInWithTOTP(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				totp := "000000"
 				if tc.totpUser != nil {
-					alg := errors.Must(otp.NewAlgorithm(tc.totpUser.TOTPAlgorithm))
-					tb := errors.Must(otp.NewTimeBased(tc.totpUser.TOTPDigits, alg, time.Unix(0, 0), tc.totpUser.TOTPPeriod))
-					totp = errors.Must(tb.Generate(tc.totpUser.TOTPKey, time.Now()))
+					alg := errsx.Must(otp.NewAlgorithm(tc.totpUser.TOTPAlgorithm))
+					tb := errsx.Must(otp.NewTimeBased(tc.totpUser.TOTPDigits, alg, time.Unix(0, 0), tc.totpUser.TOTPPeriod))
+					totp = errsx.Must(tb.Generate(tc.totpUser.TOTPKey, time.Now()))
 				}
 
 				err := svc.SignInWithTOTP(ctx, tc.userID, totp)

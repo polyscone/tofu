@@ -2,11 +2,12 @@ package account_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 )
@@ -32,7 +33,7 @@ func TestChangeTOTPTel(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		newTel := errors.Must(account.NewTel("+81 70 0000 0000"))
+		newTel := errsx.Must(account.NewTel("+81 70 0000 0000"))
 
 		err := svc.ChangeTOTPTel(ctx, validGuard, user.ID, newTel.String())
 		if err != nil {
@@ -45,7 +46,7 @@ func TestChangeTOTPTel(t *testing.T) {
 			NewTel: newTel.String(),
 		})
 
-		user = errors.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(store.FindUserByID(ctx, user.ID))
 
 		if want, got := newTel.String(), user.TOTPTel; want != got {
 			t.Errorf("want %v; got %v", want, got)

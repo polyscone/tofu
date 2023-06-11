@@ -4,13 +4,14 @@ import (
 	"crypto/rand"
 	"database/sql/driver"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	mrand "math/rand"
 	"regexp"
 	"strings"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 // validV4 is a regexp that matches any valid non-nil V4 UUID.
@@ -28,17 +29,17 @@ func NewV4() (V4, error) {
 
 	rn, err := io.ReadFull(rand.Reader, id[:])
 	if err != nil {
-		return Nil, errors.Tracef(err)
+		return Nil, fmt.Errorf("read random bytes: %w", err)
 	}
 	if n := len(id); rn != n {
-		return Nil, errors.Tracef("could only read %v of %v bytes", rn, n)
+		return Nil, fmt.Errorf("could only read %v of %v bytes", rn, n)
 	}
 
 	id[6] = (id[6] & 0x0F) | (0x04 << 4)    // Set version to 4
 	id[8] = (id[8]&(0xFF>>2) | (0x02 << 6)) // Set variant to RFC4122
 
 	if id.IsNil() {
-		return Nil, errors.Tracef("new id is nil")
+		return Nil, errors.New("new id is nil")
 	}
 
 	return id, nil
@@ -48,13 +49,13 @@ func NewV4() (V4, error) {
 // Nil UUIDs are not treated as errors.
 func ParseNillableV4(id string) (V4, error) {
 	if id != Nil.String() && !validV4.MatchString(id) {
-		return Nil, errors.Tracef("invalid uuid")
+		return Nil, errors.New("invalid uuid")
 	}
 
 	id = strings.ReplaceAll(id, "-", "")
 	decoded, err := hex.DecodeString(id)
 	if err != nil {
-		return Nil, errors.Tracef(err)
+		return Nil, fmt.Errorf("decode hex id string: %w", err)
 	}
 
 	return V4(*(*[16]byte)(decoded)), nil
@@ -63,7 +64,7 @@ func ParseNillableV4(id string) (V4, error) {
 // ParseV4 will attempt to create a new V4 UUID out of the given string.
 func ParseV4(id string) (V4, error) {
 	if id == Nil.String() {
-		return Nil, errors.Tracef("invalid uuid")
+		return Nil, errors.New("invalid uuid")
 	}
 
 	return ParseNillableV4(id)
@@ -105,7 +106,7 @@ func (id *V4) Scan(src any) error {
 	case string:
 		u, err := ParseV4(src)
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("parse v4 %T: %w", src, err)
 		}
 
 		*id = u
@@ -113,13 +114,13 @@ func (id *V4) Scan(src any) error {
 	case []byte:
 		u, err := ParseV4(string(src))
 		if err != nil {
-			return errors.Tracef(err)
+			return fmt.Errorf("parse v4 %T: %w", src, err)
 		}
 
 		*id = u
 
 	default:
-		return errors.Tracef("unable to scan %T into V4 UUID", src)
+		return fmt.Errorf("unable to scan %T into V4 UUID", src)
 	}
 
 	return nil
@@ -135,13 +136,13 @@ func (id V4) Value() (driver.Value, error) {
 }
 
 func (id V4) Generate(rand *mrand.Rand) any {
-	return errors.Must(NewV4())
+	return errsx.Must(NewV4())
 }
 
 func (id V4) Invalidate(mrand *mrand.Rand, value any) any {
 	var invalid V4
 
-	errors.Must(io.ReadFull(rand.Reader, invalid[:]))
+	errsx.Must(io.ReadFull(rand.Reader, invalid[:]))
 
 	if mrand.Int()&1 == 0 {
 		invalid[6] = 0

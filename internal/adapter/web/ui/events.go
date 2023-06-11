@@ -7,7 +7,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/background"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
@@ -17,7 +16,7 @@ func accountSignedInWithPasswordHandler(tenant *handler.Tenant, h *handler.Handl
 
 		user, err := h.Store.Account.FindUserByEmail(ctx, evt.Email)
 		if err != nil {
-			logger.PrintError(errors.Tracef(err))
+			logger.PrintErrorf("signed in with password: find user by email: %w", err)
 
 			return
 		}
@@ -25,7 +24,7 @@ func accountSignedInWithPasswordHandler(tenant *handler.Tenant, h *handler.Handl
 		if user.HasActivatedTOTP() && user.TOTPMethod == account.TOTPMethodSMS.String() {
 			background.Go(func() {
 				if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
-					logger.PrintError(errors.Tracef(err))
+					logger.PrintErrorf("signed in with password: send TOTP SMS: %w", err)
 				}
 			})
 		}
@@ -39,7 +38,7 @@ func accountDisabledTOTPHandler(tenant *handler.Tenant, h *handler.Handler) any 
 
 			config, err := h.Store.System.FindConfig(ctx)
 			if err != nil {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("disabled TOTP: find config: %w", err)
 
 				return
 			}
@@ -49,7 +48,7 @@ func accountDisabledTOTPHandler(tenant *handler.Tenant, h *handler.Handler) any 
 				To:   []string{evt.Email},
 			}
 			if err := h.SendEmail(ctx, recipients, "disabled_totp", nil); err != nil {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("disabled TOTP: send email: %w", err)
 			}
 		})
 	}
@@ -62,14 +61,14 @@ func accountSignedUpHandler(tenant *handler.Tenant, h *handler.Handler) any {
 
 			tok, err := tenant.Store.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
 			if err != nil {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("signed up: add activation token: %w", err)
 
 				return
 			}
 
 			config, err := h.Store.System.FindConfig(ctx)
 			if err != nil {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("signed up: find config: %w", err)
 
 				return
 			}
@@ -82,7 +81,7 @@ func accountSignedUpHandler(tenant *handler.Tenant, h *handler.Handler) any {
 				"Token": tok,
 			}
 			if err := h.SendEmail(ctx, recipients, "activate_account", vars); err != nil {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("signed up: send email: %w", err)
 			}
 		})
 	}

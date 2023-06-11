@@ -1,11 +1,12 @@
 package rate_test
 
 import (
+	"errors"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/rate"
 )
 
@@ -15,81 +16,81 @@ func TestBucket(t *testing.T) {
 		capacity, replenish := 50.0, 1.0
 		bucket := rate.NewTokenBucket(capacity, replenish)
 
-		if want, got := 50, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 50, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
-		if want, got := 45, errors.Must(bucket.Leak(5, now)); want != got {
+		if want, got := 45, errsx.Must(bucket.Leak(5, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
-		if want, got := 45, errors.Must(bucket.Leak(-5, now)); want != got {
+		if want, got := 45, errsx.Must(bucket.Leak(-5, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(2 * time.Second)
 
-		if want, got := 47, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 47, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
-		if want, got := 40, errors.Must(bucket.Leak(7, now)); want != got {
+		if want, got := 40, errsx.Must(bucket.Leak(7, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(3 * time.Second)
 
-		if want, got := 43, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 43, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(20 * time.Second)
 
-		if want, got := 50, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 50, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
-		if want, got := 20, errors.Must(bucket.Leak(30, now)); want != got {
+		if want, got := 20, errsx.Must(bucket.Leak(30, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(-20 * time.Second)
 
-		if want, got := 20, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 20, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(30 * time.Second)
 
-		if want, got := 30, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 30, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
-		location := errors.Must(time.LoadLocation("America/Los_Angeles"))
+		location := errsx.Must(time.LoadLocation("America/Los_Angeles"))
 		now = now.In(location)
 
-		if want, got := 30, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 30, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(1 * time.Second)
 
-		if want, got := 31, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 31, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.UTC()
 		now = now.Add(1 * time.Second)
 
-		if want, got := 32, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 32, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(500 * time.Millisecond)
 
-		if want, got := 32, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 32, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(500 * time.Millisecond)
 
-		if want, got := 33, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 33, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
@@ -100,16 +101,16 @@ func TestBucket(t *testing.T) {
 		if want, got := 33, n; want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
-		if want, got := 0, errors.Must(bucket.Leak(33, now)); want != got {
+		if want, got := 0, errsx.Must(bucket.Leak(33, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(1 * time.Second)
 
-		if want, got := 1, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 1, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
-		if want, got := 0, errors.Must(bucket.Leak(1, now)); want != got {
+		if want, got := 0, errsx.Must(bucket.Leak(1, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
@@ -120,10 +121,10 @@ func TestBucket(t *testing.T) {
 
 		now = now.Add(5 * time.Second)
 
-		if want, got := 5, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 5, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
-		if want, got := 2, errors.Must(bucket.Leak(3, now)); want != got {
+		if want, got := 2, errsx.Must(bucket.Leak(3, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
@@ -138,16 +139,16 @@ func TestBucket(t *testing.T) {
 		capacity, replenish := 50.0, 3.0
 		bucket := rate.NewTokenBucket(capacity, replenish)
 
-		if want, got := 50, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 50, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
-		if want, got := 40, errors.Must(bucket.Leak(10, now)); want != got {
+		if want, got := 40, errsx.Must(bucket.Leak(10, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(1 * time.Second)
 
-		if want, got := 43, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 43, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 	})
@@ -157,34 +158,34 @@ func TestBucket(t *testing.T) {
 		capacity, replenish := 50.0, 0.5
 		bucket := rate.NewTokenBucket(capacity, replenish)
 
-		if want, got := 50, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 50, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
-		if want, got := 42, errors.Must(bucket.Leak(7.7, now)); want != got {
-			t.Errorf("want %v; got %v", want, got)
-		}
-
-		now = now.Add(1 * time.Second)
-
-		if want, got := 42, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 42, errsx.Must(bucket.Leak(7.7, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(1 * time.Second)
 
-		if want, got := 43, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 42, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(1 * time.Second)
 
-		if want, got := 43, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 43, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
 		now = now.Add(1 * time.Second)
 
-		if want, got := 44, errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := 43, errsx.Must(bucket.Leak(0, now)); want != got {
+			t.Errorf("want %v; got %v", want, got)
+		}
+
+		now = now.Add(1 * time.Second)
+
+		if want, got := 44, errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 	})
@@ -199,7 +200,7 @@ func TestBucket(t *testing.T) {
 		// We expect some inconsistencies with timing at the limits of the
 		// bucket capacity, so to avoid those inconsistencies for the test
 		// we start by leaking half the tokens
-		if want, got := int(half), errors.Must(bucket.Leak(half, now)); want != got {
+		if want, got := int(half), errsx.Must(bucket.Leak(half, now)); want != got {
 			t.Fatalf("want %v; got %v", want, got)
 		}
 
@@ -222,7 +223,7 @@ func TestBucket(t *testing.T) {
 		// inconsistencies in test results around the capacity limits, we
 		// expect half a bucket of tokens after consistently leaking and
 		// replenishing one token
-		if want, got := int(half), errors.Must(bucket.Leak(0, now)); want != got {
+		if want, got := int(half), errsx.Must(bucket.Leak(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 	})

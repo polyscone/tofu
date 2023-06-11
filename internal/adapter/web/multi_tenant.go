@@ -1,6 +1,8 @@
 package web
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -8,10 +10,9 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
-var ErrTenantNotFound = errors.New("tenant not found")
+var ErrTenantNotFound = errors.New("not found")
 
 type NewTenantFunc func(hostname string) (*handler.Tenant, error)
 
@@ -50,7 +51,7 @@ func (h *MultiTenantHandler) handler(r *http.Request) (http.Handler, error) {
 
 	tenant, err := h.newTenant(hostname)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("new tenant: %w", err)
 	}
 
 	if r.TLS != nil {
@@ -75,7 +76,7 @@ func (h *MultiTenantHandler) handler(r *http.Request) (http.Handler, error) {
 func (h *MultiTenantHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler, err := h.handler(r)
 	if err != nil {
-		httputil.LogError(r, errors.Tracef(err))
+		httputil.LogError(r, fmt.Errorf("serve %v: %w", r.URL, err))
 
 		if errors.Is(err, ErrTenantNotFound) {
 			http.Error(w, "Site not served on this interface", http.StatusNotFound)

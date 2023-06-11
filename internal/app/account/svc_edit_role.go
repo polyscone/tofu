@@ -2,9 +2,11 @@ package account
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/repo"
 )
 
@@ -20,11 +22,11 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID 
 	}
 	{
 		if !guard.CanUpdateRoles() {
-			return nil, errors.Tracef(app.ErrUnauthorised)
+			return nil, app.ErrUnauthorised
 		}
 
 		var err error
-		var errs errors.Map
+		var errs errsx.Map
 
 		if input.name, err = NewRoleName(name); err != nil {
 			errs.Set("name", err)
@@ -44,12 +46,12 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID 
 		}
 
 		if errs != nil {
-			return nil, errs.Tracef(app.ErrMalformedInput)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	if _, err := s.store.FindRoleByID(ctx, roleID); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("find role by id: %w", err)
 	}
 
 	role := NewRole(input.name, input.description, input.permissions)
@@ -57,11 +59,14 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID 
 	role.ID = roleID
 
 	err := s.store.SaveRole(ctx, role)
+	if err != nil {
+		var conflicts *repo.ConflictError
+		if errors.As(err, &conflicts) {
+			return nil, fmt.Errorf("save role: %w: %w", app.ErrConflictingInput, conflicts)
+		}
 
-	var conflicts *repo.ConflictError
-	if errors.As(err, &conflicts) {
-		return nil, conflicts.Tracef(app.ErrConflictingInput)
+		return nil, fmt.Errorf("save role: %w", err)
 	}
 
-	return role, errors.Tracef(err)
+	return role, nil
 }

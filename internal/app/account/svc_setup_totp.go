@@ -2,9 +2,9 @@ package account
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 type SetupTOTPGuard interface {
@@ -17,7 +17,7 @@ func (s *Service) SetupTOTP(ctx context.Context, guard SetupTOTPGuard, userID in
 	}
 	{
 		if !guard.CanSetupTOTP(userID) {
-			return errors.Tracef(app.ErrUnauthorised)
+			return app.ErrUnauthorised
 		}
 
 		input.userID = userID
@@ -25,15 +25,15 @@ func (s *Service) SetupTOTP(ctx context.Context, guard SetupTOTPGuard, userID in
 
 	user, err := s.store.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find user by id: %w", err)
 	}
 
 	if err := user.SetupTOTP(); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("set up TOTP: %w", err)
 	}
 
 	if err := s.store.SaveUser(ctx, user); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)

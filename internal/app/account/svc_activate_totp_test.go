@@ -2,10 +2,11 @@ package account_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
@@ -35,7 +36,7 @@ func TestActivateTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		user = errors.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(store.FindUserByID(ctx, user.ID))
 
 		if user.ActivatedAt.IsZero() {
 			t.Error("want TOTP activated at to be populated; got zero")

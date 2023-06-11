@@ -10,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/size"
 	"golang.org/x/crypto/argon2"
 )
@@ -76,22 +75,22 @@ type Params struct {
 // to provide maximum flexibility.
 func (p *Params) IsValid() error {
 	if p.Variant != I && p.Variant != ID {
-		return errors.Tracef("unknown variant %q", p.Variant)
+		return fmt.Errorf("unknown variant %q", p.Variant)
 	}
 	if want := uint32(1); p.Iterations < want {
-		return errors.Tracef("iterations must be %d or above", want)
+		return fmt.Errorf("iterations must be %d or above", want)
 	}
 	if want := uint32(size.Kibibyte); p.Memory < want {
-		return errors.Tracef("memory must be %d or above", want)
+		return fmt.Errorf("memory must be %d or above", want)
 	}
 	if want := uint8(1); p.Parallelism < want {
-		return errors.Tracef("parallelism must be %d or above", want)
+		return fmt.Errorf("parallelism must be %d or above", want)
 	}
 	if want := uint32(8); p.SaltLength < want {
-		return errors.Tracef("salt length must be %d or above", want)
+		return fmt.Errorf("salt length must be %d or above", want)
 	}
 	if want := uint32(16); p.KeyLength < want {
-		return errors.Tracef("key length must be %d or above", want)
+		return fmt.Errorf("key length must be %d or above", want)
 	}
 	return nil
 }
@@ -183,7 +182,7 @@ func key(password, salt []byte, p Params) {
 // The salt and key will be base64 encoded.
 func encodedHashWithSalt(password, salt []byte, p Params) ([]byte, error) {
 	if err := p.IsValid(); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("invalid params: %w", err)
 	}
 
 	var key []byte
@@ -195,7 +194,7 @@ func encodedHashWithSalt(password, salt []byte, p Params) ([]byte, error) {
 		key = argon2.IDKey(password, salt, p.Iterations, p.Memory, p.Parallelism, p.KeyLength)
 
 	default:
-		return nil, errors.Tracef("unknown variant %q", p.Variant)
+		return nil, fmt.Errorf("unknown variant %q", p.Variant)
 	}
 
 	// Right now the salt and key values are just a slice of bytes, so we need
@@ -233,7 +232,7 @@ func EncodedHash(r io.Reader, password []byte, p Params) ([]byte, error) {
 
 	salt := make([]byte, int(p.SaltLength))
 	if _, err := io.ReadFull(r, salt); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("read random bytes: %w", err)
 	}
 
 	return encodedHashWithSalt(password, salt, p)
@@ -259,32 +258,32 @@ func Verify(password, encodedHash []byte, preferred *Params) (bool, bool, error)
 
 	parts := strings.Split(string(encodedHash), "$")
 	if want := 6; len(parts) != want {
-		return isValid, rehash, errors.Tracef("invalid encoded hash, want %d parts; got %d", want, len(parts))
+		return isValid, rehash, fmt.Errorf("invalid encoded hash, want %d parts; got %d", want, len(parts))
 	}
 
 	var version int
 	if _, err := fmt.Sscanf(parts[2], "v=%d", &version); err != nil {
-		return isValid, rehash, errors.Tracef(err)
+		return isValid, rehash, fmt.Errorf("scan version: %w", err)
 	}
 	if version != argon2.Version {
 		// If the version of Argon2 in the package we're using is different from
 		// that of the encoded hash we need to compare with then we should error
 		// out, because we can't compare correctly in this case
-		return isValid, rehash, errors.Tracef("want version %d; got %d", argon2.Version, version)
+		return isValid, rehash, fmt.Errorf("want version %d; got %d", argon2.Version, version)
 	}
 
 	// The salt in the encoded hash is base64 encoded, so we need to decode it
 	// in order to get the correct salt length
 	salt, err := base64.RawStdEncoding.DecodeString(parts[4])
 	if err != nil {
-		return isValid, rehash, errors.Tracef(err)
+		return isValid, rehash, fmt.Errorf("base64 decode salt: %w", err)
 	}
 
 	// The key in the encoded hash is base64 encoded, so we need to decode it
 	// in order to get the correct key length
 	key, err := base64.RawStdEncoding.DecodeString(parts[5])
 	if err != nil {
-		return isValid, rehash, errors.Tracef(err)
+		return isValid, rehash, fmt.Errorf("base64 decode key: %w", err)
 	}
 	p := Params{
 		Variant:    Variant(parts[1]),
@@ -295,12 +294,12 @@ func Verify(password, encodedHash []byte, preferred *Params) (bool, bool, error)
 	// Extract the memory, iterations (time), and parallelism parameters from
 	// the encoded hash we need to compare with
 	if _, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &p.Memory, &p.Iterations, &p.Parallelism); err != nil {
-		return isValid, rehash, errors.Tracef(err)
+		return isValid, rehash, fmt.Errorf("scan memory, iterations, and parallelism: %w", err)
 	}
 
 	encodedPassword, err := encodedHashWithSalt(password, salt, p)
 	if err != nil {
-		return isValid, rehash, errors.Tracef(err)
+		return isValid, rehash, fmt.Errorf("encode hash with salt: %w", err)
 	}
 
 	// Use the standard library's subtle.ConstantTimeCompare function to
@@ -317,7 +316,7 @@ func Verify(password, encodedHash []byte, preferred *Params) (bool, bool, error)
 		// and the isValid value will at least correctly signal whether the
 		// password and encoded hash to compare with were a match
 		if err := preferred.IsValid(); err != nil {
-			return isValid, rehash, errors.Tracef(err)
+			return isValid, rehash, fmt.Errorf("invalid params: %w", err)
 		}
 
 		// If any of the parameters passing into the function are different from

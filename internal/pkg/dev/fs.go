@@ -9,12 +9,12 @@ import (
 	"runtime/debug"
 	"strings"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 var (
-	exedir = filepath.ToSlash(filepath.Dir(errors.Must(os.Executable())))
-	info   = errors.MustOK(debug.ReadBuildInfo())
+	exedir = filepath.ToSlash(filepath.Dir(errsx.Must(os.Executable())))
+	info   = errsx.MustOK(debug.ReadBuildInfo())
 )
 
 // RelDirFS will return an os.DirFS with the given directory relative to the

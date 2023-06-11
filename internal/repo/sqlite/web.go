@@ -8,12 +8,13 @@ import (
 	"database/sql"
 	"encoding/base32"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/background"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/repo"
@@ -31,11 +32,11 @@ type WebStore struct {
 func NewWebStore(ctx context.Context, db *sql.DB, sessionLifespan time.Duration) (*WebStore, error) {
 	migrations, err := fs.Sub(migrations, "migrations/web")
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("initialise web migrations FS: %w", err)
 	}
 
 	if err := migrateFS(ctx, db, "web", migrations); err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("migrate web: %w", err)
 	}
 
 	s := WebStore{db: newDB(db)}
@@ -46,7 +47,7 @@ func NewWebStore(ctx context.Context, db *sql.DB, sessionLifespan time.Duration)
 
 		for range time.Tick(sessionLifespan) {
 			if err := s.DestroyExpiredSessions(ctx, sessionLifespan); err != nil {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("web store: destroy expired sessions: %w", err)
 			}
 		}
 	})
@@ -57,7 +58,7 @@ func NewWebStore(ctx context.Context, db *sql.DB, sessionLifespan time.Duration)
 
 		for range time.Tick(5 * time.Minute) {
 			if err := s.DeleteExpiredTokens(ctx); err != nil {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("web store: delete expired tokens: %w", err)
 			}
 		}
 	})
@@ -68,157 +69,177 @@ func NewWebStore(ctx context.Context, db *sql.DB, sessionLifespan time.Duration)
 func (s *WebStore) FindSessionDataByID(ctx context.Context, id string) (session.Data, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	session, err := s.findSessionDataByID(ctx, tx, id)
-
-	return session, errors.Tracef(err)
+	return s.findSessionDataByID(ctx, tx, id)
 }
 
 func (s *WebStore) SaveSession(ctx context.Context, sess session.Session) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	err = s.upsertSession(ctx, tx, sess)
-	if err != nil {
-		return errors.Tracef(err)
+	if err := s.upsertSession(ctx, tx, sess); err != nil {
+		return fmt.Errorf("upsert session: %w", err)
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *WebStore) DestroySession(ctx context.Context, id string) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	err = s.destroySession(ctx, tx, id)
-	if err != nil {
-		return errors.Tracef(err)
+	if err := s.destroySession(ctx, tx, id); err != nil {
+		return err
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *WebStore) DestroyExpiredSessions(ctx context.Context, lifespan time.Duration) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	err = s.destroyExpiredSessions(ctx, tx, lifespan)
-	if err != nil {
-		return errors.Tracef(err)
+	if err := s.destroyExpiredSessions(ctx, tx, lifespan); err != nil {
+		return err
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *WebStore) FindActivationTokenEmail(ctx context.Context, token string) (string, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	token, err = s.findToken(ctx, tx, token, webTokenKindActivation)
-
-	return token, errors.Tracef(err)
+	return s.findToken(ctx, tx, token, webTokenKindActivation)
 }
 
 func (s *WebStore) FindResetPasswordTokenEmail(ctx context.Context, token string) (string, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	token, err = s.findToken(ctx, tx, token, webTokenKindResetPassword)
-
-	return token, errors.Tracef(err)
+	return s.findToken(ctx, tx, token, webTokenKindResetPassword)
 }
 
 func (s *WebStore) AddActivationToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	token, err := s.createToken(ctx, tx, email, ttl, webTokenKindActivation)
 	if err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("create token: %w", err)
 	}
 
-	return token, errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return "", fmt.Errorf("tx commit: %w", err)
+	}
+
+	return token, nil
 }
 
 func (s *WebStore) AddResetPasswordToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
 	token, err := s.createToken(ctx, tx, email, ttl, webTokenKindResetPassword)
 	if err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("create token: %w", err)
 	}
 
-	return token, errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return "", fmt.Errorf("tx commit: %w", err)
+	}
+
+	return token, nil
 }
 
 func (s *WebStore) ConsumeActivationToken(ctx context.Context, token string) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	err = s.consumeToken(ctx, tx, token, webTokenKindActivation)
-	if err != nil {
-		return errors.Tracef(err)
+	if err := s.consumeToken(ctx, tx, token, webTokenKindActivation); err != nil {
+		return err
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *WebStore) ConsumeResetPasswordToken(ctx context.Context, token string) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	err = s.consumeToken(ctx, tx, token, webTokenKindResetPassword)
-	if err != nil {
-		return errors.Tracef(err)
+	if err := s.consumeToken(ctx, tx, token, webTokenKindResetPassword); err != nil {
+		return err
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *WebStore) DeleteExpiredTokens(ctx context.Context) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	err = s.deleteExpiredTokens(ctx, tx)
-	if err != nil {
-		return errors.Tracef(err)
+	if err := s.deleteExpiredTokens(ctx, tx); err != nil {
+		return err
 	}
 
-	return errors.Tracef(tx.Commit())
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (s *WebStore) findSessionDataByID(ctx context.Context, tx *Tx, id string) (session.Data, error) {
@@ -233,10 +254,10 @@ func (s *WebStore) findSessionDataByID(ctx context.Context, tx *Tx, id string) (
 	).Scan(&data)
 	if err != nil {
 		if errors.Is(err, repo.ErrNotFound) {
-			err = errors.Tracef(session.ErrNotFound, err)
+			return nil, session.ErrNotFound
 		}
 
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	d := json.NewDecoder(bytes.NewReader(data))
@@ -244,15 +265,17 @@ func (s *WebStore) findSessionDataByID(ctx context.Context, tx *Tx, id string) (
 	d.UseNumber()
 
 	var res session.Data
-	err = d.Decode(&res)
+	if err := d.Decode(&res); err != nil {
+		return nil, fmt.Errorf("decode session data JSON: %w", err)
+	}
 
-	return res, errors.Tracef(err)
+	return res, nil
 }
 
 func (s *WebStore) upsertSession(ctx context.Context, tx *Tx, sess session.Session) error {
 	b, err := json.Marshal(sess.Data)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("marshal session data JSON: %w", err)
 	}
 
 	_, err = tx.ExecContext(ctx, `
@@ -278,7 +301,7 @@ func (s *WebStore) upsertSession(ctx context.Context, tx *Tx, sess session.Sessi
 		sql.Named("updated_at", Time(tx.now.UTC())),
 	)
 
-	return errors.Tracef(err)
+	return err
 }
 
 func (s *WebStore) destroySession(ctx context.Context, tx *Tx, id string) error {
@@ -289,7 +312,7 @@ func (s *WebStore) destroySession(ctx context.Context, tx *Tx, id string) error 
 		sql.Named("id", id),
 	)
 
-	return errors.Tracef(err)
+	return err
 }
 
 func (s *WebStore) destroyExpiredSessions(ctx context.Context, tx *Tx, lifespan time.Duration) error {
@@ -300,7 +323,7 @@ func (s *WebStore) destroyExpiredSessions(ctx context.Context, tx *Tx, lifespan 
 		sql.Named("expires_at", Time(tx.now.Add(-lifespan).UTC())),
 	)
 
-	return errors.Tracef(err)
+	return err
 }
 
 func (s *WebStore) findToken(ctx context.Context, tx *Tx, token, kind string) (string, error) {
@@ -322,7 +345,7 @@ func (s *WebStore) findToken(ctx context.Context, tx *Tx, token, kind string) (s
 		sql.Named("expires_at", Time(tx.now.UTC())),
 	).Scan(&email)
 
-	return email, errors.Tracef(err)
+	return email, err
 }
 
 func (s *WebStore) consumeToken(ctx context.Context, tx *Tx, token, kind string) error {
@@ -340,14 +363,15 @@ func (s *WebStore) consumeToken(ctx context.Context, tx *Tx, token, kind string)
 		sql.Named("expires_at", Time(tx.now.UTC())),
 	)
 	if err != nil {
-		return errors.Tracef(err)
+		return err
 	}
+
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("get rows affected: %w", err)
 	}
 	if affected == 0 {
-		return errors.Tracef(repo.ErrNotFound)
+		return repo.ErrNotFound
 	}
 
 	return nil
@@ -356,7 +380,7 @@ func (s *WebStore) consumeToken(ctx context.Context, tx *Tx, token, kind string)
 func (s *WebStore) createToken(ctx context.Context, tx *Tx, email string, ttl time.Duration, kind string) (string, error) {
 	b := make([]byte, 16)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
-		return "", errors.Tracef(err)
+		return "", fmt.Errorf("read random bytes: %w", err)
 	}
 
 	b32 := base32.StdEncoding.WithPadding(base32.NoPadding)
@@ -389,11 +413,8 @@ func (s *WebStore) createToken(ctx context.Context, tx *Tx, email string, ttl ti
 		sql.Named("expires_at", expiresAt),
 		sql.Named("created_at", Time(tx.now.UTC())),
 	)
-	if err != nil {
-		return "", errors.Tracef(err)
-	}
 
-	return string(token), nil
+	return string(token), err
 }
 
 func (s *WebStore) deleteExpiredTokens(ctx context.Context, tx *Tx) error {
@@ -404,5 +425,5 @@ func (s *WebStore) deleteExpiredTokens(ctx context.Context, tx *Tx) error {
 		sql.Named("expires_at", Time(tx.now.UTC())),
 	)
 
-	return errors.Tracef(err)
+	return err
 }

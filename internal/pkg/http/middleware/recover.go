@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"runtime"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 func Recover(errorHandler ErrorHandler) Middleware {
@@ -21,9 +19,9 @@ func Recover(errorHandler ErrorHandler) Middleware {
 					buf = buf[:runtime.Stack(buf, false)]
 
 					if errorHandler != nil {
-						message := fmt.Sprintf("panic serving %v: %v\n%s", r.RemoteAddr, err, buf)
+						message := fmt.Errorf("panic serving %v: %v\n%s", r.RemoteAddr, err, buf)
 
-						errorHandler(w, r, errors.Tracef(message))
+						errorHandler(w, r, message)
 					} else {
 						http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 					}

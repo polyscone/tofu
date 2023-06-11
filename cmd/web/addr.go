@@ -5,8 +5,6 @@ import (
 	"net"
 	"strconv"
 	"strings"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
 )
 
 type Addr struct {
@@ -30,7 +28,7 @@ func (a *Addr) Set(value string) error {
 
 	listener, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("listen on %v: %w", port, err)
 	}
 
 	port = strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
@@ -45,7 +43,7 @@ func (a *Addr) Listener() (net.Listener, error) {
 	if a.listener == nil {
 		err := a.Set(":0")
 		if err != nil {
-			return nil, errors.Tracef(err)
+			return nil, err
 		}
 	}
 

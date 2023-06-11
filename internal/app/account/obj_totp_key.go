@@ -1,16 +1,13 @@
 package account
 
-import (
-	"github.com/polyscone/tofu/internal/pkg/errors"
-	"github.com/polyscone/tofu/internal/pkg/otp"
-)
+import "github.com/polyscone/tofu/internal/pkg/otp"
 
 type TOTPKey []byte
 
 func NewTOTPKey(algorithm otp.Algorithm) (TOTPKey, error) {
 	key, err := otp.NewKey(nil, algorithm)
 	if err != nil {
-		return nil, errors.Tracef(err)
+		return nil, err
 	}
 
 	return TOTPKey(key), nil

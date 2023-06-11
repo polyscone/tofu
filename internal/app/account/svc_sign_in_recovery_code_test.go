@@ -2,11 +2,12 @@ package account_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 	"github.com/polyscone/tofu/internal/repo"
@@ -75,7 +76,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		incorrectCode := errors.Must(account.GenerateRecoveryCode()).String()
+		incorrectCode := errsx.Must(account.GenerateRecoveryCode()).String()
 
 		tt := []struct {
 			name         string

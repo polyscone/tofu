@@ -2,11 +2,12 @@ package system_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/system"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
@@ -39,7 +40,7 @@ func TestUpdateConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		config := errors.Must(store.FindConfig(ctx))
+		config := errsx.Must(store.FindConfig(ctx))
 
 		if want, got := systemEmail, config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)
@@ -64,7 +65,7 @@ func TestUpdateConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		config = errors.Must(store.FindConfig(ctx))
+		config = errsx.Must(store.FindConfig(ctx))
 
 		if want, got := systemEmail, config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)

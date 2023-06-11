@@ -2,12 +2,14 @@ package account
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"math/rand"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
@@ -18,8 +20,8 @@ const (
 )
 
 var (
-	validPassword     = errors.Must(regexp.Compile(validPasswordPattern))
-	passwordGenerator = errors.Must(gen.NewPatternGenerator(validPasswordPattern))
+	validPassword     = errsx.Must(regexp.Compile(validPasswordPattern))
+	passwordGenerator = errsx.Must(gen.NewPatternGenerator(validPasswordPattern))
 )
 
 type Password []byte
@@ -30,23 +32,23 @@ func GeneratePassword() Password {
 
 func NewPassword(password string) (Password, error) {
 	if strings.TrimSpace(password) == "" {
-		return nil, errors.Tracef("cannot be empty")
+		return nil, errors.New("cannot be empty")
 	}
 
 	if strings.ContainsAny(password, "\n\r") {
-		return nil, errors.Tracef("cannot contain line breaks")
+		return nil, errors.New("cannot contain line breaks")
 	}
 
 	rc := utf8.RuneCountInString(password)
 	if rc < passwordMinLength {
-		return nil, errors.Tracef("must be at least %v characters", passwordMinLength)
+		return nil, fmt.Errorf("must be at least %v characters", passwordMinLength)
 	}
 	if rc > passwordMaxLength {
-		return nil, errors.Tracef("cannot be a over %v characters in length", passwordMaxLength)
+		return nil, fmt.Errorf("cannot be a over %v characters in length", passwordMaxLength)
 	}
 
 	if !validPassword.MatchString(password) {
-		return nil, errors.Tracef("contains invalid characters")
+		return nil, errors.New("contains invalid characters")
 	}
 
 	return Password(password), nil
@@ -65,5 +67,5 @@ func (p Password) Generate(rand *rand.Rand) any {
 }
 
 func (p Password) Invalidate(rand *rand.Rand, value any) any {
-	return Password(errors.Must(gen.Pattern(`(a{0,7}|[^ -~]{8,100}|a{101,})`)))
+	return Password(errsx.Must(gen.Pattern(`(a{0,7}|[^ -~]{8,100}|a{101,})`)))
 }

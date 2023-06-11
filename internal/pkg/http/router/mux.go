@@ -11,7 +11,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 )
 
@@ -635,7 +634,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseFloat(str, 32)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse float32: %w", err)
 			}
 		}
 
@@ -646,7 +645,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseFloat(str, 64)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse float64: %w", err)
 			}
 		}
 
@@ -657,7 +656,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseInt(str, 10, 8)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse int8: %w", err)
 			}
 		}
 
@@ -668,7 +667,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseInt(str, 10, 16)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse int16: %w", err)
 			}
 		}
 
@@ -679,7 +678,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseInt(str, 10, 32)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse int32: %w", err)
 			}
 		}
 
@@ -690,7 +689,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseInt(str, 10, 64)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse int64: %w", err)
 			}
 		}
 
@@ -701,7 +700,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseInt(str, 10, 64)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse int: %w", err)
 			}
 		}
 
@@ -712,7 +711,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseUint(str, 10, 8)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse uint8: %w", err)
 			}
 		}
 
@@ -723,7 +722,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseUint(str, 10, 16)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse uint16: %w", err)
 			}
 		}
 
@@ -734,7 +733,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseUint(str, 10, 32)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse uint32: %w", err)
 			}
 		}
 
@@ -745,7 +744,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseUint(str, 10, 64)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse uint64: %w", err)
 			}
 		}
 
@@ -756,7 +755,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseUint(str, 10, 64)
 			if err != nil {
-				return res, errors.Tracef(err)
+				return res, fmt.Errorf("parse uint: %w", err)
 			}
 		}
 

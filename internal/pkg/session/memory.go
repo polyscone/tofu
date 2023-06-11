@@ -4,8 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"fmt"
 )
 
 // JSONMemoryStore implements an in-memory repo for use with a session manager.
@@ -42,14 +41,14 @@ func (r *JSONMemoryStore) FindSessionDataByID(ctx context.Context, id string) (D
 		return res, err
 	}
 
-	return nil, errors.Tracef(ErrNotFound)
+	return nil, ErrNotFound
 }
 
 // Save persists the given session in-memory.
 func (r *JSONMemoryStore) SaveSession(ctx context.Context, s Session) error {
 	b, err := json.Marshal(s.Data)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("marshal session data: %w", err)
 	}
 
 	r.data[s.ID] = b

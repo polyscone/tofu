@@ -2,6 +2,8 @@ package ui
 
 import (
 	"embed"
+	"errors"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"path"
@@ -14,7 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/admin"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/page"
 	"github.com/polyscone/tofu/internal/pkg/dev"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/fstack"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
@@ -31,14 +33,14 @@ const (
 var files embed.FS
 
 func NewRouter(tenant *handler.Tenant) http.Handler {
-	publicFiles := fstack.New(dev.RelDirFS(publicDir), errors.Must(fs.Sub(files, publicDir)))
-	templateFiles := fstack.New(dev.RelDirFS(templateDir), errors.Must(fs.Sub(files, templateDir)))
+	publicFiles := fstack.New(dev.RelDirFS(publicDir), errsx.Must(fs.Sub(files, publicDir)))
+	templateFiles := fstack.New(dev.RelDirFS(templateDir), errsx.Must(fs.Sub(files, templateDir)))
 
 	mux := router.NewServeMux()
 	h := handler.New(mux, tenant, templateFiles, "account.sign_in", "system.config")
 
 	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
-		h.ErrorView(w, r, errors.Tracef(err), "error", nil)
+		h.ErrorView(w, r, err, "error", nil)
 	}
 
 	// Middleware
@@ -153,16 +155,16 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 		if err != nil {
 			switch {
 			case errors.Is(err, fs.ErrNotExist):
-				h.ErrorView(w, r, errors.Tracef(httputil.ErrNotFound, "%w: %v %v", err, r.Method, r.URL), "error", nil)
+				h.ErrorView(w, r, fmt.Errorf("%w: %w: %v %v", httputil.ErrNotFound, err, r.Method, r.URL), "error", nil)
 
 			default:
-				h.ErrorView(w, r, errors.Tracef(httputil.ErrInternalServerError, "%w: %v %v", err, r.Method, r.URL), "error", nil)
+				h.ErrorView(w, r, fmt.Errorf("%w: %w: %v %v", httputil.ErrInternalServerError, err, r.Method, r.URL), "error", nil)
 			}
 
 			return
 		}
 		if stat.IsDir() {
-			h.ErrorView(w, r, errors.Tracef("%w: %v %v", httputil.ErrForbidden, r.Method, r.URL), "error", nil)
+			h.ErrorView(w, r, fmt.Errorf("%w: %v %v", httputil.ErrForbidden, r.Method, r.URL), "error", nil)
 
 			return
 		}
@@ -172,12 +174,12 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 	// Generic not found handler
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		h.ErrorView(w, r, errors.Tracef("%w: %v %v", httputil.ErrNotFound, r.Method, r.URL), "error", nil)
+		h.ErrorView(w, r, fmt.Errorf("%w: %v %v", httputil.ErrNotFound, r.Method, r.URL), "error", nil)
 	})
 
 	// Generic method not allowed handler
 	mux.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-		h.ErrorView(w, r, errors.Tracef("%w: %v %v", httputil.ErrMethodNotAllowed, r.Method, r.URL), "error", nil)
+		h.ErrorView(w, r, fmt.Errorf("%w: %v %v", httputil.ErrMethodNotAllowed, r.Method, r.URL), "error", nil)
 	})
 
 	return mux

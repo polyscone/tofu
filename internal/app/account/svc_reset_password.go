@@ -2,9 +2,10 @@ package account
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errors"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 type ResetPasswordGuard interface {
@@ -20,11 +21,11 @@ func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, u
 	}
 	{
 		if !guard.CanResetPassword(userID) {
-			return errors.Tracef(app.ErrUnauthorised)
+			return app.ErrUnauthorised
 		}
 
 		var err error
-		var errs errors.Map
+		var errs errsx.Map
 
 		newPasswordCheck, _ := NewPassword(newPasswordCheck)
 
@@ -37,21 +38,21 @@ func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, u
 		}
 
 		if errs != nil {
-			return errs.Tracef(app.ErrMalformedInput)
+			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.store.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("find user by id: %w", err)
 	}
 
 	if err := user.ResetPassword(input.newPassword, s.hasher); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("reset password: %w", err)
 	}
 
 	if err := s.store.SaveUser(ctx, user); err != nil {
-		return errors.Tracef(err)
+		return fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)

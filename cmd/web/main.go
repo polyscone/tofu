@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -16,7 +17,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 )
 
@@ -129,7 +129,7 @@ func main() {
 			// to fail on a required field that was left empty, but there was no
 			// custom error message, so we just set it to a default one in that case
 			if err == nil {
-				err = errors.Tracef("required flag")
+				err = errors.New("required flag")
 			}
 
 			message := fmt.Sprintf("invalid value %q for flag -%v: %v", value, name, err)
@@ -153,26 +153,26 @@ func main() {
 	}
 
 	if err := os.MkdirAll(opts.data, 0666); err != nil {
-		logger.PrintError(errors.Tracef(err))
+		logger.PrintErrorf("make data directory: %w", err)
 
 		os.Exit(1)
 	}
 
 	if err := initPasswordHasher(); err != nil {
-		logger.PrintError(errors.Tracef(err))
+		logger.PrintErrorf("initialise password hasher: %w", err)
 
 		os.Exit(1)
 	}
 
 	if err := initTenants(); err != nil {
-		logger.PrintError(errors.Tracef(err))
+		logger.PrintErrorf("initialise tenants: %w", err)
 	}
 
 	httputil.TrustedProxies = opts.server.proxies
 
 	listener, err := opts.server.addr.Listener()
 	if err != nil {
-		logger.PrintError(errors.Tracef(err))
+		logger.PrintErrorf("get listener: %w", err)
 
 		os.Exit(1)
 	}
@@ -191,7 +191,7 @@ func main() {
 		if opts.server.addr.insecure {
 			err := srv.Serve(listener)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("serve over HTTP: %w", err)
 			}
 		} else {
 			cert := filepath.Join(opts.data, "cert.pem")
@@ -199,7 +199,7 @@ func main() {
 
 			err := srv.ServeTLS(listener, cert, key)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				logger.PrintError(errors.Tracef(err))
+				logger.PrintErrorf("serve over HTTPS: %w", err)
 			}
 		}
 	}()
@@ -216,7 +216,7 @@ func main() {
 	defer cancel()
 
 	if err := srv.Shutdown(ctxShutdown); err != nil {
-		logger.PrintError(errors.Tracef(err))
+		logger.PrintErrorf("shut down: %w", err)
 	}
 
 	databases.mu.Lock()
@@ -224,7 +224,7 @@ func main() {
 
 	for alias, db := range databases.data {
 		if err := db.Close(); err != nil {
-			logger.PrintError(errors.Tracef("%v: %v", alias, err))
+			logger.PrintErrorf("close database connection for %v: %w", alias, err)
 		}
 	}
 }

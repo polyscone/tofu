@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/background"
-	"github.com/polyscone/tofu/internal/pkg/errors"
 	"github.com/polyscone/tofu/internal/pkg/rate"
 	"github.com/polyscone/tofu/internal/pkg/realip"
 )
@@ -72,14 +71,14 @@ func RateLimit(capacity, replenish float64, config *RateLimitConfig) Middleware 
 		return func(w http.ResponseWriter, r *http.Request) {
 			if config.Consume == nil || config.Consume(r) {
 				ip, err := realip.FromRequest(r, config.TrustedProxies...)
-				if handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusInternalServerError) {
+				if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 					return
 				}
 
 				client := getClient(ip)
 
 				if _, err := client.bucket.Leak(1, time.Now()); err != nil {
-					handleError(w, r, errors.Tracef(err), config.ErrorHandler, http.StatusTooManyRequests)
+					handleError(w, r, err, config.ErrorHandler, http.StatusTooManyRequests)
 
 					return
 				}
