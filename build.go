@@ -21,7 +21,7 @@ import (
 // Tags for builds and test builds that are always applied regardless
 // of provided flag values
 const (
-	stickyTags     = "json fts1"
+	stickyTags     = "json1 fts5"
 	stickyTestTags = "test"
 )
 

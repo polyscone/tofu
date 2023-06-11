@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"regexp"
 	"strconv"
+	"strings"
 
-	"github.com/polyscone/tofu/internal/pkg/casing"
 	"github.com/polyscone/tofu/internal/pkg/size"
 )
 
@@ -216,7 +217,7 @@ func DecodeForm(dst any, r *http.Request) error {
 	return DecodeRequest(dst, r, "form", func(r *http.Request, fieldName, tagValue string) ([]string, error) {
 		key := tagValue
 		if key == "" {
-			key = casing.ToKebab(fieldName)
+			key = toKebab(fieldName)
 		}
 
 		const maxMemory = 32 * size.Megabyte
@@ -236,9 +237,21 @@ func DecodeQuery(dst any, r *http.Request) error {
 	return DecodeRequest(dst, r, "query", func(r *http.Request, fieldName, tagValue string) ([]string, error) {
 		key := tagValue
 		if key == "" {
-			key = casing.ToKebab(fieldName)
+			key = toKebab(fieldName)
 		}
 
 		return r.URL.Query()[key], nil
 	})
+}
+
+var (
+	reFirstUpper = regexp.MustCompile("(.)([A-Z][a-z]+)")
+	reAllUppers  = regexp.MustCompile("([a-z0-9])([A-Z])")
+)
+
+func toKebab(str string) string {
+	kebab := reFirstUpper.ReplaceAllString(str, "${1}-${2}")
+	kebab = reAllUppers.ReplaceAllString(kebab, "${1}-${2}")
+
+	return strings.ToLower(kebab)
 }
