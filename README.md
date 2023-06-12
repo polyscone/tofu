@@ -14,7 +14,7 @@ go run build.go -debug -watch -clear -after "./web -dev -addr :8080 -log-style t
 
 Omitting the `-debug` flag will build the project in "release" mode which does things like stripping debug symbols, among other things.
 
-The `-tenants` flag points to a JSON file that describes the tenants of the program in the following format:
+Tenant configuration is stored in the data directory's `tenants.json` file in the following format:
 
 ```json
 {
@@ -22,4 +22,3 @@ The `-tenants` flag points to a JSON file that describes the tenants of the prog
 	"app2": { "hostnames": ["local.example.com", "foo.example.com"] }
 }
 ```
-If the flag is omitted then it will default to using `tenants.json` in the `-data` directory.

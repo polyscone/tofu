@@ -34,7 +34,6 @@ var opts struct {
 	version bool
 	dev     bool
 	data    string
-	tenants string
 
 	log struct {
 		style logger.Style
@@ -69,7 +68,6 @@ func main() {
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
 	flag.BoolVar(&opts.server.insecureHTTP, "insecure-http", false, "Run in secure mode but without HTTPS")
 	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
-	flag.StringVar(&opts.tenants, "tenants", "", "A path to a JSON file that describes the tenants of the program")
 	flag.Parse()
 
 	if flag.NArg() != 0 && flag.Arg(0) != "version" {
@@ -94,10 +92,6 @@ func main() {
 		fmt.Print(info)
 
 		return
-	}
-
-	if opts.tenants == "" {
-		opts.tenants = filepath.Join(opts.data, "tenants.json")
 	}
 
 	if opts.server.insecure {
@@ -164,7 +158,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := initTenants(); err != nil {
+	tenants := filepath.Join(opts.data, "tenants.json")
+	if err := initTenants(tenants); err != nil {
 		logger.Error.Printf("initialise tenants: %v\n", err)
 	}
 

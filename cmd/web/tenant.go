@@ -112,15 +112,13 @@ type Tenant struct {
 	IsDisabled bool     `json:"isDisabled"`
 }
 
-func initTenants() error {
+func initTenants(tenantsPath string) error {
 	tenants = make(map[string]Tenant)
-	value := opts.tenants
 
-	f, err := os.OpenFile(value, os.O_RDWR|os.O_CREATE, 0666)
+	f, err := os.OpenFile(tenantsPath, os.O_RDWR|os.O_CREATE, 0666)
 	if err != nil {
-		return fmt.Errorf("open tenants file: %w", err)
+		return fmt.Errorf("open or create tenants file: %w", err)
 	}
-
 	err = func() error {
 		defer f.Close()
 
@@ -153,12 +151,13 @@ func initTenants() error {
 		return err
 	}
 
-	if b, err := os.ReadFile(value); err == nil {
-		value = string(b)
+	tenantsData, err := os.ReadFile(tenantsPath)
+	if err != nil {
+		return fmt.Errorf("read tenants file: %w", err)
 	}
 
 	data := make(map[string]Tenant)
-	if err := json.Unmarshal([]byte(value), &data); err != nil {
+	if err := json.Unmarshal([]byte(tenantsData), &data); err != nil {
 		return fmt.Errorf("unmarshal tenant data: %w", err)
 	}
 
