@@ -18,20 +18,24 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/app/system"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/rate"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/sms"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 type ctxKey int
 
 const (
-	ctxSystemConfig ctxKey = iota
+	ctxConfig ctxKey = iota
+	ctxUser
 	ctxPassport
 )
 
@@ -112,20 +116,30 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		passport := guard.NewPassport(config.RequiresSetup, guard.User{})
-		if !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
-			userID := h.Sessions.GetInt(ctx, sess.UserID)
-			user, err := h.Repo.Account.FindUserByID(ctx, userID)
-			if err == nil {
-				passport = guard.NewPassport(config.RequiresSetup, guard.User{
-					ID:          user.ID,
-					IsSuper:     user.IsSuper(),
-					Permissions: user.Permissions(),
-				})
+		user := &account.User{}
+		userID := h.Sessions.GetInt(ctx, sess.UserID)
+		isAwaitingTOTP := h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP)
+		if userID != 0 {
+			var err error
+			user, err = h.Repo.Account.FindUserByID(ctx, userID)
+			if err != nil && !errors.Is(err, repository.ErrNotFound) {
+				logger.Error.Printf("handler: middleware: find user by id: %v", err)
 			}
 		}
 
-		ctx = context.WithValue(ctx, ctxSystemConfig, config)
+		var passport guard.Passport
+		if user.ID == 0 || isAwaitingTOTP {
+			passport = guard.NewPassport(config.RequiresSetup, guard.User{})
+		} else {
+			passport = guard.NewPassport(config.RequiresSetup, guard.User{
+				ID:          user.ID,
+				IsSuper:     user.IsSuper(),
+				Permissions: user.Permissions(),
+			})
+		}
+
+		ctx = context.WithValue(ctx, ctxConfig, config)
+		ctx = context.WithValue(ctx, ctxUser, user)
 		ctx = context.WithValue(ctx, ctxPassport, passport)
 		r = r.WithContext(ctx)
 
@@ -159,17 +173,31 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 }
 
 func (h *Handler) Config(ctx context.Context) *system.Config {
-	value := ctx.Value(ctxSystemConfig)
+	value := ctx.Value(ctxConfig)
 	if value == nil {
 		return &system.Config{}
 	}
 
 	config, ok := value.(*system.Config)
 	if !ok {
-		panic(fmt.Sprintf("could not assert system config as %T", config))
+		panic(fmt.Sprintf("could not assert config as %T", config))
 	}
 
 	return config
+}
+
+func (h *Handler) User(ctx context.Context) *account.User {
+	value := ctx.Value(ctxUser)
+	if value == nil {
+		return &account.User{}
+	}
+
+	user, ok := value.(*account.User)
+	if !ok {
+		panic(fmt.Sprintf("could not assert user as %T", user))
+	}
+
+	return user
 }
 
 func (h *Handler) Passport(ctx context.Context) guard.Passport {

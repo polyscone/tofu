@@ -99,6 +99,7 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		user := h.User(ctx)
 
 		if !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
 			http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
@@ -106,8 +107,7 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		err := h.Account.SignInWithTOTP(ctx, userID, input.TOTP)
+		err := h.Account.SignInWithTOTP(ctx, user.ID, input.TOTP)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("sign in with TOTP: %w", err), "account/sign_in/totp", nil)
 
@@ -117,13 +117,6 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 		_, err = h.RenewSession(ctx)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
-
-			return
-		}
-
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
-		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
 
 			return
 		}
@@ -185,6 +178,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		user := h.User(ctx)
 
 		if !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
 			http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
@@ -192,8 +186,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		err := h.Account.SignInWithRecoveryCode(ctx, userID, input.RecoveryCode)
+		err := h.Account.SignInWithRecoveryCode(ctx, user.ID, input.RecoveryCode)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("sign in with recovery code: %w", err), "account/sign_in/recovery_code", nil)
 
@@ -203,13 +196,6 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 		_, err = h.RenewSession(ctx)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
-
-			return
-		}
-
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
-		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
 
 			return
 		}

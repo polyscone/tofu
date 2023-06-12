@@ -46,8 +46,8 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		user := h.User(ctx)
 		passport := h.Passport(ctx)
-		userID := h.Sessions.GetInt(ctx, sess.UserID)
 
 		knownBreachCount, err := pwned.KnownPasswordBreachCount(ctx, []byte(input.NewPassword))
 		if err != nil {
@@ -70,7 +70,7 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 
 		err = h.Account.ChangePassword(ctx,
 			passport,
-			userID,
+			user.ID,
 			input.OldPassword,
 			input.NewPassword,
 			input.NewPasswordCheck,

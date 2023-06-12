@@ -3,6 +3,7 @@ package httputil
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/pkg/logger"
@@ -11,15 +12,7 @@ import (
 
 var TrustedProxies []string
 
-func init() {
-	logger.AddSkipRule("/httputil/log.go", logger.SkipFile)
-}
-
-func LogError(r *http.Request, err error) {
-	LogInfof(r, "%v", err)
-}
-
-func LogInfof(r *http.Request, format string, a ...any) {
+func Log(l *log.Logger, r *http.Request, format string, a ...any) {
 	remoteAddr, _err := realip.FromRequest(r, TrustedProxies...)
 	if _err != nil {
 		remoteAddr = r.RemoteAddr
@@ -45,10 +38,18 @@ func LogInfof(r *http.Request, format string, a ...any) {
 			b = []byte(err.Error())
 		}
 
-		logger.Info.Print(string(b))
+		l.Print(string(b))
 	} else {
 		info := fmt.Sprintf("%v (trace: %v; addr: %v; user: %v)\n", request, td.id, remoteAddr, td.userID)
 
-		logger.Info.Printf("%v%v", info, text)
+		l.Printf("%v%v", info, text)
 	}
+}
+
+func LogError(r *http.Request, err error) {
+	Log(logger.Error, r, "%v", err)
+}
+
+func LogInfof(r *http.Request, format string, a ...any) {
+	Log(logger.Info, r, format, a...)
 }

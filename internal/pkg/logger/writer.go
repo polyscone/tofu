@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"runtime"
 	"runtime/debug"
 	"strings"
 	"sync"
@@ -15,34 +14,10 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-const (
-	SkipFile SkipRuleKind = iota
-	SkipFunc
-)
-
 var (
-	exedir    = filepath.ToSlash(filepath.Dir(errsx.Must(os.Executable())))
-	info      = errsx.MustOK(debug.ReadBuildInfo())
-	skipRules = []skipRule{}
+	exedir = filepath.ToSlash(filepath.Dir(errsx.Must(os.Executable())))
+	info   = errsx.MustOK(debug.ReadBuildInfo())
 )
-
-func init() {
-	AddSkipRule("/pkg/logger/", SkipFile)
-}
-
-type SkipRuleKind byte
-
-type skipRule struct {
-	value string
-	kind  SkipRuleKind
-}
-
-func AddSkipRule(value string, kind SkipRuleKind) {
-	skipRules = append(skipRules, skipRule{
-		value: value,
-		kind:  kind,
-	})
-}
 
 // Formatter represents a formatter that can be used by a
 // logger to format messages.
@@ -85,27 +60,8 @@ func (w *Writer) Write(b []byte) (int, error) {
 		newline = "\n"
 	}
 
-	at := time.Now()
-	skip := 3
-	pc, file, _, _ := runtime.Caller(skip)
-	funcName := runtime.FuncForPC(pc).Name()
-
-skipLoop:
-	for _, rule := range skipRules {
-		switch {
-		case rule.kind == SkipFile && strings.Contains(file, rule.value),
-			rule.kind == SkipFunc && strings.Contains(funcName, rule.value):
-
-			skip++
-			pc, file, _, _ = runtime.Caller(skip)
-			funcName = runtime.FuncForPC(pc).Name()
-
-			goto skipLoop
-		}
-	}
-
 	message := string(b)
-	message = w.f.Format(message, newline, at)
+	message = w.f.Format(message, newline, time.Now())
 	message = strings.ReplaceAll(message, info.Main.Path+"/", "")
 	message = strings.ReplaceAll(message, exedir+"/", "")
 
