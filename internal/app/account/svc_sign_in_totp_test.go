@@ -3,6 +3,7 @@ package account_test
 import (
 	"context"
 	"errors"
+	"strconv"
 	"testing"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 	"github.com/polyscone/tofu/internal/repository"
 )
 
@@ -112,38 +112,45 @@ func TestSignInWithTOTP(t *testing.T) {
 		}
 	})
 
-	t.Run("properties", func(t *testing.T) {
+	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
-
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		execute := func(totp account.TOTP) error {
-			err := svc.SignInWithTOTP(ctx, user.ID, totp.String())
-			if err == nil {
-				events.Expect(account.SignedInWithTOTP{Email: user.Email})
-			}
+		tt := []struct {
+			name         string
+			totp         string
+			isValidInput bool
+		}{
+			{"valid inputs", "123456", true},
 
-			return err
+			{"invalid passcode empty", "", false},
+			{"invalid passcode whitespace", "      ", false},
+			{"invalid passcode too short", "12345", false},
+			{"invalid passcode too long", "1234567", false},
+			{"invalid passcode char NUL", "1234\x0056", false},
+			{"invalid passcode char CR return", "1234\r56", false},
+			{"invalid passcode char LF", "1234\n56", false},
+			{"invalid passcode char tab", "1234\t56", false},
 		}
+		for i, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "joe@bloggs.com", ActivateTOTP: true})
 
-		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(totp account.TOTP) bool {
-				err := execute(totp)
+				err := svc.SignInWithTOTP(ctx, user.ID, tc.totp)
+				switch {
+				case err == nil:
+					events.Expect(account.SignedInWithTOTP{Email: user.Email})
 
-				return !errors.Is(err, app.ErrMalformedInput)
+				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)
+
+				case !tc.isValidInput && !errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want error: %v; got %v", app.ErrMalformedInput, err)
+				}
 			})
-		})
-
-		t.Run("invalid totp input", func(t *testing.T) {
-			quick.Check(t, func(totp quick.Invalid[account.TOTP]) bool {
-				err := execute(totp.Unwrap())
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
+		}
 	})
 }

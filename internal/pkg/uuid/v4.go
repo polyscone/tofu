@@ -7,11 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	mrand "math/rand"
 	"regexp"
 	"strings"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 // validV4 is a regexp that matches any valid non-nil V4 UUID.
@@ -133,22 +130,4 @@ func (id V4) Value() (driver.Value, error) {
 	}
 
 	return id.String(), nil
-}
-
-func (id V4) Generate(rand *mrand.Rand) any {
-	return errsx.Must(NewV4())
-}
-
-func (id V4) Invalidate(mrand *mrand.Rand, value any) any {
-	var invalid V4
-
-	errsx.Must(io.ReadFull(rand.Reader, invalid[:]))
-
-	if mrand.Int()&1 == 0 {
-		invalid[6] = 0
-	} else {
-		invalid[8] = 0
-	}
-
-	return invalid
 }

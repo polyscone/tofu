@@ -22,7 +22,7 @@ import (
 // of provided flag values
 const (
 	stickyTags     = "json1 fts5"
-	stickyTestTags = "test"
+	stickyTestTags = ""
 )
 
 var programs []*exec.Cmd

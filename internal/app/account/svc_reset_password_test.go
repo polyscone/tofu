@@ -1,16 +1,16 @@
 package account_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 )
 
 type resetPasswordGuard struct {
@@ -51,9 +51,7 @@ func TestResetPassword(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
-
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+		svc, broker, _ := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -66,7 +64,6 @@ func TestResetPassword(t *testing.T) {
 			want        error
 		}{
 			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
-			{"empty new password", validGuard, user.ID, "", app.ErrMalformedInput},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -82,49 +79,47 @@ func TestResetPassword(t *testing.T) {
 		}
 	})
 
-	t.Run("properties", func(t *testing.T) {
+	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
-
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		execute := func(newPassword, newPasswordCheck account.Password) error {
-			err := svc.ResetPassword(ctx, validGuard, user.ID, newPassword.String(), newPasswordCheck.String())
-			if err == nil {
-				events.Expect(account.PasswordReset{Email: user.Email})
-			}
+		tt := []struct {
+			name             string
+			newPassword      string
+			newPasswordCheck string
+			isValidInput     bool
+		}{
+			{"valid inputs", "password1", "password1", true},
 
-			return err
+			{"invalid password empty", "", "", false},
+			{"invalid password whitespace", "        ", "        ", false},
+			{"invalid password too short", ".......", ".......", false},
+			{"invalid password too long", strings.Repeat(".", 101), strings.Repeat(".", 101), false},
+			{"invalid password char NUL", "passwor\x00d", "passwor\x00d", false},
+			{"invalid password char CR return", "passwor\rd", "passwor\rd", false},
+			{"invalid password char LF", "passwor\nd", "passwor\nd", false},
+			{"invalid password char tab", "passwor\td", "passwor\td", false},
+			{"invalid password check mismatch", "password1", "password2", false},
 		}
+		for i, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Activate: true})
 
-		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(newPassword account.Password) bool {
-				err := execute(newPassword, newPassword)
+				err := svc.ResetPassword(ctx, validGuard, user.ID, tc.newPassword, tc.newPasswordCheck)
+				switch {
+				case err == nil:
+					events.Expect(account.PasswordReset{Email: user.Email})
 
-				return !errors.Is(err, app.ErrMalformedInput)
+				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)
+
+				case !tc.isValidInput && !errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want error: %v; got %v", app.ErrMalformedInput, err)
+				}
 			})
-		})
-
-		t.Run("invalid new password", func(t *testing.T) {
-			quick.Check(t, func(newPassword quick.Invalid[account.Password]) bool {
-				err := execute(newPassword.Unwrap(), newPassword.Unwrap())
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
-
-		t.Run("mismatched password", func(t *testing.T) {
-			quick.Check(t, func(newPassword account.Password) bool {
-				mismatch := bytes.Clone(newPassword)
-				mismatch[0]++
-
-				err := execute(newPassword, mismatch)
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
+		}
 	})
 }

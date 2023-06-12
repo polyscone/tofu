@@ -3,13 +3,13 @@ package account_test
 import (
 	"context"
 	"errors"
+	"strconv"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 )
 
 type changeTOTPTelGuard struct {
@@ -24,7 +24,7 @@ func TestChangeTOTPTel(t *testing.T) {
 	validGuard := changeTOTPTelGuard{value: true}
 	invalidGuard := changeTOTPTelGuard{value: false}
 
-	t.Run("success with unverified TOTP user", func(t *testing.T) {
+	t.Run("success", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
@@ -62,8 +62,7 @@ func TestChangeTOTPTel(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
-		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -76,9 +75,7 @@ func TestChangeTOTPTel(t *testing.T) {
 			want   error
 		}{
 			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
-			{"empty new phone", validGuard, user2.ID, "", app.ErrMalformedInput},
-			{"new phone missing country code", validGuard, user2.ID, "070 0000 0001", app.ErrMalformedInput},
-			{"activated user without TOTP setup", validGuard, user1.ID, "+81 70 0000 0003", app.ErrBadRequest},
+			{"activated user without TOTP setup", validGuard, user.ID, "+81 70 0000 0003", app.ErrBadRequest},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -94,48 +91,50 @@ func TestChangeTOTPTel(t *testing.T) {
 		}
 	})
 
-	t.Run("properties", func(t *testing.T) {
+	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
-
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		oldTel := user.TOTPTel
+		tt := []struct {
+			name         string
+			newTel       string
+			isValidInput bool
+		}{
+			{"valid inputs", "+81 12 3456 7890", true},
 
-		execute := func(newTel account.Tel) error {
-			err := svc.ChangeTOTPTel(ctx, validGuard, user.ID, newTel.String())
-			if err == nil {
-				events.Expect(account.TOTPTelChanged{
-					Email:  user.Email,
-					OldTel: oldTel,
-					NewTel: newTel.String(),
-				})
-
-				// Keep the old phone up to date with the latest phone
-				// change so subsequent tests compare on the correct value
-				oldTel = newTel.String()
-			}
-
-			return err
+			{"invalid empty", "", false},
+			{"invalid whitespace", "   ", false},
+			{"invalid missing country code", "081 12 3456 7890", false},
+			{"invalid contains hyphens", "+81-12-3456-7890", false},
+			{"invalid contains letters", "+81a12b3456c7890", false},
+			{"invalid char NUL", "+81 1\x002 3456 7890", false},
+			{"invalid char CR return", "+81 1\r2 3456 7890", false},
+			{"invalid char LF", "+81 1\n2 3456 7890", false},
+			{"invalid char tab", "+81 1\t2 3456 7890", false},
 		}
+		for i, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", SetupTOTPTel: true, VerifyTOTP: true})
 
-		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(newTel account.Tel) bool {
-				err := execute(newTel)
+				err := svc.ChangeTOTPTel(ctx, validGuard, user.ID, tc.newTel)
+				switch {
+				case err == nil:
+					events.Expect(account.TOTPTelChanged{
+						Email:  user.Email,
+						OldTel: "+00 00 0000 0000",
+						NewTel: tc.newTel,
+					})
 
-				return !errors.Is(err, app.ErrMalformedInput)
+				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)
+
+				case !tc.isValidInput && !errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want error: %v; got %v", app.ErrMalformedInput, err)
+				}
 			})
-		})
-
-		t.Run("invalid new phone", func(t *testing.T) {
-			quick.Check(t, func(newTel quick.Invalid[account.Tel]) bool {
-				err := execute(newTel.Unwrap())
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
+		}
 	})
 }

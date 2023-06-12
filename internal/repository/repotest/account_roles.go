@@ -60,7 +60,7 @@ func AccountRoles(ctx context.Context, t *testing.T, newRepo func() account.Read
 	t.Run("add and remove", func(t *testing.T) {
 		repo := newRepo()
 
-		role := &account.Role{Name: account.GenerateRoleName().String()}
+		role := &account.Role{Name: "Role name"}
 		if err := repo.AddRole(ctx, role); err != nil {
 			t.Fatal(err)
 		}

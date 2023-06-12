@@ -3,36 +3,21 @@ package account
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
 const (
-	roleNameMinLength    = 1
-	roleNameMaxLength    = 30
-	validRoleNamePattern = `^[ a-zA-Z0-9!#&()*+,./:_\-\\]{1,30}$`
+	roleNameMinLength = 1
+	roleNameMaxLength = 30
 )
 
-var (
-	validRoleName     = errsx.Must(regexp.Compile(validRoleNamePattern))
-	roleNameGenerator = errsx.Must(gen.NewPatternGenerator(validRoleNamePattern))
-)
+var validRoleName = errsx.Must(regexp.Compile(`^[ a-zA-Z0-9!#&()*+,./:_\-\\]{1,30}$`))
 
 type RoleName string
-
-func GenerateRoleName() RoleName {
-	for {
-		name, err := NewRoleName(roleNameGenerator.GenerateLimit(roleNameMaxLength))
-		if err == nil {
-			return name
-		}
-	}
-}
 
 func NewRoleName(name string) (RoleName, error) {
 	if strings.TrimSpace(name) == "" {
@@ -63,16 +48,4 @@ func NewRoleName(name string) (RoleName, error) {
 
 func (n RoleName) String() string {
 	return string(n)
-}
-
-func (n RoleName) Equal(rhs RoleName) bool {
-	return n == rhs
-}
-
-func (n RoleName) Generate(rand *rand.Rand) any {
-	return GenerateRoleName()
-}
-
-func (n RoleName) Invalidate(rand *rand.Rand, value any) any {
-	return RoleName(errsx.Must(gen.Pattern(`(|[^ a-zA-Z0-9!#&()*+,./:_\-\\]{1,30}|a{31,})`)))
 }

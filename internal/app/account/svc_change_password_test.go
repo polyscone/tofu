@@ -1,16 +1,16 @@
 package account_test
 
 import (
-	"bytes"
 	"context"
 	"errors"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 )
 
 type changePasswordGuard struct {
@@ -85,63 +85,58 @@ func TestChangePassword(t *testing.T) {
 		}
 	})
 
-	t.Run("properties", func(t *testing.T) {
+	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
-
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		execute := func(oldPassword, newPassword, newPasswordCheck account.Password) error {
-			err := svc.ChangePassword(ctx, validGuard, user.ID, oldPassword.String(), newPassword.String(), newPasswordCheck.String())
-			if err == nil {
-				events.Expect(account.PasswordChanged{Email: user.Email})
-			}
+		tt := []struct {
+			name             string
+			oldPassword      string
+			newPassword      string
+			newPasswordCheck string
+			isValidInput     bool
+		}{
+			{"valid inputs", "password", "password1", "password1", true},
 
-			return err
+			{"invalid old password empty", "", "password1", "password1", false},
+			{"invalid old password whitespace", "        ", "password1", "password1", false},
+			{"invalid old password too short", ".......", "password1", "password1", false},
+			{"invalid old password too long", strings.Repeat(".", 101), "password1", "password1", false},
+			{"invalid old password char NUL", "passwor\x00d", "password1", "password1", false},
+			{"invalid old password char CR return", "passwor\rd", "password1", "password1", false},
+			{"invalid old password char LF", "passwor\nd", "password1", "password1", false},
+			{"invalid old password char tab", "passwor\td", "password1", "password1", false},
+
+			{"invalid new password empty", "", "", "", false},
+			{"invalid new password whitespace", "        ", "", "", false},
+			{"invalid new password too short", "password", ".......", ".......", false},
+			{"invalid new password too long", "password", strings.Repeat(".", 101), strings.Repeat(".", 101), false},
+			{"invalid new password char NUL", "password", "passwor\x00d", "passwor\x00d", false},
+			{"invalid new password char CR return", "password", "passwor\rd", "passwor\rd", false},
+			{"invalid new password char LF", "password", "passwor\nd", "passwor\nd", false},
+			{"invalid new password char tab", "password", "passwor\td", "passwor\td", false},
+
+			{"invalid password check mismatch", "password", "password1", "password2", false},
 		}
+		for i, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Activate: true})
 
-		oldPassword := account.Password("password")
+				err := svc.ChangePassword(ctx, validGuard, user.ID, tc.oldPassword, tc.newPassword, tc.newPasswordCheck)
+				switch {
+				case err == nil:
+					events.Expect(account.PasswordChanged{Email: user.Email})
 
-		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(newPassword account.Password) bool {
-				err := execute(oldPassword, newPassword, newPassword)
+				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)
 
-				// Keep the old password up to date with the latest password
-				// change so subsequent tests don't fail
-				oldPassword = newPassword
-
-				return !errors.Is(err, app.ErrMalformedInput)
+				case !tc.isValidInput && !errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want error: %v; got %v", app.ErrMalformedInput, err)
+				}
 			})
-		})
-
-		t.Run("invalid old password", func(t *testing.T) {
-			quick.Check(t, func(newPassword account.Password) bool {
-				err := execute(newPassword, newPassword, newPassword)
-
-				return errors.Is(err, app.ErrInvalidInput)
-			})
-		})
-
-		t.Run("invalid new password", func(t *testing.T) {
-			quick.Check(t, func(newPassword quick.Invalid[account.Password]) bool {
-				err := execute(oldPassword, newPassword.Unwrap(), newPassword.Unwrap())
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
-
-		t.Run("mismatched password", func(t *testing.T) {
-			quick.Check(t, func(newPassword account.Password) bool {
-				mismatch := bytes.Clone(newPassword)
-				mismatch[0]++
-
-				err := execute(oldPassword, newPassword, mismatch)
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
+		}
 	})
 }

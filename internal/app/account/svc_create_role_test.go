@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 )
 
 type createRoleGuard struct {
@@ -84,50 +84,54 @@ func TestCreateRole(t *testing.T) {
 		}
 	})
 
-	t.Run("properties", func(t *testing.T) {
+	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, _ := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		execute := func(name account.RoleName, description account.RoleDesc, permission account.Permission) (*account.Role, error) {
-			permissions := []string{permission.String()}
-			role, err := svc.CreateRole(ctx, validGuard, name.String(), description.String(), permissions)
+		tt := []struct {
+			name         string
+			roleName     string
+			description  string
+			permissions  []string
+			isValidInput bool
+		}{
+			{"valid inputs", "Role name", "Description", []string{"1"}, true},
 
-			return role, err
+			{"invalid name empty", "", "Description", []string{"1"}, false},
+			{"invalid name whitespace", "   ", "Description", []string{"1"}, false},
+			{"invalid name too long", strings.Repeat(".", 31), "Description", []string{"1"}, false},
+			{"invalid name char NUL", "Role \x00name", "Description", []string{"1"}, false},
+			{"invalid name char CR return", "Role \rname", "Description", []string{"1"}, false},
+			{"invalid name char LF", "Role \nname", "Description", []string{"1"}, false},
+			{"invalid name char tab", "Role \tname", "Description", []string{"1"}, false},
+
+			{"invalid description too long", "Role name", strings.Repeat(".", 101), []string{"1"}, false},
+			{"invalid description char NUL", "Role name", "Descripti\x00on", []string{"1"}, false},
+			{"invalid description char CR return", "Role name", "Descripti\ron", []string{"1"}, false},
+			{"invalid description char LF", "Role name", "Descripti\non", []string{"1"}, false},
+			{"invalid description char tab", "Role name", "Descripti\ton", []string{"1"}, false},
+
+			{"invalid permission empty", "Role name", "Description", []string{""}, false},
+			{"invalid permission whitespace", "Role name", "Description", []string{"   "}, false},
+			{"invalid permission char NUL", "Role name", "Description", []string{"\x001"}, false},
+			{"invalid permission char CR return", "Role name", "Description", []string{"\r1"}, false},
+			{"invalid permission char LF", "Role name", "Description", []string{"\n1"}, false},
+			{"invalid permission char tab", "Role name", "Description", []string{"\t1"}, false},
 		}
+		for _, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				_, err := svc.CreateRole(ctx, validGuard, tc.roleName, tc.description, tc.permissions)
+				switch {
+				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)
 
-		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(name account.RoleName, descrpition account.RoleDesc, permission account.Permission) bool {
-				_, err := execute(name, descrpition, permission)
-
-				return !errors.Is(err, app.ErrMalformedInput)
+				case !tc.isValidInput && !errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want error: %v; got %v", app.ErrMalformedInput, err)
+				}
 			})
-		})
-
-		t.Run("invalid name", func(t *testing.T) {
-			quick.Check(t, func(name quick.Invalid[account.RoleName], description account.RoleDesc, permission account.Permission) bool {
-				_, err := execute(name.Unwrap(), description, permission)
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
-
-		t.Run("invalid description", func(t *testing.T) {
-			quick.Check(t, func(name account.RoleName, description quick.Invalid[account.RoleDesc], permission account.Permission) bool {
-				_, err := execute(name, description.Unwrap(), permission)
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
-
-		t.Run("invalid permission", func(t *testing.T) {
-			quick.Check(t, func(name account.RoleName, description account.RoleDesc, permission quick.Invalid[account.Permission]) bool {
-				_, err := execute(name, description, permission.Unwrap())
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
+		}
 	})
 }

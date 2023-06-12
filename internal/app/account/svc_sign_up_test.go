@@ -7,9 +7,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 )
 
 func TestSignUp(t *testing.T) {
@@ -33,41 +31,46 @@ func TestSignUp(t *testing.T) {
 		}
 	})
 
-	t.Run("properties", func(t *testing.T) {
-		svc, broker, repo := NewTestEnv(ctx)
+	t.Run("input validation", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, _ := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		execute := func(email account.Email, password, passwordCheck account.Password) error {
-			_, err := svc.SignUp(ctx, email.String())
-			if err == nil {
-				events.Expect(account.SignedUp{Email: email.String()})
-			}
+		tt := []struct {
+			name         string
+			email        string
+			isValidInput bool
+		}{
+			{"valid inputs", "foo@example.com", true},
 
-			return err
+			{"invalid email empty", "", false},
+			{"invalid email whitespace", "   ", false},
+			{"invalid email missing @", "fooexample.com", false},
+			{"invalid email part before @", "@example.com", false},
+			{"invalid email part after @", "foo@", false},
+			{"invalid email includes name", "Foo Bar <foo@example.com>", false},
+			{"invalid email missing TLD", "foo@example.", false},
+			{"invalid email char NUL", "foo\x00@example.com", false},
+			{"invalid email char CR return", "foo\r@example.com", false},
+			{"invalid email char LF", "foo\n@example.com", false},
+			{"invalid email char tab", "foo\t@example.com", false},
 		}
+		for _, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				_, err := svc.SignUp(ctx, tc.email)
+				switch {
+				case err == nil:
+					events.Expect(account.SignedUp{Email: tc.email})
 
-		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(email account.Email, password account.Password) bool {
-				if err := execute(email, password, password); err != nil {
-					t.Log(err)
+				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)
 
-					return false
+				case !tc.isValidInput && !errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want error: %v; got %v", app.ErrMalformedInput, err)
 				}
-
-				user := errsx.Must(repo.FindUserByEmail(ctx, email.String()))
-
-				return !user.SignedUpAt.IsZero() && user.ActivatedAt.IsZero()
 			})
-		})
-
-		t.Run("invalid email", func(t *testing.T) {
-			quick.Check(t, func(email quick.Invalid[account.Email], password account.Password) bool {
-				err := execute(email.Unwrap(), password, password)
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
+		}
 	})
 }

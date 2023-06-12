@@ -4,31 +4,21 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"math/rand"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
 const (
-	passwordMinLength    = 8
-	passwordMaxLength    = 100
-	validPasswordPattern = `^[[:print:]]{8,100}$` // [[:print:]] ≡ [ -~]
+	passwordMinLength = 8
+	passwordMaxLength = 100
 )
 
-var (
-	validPassword     = errsx.Must(regexp.Compile(validPasswordPattern))
-	passwordGenerator = errsx.Must(gen.NewPatternGenerator(validPasswordPattern))
-)
+var validPassword = errsx.Must(regexp.Compile(`^[[:print:]]{8,100}$`))
 
 type Password []byte
-
-func GeneratePassword() Password {
-	return Password(passwordGenerator.Generate())
-}
 
 func NewPassword(password string) (Password, error) {
 	if strings.TrimSpace(password) == "" {
@@ -60,12 +50,4 @@ func (p Password) String() string {
 
 func (p Password) Equal(rhs Password) bool {
 	return bytes.Equal(p, rhs)
-}
-
-func (p Password) Generate(rand *rand.Rand) any {
-	return Password(passwordGenerator.GenerateLimit(passwordMaxLength))
-}
-
-func (p Password) Invalidate(rand *rand.Rand, value any) any {
-	return Password(errsx.Must(gen.Pattern(`(a{0,7}|[^ -~]{8,100}|a{101,})`)))
 }

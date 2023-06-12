@@ -31,7 +31,7 @@
 		<p class="error">{{.Errors.Get "twilio token"}}</p>
 
 		<label for="config__twilio-from-tel">Twilio from phone</label>
-		<input id="config__twilio-from-tel" type="tel" name="twilio-from-tel" value="{{.Form.GetOr "twilio-from-tel" .Config.TwilioFromTel}}" placeholder="+00 00 0000 0000 " autocomplete="tel" pattern="\+\d(\d| )+" minlength="4" maxlength="25"{{if $disable}} disabled{{end}}>
+		<input id="config__twilio-from-tel" type="tel" name="twilio-from-tel" value="{{.Form.GetOr "twilio-from-tel" .Config.TwilioFromTel}}" placeholder="+00 00 0000 0000" autocomplete="tel" pattern="\+\d(\d| )+" minlength="4" maxlength="25"{{if $disable}} disabled{{end}}>
 		<p class="error">{{.Errors.Get "twilio from tel"}}</p>
 
 		<div class="bag reverse">

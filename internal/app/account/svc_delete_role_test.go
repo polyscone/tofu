@@ -3,10 +3,10 @@ package account_test
 import (
 	"context"
 	"errors"
+	"strconv"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/repository"
 )
@@ -42,11 +42,10 @@ func TestDeleteRole(t *testing.T) {
 			{"authorised", validGuard, nil},
 			{"unauthorised", invalidGuard, app.ErrUnauthorised},
 		}
-		for _, tc := range tt {
+		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				name := account.GenerateRoleName().String()
-				description := account.GenerateRoleDesc().String()
-				role, err := svc.CreateRole(ctx, tc.guard, name, description, nil)
+				name := "Role " + strconv.Itoa(i)
+				role, err := svc.CreateRole(ctx, tc.guard, name, "", nil)
 				if err != nil {
 					t.Fatal(err)
 				}

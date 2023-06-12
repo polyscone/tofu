@@ -3,31 +3,21 @@ package account
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/gen"
 )
 
 const (
-	permissionMinLength    = 1
-	permissionMaxLength    = 50
-	validPermissionPattern = `^[a-z0-9:_]{1,50}$`
+	permissionMinLength = 1
+	permissionMaxLength = 50
 )
 
-var (
-	validPermission     = errsx.Must(regexp.Compile(validPermissionPattern))
-	permissionGenerator = errsx.Must(gen.NewPatternGenerator(validPermissionPattern))
-)
+var validPermission = errsx.Must(regexp.Compile(`^[a-z0-9:_]{1,50}$`))
 
 type Permission string
-
-func GeneratePermission() Permission {
-	return Permission(permissionGenerator.Generate())
-}
 
 func NewPermission(name string) (Permission, error) {
 	if strings.TrimSpace(name) == "" {
@@ -58,16 +48,4 @@ func NewPermission(name string) (Permission, error) {
 
 func (n Permission) String() string {
 	return string(n)
-}
-
-func (n Permission) Equal(rhs Permission) bool {
-	return n == rhs
-}
-
-func (n Permission) Generate(rand *rand.Rand) any {
-	return GeneratePermission()
-}
-
-func (n Permission) Invalidate(rand *rand.Rand, value any) any {
-	return Permission(errsx.Must(gen.Pattern(`(|[^a-z0-9:_]{1,50}|a{51,})`)))
 }

@@ -3,13 +3,13 @@ package account_test
 import (
 	"context"
 	"errors"
+	"strconv"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
 	"github.com/polyscone/tofu/internal/repository"
 )
 
@@ -76,7 +76,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		incorrectCode := errsx.Must(account.GenerateRecoveryCode()).String()
+		incorrectCode := errsx.Must(account.NewRandomRecoveryCode()).String()
 
 		tt := []struct {
 			name         string
@@ -103,38 +103,48 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		}
 	})
 
-	t.Run("properties", func(t *testing.T) {
+	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
-
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		execute := func(code account.RecoveryCode) error {
-			err := svc.SignInWithRecoveryCode(ctx, user.ID, code.String())
-			if err == nil {
-				events.Expect(account.SignedInWithRecoveryCode{Email: user.Email})
-			}
+		tt := []struct {
+			name         string
+			code         string
+			isValidInput bool
+		}{
+			{"valid inputs", "AZ234567", true},
 
-			return err
+			{"invalid passcode empty", "", false},
+			{"invalid passcode whitespace", "      ", false},
+			{"invalid passcode lowercase letter", "a234567", false},
+			{"invalid passcode invalid base32 number 1", "1234567", false},
+			{"invalid passcode invalid base32 number 8", "8234567", false},
+			{"invalid passcode invalid base32 number 9", "9234567", false},
+			{"invalid passcode invalid base32 number 0", "0234567", false},
+			{"invalid passcode char NUL", "234\x0056", false},
+			{"invalid passcode char CR return", "234\r56", false},
+			{"invalid passcode char LF", "234\n56", false},
+			{"invalid passcode char tab", "234\t56", false},
 		}
+		for i, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "joe@bloggs.com", ActivateTOTP: true})
 
-		t.Run("valid inputs", func(t *testing.T) {
-			quick.Check(t, func(code account.RecoveryCode) bool {
-				err := execute(code)
+				err := svc.SignInWithRecoveryCode(ctx, user.ID, tc.code)
+				switch {
+				case err == nil:
+					events.Expect(account.SignedInWithRecoveryCode{Email: user.Email})
 
-				return !errors.Is(err, app.ErrMalformedInput)
+				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)
+
+				case !tc.isValidInput && !errors.Is(err, app.ErrMalformedInput):
+					t.Errorf("want error: %v; got %v", app.ErrMalformedInput, err)
+				}
 			})
-		})
-
-		t.Run("invalid recovery code input", func(t *testing.T) {
-			quick.Check(t, func(code quick.Invalid[account.RecoveryCode]) bool {
-				err := execute(code.Unwrap())
-
-				return errors.Is(err, app.ErrMalformedInput)
-			})
-		})
+		}
 	})
 }

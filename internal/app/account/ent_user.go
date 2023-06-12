@@ -239,7 +239,7 @@ func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) error {
 	u.RecoveryCodes = make([]string, nCodes)
 
 	for i := 0; i < nCodes; i++ {
-		code, err := GenerateRecoveryCode()
+		code, err := NewRandomRecoveryCode()
 		if err != nil {
 			return fmt.Errorf("generate recovery code: %w", err)
 		}
@@ -322,7 +322,7 @@ func (u *User) RegenerateRecoveryCodes(totp TOTP) error {
 	u.RecoveryCodes = make([]string, nCodes)
 
 	for i := 0; i < nCodes; i++ {
-		code, err := GenerateRecoveryCode()
+		code, err := NewRandomRecoveryCode()
 		if err != nil {
 			return fmt.Errorf("generate recovery code: %w", err)
 		}
