@@ -23,5 +23,5 @@ func (f *TextFormatter) Format(message, newline string, at time.Time) string {
 
 	message = strings.TrimRight(message, "\n\r\t")
 
-	return fmt.Sprintf("[%v] %s\n", at.Format("15:04:05 MST"), message)
+	return fmt.Sprintf("[%v]\n%v\n\n", at.Format("15:04:05 MST"), message)
 }

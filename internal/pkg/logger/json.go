@@ -23,5 +23,5 @@ func (f *JSONFormatter) Format(message, newline string, at time.Time) string {
 		"msg": value,
 	}))
 
-	return fmt.Sprintf("%s%s", b, newline)
+	return fmt.Sprintf("%s%v", b, newline)
 }
