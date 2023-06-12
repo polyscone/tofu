@@ -26,9 +26,9 @@ func TestSetupTOTP(t *testing.T) {
 
 	t.Run("success with activated user", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -38,7 +38,7 @@ func TestSetupTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if len(user.TOTPKey) == 0 {
 			t.Error("want TOTP key to be populated")
@@ -69,7 +69,7 @@ func TestSetupTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if bytes.Equal(oldTOTPKey, user.TOTPKey) {
 			t.Error("want TOTP key to change")
@@ -78,9 +78,9 @@ func TestSetupTOTP(t *testing.T) {
 
 	t.Run("success with activated user and verified TOTP", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "lisa@jones.com", VerifyTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "lisa@jones.com", VerifyTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -90,7 +90,7 @@ func TestSetupTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if len(user.TOTPKey) == 0 {
 			t.Error("want TOTP key to be populated")
@@ -117,9 +117,9 @@ func TestSetupTOTP(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

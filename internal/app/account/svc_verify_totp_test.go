@@ -12,7 +12,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 type verifyTOTPGuard struct {
@@ -29,9 +29,9 @@ func TestVerifyTOTP(t *testing.T) {
 
 	t.Run("success with activated user with app TOTP setup", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", SetupTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", SetupTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -48,7 +48,7 @@ func TestVerifyTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if want, got := account.TOTPMethodApp.String(), user.TOTPMethod; want != got {
 			t.Errorf("want TOTP method to be %q; got %q", want, got)
@@ -67,9 +67,9 @@ func TestVerifyTOTP(t *testing.T) {
 
 	t.Run("success with activated user with SMS TOTP setup", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "baz@qux.com", SetupTOTPTel: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "baz@qux.com", SetupTOTPTel: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -86,7 +86,7 @@ func TestVerifyTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if want, got := account.TOTPMethodApp.String(), user.TOTPMethod; want != got {
 			t.Errorf("want TOTP method to be %q; got %q", want, got)
@@ -105,11 +105,11 @@ func TestVerifyTOTP(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
-		user2 := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", SetupTOTP: true})
-		user3 := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", ActivateTOTP: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", SetupTOTP: true})
+		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -122,8 +122,8 @@ func TestVerifyTOTP(t *testing.T) {
 			want     error
 		}{
 			{"unauthorised", invalidGuard, 0, nil, app.ErrUnauthorised},
-			{"empty user id correct TOTP", validGuard, 0, user2, repo.ErrNotFound},
-			{"empty user id incorrect TOTP", validGuard, 0, nil, repo.ErrNotFound},
+			{"empty user id correct TOTP", validGuard, 0, user2, repository.ErrNotFound},
+			{"empty user id incorrect TOTP", validGuard, 0, nil, repository.ErrNotFound},
 			{"no TOTP user id correct TOTP", validGuard, user1.ID, user2, nil},
 			{"already activated TOTP", validGuard, user3.ID, user3, app.ErrBadRequest},
 		}
@@ -150,9 +150,9 @@ func TestVerifyTOTP(t *testing.T) {
 
 	t.Run("properties", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

@@ -29,7 +29,7 @@ func TestUpdateRole(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -80,7 +80,7 @@ func TestUpdateRole(t *testing.T) {
 					return
 				}
 
-				after, err := store.FindRoleByID(ctx, edited.ID)
+				after, err := repo.FindRoleByID(ctx, edited.ID)
 				if err != nil {
 					t.Fatal(err)
 				}

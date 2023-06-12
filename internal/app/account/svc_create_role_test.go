@@ -27,7 +27,7 @@ func TestCreateRole(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -58,7 +58,7 @@ func TestCreateRole(t *testing.T) {
 					return
 				}
 
-				found := errsx.Must(store.FindRoleByID(ctx, created.ID))
+				found := errsx.Must(repo.FindRoleByID(ctx, created.ID))
 
 				if want, got := created.Name, found.Name; want != got {
 					t.Errorf("want name to be %q; got %q", want, got)

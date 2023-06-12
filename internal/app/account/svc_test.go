@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/repo/sqlite"
+	"github.com/polyscone/tofu/internal/repository/sqlite"
 )
 
 var hasher = testutil.NewPasswordHasher()
@@ -18,10 +18,10 @@ var hasher = testutil.NewPasswordHasher()
 func NewTestEnv(ctx context.Context) (*account.Service, event.Broker, account.ReadWriter) {
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	store := errsx.Must(sqlite.NewAccountStore(ctx, db))
-	svc := errsx.Must(account.NewService(broker, store, hasher))
+	repo := errsx.Must(sqlite.NewAccountRepo(ctx, db))
+	svc := errsx.Must(account.NewService(broker, repo, hasher))
 
-	return svc, broker, store
+	return svc, broker, repo
 }
 
 type TestUser struct {
@@ -34,7 +34,7 @@ type TestUser struct {
 	ActivateTOTP bool
 }
 
-func MustAddUser(t *testing.T, ctx context.Context, store account.ReadWriter, tu TestUser) *account.User {
+func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu TestUser) *account.User {
 	t.Helper()
 
 	tu.VerifyTOTP = tu.VerifyTOTP || tu.ActivateTOTP
@@ -73,7 +73,7 @@ func MustAddUser(t *testing.T, ctx context.Context, store account.ReadWriter, tu
 		errsx.Must0(user.ActivateTOTP())
 	}
 
-	errsx.Must0(store.AddUser(ctx, user))
+	errsx.Must0(repo.AddUser(ctx, user))
 
 	return user
 }
@@ -83,7 +83,7 @@ type TestRole struct {
 	Permissions []string
 }
 
-func MustAddRole(t *testing.T, ctx context.Context, store account.ReadWriter, tr TestRole) *account.Role {
+func MustAddRole(t *testing.T, ctx context.Context, repo account.ReadWriter, tr TestRole) *account.Role {
 	t.Helper()
 
 	name := errsx.Must(account.NewRoleName(tr.Name))
@@ -99,7 +99,7 @@ func MustAddRole(t *testing.T, ctx context.Context, store account.ReadWriter, tr
 
 	role := account.NewRole(name, "", permissions)
 
-	errsx.Must0(store.AddRole(ctx, role))
+	errsx.Must0(repo.AddRole(ctx, role))
 
 	return role
 }

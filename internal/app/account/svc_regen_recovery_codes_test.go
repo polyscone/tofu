@@ -27,9 +27,9 @@ func TestRegenRecoveryCodes(t *testing.T) {
 
 	t.Run("success with user with verified TOTP", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -47,7 +47,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 
 		events.Expect(account.RecoveryCodesRegenerated{Email: user.Email})
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if len(user.RecoveryCodes) == 0 {
 			t.Error("want at least one recovery code; got none")
@@ -74,10 +74,10 @@ func TestRegenRecoveryCodes(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
-		user2 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

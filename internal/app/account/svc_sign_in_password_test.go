@@ -14,9 +14,9 @@ import (
 func TestSignInWithPassword(t *testing.T) {
 	t.Run("success for matching email and password", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -32,7 +32,7 @@ func TestSignInWithPassword(t *testing.T) {
 
 		events.Expect(account.SignedInWithPassword{Email: user.Email})
 
-		user, err = store.FindUserByID(ctx, user.ID)
+		user, err = repo.FindUserByID(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -47,10 +47,10 @@ func TestSignInWithPassword(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com"})
-		user2 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com"})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

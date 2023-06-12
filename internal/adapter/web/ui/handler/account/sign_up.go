@@ -62,7 +62,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 				ctx := context.Background()
 
 				background.Go(func() {
-					tok, err := h.Store.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
+					tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 					if err != nil {
 						logger.PrintErrorf("sign up: add reset password token: %w", err)
 

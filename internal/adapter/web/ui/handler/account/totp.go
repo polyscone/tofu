@@ -131,7 +131,7 @@ func totpSetupAppGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Store.Account.FindUserByID(ctx, userID)
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			return nil, fmt.Errorf("find user by id: %w", err)
 		}
@@ -217,7 +217,7 @@ func totpSetupSMSGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Store.Account.FindUserByID(ctx, userID)
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			return nil, fmt.Errorf("find user by id: %w", err)
 		}
@@ -257,7 +257,7 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Store.Account.FindUserByID(ctx, userID)
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
 
@@ -335,7 +335,7 @@ func totpSendSMSPost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Store.Account.FindUserByID(ctx, userID)
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
 
@@ -365,7 +365,7 @@ func totpSetupActivateGet(h *handler.Handler) http.HandlerFunc {
 		}
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Store.Account.FindUserByID(ctx, userID)
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
 
@@ -384,7 +384,7 @@ func totpSetupActivatePost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Store.Account.FindUserByID(ctx, userID)
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
 
@@ -478,7 +478,7 @@ func totpRecoveryCodesGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		user, err := h.Store.Account.FindUserByID(ctx, userID)
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			return nil, fmt.Errorf("find user by id: %w", err)
 		}

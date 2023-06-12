@@ -67,7 +67,7 @@ type Handler struct {
 }
 
 func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName, systemConfigPathName string) *Handler {
-	sessions := session.NewManager(tenant.Store.Web)
+	sessions := session.NewManager(tenant.Repo.Web)
 	funcs := template.FuncMap{
 		"Add":           tmplAdd,
 		"Sub":           tmplSub,
@@ -105,7 +105,7 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		config, err := h.Store.System.FindConfig(ctx)
+		config, err := h.Repo.System.FindConfig(ctx)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find config: %w", err), "error", nil)
 
@@ -115,7 +115,7 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		passport := guard.NewPassport(config.RequiresSetup, guard.User{})
 		if !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
 			userID := h.Sessions.GetInt(ctx, sess.UserID)
-			user, err := h.Store.Account.FindUserByID(ctx, userID)
+			user, err := h.Repo.Account.FindUserByID(ctx, userID)
 			if err == nil {
 				passport = guard.NewPassport(config.RequiresSetup, guard.User{
 					ID:          user.ID,
@@ -187,7 +187,7 @@ func (h *Handler) Passport(ctx context.Context) guard.Passport {
 }
 
 func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Passport, error) {
-	user, err := h.Store.Account.FindUserByEmail(ctx, email)
+	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return guard.Passport{}, fmt.Errorf("find user by email: %w", err)
 	}
@@ -257,7 +257,7 @@ func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailCo
 	var content emailContent
 
 	ctx := context.Background()
-	config, err := h.Store.System.FindConfig(ctx)
+	config, err := h.Repo.System.FindConfig(ctx)
 	if err != nil {
 		return content, fmt.Errorf("find config: %w", err)
 	}
@@ -338,7 +338,7 @@ func (h *Handler) SendEmail(ctx context.Context, recipients EmailRecipients, nam
 }
 
 func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
-	config, err := h.Store.System.FindConfig(ctx)
+	config, err := h.Repo.System.FindConfig(ctx)
 	if err != nil {
 		return fmt.Errorf("find config: %w", err)
 	}
@@ -352,7 +352,7 @@ func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
 func (h *Handler) SendTOTPSMS(email, tel string) error {
 	ctx := context.Background()
 
-	user, err := h.Store.Account.FindUserByEmail(ctx, email)
+	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return fmt.Errorf("find user by email: %w", err)
 	}
@@ -622,7 +622,7 @@ func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
 
 		passport := h.Passport(ctx)
 		if !check(passport) {
-			h.ErrorView(w, r, app.ErrUnauthorised, "error", nil)
+			h.ErrorView(w, r, fmt.Errorf("require auth: %w", app.ErrUnauthorised), "error", nil)
 
 			return false
 		}

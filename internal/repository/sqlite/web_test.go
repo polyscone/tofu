@@ -7,7 +7,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/session"
-	"github.com/polyscone/tofu/internal/repo/sqlite"
+	"github.com/polyscone/tofu/internal/repository/sqlite"
 )
 
 func TestWebSession(t *testing.T) {
@@ -16,9 +16,9 @@ func TestWebSession(t *testing.T) {
 
 		session.TestManager(t, func() session.ReadWriter {
 			db := sqlite.OpenInMemoryTestDatabase(ctx)
-			store := errsx.Must(sqlite.NewWebStore(ctx, db, 10*time.Minute))
+			repo := errsx.Must(sqlite.NewWebRepo(ctx, db, 10*time.Minute))
 
-			return store
+			return repo
 		})
 	})
 }

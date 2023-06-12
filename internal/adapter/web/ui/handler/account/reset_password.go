@@ -63,7 +63,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 			// been cancelled after the main request handler finished
 			ctx := context.Background()
 
-			tok, err := h.Store.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
+			tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 			if err != nil {
 				logger.PrintErrorf("reset password: add reset password token: %w", err)
 
@@ -113,14 +113,14 @@ func resetPasswordNewPasswordPost(h *handler.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		email, err := h.Store.Web.FindResetPasswordTokenEmail(ctx, input.Token)
+		email, err := h.Repo.Web.FindResetPasswordTokenEmail(ctx, input.Token)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find reset password token email: %w", err), "error", nil)
 
 			return
 		}
 
-		user, err := h.Store.Account.FindUserByEmail(ctx, email)
+		user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find user by email: %w", err), "error", nil)
 
@@ -141,7 +141,7 @@ func resetPasswordNewPasswordPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Store.Web.ConsumeResetPasswordToken(ctx, input.Token)
+		err = h.Repo.Web.ConsumeResetPasswordToken(ctx, input.Token)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("consume reset password token: %w", err), "error", nil)
 

@@ -34,12 +34,12 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 		}
 	}
 
-	user, err := s.store.FindUserByEmail(ctx, input.email.String())
+	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	if err != nil {
 		return fmt.Errorf("find user by email: %w", err)
 	}
 
-	superUserCount, err := s.store.CountUsersByRoleID(ctx, SuperRole.ID)
+	superUserCount, err := s.repo.CountUsersByRoleID(ctx, SuperRole.ID)
 	if err != nil {
 		return fmt.Errorf("count users by role id: %w", err)
 	}
@@ -53,7 +53,7 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 		return fmt.Errorf("activate user: %w", err)
 	}
 
-	if err := s.store.SaveUser(ctx, user); err != nil {
+	if err := s.repo.SaveUser(ctx, user); err != nil {
 		return fmt.Errorf("save user: %w", err)
 	}
 

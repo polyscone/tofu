@@ -63,7 +63,7 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		}
 	}
 
-	user, err := s.store.FindUserByID(ctx, input.userID)
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}
@@ -73,7 +73,7 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		roles = make([]*Role, len(roleIDs))
 
 		for i, roleID := range roleIDs {
-			role, err := s.store.FindRoleByID(ctx, roleID)
+			role, err := s.repo.FindRoleByID(ctx, roleID)
 			if err != nil {
 				return fmt.Errorf("find role by id: %w", err)
 			}
@@ -86,7 +86,7 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		return fmt.Errorf("change roles: %w", err)
 	}
 
-	if err := s.store.SaveUser(ctx, user); err != nil {
+	if err := s.repo.SaveUser(ctx, user); err != nil {
 		return fmt.Errorf("save user: %w", err)
 	}
 

@@ -17,7 +17,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
-	"github.com/polyscone/tofu/internal/repo/sqlite"
+	"github.com/polyscone/tofu/internal/repository/sqlite"
 )
 
 var tenants = make(map[string]Tenant)
@@ -56,19 +56,19 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 	broker := event.NewMemoryBroker()
 
-	accountStore, err := sqlite.NewAccountStore(ctx, db)
+	accountRepo, err := sqlite.NewAccountRepo(ctx, db)
 	if err != nil {
-		return nil, fmt.Errorf("new account store: %w", err)
+		return nil, fmt.Errorf("new account repo: %w", err)
 	}
 
-	systemStore, err := sqlite.NewSystemStore(ctx, db)
+	systemRepo, err := sqlite.NewSystemRepo(ctx, db)
 	if err != nil {
-		return nil, fmt.Errorf("new system store: %w", err)
+		return nil, fmt.Errorf("new system repo: %w", err)
 	}
 
-	webStore, err := sqlite.NewWebStore(ctx, db, 2*time.Hour)
+	webRepo, err := sqlite.NewWebRepo(ctx, db, 2*time.Hour)
 	if err != nil {
-		return nil, fmt.Errorf("new web store: %w", err)
+		return nil, fmt.Errorf("new web repo: %w", err)
 	}
 
 	mailer, err := smtp.NewMailClient("localhost", 25)
@@ -76,12 +76,12 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		return nil, fmt.Errorf("new SMTP client: %w", err)
 	}
 
-	accountService, err := account.NewService(broker, accountStore, hasher)
+	accountService, err := account.NewService(broker, accountRepo, hasher)
 	if err != nil {
 		return nil, fmt.Errorf("new account service: %w", err)
 	}
 
-	systemService, err := system.NewService(broker, systemStore)
+	systemService, err := system.NewService(broker, systemRepo)
 	if err != nil {
 		return nil, fmt.Errorf("new system service: %w", err)
 	}
@@ -96,10 +96,10 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		},
 		Account: accountService,
 		System:  systemService,
-		Store: handler.Store{
-			Account: accountStore,
-			System:  systemStore,
-			Web:     webStore,
+		Repo: handler.Repo{
+			Account: accountRepo,
+			System:  systemRepo,
+			Web:     webRepo,
 		},
 	}
 

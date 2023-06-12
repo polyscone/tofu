@@ -21,13 +21,13 @@ type ReadWriter interface {
 
 type Service struct {
 	broker event.Broker
-	store  ReadWriter
+	repo   ReadWriter
 }
 
-func NewService(broker event.Broker, store ReadWriter) (*Service, error) {
+func NewService(broker event.Broker, repo ReadWriter) (*Service, error) {
 	svc := Service{
 		broker: broker,
-		store:  store,
+		repo:   repo,
 	}
 
 	return &svc, nil

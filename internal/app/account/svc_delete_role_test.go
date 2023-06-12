@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 type deleteRoleGuard struct {
@@ -29,7 +29,7 @@ func TestDeleteRole(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -60,8 +60,8 @@ func TestDeleteRole(t *testing.T) {
 					return
 				}
 
-				if _, err := store.FindRoleByID(ctx, deleted.ID); err == nil {
-					t.Errorf("want error: %v; got <nil>", repo.ErrNotFound)
+				if _, err := repo.FindRoleByID(ctx, deleted.ID); err == nil {
+					t.Errorf("want error: %v; got <nil>", repository.ErrNotFound)
 				}
 			})
 		}

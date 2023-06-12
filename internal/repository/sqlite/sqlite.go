@@ -17,7 +17,7 @@ import (
 	"github.com/mattn/go-sqlite3"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/uuid"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 //go:embed "migrations"
@@ -290,11 +290,11 @@ func repoerr(err error) error {
 	}
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return repo.ErrNotFound
+		return repository.ErrNotFound
 	}
 
 	if msg := strings.ToLower(err.Error()); strings.Contains(msg, "unique constraint failed") {
-		return repo.ErrConflict
+		return repository.ErrConflict
 	}
 
 	return err

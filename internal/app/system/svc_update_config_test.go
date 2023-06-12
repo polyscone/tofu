@@ -25,7 +25,7 @@ func TestUpdateConfig(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -40,7 +40,7 @@ func TestUpdateConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		config := errsx.Must(store.FindConfig(ctx))
+		config := errsx.Must(repo.FindConfig(ctx))
 
 		if want, got := systemEmail, config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)
@@ -65,7 +65,7 @@ func TestUpdateConfig(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		config = errsx.Must(store.FindConfig(ctx))
+		config = errsx.Must(repo.FindConfig(ctx))
 
 		if want, got := systemEmail, config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)

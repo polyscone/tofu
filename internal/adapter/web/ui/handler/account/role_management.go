@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 func RoleManagement(h *handler.Handler, mux *router.ServeMux) {
@@ -50,7 +50,7 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 		sortTopID := h.Sessions.PopInt(ctx, sess.SortTopID)
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
-		roles, total, err := h.Store.Account.FindRolesPageBySearch(ctx, sortTopID, search, page, size)
+		roles, total, err := h.Repo.Account.FindRolesPageBySearch(ctx, sortTopID, search, page, size)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find roles page by search: %w", err), "error", nil)
 
@@ -58,7 +58,7 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 		}
 
 		h.View(w, r, http.StatusOK, "account/management/role/list", handler.Vars{
-			"Roles": repo.NewBook(roles, page, size, total),
+			"Roles": repository.NewBook(roles, page, size, total),
 			"Super": account.SuperRole,
 		})
 	}
@@ -118,12 +118,12 @@ func roleEditGet(h *handler.Handler) http.HandlerFunc {
 		}
 
 		if roleID == account.SuperRole.ID {
-			return nil, app.ErrForbidden
+			return nil, fmt.Errorf("edit super role: %w", app.ErrForbidden)
 		}
 
 		ctx := r.Context()
 
-		role, err := h.Store.Account.FindRoleByID(ctx, roleID)
+		role, err := h.Repo.Account.FindRoleByID(ctx, roleID)
 		if err != nil {
 			return nil, fmt.Errorf("find role by id: %w", err)
 		}
@@ -162,7 +162,7 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		if roleID == account.SuperRole.ID {
-			h.ErrorView(w, r, app.ErrForbidden, "error", nil)
+			h.ErrorView(w, r, fmt.Errorf("edit super role: %w", app.ErrForbidden), "error", nil)
 
 			return
 		}
@@ -195,21 +195,21 @@ func roleDeleteGet(h *handler.Handler) http.HandlerFunc {
 		}
 
 		if roleID == account.SuperRole.ID {
-			h.ErrorView(w, r, app.ErrForbidden, "error", nil)
+			h.ErrorView(w, r, fmt.Errorf("delete super role: %w", app.ErrForbidden), "error", nil)
 
 			return
 		}
 
 		ctx := r.Context()
 
-		role, err := h.Store.Account.FindRoleByID(ctx, roleID)
+		role, err := h.Repo.Account.FindRoleByID(ctx, roleID)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find role by id: %w", err), "error", nil)
 
 			return
 		}
 
-		userCount, err := h.Store.Account.CountUsersByRoleID(ctx, roleID)
+		userCount, err := h.Repo.Account.CountUsersByRoleID(ctx, roleID)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("count users by role id: %w", err), "error", nil)
 
@@ -233,7 +233,7 @@ func roleDeletePost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		if roleID == account.SuperRole.ID {
-			h.ErrorView(w, r, app.ErrForbidden, "error", nil)
+			h.ErrorView(w, r, fmt.Errorf("delete super role: %w", app.ErrForbidden), "error", nil)
 
 			return
 		}

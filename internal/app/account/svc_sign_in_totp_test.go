@@ -12,15 +12,15 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 func TestSignInWithTOTP(t *testing.T) {
 	t.Run("success for valid user id and correct totp", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
 
 		if !user.LastSignedInAt.IsZero() {
 			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
@@ -31,7 +31,7 @@ func TestSignInWithTOTP(t *testing.T) {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
-		user, err = store.FindUserByID(ctx, user.ID)
+		user, err = repo.FindUserByID(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -56,7 +56,7 @@ func TestSignInWithTOTP(t *testing.T) {
 
 		events.Expect(account.SignedInWithTOTP{Email: user.Email})
 
-		user, err = store.FindUserByID(ctx, user.ID)
+		user, err = repo.FindUserByID(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,12 +68,12 @@ func TestSignInWithTOTP(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
-		user2 := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", SetupTOTP: true})
-		user3 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
-		user4 := MustAddUser(t, ctx, store, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", SetupTOTP: true})
+		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
+		user4 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -84,8 +84,8 @@ func TestSignInWithTOTP(t *testing.T) {
 			totpUser *account.User
 			want     error
 		}{
-			{"empty user id correct TOTP", 0, user4, repo.ErrNotFound},
-			{"empty user id incorrect TOTP", 0, nil, repo.ErrNotFound},
+			{"empty user id correct TOTP", 0, user4, repository.ErrNotFound},
+			{"empty user id incorrect TOTP", 0, nil, repository.ErrNotFound},
 			{"activated user id incorrect TOTP", user4.ID, nil, app.ErrInvalidInput},
 			{"activated user id unverified correct TOTP", user2.ID, user2, app.ErrBadRequest},
 			{"activated user id without TOTP setup", user1.ID, nil, app.ErrBadRequest},
@@ -114,9 +114,9 @@ func TestSignInWithTOTP(t *testing.T) {
 
 	t.Run("properties", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

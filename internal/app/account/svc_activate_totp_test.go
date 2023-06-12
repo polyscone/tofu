@@ -24,9 +24,9 @@ func TestActivateTOTP(t *testing.T) {
 
 	t.Run("success with verified TOTP", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", VerifyTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", VerifyTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -36,7 +36,7 @@ func TestActivateTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if user.ActivatedAt.IsZero() {
 			t.Error("want TOTP activated at to be populated; got zero")
@@ -45,10 +45,10 @@ func TestActivateTOTP(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", SetupTOTP: true})
-		user2 := MustAddUser(t, ctx, store, TestUser{Email: "qux@quxx.com", ActivateTOTP: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", SetupTOTP: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "qux@quxx.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

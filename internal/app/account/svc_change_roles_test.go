@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 type setRolesGuard struct {
@@ -33,11 +33,11 @@ func TestChangeRoles(t *testing.T) {
 
 	t.Run("success with activated user", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
-		role1 := MustAddRole(t, ctx, store, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
-		role2 := MustAddRole(t, ctx, store, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
+		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -52,7 +52,7 @@ func TestChangeRoles(t *testing.T) {
 
 		events.Expect(account.RolesChanged{Email: user.Email})
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if want, got := []*account.Role{role1, role2}, user.Roles; len(want) != len(got) {
 			t.Errorf("want %v roles; got %v", len(want), len(got))
@@ -102,12 +102,12 @@ func TestChangeRoles(t *testing.T) {
 
 	t.Run("success with super role", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
-		role1 := MustAddRole(t, ctx, store, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
-		role2 := MustAddRole(t, ctx, store, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
-		superRole := errsx.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
+		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
+		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -122,7 +122,7 @@ func TestChangeRoles(t *testing.T) {
 
 		events.Expect(account.RolesChanged{Email: user.Email})
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if want, got := []*account.Role{role1, role2, superRole}, user.Roles; len(want) != len(got) {
 			t.Errorf("want %v roles; got %v", len(want), len(got))
@@ -181,13 +181,13 @@ func TestChangeRoles(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
-		super := MustAddUser(t, ctx, store, TestUser{Email: "super@bloggs.com", Activate: true})
-		role1 := MustAddRole(t, ctx, store, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
-		role2 := MustAddRole(t, ctx, store, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
-		superRole := errsx.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		super := MustAddUser(t, ctx, repo, TestUser{Email: "super@bloggs.com", Activate: true})
+		role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
+		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
+		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))
 
 		roleIDs := []int{superRole.ID}
 		errsx.Must0(svc.ChangeRoles(ctx, validSuperGuard, super.ID, roleIDs, nil, nil))
@@ -203,8 +203,8 @@ func TestChangeRoles(t *testing.T) {
 			want    error
 		}{
 			{"unauthorised", invalidGuard, 0, nil, app.ErrUnauthorised},
-			{"non-existent user id", validGuard, 0, []int{role1.ID, role2.ID}, repo.ErrNotFound},
-			{"non-existent role ids", validGuard, user.ID, []int{-1, 0}, repo.ErrNotFound},
+			{"non-existent user id", validGuard, 0, []int{role1.ID, role2.ID}, repository.ErrNotFound},
+			{"non-existent role ids", validGuard, user.ID, []int{-1, 0}, repository.ErrNotFound},
 			{"unauthorised assignment of super role", validGuard, user.ID, []int{superRole.ID}, app.ErrUnauthorised},
 			{"removing super role", validGuard, super.ID, nil, app.ErrBadRequest},
 		}

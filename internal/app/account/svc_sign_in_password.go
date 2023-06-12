@@ -29,7 +29,7 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 		}
 	}
 
-	user, err := s.store.FindUserByEmail(ctx, input.email.String())
+	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	if err != nil {
 		// We always hash a password even when we error finding a user to help
 		// prevent timing attacks that would allow enumeration of valid emails
@@ -45,7 +45,7 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 		return fmt.Errorf("sign in with password: %w", err)
 	}
 
-	if err := s.store.SaveUser(ctx, user); err != nil {
+	if err := s.repo.SaveUser(ctx, user); err != nil {
 		return fmt.Errorf("save user: %w", err)
 	}
 

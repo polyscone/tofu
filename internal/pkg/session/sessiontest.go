@@ -7,9 +7,9 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-func TestManager(t *testing.T, newStore func() ReadWriter) {
+func TestManager(t *testing.T, newRepo func() ReadWriter) {
 	t.Run("initial session setup", func(t *testing.T) {
-		sm := NewManager(newStore())
+		sm := NewManager(newRepo())
 		ctx := context.Background()
 
 		initID := "qux"
@@ -40,7 +40,7 @@ func TestManager(t *testing.T, newStore func() ReadWriter) {
 	})
 
 	t.Run("get, set, and pop", func(t *testing.T) {
-		sm := NewManager(newStore())
+		sm := NewManager(newRepo())
 		ctx := context.Background()
 
 		ctx = errsx.Must(sm.Load(ctx, ""))
@@ -188,7 +188,7 @@ func TestManager(t *testing.T, newStore func() ReadWriter) {
 	})
 
 	t.Run("membership tests", func(t *testing.T) {
-		sm := NewManager(newStore())
+		sm := NewManager(newRepo())
 		ctx := context.Background()
 
 		ctx, err := sm.Load(ctx, "")
@@ -213,7 +213,7 @@ func TestManager(t *testing.T, newStore func() ReadWriter) {
 	})
 
 	t.Run("loading an existing session", func(t *testing.T) {
-		sm := NewManager(newStore())
+		sm := NewManager(newRepo())
 		ctx := context.Background()
 
 		ctx, err := sm.Load(ctx, "")
@@ -246,7 +246,7 @@ func TestManager(t *testing.T, newStore func() ReadWriter) {
 	})
 
 	t.Run("renew a session id", func(t *testing.T) {
-		sm := NewManager(newStore())
+		sm := NewManager(newRepo())
 		ctx := context.Background()
 
 		ctx, err := sm.Load(ctx, "")
@@ -273,7 +273,7 @@ func TestManager(t *testing.T, newStore func() ReadWriter) {
 	})
 
 	t.Run("destroying an existing session", func(t *testing.T) {
-		sm := NewManager(newStore())
+		sm := NewManager(newRepo())
 		ctx := context.Background()
 
 		ctx, err := sm.Load(ctx, "")

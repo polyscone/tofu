@@ -8,14 +8,14 @@ import (
 	"io/fs"
 
 	"github.com/polyscone/tofu/internal/app/system"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
-type SystemStore struct {
+type SystemRepo struct {
 	db *DB
 }
 
-func NewSystemStore(ctx context.Context, db *sql.DB) (*SystemStore, error) {
+func NewSystemRepo(ctx context.Context, db *sql.DB) (*SystemRepo, error) {
 	migrations, err := fs.Sub(migrations, "migrations/system")
 	if err != nil {
 		return nil, fmt.Errorf("initialise system migrations FS: %w", err)
@@ -25,29 +25,29 @@ func NewSystemStore(ctx context.Context, db *sql.DB) (*SystemStore, error) {
 		return nil, fmt.Errorf("migrate system: %w", err)
 	}
 
-	s := SystemStore{db: newDB(db)}
+	r := SystemRepo{db: newDB(db)}
 
-	return &s, nil
+	return &r, nil
 }
 
-func (s *SystemStore) FindConfig(ctx context.Context) (*system.Config, error) {
-	tx, err := s.db.BeginTx(ctx, nil)
+func (r *SystemRepo) FindConfig(ctx context.Context) (*system.Config, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	return s.findConfig(ctx, tx)
+	return r.findConfig(ctx, tx)
 }
 
-func (s *SystemStore) SaveConfig(ctx context.Context, config *system.Config) error {
-	tx, err := s.db.BeginTx(ctx, nil)
+func (r *SystemRepo) SaveConfig(ctx context.Context, config *system.Config) error {
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	if err := s.upsertConfig(ctx, tx, config); err != nil {
+	if err := r.upsertConfig(ctx, tx, config); err != nil {
 		return fmt.Errorf("upsert config: %w", err)
 	}
 
@@ -58,7 +58,7 @@ func (s *SystemStore) SaveConfig(ctx context.Context, config *system.Config) err
 	return nil
 }
 
-func (s *SystemStore) findConfig(ctx context.Context, tx *Tx) (*system.Config, error) {
+func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, error) {
 	var config system.Config
 
 	err := tx.QueryRowContext(ctx, `
@@ -74,16 +74,16 @@ func (s *SystemStore) findConfig(ctx context.Context, tx *Tx) (*system.Config, e
 		&config.TwilioToken,
 		&config.TwilioFromTel,
 	)
-	if err != nil && !errors.Is(err, repo.ErrNotFound) {
+	if err != nil && !errors.Is(err, repository.ErrNotFound) {
 		return nil, err
 	}
 
-	config.RequiresSetup = errors.Is(err, repo.ErrNotFound)
+	config.RequiresSetup = errors.Is(err, repository.ErrNotFound)
 
 	return &config, nil
 }
 
-func (s *SystemStore) upsertConfig(ctx context.Context, tx *Tx, config *system.Config) error {
+func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Config) error {
 	_, err := tx.ExecContext(ctx, `
 		INSERT INTO system__config (
 			id,

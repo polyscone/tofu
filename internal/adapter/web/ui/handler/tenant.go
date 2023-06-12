@@ -32,7 +32,7 @@ type WebReadWriter interface {
 	ConsumeResetPasswordToken(ctx context.Context, token string) error
 }
 
-type Store struct {
+type Repo struct {
 	Account AccountReader
 	System  system.Reader
 	Web     WebReadWriter
@@ -56,5 +56,5 @@ type Tenant struct {
 	Account *account.Service
 	System  *system.Service
 
-	Store Store
+	Repo Repo
 }

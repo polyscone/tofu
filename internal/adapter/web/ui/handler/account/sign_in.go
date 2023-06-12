@@ -13,7 +13,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 const lowRecoveryCodes = 2
@@ -121,7 +121,7 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		user, err := h.Store.Account.FindUserByID(ctx, userID)
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
 
@@ -207,7 +207,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		user, err := h.Store.Account.FindUserByID(ctx, userID)
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
 
@@ -251,7 +251,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 		h.ErrorViewFunc(w, r, fmt.Errorf("sign in with password: %w", err), "account/sign_in/password", func(data *handler.ViewData) {
 			switch {
 			case errors.Is(err, app.ErrBadRequest),
-				errors.Is(err, repo.ErrNotFound),
+				errors.Is(err, repository.ErrNotFound),
 				errors.Is(err, account.ErrNotActivated):
 
 				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
@@ -294,7 +294,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 }
 
 func signInSetSession(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email string) error {
-	user, err := h.Store.Account.FindUserByEmail(ctx, email)
+	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return fmt.Errorf("find user by email: %w", err)
 	}

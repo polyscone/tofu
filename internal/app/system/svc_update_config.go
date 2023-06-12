@@ -45,7 +45,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard, sys
 		}
 	}
 
-	config, err := s.store.FindConfig(ctx)
+	config, err := s.repo.FindConfig(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("find config: %w", err)
 	}
@@ -53,7 +53,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard, sys
 	config.ChangeSystemEmail(input.systemEmail)
 	config.ChangeTwilioAPI(input.twilioSID, input.twilioToken, input.twilioFromTel)
 
-	if err := s.store.SaveConfig(ctx, config); err != nil {
+	if err := s.repo.SaveConfig(ctx, config); err != nil {
 		return nil, fmt.Errorf("save config: %w", err)
 	}
 

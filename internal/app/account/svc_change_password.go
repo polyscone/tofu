@@ -45,7 +45,7 @@ func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard,
 		}
 	}
 
-	user, err := s.store.FindUserByID(ctx, input.userID)
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}
@@ -54,7 +54,7 @@ func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard,
 		return fmt.Errorf("change password: %w", err)
 	}
 
-	if err := s.store.SaveUser(ctx, user); err != nil {
+	if err := s.repo.SaveUser(ctx, user); err != nil {
 		return fmt.Errorf("save user: %w", err)
 	}
 

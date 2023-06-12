@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/password"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 var SuperRole *Role
@@ -38,11 +38,11 @@ type ReadWriter interface {
 
 type Service struct {
 	broker event.Broker
-	store  ReadWriter
+	repo   ReadWriter
 	hasher password.Hasher
 }
 
-func NewService(broker event.Broker, store ReadWriter, hasher password.Hasher) (*Service, error) {
+func NewService(broker event.Broker, repo ReadWriter, hasher password.Hasher) (*Service, error) {
 	var permissions []Permission
 	for _, group := range guard.PermissionGroups {
 		for _, p := range group.Permissions {
@@ -58,17 +58,17 @@ func NewService(broker event.Broker, store ReadWriter, hasher password.Hasher) (
 	SuperRole = NewRole("Super", "Has full access to the system; can't be edited or deleted.", permissions)
 
 	ctx := context.Background()
-	role, err := store.FindRoleByName(ctx, SuperRole.Name)
+	role, err := repo.FindRoleByName(ctx, SuperRole.Name)
 	switch {
 	case err == nil:
 		SuperRole.ID = role.ID
 
-		if err := store.SaveRole(ctx, SuperRole); err != nil {
+		if err := repo.SaveRole(ctx, SuperRole); err != nil {
 			return nil, fmt.Errorf("save super role: %w", err)
 		}
 
-	case errors.Is(err, repo.ErrNotFound):
-		if err := store.AddRole(ctx, SuperRole); err != nil {
+	case errors.Is(err, repository.ErrNotFound):
+		if err := repo.AddRole(ctx, SuperRole); err != nil {
 			return nil, fmt.Errorf("add super role: %w", err)
 		}
 
@@ -78,7 +78,7 @@ func NewService(broker event.Broker, store ReadWriter, hasher password.Hasher) (
 
 	svc := Service{
 		broker: broker,
-		store:  store,
+		repo:   repo,
 		hasher: hasher,
 	}
 

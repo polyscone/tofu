@@ -27,9 +27,9 @@ func TestChangePassword(t *testing.T) {
 
 	t.Run("success with activated user", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -42,7 +42,7 @@ func TestChangePassword(t *testing.T) {
 
 		events.Expect(account.PasswordChanged{Email: user.Email})
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if _, err := user.SignInWithPassword(newPassword, hasher); err != nil {
 			t.Errorf("want to be able to aign in with new password; got %q", err)
@@ -51,9 +51,9 @@ func TestChangePassword(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -87,9 +87,9 @@ func TestChangePassword(t *testing.T) {
 
 	t.Run("properties", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "jane@doe.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

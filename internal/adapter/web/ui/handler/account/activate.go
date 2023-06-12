@@ -43,7 +43,7 @@ func activatePost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		email, err := h.Store.Web.FindActivationTokenEmail(ctx, input.Token)
+		email, err := h.Repo.Web.FindActivationTokenEmail(ctx, input.Token)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find activation token email: %w", err), "error", nil)
 
@@ -57,7 +57,7 @@ func activatePost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Store.Web.ConsumeActivationToken(ctx, input.Token)
+		err = h.Repo.Web.ConsumeActivationToken(ctx, input.Token)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("consume activation token: %w", err), "error", nil)
 

@@ -34,7 +34,7 @@ func TestSignUp(t *testing.T) {
 	})
 
 	t.Run("properties", func(t *testing.T) {
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -56,7 +56,7 @@ func TestSignUp(t *testing.T) {
 					return false
 				}
 
-				user := errsx.Must(store.FindUserByEmail(ctx, email.String()))
+				user := errsx.Must(repo.FindUserByEmail(ctx, email.String()))
 
 				return !user.SignedUpAt.IsZero() && user.ActivatedAt.IsZero()
 			})

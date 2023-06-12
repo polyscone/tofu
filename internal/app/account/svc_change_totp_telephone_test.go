@@ -26,9 +26,9 @@ func TestChangeTOTPTel(t *testing.T) {
 
 	t.Run("success with unverified TOTP user", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", SetupTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", SetupTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -46,7 +46,7 @@ func TestChangeTOTPTel(t *testing.T) {
 			NewTel: newTel.String(),
 		})
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if want, got := newTel.String(), user.TOTPTel; want != got {
 			t.Errorf("want %v; got %v", want, got)
@@ -60,10 +60,10 @@ func TestChangeTOTPTel(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
-		user2 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -96,9 +96,9 @@ func TestChangeTOTPTel(t *testing.T) {
 
 	t.Run("properties", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

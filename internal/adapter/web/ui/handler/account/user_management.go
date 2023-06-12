@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 func UserManagement(h *handler.Handler, mux *router.ServeMux) {
@@ -35,7 +35,7 @@ func userListGet(h *handler.Handler) http.HandlerFunc {
 		sortTopID := h.Sessions.GetInt(ctx, sess.UserID)
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
-		users, total, err := h.Store.Account.FindUsersPageBySearch(ctx, sortTopID, search, page, size)
+		users, total, err := h.Repo.Account.FindUsersPageBySearch(ctx, sortTopID, search, page, size)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find users page by search: %w", err), "error", nil)
 
@@ -43,7 +43,7 @@ func userListGet(h *handler.Handler) http.HandlerFunc {
 		}
 
 		h.View(w, r, http.StatusOK, "account/management/user/list", handler.Vars{
-			"Users": repo.NewBook(users, page, size, total),
+			"Users": repository.NewBook(users, page, size, total),
 		})
 	}
 }
@@ -57,7 +57,7 @@ func userEditGet(h *handler.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		user, err := h.Store.Account.FindUserByID(ctx, userID)
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			return nil, fmt.Errorf("find user by id: %w", err)
 		}
@@ -71,7 +71,7 @@ func userEditGet(h *handler.Handler) http.HandlerFunc {
 			}
 		}
 
-		roles, _, err := h.Store.Account.FindRoles(ctx, account.SuperRole.ID)
+		roles, _, err := h.Repo.Account.FindRoles(ctx, account.SuperRole.ID)
 
 		vars := handler.Vars{
 			"User":             user,
@@ -112,7 +112,7 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		user, err := h.Store.Account.FindUserByID(ctx, userID)
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
 

@@ -10,15 +10,15 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/pkg/testutil/quick"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 func TestSignInWithRecoveryCode(t *testing.T) {
 	t.Run("success for valid user id and correct recovery code", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		if !user.LastSignedInAt.IsZero() {
 			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
@@ -46,7 +46,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 
 		events.Expect(account.SignedInWithRecoveryCode{Email: user.Email})
 
-		user, err = store.FindUserByID(ctx, user.ID)
+		user, err = repo.FindUserByID(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,10 +68,10 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, store, TestUser{Email: "jim@bloggs.com", Activate: true})
-		user2 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -84,8 +84,8 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			recoveryCode string
 			want         error
 		}{
-			{"empty user id correct recovery code", 0, user2.RecoveryCodes[1], repo.ErrNotFound},
-			{"empty user id incorrect recovery code", 0, incorrectCode, repo.ErrNotFound},
+			{"empty user id correct recovery code", 0, user2.RecoveryCodes[1], repository.ErrNotFound},
+			{"empty user id incorrect recovery code", 0, incorrectCode, repository.ErrNotFound},
 			{"activated user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
 			{"activated user id without TOTP setup", user1.ID, incorrectCode, app.ErrBadRequest},
 		}
@@ -105,9 +105,9 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 
 	t.Run("properties", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

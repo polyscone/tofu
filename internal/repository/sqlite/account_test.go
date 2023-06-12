@@ -6,8 +6,8 @@ import (
 
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/repo/repotest"
-	"github.com/polyscone/tofu/internal/repo/sqlite"
+	"github.com/polyscone/tofu/internal/repository/repotest"
+	"github.com/polyscone/tofu/internal/repository/sqlite"
 )
 
 func TestAccount(t *testing.T) {
@@ -16,9 +16,9 @@ func TestAccount(t *testing.T) {
 
 		repotest.Account(ctx, t, func() account.ReadWriter {
 			db := sqlite.OpenInMemoryTestDatabase(ctx)
-			store := errsx.Must(sqlite.NewAccountStore(ctx, db))
+			repo := errsx.Must(sqlite.NewAccountRepo(ctx, db))
 
-			return store
+			return repo
 		})
 	})
 }

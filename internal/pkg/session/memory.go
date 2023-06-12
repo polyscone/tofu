@@ -7,27 +7,27 @@ import (
 	"fmt"
 )
 
-// JSONMemoryStore implements an in-memory repo for use with a session manager.
+// JSONMemoryRepo implements an in-memory repo for use with a session manager.
 // The intended use of this repo is developer tests.
 //
 // We want to test against JSON here to make sure we handle numbers correctly,
 // which is why we map to a byte slice
-type JSONMemoryStore struct {
+type JSONMemoryRepo struct {
 	useNumber bool
 	data      map[string][]byte
 }
 
-// NewJSONMemoryStore returns a new in-memory session repo, intended
+// NewJSONMemoryRepo returns a new in-memory session repo, intended
 // for use in developer tests.
-func NewJSONMemoryStore(useNumber bool) *JSONMemoryStore {
-	return &JSONMemoryStore{
+func NewJSONMemoryRepo(useNumber bool) *JSONMemoryRepo {
+	return &JSONMemoryRepo{
 		useNumber: useNumber,
 		data:      make(map[string][]byte),
 	}
 }
 
 // FindByID attempts to find session data using the given id.
-func (r *JSONMemoryStore) FindSessionDataByID(ctx context.Context, id string) (Data, error) {
+func (r *JSONMemoryRepo) FindSessionDataByID(ctx context.Context, id string) (Data, error) {
 	if data, ok := r.data[id]; ok {
 		d := json.NewDecoder(bytes.NewReader(data))
 
@@ -45,7 +45,7 @@ func (r *JSONMemoryStore) FindSessionDataByID(ctx context.Context, id string) (D
 }
 
 // Save persists the given session in-memory.
-func (r *JSONMemoryStore) SaveSession(ctx context.Context, s Session) error {
+func (r *JSONMemoryRepo) SaveSession(ctx context.Context, s Session) error {
 	b, err := json.Marshal(s.Data)
 	if err != nil {
 		return fmt.Errorf("marshal session data: %w", err)
@@ -57,7 +57,7 @@ func (r *JSONMemoryStore) SaveSession(ctx context.Context, s Session) error {
 }
 
 // Destroy deletes a session by the given id from memory.
-func (r *JSONMemoryStore) DestroySession(ctx context.Context, id string) error {
+func (r *JSONMemoryRepo) DestroySession(ctx context.Context, id string) error {
 	delete(r.data, id)
 
 	return nil

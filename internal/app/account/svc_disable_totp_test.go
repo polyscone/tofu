@@ -26,9 +26,9 @@ func TestDisableTOTP(t *testing.T) {
 
 	t.Run("success with correct password", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", SetupTOTPTel: true, ActivateTOTP: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", SetupTOTPTel: true, ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -40,7 +40,7 @@ func TestDisableTOTP(t *testing.T) {
 
 		events.Expect(account.DisabledTOTP{Email: user.Email})
 
-		user = errsx.Must(store.FindUserByID(ctx, user.ID))
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 		if want, got := []byte(nil), user.TOTPKey; !bytes.Equal(want, got) {
 			t.Errorf("want %q; got %q", want, got)
 		}
@@ -75,10 +75,10 @@ func TestDisableTOTP(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", SetupTOTPTel: true, VerifyTOTP: true})
-		user2 := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com", SetupTOTPTel: true, ActivateTOTP: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", SetupTOTPTel: true, VerifyTOTP: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", SetupTOTPTel: true, ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

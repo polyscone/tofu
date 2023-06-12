@@ -14,7 +14,7 @@ func accountSignedInWithPasswordHandler(tenant *handler.Tenant, h *handler.Handl
 	return func(evt account.SignedInWithPassword) {
 		ctx := context.Background()
 
-		user, err := h.Store.Account.FindUserByEmail(ctx, evt.Email)
+		user, err := h.Repo.Account.FindUserByEmail(ctx, evt.Email)
 		if err != nil {
 			logger.PrintErrorf("signed in with password: find user by email: %w", err)
 
@@ -36,7 +36,7 @@ func accountDisabledTOTPHandler(tenant *handler.Tenant, h *handler.Handler) any 
 		background.Go(func() {
 			ctx := context.Background()
 
-			config, err := h.Store.System.FindConfig(ctx)
+			config, err := h.Repo.System.FindConfig(ctx)
 			if err != nil {
 				logger.PrintErrorf("disabled TOTP: find config: %w", err)
 
@@ -59,14 +59,14 @@ func accountSignedUpHandler(tenant *handler.Tenant, h *handler.Handler) any {
 		background.Go(func() {
 			ctx := context.Background()
 
-			tok, err := tenant.Store.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
+			tok, err := tenant.Repo.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
 			if err != nil {
 				logger.PrintErrorf("signed up: add activation token: %w", err)
 
 				return
 			}
 
-			config, err := h.Store.System.FindConfig(ctx)
+			config, err := h.Repo.System.FindConfig(ctx)
 			if err != nil {
 				logger.PrintErrorf("signed up: find config: %w", err)
 

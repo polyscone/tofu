@@ -16,16 +16,16 @@ import (
 func TestActivateUser(t *testing.T) {
 	t.Run("success with existing user", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com"})
-		user2 := MustAddUser(t, ctx, store, TestUser{Email: "foo@bar.com"})
-		superRole := errsx.Must(store.FindRoleByName(ctx, account.SuperRole.Name))
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com"})
+		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		superUserCount := errsx.Must(store.CountUsersByRoleID(ctx, superRole.ID))
+		superUserCount := errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
 		if want, got := 0, superUserCount; want != got {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
@@ -37,7 +37,7 @@ func TestActivateUser(t *testing.T) {
 		events.Expect(account.RolesChanged{Email: user1.Email})
 		events.Expect(account.Activated{Email: user1.Email})
 
-		user1 = errsx.Must(store.FindUserByEmail(ctx, user1.Email))
+		user1 = errsx.Must(repo.FindUserByEmail(ctx, user1.Email))
 
 		if user1.ActivatedAt.IsZero() {
 			t.Error("want non-zero activated at; got zero")
@@ -49,7 +49,7 @@ func TestActivateUser(t *testing.T) {
 
 		events.Expect(account.SignedInWithPassword{Email: user1.Email})
 
-		superUserCount = errsx.Must(store.CountUsersByRoleID(ctx, superRole.ID))
+		superUserCount = errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
 		if want, got := 1, superUserCount; want != got {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
@@ -60,7 +60,7 @@ func TestActivateUser(t *testing.T) {
 
 		events.Expect(account.Activated{Email: user2.Email})
 
-		superUserCount = errsx.Must(store.CountUsersByRoleID(ctx, superRole.ID))
+		superUserCount = errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
 		if want, got := 1, superUserCount; want != got {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
@@ -68,9 +68,9 @@ func TestActivateUser(t *testing.T) {
 
 	t.Run("fail activating an already activated user", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, store := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, store, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

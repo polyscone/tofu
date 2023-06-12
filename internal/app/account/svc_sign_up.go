@@ -7,7 +7,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/repo"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
@@ -33,8 +33,8 @@ func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 		return nil, fmt.Errorf("sign up: %w", err)
 	}
 
-	if err := s.store.AddUser(ctx, user); err != nil {
-		var conflicts *repo.ConflictError
+	if err := s.repo.AddUser(ctx, user); err != nil {
+		var conflicts *repository.ConflictError
 		if errors.As(err, &conflicts) {
 			return nil, fmt.Errorf("add user: %w: %w", app.ErrConflictingInput, conflicts)
 		}
