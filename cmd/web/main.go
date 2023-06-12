@@ -153,26 +153,26 @@ func main() {
 	}
 
 	if err := os.MkdirAll(opts.data, 0666); err != nil {
-		logger.PrintErrorf("make data directory: %w", err)
+		logger.Error.Printf("make data directory: %v\n", err)
 
 		os.Exit(1)
 	}
 
 	if err := initPasswordHasher(); err != nil {
-		logger.PrintErrorf("initialise password hasher: %w", err)
+		logger.Error.Printf("initialise password hasher: %v\n", err)
 
 		os.Exit(1)
 	}
 
 	if err := initTenants(); err != nil {
-		logger.PrintErrorf("initialise tenants: %w", err)
+		logger.Error.Printf("initialise tenants: %v\n", err)
 	}
 
 	httputil.TrustedProxies = opts.server.proxies
 
 	listener, err := opts.server.addr.Listener()
 	if err != nil {
-		logger.PrintErrorf("get listener: %w", err)
+		logger.Error.Printf("get listener: %v\n", err)
 
 		os.Exit(1)
 	}
@@ -191,7 +191,7 @@ func main() {
 		if opts.server.addr.insecure {
 			err := srv.Serve(listener)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				logger.PrintErrorf("serve over HTTP: %w", err)
+				logger.Error.Printf("serve over HTTP: %v\n", err)
 			}
 		} else {
 			cert := filepath.Join(opts.data, "cert.pem")
@@ -199,7 +199,7 @@ func main() {
 
 			err := srv.ServeTLS(listener, cert, key)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				logger.PrintErrorf("serve over HTTPS: %w", err)
+				logger.Error.Printf("serve over HTTPS: %v\n", err)
 			}
 		}
 	}()
@@ -216,7 +216,7 @@ func main() {
 	defer cancel()
 
 	if err := srv.Shutdown(ctxShutdown); err != nil {
-		logger.PrintErrorf("shut down: %w", err)
+		logger.Error.Printf("shut down: %v\n", err)
 	}
 
 	databases.mu.Lock()
@@ -224,7 +224,7 @@ func main() {
 
 	for alias, db := range databases.data {
 		if err := db.Close(); err != nil {
-			logger.PrintErrorf("close database connection for %v: %w", alias, err)
+			logger.Error.Printf("close database connection for %v: %v\n", alias, err)
 		}
 	}
 }

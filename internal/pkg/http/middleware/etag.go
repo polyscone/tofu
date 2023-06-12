@@ -40,7 +40,7 @@ func ETag(next http.HandlerFunc) http.HandlerFunc {
 			}
 
 			if _, err := buf.WriteTo(w); err != nil {
-				logger.PrintErrorf("etag: write response: %w", err)
+				logger.Error.Printf("etag: write response: %v\n", err)
 			}
 		}
 	}

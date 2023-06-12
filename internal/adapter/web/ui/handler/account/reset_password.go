@@ -65,7 +65,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 
 			tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 			if err != nil {
-				logger.PrintErrorf("reset password: add reset password token: %w", err)
+				logger.Error.Printf("reset password: add reset password token: %v\n", err)
 
 				return
 			}
@@ -78,7 +78,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 				"Token": tok,
 			}
 			if err := h.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
-				logger.PrintErrorf("reset password: send email: %w", err)
+				logger.Error.Printf("reset password: send email: %v\n", err)
 			}
 		})
 

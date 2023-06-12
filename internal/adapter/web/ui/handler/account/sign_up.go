@@ -64,7 +64,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 				background.Go(func() {
 					tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 					if err != nil {
-						logger.PrintErrorf("sign up: add reset password token: %w", err)
+						logger.Error.Printf("sign up: add reset password token: %v\n", err)
 
 						return
 					}
@@ -77,7 +77,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 						"Token": tok,
 					}
 					if err := h.SendEmail(ctx, recipients, "sign_up_reset_password", vars); err != nil {
-						logger.PrintErrorf("sign up: send email: %w", err)
+						logger.Error.Printf("sign up: send email: %v\n", err)
 					}
 				})
 

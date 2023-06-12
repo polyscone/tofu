@@ -47,7 +47,7 @@ func NewWebRepo(ctx context.Context, db *sql.DB, sessionLifespan time.Duration) 
 
 		for range time.Tick(sessionLifespan) {
 			if err := r.DestroyExpiredSessions(ctx, sessionLifespan); err != nil {
-				logger.PrintErrorf("web repo: destroy expired sessions: %w", err)
+				logger.Error.Printf("web repo: destroy expired sessions: %v\n", err)
 			}
 		}
 	})
@@ -58,7 +58,7 @@ func NewWebRepo(ctx context.Context, db *sql.DB, sessionLifespan time.Duration) 
 
 		for range time.Tick(5 * time.Minute) {
 			if err := r.DeleteExpiredTokens(ctx); err != nil {
-				logger.PrintErrorf("web repo: delete expired tokens: %w", err)
+				logger.Error.Printf("web repo: delete expired tokens: %v\n", err)
 			}
 		}
 	})

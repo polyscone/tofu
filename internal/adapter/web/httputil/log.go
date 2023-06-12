@@ -16,39 +16,7 @@ func init() {
 }
 
 func LogError(r *http.Request, err error) {
-	remoteAddr, _err := realip.FromRequest(r, TrustedProxies...)
-	if _err != nil {
-		remoteAddr = r.RemoteAddr
-
-		logger.Error.Println(_err)
-	}
-
-	text := logger.SprintErrorf(err)
-	td := getTraceData(r.Context())
-	request := fmt.Sprintf("%v %v", r.Method, r.URL)
-
-	if logger.OutputStyle == logger.JSON {
-		info := make(map[string]any)
-		if err := json.Unmarshal([]byte(text), &info); err != nil {
-			logger.Error.Println(err)
-		}
-
-		info["traceId"] = td.id
-		info["userId"] = td.userID
-		info["request"] = request
-		info["remoteAddr"] = remoteAddr
-
-		b, err := json.Marshal(info)
-		if err != nil {
-			b = []byte(err.Error())
-		}
-
-		logger.Error.Print(string(b))
-	} else {
-		info := fmt.Sprintf("%v (trace: %v; addr: %v; user: %v)\n", request, td.id, remoteAddr, td.userID)
-
-		logger.Error.Printf("%v%v", info, text)
-	}
+	LogInfof(r, "%v", err)
 }
 
 func LogInfof(r *http.Request, format string, a ...any) {

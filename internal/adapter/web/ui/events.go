@@ -16,7 +16,7 @@ func accountSignedInWithPasswordHandler(tenant *handler.Tenant, h *handler.Handl
 
 		user, err := h.Repo.Account.FindUserByEmail(ctx, evt.Email)
 		if err != nil {
-			logger.PrintErrorf("signed in with password: find user by email: %w", err)
+			logger.Error.Printf("signed in with password: find user by email: %v\n", err)
 
 			return
 		}
@@ -24,7 +24,7 @@ func accountSignedInWithPasswordHandler(tenant *handler.Tenant, h *handler.Handl
 		if user.HasActivatedTOTP() && user.TOTPMethod == account.TOTPMethodSMS.String() {
 			background.Go(func() {
 				if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
-					logger.PrintErrorf("signed in with password: send TOTP SMS: %w", err)
+					logger.Error.Printf("signed in with password: send TOTP SMS: %v\n", err)
 				}
 			})
 		}
@@ -38,7 +38,7 @@ func accountDisabledTOTPHandler(tenant *handler.Tenant, h *handler.Handler) any 
 
 			config, err := h.Repo.System.FindConfig(ctx)
 			if err != nil {
-				logger.PrintErrorf("disabled TOTP: find config: %w", err)
+				logger.Error.Printf("disabled TOTP: find config: %v\n", err)
 
 				return
 			}
@@ -48,7 +48,7 @@ func accountDisabledTOTPHandler(tenant *handler.Tenant, h *handler.Handler) any 
 				To:   []string{evt.Email},
 			}
 			if err := h.SendEmail(ctx, recipients, "disabled_totp", nil); err != nil {
-				logger.PrintErrorf("disabled TOTP: send email: %w", err)
+				logger.Error.Printf("disabled TOTP: send email: %v\n", err)
 			}
 		})
 	}
@@ -61,14 +61,14 @@ func accountSignedUpHandler(tenant *handler.Tenant, h *handler.Handler) any {
 
 			tok, err := tenant.Repo.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
 			if err != nil {
-				logger.PrintErrorf("signed up: add activation token: %w", err)
+				logger.Error.Printf("signed up: add activation token: %v\n", err)
 
 				return
 			}
 
 			config, err := h.Repo.System.FindConfig(ctx)
 			if err != nil {
-				logger.PrintErrorf("signed up: find config: %w", err)
+				logger.Error.Printf("signed up: find config: %v\n", err)
 
 				return
 			}
@@ -81,7 +81,7 @@ func accountSignedUpHandler(tenant *handler.Tenant, h *handler.Handler) any {
 				"Token": tok,
 			}
 			if err := h.SendEmail(ctx, recipients, "activate_account", vars); err != nil {
-				logger.PrintErrorf("signed up: send email: %w", err)
+				logger.Error.Printf("signed up: send email: %v\n", err)
 			}
 		})
 	}
