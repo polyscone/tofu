@@ -42,7 +42,7 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 
 	_, err = user.SignInWithPassword(input.password, s.hasher)
 	if err != nil {
-		return fmt.Errorf("sign in with password: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

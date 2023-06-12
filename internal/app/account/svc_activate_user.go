@@ -50,7 +50,7 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 	}
 
 	if err := user.Activate(input.password, s.hasher); err != nil {
-		return fmt.Errorf("activate user: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

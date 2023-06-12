@@ -42,7 +42,7 @@ func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, u
 	}
 
 	if err := user.ChangeTOTPTel(input.newTel); err != nil {
-		return fmt.Errorf("change TOTP tel: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

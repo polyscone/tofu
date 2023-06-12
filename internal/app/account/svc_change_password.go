@@ -51,7 +51,7 @@ func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard,
 	}
 
 	if err := user.ChangePassword(input.oldPassword, input.newPassword, s.hasher); err != nil {
-		return fmt.Errorf("change password: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

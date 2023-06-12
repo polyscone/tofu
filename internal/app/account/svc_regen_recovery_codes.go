@@ -42,7 +42,7 @@ func (s *Service) RegenerateRecoveryCodes(ctx context.Context, guard RegenerateR
 	}
 
 	if err := user.RegenerateRecoveryCodes(input.totp); err != nil {
-		return fmt.Errorf("regenerate recovery codes: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

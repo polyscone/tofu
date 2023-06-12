@@ -29,7 +29,7 @@ func (s *Service) SetupTOTP(ctx context.Context, guard SetupTOTPGuard, userID in
 	}
 
 	if err := user.SetupTOTP(); err != nil {
-		return fmt.Errorf("set up TOTP: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

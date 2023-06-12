@@ -42,7 +42,7 @@ func (s *Service) DisableTOTP(ctx context.Context, guard DisableTOTPGuard, userI
 	}
 
 	if err := user.DisableTOTP(input.password, s.hasher); err != nil {
-		return fmt.Errorf("disable TOTP: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

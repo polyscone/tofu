@@ -34,7 +34,7 @@ func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, code s
 	}
 
 	if err := user.SignInWithRecoveryCode(input.code); err != nil {
-		return fmt.Errorf("sign in with recovery code: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

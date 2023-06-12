@@ -48,7 +48,7 @@ func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, u
 	}
 
 	if err := user.ResetPassword(input.newPassword, s.hasher); err != nil {
-		return fmt.Errorf("reset password: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

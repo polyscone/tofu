@@ -34,7 +34,7 @@ func (s *Service) SignInWithTOTP(ctx context.Context, userID int, totp string) e
 	}
 
 	if err := user.SignInWithTOTP(input.totp); err != nil {
-		return fmt.Errorf("sign in with TOTP: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

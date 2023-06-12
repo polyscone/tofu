@@ -83,7 +83,7 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 	}
 
 	if err := user.ChangeRoles(roles, input.grants, input.denials); err != nil {
-		return fmt.Errorf("change roles: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

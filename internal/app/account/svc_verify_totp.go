@@ -46,7 +46,7 @@ func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID 
 	}
 
 	if err := user.VerifyTOTP(input.totp, input.totpMethod); err != nil {
-		return fmt.Errorf("verify TOTP: %w", err)
+		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
