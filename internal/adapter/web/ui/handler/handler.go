@@ -256,23 +256,12 @@ func (h *Handler) email(name string) *template.Template {
 func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailContent, error) {
 	var content emailContent
 
-	ctx := context.Background()
-	config, err := h.Repo.System.FindConfig(ctx)
-	if err != nil {
-		return content, fmt.Errorf("find config: %w", err)
-	}
-
 	data := emailData{
 		URL: URL{
 			Scheme:   h.Tenant.Scheme,
 			Host:     h.Tenant.Host,
 			Hostname: h.Tenant.Hostname,
 			Port:     h.Tenant.Port,
-		},
-		App: AppData{
-			Name:        app.Name,
-			Description: app.Description,
-			HasSMS:      config.HasSMS(),
 		},
 	}
 
@@ -394,7 +383,6 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 		App: AppData{
 			Name:        app.Name,
 			Description: app.Description,
-			HasSMS:      config.HasSMS(),
 		},
 		Session: SessionData{
 			// Global session keys

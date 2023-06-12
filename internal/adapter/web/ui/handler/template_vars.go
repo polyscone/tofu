@@ -83,7 +83,6 @@ type URL struct {
 type AppData struct {
 	Name        string
 	Description string
-	HasSMS      bool
 }
 
 type SessionData struct {
@@ -129,7 +128,6 @@ type ViewDataFunc func(data *ViewData)
 
 type emailData struct {
 	URL  URL
-	App  AppData
 	Vars Vars
 }
 
