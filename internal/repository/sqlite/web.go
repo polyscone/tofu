@@ -353,7 +353,8 @@ func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) 
 	hash := sum[:]
 
 	res, err := tx.ExecContext(ctx, `
-		DELETE FROM web__tokens	WHERE
+		DELETE FROM web__tokens
+		WHERE
 			hash = :hash AND
 			kind = :kind AND
 			expires_at > :expires_at

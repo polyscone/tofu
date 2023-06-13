@@ -157,19 +157,6 @@ CalibrateLoop:
 	}
 }
 
-// Argon2 implements methods to generate and validate variants of Argon2 hashes.
-//
-// The Rand field is only provided as a means for things like unit tests to
-// provide their own deterministic reader and should be left as nil in a
-// production environment.
-//
-// Leaving the Rand field as nil will allow the hashing functions to use the
-// standard library's crypto/rand reader to generate the random bytes needed
-// for secure password hashes.
-type Argon2 struct {
-	Rand io.Reader
-}
-
 func key(password, salt []byte, p Params) {
 	switch p.Variant {
 	case I:
@@ -230,7 +217,7 @@ func encodedHashWithSalt(password, salt []byte, p Params) ([]byte, error) {
 // EncodedHash will generate and return an encoded variant of an Argon2 hash
 // based on the given parameters.
 //
-// The encoded has returned will follow the format:
+// The encoded hash returned will follow the format:
 // $argon2x$v=19$m=65536,t=1,p=1$salt$key.
 //
 // The salt and key will be base64 encoded and the salt will be
@@ -248,7 +235,7 @@ func EncodedHash(r io.Reader, password []byte, p Params) ([]byte, error) {
 	return encodedHashWithSalt(password, salt, p)
 }
 
-// Verify will verify whether the given password matches the given encoded
+// Verify will check to see whether the given password matches the given encoded
 // hash or not.
 //
 // The given password will be hashed according to the parameters available in
