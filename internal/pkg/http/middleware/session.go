@@ -138,7 +138,7 @@ func getSessionCookieID(r *http.Request) (string, error) {
 		return "", nil
 	}
 	if err != nil {
-		return "", fmt.Errorf("get session cookie id: %w", err)
+		return "", fmt.Errorf("session cookie id: %w", err)
 	}
 
 	return cookie.Value, nil

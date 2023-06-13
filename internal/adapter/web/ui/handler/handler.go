@@ -337,7 +337,7 @@ func (h *Handler) emailContent(name string, vars Vars) (emailContent, error) {
 func (h *Handler) SendEmail(ctx context.Context, recipients EmailRecipients, name string, vars Vars) error {
 	content, err := h.emailContent(name, vars)
 	if err != nil {
-		return fmt.Errorf("get email content: %w", err)
+		return fmt.Errorf("email content: %w", err)
 	}
 
 	msg := smtp.Msg{

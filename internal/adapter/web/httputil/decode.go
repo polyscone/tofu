@@ -32,7 +32,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 
 		strs, err := fn(r, typeField.Name, tagValue)
 		if err != nil {
-			return fmt.Errorf("get request value: %w", err)
+			return fmt.Errorf("request value: %w", err)
 		}
 
 		var str string

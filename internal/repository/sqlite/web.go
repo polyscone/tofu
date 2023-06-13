@@ -368,7 +368,7 @@ func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) 
 
 	affected, err := res.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("get rows affected: %w", err)
+		return fmt.Errorf("rows affected: %w", err)
 	}
 	if affected == 0 {
 		return repository.ErrNotFound

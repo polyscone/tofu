@@ -124,7 +124,7 @@ func initTenants(tenantsPath string) error {
 
 		info, err := f.Stat()
 		if err != nil {
-			return fmt.Errorf("get tenants file info: %w", err)
+			return fmt.Errorf("tenants file stat info: %w", err)
 		}
 
 		if info.Size() == 0 {
