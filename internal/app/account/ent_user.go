@@ -9,7 +9,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/aggregate"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/otp"
-	"github.com/polyscone/tofu/internal/pkg/password"
 )
 
 const SignInMethodWebsite = "Website"
@@ -115,7 +114,7 @@ func (u *User) SignUp() error {
 	return nil
 }
 
-func (u *User) Activate(password Password, hasher password.Hasher) error {
+func (u *User) Activate(password Password, hasher Hasher) error {
 	if !u.ActivatedAt.IsZero() {
 		return errors.New("already activated")
 	}
@@ -131,7 +130,7 @@ func (u *User) Activate(password Password, hasher password.Hasher) error {
 	return nil
 }
 
-func (u *User) setPassword(newPassword Password, hasher password.Hasher) error {
+func (u *User) setPassword(newPassword Password, hasher Hasher) error {
 	hashedPassword, err := hasher.EncodedHash(newPassword.data)
 	if err != nil {
 		return fmt.Errorf("hash password: %w", err)
@@ -142,7 +141,7 @@ func (u *User) setPassword(newPassword Password, hasher password.Hasher) error {
 	return nil
 }
 
-func (u *User) ChangePassword(oldPassword, newPassword Password, hasher password.Hasher) error {
+func (u *User) ChangePassword(oldPassword, newPassword Password, hasher Hasher) error {
 	if u.ActivatedAt.IsZero() {
 		return errors.New("cannot change password until activated")
 	}
@@ -162,7 +161,7 @@ func (u *User) ChangePassword(oldPassword, newPassword Password, hasher password
 	return nil
 }
 
-func (u *User) ResetPassword(newPassword Password, hasher password.Hasher) error {
+func (u *User) ResetPassword(newPassword Password, hasher Hasher) error {
 	if u.ActivatedAt.IsZero() {
 		return errors.New("cannot change password until activated")
 	}
@@ -338,7 +337,7 @@ func (u *User) RegenerateRecoveryCodes(totp TOTP) error {
 	return nil
 }
 
-func (u *User) DisableTOTP(password Password, hasher password.Hasher) error {
+func (u *User) DisableTOTP(password Password, hasher Hasher) error {
 	if !u.HasActivatedTOTP() {
 		return errors.New("cannot disable an unactivated TOTP")
 	}
@@ -381,7 +380,7 @@ func (u *User) DisableTOTPWithRecoveryCode(code RecoveryCode) error {
 	return nil
 }
 
-func (u *User) verifyPassword(password Password, hasher password.Hasher) (bool, error) {
+func (u *User) verifyPassword(password Password, hasher Hasher) (bool, error) {
 	ok, rehash, err := hasher.Verify(password.data, u.HashedPassword)
 	if err != nil {
 		return false, err
@@ -398,7 +397,7 @@ func (u *User) verifyPassword(password Password, hasher password.Hasher) (bool, 
 	return false, nil
 }
 
-func (u *User) SignInWithPassword(password Password, hasher password.Hasher) (bool, error) {
+func (u *User) SignInWithPassword(password Password, hasher Hasher) (bool, error) {
 	if u.ActivatedAt.IsZero() {
 		return false, ErrNotActivated
 	}

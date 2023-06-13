@@ -7,7 +7,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/pkg/event"
-	"github.com/polyscone/tofu/internal/pkg/password"
 	"github.com/polyscone/tofu/internal/repository"
 )
 
@@ -36,13 +35,18 @@ type ReadWriter interface {
 	Writer
 }
 
+type Hasher interface {
+	EncodedHash(password []byte) ([]byte, error)
+	Verify(password, encodedHash []byte) (ok, rehash bool, err error)
+}
+
 type Service struct {
 	broker event.Broker
 	repo   ReadWriter
-	hasher password.Hasher
+	hasher Hasher
 }
 
-func NewService(broker event.Broker, repo ReadWriter, hasher password.Hasher) (*Service, error) {
+func NewService(broker event.Broker, repo ReadWriter, hasher Hasher) (*Service, error) {
 	var permissions []Permission
 	for _, group := range guard.PermissionGroups {
 		for _, p := range group.Permissions {

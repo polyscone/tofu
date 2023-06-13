@@ -7,12 +7,12 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/logger"
-	"github.com/polyscone/tofu/internal/pkg/password"
 	"github.com/polyscone/tofu/internal/pkg/password/argon2"
 )
 
-var hasher password.Hasher
+var hasher account.Hasher
 
 func initPasswordHasher() error {
 	var params argon2.Params
