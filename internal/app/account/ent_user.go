@@ -175,7 +175,7 @@ func (u *User) ResetPassword(newPassword Password, hasher password.Hasher) error
 
 func (u *User) SetupTOTP() error {
 	if u.HasActivatedTOTP() {
-		return fmt.Errorf("%w: TOTP already setup and activated", app.ErrBadRequest)
+		return errors.New("TOTP already setup and activated")
 	}
 
 	key, err := NewTOTPKey(otp.SHA1)
@@ -225,7 +225,7 @@ func (u *User) verifyTOTP(totp TOTP) error {
 
 func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) error {
 	if u.HasActivatedTOTP() {
-		return fmt.Errorf("%w: already verified and activated", app.ErrBadRequest)
+		return errors.New("already verified and activated")
 	}
 
 	if err := u.verifyTOTP(totp); err != nil {
@@ -252,11 +252,11 @@ func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) error {
 
 func (u *User) ActivateTOTP() error {
 	if !u.HasVerifiedTOTP() {
-		return fmt.Errorf("%w: unverified TOTP cannot be activated", app.ErrBadRequest)
+		return errors.New("unverified TOTP cannot be activated")
 	}
 
 	if u.HasActivatedTOTP() {
-		return fmt.Errorf("%w: already activated", app.ErrBadRequest)
+		return errors.New("already activated")
 	}
 
 	u.TOTPActivatedAt = time.Now().UTC()
@@ -266,7 +266,7 @@ func (u *User) ActivateTOTP() error {
 
 func (u *User) ChangeTOTPTel(newTel Tel) error {
 	if len(u.TOTPKey) == 0 {
-		return fmt.Errorf("%w: cannot change TOTP phone without a key setup", app.ErrBadRequest)
+		return errors.New("cannot change TOTP phone without a key setup")
 	}
 
 	if u.TOTPTel == newTel.String() {
@@ -288,7 +288,7 @@ func (u *User) ChangeTOTPTel(newTel Tel) error {
 
 func (u *User) GenerateTOTP() (string, error) {
 	if len(u.TOTPKey) == 0 {
-		return "", fmt.Errorf("%w: cannot generate a TOTP without a key setup", app.ErrBadRequest)
+		return "", errors.New("cannot generate a TOTP without a key setup")
 	}
 
 	alg, err := otp.NewAlgorithm(u.TOTPAlgorithm)
@@ -311,7 +311,7 @@ func (u *User) GenerateTOTP() (string, error) {
 
 func (u *User) RegenerateRecoveryCodes(totp TOTP) error {
 	if !u.HasActivatedTOTP() {
-		return fmt.Errorf("%w: cannot regenerate recovery codes without an activated TOTP", app.ErrBadRequest)
+		return errors.New("cannot regenerate recovery codes without an activated TOTP")
 	}
 
 	if err := u.verifyTOTP(totp); err != nil {
@@ -337,7 +337,7 @@ func (u *User) RegenerateRecoveryCodes(totp TOTP) error {
 
 func (u *User) DisableTOTP(password Password, hasher password.Hasher) error {
 	if !u.HasActivatedTOTP() {
-		return fmt.Errorf("%w: cannot disable an unactivated TOTP", app.ErrBadRequest)
+		return errors.New("cannot disable an unactivated TOTP")
 	}
 
 	if _, err := u.verifyPassword(password, hasher); err != nil {
@@ -384,7 +384,7 @@ func (u *User) verifyPassword(password Password, hasher password.Hasher) (bool, 
 		return false, err
 	}
 	if !ok {
-		return false, fmt.Errorf("%w: could not verify password", app.ErrBadRequest)
+		return false, errors.New("could not verify password")
 	}
 	if rehash {
 		err := u.setPassword(password, hasher)
@@ -397,7 +397,7 @@ func (u *User) verifyPassword(password Password, hasher password.Hasher) (bool, 
 
 func (u *User) SignInWithPassword(password Password, hasher password.Hasher) (bool, error) {
 	if u.ActivatedAt.IsZero() {
-		return false, fmt.Errorf("%w: %w", app.ErrBadRequest, ErrNotActivated)
+		return false, ErrNotActivated
 	}
 
 	rehashed, err := u.verifyPassword(password, hasher)
@@ -417,11 +417,11 @@ func (u *User) SignInWithPassword(password Password, hasher password.Hasher) (bo
 
 func (u *User) SignInWithTOTP(totp TOTP) error {
 	if !u.HasActivatedTOTP() {
-		return fmt.Errorf("%w: account does not have TOTP", app.ErrBadRequest)
+		return errors.New("account does not have TOTP")
 	}
 
 	if u.ActivatedAt.IsZero() {
-		return fmt.Errorf("%w: %w", app.ErrBadRequest, ErrNotActivated)
+		return ErrNotActivated
 	}
 
 	if err := u.verifyTOTP(totp); err != nil {
@@ -449,11 +449,11 @@ func (u *User) useRecoveryCode(code RecoveryCode) error {
 
 func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
 	if !u.HasActivatedTOTP() {
-		return fmt.Errorf("%w: account cannot use recovery codes", app.ErrBadRequest)
+		return errors.New("account cannot use recovery codes")
 	}
 
 	if u.ActivatedAt.IsZero() {
-		return fmt.Errorf("%w: %w", app.ErrBadRequest, ErrNotActivated)
+		return ErrNotActivated
 	}
 
 	if err := u.useRecoveryCode(code); err != nil {
@@ -480,7 +480,7 @@ func (u *User) ChangeRoles(roles []*Role, grants, denials []Permission) error {
 	}
 
 	if u.IsSuper() && !containsSuper {
-		return fmt.Errorf("%w: cannot remove super role", app.ErrBadRequest)
+		return errors.New("cannot remove super role")
 	}
 
 	if containsSuper {

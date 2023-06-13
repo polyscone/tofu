@@ -2,18 +2,14 @@ package account
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
-	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
-	"github.com/polyscone/tofu/internal/repository"
 )
 
 const lowRecoveryCodes = 2
@@ -235,13 +231,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 	err := h.Account.SignInWithPassword(ctx, email, password)
 	if err != nil {
 		h.ErrorViewFunc(w, r, fmt.Errorf("sign in with password: %w", err), "account/sign_in/password", func(data *handler.ViewData) {
-			switch {
-			case errors.Is(err, app.ErrBadRequest),
-				errors.Is(err, repository.ErrNotFound),
-				errors.Is(err, account.ErrNotActivated):
-
-				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
-			}
+			data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
 		})
 
 		return

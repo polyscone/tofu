@@ -87,9 +87,9 @@ func TestSignInWithTOTP(t *testing.T) {
 			{"empty user id correct TOTP", 0, user4, repository.ErrNotFound},
 			{"empty user id incorrect TOTP", 0, nil, repository.ErrNotFound},
 			{"activated user id incorrect TOTP", user4.ID, nil, app.ErrInvalidInput},
-			{"activated user id unverified correct TOTP", user2.ID, user2, app.ErrBadRequest},
-			{"activated user id without TOTP setup", user1.ID, nil, app.ErrBadRequest},
-			{"activated user id without TOTP activated", user3.ID, user3, app.ErrBadRequest},
+			{"activated user id unverified correct TOTP", user2.ID, user2, nil},
+			{"activated user id without TOTP setup", user1.ID, nil, nil},
+			{"activated user id without TOTP activated", user3.ID, user3, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

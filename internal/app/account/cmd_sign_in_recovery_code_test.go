@@ -87,7 +87,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			{"empty user id correct recovery code", 0, user2.RecoveryCodes[1], repository.ErrNotFound},
 			{"empty user id incorrect recovery code", 0, incorrectCode, repository.ErrNotFound},
 			{"activated user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
-			{"activated user id without TOTP setup", user1.ID, incorrectCode, app.ErrBadRequest},
+			{"activated user id without TOTP setup", user1.ID, incorrectCode, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

@@ -125,7 +125,7 @@ func TestVerifyTOTP(t *testing.T) {
 			{"empty user id correct TOTP", validGuard, 0, user2, repository.ErrNotFound},
 			{"empty user id incorrect TOTP", validGuard, 0, nil, repository.ErrNotFound},
 			{"no TOTP user id correct TOTP", validGuard, user1.ID, user2, nil},
-			{"already activated TOTP", validGuard, user3.ID, user3, app.ErrBadRequest},
+			{"already activated TOTP", validGuard, user3.ID, user3, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

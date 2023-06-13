@@ -206,7 +206,7 @@ func TestChangeRoles(t *testing.T) {
 			{"non-existent user id", validGuard, 0, []int{role1.ID, role2.ID}, repository.ErrNotFound},
 			{"non-existent role ids", validGuard, user.ID, []int{-1, 0}, repository.ErrNotFound},
 			{"unauthorised assignment of super role", validGuard, user.ID, []int{superRole.ID}, app.ErrUnauthorised},
-			{"removing super role", validGuard, super.ID, nil, app.ErrBadRequest},
+			{"removing super role", validGuard, super.ID, nil, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

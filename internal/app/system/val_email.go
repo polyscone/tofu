@@ -9,18 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-const validEmailPattern = "" +
-	`^` +
-	// Local part
-	`[\w+-](\.?[\w+-]|[\w+-]){0,60}` +
-	// Separator
-	`@` +
-	// Domain
-	`[0-9A-Za-z](-?[0-9A-Za-z]|[0-9A-Za-z]){0,60}` +
-	`\.[A-Za-z]{2,6}(\.[A-Za-z]{2,6})?` +
-	`$`
-
-var validEmail = errsx.Must(regexp.Compile(validEmailPattern))
+var validEmail = errsx.Must(regexp.Compile(`.+?@.+?(\..+?)+`))
 
 type Email string
 

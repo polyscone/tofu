@@ -131,7 +131,7 @@ func TestSetupTOTP(t *testing.T) {
 			want   error
 		}{
 			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
-			{"TOTP already setup and activated", validGuard, user.ID, app.ErrBadRequest},
+			{"TOTP already setup and activated", validGuard, user.ID, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

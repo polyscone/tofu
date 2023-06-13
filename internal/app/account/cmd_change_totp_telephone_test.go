@@ -75,7 +75,7 @@ func TestChangeTOTPTel(t *testing.T) {
 			want   error
 		}{
 			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
-			{"activated user without TOTP setup", validGuard, user.ID, "+81 70 0000 0003", app.ErrBadRequest},
+			{"activated user without TOTP setup", validGuard, user.ID, "+81 70 0000 0003", nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

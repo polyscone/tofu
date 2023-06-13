@@ -60,8 +60,8 @@ func TestActivateTOTP(t *testing.T) {
 			want   error
 		}{
 			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
-			{"unverified TOTP", validGuard, user1.ID, app.ErrBadRequest},
-			{"already activated TOTP", validGuard, user2.ID, app.ErrBadRequest},
+			{"unverified TOTP", validGuard, user1.ID, nil},
+			{"already activated TOTP", validGuard, user2.ID, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

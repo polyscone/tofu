@@ -90,7 +90,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 			want     error
 		}{
 			{"unauthorised", invalidGuard, 0, user2, app.ErrUnauthorised},
-			{"TOTP not setup or verified", validGuard, user1.ID, nil, app.ErrBadRequest},
+			{"TOTP not setup or verified", validGuard, user1.ID, nil, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
