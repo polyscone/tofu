@@ -33,8 +33,8 @@ func TestActivateUser(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.RolesChanged{Email: user1.Email})
 		events.Expect(account.Activated{Email: user1.Email})
+		events.Expect(account.RolesChanged{Email: user1.Email})
 
 		user1 = errsx.Must(repo.FindUserByEmail(ctx, user1.Email))
 

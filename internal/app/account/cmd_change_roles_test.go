@@ -183,7 +183,8 @@ func TestChangeRoles(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com"})
 		super := MustAddUser(t, ctx, repo, TestUser{Email: "super@bloggs.com", Activate: true})
 		role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
@@ -204,8 +205,9 @@ func TestChangeRoles(t *testing.T) {
 		}{
 			{"unauthorised", invalidGuard, 0, nil, app.ErrUnauthorised},
 			{"non-existent user id", validGuard, 0, []int{role1.ID, role2.ID}, repository.ErrNotFound},
-			{"non-existent role ids", validGuard, user.ID, []int{-1, 0}, repository.ErrNotFound},
-			{"unauthorised assignment of super role", validGuard, user.ID, []int{superRole.ID}, app.ErrUnauthorised},
+			{"non-existent role ids", validGuard, user1.ID, []int{-1, 0}, repository.ErrNotFound},
+			{"unauthorised assignment of super role", validGuard, user1.ID, []int{superRole.ID}, app.ErrUnauthorised},
+			{"unactivated user", validGuard, user2.ID, []int{role1.ID}, nil},
 			{"removing super role", validGuard, super.ID, nil, nil},
 		}
 		for _, tc := range tt {

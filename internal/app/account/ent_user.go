@@ -480,6 +480,10 @@ func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
 }
 
 func (u *User) ChangeRoles(roles []*Role, grants, denials []Permission) error {
+	if u.ActivatedAt.IsZero() {
+		return errors.New("cannot change roles until activated")
+	}
+
 	var containsSuper bool
 	for _, role := range roles {
 		if role.ID == SuperRole.ID {

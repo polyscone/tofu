@@ -43,14 +43,15 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 	if err != nil {
 		return fmt.Errorf("count users by role id: %w", err)
 	}
+
+	if err := user.Activate(input.password, s.hasher); err != nil {
+		return err
+	}
+
 	if superUserCount == 0 {
 		if err := user.ChangeRoles([]*Role{SuperRole}, nil, nil); err != nil {
 			return fmt.Errorf("add super role to initial user: %w", err)
 		}
-	}
-
-	if err := user.Activate(input.password, s.hasher); err != nil {
-		return err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
