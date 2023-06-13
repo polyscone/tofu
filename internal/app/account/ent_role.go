@@ -1,6 +1,10 @@
 package account
 
+import "github.com/polyscone/tofu/internal/pkg/aggregate"
+
 type Role struct {
+	aggregate.Root
+
 	ID          int
 	Name        string
 	Description string
