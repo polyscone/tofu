@@ -13,10 +13,10 @@ import (
 
 const (
 	passwordMinLength = 8
-	passwordMaxLength = 100
+	passwordMaxLength = 1000
 )
 
-var validPassword = errsx.Must(regexp.Compile(`^[[:print:]]{8,100}$`))
+var validPassword = errsx.Must(regexp.Compile(`^.{8,1000}$`))
 
 type Password struct {
 	_ [0]func() // Disallow comparison

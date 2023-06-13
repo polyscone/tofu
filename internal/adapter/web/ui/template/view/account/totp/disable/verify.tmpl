@@ -15,7 +15,7 @@
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
 		<label for="totp__password">Password</label>
-		<input id="totp__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern="[ -~]{8,100}" minlength="8" maxlength="100">
+		<input id="totp__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern=".{8,1000}" minlength="8" maxlength="1000">
 		<p class="error">{{.Errors.Get "password"}}</p>
 
 		<div class="bag reverse">

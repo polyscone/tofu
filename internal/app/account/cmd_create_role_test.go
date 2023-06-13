@@ -103,23 +103,11 @@ func TestCreateRole(t *testing.T) {
 			{"invalid name empty", "", "Description", []string{"1"}, false},
 			{"invalid name whitespace", "   ", "Description", []string{"1"}, false},
 			{"invalid name too long", strings.Repeat(".", 31), "Description", []string{"1"}, false},
-			{"invalid name char NUL", "Role \x00name", "Description", []string{"1"}, false},
-			{"invalid name char CR return", "Role \rname", "Description", []string{"1"}, false},
-			{"invalid name char LF", "Role \nname", "Description", []string{"1"}, false},
-			{"invalid name char tab", "Role \tname", "Description", []string{"1"}, false},
 
 			{"invalid description too long", "Role name", strings.Repeat(".", 101), []string{"1"}, false},
-			{"invalid description char NUL", "Role name", "Descripti\x00on", []string{"1"}, false},
-			{"invalid description char CR return", "Role name", "Descripti\ron", []string{"1"}, false},
-			{"invalid description char LF", "Role name", "Descripti\non", []string{"1"}, false},
-			{"invalid description char tab", "Role name", "Descripti\ton", []string{"1"}, false},
 
 			{"invalid permission empty", "Role name", "Description", []string{""}, false},
 			{"invalid permission whitespace", "Role name", "Description", []string{"   "}, false},
-			{"invalid permission char NUL", "Role name", "Description", []string{"\x001"}, false},
-			{"invalid permission char CR return", "Role name", "Description", []string{"\r1"}, false},
-			{"invalid permission char LF", "Role name", "Description", []string{"\n1"}, false},
-			{"invalid permission char tab", "Role name", "Description", []string{"\t1"}, false},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

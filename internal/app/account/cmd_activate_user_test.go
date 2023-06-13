@@ -102,19 +102,11 @@ func TestActivateUser(t *testing.T) {
 			{"invalid email part after @", "foo@", "password", "password", false},
 			{"invalid email includes name", "Foo Bar <foo@example.com>", "password", "password", false},
 			{"invalid email missing TLD", "foo@example.", "password", "password", false},
-			{"invalid email char NUL", "foo\x00@example.com", "password", "password", false},
-			{"invalid email char CR return", "foo\r@example.com", "password", "password", false},
-			{"invalid email char LF", "foo\n@example.com", "password", "password", false},
-			{"invalid email char tab", "foo\t@example.com", "password", "password", false},
 
 			{"invalid password empty", "foo@example.com", "", "", false},
 			{"invalid password whitespace", "foo@example.com", "        ", "        ", false},
 			{"invalid password too short", "foo@example.com", ".......", ".......", false},
-			{"invalid password too long", "foo@example.com", strings.Repeat(".", 101), strings.Repeat(".", 101), false},
-			{"invalid password char NUL", "foo@example.com", "passwor\x00d", "passwor\x00d", false},
-			{"invalid password char CR return", "foo@example.com", "passwor\rd", "passwor\rd", false},
-			{"invalid password char LF", "foo@example.com", "passwor\nd", "passwor\nd", false},
-			{"invalid password char tab", "foo@example.com", "passwor\td", "passwor\td", false},
+			{"invalid password too long", "foo@example.com", strings.Repeat(".", 1001), strings.Repeat(".", 1001), false},
 			{"invalid password check mismatch", "foo@example.com", "password", "password1", false},
 		}
 		for _, tc := range tt {

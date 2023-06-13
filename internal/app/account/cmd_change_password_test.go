@@ -104,20 +104,12 @@ func TestChangePassword(t *testing.T) {
 			{"invalid old password empty", "", "password1", "password1", false},
 			{"invalid old password whitespace", "        ", "password1", "password1", false},
 			{"invalid old password too short", ".......", "password1", "password1", false},
-			{"invalid old password too long", strings.Repeat(".", 101), "password1", "password1", false},
-			{"invalid old password char NUL", "passwor\x00d", "password1", "password1", false},
-			{"invalid old password char CR return", "passwor\rd", "password1", "password1", false},
-			{"invalid old password char LF", "passwor\nd", "password1", "password1", false},
-			{"invalid old password char tab", "passwor\td", "password1", "password1", false},
+			{"invalid old password too long", strings.Repeat(".", 1001), "password1", "password1", false},
 
 			{"invalid new password empty", "", "", "", false},
 			{"invalid new password whitespace", "        ", "", "", false},
 			{"invalid new password too short", "password", ".......", ".......", false},
-			{"invalid new password too long", "password", strings.Repeat(".", 101), strings.Repeat(".", 101), false},
-			{"invalid new password char NUL", "password", "passwor\x00d", "passwor\x00d", false},
-			{"invalid new password char CR return", "password", "passwor\rd", "passwor\rd", false},
-			{"invalid new password char LF", "password", "passwor\nd", "passwor\nd", false},
-			{"invalid new password char tab", "password", "passwor\td", "passwor\td", false},
+			{"invalid new password too long", "password", strings.Repeat(".", 1001), strings.Repeat(".", 1001), false},
 
 			{"invalid password check mismatch", "password", "password1", "password2", false},
 		}

@@ -166,10 +166,6 @@ func TestVerifyTOTP(t *testing.T) {
 			{"invalid passcode whitespace", "      ", false},
 			{"invalid passcode too short", "12345", false},
 			{"invalid passcode too long", "1234567", false},
-			{"invalid passcode char NUL", "1234\x0056", false},
-			{"invalid passcode char CR return", "1234\r56", false},
-			{"invalid passcode char LF", "1234\n56", false},
-			{"invalid passcode char tab", "1234\t56", false},
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

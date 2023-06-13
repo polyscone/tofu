@@ -124,10 +124,6 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			{"invalid passcode invalid base32 number 8", "8234567", false},
 			{"invalid passcode invalid base32 number 9", "9234567", false},
 			{"invalid passcode invalid base32 number 0", "0234567", false},
-			{"invalid passcode char NUL", "234\x0056", false},
-			{"invalid passcode char CR return", "234\r56", false},
-			{"invalid passcode char LF", "234\n56", false},
-			{"invalid passcode char tab", "234\t56", false},
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

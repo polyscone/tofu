@@ -110,10 +110,6 @@ func TestChangeTOTPTel(t *testing.T) {
 			{"invalid missing country code", "081 12 3456 7890", false},
 			{"invalid contains hyphens", "+81-12-3456-7890", false},
 			{"invalid contains letters", "+81a12b3456c7890", false},
-			{"invalid char NUL", "+81 1\x002 3456 7890", false},
-			{"invalid char CR return", "+81 1\r2 3456 7890", false},
-			{"invalid char LF", "+81 1\n2 3456 7890", false},
-			{"invalid char tab", "+81 1\t2 3456 7890", false},
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

@@ -97,11 +97,7 @@ func TestResetPassword(t *testing.T) {
 			{"invalid password empty", "", "", false},
 			{"invalid password whitespace", "        ", "        ", false},
 			{"invalid password too short", ".......", ".......", false},
-			{"invalid password too long", strings.Repeat(".", 101), strings.Repeat(".", 101), false},
-			{"invalid password char NUL", "passwor\x00d", "passwor\x00d", false},
-			{"invalid password char CR return", "passwor\rd", "passwor\rd", false},
-			{"invalid password char LF", "passwor\nd", "passwor\nd", false},
-			{"invalid password char tab", "passwor\td", "passwor\td", false},
+			{"invalid password too long", strings.Repeat(".", 1001), strings.Repeat(".", 1001), false},
 			{"invalid password check mismatch", "password1", "password2", false},
 		}
 		for i, tc := range tt {

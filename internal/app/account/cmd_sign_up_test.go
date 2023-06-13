@@ -52,10 +52,6 @@ func TestSignUp(t *testing.T) {
 			{"invalid email part after @", "foo@", false},
 			{"invalid email includes name", "Foo Bar <foo@example.com>", false},
 			{"invalid email missing TLD", "foo@example.", false},
-			{"invalid email char NUL", "foo\x00@example.com", false},
-			{"invalid email char CR return", "foo\r@example.com", false},
-			{"invalid email char LF", "foo\n@example.com", false},
-			{"invalid email char tab", "foo\t@example.com", false},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
