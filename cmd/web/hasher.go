@@ -8,15 +8,26 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/password/argon2"
 	"github.com/polyscone/tofu/internal/pkg/size"
 )
 
-var hasher account.Hasher
+var hasher *Hasher
 
-func initPasswordHasher() error {
+type Hasher struct {
+	params argon2.Params
+}
+
+func (h *Hasher) EncodedPasswordHash(password []byte) ([]byte, error) {
+	return argon2.EncodedHash(nil, password, h.params)
+}
+
+func (h *Hasher) VerifyPasswordHash(password, encodedHash []byte) (ok, rehash bool, _ error) {
+	return argon2.Verify(password, encodedHash, &h.params)
+}
+
+func initHasher() error {
 	var params argon2.Params
 
 	paramsCache := filepath.Join(opts.data, "argon2_params.json")
@@ -30,7 +41,7 @@ func initPasswordHasher() error {
 	}
 
 	if params.IsValid() != nil {
-		logger.Info.Println("detecting new argon2 password hashing parameters...")
+		logger.Info.Println("detecting new argon2 password hashing parameters, please wait...")
 
 		params, _ = argon2.Calibrate(1*time.Second, argon2.ID, 64*size.Mebibyte, runtime.NumCPU()*2)
 		paramsJSON, err := json.Marshal(params)
@@ -49,7 +60,7 @@ func initPasswordHasher() error {
 		return fmt.Errorf("invalid argon2 params: %w", err)
 	}
 
-	hasher = argon2.NewHasher(nil, params)
+	hasher = &Hasher{params: params}
 
 	return nil
 }

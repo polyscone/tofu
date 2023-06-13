@@ -33,7 +33,7 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 	if err != nil {
 		// We always hash a password even when we error finding a user to help
 		// prevent timing attacks that would allow enumeration of valid emails
-		if _, err := s.hasher.EncodedHash(input.password.data); err != nil {
+		if _, err := s.hasher.EncodedPasswordHash(input.password.data); err != nil {
 			return fmt.Errorf("hash password: %w", err)
 		}
 

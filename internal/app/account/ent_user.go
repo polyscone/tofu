@@ -131,7 +131,7 @@ func (u *User) Activate(password Password, hasher Hasher) error {
 }
 
 func (u *User) setPassword(newPassword Password, hasher Hasher) error {
-	hashedPassword, err := hasher.EncodedHash(newPassword.data)
+	hashedPassword, err := hasher.EncodedPasswordHash(newPassword.data)
 	if err != nil {
 		return fmt.Errorf("hash password: %w", err)
 	}
@@ -381,7 +381,7 @@ func (u *User) DisableTOTPWithRecoveryCode(code RecoveryCode) error {
 }
 
 func (u *User) verifyPassword(password Password, hasher Hasher) (rehash bool, _ error) {
-	ok, rehash, err := hasher.Verify(password.data, u.HashedPassword)
+	ok, rehash, err := hasher.VerifyPasswordHash(password.data, u.HashedPassword)
 	if err != nil {
 		return false, err
 	}

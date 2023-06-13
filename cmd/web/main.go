@@ -152,8 +152,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err := initPasswordHasher(); err != nil {
-		logger.Error.Printf("initialise password hasher: %v\n", err)
+	if err := initHasher(); err != nil {
+		logger.Error.Printf("initialise hasher: %v\n", err)
 
 		os.Exit(1)
 	}
