@@ -115,7 +115,7 @@ type Tenant struct {
 func initTenants(tenantsPath string) error {
 	tenants = make(map[string]Tenant)
 
-	f, err := os.OpenFile(tenantsPath, os.O_RDWR|os.O_CREATE, 0666)
+	f, err := os.OpenFile(tenantsPath, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return fmt.Errorf("open or create tenants file: %w", err)
 	}

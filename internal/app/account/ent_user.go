@@ -380,7 +380,7 @@ func (u *User) DisableTOTPWithRecoveryCode(code RecoveryCode) error {
 	return nil
 }
 
-func (u *User) verifyPassword(password Password, hasher Hasher) (bool, error) {
+func (u *User) verifyPassword(password Password, hasher Hasher) (rehash bool, _ error) {
 	ok, rehash, err := hasher.Verify(password.data, u.HashedPassword)
 	if err != nil {
 		return false, err
@@ -389,9 +389,11 @@ func (u *User) verifyPassword(password Password, hasher Hasher) (bool, error) {
 		return false, ErrInvalidPassword
 	}
 	if rehash {
-		err := u.setPassword(password, hasher)
+		if err := u.setPassword(password, hasher); err != nil {
+			return true, fmt.Errorf("rehash password: %w", err)
+		}
 
-		return true, fmt.Errorf("rehash password: %w", err)
+		return true, nil
 	}
 
 	return false, nil

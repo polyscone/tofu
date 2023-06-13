@@ -21,7 +21,7 @@ func TestArgon2(t *testing.T) {
 		name        string
 		variant     argon2.Variant
 		password    string
-		iterations  uint32
+		time        uint32
 		memory      uint32
 		parallelism uint8
 		saltLength  uint32
@@ -38,13 +38,13 @@ func TestArgon2(t *testing.T) {
 
 		{"error unknown variant", argon2.Variant("bad variant"), "error", 1, mebibyte, 1, 8, 16, "", true},
 
-		{"argon2i error too few iterations", argon2.I, "error", 0, mebibyte, 1, 8, 16, "", true},
+		{"argon2i error too few time", argon2.I, "error", 0, mebibyte, 1, 8, 16, "", true},
 		{"argon2i error too little memory", argon2.I, "error", 1, 512, 1, 8, 16, "", true},
 		{"argon2i error too little parallelism", argon2.I, "error", 1, mebibyte, 0, 8, 16, "", true},
 		{"argon2i error salt too short", argon2.I, "error", 1, mebibyte, 1, 4, 16, "", true},
 		{"argon2i error key too short", argon2.I, "error", 1, mebibyte, 1, 8, 8, "", true},
 
-		{"argon2id error too few iterations", argon2.ID, "error", 0, mebibyte, 1, 8, 16, "", true},
+		{"argon2id error too few time", argon2.ID, "error", 0, mebibyte, 1, 8, 16, "", true},
 		{"argon2id error too little memory", argon2.ID, "error", 1, 512, 1, 8, 16, "", true},
 		{"argon2id error too little parallelism", argon2.ID, "error", 1, mebibyte, 0, 8, 16, "", true},
 		{"argon2id error salt too short", argon2.ID, "error", 1, mebibyte, 1, 4, 16, "", true},
@@ -62,7 +62,7 @@ func TestArgon2(t *testing.T) {
 			reader := bytes.NewReader([]byte("0123456789012345"))
 			hash, err := argon2.EncodedHash(reader, []byte(tc.password), argon2.Params{
 				Variant:     tc.variant,
-				Iterations:  tc.iterations,
+				Time:        tc.time,
 				Memory:      tc.memory,
 				Parallelism: tc.parallelism,
 				SaltLength:  tc.saltLength,
@@ -99,7 +99,7 @@ func TestArgon2CSPRNG(t *testing.T) {
 			for i := 0; i < tc.samples; i++ {
 				hash, err := argon2.EncodedHash(nil, []byte("correct horse battery staple"), argon2.Params{
 					Variant:     tc.variant,
-					Iterations:  1,
+					Time:        1,
 					Memory:      mebibyte,
 					Parallelism: 4,
 					SaltLength:  8,
@@ -148,7 +148,7 @@ func TestArgon2Verify(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			params := argon2.Params{
 				Variant:     tc.variant,
-				Iterations:  1,
+				Time:        1,
 				Memory:      mebibyte,
 				Parallelism: 1,
 				SaltLength:  16,
@@ -164,7 +164,7 @@ func TestArgon2Verify(t *testing.T) {
 						params.Variant = argon2.I
 					}
 				}
-				params.Iterations = 2
+				params.Time = 2
 				params.Memory = 2 * mebibyte
 				params.Parallelism = 2
 				params.SaltLength = 32

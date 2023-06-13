@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/password/argon2"
+	"github.com/polyscone/tofu/internal/pkg/size"
 )
 
 var hasher account.Hasher
@@ -30,13 +32,13 @@ func initPasswordHasher() error {
 	if params.IsValid() != nil {
 		logger.Info.Println("detecting new argon2 password hashing parameters...")
 
-		params, _ = argon2.DetectParams(1*time.Second, argon2.ID, 0, 0)
+		params, _ = argon2.Calibrate(1*time.Second, argon2.ID, 64*size.Mebibyte, runtime.NumCPU()*2)
 		paramsJSON, err := json.Marshal(params)
 		if err != nil {
 			return fmt.Errorf("marshal argon2 params: %w", err)
 		}
 
-		if err := os.WriteFile(paramsCache, paramsJSON, 0666); err != nil {
+		if err := os.WriteFile(paramsCache, paramsJSON, 0755); err != nil {
 			return fmt.Errorf("write argon2 params: %w", err)
 		}
 

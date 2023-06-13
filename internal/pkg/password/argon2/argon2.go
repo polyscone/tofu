@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"runtime"
 	"strings"
 	"time"
 
@@ -27,10 +26,10 @@ const (
 // Params holds the parameters that will be used in the Argon2 key
 // derivation functions.
 //
-// A sensible starting point for Argon2id would be to set Iterations to
+// A sensible starting point for Argon2id would be to set Time to
 // 1, and Memory to 64 MiB (64 * 1024 KiB).
 //
-// For Argon2i a sensible starting point would be to set Iterations to
+// For Argon2i a sensible starting point would be to set Time to
 // 3, and Memory to 32 MiB (32 * 1024 KiB).
 //
 // Argon2 key derivation functions expect the memory parameter to be expressed
@@ -41,8 +40,10 @@ const (
 // Since 1024 KiB is the same as 1 MiB it might help to set the memory parameter
 // in terms of mebibytes instead of kibibytes.
 //
-// In that case a helper variable can be set such as
-// const mebibyte = 1 * size.Mebibyte / size.Kibibyte.
+// In that case a helper variable can be set such as:
+//
+//	const mebibyte = 1 * size.Mebibyte / size.Kibibyte.
+//
 // Then the helper variable can be used when setting the memory parameter, for
 // example, 64 * mebibyte.
 //
@@ -57,7 +58,7 @@ const (
 // For more information see: https://golang.org/x/crypto/argon2
 type Params struct {
 	Variant     Variant
-	Iterations  uint32
+	Time        uint32
 	Memory      uint32
 	Parallelism uint8
 	SaltLength  uint32
@@ -77,8 +78,8 @@ func (p *Params) IsValid() error {
 	if p.Variant != I && p.Variant != ID {
 		return fmt.Errorf("unknown variant %q", p.Variant)
 	}
-	if want := uint32(1); p.Iterations < want {
-		return fmt.Errorf("iterations must be %d or above", want)
+	if want := uint32(1); p.Time < want {
+		return fmt.Errorf("time must be %d or above", want)
 	}
 	if want := uint32(size.Kibibyte); p.Memory < want {
 		return fmt.Errorf("memory must be %d or above", want)
@@ -95,17 +96,30 @@ func (p *Params) IsValid() error {
 	return nil
 }
 
-func DetectParams(target time.Duration, variant Variant, maxMemory, parallelism int) (Params, time.Duration) {
-	if maxMemory == 0 {
-		maxMemory = 1 * size.Gibibyte / size.Kibibyte
+func Calibrate(target time.Duration, variant Variant, memory, parallelism int) (Params, time.Duration) {
+	if memory <= 0 {
+		panic("memory must be set")
 	}
-	if parallelism == 0 {
-		parallelism = runtime.NumCPU() * 2
+	if parallelism <= 0 {
+		panic("parallelism must be set")
 	}
+
+	var t uint32
+	switch variant {
+	case I:
+		t = 3
+
+	case ID:
+		t = 1
+
+	default:
+		panic(fmt.Sprintf("unknown variant %q", variant))
+	}
+
 	params := Params{
 		Variant:     variant,
-		Iterations:  4,
-		Memory:      64 * size.Mebibyte / size.Kibibyte,
+		Time:        t,
+		Memory:      uint32(memory / size.Kibibyte),
 		Parallelism: uint8(parallelism),
 		SaltLength:  16,
 		KeyLength:   32,
@@ -121,29 +135,25 @@ func DetectParams(target time.Duration, variant Variant, maxMemory, parallelism 
 		panic(err)
 	}
 
-detect:
+CalibrateLoop:
 	for {
 		t := time.Now()
 		key(password, salt, params)
 		took := time.Since(t)
 
 		if took >= target {
-			// Double check the time taken just in case we need to bump up
-			// the param values more
+			// Double check the time taken just in case we need to
+			// increase parameter values again
 			t := time.Now()
 			key(password, salt, params)
 			if took := time.Since(t); took < target {
-				continue detect
+				continue CalibrateLoop
 			}
 
 			return params, took
 		}
 
-		if params.Memory >= uint32(maxMemory) {
-			params.Iterations++
-		} else {
-			params.Memory += 64 * size.Mebibyte / size.Kibibyte
-		}
+		params.Time++
 	}
 }
 
@@ -163,10 +173,10 @@ type Argon2 struct {
 func key(password, salt []byte, p Params) {
 	switch p.Variant {
 	case I:
-		argon2.Key(password, salt, p.Iterations, p.Memory, p.Parallelism, p.KeyLength)
+		argon2.Key(password, salt, p.Time, p.Memory, p.Parallelism, p.KeyLength)
 
 	case ID:
-		argon2.IDKey(password, salt, p.Iterations, p.Memory, p.Parallelism, p.KeyLength)
+		argon2.IDKey(password, salt, p.Time, p.Memory, p.Parallelism, p.KeyLength)
 
 	default:
 		panic(fmt.Sprintf("unknown variant %q", p.Variant))
@@ -188,10 +198,10 @@ func encodedHashWithSalt(password, salt []byte, p Params) ([]byte, error) {
 	var key []byte
 	switch p.Variant {
 	case I:
-		key = argon2.Key(password, salt, p.Iterations, p.Memory, p.Parallelism, p.KeyLength)
+		key = argon2.Key(password, salt, p.Time, p.Memory, p.Parallelism, p.KeyLength)
 
 	case ID:
-		key = argon2.IDKey(password, salt, p.Iterations, p.Memory, p.Parallelism, p.KeyLength)
+		key = argon2.IDKey(password, salt, p.Time, p.Memory, p.Parallelism, p.KeyLength)
 
 	default:
 		return nil, fmt.Errorf("unknown variant %q", p.Variant)
@@ -211,7 +221,7 @@ func encodedHashWithSalt(password, salt []byte, p Params) ([]byte, error) {
 	// $argon2x$v=19$m=65536,t=1,p=1$salt$key
 	encodedHash := fmt.Sprintf(
 		"$%s$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		p.Variant, argon2.Version, p.Memory, p.Iterations, p.Parallelism, base64Salt, base64Key,
+		p.Variant, argon2.Version, p.Memory, p.Time, p.Parallelism, base64Salt, base64Key,
 	)
 
 	return []byte(encodedHash), nil
@@ -291,10 +301,10 @@ func Verify(password, encodedHash []byte, preferred *Params) (bool, bool, error)
 		KeyLength:  uint32(len(key)),
 	}
 
-	// Extract the memory, iterations (time), and parallelism parameters from
+	// Extract the memory, time (time), and parallelism parameters from
 	// the encoded hash we need to compare with
-	if _, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &p.Memory, &p.Iterations, &p.Parallelism); err != nil {
-		return isValid, rehash, fmt.Errorf("scan memory, iterations, and parallelism: %w", err)
+	if _, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &p.Memory, &p.Time, &p.Parallelism); err != nil {
+		return isValid, rehash, fmt.Errorf("scan memory, time, and parallelism: %w", err)
 	}
 
 	encodedPassword, err := encodedHashWithSalt(password, salt, p)
@@ -325,7 +335,7 @@ func Verify(password, encodedHash []byte, preferred *Params) (bool, bool, error)
 		// It's then up to the user of the function to decide whether to rehash
 		// the password using their preferred parameters or not
 		rehash = preferred.Variant != p.Variant ||
-			preferred.Iterations != p.Iterations ||
+			preferred.Time != p.Time ||
 			preferred.Memory != p.Memory ||
 			preferred.Parallelism != p.Parallelism ||
 			preferred.SaltLength != p.SaltLength ||

@@ -146,7 +146,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	if err := os.MkdirAll(opts.data, 0666); err != nil {
+	if err := os.MkdirAll(opts.data, 0755); err != nil {
 		logger.Error.Printf("make data directory: %v\n", err)
 
 		os.Exit(1)
