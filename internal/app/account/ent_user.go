@@ -14,7 +14,10 @@ import (
 
 const SignInMethodWebsite = "Website"
 
-var ErrNotActivated = errors.New("account is not activated")
+var (
+	ErrNotActivated    = errors.New("account is not activated")
+	ErrInvalidPassword = errors.New("invalid password")
+)
 
 type User struct {
 	aggregate.Root
@@ -384,7 +387,7 @@ func (u *User) verifyPassword(password Password, hasher password.Hasher) (bool, 
 		return false, err
 	}
 	if !ok {
-		return false, errors.New("could not verify password")
+		return false, ErrInvalidPassword
 	}
 	if rehash {
 		err := u.setPassword(password, hasher)

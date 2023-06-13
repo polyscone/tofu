@@ -17,6 +17,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
@@ -97,7 +98,7 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		if input.Method != "app" && input.Method != "sms" {
-			h.ErrorView(w, r, app.ErrBadRequest, "error", nil)
+			h.ErrorView(w, r, fmt.Errorf("TOTP setup: %w", app.ErrBadRequest), "error", nil)
 
 			return
 		}
@@ -121,7 +122,7 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 			http.Redirect(w, r, h.Path("account.totp.setup.sms"), http.StatusSeeOther)
 
 		default:
-			h.ErrorView(w, r, app.ErrBadRequest, "error", nil)
+			h.ErrorView(w, r, fmt.Errorf("TOTP setup: %w", app.ErrBadRequest), "error", nil)
 		}
 	}
 }
@@ -404,7 +405,7 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 
 		err := h.Account.DisableTOTP(ctx, passport, user.ID, input.Password)
 		if err != nil {
-			if errors.Is(err, app.ErrBadRequest) {
+			if errors.Is(err, account.ErrInvalidPassword) {
 				err = fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
 					"password": errors.New("invalid password"),
 				})
