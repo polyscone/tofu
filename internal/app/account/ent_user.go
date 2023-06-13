@@ -107,7 +107,13 @@ func (u *User) HasActivatedTOTP() bool {
 }
 
 func (u *User) SignUp() error {
-	u.SignedUpAt = time.Now().UTC()
+	if !u.ActivatedAt.IsZero() {
+		return nil
+	}
+
+	if u.SignedUpAt.IsZero() {
+		u.SignedUpAt = time.Now().UTC()
+	}
 
 	u.Events.Enqueue(SignedUp{Email: u.Email})
 

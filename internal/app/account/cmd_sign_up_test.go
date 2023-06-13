@@ -14,7 +14,7 @@ func TestSignUp(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("errors", func(t *testing.T) {
-		svc, broker, _ := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -25,9 +25,16 @@ func TestSignUp(t *testing.T) {
 
 		events.Expect(account.SignedUp{Email: "foo@example.com"})
 
-		_, err := svc.SignUp(ctx, "foo@example.com")
+		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
+			t.Fatal(err)
+		}
+
+		events.Expect(account.SignedUp{Email: "foo@example.com"})
+
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "bar@example.com", Activate: true})
+		_, err := svc.SignUp(ctx, user.Email)
 		if want := app.ErrConflictingInput; !errors.Is(err, want) {
-			t.Fatalf("want error: %T; got %T", want, err)
+			t.Fatalf("want error: %v; got %v", want, err)
 		}
 	})
 

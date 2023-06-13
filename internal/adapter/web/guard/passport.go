@@ -94,6 +94,19 @@ func (p Passport) CanEditUsers() bool {
 	return p.can(editUsers)
 }
 
+func (p Passport) CanAccessAdmin() bool {
+	switch {
+	case p.CanViewConfig(),
+		p.CanViewUsers(),
+		p.CanViewRoles():
+
+		return true
+
+	default:
+		return false
+	}
+}
+
 func (p Passport) can(query string) bool {
 	for _, permission := range p.permissions {
 		if query == permission {

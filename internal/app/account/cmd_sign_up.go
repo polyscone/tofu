@@ -27,19 +27,39 @@ func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 		}
 	}
 
-	user := NewUser(input.email)
+	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
+	switch {
+	case err == nil:
+		if user.ActivatedAt.IsZero() {
+			if err := user.SignUp(); err != nil {
+				return nil, fmt.Errorf("sign up existing: %w", err)
+			}
+		} else {
+			conflict := &repository.ConflictError{
+				Map: errsx.Map{"email": errors.New("already in use")},
+			}
 
-	if err := user.SignUp(); err != nil {
-		return nil, fmt.Errorf("sign up: %w", err)
-	}
-
-	if err := s.repo.AddUser(ctx, user); err != nil {
-		var conflicts *repository.ConflictError
-		if errors.As(err, &conflicts) {
-			return nil, fmt.Errorf("add user: %w: %w", app.ErrConflictingInput, conflicts)
+			return nil, fmt.Errorf("sign up existing: %w: %w", app.ErrConflictingInput, conflict)
 		}
 
-		return nil, fmt.Errorf("add user: %w", err)
+	case errors.Is(err, repository.ErrNotFound):
+		user = NewUser(input.email)
+
+		if err := user.SignUp(); err != nil {
+			return nil, fmt.Errorf("sign up: %w", err)
+		}
+
+		if err := s.repo.AddUser(ctx, user); err != nil {
+			var conflict *repository.ConflictError
+			if errors.As(err, &conflict) {
+				return nil, fmt.Errorf("add user: %w: %w", app.ErrConflictingInput, conflict)
+			}
+
+			return nil, fmt.Errorf("add user: %w", err)
+		}
+
+	default:
+		return nil, fmt.Errorf("find user by email: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)

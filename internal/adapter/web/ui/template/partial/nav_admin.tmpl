@@ -1,6 +1,6 @@
 {{define "nav_admin"}}
 
-{{if or .Passport.CanViewConfig .Passport.CanViewUsers .Passport.CanViewRoles}}
+{{if .Passport.CanAccessAdmin}}
 	<nav>
 		<ul>
 			{{if .Passport.CanViewUsers}}

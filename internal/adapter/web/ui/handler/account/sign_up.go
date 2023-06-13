@@ -57,11 +57,11 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, app.ErrConflictingInput):
-				// We can't use the request context here because it will have already
-				// been cancelled after the main request handler finished
-				ctx := context.Background()
-
 				background.Go(func() {
+					// We can't use the request context here because it will have already
+					// been cancelled after the main request handler finished
+					ctx := context.Background()
+
 					tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 					if err != nil {
 						logger.Error.Printf("sign up: add reset password token: %v\n", err)

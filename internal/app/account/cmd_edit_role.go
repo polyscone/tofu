@@ -60,9 +60,9 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID 
 
 	err := s.repo.SaveRole(ctx, role)
 	if err != nil {
-		var conflicts *repository.ConflictError
-		if errors.As(err, &conflicts) {
-			return nil, fmt.Errorf("save role: %w: %w", app.ErrConflictingInput, conflicts)
+		var conflict *repository.ConflictError
+		if errors.As(err, &conflict) {
+			return nil, fmt.Errorf("save role: %w: %w", app.ErrConflictingInput, conflict)
 		}
 
 		return nil, fmt.Errorf("save role: %w", err)

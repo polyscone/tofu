@@ -59,7 +59,7 @@ func accountSignedUpHandler(tenant *handler.Tenant, h *handler.Handler) any {
 		background.Go(func() {
 			ctx := context.Background()
 
-			tok, err := tenant.Repo.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
+			tok, err := tenant.Repo.Web.AddActivationToken(ctx, evt.Email, 2*time.Hour)
 			if err != nil {
 				logger.Error.Printf("signed up: add activation token: %v\n", err)
 

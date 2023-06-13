@@ -53,9 +53,9 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, d
 	role := NewRole(input.name, input.description, input.permissions)
 
 	if err := s.repo.AddRole(ctx, role); err != nil {
-		var conflicts *repository.ConflictError
-		if errors.As(err, &conflicts) {
-			return nil, fmt.Errorf("add role: %w: %w", app.ErrConflictingInput, conflicts)
+		var conflict *repository.ConflictError
+		if errors.As(err, &conflict) {
+			return nil, fmt.Errorf("add role: %w: %w", app.ErrConflictingInput, conflict)
 		}
 
 		return nil, fmt.Errorf("add role: %w", err)
