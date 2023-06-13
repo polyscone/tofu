@@ -129,7 +129,7 @@ func (u *User) Activate(password Password, hasher password.Hasher) error {
 }
 
 func (u *User) setPassword(newPassword Password, hasher password.Hasher) error {
-	hashedPassword, err := hasher.EncodedHash(newPassword)
+	hashedPassword, err := hasher.EncodedHash(newPassword.data)
 	if err != nil {
 		return fmt.Errorf("hash password: %w", err)
 	}
@@ -184,7 +184,7 @@ func (u *User) SetupTOTP() error {
 	}
 
 	u.TOTPMethod = TOTPMethodNone.String()
-	u.TOTPKey = key
+	u.TOTPKey = key.data
 	u.TOTPAlgorithm = otp.SHA1.String()
 	u.TOTPDigits = 6
 	u.TOTPPeriod = 30 * time.Second
@@ -379,7 +379,7 @@ func (u *User) DisableTOTPWithRecoveryCode(code RecoveryCode) error {
 }
 
 func (u *User) verifyPassword(password Password, hasher password.Hasher) (bool, error) {
-	ok, rehash, err := hasher.Verify(password, u.HashedPassword)
+	ok, rehash, err := hasher.Verify(password.data, u.HashedPassword)
 	if err != nil {
 		return false, err
 	}

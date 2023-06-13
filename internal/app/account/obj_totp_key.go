@@ -2,13 +2,17 @@ package account
 
 import "github.com/polyscone/tofu/internal/pkg/otp"
 
-type TOTPKey []byte
+type TOTPKey struct {
+	_ [0]func() // Disallow comparison
 
-func NewTOTPKey(algorithm otp.Algorithm) (TOTPKey, error) {
+	data []byte
+}
+
+func NewTOTPKey(algorithm otp.Algorithm) (zero TOTPKey, _ error) {
 	key, err := otp.NewKey(nil, algorithm)
 	if err != nil {
-		return nil, err
+		return zero, err
 	}
 
-	return TOTPKey(key), nil
+	return TOTPKey{data: key}, nil
 }

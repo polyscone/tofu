@@ -1,7 +1,7 @@
 package account
 
 import (
-	"bytes"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"regexp"
@@ -18,36 +18,40 @@ const (
 
 var validPassword = errsx.Must(regexp.Compile(`^[[:print:]]{8,100}$`))
 
-type Password []byte
+type Password struct {
+	_ [0]func() // Disallow comparison
 
-func NewPassword(password string) (Password, error) {
+	data []byte
+}
+
+func NewPassword(password string) (zero Password, _ error) {
 	if strings.TrimSpace(password) == "" {
-		return nil, errors.New("cannot be empty")
+		return zero, errors.New("cannot be empty")
 	}
 
 	if strings.ContainsAny(password, "\n\r") {
-		return nil, errors.New("cannot contain line breaks")
+		return zero, errors.New("cannot contain line breaks")
 	}
 
 	rc := utf8.RuneCountInString(password)
 	if rc < passwordMinLength {
-		return nil, fmt.Errorf("must be at least %v characters", passwordMinLength)
+		return zero, fmt.Errorf("must be at least %v characters", passwordMinLength)
 	}
 	if rc > passwordMaxLength {
-		return nil, fmt.Errorf("cannot be a over %v characters in length", passwordMaxLength)
+		return zero, fmt.Errorf("cannot be a over %v characters in length", passwordMaxLength)
 	}
 
 	if !validPassword.MatchString(password) {
-		return nil, errors.New("contains invalid characters")
+		return zero, errors.New("contains invalid characters")
 	}
 
-	return Password(password), nil
+	return Password{data: []byte(password)}, nil
 }
 
 func (p Password) String() string {
-	return string(p)
+	return string(p.data)
 }
 
 func (p Password) Equal(rhs Password) bool {
-	return bytes.Equal(p, rhs)
+	return subtle.ConstantTimeCompare(p.data, rhs.data) == 1
 }
