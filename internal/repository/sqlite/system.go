@@ -60,7 +60,6 @@ func (r *SystemRepo) SaveConfig(ctx context.Context, config *system.Config) erro
 
 func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, error) {
 	var config system.Config
-
 	err := tx.QueryRowContext(ctx, `
 		SELECT
 			system_email,

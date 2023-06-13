@@ -221,12 +221,12 @@ func AccountUsers(ctx context.Context, t *testing.T, newRepo func() account.Read
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				var conflicts *repository.ConflictError
-				if !errors.As(tc.err, &conflicts) {
-					t.Fatalf("want %T; got %T", conflicts, tc.err)
+				var conflict *repository.ConflictError
+				if !errors.As(tc.err, &conflict) {
+					t.Fatalf("want %T; got %T", conflict, tc.err)
 				}
 
-				if conflicts.Get("email") == "" {
+				if conflict.Get("email") == "" {
 					t.Error("want email conflict error; got empty string")
 				}
 			})

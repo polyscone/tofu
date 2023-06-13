@@ -195,8 +195,13 @@ func (r *WebRepo) ConsumeActivationToken(ctx context.Context, token string) erro
 	}
 	defer tx.Rollback()
 
-	if err := r.consumeToken(ctx, tx, token, webTokenKindActivation); err != nil {
+	email, err := r.consumeToken(ctx, tx, token, webTokenKindActivation)
+	if err != nil {
 		return err
+	}
+
+	if err := r.deleteTokensByKind(ctx, tx, email, webTokenKindActivation); err != nil {
+		return fmt.Errorf("delete tokens for email: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -213,8 +218,13 @@ func (r *WebRepo) ConsumeResetPasswordToken(ctx context.Context, token string) e
 	}
 	defer tx.Rollback()
 
-	if err := r.consumeToken(ctx, tx, token, webTokenKindResetPassword); err != nil {
+	email, err := r.consumeToken(ctx, tx, token, webTokenKindResetPassword)
+	if err != nil {
 		return err
+	}
+
+	if err := r.deleteTokensByKind(ctx, tx, email, webTokenKindResetPassword); err != nil {
+		return fmt.Errorf("delete tokens for email: %w", err)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -244,7 +254,6 @@ func (r *WebRepo) DeleteExpiredTokens(ctx context.Context) error {
 
 func (r *WebRepo) findSessionDataByID(ctx context.Context, tx *Tx, id string) (session.Data, error) {
 	var data []byte
-
 	err := tx.QueryRowContext(ctx, `
 		SELECT data
 		FROM web__sessions
@@ -331,7 +340,6 @@ func (r *WebRepo) findToken(ctx context.Context, tx *Tx, token, kind string) (st
 	hash := sum[:]
 
 	var email string
-
 	err := tx.QueryRowContext(ctx, `
 		SELECT email
 		FROM web__tokens
@@ -348,34 +356,31 @@ func (r *WebRepo) findToken(ctx context.Context, tx *Tx, token, kind string) (st
 	return email, err
 }
 
-func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) error {
+func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) (string, error) {
 	sum := sha256.Sum256([]byte(token))
 	hash := sum[:]
 
-	res, err := tx.ExecContext(ctx, `
+	var email string
+	err := tx.QueryRowContext(ctx, `
 		DELETE FROM web__tokens
 		WHERE
 			hash = :hash AND
 			kind = :kind AND
 			expires_at > :expires_at
+		RETURNING email
 	`,
 		sql.Named("hash", hash),
 		sql.Named("kind", kind),
 		sql.Named("expires_at", Time(tx.now.UTC())),
-	)
+	).Scan(&email)
 	if err != nil {
-		return err
+		return "", err
+	}
+	if email == "" {
+		return "", repository.ErrNotFound
 	}
 
-	affected, err := res.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("rows affected: %w", err)
-	}
-	if affected == 0 {
-		return repository.ErrNotFound
-	}
-
-	return nil
+	return email, nil
 }
 
 func (r *WebRepo) createToken(ctx context.Context, tx *Tx, email string, ttl time.Duration, kind string) (string, error) {
@@ -416,6 +421,20 @@ func (r *WebRepo) createToken(ctx context.Context, tx *Tx, email string, ttl tim
 	)
 
 	return string(token), err
+}
+
+func (r *WebRepo) deleteTokensByKind(ctx context.Context, tx *Tx, email string, kind Kind) error {
+	_, err := tx.ExecContext(ctx, `
+		DELETE FROM web__tokens
+		WHERE
+			email = :email AND
+			kind = :kind
+	`,
+		sql.Named("email", email),
+		sql.Named("kind", kind),
+	)
+
+	return err
 }
 
 func (r *WebRepo) deleteExpiredTokens(ctx context.Context, tx *Tx) error {
