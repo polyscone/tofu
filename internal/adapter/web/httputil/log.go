@@ -26,11 +26,11 @@ func Log(l *log.Logger, r *http.Request, format string, a ...any) {
 
 	if logger.OutputStyle == logger.JSON {
 		info := map[string]any{
+			"msg":        text,
+			"remoteAddr": remoteAddr,
+			"request":    request,
 			"traceId":    td.id,
 			"userId":     td.userID,
-			"request":    request,
-			"remoteAddr": remoteAddr,
-			"info":       text,
 		}
 
 		b, err := json.Marshal(info)
