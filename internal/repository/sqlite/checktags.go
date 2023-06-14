@@ -8,7 +8,7 @@ import (
 )
 
 func init() {
-	fmt.Println(`Please run build with -tags "fts5 json1"`)
+	fmt.Println(`Please rebuild with -tags "fts5 json1"`)
 
 	os.Exit(1)
 }
