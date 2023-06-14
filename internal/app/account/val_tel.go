@@ -4,11 +4,9 @@ import (
 	"errors"
 	"regexp"
 	"strings"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-var validTel = errsx.Must(regexp.Compile(`^\+\d(\d| )+$`))
+var validTel = regexp.MustCompile(`^\+\d(\d| )+$`)
 
 type Tel string
 

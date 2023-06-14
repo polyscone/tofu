@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 const (
@@ -15,7 +13,7 @@ const (
 	permissionMaxLength = 50
 )
 
-var validPermission = errsx.Must(regexp.Compile(`^[a-z0-9:_]{1,50}$`))
+var validPermission = regexp.MustCompile(`^[a-z0-9:_]{1,50}$`)
 
 type Permission string
 

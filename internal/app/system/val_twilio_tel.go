@@ -3,13 +3,9 @@ package system
 import (
 	"errors"
 	"regexp"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-const validTwilioTelPattern = `^\+\d(\d| )+$`
-
-var validTwilioTel = errsx.Must(regexp.Compile(validTwilioTelPattern))
+var validTwilioTel = regexp.MustCompile(`^\+\d(\d| )+$`)
 
 type TwilioTel string
 

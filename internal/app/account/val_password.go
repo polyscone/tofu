@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 const (
@@ -16,7 +14,7 @@ const (
 	passwordMaxLength = 1000
 )
 
-var validPassword = errsx.Must(regexp.Compile(`^.{8,1000}$`))
+var validPassword = regexp.MustCompile(`^.{8,1000}$`)
 
 type Password struct {
 	_ [0]func() // Disallow comparison

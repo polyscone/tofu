@@ -3,11 +3,9 @@ package account
 import (
 	"errors"
 	"regexp"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-var validTOTP = errsx.Must(regexp.Compile(`^\d{6}$`))
+var validTOTP = regexp.MustCompile(`^\d{6}$`)
 
 type TOTP string
 

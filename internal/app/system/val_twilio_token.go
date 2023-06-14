@@ -3,13 +3,9 @@ package system
 import (
 	"errors"
 	"regexp"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-const validTwilioTokenPattern = `^[0-9a-f]{32}$`
-
-var validTwilioToken = errsx.Must(regexp.Compile(validTwilioTokenPattern))
+var validTwilioToken = regexp.MustCompile(`^[0-9a-f]{32}$`)
 
 type TwilioToken string
 

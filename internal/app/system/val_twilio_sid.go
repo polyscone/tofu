@@ -3,13 +3,9 @@ package system
 import (
 	"errors"
 	"regexp"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-const validTwilioSIDPattern = `^AC[0-9a-f]{32}$`
-
-var validTwilioSID = errsx.Must(regexp.Compile(validTwilioSIDPattern))
+var validTwilioSID = regexp.MustCompile(`^AC[0-9a-f]{32}$`)
 
 type TwilioSID string
 

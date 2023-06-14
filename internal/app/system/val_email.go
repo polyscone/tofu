@@ -5,11 +5,9 @@ import (
 	"net/mail"
 	"regexp"
 	"strings"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-var validEmail = errsx.Must(regexp.Compile(`.+?@.+?(\..+?)+`))
+var validEmail = regexp.MustCompile(`.+?@.+?(\..+?)+`)
 
 type Email string
 

@@ -7,11 +7,9 @@ import (
 	"fmt"
 	"io"
 	"regexp"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-var validCode = errsx.Must(regexp.Compile(`^[A-Z2-7]+$`))
+var validCode = regexp.MustCompile(`^[A-Z2-7]+$`)
 
 type RecoveryCode string
 

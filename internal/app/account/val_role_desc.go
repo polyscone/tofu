@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"regexp"
 	"unicode/utf8"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 const roleDescMaxLength = 100
 
-var validRoleDesc = errsx.Must(regexp.Compile(`^[[:print:]]*$`))
+var validRoleDesc = regexp.MustCompile(`^[[:print:]]*$`)
 
 type RoleDesc string
 

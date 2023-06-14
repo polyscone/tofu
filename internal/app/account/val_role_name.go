@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 const (
@@ -15,7 +13,7 @@ const (
 	roleNameMaxLength = 30
 )
 
-var validRoleName = errsx.Must(regexp.Compile(`^[ a-zA-Z0-9!#&()*+,./:_\-\\]{1,30}$`))
+var validRoleName = regexp.MustCompile(`^[ a-zA-Z0-9!#&()*+,./:_\-\\]{1,30}$`)
 
 type RoleName string
 
