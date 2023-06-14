@@ -110,25 +110,25 @@ func TestTOTP(t *testing.T) {
 	}
 }
 
-func TestTOTPDefaultVerifyErrors(t *testing.T) {
+func TestTOTPDefaultCheckErrors(t *testing.T) {
 	tt := []struct {
 		name       string
 		delaySteps int
 	}{
-		{"totp verify expect error with too many delay steps", 5},
+		{"totp check expect error with too many delay steps", 5},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			key := errsx.Must(timeBasedKey(20))
 			totp := errsx.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
-			if _, err := totp.Verify(key, time.Now(), tc.delaySteps, ""); err == nil {
+			if _, err := totp.Check(key, time.Now(), tc.delaySteps, ""); err == nil {
 				t.Error("expected error")
 			}
 		})
 	}
 }
 
-func TestTOTPDefaultVerify(t *testing.T) {
+func TestTOTPDefaultCheck(t *testing.T) {
 	now := time.Now()
 	tt := []struct {
 		name       string
@@ -136,12 +136,12 @@ func TestTOTPDefaultVerify(t *testing.T) {
 		delaySteps int
 		expected   bool
 	}{
-		{"totp verify pass generated with current time, 1 delay step", now, 1, true},
-		{"totp verify pass generated one step in the past, 1 delay step", now.Add(-defaultStep), 1, true},
-		{"totp verify pass generated two steps in the past, 1 delay step", now.Add(-defaultStep * 2), 1, false},
-		{"totp verify pass generated two steps in the past, 2 delay steps", now.Add(-defaultStep * 2), 2, true},
-		{"totp verify pass generated one steps in the future, 1 delay step", now.Add(defaultStep), 1, true},
-		{"totp verify pass generated one step in the future, 0 delay steps", now.Add(defaultStep), 0, false},
+		{"totp check pass generated with current time, 1 delay step", now, 1, true},
+		{"totp check pass generated one step in the past, 1 delay step", now.Add(-defaultStep), 1, true},
+		{"totp check pass generated two steps in the past, 1 delay step", now.Add(-defaultStep * 2), 1, false},
+		{"totp check pass generated two steps in the past, 2 delay steps", now.Add(-defaultStep * 2), 2, true},
+		{"totp check pass generated one steps in the future, 1 delay step", now.Add(defaultStep), 1, true},
+		{"totp check pass generated one step in the future, 0 delay steps", now.Add(defaultStep), 0, false},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
@@ -149,7 +149,7 @@ func TestTOTPDefaultVerify(t *testing.T) {
 			totp := errsx.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
 			pass := errsx.Must(totp.Generate(key, tc.time))
 
-			ok := errsx.Must(totp.Verify(key, now, tc.delaySteps, pass))
+			ok := errsx.Must(totp.Check(key, now, tc.delaySteps, pass))
 
 			if want, got := tc.expected, ok; want != got {
 				t.Errorf("want %v; got %v", want, got)
@@ -158,20 +158,20 @@ func TestTOTPDefaultVerify(t *testing.T) {
 	}
 }
 
-func TestTOTPDefaultVerifyDuplicatePasscodes(t *testing.T) {
+func TestTOTPDefaultCheckDuplicatePasscodes(t *testing.T) {
 	key := []byte("12345678901234567890")
 	now := time.Now()
 	totp := errsx.Must(otp.NewTimeBased(6, otp.SHA1, time.Unix(0, 0), 30*time.Second))
 	pass := errsx.Must(totp.Generate(key, now))
 
-	ok := errsx.Must(totp.Verify(key, now, 1, pass))
+	ok := errsx.Must(totp.Check(key, now, 1, pass))
 
-	// Initial verify should be fine
+	// Initial check should be fine
 	if want, got := true, ok; want != got {
 		t.Errorf("want %v; got %v", want, got)
 	}
 
-	ok, err := totp.Verify(key, now, 1, pass)
+	ok, err := totp.Check(key, now, 1, pass)
 	if err == nil {
 		t.Error("want duplicate error")
 	}

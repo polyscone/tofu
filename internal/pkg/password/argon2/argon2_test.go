@@ -119,7 +119,7 @@ func TestArgon2CSPRNG(t *testing.T) {
 	}
 }
 
-func TestArgon2Verify(t *testing.T) {
+func TestArgon2Check(t *testing.T) {
 	tt := []struct {
 		name          string
 		variant       argon2.Variant
@@ -171,7 +171,7 @@ func TestArgon2Verify(t *testing.T) {
 				params.KeyLength = 64
 			}
 
-			passed, rehash, err := argon2.Verify([]byte(tc.password), []byte(tc.encoded), &params)
+			passed, rehash, err := argon2.Check([]byte(tc.password), []byte(tc.encoded), &params)
 
 			if tc.wantError {
 				if err == nil {

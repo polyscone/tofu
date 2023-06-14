@@ -235,7 +235,7 @@ func EncodedHash(r io.Reader, password []byte, p Params) ([]byte, error) {
 	return encodedHashWithSalt(password, salt, p)
 }
 
-// Verify will check to see whether the given password matches the given encoded
+// Check will check to see whether the given password matches the given encoded
 // hash or not.
 //
 // The given password will be hashed according to the parameters available in
@@ -248,8 +248,8 @@ func EncodedHash(r io.Reader, password []byte, p Params) ([]byte, error) {
 // hash's because preferred is treated as the "preferred" parameters.
 //
 // The rehash return value will only be set to anything other than false
-// on successful verification.
-func Verify(password, encodedHash []byte, preferred *Params) (bool, bool, error) {
+// on a successful check.
+func Check(password, encodedHash []byte, preferred *Params) (bool, bool, error) {
 	var isValid bool
 	var rehash bool
 

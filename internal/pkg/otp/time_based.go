@@ -83,7 +83,7 @@ func (otp TimeBased) Generate(key []byte, t time.Time) (string, error) {
 	return totp, nil
 }
 
-func (otp TimeBased) Verify(key []byte, t time.Time, delaySteps int, userPassword string) (bool, error) {
+func (otp TimeBased) Check(key []byte, t time.Time, delaySteps int, userPassword string) (bool, error) {
 	if delaySteps < 0 {
 		return false, errors.New("delay steps cannot be negative")
 	}

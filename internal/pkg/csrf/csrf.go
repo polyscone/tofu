@@ -97,9 +97,9 @@ func SetToken(ctx context.Context, masked []byte) (context.Context, error) {
 	return context.WithValue(ctx, tokenDataKey, &data), nil
 }
 
-// Verify accepts a masked token to compare with the one on the given context.
+// Check accepts a masked token to compare with the one on the given context.
 // If the tokens match then it returns nil.
-func Verify(ctx context.Context, maskedCmp []byte) error {
+func Check(ctx context.Context, maskedCmp []byte) error {
 	if maskedCmp == nil {
 		return ErrEmptyToken
 	}

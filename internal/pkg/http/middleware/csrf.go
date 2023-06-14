@@ -80,7 +80,7 @@ func CSRF(config *CSRFConfig) Middleware {
 					return
 				}
 
-				err = csrf.Verify(ctx, decoded)
+				err = csrf.Check(ctx, decoded)
 				if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 					return
 				}

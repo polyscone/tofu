@@ -20,7 +20,7 @@ func TestCSRF(t *testing.T) {
 		}
 
 		token := csrf.MaskedToken(ctx)
-		if err := csrf.Verify(ctx, token); err != nil {
+		if err := csrf.Check(ctx, token); err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
@@ -28,7 +28,7 @@ func TestCSRF(t *testing.T) {
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
-		if err := csrf.Verify(ctx, token); err != nil {
+		if err := csrf.Check(ctx, token); err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
 	})
@@ -79,7 +79,7 @@ func TestCSRF(t *testing.T) {
 			t.Errorf("want unique strings; got equal")
 		}
 
-		if err := csrf.Verify(ctx, token1); err != nil {
+		if err := csrf.Check(ctx, token1); err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
@@ -88,12 +88,12 @@ func TestCSRF(t *testing.T) {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
-		if err := csrf.Verify(ctx, token1); !errors.Is(err, csrf.ErrInvalidToken) {
+		if err := csrf.Check(ctx, token1); !errors.Is(err, csrf.ErrInvalidToken) {
 			t.Errorf("want csrf.ErrInvalidToken; got %q", err)
 		}
 
 		token2 := csrf.MaskedToken(ctx)
-		if err := csrf.Verify(ctx, token2); err != nil {
+		if err := csrf.Check(ctx, token2); err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
 	})
@@ -109,7 +109,7 @@ func TestCSRF(t *testing.T) {
 		}
 
 		token1 := csrf.MaskedToken(ctx)
-		if err := csrf.Verify(ctx, token1); err != nil {
+		if err := csrf.Check(ctx, token1); err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
@@ -127,17 +127,17 @@ func TestCSRF(t *testing.T) {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
-		if err := csrf.Verify(ctx, token1); !errors.Is(err, csrf.ErrInvalidToken) {
+		if err := csrf.Check(ctx, token1); !errors.Is(err, csrf.ErrInvalidToken) {
 			t.Errorf("want csrf.ErrInvalidToken; got %q", err)
 		}
 
 		token2 := csrf.MaskedToken(ctx)
-		if err := csrf.Verify(ctx, token2); err != nil {
+		if err := csrf.Check(ctx, token2); err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
 	})
 
-	t.Run("verify token", func(t *testing.T) {
+	t.Run("check token", func(t *testing.T) {
 		ctx := context.Background()
 		ctx, err := csrf.SetToken(ctx, nil)
 		if err != nil {
@@ -146,7 +146,7 @@ func TestCSRF(t *testing.T) {
 
 		t.Run("same token", func(t *testing.T) {
 			token := csrf.MaskedToken(ctx)
-			err := csrf.Verify(ctx, token)
+			err := csrf.Check(ctx, token)
 			if err != nil {
 				t.Errorf("want <nil>; got %q", err)
 			}
@@ -160,13 +160,13 @@ func TestCSRF(t *testing.T) {
 			}
 
 			token := csrf.MaskedToken(ctx2)
-			if err := csrf.Verify(ctx, token); !errors.Is(err, csrf.ErrInvalidToken) {
+			if err := csrf.Check(ctx, token); !errors.Is(err, csrf.ErrInvalidToken) {
 				t.Errorf("want csrf.ErrInvalidToken; got %q", err)
 			}
 		})
 
 		t.Run("empty token", func(t *testing.T) {
-			if err := csrf.Verify(ctx, nil); !errors.Is(err, csrf.ErrEmptyToken) {
+			if err := csrf.Check(ctx, nil); !errors.Is(err, csrf.ErrEmptyToken) {
 				t.Errorf("want csrf.ErrEmptyToken; got %q", err)
 			}
 		})

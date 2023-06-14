@@ -153,7 +153,7 @@ func (u *User) ChangePassword(oldPassword, newPassword Password, hasher Hasher) 
 		return errors.New("cannot change password until activated")
 	}
 
-	if _, err := u.verifyPassword(oldPassword, hasher); err != nil {
+	if _, err := u.checkPassword(oldPassword, hasher); err != nil {
 		return fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
 			"old password": err,
 		})
@@ -202,7 +202,7 @@ func (u *User) SetupTOTP() error {
 	return nil
 }
 
-func (u *User) verifyTOTP(totp TOTP) error {
+func (u *User) checkTOTP(totp TOTP) error {
 	alg, err := otp.NewAlgorithm(u.TOTPAlgorithm)
 	if err != nil {
 		return fmt.Errorf("new OTP algorithm: %w", err)
@@ -213,7 +213,7 @@ func (u *User) verifyTOTP(totp TOTP) error {
 		return fmt.Errorf("new time based OTP generator: %w", err)
 	}
 
-	ok, err := tb.Verify(u.TOTPKey, time.Now(), 1, totp.String())
+	ok, err := tb.Check(u.TOTPKey, time.Now(), 1, totp.String())
 	if err != nil {
 		if errors.Is(err, otp.ErrPasswordUsed) {
 			return fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
@@ -237,7 +237,7 @@ func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) ([]string, error) {
 		return nil, errors.New("already verified and activated")
 	}
 
-	if err := u.verifyTOTP(totp); err != nil {
+	if err := u.checkTOTP(totp); err != nil {
 		return nil, err
 	}
 
@@ -338,8 +338,8 @@ func (u *User) RegenerateRecoveryCodes(totp TOTP) ([]string, error) {
 		return nil, errors.New("cannot regenerate recovery codes without an activated TOTP")
 	}
 
-	if err := u.verifyTOTP(totp); err != nil {
-		return nil, fmt.Errorf("verify TOTP: %w", err)
+	if err := u.checkTOTP(totp); err != nil {
+		return nil, fmt.Errorf("check TOTP: %w", err)
 	}
 
 	codes, err := u.replaceRecoveryCodes()
@@ -357,8 +357,8 @@ func (u *User) DisableTOTP(password Password, hasher Hasher) error {
 		return errors.New("cannot disable an unactivated TOTP")
 	}
 
-	if _, err := u.verifyPassword(password, hasher); err != nil {
-		return fmt.Errorf("verify password: %w", err)
+	if _, err := u.checkPassword(password, hasher); err != nil {
+		return fmt.Errorf("check password: %w", err)
 	}
 
 	u.TOTPMethod = TOTPMethodNone.String()
@@ -395,8 +395,8 @@ func (u *User) DisableTOTPWithRecoveryCode(code RecoveryCode) error {
 	return nil
 }
 
-func (u *User) verifyPassword(password Password, hasher Hasher) (rehash bool, _ error) {
-	ok, rehash, err := hasher.VerifyPasswordHash(password.data, u.HashedPassword)
+func (u *User) checkPassword(password Password, hasher Hasher) (rehash bool, _ error) {
+	ok, rehash, err := hasher.CheckPasswordHash(password.data, u.HashedPassword)
 	if err != nil {
 		return false, err
 	}
@@ -419,9 +419,9 @@ func (u *User) SignInWithPassword(password Password, hasher Hasher) (bool, error
 		return false, ErrNotActivated
 	}
 
-	rehashed, err := u.verifyPassword(password, hasher)
+	rehashed, err := u.checkPassword(password, hasher)
 	if err != nil {
-		return false, fmt.Errorf("verify password: %w", err)
+		return false, fmt.Errorf("check password: %w", err)
 	}
 
 	if !u.HasActivatedTOTP() {
@@ -443,8 +443,8 @@ func (u *User) SignInWithTOTP(totp TOTP) error {
 		return ErrNotActivated
 	}
 
-	if err := u.verifyTOTP(totp); err != nil {
-		return fmt.Errorf("verify TOTP: %w", err)
+	if err := u.checkTOTP(totp); err != nil {
+		return fmt.Errorf("check TOTP: %w", err)
 	}
 
 	u.LastSignedInAt = time.Now().UTC()

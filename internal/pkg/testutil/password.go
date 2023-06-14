@@ -12,6 +12,6 @@ func (h *PasswordHasher) EncodedPasswordHash(password []byte) ([]byte, error) {
 	return password, nil
 }
 
-func (h *PasswordHasher) VerifyPasswordHash(password, encodedHash []byte) (bool, bool, error) {
+func (h *PasswordHasher) CheckPasswordHash(password, encodedHash []byte) (bool, bool, error) {
 	return bytes.Equal(password, encodedHash), false, nil
 }

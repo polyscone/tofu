@@ -23,8 +23,8 @@ func (h *Hasher) EncodedPasswordHash(password []byte) ([]byte, error) {
 	return argon2.EncodedHash(nil, password, h.params)
 }
 
-func (h *Hasher) VerifyPasswordHash(password, encodedHash []byte) (ok, rehash bool, _ error) {
-	return argon2.Verify(password, encodedHash, &h.params)
+func (h *Hasher) CheckPasswordHash(password, encodedHash []byte) (ok, rehash bool, _ error) {
+	return argon2.Check(password, encodedHash, &h.params)
 }
 
 func initHasher() error {
