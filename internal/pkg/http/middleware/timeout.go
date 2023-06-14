@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/polyscone/tofu/internal/pkg/logger"
+	"golang.org/x/exp/slog"
 )
 
 func Timeout(dt time.Duration, errorHandler ErrorHandler) Middleware {
@@ -139,7 +139,7 @@ func (w *timeoutWriter) writeHeaderLocked(code int) {
 
 	case w.wroteHeader:
 		if w.req != nil {
-			logger.Error.Println("superfluous response.WriteHeader call")
+			slog.Error("superfluous response.WriteHeader call")
 		}
 
 	default:

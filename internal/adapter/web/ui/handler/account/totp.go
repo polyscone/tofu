@@ -21,8 +21,8 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/sms"
+	"golang.org/x/exp/slog"
 )
 
 func TOTP(h *handler.Handler, mux *router.ServeMux) {
@@ -91,13 +91,13 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 			Method string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
 
 		if input.Method != "app" && input.Method != "sms" {
-			h.ErrorView(w, r, fmt.Errorf("TOTP setup: %w", app.ErrBadRequest), "error", nil)
+			h.ErrorView(w, r, "TOTP setup", app.ErrBadRequest, "error", nil)
 
 			return
 		}
@@ -108,7 +108,7 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 
 		err := h.Account.SetupTOTP(ctx, passport, user.ID)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("setup TOTP: %w", err), "error", nil)
+			h.ErrorView(w, r, "setup TOTP", err, "error", nil)
 
 			return
 		}
@@ -121,7 +121,7 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 			http.Redirect(w, r, h.Path("account.totp.setup.sms"), http.StatusSeeOther)
 
 		default:
-			h.ErrorView(w, r, fmt.Errorf("TOTP setup: %w", app.ErrBadRequest), "error", nil)
+			h.ErrorView(w, r, "TOTP setup", app.ErrBadRequest, "error", nil)
 		}
 	}
 }
@@ -187,7 +187,7 @@ func totpSetupAppPost(h *handler.Handler) http.HandlerFunc {
 			TOTP string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -198,7 +198,7 @@ func totpSetupAppPost(h *handler.Handler) http.HandlerFunc {
 
 		codes, err := h.Account.VerifyTOTP(ctx, passport, user.ID, input.TOTP, "app")
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("verify TOTP: %w", err), "account/totp/setup/app", nil)
+			h.ErrorView(w, r, "verify TOTP", err, "account/totp/setup/app", nil)
 
 			return
 		}
@@ -240,7 +240,7 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 			Tel string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -259,14 +259,14 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 				})
 			}
 
-			h.ErrorView(w, r, fmt.Errorf("send TOTP SMS: %w", err), "account/totp/setup/sms", nil)
+			h.ErrorView(w, r, "send TOTP SMS", err, "account/totp/setup/sms", nil)
 
 			return
 		}
 
 		err = h.Account.ChangeTOTPTel(ctx, passport, user.ID, input.Tel)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("change TOTP tel: %w", err), "account/totp/setup/sms", nil)
+			h.ErrorView(w, r, "change TOTP tel", err, "account/totp/setup/sms", nil)
 
 			return
 		}
@@ -295,7 +295,7 @@ func totpSetupSMSVerifyPost(h *handler.Handler) http.HandlerFunc {
 			TOTP string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -306,7 +306,7 @@ func totpSetupSMSVerifyPost(h *handler.Handler) http.HandlerFunc {
 
 		codes, err := h.Account.VerifyTOTP(ctx, passport, user.ID, input.TOTP, "sms")
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("verify TOTP: %w", err), "account/totp/setup/sms_verify", nil)
+			h.ErrorView(w, r, "verify TOTP", err, "account/totp/setup/sms_verify", nil)
 
 			return
 		}
@@ -324,7 +324,7 @@ func totpSendSMSPost(h *handler.Handler) http.HandlerFunc {
 
 		background.Go(func() {
 			if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
-				logger.Error.Printf("TOTP send SMS: send SMS: %v\n", err)
+				slog.Error("TOTP send SMS: send SMS", "error", err)
 			}
 		})
 
@@ -342,7 +342,7 @@ func totpSetupActivatePost(h *handler.Handler) http.HandlerFunc {
 
 		err := h.Account.ActivateTOTP(ctx, passport, user.ID)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("activate TOTP: %w", err), "error", nil)
+			h.ErrorView(w, r, "activate TOTP", err, "error", nil)
 
 			return
 		}
@@ -380,7 +380,7 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 			Password string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -397,14 +397,14 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 				})
 			}
 
-			h.ErrorViewFunc(w, r, fmt.Errorf("disable TOTP: %w", err), "account/totp/disable/verify", nil)
+			h.ErrorViewFunc(w, r, "disable TOTP", err, "account/totp/disable/verify", nil)
 
 			return
 		}
 
 		_, err = h.RenewSession(ctx)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
+			h.ErrorView(w, r, "renew session", err, "error", nil)
 
 			return
 		}
@@ -454,7 +454,7 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 			TOTP string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -465,7 +465,7 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 
 		codes, err := h.Account.RegenerateRecoveryCodes(ctx, passport, user.ID, input.TOTP)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("regenerate recovery codes: %w", err), "account/totp/recovery_codes/regenerate", nil)
+			h.ErrorView(w, r, "regenerate recovery codes", err, "account/totp/recovery_codes/regenerate", nil)
 
 			return
 		}

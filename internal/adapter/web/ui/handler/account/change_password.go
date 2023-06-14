@@ -1,7 +1,6 @@
 package account
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
@@ -37,7 +36,7 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -54,21 +53,21 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 			input.NewPasswordCheck,
 		)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("change password: %w", err), "account/change_password/form", nil)
+			h.ErrorView(w, r, "change password", err, "account/change_password/form", nil)
 
 			return
 		}
 
 		_, err = h.RenewSession(ctx)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
+			h.ErrorView(w, r, "renew session", err, "error", nil)
 
 			return
 		}
 
 		knownBreachCount, err := pwned.KnownPasswordBreachCount(ctx, []byte(input.NewPassword))
 		if err != nil {
-			httputil.LogError(r, err)
+			httputil.LogError(r, "known password breach count", "error", err)
 
 			h.Sessions.Delete(ctx, sess.KnownPasswordBreachCount)
 		} else {

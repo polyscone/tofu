@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
@@ -33,7 +32,7 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 			TwilioFromTel string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -42,7 +41,7 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		if !passport.CanUpdateConfig() {
-			h.ErrorView(w, r, app.ErrUnauthorised, "error", nil)
+			h.ErrorView(w, r, "can update config", app.ErrUnauthorised, "error", nil)
 
 			return
 		}
@@ -54,7 +53,7 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 			input.TwilioFromTel,
 		)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("update config: %w", err), "admin/system_config", nil)
+			h.ErrorView(w, r, "update config", err, "admin/system_config", nil)
 
 			return
 		}

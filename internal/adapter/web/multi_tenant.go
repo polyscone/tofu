@@ -76,7 +76,7 @@ func (h *MultiTenantHandler) handler(r *http.Request) (http.Handler, error) {
 func (h *MultiTenantHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler, err := h.handler(r)
 	if err != nil {
-		httputil.LogError(r, fmt.Errorf("serve %v: %w", r.URL, err))
+		httputil.LogError(r, "serve HTTP", "error", err, "url", r.URL.String())
 
 		if errors.Is(err, ErrTenantNotFound) {
 			http.Error(w, "Site not served on this interface", http.StatusNotFound)

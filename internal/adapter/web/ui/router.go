@@ -40,13 +40,13 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 	mux := router.NewServeMux()
 	h := handler.New(mux, tenant, templateFiles, "account.sign_in", "system.config")
 
-	errorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
-		h.ErrorView(w, r, err, "error", nil)
+	middlewareErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
+		h.ErrorView(w, r, "middleware", err, "error", nil)
 	}
 
 	// Middleware
-	mux.Use(middleware.Recover(errorHandler))
-	mux.Use(middleware.Timeout(5*time.Second, errorHandler))
+	mux.Use(middleware.Recover(middlewareErrorHandler))
+	mux.Use(middleware.Timeout(5*time.Second, middlewareErrorHandler))
 	mux.Use(middleware.RemoveTrailingSlash)
 	mux.Use(middleware.MethodOverride)
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
@@ -69,20 +69,20 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 			return true
 		},
-		ErrorHandler:   errorHandler,
+		ErrorHandler:   middlewareErrorHandler,
 		TrustedProxies: tenant.Proxies,
 	}))
 	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
 		Insecure:     tenant.Insecure,
-		ErrorHandler: errorHandler,
+		ErrorHandler: middlewareErrorHandler,
 	}))
-	mux.Use(httputil.TraceRequest(h.Sessions, errorHandler))
+	mux.Use(httputil.TraceRequest(h.Sessions, middlewareErrorHandler))
 	mux.Use(middleware.NoContent)
 	mux.Use(middleware.SecurityHeaders)
 	mux.Use(middleware.ETag)
 	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
 		Insecure:     tenant.Insecure,
-		ErrorHandler: errorHandler,
+		ErrorHandler: middlewareErrorHandler,
 	}))
 	mux.Use(middleware.Heartbeat("/meta/health"))
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
@@ -159,16 +159,16 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 		if err != nil {
 			switch {
 			case errors.Is(err, fs.ErrNotExist):
-				h.ErrorView(w, r, fmt.Errorf("%w: %w: %v %v", httputil.ErrNotFound, err, r.Method, r.URL), "error", nil)
+				h.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrNotFound, err), "error", nil)
 
 			default:
-				h.ErrorView(w, r, fmt.Errorf("%w: %w: %v %v", httputil.ErrInternalServerError, err, r.Method, r.URL), "error", nil)
+				h.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrInternalServerError, err), "error", nil)
 			}
 
 			return
 		}
 		if stat.IsDir() {
-			h.ErrorView(w, r, fmt.Errorf("%w: %v %v", httputil.ErrForbidden, r.Method, r.URL), "error", nil)
+			h.ErrorView(w, r, "static directory", httputil.ErrForbidden, "error", nil)
 
 			return
 		}
@@ -178,12 +178,12 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 	// Generic not found handler
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		h.ErrorView(w, r, fmt.Errorf("%w: %v %v", httputil.ErrNotFound, r.Method, r.URL), "error", nil)
+		h.ErrorView(w, r, "handler", httputil.ErrNotFound, "error", nil)
 	})
 
 	// Generic method not allowed handler
 	mux.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-		h.ErrorView(w, r, fmt.Errorf("%w: %v %v", httputil.ErrMethodNotAllowed, r.Method, r.URL), "error", nil)
+		h.ErrorView(w, r, "handler", httputil.ErrMethodNotAllowed, "error", nil)
 	})
 
 	return mux

@@ -1,12 +1,12 @@
 package background
 
-import "github.com/polyscone/tofu/internal/pkg/logger"
+import "golang.org/x/exp/slog"
 
 func Go(fn func()) {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				logger.Error.Println(r)
+				slog.Error("background goroutine panic", "recover", r)
 			}
 		}()
 

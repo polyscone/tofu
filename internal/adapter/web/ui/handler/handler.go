@@ -23,12 +23,12 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/rate"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/sms"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
 	"github.com/polyscone/tofu/internal/repository"
+	"golang.org/x/exp/slog"
 )
 
 type ctxKey int
@@ -111,7 +111,7 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 
 		config, err := h.Repo.System.FindConfig(ctx)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("find config: %w", err), "error", nil)
+			h.ErrorView(w, r, "find config", err, "error", nil)
 
 			return
 		}
@@ -123,7 +123,7 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 			var err error
 			user, err = h.Repo.Account.FindUserByID(ctx, userID)
 			if err != nil && !errors.Is(err, repository.ErrNotFound) {
-				logger.Error.Printf("handler: middleware: find user by id: %v", err)
+				slog.Error("handler: middleware: find user by id", "error", err)
 			}
 		}
 
@@ -328,14 +328,14 @@ func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailCo
 	return content, nil
 }
 
-func (h *Handler) emailContent(name string, vars Vars) (emailContent, error) {
-	return h.emailContentFunc(name, func(data *emailData) {
+func (h *Handler) emailContent(view string, vars Vars) (emailContent, error) {
+	return h.emailContentFunc(view, func(data *emailData) {
 		data.Vars = data.Vars.Merge(vars)
 	})
 }
 
-func (h *Handler) SendEmail(ctx context.Context, recipients EmailRecipients, name string, vars Vars) error {
-	content, err := h.emailContent(name, vars)
+func (h *Handler) SendEmail(ctx context.Context, recipients EmailRecipients, view string, vars Vars) error {
+	content, err := h.emailContent(view, vars)
 	if err != nil {
 		return fmt.Errorf("email content: %w", err)
 	}
@@ -390,13 +390,13 @@ func (h *Handler) view(name string) *template.Template {
 	return h.template(name, "partial/*.tmpl", "view/"+name+".tmpl", "master.tmpl")
 }
 
-func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, name string, dataFunc ViewDataFunc) {
+func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc ViewDataFunc) {
 	ctx := r.Context()
 	config := h.Config(ctx)
 	passport := h.Passport(ctx)
 
 	data := ViewData{
-		View:   name,
+		View:   view,
 		Status: status,
 		CSRF:   CSRF{ctx: ctx},
 		Form:   Form{Values: r.PostForm},
@@ -432,10 +432,10 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 		Passport: passport,
 	}
 
-	if vars, ok := h.viewVarsFuncs[name]; ok {
+	if vars, ok := h.viewVarsFuncs[view]; ok {
 		defaults, err := vars(r)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("vars: %w", err), "error", nil)
+			h.ErrorView(w, r, "vars", err, "error", nil)
 
 			return
 		}
@@ -448,12 +448,12 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 	}
 
 	// Make sure the current view name isn't overwritten by a user function
-	data.View = name
+	data.View = view
 
 	var buf bytes.Buffer
 
-	if err := h.view(name).ExecuteTemplate(&buf, "master", data); err != nil {
-		httputil.LogError(r, fmt.Errorf("execute view template: %w", err))
+	if err := h.view(view).ExecuteTemplate(&buf, "master", data); err != nil {
+		httputil.LogError(r, "execute view template", "error", err)
 
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 
@@ -464,22 +464,22 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, n
 	w.WriteHeader(status)
 
 	if _, err := buf.WriteTo(w); err != nil {
-		httputil.LogError(r, fmt.Errorf("handler: write view template response: %w", err))
+		httputil.LogError(r, "write view template response", "error", err)
 	}
 }
 
-func (h *Handler) View(w http.ResponseWriter, r *http.Request, status int, name string, vars Vars) {
-	h.ViewFunc(w, r, status, name, func(data *ViewData) {
+func (h *Handler) View(w http.ResponseWriter, r *http.Request, status int, view string, vars Vars) {
+	h.ViewFunc(w, r, status, view, func(data *ViewData) {
 		data.Vars = data.Vars.Merge(vars)
 	})
 }
 
-func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err error, name string, dataFunc ViewDataFunc) {
-	httputil.LogError(r, err)
+func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg string, err error, view string, dataFunc ViewDataFunc) {
+	httputil.LogError(r, msg, "error", err)
 
 	status := httputil.ErrorStatus(err)
 
-	h.ViewFunc(w, r, status, name, func(data *ViewData) {
+	h.ViewFunc(w, r, status, view, func(data *ViewData) {
 		switch {
 		case errors.Is(err, httputil.ErrNotFound):
 			data.ErrorMessage = "The page you were looking for could not be found."
@@ -528,14 +528,14 @@ func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, err erro
 	})
 }
 
-func (h *Handler) ErrorView(w http.ResponseWriter, r *http.Request, err error, name string, vars Vars) {
-	h.ErrorViewFunc(w, r, err, name, func(data *ViewData) {
+func (h *Handler) ErrorView(w http.ResponseWriter, r *http.Request, msg string, err error, view string, vars Vars) {
+	h.ErrorViewFunc(w, r, msg, err, view, func(data *ViewData) {
 		data.Vars = data.Vars.Merge(vars)
 	})
 }
 
-func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, err error) {
-	httputil.LogError(r, err)
+func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, err error) {
+	httputil.LogError(r, msg, "error", err)
 
 	var displayOK bool
 	status := httputil.ErrorStatus(err)
@@ -574,7 +574,7 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, err error) {
 	}
 
 	if err := json.NewEncoder(w).Encode(detail); err != nil {
-		httputil.LogError(r, fmt.Errorf("handler: write JSON response: %w", err))
+		httputil.LogError(r, "write JSON response", "error", err)
 	}
 }
 
@@ -582,7 +582,7 @@ func (h *Handler) JSON(w http.ResponseWriter, r *http.Request, data any) bool {
 	w.Header().Set("content-type", "application/json")
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
-		h.ErrorJSON(w, r, fmt.Errorf("encode JSON: %w", err))
+		h.ErrorJSON(w, r, "encode JSON", err)
 
 		return false
 	}
@@ -647,7 +647,7 @@ func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
 		passport := h.Passport(ctx)
 
 		if !check(passport) {
-			h.ErrorView(w, r, fmt.Errorf("require auth: %w", app.ErrUnauthorised), "error", nil)
+			h.ErrorView(w, r, "require auth", app.ErrUnauthorised, "error", nil)
 
 			return false
 		}

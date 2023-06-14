@@ -13,7 +13,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/logger"
+	"golang.org/x/exp/slog"
 )
 
 func ResetPassword(h *handler.Handler, mux *router.ServeMux) {
@@ -40,7 +40,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 			Email string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -50,7 +50,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 				"email": err,
 			})
 
-			h.ErrorView(w, r, err, "account/reset_password/request", nil)
+			h.ErrorView(w, r, "new email", err, "account/reset_password/request", nil)
 
 			return
 		}
@@ -65,7 +65,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 
 			tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 			if err != nil {
-				logger.Error.Printf("reset password: add reset password token: %v\n", err)
+				slog.Error("reset password: add reset password token", "error", err)
 
 				return
 			}
@@ -78,7 +78,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 				"Token": tok,
 			}
 			if err := h.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
-				logger.Error.Printf("reset password: send email: %v\n", err)
+				slog.Error("reset password: send email", "error", err)
 			}
 		})
 
@@ -106,7 +106,7 @@ func resetPasswordNewPasswordPost(h *handler.Handler) http.HandlerFunc {
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -115,35 +115,35 @@ func resetPasswordNewPasswordPost(h *handler.Handler) http.HandlerFunc {
 
 		email, err := h.Repo.Web.FindResetPasswordTokenEmail(ctx, input.Token)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("find reset password token email: %w", err), "error", nil)
+			h.ErrorView(w, r, "find reset password token email", err, "error", nil)
 
 			return
 		}
 
 		user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("find user by email: %w", err), "error", nil)
+			h.ErrorView(w, r, "find user by email", err, "error", nil)
 
 			return
 		}
 
 		passport, err := h.PassportByEmail(ctx, email)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("passport by email: %w", err), "error", nil)
+			h.ErrorView(w, r, "passport by email", err, "error", nil)
 
 			return
 		}
 
 		err = h.Account.ResetPassword(ctx, passport, user.ID, input.NewPassword, input.NewPasswordCheck)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("reset password: %w", err), "account/reset_password/new_password", nil)
+			h.ErrorView(w, r, "reset password", err, "account/reset_password/new_password", nil)
 
 			return
 		}
 
 		err = h.Repo.Web.ConsumeResetPasswordToken(ctx, input.Token)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("consume reset password token: %w", err), "error", nil)
+			h.ErrorView(w, r, "consume reset password token", err, "error", nil)
 
 			return
 		}

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/polyscone/tofu/internal/pkg/logger"
+	"golang.org/x/exp/slog"
 )
 
 func SecurityHeaders(next http.HandlerFunc) http.HandlerFunc {
@@ -37,7 +37,7 @@ func SecurityHeaders(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if len(messages) > 0 {
-			logger.Error.Println(strings.Join(messages, "\n"))
+			slog.Error("security headers", "messages", strings.Join(messages, "\n"))
 		}
 	}
 }

@@ -8,9 +8,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/password/argon2"
 	"github.com/polyscone/tofu/internal/pkg/size"
+	"golang.org/x/exp/slog"
 )
 
 var hasher *Hasher
@@ -41,7 +41,7 @@ func initHasher() error {
 	}
 
 	if params.IsValid() != nil {
-		logger.Info.Println("detecting new argon2 password hashing parameters, please wait...")
+		slog.Info("detecting new argon2 password hashing parameters, please wait...")
 
 		params, _ = argon2.Calibrate(1*time.Second, argon2.ID, 64*size.Mebibyte, runtime.NumCPU()*2)
 		paramsJSON, err := json.Marshal(params)
@@ -53,7 +53,7 @@ func initHasher() error {
 			return fmt.Errorf("write argon2 params: %w", err)
 		}
 
-		logger.Info.Printf("new argon2 password hashing parameters detected and cached in %v\n", paramsCache)
+		slog.Info("new argon2 password hashing parameters detected and cached", "location", paramsCache)
 	}
 
 	if err := params.IsValid(); err != nil {

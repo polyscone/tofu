@@ -1,7 +1,6 @@
 package account
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
@@ -18,7 +17,7 @@ func signOutPost(h *handler.Handler) http.HandlerFunc {
 
 		_, err := h.RenewSession(ctx)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
+			h.ErrorView(w, r, "renew session", err, "error", nil)
 
 			return
 		}

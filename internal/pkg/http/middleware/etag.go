@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/polyscone/tofu/internal/pkg/logger"
+	"golang.org/x/exp/slog"
 )
 
 func ETag(next http.HandlerFunc) http.HandlerFunc {
@@ -40,7 +40,7 @@ func ETag(next http.HandlerFunc) http.HandlerFunc {
 			}
 
 			if _, err := buf.WriteTo(w); err != nil {
-				logger.Error.Printf("etag: write response: %v\n", err)
+				slog.Error("etag: write response", "error", err)
 			}
 		}
 	}

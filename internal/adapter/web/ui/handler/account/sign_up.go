@@ -3,7 +3,6 @@ package account
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"time"
 
@@ -13,7 +12,7 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/logger"
+	"golang.org/x/exp/slog"
 )
 
 func SignUp(h *handler.Handler, mux *router.ServeMux) {
@@ -45,7 +44,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 			Email string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -64,7 +63,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 
 					tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 					if err != nil {
-						logger.Error.Printf("sign up: add reset password token: %v\n", err)
+						slog.Error("sign up: add reset password token: %v", "error", err)
 
 						return
 					}
@@ -77,12 +76,12 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 						"Token": tok,
 					}
 					if err := h.SendEmail(ctx, recipients, "sign_up_reset_password", vars); err != nil {
-						logger.Error.Printf("sign up: send email: %v\n", err)
+						slog.Error("sign up: send email: %v", "error", err)
 					}
 				})
 
 			default:
-				h.ErrorView(w, r, fmt.Errorf("sign up: %w", err), "account/sign_up/form", nil)
+				h.ErrorView(w, r, "sign up", err, "account/sign_up/form", nil)
 
 				return
 			}

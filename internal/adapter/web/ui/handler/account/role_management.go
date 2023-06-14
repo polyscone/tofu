@@ -52,7 +52,7 @@ func roleListGet(h *handler.Handler) http.HandlerFunc {
 		page, size := httputil.Pagination(r)
 		roles, total, err := h.Repo.Account.FindRolesPageBySearch(ctx, sortTopID, search, page, size)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("find roles page by search: %w", err), "error", nil)
+			h.ErrorView(w, r, "find roles page by search", err, "error", nil)
 
 			return
 		}
@@ -86,7 +86,7 @@ func roleNewPost(h *handler.Handler) http.HandlerFunc {
 			Permissions []string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -96,7 +96,7 @@ func roleNewPost(h *handler.Handler) http.HandlerFunc {
 
 		role, err := h.Account.CreateRole(ctx, passport, input.Name, input.Description, input.Permissions)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("create role: %w", err), "account/management/role/new", nil)
+			h.ErrorView(w, r, "create role", err, "account/management/role/new", nil)
 
 			return
 		}
@@ -149,20 +149,20 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 			Permissions []string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
 
 		roleID, err := router.URLParamAs[int](r, "roleID")
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("URL param as: %w", err), "error", nil)
+			h.ErrorView(w, r, "URL param as", err, "error", nil)
 
 			return
 		}
 
 		if roleID == account.SuperRole.ID {
-			h.ErrorView(w, r, fmt.Errorf("edit super role: %w", app.ErrForbidden), "error", nil)
+			h.ErrorView(w, r, "edit super role", app.ErrForbidden, "error", nil)
 
 			return
 		}
@@ -172,7 +172,7 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 
 		role, err := h.Account.UpdateRole(ctx, passport, roleID, input.Name, input.Description, input.Permissions)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("update role: %w", err), "account/management/role/edit", nil)
+			h.ErrorView(w, r, "update role", err, "account/management/role/edit", nil)
 
 			return
 		}
@@ -189,13 +189,13 @@ func roleDeleteGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roleID, err := router.URLParamAs[int](r, "roleID")
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("URL param as: %w", err), "error", nil)
+			h.ErrorView(w, r, "URL param as", err, "error", nil)
 
 			return
 		}
 
 		if roleID == account.SuperRole.ID {
-			h.ErrorView(w, r, fmt.Errorf("delete super role: %w", app.ErrForbidden), "error", nil)
+			h.ErrorView(w, r, "delete super role", app.ErrForbidden, "error", nil)
 
 			return
 		}
@@ -204,14 +204,14 @@ func roleDeleteGet(h *handler.Handler) http.HandlerFunc {
 
 		role, err := h.Repo.Account.FindRoleByID(ctx, roleID)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("find role by id: %w", err), "error", nil)
+			h.ErrorView(w, r, "find role by id", err, "error", nil)
 
 			return
 		}
 
 		userCount, err := h.Repo.Account.CountUsersByRoleID(ctx, roleID)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("count users by role id: %w", err), "error", nil)
+			h.ErrorView(w, r, "count users by role id", err, "error", nil)
 
 			return
 		}
@@ -227,13 +227,13 @@ func roleDeletePost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roleID, err := router.URLParamAs[int](r, "roleID")
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("URL param as: %w", err), "error", nil)
+			h.ErrorView(w, r, "URL param as", err, "error", nil)
 
 			return
 		}
 
 		if roleID == account.SuperRole.ID {
-			h.ErrorView(w, r, fmt.Errorf("delete super role: %w", app.ErrForbidden), "error", nil)
+			h.ErrorView(w, r, "delete super role", app.ErrForbidden, "error", nil)
 
 			return
 		}
@@ -243,7 +243,7 @@ func roleDeletePost(h *handler.Handler) http.HandlerFunc {
 
 		role, err := h.Account.DeleteRole(ctx, passport, roleID)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("delete role: %w", err), "error", nil)
+			h.ErrorView(w, r, "delete role", err, "error", nil)
 
 			return
 		}

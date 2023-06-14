@@ -37,7 +37,7 @@ func userListGet(h *handler.Handler) http.HandlerFunc {
 		page, size := httputil.Pagination(r)
 		users, total, err := h.Repo.Account.FindUsersPageBySearch(ctx, sortTopID, search, page, size)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("find users page by search: %w", err), "error", nil)
+			h.ErrorView(w, r, "find users page by search", err, "error", nil)
 
 			return
 		}
@@ -97,14 +97,14 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 			Denials []string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
 
 		userID, err := router.URLParamAs[int](r, "userID")
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("URL param as: %w", err), "error", nil)
+			h.ErrorView(w, r, "URL param as", err, "error", nil)
 
 			return
 		}
@@ -114,14 +114,14 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("find user by id: %w", err), "error", nil)
+			h.ErrorView(w, r, "find user by id", err, "error", nil)
 
 			return
 		}
 
 		err = h.Account.ChangeRoles(ctx, passport, userID, input.RoleIDs, input.Grants, input.Denials)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("change roles: %w", err), "account/management/user/edit", nil)
+			h.ErrorView(w, r, "change roles", err, "account/management/user/edit", nil)
 
 			return
 		}

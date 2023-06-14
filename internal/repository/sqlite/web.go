@@ -15,9 +15,9 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/background"
-	"github.com/polyscone/tofu/internal/pkg/logger"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/repository"
+	"golang.org/x/exp/slog"
 )
 
 const (
@@ -47,7 +47,7 @@ func NewWebRepo(ctx context.Context, db *sql.DB, sessionLifespan time.Duration) 
 
 		for range time.Tick(sessionLifespan) {
 			if err := r.DestroyExpiredSessions(ctx, sessionLifespan); err != nil {
-				logger.Error.Printf("web repo: destroy expired sessions: %v\n", err)
+				slog.Error("web repo: destroy expired sessions", "error", err)
 			}
 		}
 	})
@@ -58,7 +58,7 @@ func NewWebRepo(ctx context.Context, db *sql.DB, sessionLifespan time.Duration) 
 
 		for range time.Tick(5 * time.Minute) {
 			if err := r.DeleteExpiredTokens(ctx); err != nil {
-				logger.Error.Printf("web repo: delete expired tokens: %v\n", err)
+				slog.Error("web repo: delete expired tokens", "error", err)
 			}
 		}
 	})

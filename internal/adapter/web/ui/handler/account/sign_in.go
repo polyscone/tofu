@@ -52,7 +52,7 @@ func signInPost(h *handler.Handler) http.HandlerFunc {
 			Password string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -89,7 +89,7 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 			TOTP string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -105,14 +105,14 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 
 		err := h.Account.SignInWithTOTP(ctx, user.ID, input.TOTP)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("sign in with TOTP: %w", err), "account/sign_in/totp", nil)
+			h.ErrorView(w, r, "sign in with TOTP", err, "account/sign_in/totp", nil)
 
 			return
 		}
 
 		_, err = h.RenewSession(ctx)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
+			h.ErrorView(w, r, "renew session", err, "error", nil)
 
 			return
 		}
@@ -168,7 +168,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 			RecoveryCode string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -184,14 +184,14 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 
 		err := h.Account.SignInWithRecoveryCode(ctx, user.ID, input.RecoveryCode)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("sign in with recovery code: %w", err), "account/sign_in/recovery_code", nil)
+			h.ErrorView(w, r, "sign in with recovery code", err, "account/sign_in/recovery_code", nil)
 
 			return
 		}
 
 		_, err = h.RenewSession(ctx)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
+			h.ErrorView(w, r, "renew session", err, "error", nil)
 
 			return
 		}
@@ -230,7 +230,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 func signInWithPassword(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email, password string) {
 	err := h.Account.SignInWithPassword(ctx, email, password)
 	if err != nil {
-		h.ErrorViewFunc(w, r, fmt.Errorf("sign in with password: %w", err), "account/sign_in/password", func(data *handler.ViewData) {
+		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", func(data *handler.ViewData) {
 			data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
 		})
 
@@ -239,21 +239,21 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 
 	_, err = h.RenewSession(ctx)
 	if err != nil {
-		h.ErrorView(w, r, fmt.Errorf("renew session: %w", err), "error", nil)
+		h.ErrorView(w, r, "renew session", err, "error", nil)
 
 		return
 	}
 
 	err = signInSetSession(ctx, h, w, r, email)
 	if err != nil {
-		h.ErrorView(w, r, fmt.Errorf("sign in set session: %w", err), "error", nil)
+		h.ErrorView(w, r, "sign in set session", err, "error", nil)
 
 		return
 	}
 
 	knownBreachCount, err := pwned.KnownPasswordBreachCount(ctx, []byte(password))
 	if err != nil {
-		httputil.LogError(r, err)
+		httputil.LogError(r, "known password breach count", "error", err)
 	}
 
 	if knownBreachCount > 0 {

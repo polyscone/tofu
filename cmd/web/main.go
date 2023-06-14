@@ -5,7 +5,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -17,7 +16,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/pkg/logger"
+	"golang.org/x/exp/slog"
 )
 
 // Build information is set at compile time using the `-X` ldflags.
@@ -36,7 +35,7 @@ var opts struct {
 	data    string
 
 	log struct {
-		style logger.Style
+		style LoggerStyle
 	}
 
 	server struct {
@@ -99,19 +98,24 @@ func main() {
 	}
 
 	if opts.log.style == "" {
-		opts.log.style = logger.JSON
+		opts.log.style = styleJSON
 	}
 
-	infoLogger := logger.New(os.Stdout, opts.log.style)
-	errorLogger := logger.New(os.Stderr, opts.log.style)
+	var handler slog.Handler
+	switch opts.log.style {
+	case styleJSON:
+		handler = slog.NewJSONHandler(os.Stdout, nil)
 
-	log.SetFlags(0)
-	log.SetOutput(infoLogger)
+	case styleText:
+		handler = slog.NewTextHandler(os.Stdout, nil)
 
-	logger.OutputStyle = opts.log.style
+	default:
+		fmt.Printf("Unknown log style %q", opts.log.style)
 
-	logger.Info.SetOutput(infoLogger)
-	logger.Error.SetOutput(errorLogger)
+		os.Exit(2)
+	}
+
+	slog.SetDefault(slog.New(handler))
 
 	opts.server.addr.insecure = opts.server.insecureHTTP
 
@@ -147,32 +151,33 @@ func main() {
 	}
 
 	if err := os.MkdirAll(opts.data, 0755); err != nil {
-		logger.Error.Printf("make data directory: %v\n", err)
+		slog.Error("make data directory", "error", err)
 
 		os.Exit(1)
 	}
 
 	if err := initHasher(); err != nil {
-		logger.Error.Printf("initialise hasher: %v\n", err)
+		slog.Error("initialise hasher", "error", err)
 
 		os.Exit(1)
 	}
 
 	tenants := filepath.Join(opts.data, "tenants.json")
 	if err := initTenants(tenants); err != nil {
-		logger.Error.Printf("initialise tenants: %v\n", err)
+		slog.Error("initialise tenants", "error", err)
 	}
 
 	httputil.TrustedProxies = opts.server.proxies
 
 	listener, err := opts.server.addr.Listener()
 	if err != nil {
-		logger.Error.Printf("get listener: %v\n", err)
+		slog.Error("get listener", "error", err)
 
 		os.Exit(1)
 	}
 
 	srv := http.Server{
+		ErrorLog:     slog.NewLogLogger(handler, slog.LevelError),
 		Addr:         opts.server.addr.value,
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  5 * time.Second,
@@ -181,12 +186,12 @@ func main() {
 	}
 
 	go func() {
-		logger.Info.Printf("listening on %v (pid %v)\n", opts.server.addr, os.Getpid())
+		slog.Info("listening", "addr", opts.server.addr.String(), "pid", os.Getpid())
 
 		if opts.server.addr.insecure {
 			err := srv.Serve(listener)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				logger.Error.Printf("serve over HTTP: %v\n", err)
+				slog.Error("serve over HTTP", "error", err)
 			}
 		} else {
 			cert := filepath.Join(opts.data, "cert.pem")
@@ -194,7 +199,7 @@ func main() {
 
 			err := srv.ServeTLS(listener, cert, key)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {
-				logger.Error.Printf("serve over HTTPS: %v\n", err)
+				slog.Error("serve over HTTPS", "error", err)
 			}
 		}
 	}()
@@ -205,13 +210,13 @@ func main() {
 	caught := <-stop
 	signal.Stop(stop)
 
-	logger.Info.Printf("caught %v; shutting down\n", caught)
+	slog.Info("shutting down", "signal", caught.String())
 
 	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := srv.Shutdown(ctxShutdown); err != nil {
-		logger.Error.Printf("shut down: %v\n", err)
+		slog.Error("shut down", "error", err)
 	}
 
 	databases.mu.Lock()
@@ -219,7 +224,7 @@ func main() {
 
 	for alias, db := range databases.data {
 		if err := db.Close(); err != nil {
-			logger.Error.Printf("close database connection for %v: %v\n", alias, err)
+			slog.Error("close database connection", "alias", alias, "error", err)
 		}
 	}
 }

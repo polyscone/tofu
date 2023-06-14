@@ -1,7 +1,6 @@
 package account
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
@@ -30,7 +29,7 @@ func activatePost(h *handler.Handler) http.HandlerFunc {
 			PasswordCheck string `form:"password"` // The UI doesn't include a check field
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
-			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
+			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -45,21 +44,21 @@ func activatePost(h *handler.Handler) http.HandlerFunc {
 
 		email, err := h.Repo.Web.FindActivationTokenEmail(ctx, input.Token)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("find activation token email: %w", err), "error", nil)
+			h.ErrorView(w, r, "find activation token email", err, "error", nil)
 
 			return
 		}
 
 		err = h.Account.ActivateUser(ctx, email, input.Password, input.PasswordCheck)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("activate user: %w", err), "account/activate/form", nil)
+			h.ErrorView(w, r, "activate user", err, "account/activate/form", nil)
 
 			return
 		}
 
 		err = h.Repo.Web.ConsumeActivationToken(ctx, input.Token)
 		if err != nil {
-			h.ErrorView(w, r, fmt.Errorf("consume activation token: %w", err), "error", nil)
+			h.ErrorView(w, r, "consume activation token", err, "error", nil)
 
 			return
 		}
