@@ -2,6 +2,8 @@ package account
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base32"
 	"errors"
 	"fmt"
@@ -34,4 +36,11 @@ func NewRandomRecoveryCode() (RecoveryCode, error) {
 
 func (c RecoveryCode) String() string {
 	return string(c)
+}
+
+func (c RecoveryCode) EqualHash(rhs []byte) bool {
+	sum := sha256.Sum256([]byte(c))
+	hash := sum[:]
+
+	return subtle.ConstantTimeCompare(hash, rhs) == 1
 }

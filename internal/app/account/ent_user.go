@@ -1,7 +1,6 @@
 package account
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"errors"
 	"fmt"
@@ -456,11 +455,8 @@ func (u *User) SignInWithTOTP(totp TOTP) error {
 }
 
 func (u *User) useRecoveryCode(code RecoveryCode) error {
-	sum := sha256.Sum256([]byte(code))
-	hash := sum[:]
-
 	for i, rc := range u.HashedRecoveryCodes {
-		if bytes.Equal(rc, hash) {
+		if code.EqualHash(rc) {
 			u.HashedRecoveryCodes = append(u.HashedRecoveryCodes[:i], u.HashedRecoveryCodes[i+1:]...)
 
 			return nil
