@@ -495,9 +495,7 @@ func (u *User) ChangeRoles(roles []*Role, grants, denials []Permission) error {
 
 	var containsSuper bool
 	for _, role := range roles {
-		if role.ID == SuperRole.ID {
-			containsSuper = true
-
+		if containsSuper = role.ID == SuperRole.ID; containsSuper {
 			break
 		}
 	}
