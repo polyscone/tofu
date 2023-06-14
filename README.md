@@ -9,7 +9,7 @@ go run build.go -help
 
 To run the project with Go vet, tests, and file watching run:
 ```
-go run build.go -debug -watch -clear -after "./web -dev -addr :8080 -log-style text"
+go run build.go -debug -watch -clear -after "./web -dev -addr :8080 -log-style pretty"
 ```
 
 Omitting the `-debug` flag will build the project in "release" mode which does things like stripping debug symbols, among other things.

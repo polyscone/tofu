@@ -51,7 +51,7 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %v:\n", os.Args[0])
-		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-dev] [-addr <addr>] [-log-style <text|json>]\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-dev] [-addr <addr>] [-log-style <text|json|pretty>]\n", os.Args[0])
 		fmt.Fprintln(flag.CommandLine.Output(), "Commands:")
 		fmt.Fprintf(flag.CommandLine.Output(), "  version\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "    \tDisplay binary version information\n")
@@ -62,7 +62,7 @@ func main() {
 	flag.StringVar(&opts.data, "data", "./.data", "The directory to use for storing application data")
 	flag.BoolVar(&opts.dev, "dev", false, "Whether to run in development mode")
 	flag.BoolVar(&opts.version, "version", false, "Display binary version information")
-	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json)")
+	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json|pretty)")
 	flag.Var(&opts.server.addr, "addr", "The address to run the build server on, for example :8080; random if empty")
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
 	flag.BoolVar(&opts.server.insecureHTTP, "insecure-http", false, "Run in secure mode but without HTTPS")
@@ -101,13 +101,17 @@ func main() {
 		opts.log.style = styleJSON
 	}
 
+	var level slog.LevelVar
 	var handler slog.Handler
 	switch opts.log.style {
 	case styleJSON:
-		handler = slog.NewJSONHandler(os.Stdout, nil)
+		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: &level})
 
 	case styleText:
-		handler = slog.NewTextHandler(os.Stdout, nil)
+		handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: &level})
+
+	case stylePretty:
+		handler = NewPrettyHandler(os.Stdout, &level)
 
 	default:
 		fmt.Printf("Unknown log style %q", opts.log.style)
