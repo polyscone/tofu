@@ -40,13 +40,15 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 	mux := router.NewServeMux()
 	h := handler.New(mux, tenant, templateFiles, "account.sign_in", "system.config")
 
-	middlewareErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
-		h.ErrorView(w, r, "middleware", err, "error", nil)
+	errorHandler := func(msg string) middleware.ErrorHandler {
+		return func(w http.ResponseWriter, r *http.Request, err error) {
+			h.ErrorView(w, r, msg, err, "error", nil)
+		}
 	}
 
 	// Middleware
-	mux.Use(middleware.Recover(middlewareErrorHandler))
-	mux.Use(middleware.Timeout(5*time.Second, middlewareErrorHandler))
+	mux.Use(middleware.Recover(errorHandler("recover middleware")))
+	mux.Use(middleware.Timeout(5*time.Second, errorHandler("timeout middleware")))
 	mux.Use(middleware.RemoveTrailingSlash)
 	mux.Use(middleware.MethodOverride)
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
@@ -69,20 +71,20 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 			return true
 		},
-		ErrorHandler:   middlewareErrorHandler,
+		ErrorHandler:   errorHandler("rate limit middleware"),
 		TrustedProxies: tenant.Proxies,
 	}))
 	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
 		Insecure:     tenant.Insecure,
-		ErrorHandler: middlewareErrorHandler,
+		ErrorHandler: errorHandler("session middleware"),
 	}))
-	mux.Use(httputil.TraceRequest(h.Sessions, middlewareErrorHandler))
+	mux.Use(httputil.TraceRequest(h.Sessions, errorHandler("trace request middleware")))
 	mux.Use(middleware.NoContent)
 	mux.Use(middleware.SecurityHeaders)
 	mux.Use(middleware.ETag)
 	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
 		Insecure:     tenant.Insecure,
-		ErrorHandler: middlewareErrorHandler,
+		ErrorHandler: errorHandler("CSRF middleware"),
 	}))
 	mux.Use(middleware.Heartbeat("/meta/health"))
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
