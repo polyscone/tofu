@@ -1,6 +1,7 @@
 package account_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"testing"
@@ -34,13 +35,13 @@ func TestRegenRecoveryCodes(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		originals := user.RecoveryCodes
+		originals := user.HashedRecoveryCodes
 
 		alg := errsx.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
 		tb := errsx.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
 		totp := errsx.Must(tb.Generate(user.TOTPKey, time.Now()))
 
-		err := svc.RegenerateRecoveryCodes(ctx, validGuard, user.ID, totp)
+		codes, err := svc.RegenerateRecoveryCodes(ctx, validGuard, user.ID, totp)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -49,22 +50,25 @@ func TestRegenRecoveryCodes(t *testing.T) {
 
 		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
-		if len(user.RecoveryCodes) == 0 {
+		if want, got := len(codes), len(user.HashedRecoveryCodes); want != got {
+			t.Errorf("want %v recovery codes; got %v", want, got)
+		}
+		if len(user.HashedRecoveryCodes) == 0 {
 			t.Error("want at least one recovery code; got none")
 		} else {
-			for _, rc := range user.RecoveryCodes {
+			for _, rc := range user.HashedRecoveryCodes {
 				if len(rc) == 0 {
 					t.Fatal("want code; got empty string")
 				}
 			}
 		}
 
-		if want, got := len(originals), len(user.RecoveryCodes); want != got {
+		if want, got := len(originals), len(user.HashedRecoveryCodes); want != got {
 			t.Errorf("want %v recovery codes; got %v", want, got)
 		} else {
 			for _, original := range originals {
-				for _, rc := range user.RecoveryCodes {
-					if original == rc {
+				for _, rc := range user.HashedRecoveryCodes {
+					if bytes.Equal(original, rc) {
 						t.Errorf("want different codes; got %q and %q", original, rc)
 					}
 				}
@@ -101,7 +105,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 					totp = errsx.Must(tb.Generate(tc.totpUser.TOTPKey, time.Now()))
 				}
 
-				err := svc.RegenerateRecoveryCodes(ctx, tc.guard, tc.userID, totp)
+				_, err := svc.RegenerateRecoveryCodes(ctx, tc.guard, tc.userID, totp)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want %q; got %q", tc.want, err)

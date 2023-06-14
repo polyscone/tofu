@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/account"
@@ -136,6 +137,9 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 		})
 
 		mux.Prefix("/system", func(mux *router.ServeMux) {
+			mux.Before(h.RequireSignInIf(func(p guard.Passport) bool { return !p.CanViewConfig() }))
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanViewConfig() }))
+
 			admin.SystemConfig(h, mux)
 		})
 	})

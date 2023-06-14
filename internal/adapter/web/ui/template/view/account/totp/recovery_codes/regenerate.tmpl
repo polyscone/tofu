@@ -1,7 +1,7 @@
 {{define "view_head"}}
 
 <div class="center">
-	{{if .Vars.ShowRecoveryCodes}}
+	{{if .Vars.RecoveryCodes}}
 		<h1>Your new recovery codes</h1>
 	{{else}}
 		<h1>Generate new recovery codes</h1>
@@ -13,7 +13,7 @@
 {{define "view_body"}}
 
 <div class="center">
-	{{if .Vars.ShowRecoveryCodes}}
+	{{if .Vars.RecoveryCodes}}
 		<div class="warning-banner">
 			<p>Your previous recovery codes are no longer valid.</p>
 			<p>Please download, print, copy, or photograph your new recovery codes and store them in a safe place separate from your authentication device.</p>
@@ -27,17 +27,17 @@
 
 		{{template "com_recovery_codes" .WithComData .Vars.RecoveryCodes}}
 	{{else}}
-		{{if ge (len .Vars.RecoveryCodes) 1}}
-			{{if eq (len .Vars.RecoveryCodes) 1}}
-				<p>You have {{len .Vars.RecoveryCodes}} recovery code remaining.</p>
+		{{if ge (len .Vars.HashedRecoveryCodes) 1}}
+			{{if eq (len .Vars.HashedRecoveryCodes) 1}}
+				<p>You have {{len .Vars.HashedRecoveryCodes}} recovery code remaining.</p>
 			{{else}}
-				<p>You have {{len .Vars.RecoveryCodes}} recovery codes remaining.</p>
+				<p>You have {{len .Vars.HashedRecoveryCodes}} recovery codes remaining.</p>
 			{{end}}
 
 			<p>If you'd like to generate new recovery codes you'll need to verify your identity by entering a valid passcode in the form below.</p>
 		{{end}}
 
-		{{if eq (len .Vars.RecoveryCodes) 0}}
+		{{if eq (len .Vars.HashedRecoveryCodes) 0}}
 			<div class="error-banner">
 				<p>You do not have any recovery codes. Please use the form below to generate new ones.</p>
 			</div>
@@ -55,7 +55,7 @@
 			<p class="error">{{.Errors.Get "totp"}}</p>
 
 			<div class="bag reverse">
-				{{if eq (len .Vars.RecoveryCodes) 0}}
+				{{if eq (len .Vars.HashedRecoveryCodes) 0}}
 					<button type="submit">Generate Recovery Codes</button>
 				{{else}}
 					<button type="submit">Replace Recovery Codes</button>

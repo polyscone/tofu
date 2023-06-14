@@ -34,13 +34,14 @@ type TestUser struct {
 	ActivateTOTP bool
 }
 
-func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu TestUser) *account.User {
+func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.ReadWriter, tu TestUser) (*account.User, []string) {
 	t.Helper()
 
 	tu.VerifyTOTP = tu.VerifyTOTP || tu.ActivateTOTP
 	tu.SetupTOTP = tu.SetupTOTP || tu.SetupTOTPTel || tu.VerifyTOTP || tu.ActivateTOTP
 	tu.Activate = tu.Activate || tu.SetupTOTP || tu.VerifyTOTP
 
+	var codes []string
 	user := account.NewUser(errsx.Must(account.NewEmail(tu.Email)))
 
 	errsx.Must0(user.SignUp())
@@ -65,7 +66,7 @@ func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu 
 		tb := errsx.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
 		totp := errsx.Must(account.NewTOTP(errsx.Must(tb.Generate(user.TOTPKey, time.Now()))))
 
-		errsx.Must0(user.VerifyTOTP(totp, "app"))
+		codes = errsx.Must(user.VerifyTOTP(totp, "app"))
 
 		otp.CleanUsedTOTP(totp.String())
 	}
@@ -74,6 +75,12 @@ func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu 
 	}
 
 	errsx.Must0(repo.AddUser(ctx, user))
+
+	return user, codes
+}
+
+func MustAddUser(t *testing.T, ctx context.Context, repo account.ReadWriter, tu TestUser) *account.User {
+	user, _ := MustAddUserRecoveryCodes(t, ctx, repo, tu)
 
 	return user
 }

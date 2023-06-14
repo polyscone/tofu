@@ -20,15 +20,6 @@ func SystemConfig(h *handler.Handler, mux *router.ServeMux) {
 
 func systemConfigGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		passport := h.Passport(ctx)
-
-		if !passport.CanViewConfig() {
-			h.ErrorView(w, r, app.ErrUnauthorised, "error", nil)
-
-			return
-		}
-
 		h.View(w, r, http.StatusOK, "admin/system_config", nil)
 	}
 }

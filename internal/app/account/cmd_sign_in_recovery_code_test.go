@@ -1,6 +1,7 @@
 package account_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"strconv"
@@ -18,7 +19,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user, codes := MustAddUserRecoveryCodes(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		if !user.LastSignedInAt.IsZero() {
 			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
@@ -36,10 +37,10 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		nRecoveryCodes := len(user.RecoveryCodes)
-		usedRecoveryCode := user.RecoveryCodes[0]
+		nRecoveryCodes := len(user.HashedRecoveryCodes)
+		usedRecoveryCodeHash := user.HashedRecoveryCodes[0]
 
-		err = svc.SignInWithRecoveryCode(ctx, user.ID, usedRecoveryCode)
+		err = svc.SignInWithRecoveryCode(ctx, user.ID, codes[0])
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
@@ -55,11 +56,11 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			t.Error("want last signed in at to be populated; got zero")
 		}
 
-		if want, got := nRecoveryCodes-1, len(user.RecoveryCodes); want != got {
+		if want, got := nRecoveryCodes-1, len(user.HashedRecoveryCodes); want != got {
 			t.Errorf("want %v recovery codes; got %v", want, got)
 		} else {
-			for _, rc := range user.RecoveryCodes {
-				if rc == usedRecoveryCode {
+			for _, rc := range user.HashedRecoveryCodes {
+				if bytes.Equal(rc, usedRecoveryCodeHash) {
 					t.Error("want used recovery code to be removed")
 				}
 			}
@@ -71,7 +72,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		svc, broker, repo := NewTestEnv(ctx)
 
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
-		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user2, codes := MustAddUserRecoveryCodes(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -84,7 +85,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			recoveryCode string
 			want         error
 		}{
-			{"empty user id correct recovery code", 0, user2.RecoveryCodes[1], repository.ErrNotFound},
+			{"empty user id correct recovery code", 0, codes[1], repository.ErrNotFound},
 			{"empty user id incorrect recovery code", 0, incorrectCode, repository.ErrNotFound},
 			{"activated user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
 			{"activated user id without TOTP setup", user1.ID, incorrectCode, nil},

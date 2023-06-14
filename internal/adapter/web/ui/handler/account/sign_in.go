@@ -118,7 +118,7 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		switch {
-		case len(user.RecoveryCodes) == 0:
+		case len(user.HashedRecoveryCodes) == 0:
 			h.AddFlashImportantf(ctx, `
 				You've run out of recovery codes.<br>
 				We recommend
@@ -126,7 +126,7 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 				as soon as you can.
 			`)
 
-		case len(user.RecoveryCodes) <= lowRecoveryCodes:
+		case len(user.HashedRecoveryCodes) <= lowRecoveryCodes:
 			h.AddFlashImportantf(ctx, `
 				You're running low on recovery codes.<br>
 				We recommend
@@ -203,7 +203,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 		`)
 
 		switch {
-		case len(user.RecoveryCodes) == 0:
+		case len(user.HashedRecoveryCodes) == 0:
 			h.AddFlashImportantf(ctx, `
 				You've run out of recovery codes.<br>
 				We recommend
@@ -211,7 +211,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 				as soon as you can.
 			`)
 
-		case len(user.RecoveryCodes) <= lowRecoveryCodes:
+		case len(user.HashedRecoveryCodes) <= lowRecoveryCodes:
 			h.AddFlashImportantf(ctx, `
 				You're running low on recovery codes.<br>
 				We recommend

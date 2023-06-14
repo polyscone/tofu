@@ -278,16 +278,16 @@ func (r *AccountRepo) RemoveRole(ctx context.Context, roleID int) error {
 	return nil
 }
 
-func (r *AccountRepo) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([]account.RecoveryCode, error) {
+func (r *AccountRepo) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([][]byte, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	recoveryCodes, _, err := r.findRecoveryCodes(ctx, tx, userID)
+	hashedCodes, _, err := r.findHashedRecoveryCodes(ctx, tx, userID)
 
-	return recoveryCodes, err
+	return hashedCodes, err
 }
 
 func (r *AccountRepo) AddUser(ctx context.Context, user *account.User) error {
@@ -703,10 +703,10 @@ func (r *AccountRepo) deleteRole(ctx context.Context, tx *Tx, roleID int) error 
 	return err
 }
 
-func (r *AccountRepo) findRecoveryCodes(ctx context.Context, tx *Tx, userID int) ([]account.RecoveryCode, int, error) {
+func (r *AccountRepo) findHashedRecoveryCodes(ctx context.Context, tx *Tx, userID int) ([][]byte, int, error) {
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
-			code,
+			hashed_code,
 			COUNT(1) OVER () AS total
 		FROM account__recovery_codes
 		WHERE user_id = :user_id
@@ -719,38 +719,38 @@ func (r *AccountRepo) findRecoveryCodes(ctx context.Context, tx *Tx, userID int)
 	defer rows.Close()
 
 	var total int
-	var recoveryCodes []account.RecoveryCode
+	var hashedCodes [][]byte
 	for rows.Next() {
-		var recoveryCode account.RecoveryCode
+		var hashedCode []byte
 
 		err := rows.Scan(
-			&recoveryCode,
+			&hashedCode,
 			&total,
 		)
 		if err != nil {
 			return nil, 0, err
 		}
 
-		recoveryCodes = append(recoveryCodes, recoveryCode)
+		hashedCodes = append(hashedCodes, hashedCode)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, 0, fmt.Errorf("rows: %w", err)
 	}
 
-	return recoveryCodes, total, nil
+	return hashedCodes, total, nil
 }
 
 func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user *account.User) error {
-	recoveryCodes, _, err := r.findRecoveryCodes(ctx, tx, user.ID)
+	hashedCodes, _, err := r.findHashedRecoveryCodes(ctx, tx, user.ID)
 	if err != nil {
-		return fmt.Errorf("find recovery codes: %w", err)
+		return fmt.Errorf("find hashed recovery codes: %w", err)
 	}
 
-	if recoveryCodes != nil {
-		user.RecoveryCodes = make([]string, len(recoveryCodes))
+	if hashedCodes != nil {
+		user.HashedRecoveryCodes = make([][]byte, len(hashedCodes))
 
-		for i, rc := range recoveryCodes {
-			user.RecoveryCodes[i] = rc.String()
+		for i, rc := range hashedCodes {
+			user.HashedRecoveryCodes[i] = rc
 		}
 	}
 
@@ -858,20 +858,20 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 	}
 	user.ID = int(id)
 
-	for _, rc := range user.RecoveryCodes {
+	for _, rc := range user.HashedRecoveryCodes {
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO account__recovery_codes (
 				user_id,
-				code,
+				hashed_code,
 				created_at
 			) VALUES (
 				:user_id,
-				:code,
+				:hashed_code,
 				:created_at
 			)
 		`,
 			sql.Named("user_id", user.ID),
-			sql.Named("code", rc),
+			sql.Named("hashed_code", rc),
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
@@ -1010,20 +1010,20 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		return err
 	}
 
-	for _, rc := range user.RecoveryCodes {
+	for _, rc := range user.HashedRecoveryCodes {
 		_, err = tx.ExecContext(ctx, `
 			INSERT INTO account__recovery_codes (
 				user_id,
-				code,
+				hashed_code,
 				created_at
 			) VALUES (
 				:user_id,
-				:code,
+				:hashed_code,
 				:created_at
 			)
 		`,
 			sql.Named("user_id", user.ID),
-			sql.Named("code", rc),
+			sql.Named("hashed_code", rc),
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {

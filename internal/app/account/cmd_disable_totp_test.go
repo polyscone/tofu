@@ -68,7 +68,7 @@ func TestDisableTOTP(t *testing.T) {
 		if got := user.TOTPActivatedAt; !got.IsZero() {
 			t.Errorf("want TOTP activated at to be zero; got %v", got)
 		}
-		if want, got := 0, len(user.RecoveryCodes); want != got {
+		if want, got := 0, len(user.HashedRecoveryCodes); want != got {
 			t.Error("want recovery codes to be cleared")
 		}
 	})

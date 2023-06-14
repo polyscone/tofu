@@ -49,7 +49,6 @@ func TOTP(h *handler.Handler, mux *router.ServeMux) {
 			})
 
 			mux.Prefix("/activate", func(mux *router.ServeMux) {
-				mux.Get("/", totpSetupActivateGet(h), "account.totp.setup.activate")
 				mux.Post("/", totpSetupActivatePost(h), "account.totp.setup.activate.post")
 			})
 
@@ -197,14 +196,16 @@ func totpSetupAppPost(h *handler.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		err := h.Account.VerifyTOTP(ctx, passport, user.ID, input.TOTP, "app")
+		codes, err := h.Account.VerifyTOTP(ctx, passport, user.ID, input.TOTP, "app")
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("verify TOTP: %w", err), "account/totp/setup/app", nil)
 
 			return
 		}
 
-		http.Redirect(w, r, h.Path("account.totp.setup.activate"), http.StatusSeeOther)
+		h.View(w, r, http.StatusOK, "account/totp/setup/activate", handler.Vars{
+			"RecoveryCodes": codes,
+		})
 	}
 }
 
@@ -303,14 +304,16 @@ func totpSetupSMSVerifyPost(h *handler.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		err := h.Account.VerifyTOTP(ctx, passport, user.ID, input.TOTP, "sms")
+		codes, err := h.Account.VerifyTOTP(ctx, passport, user.ID, input.TOTP, "sms")
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("verify TOTP: %w", err), "account/totp/setup/sms_verify", nil)
 
 			return
 		}
 
-		http.Redirect(w, r, h.Path("account.totp.setup.activate"), http.StatusSeeOther)
+		h.View(w, r, http.StatusOK, "account/totp/setup/activate", handler.Vars{
+			"RecoveryCodes": codes,
+		})
 	}
 }
 
@@ -328,23 +331,6 @@ func totpSendSMSPost(h *handler.Handler) http.HandlerFunc {
 		h.AddFlashf(ctx, "A passcode has been sent to your registered phone number.")
 
 		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
-	}
-}
-
-func totpSetupActivateGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		user := h.User(ctx)
-
-		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
-			h.View(w, r, http.StatusOK, "account/totp/setup/enabled", nil)
-
-			return
-		}
-
-		h.View(w, r, http.StatusOK, "account/totp/setup/activate", handler.Vars{
-			"RecoveryCodes": user.RecoveryCodes,
-		})
 	}
 }
 
@@ -442,8 +428,8 @@ func totpRecoveryCodesGet(h *handler.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 
 		vars := handler.Vars{
-			"RecoveryCodes":     user.RecoveryCodes,
-			"ShowRecoveryCodes": false,
+			"HashedRecoveryCodes": user.HashedRecoveryCodes,
+			"RecoveryCodes":       nil,
 		}
 
 		return vars, nil
@@ -477,7 +463,7 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		err := h.Account.RegenerateRecoveryCodes(ctx, passport, user.ID, input.TOTP)
+		codes, err := h.Account.RegenerateRecoveryCodes(ctx, passport, user.ID, input.TOTP)
 		if err != nil {
 			h.ErrorView(w, r, fmt.Errorf("regenerate recovery codes: %w", err), "account/totp/recovery_codes/regenerate", nil)
 
@@ -485,7 +471,7 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		h.View(w, r, http.StatusOK, "account/totp/recovery_codes/regenerate", handler.Vars{
-			"ShowRecoveryCodes": true,
+			"RecoveryCodes": codes,
 		})
 	}
 }

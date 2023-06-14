@@ -623,12 +623,13 @@ func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
 	return true
 }
 
-func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
+func (h *Handler) RequireSignInIf(check PredicateFunc) router.BeforeHookFunc {
 	return func(w http.ResponseWriter, r *http.Request) bool {
 		ctx := r.Context()
 		isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+		passport := h.Passport(ctx)
 
-		if !isSignedIn {
+		if !isSignedIn && check(passport) {
 			h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
 			http.Redirect(w, r, h.mux.Path(h.signInPathName), http.StatusSeeOther)
@@ -636,7 +637,15 @@ func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
 			return false
 		}
 
+		return true
+	}
+}
+
+func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
+	return func(w http.ResponseWriter, r *http.Request) bool {
+		ctx := r.Context()
 		passport := h.Passport(ctx)
+
 		if !check(passport) {
 			h.ErrorView(w, r, fmt.Errorf("require auth: %w", app.ErrUnauthorised), "error", nil)
 

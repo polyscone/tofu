@@ -1,11 +1,7 @@
 {{define "view_head"}}
 
 <div class="center">
-	{{if .Vars.NewKnownPasswordBreachCount}}
-		<h1>Confirm change password</h1>
-	{{else}}
-		<h1>Change password</h1>
-	{{end}}
+	<h1>Change password</h1>
 </div>
 
 {{end}}
@@ -13,15 +9,7 @@
 {{define "view_body"}}
 
 <div class="center">
-	{{if .Vars.NewKnownPasswordBreachCount}}
-		<div class="warning-banner">
-			<p>
-				Your password has not been changed yet because it appears <span data-locale-number>{{.Vars.NewKnownPasswordBreachCount}}</span> {{if gt .Vars.NewKnownPasswordBreachCount 1}}times{{else}}time{{end}}
-				in a <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer">database of security breaches</a> and isn't considered to be secure.
-			</p>
-		</div>
-		<p>You can continue and use this password, but we recommend that you choose a more secure one.</p>
-	{{else if .Session.KnownPasswordBreachCount}}
+	{{if .Session.KnownPasswordBreachCount}}
 		<div class="warning-banner">
 			<p>
 				The password you're currently using appears <span data-locale-number>{{.Session.KnownPasswordBreachCount}}</span> {{if gt .Session.KnownPasswordBreachCount 1}}times{{else}}time{{end}}
@@ -34,34 +22,21 @@
 	<form action="{{Path "account.change_password.post"}}" method="POST">
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
-		{{if .Vars.NewKnownPasswordBreachCount}}
-			<input type="hidden" name="old-password" value="{{.Form.Get "old-password"}}">
-			<input type="hidden" name="insecure-password" value="{{.Form.Get "new-password"}}">
+		<label for="change-password__old-password">Old password</label>
+		<input id="change-password__old-password" type="password" name="old-password" value="{{.Form.Get "old-password"}}" placeholder="old password" autocomplete="current-password" required pattern=".{8,1000}" minlength="8" maxlength="1000">
+		<p class="error">{{.Errors.Get "old password"}}</p>
 
-			<label for="change-password__new-password">New password</label>
-			<input id="change-password__new-password" type="password" name="new-password" value="{{.Form.Get "new-password"}}" placeholder="new password" autocomplete="new-password" required pattern=".{8,1000}" minlength="8" maxlength="1000">
-			<p class="error">{{.Errors.Get "new password"}}</p>
+		<label for="change-password__new-password">New password</label>
+		<input id="change-password__new-password" type="password" name="new-password" value="{{.Form.Get "new-password"}}" placeholder="new password" autocomplete="new-password" required pattern=".{8,1000}" minlength="8" maxlength="1000">
+		<p class="error">{{.Errors.Get "new password"}}</p>
 
-			<div class="bag reverse">
-				<button type="submit">Use this password{{if .Session.Redirect}} and continue{{end}}</button>
-			</div>
-		{{else}}
-			<label for="change-password__old-password">Old password</label>
-			<input id="change-password__old-password" type="password" name="old-password" value="{{.Form.Get "old-password"}}" placeholder="old password" autocomplete="current-password" required pattern=".{8,1000}" minlength="8" maxlength="1000">
-			<p class="error">{{.Errors.Get "old password"}}</p>
+		<div class="bag reverse">
+			<button type="submit">Update password{{if .Session.Redirect}} and continue{{end}}</button>
 
-			<label for="change-password__new-password">New password</label>
-			<input id="change-password__new-password" type="password" name="new-password" value="{{.Form.Get "new-password"}}" placeholder="new password" autocomplete="new-password" required pattern=".{8,1000}" minlength="8" maxlength="1000">
-			<p class="error">{{.Errors.Get "new password"}}</p>
-
-			<div class="bag reverse">
-				<button type="submit">Update password{{if .Session.Redirect}} and continue{{end}}</button>
-
-				{{if .Session.Redirect}}
-					<a href="{{.Session.Redirect}}" class="btn btn--alt">Change later</a>
-				{{end}}
-			</div>
-		{{end}}
+			{{if .Session.Redirect}}
+				<a href="{{.Session.Redirect}}" class="btn btn--alt">Change later</a>
+			{{end}}
+		</div>
 	</form>
 </div>
 

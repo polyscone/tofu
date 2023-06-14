@@ -75,10 +75,10 @@ CREATE TABLE account__user_denials (
 );
 
 CREATE TABLE account__recovery_codes (
-	user_id    INTEGER NOT NULL,
-	code       TEXT NOT NULL,
-	created_at DATETIME NOT NULL,
-	updated_at DATETIME,
+	user_id     INTEGER NOT NULL,
+	hashed_code TEXT NOT NULL,
+	created_at  DATETIME NOT NULL,
+	updated_at  DATETIME,
 	FOREIGN KEY (user_id) REFERENCES account__users (id) ON DELETE CASCADE ON UPDATE CASCADE,
-	PRIMARY KEY (user_id, code)
+	PRIMARY KEY (user_id, hashed_code)
 );

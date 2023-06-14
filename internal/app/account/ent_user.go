@@ -1,6 +1,8 @@
 package account
 
 import (
+	"bytes"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"time"
@@ -21,25 +23,25 @@ var (
 type User struct {
 	aggregate.Root
 
-	ID                 int
-	Email              string
-	HashedPassword     []byte
-	TOTPMethod         string
-	TOTPTel            string
-	TOTPKey            []byte
-	TOTPAlgorithm      string
-	TOTPDigits         int
-	TOTPPeriod         time.Duration
-	TOTPVerifiedAt     time.Time
-	TOTPActivatedAt    time.Time
-	SignedUpAt         time.Time
-	ActivatedAt        time.Time
-	LastSignedInAt     time.Time
-	LastSignedInMethod string
-	RecoveryCodes      []string
-	Roles              []*Role
-	Grants             []string
-	Denials            []string
+	ID                  int
+	Email               string
+	HashedPassword      []byte
+	TOTPMethod          string
+	TOTPTel             string
+	TOTPKey             []byte
+	TOTPAlgorithm       string
+	TOTPDigits          int
+	TOTPPeriod          time.Duration
+	TOTPVerifiedAt      time.Time
+	TOTPActivatedAt     time.Time
+	SignedUpAt          time.Time
+	ActivatedAt         time.Time
+	LastSignedInAt      time.Time
+	LastSignedInMethod  string
+	HashedRecoveryCodes [][]byte
+	Roles               []*Role
+	Grants              []string
+	Denials             []string
 }
 
 type UserFilter struct {
@@ -231,31 +233,24 @@ func (u *User) verifyTOTP(totp TOTP) error {
 	return nil
 }
 
-func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) error {
+func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) ([]string, error) {
 	if u.HasActivatedTOTP() {
-		return errors.New("already verified and activated")
+		return nil, errors.New("already verified and activated")
 	}
 
 	if err := u.verifyTOTP(totp); err != nil {
-		return err
+		return nil, err
 	}
 
 	u.TOTPMethod = method.String()
 	u.TOTPVerifiedAt = time.Now().UTC()
 
-	nCodes := 6
-	u.RecoveryCodes = make([]string, nCodes)
-
-	for i := 0; i < nCodes; i++ {
-		code, err := NewRandomRecoveryCode()
-		if err != nil {
-			return fmt.Errorf("generate recovery code: %w", err)
-		}
-
-		u.RecoveryCodes[i] = code.String()
+	codes, err := u.replaceRecoveryCodes()
+	if err != nil {
+		return nil, fmt.Errorf("replace recovery codes: %w", err)
 	}
 
-	return nil
+	return codes, nil
 }
 
 func (u *User) ActivateTOTP() error {
@@ -317,30 +312,45 @@ func (u *User) GenerateTOTP() (string, error) {
 	return totp, nil
 }
 
-func (u *User) RegenerateRecoveryCodes(totp TOTP) error {
-	if !u.HasActivatedTOTP() {
-		return errors.New("cannot regenerate recovery codes without an activated TOTP")
-	}
-
-	if err := u.verifyTOTP(totp); err != nil {
-		return fmt.Errorf("verify TOTP: %w", err)
-	}
-
+func (u *User) replaceRecoveryCodes() ([]string, error) {
 	nCodes := 6
-	u.RecoveryCodes = make([]string, nCodes)
+	codes := make([]string, nCodes)
+	hashedCodes := make([][]byte, nCodes)
 
 	for i := 0; i < nCodes; i++ {
 		code, err := NewRandomRecoveryCode()
 		if err != nil {
-			return fmt.Errorf("generate recovery code: %w", err)
+			return nil, fmt.Errorf("new random recovery code: %w", err)
 		}
 
-		u.RecoveryCodes[i] = code.String()
+		sum := sha256.Sum256([]byte(code))
+
+		codes[i] = code.String()
+		hashedCodes[i] = sum[:]
+	}
+
+	u.HashedRecoveryCodes = hashedCodes
+
+	return codes, nil
+}
+
+func (u *User) RegenerateRecoveryCodes(totp TOTP) ([]string, error) {
+	if !u.HasActivatedTOTP() {
+		return nil, errors.New("cannot regenerate recovery codes without an activated TOTP")
+	}
+
+	if err := u.verifyTOTP(totp); err != nil {
+		return nil, fmt.Errorf("verify TOTP: %w", err)
+	}
+
+	codes, err := u.replaceRecoveryCodes()
+	if err != nil {
+		return nil, fmt.Errorf("replace recovery codes: %w", err)
 	}
 
 	u.Events.Enqueue(RecoveryCodesRegenerated{Email: u.Email})
 
-	return nil
+	return codes, nil
 }
 
 func (u *User) DisableTOTP(password Password, hasher Hasher) error {
@@ -360,7 +370,7 @@ func (u *User) DisableTOTP(password Password, hasher Hasher) error {
 	u.TOTPPeriod = 0
 	u.TOTPVerifiedAt = time.Time{}
 	u.TOTPActivatedAt = time.Time{}
-	u.RecoveryCodes = nil
+	u.HashedRecoveryCodes = nil
 
 	u.Events.Enqueue(DisabledTOTP{Email: u.Email})
 
@@ -379,7 +389,7 @@ func (u *User) DisableTOTPWithRecoveryCode(code RecoveryCode) error {
 	u.TOTPDigits = 0
 	u.TOTPPeriod = 0
 	u.TOTPVerifiedAt = time.Time{}
-	u.RecoveryCodes = nil
+	u.HashedRecoveryCodes = nil
 
 	u.Events.Enqueue(DisabledTOTP{Email: u.Email})
 
@@ -446,9 +456,12 @@ func (u *User) SignInWithTOTP(totp TOTP) error {
 }
 
 func (u *User) useRecoveryCode(code RecoveryCode) error {
-	for i, rc := range u.RecoveryCodes {
-		if rc == code.String() {
-			u.RecoveryCodes = append(u.RecoveryCodes[:i], u.RecoveryCodes[i+1:]...)
+	sum := sha256.Sum256([]byte(code))
+	hash := sum[:]
+
+	for i, rc := range u.HashedRecoveryCodes {
+		if bytes.Equal(rc, hash) {
+			u.HashedRecoveryCodes = append(u.HashedRecoveryCodes[:i], u.HashedRecoveryCodes[i+1:]...)
 
 			return nil
 		}

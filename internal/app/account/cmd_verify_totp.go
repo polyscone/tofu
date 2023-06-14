@@ -12,7 +12,7 @@ type VerifyTOTPGuard interface {
 	CanVerifyTOTP(userID int) bool
 }
 
-func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID int, totp, totpMethod string) error {
+func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID int, totp, totpMethod string) ([]string, error) {
 	var input struct {
 		userID     int
 		totp       TOTP
@@ -20,7 +20,7 @@ func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID 
 	}
 	{
 		if !guard.CanVerifyTOTP(userID) {
-			return app.ErrUnauthorised
+			return nil, app.ErrUnauthorised
 		}
 
 		var err error
@@ -36,24 +36,25 @@ func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID 
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return fmt.Errorf("find user by id: %w", err)
+		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
-	if err := user.VerifyTOTP(input.totp, input.totpMethod); err != nil {
-		return err
+	codes, err := user.VerifyTOTP(input.totp, input.totpMethod)
+	if err != nil {
+		return nil, err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
-		return fmt.Errorf("save user: %w", err)
+		return nil, fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return codes, nil
 }

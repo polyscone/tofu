@@ -17,8 +17,6 @@ func ChangePassword(h *handler.Handler, mux *router.ServeMux) {
 
 		mux.Get("/", changePasswordGet(h), "account.change_password")
 		mux.Post("/", changePasswordPost(h), "account.change_password.post")
-
-		mux.Get("/success", changePasswordSuccessGet(h), "account.change_password.success")
 	})
 
 	// Redirect to help password managers find the change password page
@@ -37,7 +35,6 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 			OldPassword      string
 			NewPassword      string
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
-			InsecurePassword string
 		}
 		if err := httputil.DecodeForm(&input, r); err != nil {
 			h.ErrorView(w, r, fmt.Errorf("decode form: %w", err), "error", nil)
@@ -49,26 +46,7 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		knownBreachCount, err := pwned.KnownPasswordBreachCount(ctx, []byte(input.NewPassword))
-		if err != nil {
-			httputil.LogError(r, err)
-		}
-
-		if input.NewPassword == input.InsecurePassword {
-			if knownBreachCount > 0 {
-				h.Sessions.Set(ctx, sess.KnownPasswordBreachCount, knownBreachCount)
-			} else {
-				h.Sessions.Delete(ctx, sess.KnownPasswordBreachCount)
-			}
-		} else if knownBreachCount > 0 {
-			h.View(w, r, http.StatusOK, "account/change_password/form", handler.Vars{
-				"NewKnownPasswordBreachCount": knownBreachCount,
-			})
-
-			return
-		}
-
-		err = h.Account.ChangePassword(ctx,
+		err := h.Account.ChangePassword(ctx,
 			passport,
 			user.ID,
 			input.OldPassword,
@@ -88,21 +66,29 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
+		knownBreachCount, err := pwned.KnownPasswordBreachCount(ctx, []byte(input.NewPassword))
+		if err != nil {
+			httputil.LogError(r, err)
+
+			h.Sessions.Delete(ctx, sess.KnownPasswordBreachCount)
+		} else {
+			if knownBreachCount > 0 {
+				h.Sessions.Set(ctx, sess.KnownPasswordBreachCount, knownBreachCount)
+			} else {
+				h.Sessions.Delete(ctx, sess.KnownPasswordBreachCount)
+			}
+		}
+
+		h.AddFlashf(ctx, "Your password has been successfully changed.")
+
 		var redirect string
 		if r := h.Sessions.PopString(ctx, sess.Redirect); r != "" {
-			h.AddFlashf(ctx, "Your password has been successfully changed.")
 
 			redirect = r
 		} else {
-			redirect = h.Path("account.change_password.success")
+			redirect = h.Path("account.change_password")
 		}
 
 		http.Redirect(w, r, redirect, http.StatusSeeOther)
-	}
-}
-
-func changePasswordSuccessGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/change_password/success", nil)
 	}
 }
