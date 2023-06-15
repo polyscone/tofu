@@ -561,7 +561,9 @@ func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg stri
 		case errors.Is(err, csrf.ErrInvalidToken):
 			data.ErrorMessage = "Invalid CSRF token."
 
-		case errors.Is(err, rate.ErrInsufficientTokens):
+		case errors.Is(err, rate.ErrInsufficientTokens),
+			errors.Is(err, account.ErrSignInThrottled):
+
 			data.ErrorMessage = "You have made too many consecutive requests."
 
 		default:

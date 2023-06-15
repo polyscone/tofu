@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
@@ -42,6 +43,12 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 
 	_, err = user.SignInWithPassword(input.password, s.hasher)
 	if err != nil {
+		if errors.Is(err, ErrNotActivated) || errors.Is(err, ErrInvalidPassword) {
+			if err := s.repo.SaveUser(ctx, user); err != nil {
+				return fmt.Errorf("save user: %w", err)
+			}
+		}
+
 		return err
 	}
 

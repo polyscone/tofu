@@ -12,12 +12,25 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/otp"
 )
 
-const SignInMethodWebsite = "Website"
+const (
+	SignInMethodWebsite          = "Website"
+	MaxUnthrottledSignInAttempts = 3
+)
 
 var (
 	ErrNotActivated    = errors.New("account is not activated")
 	ErrInvalidPassword = errors.New("invalid password")
+	ErrSignInThrottled = errors.New("sign in throttled")
 )
+
+type SignInThrottleError struct {
+	Delay    time.Duration
+	UnlockAt time.Time
+}
+
+func (t SignInThrottleError) Error() string {
+	return fmt.Sprintf("delayed for %v: unlocking at %v", t.Delay, t.UnlockAt.Format(time.RFC3339))
+}
 
 type User struct {
 	aggregate.Root
@@ -35,6 +48,8 @@ type User struct {
 	TOTPActivatedAt     time.Time
 	SignedUpAt          time.Time
 	ActivatedAt         time.Time
+	SignInAttempts      int
+	LastSignInAttemptAt time.Time
 	LastSignedInAt      time.Time
 	LastSignedInMethod  string
 	HashedRecoveryCodes [][]byte
@@ -131,6 +146,8 @@ func (u *User) Activate(password Password, hasher Hasher) error {
 	}
 
 	u.ActivatedAt = time.Now().UTC()
+	u.SignInAttempts = 0
+	u.LastSignInAttemptAt = time.Time{}
 
 	u.Events.Enqueue(Activated{Email: u.Email})
 
@@ -414,13 +431,39 @@ func (u *User) checkPassword(password Password, hasher Hasher) (rehash bool, _ e
 	return false, nil
 }
 
-func (u *User) SignInWithPassword(password Password, hasher Hasher) (bool, error) {
+func (u *User) SignInWithPassword(password Password, hasher Hasher) (rehashed bool, _ error) {
+	if u.SignInAttempts >= MaxUnthrottledSignInAttempts {
+		const maxDelay = 1 * time.Hour
+
+		shift := u.SignInAttempts - (MaxUnthrottledSignInAttempts - 1)
+		delay := (1 << shift) * time.Second
+		if delay > maxDelay {
+			delay = maxDelay
+		}
+
+		unlockAt := u.LastSignInAttemptAt.Add(delay)
+		if time.Now().Before(unlockAt) {
+			throttle := &SignInThrottleError{
+				Delay:    delay,
+				UnlockAt: unlockAt,
+			}
+
+			return false, fmt.Errorf("%w: %w", ErrSignInThrottled, throttle)
+		}
+	}
+
 	if u.ActivatedAt.IsZero() {
+		u.SignInAttempts++
+		u.LastSignInAttemptAt = time.Now()
+
 		return false, ErrNotActivated
 	}
 
 	rehashed, err := u.checkPassword(password, hasher)
 	if err != nil {
+		u.SignInAttempts++
+		u.LastSignInAttemptAt = time.Now()
+
 		return false, fmt.Errorf("check password: %w", err)
 	}
 
@@ -428,6 +471,9 @@ func (u *User) SignInWithPassword(password Password, hasher Hasher) (bool, error
 		u.LastSignedInAt = time.Now().UTC()
 		u.LastSignedInMethod = SignInMethodWebsite
 	}
+
+	u.SignInAttempts = 0
+	u.LastSignInAttemptAt = time.Time{}
 
 	u.Events.Enqueue(SignedInWithPassword{Email: u.Email})
 

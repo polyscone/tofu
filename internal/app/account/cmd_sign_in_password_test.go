@@ -27,7 +27,7 @@ func TestSignInWithPassword(t *testing.T) {
 
 		err := svc.SignInWithPassword(ctx, user.Email, "password")
 		if err != nil {
-			t.Errorf("want <nil>; got %q", err)
+			t.Errorf("want <nil>; got %v", err)
 		}
 
 		events.Expect(account.SignedInWithPassword{Email: user.Email})
@@ -42,6 +42,106 @@ func TestSignInWithPassword(t *testing.T) {
 		}
 		if want, got := account.SignInMethodWebsite, user.LastSignedInMethod; want != got {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
+		}
+	})
+
+	t.Run("throttling", func(t *testing.T) {
+		ctx := context.Background()
+		svc, _, repo := NewTestEnv(ctx)
+
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+
+		for _, user := range []*account.User{user1, user2} {
+			{
+				err := svc.SignInWithPassword(ctx, user.Email, "foobarbaz")
+				if err == nil {
+					t.Error("want error; got <nil>")
+				}
+
+				user, err = repo.FindUserByID(ctx, user.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if want, got := 1, user.SignInAttempts; want != got {
+					t.Errorf("want sign in attempts to be %v; got %v", want, got)
+				}
+				if user.LastSignInAttemptAt.IsZero() {
+					t.Error("want last sign in attempt at to be populated; got zero")
+				}
+			}
+
+			{
+				if user.ActivatedAt.IsZero() {
+					err := svc.ActivateUser(ctx, user.Email, "password", "password")
+					if err != nil {
+						t.Errorf("want <nil>; got %v", err)
+					}
+				} else {
+					err := svc.SignInWithPassword(ctx, user.Email, "password")
+					if err != nil {
+						t.Errorf("want <nil>; got %v", err)
+					}
+				}
+
+				var err error
+				user, err = repo.FindUserByID(ctx, user.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if want, got := 0, user.SignInAttempts; want != got {
+					t.Errorf("want sign in attempts to be %v; got %v", want, got)
+				}
+				if !user.LastSignInAttemptAt.IsZero() {
+					t.Errorf("want last sign in attempt at to be cleared; got %v", user.LastSignInAttemptAt)
+				}
+			}
+
+			{
+				for i := 0; i < account.MaxUnthrottledSignInAttempts; i++ {
+					err := svc.SignInWithPassword(ctx, user.Email, "foobarbaz")
+					if err == nil {
+						t.Error("want error; got <nil>")
+					}
+				}
+
+				var err error
+				user, err = repo.FindUserByID(ctx, user.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if want, got := account.MaxUnthrottledSignInAttempts, user.SignInAttempts; want != got {
+					t.Errorf("want sign in attempts to be %v; got %v", want, got)
+				}
+			}
+
+			{
+				err := svc.SignInWithPassword(ctx, user.Email, "foobarbaz")
+				if !errors.Is(err, account.ErrSignInThrottled) {
+					t.Errorf("want error: %v; got %v", account.ErrSignInThrottled, err)
+				}
+
+				user, err = repo.FindUserByID(ctx, user.ID)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				if want, got := account.MaxUnthrottledSignInAttempts, user.SignInAttempts; want != got {
+					t.Errorf("want sign in attempts to be %v; got %v", want, got)
+				}
+			}
+
+			err := svc.SignInWithPassword(ctx, user.Email, "password")
+			var throttle *account.SignInThrottleError
+			if !errors.As(err, &throttle) {
+				t.Fatalf("want %T; got %T", throttle, err)
+			}
+			if !errors.Is(err, account.ErrSignInThrottled) {
+				t.Errorf("want error: %v; got %v", account.ErrSignInThrottled, err)
+			}
 		}
 	})
 

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/rate"
 )
@@ -43,7 +44,9 @@ func ErrorStatus(err error) int {
 	case errors.Is(err, ErrMethodNotAllowed):
 		return http.StatusMethodNotAllowed
 
-	case errors.Is(err, rate.ErrInsufficientTokens):
+	case errors.Is(err, rate.ErrInsufficientTokens),
+		errors.Is(err, account.ErrSignInThrottled):
+
 		return http.StatusTooManyRequests
 
 	default:

@@ -1,6 +1,8 @@
 package testutil
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/pkg/event"
@@ -34,7 +36,14 @@ func (e *EventLog) Check(t *testing.T) bool {
 	t.Helper()
 
 	if want, got := len(e.want), len(e.got); want != got {
-		t.Errorf("want %v events; got %v", want, got)
+		var events string
+		for _, evt := range e.got {
+			events += fmt.Sprintf("  %#v\n", evt)
+		}
+
+		events = strings.TrimSuffix(events, "\n")
+
+		t.Errorf("\nwant %v events; got %v:\n%v", want, got, events)
 
 		return false
 	}
@@ -56,7 +65,14 @@ func CheckEvents(t *testing.T, wantEvents, gotEvents []event.Event) bool {
 	t.Helper()
 
 	if want, got := len(wantEvents), len(gotEvents); want != got {
-		t.Errorf("want %v events; got %v", want, got)
+		var events string
+		for _, evt := range gotEvents {
+			events += fmt.Sprintf("  %#v\n", evt)
+		}
+
+		events = strings.TrimSuffix(events, "\n")
+
+		t.Errorf("\nwant %v events; got %v:\n%v", want, got, events)
 
 		return false
 	}

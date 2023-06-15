@@ -2,12 +2,16 @@ package account
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"math"
 	"net/http"
+	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
 )
@@ -233,7 +237,39 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 	err := h.Account.SignInWithPassword(ctx, email, password)
 	if err != nil {
 		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", func(data *handler.ViewData) {
-			data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
+			var throttle *account.SignInThrottleError
+			if errors.As(err, &throttle) {
+				var wait string
+				remaining := time.Until(throttle.UnlockAt)
+
+				minutes := int(remaining.Minutes())
+				if minutes == 1 {
+					wait += fmt.Sprintf("%v minute", minutes)
+				} else if minutes > 1 {
+					wait += fmt.Sprintf("%v minutes", minutes)
+				}
+
+				seconds := int(math.Mod(remaining.Seconds(), 60))
+				if seconds > 0 {
+					if wait != "" {
+						wait += " and "
+					}
+
+					if seconds == 1 {
+						wait += fmt.Sprintf("%v second", seconds)
+					} else {
+						wait += fmt.Sprintf("%v seconds", seconds)
+					}
+				}
+
+				if wait != "" {
+					wait = " in " + wait
+				}
+
+				data.ErrorMessage = fmt.Sprintf("Too many failed sign in attempts. Please try again%v.", wait)
+			} else {
+				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
+			}
 		})
 
 		return
