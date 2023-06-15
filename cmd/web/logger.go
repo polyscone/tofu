@@ -12,16 +12,16 @@ import (
 )
 
 const (
-	styleText   LoggerStyle = "text"
-	styleJSON   LoggerStyle = "json"
-	stylePretty LoggerStyle = "pretty"
+	styleText LoggerStyle = "text"
+	styleJSON LoggerStyle = "json"
+	styleDev  LoggerStyle = "dev"
 )
 
 type LoggerStyle string
 
 func (s *LoggerStyle) isValid() bool {
 	switch *s {
-	case styleText, styleJSON, stylePretty:
+	case styleText, styleJSON, styleDev:
 		return true
 	}
 
@@ -31,7 +31,7 @@ func (s *LoggerStyle) isValid() bool {
 func (s *LoggerStyle) Set(value string) error {
 	style := LoggerStyle(value)
 	if !style.isValid() {
-		return errors.New(`style must be one of "text", "json", or "pretty"`)
+		return errors.New(`style must be one of "text", "json", or "dev"`)
 	}
 
 	*s = style
@@ -43,20 +43,20 @@ func (s LoggerStyle) String() string {
 	return string(s)
 }
 
-type PrettyHandler struct {
+type DevHandler struct {
 	level slog.Leveler
 	mu    sync.Mutex
 	w     io.Writer
 }
 
-func NewPrettyHandler(w io.Writer, level slog.Leveler) *PrettyHandler {
-	return &PrettyHandler{
+func NewDevHandler(w io.Writer, level slog.Leveler) *DevHandler {
+	return &DevHandler{
 		level: level,
 		w:     w,
 	}
 }
 
-func (h *PrettyHandler) Enabled(ctx context.Context, level slog.Level) bool {
+func (h *DevHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	minLevel := slog.LevelInfo
 	if h.level != nil {
 		minLevel = h.level.Level()
@@ -71,7 +71,7 @@ func (h *PrettyHandler) Enabled(ctx context.Context, level slog.Level) bool {
 // - Attr's values should be resolved
 // - If a group's key is empty, inline the group's Attrs
 // - If a group has no Attrs (even if it has a non-empty key), ignore it
-func (h *PrettyHandler) Handle(ctx context.Context, r slog.Record) error {
+func (h *DevHandler) Handle(ctx context.Context, r slog.Record) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
@@ -97,11 +97,11 @@ func (h *PrettyHandler) Handle(ctx context.Context, r slog.Record) error {
 }
 
 // TODO: Implement creating a new handler with attrs
-func (h *PrettyHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
+func (h *DevHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	return h
 }
 
 // TODO: Implement creating a new handler with group name
-func (h *PrettyHandler) WithGroup(name string) slog.Handler {
+func (h *DevHandler) WithGroup(name string) slog.Handler {
 	return h
 }
