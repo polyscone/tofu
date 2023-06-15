@@ -53,7 +53,7 @@ type Tenant struct {
 	Proxies  []string
 	Broker   event.Broker
 	Email    Email
-	Logger   *slog.Logger
+	Log      *slog.Logger
 
 	Account *account.Service
 	System  *system.Service

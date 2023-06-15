@@ -15,7 +15,7 @@ func accountSignedInWithPasswordHandler(h *handler.Handler) any {
 
 		user, err := h.Repo.Account.FindUserByEmail(ctx, evt.Email)
 		if err != nil {
-			h.Logger.Error("signed in with password: find user by email", "error", err)
+			h.Log.Error("signed in with password: find user by email", "error", err)
 
 			return
 		}
@@ -23,7 +23,7 @@ func accountSignedInWithPasswordHandler(h *handler.Handler) any {
 		if user.HasActivatedTOTP() && user.TOTPMethod == account.TOTPMethodSMS.String() {
 			background.Go(func() {
 				if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
-					h.Logger.Error("signed in with password: send TOTP SMS", "error", err)
+					h.Log.Error("signed in with password: send TOTP SMS", "error", err)
 				}
 			})
 		}
@@ -37,7 +37,7 @@ func accountDisabledTOTPHandler(h *handler.Handler) any {
 
 			config, err := h.Repo.System.FindConfig(ctx)
 			if err != nil {
-				h.Logger.Error("disabled TOTP: find config", "error", err)
+				h.Log.Error("disabled TOTP: find config", "error", err)
 
 				return
 			}
@@ -47,7 +47,7 @@ func accountDisabledTOTPHandler(h *handler.Handler) any {
 				To:   []string{evt.Email},
 			}
 			if err := h.SendEmail(ctx, recipients, "disabled_totp", nil); err != nil {
-				h.Logger.Error("disabled TOTP: send email", "error", err)
+				h.Log.Error("disabled TOTP: send email", "error", err)
 			}
 		})
 	}
@@ -60,14 +60,14 @@ func accountSignedUpHandler(h *handler.Handler) any {
 
 			tok, err := h.Repo.Web.AddActivationToken(ctx, evt.Email, 2*time.Hour)
 			if err != nil {
-				h.Logger.Error("signed up: add activation token", "error", err)
+				h.Log.Error("signed up: add activation token", "error", err)
 
 				return
 			}
 
 			config, err := h.Repo.System.FindConfig(ctx)
 			if err != nil {
-				h.Logger.Error("signed up: find config", "error", err)
+				h.Log.Error("signed up: find config", "error", err)
 
 				return
 			}
@@ -80,7 +80,7 @@ func accountSignedUpHandler(h *handler.Handler) any {
 				"Token": tok,
 			}
 			if err := h.SendEmail(ctx, recipients, "activate_account", vars); err != nil {
-				h.Logger.Error("signed up: send email", "error", err)
+				h.Log.Error("signed up: send email", "error", err)
 			}
 		})
 	}

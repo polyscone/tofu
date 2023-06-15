@@ -55,6 +55,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		log := h.Logger(ctx)
 		config := h.Config(ctx)
 
 		background.Go(func() {
@@ -64,7 +65,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 
 			tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 			if err != nil {
-				h.Logger.Error("reset password: add reset password token", "error", err)
+				log.Error("reset password: add reset password token", "error", err)
 
 				return
 			}
@@ -77,7 +78,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 				"Token": tok,
 			}
 			if err := h.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
-				h.Logger.Error("reset password: send email", "error", err)
+				log.Error("reset password: send email", "error", err)
 			}
 		})
 

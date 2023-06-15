@@ -45,13 +45,16 @@ func (s Style) String() string {
 
 type DevHandler struct {
 	level slog.Leveler
-	mu    sync.Mutex
+	group string
+	attrs []slog.Attr
+	mu    *sync.Mutex
 	w     io.Writer
 }
 
 func NewDevHandler(w io.Writer, level slog.Leveler) *DevHandler {
 	return &DevHandler{
 		level: level,
+		mu:    new(sync.Mutex),
 		w:     w,
 	}
 }
@@ -65,20 +68,32 @@ func (h *DevHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return level >= minLevel
 }
 
-// TODO:
-// - If r.Time is the zero time, ignore the time
-// - If r.PC is zero, ignore it
-// - Attr's values should be resolved
-// - If a group's key is empty, inline the group's Attrs
-// - If a group has no Attrs (even if it has a non-empty key), ignore it
 func (h *DevHandler) Handle(ctx context.Context, r slog.Record) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
 	var attrs string
+	for _, a := range h.attrs {
+		if !a.Equal(slog.Attr{}) {
+			attrs += "  "
+
+			if h.group != "" {
+				attrs += h.group + "."
+			}
+
+			attrs += a.Key + ": " + a.Value.String() + "\n"
+		}
+	}
+
 	r.Attrs(func(a slog.Attr) bool {
 		if !a.Equal(slog.Attr{}) {
-			attrs += "  " + a.Key + ": " + a.Value.String() + "\n"
+			attrs += "  "
+
+			if h.group != "" {
+				attrs += h.group + "."
+			}
+
+			attrs += a.Key + ": " + a.Value.String() + "\n"
 		}
 
 		return true
@@ -96,12 +111,22 @@ func (h *DevHandler) Handle(ctx context.Context, r slog.Record) error {
 	return nil
 }
 
-// TODO: Implement creating a new handler with attrs
 func (h *DevHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return h
+	return &DevHandler{
+		level: h.level,
+		group: h.group,
+		attrs: append(h.attrs, attrs...),
+		mu:    h.mu,
+		w:     h.w,
+	}
 }
 
-// TODO: Implement creating a new handler with group name
 func (h *DevHandler) WithGroup(name string) slog.Handler {
-	return h
+	return &DevHandler{
+		level: h.level,
+		group: strings.TrimSuffix(name+"."+h.group, "."),
+		attrs: h.attrs,
+		mu:    h.mu,
+		w:     h.w,
+	}
 }

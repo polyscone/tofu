@@ -228,6 +228,8 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 }
 
 func signInWithPassword(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email, password string) {
+	log := h.Logger(ctx)
+
 	err := h.Account.SignInWithPassword(ctx, email, password)
 	if err != nil {
 		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", func(data *handler.ViewData) {
@@ -253,7 +255,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 
 	knownBreachCount, err := pwned.KnownPasswordBreachCount(ctx, []byte(password))
 	if err != nil {
-		httputil.LogError(h.Logger, r, "known password breach count", "error", err)
+		log.Error("known password breach count", "error", err)
 	}
 
 	if knownBreachCount > 0 {

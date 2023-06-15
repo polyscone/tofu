@@ -24,16 +24,20 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/rate"
+	"github.com/polyscone/tofu/internal/pkg/realip"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/sms"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 	"github.com/polyscone/tofu/internal/repository"
+	"golang.org/x/exp/slog"
 )
 
 type ctxKey int
 
 const (
-	ctxConfig ctxKey = iota
+	ctxLogger ctxKey = iota
+	ctxConfig
 	ctxUser
 	ctxPassport
 )
@@ -108,9 +112,20 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
+		requestID, err := uuid.NewV4()
+		if err != nil {
+			h.Log.Error("handler middleware: new v4 UUID", "error", err)
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+
+			return
+		}
+
 		config, err := h.Repo.System.FindConfig(ctx)
 		if err != nil {
-			h.ErrorView(w, r, "find config", err, "error", nil)
+			h.Log.Error("handler middleware: find config", "error", err)
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 
 			return
 		}
@@ -122,7 +137,7 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 			var err error
 			user, err = h.Repo.Account.FindUserByID(ctx, userID)
 			if err != nil && !errors.Is(err, repository.ErrNotFound) {
-				h.Logger.Error("handler: middleware: find user by id", "error", err)
+				h.Log.Error("handler middleware: find user by id", "error", err)
 			}
 		}
 
@@ -137,6 +152,22 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 			})
 		}
 
+		remoteAddr, err := realip.FromRequest(r, h.Proxies...)
+		if err != nil {
+			remoteAddr = r.RemoteAddr
+
+			h.Log.Error("handler middleware: realip from request", "error", err)
+		}
+
+		logger := h.Log.With(
+			"id", requestID,
+			"method", r.Method,
+			"remoteAddr", remoteAddr,
+			"url", r.URL.String(),
+			"user", userID,
+		)
+
+		ctx = context.WithValue(ctx, ctxLogger, logger)
 		ctx = context.WithValue(ctx, ctxConfig, config)
 		ctx = context.WithValue(ctx, ctxUser, user)
 		ctx = context.WithValue(ctx, ctxPassport, passport)
@@ -169,6 +200,20 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 	}
 
 	return csrf.MaskedToken(ctx), nil
+}
+
+func (h *Handler) Logger(ctx context.Context) *slog.Logger {
+	value := ctx.Value(ctxLogger)
+	if value == nil {
+		return slog.Default()
+	}
+
+	logger, ok := value.(*slog.Logger)
+	if !ok {
+		panic(fmt.Sprintf("could not assert logger as %T", logger))
+	}
+
+	return logger
 }
 
 func (h *Handler) Config(ctx context.Context) *system.Config {
@@ -452,7 +497,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, v
 	var buf bytes.Buffer
 
 	if err := h.view(view).ExecuteTemplate(&buf, "master", data); err != nil {
-		httputil.LogError(h.Logger, r, "execute view template", "error", err)
+		h.Logger(ctx).Error("execute view template", "error", err)
 
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 
@@ -463,7 +508,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, v
 	w.WriteHeader(status)
 
 	if _, err := buf.WriteTo(w); err != nil {
-		httputil.LogError(h.Logger, r, "write view template response", "error", err)
+		h.Logger(ctx).Error("write view template response", "error", err)
 	}
 }
 
@@ -474,7 +519,9 @@ func (h *Handler) View(w http.ResponseWriter, r *http.Request, status int, view 
 }
 
 func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg string, err error, view string, dataFunc ViewDataFunc) {
-	httputil.LogError(h.Logger, r, msg, "error", err)
+	ctx := r.Context()
+
+	h.Logger(ctx).Error(msg, "error", err)
 
 	status := httputil.ErrorStatus(err)
 
@@ -534,7 +581,9 @@ func (h *Handler) ErrorView(w http.ResponseWriter, r *http.Request, msg string, 
 }
 
 func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, err error) {
-	httputil.LogError(h.Logger, r, msg, "error", err)
+	ctx := r.Context()
+
+	h.Logger(ctx).Error(msg, "error", err)
 
 	var displayOK bool
 	status := httputil.ErrorStatus(err)
@@ -573,7 +622,7 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 	}
 
 	if err := json.NewEncoder(w).Encode(detail); err != nil {
-		httputil.LogError(h.Logger, r, "write JSON response", "error", err)
+		h.Logger(ctx).Error("write JSON response", "error", err)
 	}
 }
 

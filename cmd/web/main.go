@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web"
-	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/pkg/slogger"
 	"golang.org/x/exp/slog"
 )
@@ -167,8 +166,6 @@ func main() {
 	if err := initTenants(tenants); err != nil {
 		slog.Error("initialise tenants", "error", err)
 	}
-
-	httputil.TrustedProxies = opts.server.proxies
 
 	listener, err := opts.server.addr.Listener()
 	if err != nil {

@@ -78,7 +78,6 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 		Insecure:     tenant.Insecure,
 		ErrorHandler: errorHandler("session middleware"),
 	}))
-	mux.Use(httputil.TraceRequest(h.Sessions, errorHandler("trace request middleware")))
 	mux.Use(middleware.NoContent)
 	mux.Use(middleware.SecurityHeaders)
 	mux.Use(middleware.ETag)

@@ -63,7 +63,7 @@ func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 	if err != nil {
 		return nil, fmt.Errorf("new logger: %w", err)
 	}
-	tenant.Logger = logger
+	tenant.Log = logger
 
 	if r.TLS != nil {
 		tenant.Scheme = "https"

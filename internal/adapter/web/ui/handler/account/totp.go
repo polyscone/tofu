@@ -320,10 +320,11 @@ func totpSendSMSPost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		user := h.User(ctx)
+		log := h.Logger(ctx)
 
 		background.Go(func() {
 			if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
-				h.Logger.Error("TOTP send SMS: send SMS", "error", err)
+				log.Error("TOTP send SMS: send SMS", "error", err)
 			}
 		})
 
