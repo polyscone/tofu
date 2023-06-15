@@ -22,7 +22,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/sms"
-	"golang.org/x/exp/slog"
 )
 
 func TOTP(h *handler.Handler, mux *router.ServeMux) {
@@ -324,7 +323,7 @@ func totpSendSMSPost(h *handler.Handler) http.HandlerFunc {
 
 		background.Go(func() {
 			if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
-				slog.Error("TOTP send SMS: send SMS", "error", err)
+				h.Logger.Error("TOTP send SMS: send SMS", "error", err)
 			}
 		})
 

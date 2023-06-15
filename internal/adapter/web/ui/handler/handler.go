@@ -28,7 +28,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/sms"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
 	"github.com/polyscone/tofu/internal/repository"
-	"golang.org/x/exp/slog"
 )
 
 type ctxKey int
@@ -123,7 +122,7 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 			var err error
 			user, err = h.Repo.Account.FindUserByID(ctx, userID)
 			if err != nil && !errors.Is(err, repository.ErrNotFound) {
-				slog.Error("handler: middleware: find user by id", "error", err)
+				h.Logger.Error("handler: middleware: find user by id", "error", err)
 			}
 		}
 
@@ -453,7 +452,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, v
 	var buf bytes.Buffer
 
 	if err := h.view(view).ExecuteTemplate(&buf, "master", data); err != nil {
-		httputil.LogError(r, "execute view template", "error", err)
+		httputil.LogError(h.Logger, r, "execute view template", "error", err)
 
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 
@@ -464,7 +463,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, v
 	w.WriteHeader(status)
 
 	if _, err := buf.WriteTo(w); err != nil {
-		httputil.LogError(r, "write view template response", "error", err)
+		httputil.LogError(h.Logger, r, "write view template response", "error", err)
 	}
 }
 
@@ -475,7 +474,7 @@ func (h *Handler) View(w http.ResponseWriter, r *http.Request, status int, view 
 }
 
 func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg string, err error, view string, dataFunc ViewDataFunc) {
-	httputil.LogError(r, msg, "error", err)
+	httputil.LogError(h.Logger, r, msg, "error", err)
 
 	status := httputil.ErrorStatus(err)
 
@@ -535,7 +534,7 @@ func (h *Handler) ErrorView(w http.ResponseWriter, r *http.Request, msg string, 
 }
 
 func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, err error) {
-	httputil.LogError(r, msg, "error", err)
+	httputil.LogError(h.Logger, r, msg, "error", err)
 
 	var displayOK bool
 	status := httputil.ErrorStatus(err)
@@ -574,7 +573,7 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 	}
 
 	if err := json.NewEncoder(w).Encode(detail); err != nil {
-		httputil.LogError(r, "write JSON response", "error", err)
+		httputil.LogError(h.Logger, r, "write JSON response", "error", err)
 	}
 }
 

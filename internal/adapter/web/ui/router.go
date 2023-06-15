@@ -98,9 +98,9 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 	mux.Use(h.Middleware)
 
 	// Event listeners
-	tenant.Broker.Listen(accountSignedInWithPasswordHandler(tenant, h))
-	tenant.Broker.Listen(accountDisabledTOTPHandler(tenant, h))
-	tenant.Broker.Listen(accountSignedUpHandler(tenant, h))
+	tenant.Broker.Listen(accountSignedInWithPasswordHandler(h))
+	tenant.Broker.Listen(accountDisabledTOTPHandler(h))
+	tenant.Broker.Listen(accountSignedUpHandler(h))
 
 	// Redirects
 	mux.Redirect(http.MethodGet, "/security.txt", "/.well-known/security.txt", http.StatusMovedPermanently)

@@ -253,7 +253,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 
 	knownBreachCount, err := pwned.KnownPasswordBreachCount(ctx, []byte(password))
 	if err != nil {
-		httputil.LogError(r, "known password breach count", "error", err)
+		httputil.LogError(h.Logger, r, "known password breach count", "error", err)
 	}
 
 	if knownBreachCount > 0 {

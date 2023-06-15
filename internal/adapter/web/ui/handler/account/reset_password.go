@@ -13,7 +13,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"golang.org/x/exp/slog"
 )
 
 func ResetPassword(h *handler.Handler, mux *router.ServeMux) {
@@ -65,7 +64,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 
 			tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
 			if err != nil {
-				slog.Error("reset password: add reset password token", "error", err)
+				h.Logger.Error("reset password: add reset password token", "error", err)
 
 				return
 			}
@@ -78,7 +77,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 				"Token": tok,
 			}
 			if err := h.SendEmail(ctx, recipients, "reset_password", vars); err != nil {
-				slog.Error("reset password: send email", "error", err)
+				h.Logger.Error("reset password: send email", "error", err)
 			}
 		})
 

@@ -67,7 +67,7 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 
 		knownBreachCount, err := pwned.KnownPasswordBreachCount(ctx, []byte(input.NewPassword))
 		if err != nil {
-			httputil.LogError(r, "known password breach count", "error", err)
+			httputil.LogError(h.Logger, r, "known password breach count", "error", err)
 
 			h.Sessions.Delete(ctx, sess.KnownPasswordBreachCount)
 		} else {

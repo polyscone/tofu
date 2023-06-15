@@ -1,4 +1,4 @@
-package main
+package slogger
 
 import (
 	"context"
@@ -12,24 +12,24 @@ import (
 )
 
 const (
-	styleText LoggerStyle = "text"
-	styleJSON LoggerStyle = "json"
-	styleDev  LoggerStyle = "dev"
+	StyleText Style = "text"
+	StyleJSON Style = "json"
+	StyleDev  Style = "dev"
 )
 
-type LoggerStyle string
+type Style string
 
-func (s *LoggerStyle) isValid() bool {
+func (s *Style) isValid() bool {
 	switch *s {
-	case styleText, styleJSON, styleDev:
+	case StyleText, StyleJSON, StyleDev:
 		return true
 	}
 
 	return false
 }
 
-func (s *LoggerStyle) Set(value string) error {
-	style := LoggerStyle(value)
+func (s *Style) Set(value string) error {
+	style := Style(value)
 	if !style.isValid() {
 		return errors.New(`style must be one of "text", "json", or "dev"`)
 	}
@@ -39,7 +39,7 @@ func (s *LoggerStyle) Set(value string) error {
 	return nil
 }
 
-func (s LoggerStyle) String() string {
+func (s Style) String() string {
 	return string(s)
 }
 

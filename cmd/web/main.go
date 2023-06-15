@@ -16,6 +16,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
+	"github.com/polyscone/tofu/internal/pkg/slogger"
 	"golang.org/x/exp/slog"
 )
 
@@ -35,7 +36,7 @@ var opts struct {
 	data    string
 
 	log struct {
-		style LoggerStyle
+		style slogger.Style
 	}
 
 	server struct {
@@ -98,28 +99,24 @@ func main() {
 	}
 
 	if opts.log.style == "" {
-		opts.log.style = styleJSON
+		opts.log.style = slogger.StyleJSON
 	}
 
-	var level slog.LevelVar
-	var handler slog.Handler
-	switch opts.log.style {
-	case styleJSON:
-		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: &level})
-
-	case styleText:
-		handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: &level})
-
-	case styleDev:
-		handler = NewDevHandler(os.Stdout, &level)
-
-	default:
-		fmt.Printf("Unknown log style %q", opts.log.style)
+	handler, err := slogger.NewHandler(opts.log.style, nil)
+	if err != nil {
+		fmt.Println(err)
 
 		os.Exit(2)
 	}
 
-	slog.SetDefault(slog.New(handler))
+	logger, err := slogger.New(opts.log.style, nil)
+	if err != nil {
+		fmt.Println(err)
+
+		os.Exit(2)
+	}
+
+	slog.SetDefault(logger)
 
 	opts.server.addr.insecure = opts.server.insecureHTTP
 
@@ -186,7 +183,7 @@ func main() {
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
-		Handler:      web.NewMultiTenantHandler(newTenant),
+		Handler:      web.NewMultiTenantHandler(logger, opts.log.style, newTenant),
 	}
 
 	go func() {

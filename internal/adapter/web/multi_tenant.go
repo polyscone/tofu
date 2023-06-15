@@ -7,9 +7,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
+	"github.com/polyscone/tofu/internal/pkg/slogger"
+	"golang.org/x/exp/slog"
 )
 
 var ErrTenantNotFound = errors.New("not found")
@@ -17,42 +18,52 @@ var ErrTenantNotFound = errors.New("not found")
 type NewTenantFunc func(hostname string) (*handler.Tenant, error)
 
 type MultiTenantHandler struct {
-	newTenant  NewTenantFunc
-	handlersMu sync.RWMutex
-	handlers   map[string]http.Handler
+	logger    *slog.Logger
+	logStyle  slogger.Style
+	newTenant NewTenantFunc
+	muxesMu   sync.RWMutex
+	muxes     map[string]http.Handler
 }
 
-func NewMultiTenantHandler(newTenant NewTenantFunc) *MultiTenantHandler {
+func NewMultiTenantHandler(logger *slog.Logger, logStyle slogger.Style, newTenant NewTenantFunc) *MultiTenantHandler {
 	return &MultiTenantHandler{
+		logger:    logger,
+		logStyle:  logStyle,
 		newTenant: newTenant,
-		handlers:  make(map[string]http.Handler),
+		muxes:     make(map[string]http.Handler),
 	}
 }
 
-func (h *MultiTenantHandler) handler(r *http.Request) (http.Handler, error) {
+func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 	hostname, port, _ := strings.Cut(r.Host, ":")
 
-	h.handlersMu.RLock()
+	h.muxesMu.RLock()
 
-	if handler, ok := h.handlers[hostname]; ok {
-		h.handlersMu.RUnlock()
+	if mux, ok := h.muxes[hostname]; ok {
+		h.muxesMu.RUnlock()
 
-		return handler, nil
+		return mux, nil
 	}
 
-	h.handlersMu.RUnlock()
+	h.muxesMu.RUnlock()
 
-	h.handlersMu.Lock()
-	defer h.handlersMu.Unlock()
+	h.muxesMu.Lock()
+	defer h.muxesMu.Unlock()
 
-	if handler, ok := h.handlers[hostname]; ok {
-		return handler, nil
+	if mux, ok := h.muxes[hostname]; ok {
+		return mux, nil
 	}
 
 	tenant, err := h.newTenant(hostname)
 	if err != nil {
 		return nil, fmt.Errorf("new tenant: %w", err)
 	}
+
+	logger, err := slogger.New(h.logStyle, nil)
+	if err != nil {
+		return nil, fmt.Errorf("new logger: %w", err)
+	}
+	tenant.Logger = logger
 
 	if r.TLS != nil {
 		tenant.Scheme = "https"
@@ -68,15 +79,15 @@ func (h *MultiTenantHandler) handler(r *http.Request) (http.Handler, error) {
 
 	mux.Handle("/", ui.NewRouter(tenant))
 
-	h.handlers[hostname] = mux
+	h.muxes[hostname] = mux
 
 	return mux, nil
 }
 
 func (h *MultiTenantHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	handler, err := h.handler(r)
+	mux, err := h.mux(r)
 	if err != nil {
-		httputil.LogError(r, "serve HTTP", "error", err, "url", r.URL.String())
+		h.logger.Error("serve HTTP", "error", err, "url", r.URL.String())
 
 		if errors.Is(err, ErrTenantNotFound) {
 			http.Error(w, "Site not served on this interface", http.StatusNotFound)
@@ -87,5 +98,5 @@ func (h *MultiTenantHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	handler.ServeHTTP(w, r)
+	mux.ServeHTTP(w, r)
 }

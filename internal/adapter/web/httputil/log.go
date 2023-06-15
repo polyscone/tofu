@@ -9,12 +9,12 @@ import (
 
 var TrustedProxies []string
 
-func Log(log func(string, ...any), r *http.Request, msg string, args ...any) {
+func Log(logger *slog.Logger, level slog.Level, r *http.Request, msg string, args ...any) {
 	remoteAddr, _err := realip.FromRequest(r, TrustedProxies...)
 	if _err != nil {
 		remoteAddr = r.RemoteAddr
 
-		slog.Error("realip from request", "error", _err)
+		logger.Error("realip from request", "error", _err)
 	}
 
 	td := getTraceData(r.Context())
@@ -25,13 +25,21 @@ func Log(log func(string, ...any), r *http.Request, msg string, args ...any) {
 	args = append(args, "url", r.URL.String())
 	args = append(args, "user", td.userID)
 
-	log(msg, args...)
+	logger.Log(nil, level, msg, args...)
 }
 
-func LogError(r *http.Request, msg string, args ...any) {
-	Log(slog.Error, r, msg, args...)
+func LogDebug(logger *slog.Logger, r *http.Request, msg string, args ...any) {
+	Log(logger, slog.LevelDebug, r, msg, args...)
 }
 
-func LogInfo(r *http.Request, msg string, args ...any) {
-	Log(slog.Info, r, msg, args...)
+func LogInfo(logger *slog.Logger, r *http.Request, msg string, args ...any) {
+	Log(logger, slog.LevelInfo, r, msg, args...)
+}
+
+func LogWarn(logger *slog.Logger, r *http.Request, msg string, args ...any) {
+	Log(logger, slog.LevelWarn, r, msg, args...)
+}
+
+func LogError(logger *slog.Logger, r *http.Request, msg string, args ...any) {
+	Log(logger, slog.LevelError, r, msg, args...)
 }
