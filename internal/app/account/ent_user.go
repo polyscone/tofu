@@ -395,7 +395,7 @@ func (u *User) DisableTOTPWithRecoveryCode(code RecoveryCode) error {
 	return nil
 }
 
-func (u *User) checkPassword(password Password, hasher Hasher) (rehash bool, _ error) {
+func (u *User) checkPassword(password Password, hasher Hasher) (rehashed bool, _ error) {
 	ok, rehash, err := hasher.CheckPasswordHash(password.data, u.HashedPassword)
 	if err != nil {
 		return false, err
@@ -416,6 +416,11 @@ func (u *User) checkPassword(password Password, hasher Hasher) (rehash bool, _ e
 
 func (u *User) SignInWithPassword(password Password, hasher Hasher) (rehashed bool, _ error) {
 	if u.ActivatedAt.IsZero() {
+		// Always check a password of some kind to help prevent timing attacks
+		if err := hasher.CheckDummyPasswordHash(password.data); err != nil {
+			return false, fmt.Errorf("check dummy password hash: %w", err)
+		}
+
 		return false, ErrNotActivated
 	}
 

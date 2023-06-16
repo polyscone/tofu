@@ -17,6 +17,7 @@ var hasher *Hasher
 
 type Hasher struct {
 	params argon2.Params
+	dummy  []byte
 }
 
 func (h *Hasher) EncodedPasswordHash(password []byte) ([]byte, error) {
@@ -25,6 +26,12 @@ func (h *Hasher) EncodedPasswordHash(password []byte) ([]byte, error) {
 
 func (h *Hasher) CheckPasswordHash(password, encodedHash []byte) (ok, rehash bool, _ error) {
 	return argon2.Check(password, encodedHash, &h.params)
+}
+
+func (h *Hasher) CheckDummyPasswordHash(password []byte) error {
+	_, _, err := argon2.Check(password, h.dummy, &h.params)
+
+	return err
 }
 
 func initHasher() error {
@@ -60,7 +67,15 @@ func initHasher() error {
 		return fmt.Errorf("invalid argon2 params: %w", err)
 	}
 
-	hasher = &Hasher{params: params}
+	dummy, err := argon2.EncodedHash(nil, []byte("password"), params)
+	if err != nil {
+		return fmt.Errorf("new dummy hash: %w", err)
+	}
+
+	hasher = &Hasher{
+		params: params,
+		dummy:  dummy,
+	}
 
 	return nil
 }

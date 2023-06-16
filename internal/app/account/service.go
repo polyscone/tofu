@@ -42,6 +42,7 @@ type ReadWriter interface {
 type Hasher interface {
 	EncodedPasswordHash(password []byte) ([]byte, error)
 	CheckPasswordHash(password, encodedHash []byte) (ok, rehash bool, err error)
+	CheckDummyPasswordHash(password []byte) error
 }
 
 type Service struct {
