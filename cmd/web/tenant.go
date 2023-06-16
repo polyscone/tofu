@@ -12,6 +12,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/app/system"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
@@ -56,7 +57,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 	broker := event.NewMemoryBroker()
 
-	accountRepo, err := sqlite.NewAccountRepo(ctx, db)
+	accountRepo, err := sqlite.NewAccountRepo(ctx, db, app.SignInThrottleTTL)
 	if err != nil {
 		return nil, fmt.Errorf("new account repo: %w", err)
 	}

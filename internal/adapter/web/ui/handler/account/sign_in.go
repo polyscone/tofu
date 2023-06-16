@@ -4,15 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"net/http"
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/pkg/human"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
 )
 
@@ -231,38 +232,17 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 	}
 }
 
-func signInSetThrottleError(err error) handler.ViewDataFunc {
+func signInWithPasswordErrors(err error) handler.ViewDataFunc {
 	return func(data *handler.ViewData) {
 		var throttle *account.SignInThrottleError
 		if errors.As(err, &throttle) {
-			var wait string
-			remaining := time.Until(throttle.UnlockAt)
-
-			minutes := int(remaining.Minutes())
-			if minutes == 1 {
-				wait += fmt.Sprintf("%v minute", minutes)
-			} else if minutes > 1 {
-				wait += fmt.Sprintf("%v minutes", minutes)
-			}
-
-			seconds := int(math.Mod(remaining.Seconds(), 60))
-			if seconds > 0 {
-				if wait != "" {
-					wait += " and "
-				}
-
-				if seconds == 1 {
-					wait += fmt.Sprintf("%v second", seconds)
-				} else {
-					wait += fmt.Sprintf("%v seconds", seconds)
-				}
-			}
-
+			last := human.Duration(app.SignInThrottleTTL)
+			wait := human.Duration(time.Until(throttle.UnlockAt))
 			if wait != "" {
 				wait = " in " + wait
 			}
 
-			data.ErrorMessage = fmt.Sprintf("Too many failed sign in attempts. Please try again%v.", wait)
+			data.ErrorMessage = fmt.Sprintf("Too many failed sign in attempts in the last %v. Please try again%v.", last, wait)
 		} else {
 			data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
 		}
@@ -274,7 +254,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 
 	attempts := h.Sessions.GetInt(ctx, sess.SignInAttempts)
 	lastAttemptAt := h.Sessions.GetTime(ctx, sess.LastSignInAttemptAt)
-	if time.Since(lastAttemptAt) > 24*time.Hour {
+	if time.Since(lastAttemptAt) > app.SignInThrottleTTL {
 		attempts = 0
 		lastAttemptAt = time.Time{}
 	}
@@ -282,7 +262,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 	if err := h.Account.CheckSignInThrottle(attempts, lastAttemptAt); err != nil {
 		err = fmt.Errorf("check session sign in throttle: %w", err)
 
-		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", signInSetThrottleError(err))
+		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", signInWithPasswordErrors(err))
 
 		return
 	}
@@ -295,7 +275,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 		h.Sessions.Set(ctx, sess.SignInAttempts, attempts)
 		h.Sessions.Set(ctx, sess.LastSignInAttemptAt, lastAttemptAt)
 
-		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", signInSetThrottleError(err))
+		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", signInWithPasswordErrors(err))
 
 		return
 	}

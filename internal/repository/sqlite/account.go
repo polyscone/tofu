@@ -20,7 +20,7 @@ type AccountRepo struct {
 	db *DB
 }
 
-func NewAccountRepo(ctx context.Context, db *sql.DB) (*AccountRepo, error) {
+func NewAccountRepo(ctx context.Context, db *sql.DB, signInThrottleTTL time.Duration) (*AccountRepo, error) {
 	migrations, err := fs.Sub(migrations, "migrations/account")
 	if err != nil {
 		return nil, fmt.Errorf("initialise account migrations FS: %w", err)
@@ -37,7 +37,7 @@ func NewAccountRepo(ctx context.Context, db *sql.DB) (*AccountRepo, error) {
 		ctx := context.Background()
 
 		for range time.Tick(5 * time.Minute) {
-			if err := r.DeleteStaleSignInAttemptLogs(ctx, 24*time.Hour); err != nil {
+			if err := r.DeleteStaleSignInAttemptLogs(ctx, signInThrottleTTL); err != nil {
 				slog.Error("account repo: delete stale sign in attempt logs", "error", err)
 			}
 		}
@@ -210,8 +210,14 @@ func (r *AccountRepo) SaveSignInAttemptLog(ctx context.Context, log *account.Sig
 	}
 	defer tx.Rollback()
 
-	if err := r.upsertSignInAttemptLog(ctx, tx, log); err != nil {
-		return fmt.Errorf("upsert sign in attempt log: %w", err)
+	if log.Attempts == 0 {
+		if err := r.deleteSignInAttemptLog(ctx, tx, log.Email); err != nil {
+			return fmt.Errorf("delete sign in attempt log: %w", err)
+		}
+	} else {
+		if err := r.upsertSignInAttemptLog(ctx, tx, log); err != nil {
+			return fmt.Errorf("upsert sign in attempt log: %w", err)
+		}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -914,6 +920,17 @@ func (r *AccountRepo) upsertSignInAttemptLog(ctx context.Context, tx *Tx, log *a
 		sql.Named("last_attempt_at", Time(log.LastAttemptAt.UTC())),
 		sql.Named("created_at", Time(tx.now.UTC())),
 		sql.Named("updated_at", Time(tx.now.UTC())),
+	)
+
+	return err
+}
+
+func (r *AccountRepo) deleteSignInAttemptLog(ctx context.Context, tx *Tx, email string) error {
+	_, err := tx.ExecContext(ctx, `
+		DELETE FROM account__sign_in_attempt_logs
+		WHERE email = :email
+	`,
+		sql.Named("email", email),
 	)
 
 	return err

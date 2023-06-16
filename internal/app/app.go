@@ -1,10 +1,14 @@
 package app
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 const (
-	Name        = "App"
-	Description = "This is a boilerplate project for applications written in Go."
+	Name              = "App"
+	Description       = "This is a boilerplate project for applications written in Go."
+	SignInThrottleTTL = 24 * time.Hour
 )
 
 var (

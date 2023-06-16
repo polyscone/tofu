@@ -18,7 +18,7 @@ var hasher = testutil.NewPasswordHasher()
 func NewTestEnv(ctx context.Context) (*account.Service, event.Broker, account.ReadWriter) {
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	repo := errsx.Must(sqlite.NewAccountRepo(ctx, db))
+	repo := errsx.Must(sqlite.NewAccountRepo(ctx, db, 1*time.Minute))
 	svc := errsx.Must(account.NewService(broker, repo, hasher))
 
 	return svc, broker, repo
