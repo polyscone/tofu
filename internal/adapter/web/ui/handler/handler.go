@@ -564,7 +564,7 @@ func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg stri
 		case errors.Is(err, rate.ErrInsufficientTokens),
 			errors.Is(err, account.ErrSignInThrottled):
 
-			data.ErrorMessage = "You have made too many consecutive requests."
+			data.ErrorMessage = "You have made too many consecutive requests. Please try again later."
 
 		default:
 			data.ErrorMessage = "An error has occurred."
