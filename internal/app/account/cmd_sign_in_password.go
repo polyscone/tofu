@@ -12,7 +12,7 @@ import (
 
 const (
 	MaxFreeSignInAttempts  = 3
-	MaxSignInThrottleDelay = 30 * time.Minute
+	MaxSignInThrottleDelay = app.SignInThrottleTTL / 2
 )
 
 var ErrSignInThrottled = errors.New("sign in throttled")

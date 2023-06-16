@@ -8,7 +8,7 @@ import (
 const (
 	Name              = "App"
 	Description       = "This is a boilerplate project for applications written in Go."
-	SignInThrottleTTL = 24 * time.Hour
+	SignInThrottleTTL = 30 * time.Minute
 )
 
 var (
