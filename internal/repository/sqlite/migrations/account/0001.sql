@@ -12,14 +12,20 @@ CREATE TABLE account__users (
 	totp_activated_at       DATETIME,
 	signed_up_at            DATETIME NOT NULL,
 	activated_at            DATETIME,
-	sign_in_attempts        INTEGER NOT NULL,
-	last_sign_in_attempt_at DATETIME,
 	last_signed_in_at       DATETIME,
 	last_signed_in_method   TEXT NOT NULL,
 	created_at              DATETIME NOT NULL,
 	updated_at              DATETIME
 );
 CREATE INDEX idx_account__users_email ON account__users (email);
+
+CREATE TABLE account__sign_in_attempt_logs (
+	email           TEXT NOT NULL PRIMARY KEY,
+	attempts        INTEGER NOT NULL,
+	last_attempt_at DATETIME NOT NULL,
+	created_at      DATETIME NOT NULL,
+	updated_at      DATETIME
+);
 
 CREATE TABLE account__roles (
 	id          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,

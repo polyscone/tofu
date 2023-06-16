@@ -7,10 +7,13 @@ import (
 	"fmt"
 	"io/fs"
 	"strings"
+	"time"
 
 	"github.com/polyscone/tofu/internal/app/account"
+	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/repository"
+	"golang.org/x/exp/slog"
 )
 
 type AccountRepo struct {
@@ -28,6 +31,17 @@ func NewAccountRepo(ctx context.Context, db *sql.DB) (*AccountRepo, error) {
 	}
 
 	r := AccountRepo{db: newDB(db)}
+
+	// Background goroutine to clean up stale sign in attempt logs
+	background.Go(func() {
+		ctx := context.Background()
+
+		for range time.Tick(5 * time.Minute) {
+			if err := r.DeleteStaleSignInAttemptLogs(ctx, 24*time.Hour); err != nil {
+				slog.Error("account repo: delete stale sign in attempt logs", "error", err)
+			}
+		}
+	})
 
 	return &r, nil
 }
@@ -126,6 +140,24 @@ func (r *AccountRepo) CountUsersByRoleID(ctx context.Context, roleID int) (int, 
 	return total, err
 }
 
+func (r *AccountRepo) AddUser(ctx context.Context, user *account.User) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := r.createUser(ctx, tx, user); err != nil {
+		return fmt.Errorf("create user: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
+}
+
 func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.User, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -141,6 +173,70 @@ func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, sortTopID int, 
 		Limit:     limit,
 		Offset:    offset,
 	})
+}
+
+func (r *AccountRepo) SaveUser(ctx context.Context, user *account.User) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := r.updateUser(ctx, tx, user); err != nil {
+		return fmt.Errorf("update user: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
+}
+
+func (r *AccountRepo) FindSignInAttemptLogByEmail(ctx context.Context, email string) (*account.SignInAttemptLog, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	return r.findSignInAttemptLog(ctx, tx, email)
+}
+
+func (r *AccountRepo) SaveSignInAttemptLog(ctx context.Context, log *account.SignInAttemptLog) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := r.upsertSignInAttemptLog(ctx, tx, log); err != nil {
+		return fmt.Errorf("upsert sign in attempt log: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
+}
+
+func (r *AccountRepo) DeleteStaleSignInAttemptLogs(ctx context.Context, ttl time.Duration) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := r.deleteStaleSignInAttemptLogs(ctx, tx, ttl); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
 }
 
 func (r *AccountRepo) FindRoleByID(ctx context.Context, roleID int) (*account.Role, error) {
@@ -290,42 +386,6 @@ func (r *AccountRepo) FindRecoveryCodesByUserID(ctx context.Context, userID int)
 	return hashedCodes, err
 }
 
-func (r *AccountRepo) AddUser(ctx context.Context, user *account.User) error {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin tx: %w", err)
-	}
-	defer tx.Rollback()
-
-	if err := r.createUser(ctx, tx, user); err != nil {
-		return fmt.Errorf("create user: %w", err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("tx commit: %w", err)
-	}
-
-	return nil
-}
-
-func (r *AccountRepo) SaveUser(ctx context.Context, user *account.User) error {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin tx: %w", err)
-	}
-	defer tx.Rollback()
-
-	if err := r.updateUser(ctx, tx, user); err != nil {
-		return fmt.Errorf("update user: %w", err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("tx commit: %w", err)
-	}
-
-	return nil
-}
-
 func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.UserFilter) ([]*account.User, int, error) {
 	var joins []string
 	var where []string
@@ -366,8 +426,6 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			u.totp_activated_at,
 			u.signed_up_at,
 			u.activated_at,
-			u.sign_in_attempts,
-			u.last_sign_in_attempt_at,
 			u.last_signed_in_at,
 			u.last_signed_in_method,
 			COUNT(1) OVER () AS total
@@ -402,8 +460,6 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			(*NullTime)(&user.TOTPActivatedAt),
 			(*Time)(&user.SignedUpAt),
 			(*NullTime)(&user.ActivatedAt),
-			&user.SignInAttempts,
-			(*NullTime)(&user.LastSignInAttemptAt),
 			(*NullTime)(&user.LastSignedInAt),
 			&user.LastSignedInMethod,
 			&total,
@@ -419,6 +475,459 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 	}
 
 	return users, total, nil
+}
+
+func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user *account.User) error {
+	hashedCodes, _, err := r.findHashedRecoveryCodes(ctx, tx, user.ID)
+	if err != nil {
+		return fmt.Errorf("find hashed recovery codes: %w", err)
+	}
+
+	if hashedCodes != nil {
+		user.HashedRecoveryCodes = make([][]byte, len(hashedCodes))
+
+		for i, rc := range hashedCodes {
+			user.HashedRecoveryCodes[i] = rc
+		}
+	}
+
+	return nil
+}
+
+func (r *AccountRepo) attachUserRoles(ctx context.Context, tx *Tx, user *account.User) error {
+	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{UserID: &user.ID})
+	if err != nil {
+		return fmt.Errorf("find roles: %w", err)
+	}
+
+	user.Roles = roles
+
+	return nil
+}
+
+func (r *AccountRepo) attachUserGrants(ctx context.Context, tx *Tx, user *account.User) error {
+	grants, _, err := r.findPermissions(ctx, tx, permissionFilter{grantsUserID: &user.ID})
+	if err != nil {
+		return fmt.Errorf("find permissions: %w", err)
+	}
+
+	user.Grants = grants
+
+	return nil
+}
+
+func (r *AccountRepo) attachUserDenials(ctx context.Context, tx *Tx, user *account.User) error {
+	denials, _, err := r.findPermissions(ctx, tx, permissionFilter{denialsUserID: &user.ID})
+	if err != nil {
+		return fmt.Errorf("find permissions: %w", err)
+	}
+
+	user.Denials = denials
+
+	return nil
+}
+
+func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User) error {
+	res, err := tx.ExecContext(ctx, `
+		INSERT INTO account__users (
+			email,
+			hashed_password,
+			totp_method,
+			totp_tel,
+			totp_key,
+			totp_algorithm,
+			totp_digits,
+			totp_period_ns,
+			totp_verified_at,
+			totp_activated_at,
+			signed_up_at,
+			activated_at,
+			last_signed_in_at,
+			last_signed_in_method,
+			created_at
+		) VALUES (
+			:email,
+			:hashed_password,
+			:totp_method,
+			:totp_tel,
+			:totp_key,
+			:totp_algorithm,
+			:totp_digits,
+			:totp_period_ns,
+			:totp_verified_at,
+			:totp_activated_at,
+			:signed_up_at,
+			:activated_at,
+			:last_signed_in_at,
+			:last_signed_in_method,
+			:created_at
+		)
+	`,
+		sql.Named("email", user.Email),
+		sql.Named("hashed_password", user.HashedPassword),
+		sql.Named("totp_method", user.TOTPMethod),
+		sql.Named("totp_tel", user.TOTPTel),
+		sql.Named("totp_key", user.TOTPKey),
+		sql.Named("totp_algorithm", user.TOTPAlgorithm),
+		sql.Named("totp_digits", user.TOTPDigits),
+		sql.Named("totp_period_ns", user.TOTPPeriod),
+		sql.Named("totp_verified_at", NullTime(user.TOTPVerifiedAt)),
+		sql.Named("totp_activated_at", NullTime(user.TOTPActivatedAt)),
+		sql.Named("signed_up_at", Time(user.SignedUpAt)),
+		sql.Named("activated_at", NullTime(user.ActivatedAt)),
+		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
+		sql.Named("last_signed_in_method", user.LastSignedInMethod),
+		sql.Named("created_at", Time(tx.now.UTC())),
+	)
+	if err != nil {
+		if errors.Is(err, repository.ErrConflict) {
+			return fmt.Errorf("%w: %w", err, &repository.ConflictError{
+				Map: errsx.Map{"email": errors.New("already in use")},
+			})
+		}
+
+		return err
+	}
+
+	id, err := res.LastInsertId()
+	if err != nil {
+		return fmt.Errorf("last insert id: %w", err)
+	}
+	user.ID = int(id)
+
+	for _, rc := range user.HashedRecoveryCodes {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__recovery_codes (
+				user_id,
+				hashed_code,
+				created_at
+			) VALUES (
+				:user_id,
+				:hashed_code,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("hashed_code", rc),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, role := range user.Roles {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_roles (
+				user_id,
+				role_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:role_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("role_id", role.ID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, grant := range user.Grants {
+		permissionID, err := r.upsertPermission(ctx, tx, grant)
+		if err != nil {
+			return fmt.Errorf("upsert permission: %w", err)
+		}
+
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_grants (
+				user_id,
+				permission_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:permission_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("permission_id", permissionID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, denial := range user.Denials {
+		permissionID, err := r.upsertPermission(ctx, tx, denial)
+		if err != nil {
+			return fmt.Errorf("upsert permission: %w", err)
+		}
+
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_denials (
+				user_id,
+				permission_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:permission_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("permission_id", permissionID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User) error {
+	_, err := tx.ExecContext(ctx, `
+		UPDATE account__users SET
+			email = :email,
+			hashed_password = :hashed_password,
+			totp_method = :totp_method,
+			totp_tel = :totp_tel,
+			totp_key = :totp_key,
+			totp_algorithm = :totp_algorithm,
+			totp_digits = :totp_digits,
+			totp_period_ns = :totp_period_ns,
+			totp_verified_at = :totp_verified_at,
+			totp_activated_at = :totp_activated_at,
+			signed_up_at = :signed_up_at,
+			activated_at = :activated_at,
+			last_signed_in_at = :last_signed_in_at,
+			last_signed_in_method = :last_signed_in_method,
+			updated_at = :updated_at
+		WHERE id = :id
+	`,
+		sql.Named("id", user.ID),
+		sql.Named("email", user.Email),
+		sql.Named("hashed_password", user.HashedPassword),
+		sql.Named("totp_method", user.TOTPMethod),
+		sql.Named("totp_tel", user.TOTPTel),
+		sql.Named("totp_key", user.TOTPKey),
+		sql.Named("totp_algorithm", user.TOTPAlgorithm),
+		sql.Named("totp_digits", user.TOTPDigits),
+		sql.Named("totp_period_ns", user.TOTPPeriod),
+		sql.Named("totp_verified_at", NullTime(user.TOTPVerifiedAt)),
+		sql.Named("totp_activated_at", NullTime(user.TOTPActivatedAt)),
+		sql.Named("signed_up_at", Time(user.SignedUpAt)),
+		sql.Named("activated_at", NullTime(user.ActivatedAt)),
+		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
+		sql.Named("last_signed_in_method", user.LastSignedInMethod),
+		sql.Named("updated_at", Time(tx.now.UTC())),
+	)
+	if err != nil {
+		if errors.Is(err, repository.ErrConflict) {
+			return fmt.Errorf("%w: %w", err, &repository.ConflictError{
+				Map: errsx.Map{"email": errors.New("already in use")},
+			})
+		}
+
+		return err
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"DELETE FROM account__recovery_codes WHERE user_id = :user_id",
+		sql.Named("user_id", user.ID),
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, rc := range user.HashedRecoveryCodes {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__recovery_codes (
+				user_id,
+				hashed_code,
+				created_at
+			) VALUES (
+				:user_id,
+				:hashed_code,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("hashed_code", rc),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"DELETE FROM account__user_roles WHERE user_id = :user_id",
+		sql.Named("user_id", user.ID),
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, role := range user.Roles {
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_roles (
+				user_id,
+				role_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:role_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("role_id", role.ID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"DELETE FROM account__user_grants WHERE user_id = :user_id",
+		sql.Named("user_id", user.ID),
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, grant := range user.Grants {
+		permissionID, err := r.upsertPermission(ctx, tx, grant)
+		if err != nil {
+			return fmt.Errorf("upsert permission: %w", err)
+		}
+
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_grants (
+				user_id,
+				permission_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:permission_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("permission_id", permissionID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err = tx.ExecContext(ctx,
+		"DELETE FROM account__user_denials WHERE user_id = :user_id",
+		sql.Named("user_id", user.ID),
+	)
+	if err != nil {
+		return err
+	}
+
+	for _, denial := range user.Denials {
+		permissionID, err := r.upsertPermission(ctx, tx, denial)
+		if err != nil {
+			return fmt.Errorf("upsert permission: %w", err)
+		}
+
+		_, err = tx.ExecContext(ctx, `
+			INSERT INTO account__user_denials (
+				user_id,
+				permission_id,
+				created_at
+			) VALUES (
+				:user_id,
+				:permission_id,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("permission_id", permissionID),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (r *AccountRepo) findSignInAttemptLog(ctx context.Context, tx *Tx, email string) (*account.SignInAttemptLog, error) {
+	log := account.SignInAttemptLog{Email: email}
+
+	err := tx.QueryRowContext(ctx, `
+		SELECT
+			attempts,
+			last_attempt_at
+		FROM account__sign_in_attempt_logs
+		WHERE email = :email
+	`,
+		sql.Named("email", email),
+	).Scan(
+		&log.Attempts,
+		(*Time)(&log.LastAttemptAt),
+	)
+	if errors.Is(err, repository.ErrNotFound) {
+		err = nil
+	}
+
+	return &log, err
+}
+
+func (r *AccountRepo) upsertSignInAttemptLog(ctx context.Context, tx *Tx, log *account.SignInAttemptLog) error {
+	_, err := tx.ExecContext(ctx, `
+		INSERT INTO account__sign_in_attempt_logs (
+			email,
+			attempts,
+			last_attempt_at,
+			created_at
+		) VALUES (
+			:email,
+			:attempts,
+			:last_attempt_at,
+			:created_at
+		)
+		ON CONFLICT DO
+			UPDATE SET
+				attempts = :attempts,
+				last_attempt_at = :last_attempt_at,
+				updated_at = :updated_at
+	`,
+		sql.Named("email", log.Email),
+		sql.Named("attempts", log.Attempts),
+		sql.Named("last_attempt_at", Time(log.LastAttemptAt.UTC())),
+		sql.Named("created_at", Time(tx.now.UTC())),
+		sql.Named("updated_at", Time(tx.now.UTC())),
+	)
+
+	return err
+}
+
+func (r *AccountRepo) deleteStaleSignInAttemptLogs(ctx context.Context, tx *Tx, ttl time.Duration) error {
+	_, err := tx.ExecContext(ctx, `
+		DELETE FROM account__sign_in_attempt_logs
+		WHERE last_attempt_at <= :valid_window_start
+	`,
+		sql.Named("valid_window_start", Time(tx.now.Add(-ttl).UTC())),
+	)
+
+	return err
 }
 
 type permissionFilter struct {
@@ -493,25 +1002,16 @@ func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string)
 		)
 		ON CONFLICT DO
 			UPDATE SET
-				name = :name
+				name = :name,
+				updated_at = :updated_at
 		RETURNING id
 	`,
 		sql.Named("name", name),
 		sql.Named("created_at", Time(tx.now.UTC())),
+		sql.Named("updated_at", Time(tx.now.UTC())),
 	).Scan(&id)
 
 	return id, err
-}
-
-func (r *AccountRepo) attachRolePermissions(ctx context.Context, tx *Tx, role *account.Role) error {
-	permissions, _, err := r.findPermissions(ctx, tx, permissionFilter{roleID: &role.ID})
-	if err != nil {
-		return fmt.Errorf("find permissions: %w", err)
-	}
-
-	role.Permissions = permissions
-
-	return nil
 }
 
 func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.RoleFilter) ([]*account.Role, int, error) {
@@ -579,6 +1079,17 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 	}
 
 	return roles, total, nil
+}
+
+func (r *AccountRepo) attachRolePermissions(ctx context.Context, tx *Tx, role *account.Role) error {
+	permissions, _, err := r.findPermissions(ctx, tx, permissionFilter{roleID: &role.ID})
+	if err != nil {
+		return fmt.Errorf("find permissions: %w", err)
+	}
+
+	role.Permissions = permissions
+
+	return nil
 }
 
 func (r *AccountRepo) createRole(ctx context.Context, tx *Tx, role *account.Role) error {
@@ -742,405 +1253,4 @@ func (r *AccountRepo) findHashedRecoveryCodes(ctx context.Context, tx *Tx, userI
 	}
 
 	return hashedCodes, total, nil
-}
-
-func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user *account.User) error {
-	hashedCodes, _, err := r.findHashedRecoveryCodes(ctx, tx, user.ID)
-	if err != nil {
-		return fmt.Errorf("find hashed recovery codes: %w", err)
-	}
-
-	if hashedCodes != nil {
-		user.HashedRecoveryCodes = make([][]byte, len(hashedCodes))
-
-		for i, rc := range hashedCodes {
-			user.HashedRecoveryCodes[i] = rc
-		}
-	}
-
-	return nil
-}
-
-func (r *AccountRepo) attachUserRoles(ctx context.Context, tx *Tx, user *account.User) error {
-	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{UserID: &user.ID})
-	if err != nil {
-		return fmt.Errorf("find roles: %w", err)
-	}
-
-	user.Roles = roles
-
-	return nil
-}
-
-func (r *AccountRepo) attachUserGrants(ctx context.Context, tx *Tx, user *account.User) error {
-	grants, _, err := r.findPermissions(ctx, tx, permissionFilter{grantsUserID: &user.ID})
-	if err != nil {
-		return fmt.Errorf("find permissions: %w", err)
-	}
-
-	user.Grants = grants
-
-	return nil
-}
-
-func (r *AccountRepo) attachUserDenials(ctx context.Context, tx *Tx, user *account.User) error {
-	denials, _, err := r.findPermissions(ctx, tx, permissionFilter{denialsUserID: &user.ID})
-	if err != nil {
-		return fmt.Errorf("find permissions: %w", err)
-	}
-
-	user.Denials = denials
-
-	return nil
-}
-
-func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User) error {
-	res, err := tx.ExecContext(ctx, `
-		INSERT INTO account__users (
-			email,
-			hashed_password,
-			totp_method,
-			totp_tel,
-			totp_key,
-			totp_algorithm,
-			totp_digits,
-			totp_period_ns,
-			totp_verified_at,
-			totp_activated_at,
-			signed_up_at,
-			activated_at,
-			sign_in_attempts,
-			last_sign_in_attempt_at,
-			last_signed_in_at,
-			last_signed_in_method,
-			created_at
-		) VALUES (
-			:email,
-			:hashed_password,
-			:totp_method,
-			:totp_tel,
-			:totp_key,
-			:totp_algorithm,
-			:totp_digits,
-			:totp_period_ns,
-			:totp_verified_at,
-			:totp_activated_at,
-			:signed_up_at,
-			:activated_at,
-			:sign_in_attempts,
-			:last_sign_in_attempt_at,
-			:last_signed_in_at,
-			:last_signed_in_method,
-			:created_at
-		)
-	`,
-		sql.Named("email", user.Email),
-		sql.Named("hashed_password", user.HashedPassword),
-		sql.Named("totp_method", user.TOTPMethod),
-		sql.Named("totp_tel", user.TOTPTel),
-		sql.Named("totp_key", user.TOTPKey),
-		sql.Named("totp_algorithm", user.TOTPAlgorithm),
-		sql.Named("totp_digits", user.TOTPDigits),
-		sql.Named("totp_period_ns", user.TOTPPeriod),
-		sql.Named("totp_verified_at", NullTime(user.TOTPVerifiedAt)),
-		sql.Named("totp_activated_at", NullTime(user.TOTPActivatedAt)),
-		sql.Named("signed_up_at", Time(user.SignedUpAt)),
-		sql.Named("activated_at", NullTime(user.ActivatedAt)),
-		sql.Named("sign_in_attempts", user.SignInAttempts),
-		sql.Named("last_sign_in_attempt_at", NullTime(user.LastSignInAttemptAt)),
-		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
-		sql.Named("last_signed_in_method", user.LastSignedInMethod),
-		sql.Named("created_at", Time(tx.now.UTC())),
-	)
-	if err != nil {
-		if errors.Is(err, repository.ErrConflict) {
-			return fmt.Errorf("%w: %w", err, &repository.ConflictError{
-				Map: errsx.Map{"email": errors.New("already in use")},
-			})
-		}
-
-		return err
-	}
-
-	id, err := res.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("last insert id: %w", err)
-	}
-	user.ID = int(id)
-
-	for _, rc := range user.HashedRecoveryCodes {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__recovery_codes (
-				user_id,
-				hashed_code,
-				created_at
-			) VALUES (
-				:user_id,
-				:hashed_code,
-				:created_at
-			)
-		`,
-			sql.Named("user_id", user.ID),
-			sql.Named("hashed_code", rc),
-			sql.Named("created_at", Time(tx.now.UTC())),
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, role := range user.Roles {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__user_roles (
-				user_id,
-				role_id,
-				created_at
-			) VALUES (
-				:user_id,
-				:role_id,
-				:created_at
-			)
-		`,
-			sql.Named("user_id", user.ID),
-			sql.Named("role_id", role.ID),
-			sql.Named("created_at", Time(tx.now.UTC())),
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, grant := range user.Grants {
-		permissionID, err := r.upsertPermission(ctx, tx, grant)
-		if err != nil {
-			return fmt.Errorf("upsert permission: %w", err)
-		}
-
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__user_grants (
-				user_id,
-				permission_id,
-				created_at
-			) VALUES (
-				:user_id,
-				:permission_id,
-				:created_at
-			)
-		`,
-			sql.Named("user_id", user.ID),
-			sql.Named("permission_id", permissionID),
-			sql.Named("created_at", Time(tx.now.UTC())),
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	for _, denial := range user.Denials {
-		permissionID, err := r.upsertPermission(ctx, tx, denial)
-		if err != nil {
-			return fmt.Errorf("upsert permission: %w", err)
-		}
-
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__user_denials (
-				user_id,
-				permission_id,
-				created_at
-			) VALUES (
-				:user_id,
-				:permission_id,
-				:created_at
-			)
-		`,
-			sql.Named("user_id", user.ID),
-			sql.Named("permission_id", permissionID),
-			sql.Named("created_at", Time(tx.now.UTC())),
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User) error {
-	_, err := tx.ExecContext(ctx, `
-		UPDATE account__users SET
-			email = :email,
-			hashed_password = :hashed_password,
-			totp_method = :totp_method,
-			totp_tel = :totp_tel,
-			totp_key = :totp_key,
-			totp_algorithm = :totp_algorithm,
-			totp_digits = :totp_digits,
-			totp_period_ns = :totp_period_ns,
-			totp_verified_at = :totp_verified_at,
-			totp_activated_at = :totp_activated_at,
-			signed_up_at = :signed_up_at,
-			activated_at = :activated_at,
-			sign_in_attempts = :sign_in_attempts,
-			last_sign_in_attempt_at = :last_sign_in_attempt_at,
-			last_signed_in_at = :last_signed_in_at,
-			last_signed_in_method = :last_signed_in_method,
-			updated_at = :updated_at
-		WHERE id = :id
-	`,
-		sql.Named("id", user.ID),
-		sql.Named("email", user.Email),
-		sql.Named("hashed_password", user.HashedPassword),
-		sql.Named("totp_method", user.TOTPMethod),
-		sql.Named("totp_tel", user.TOTPTel),
-		sql.Named("totp_key", user.TOTPKey),
-		sql.Named("totp_algorithm", user.TOTPAlgorithm),
-		sql.Named("totp_digits", user.TOTPDigits),
-		sql.Named("totp_period_ns", user.TOTPPeriod),
-		sql.Named("totp_verified_at", NullTime(user.TOTPVerifiedAt)),
-		sql.Named("totp_activated_at", NullTime(user.TOTPActivatedAt)),
-		sql.Named("signed_up_at", Time(user.SignedUpAt)),
-		sql.Named("activated_at", NullTime(user.ActivatedAt)),
-		sql.Named("sign_in_attempts", user.SignInAttempts),
-		sql.Named("last_sign_in_attempt_at", NullTime(user.LastSignInAttemptAt)),
-		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
-		sql.Named("last_signed_in_method", user.LastSignedInMethod),
-		sql.Named("updated_at", Time(tx.now.UTC())),
-	)
-	if err != nil {
-		if errors.Is(err, repository.ErrConflict) {
-			return fmt.Errorf("%w: %w", err, &repository.ConflictError{
-				Map: errsx.Map{"email": errors.New("already in use")},
-			})
-		}
-
-		return err
-	}
-
-	_, err = tx.ExecContext(ctx,
-		"DELETE FROM account__recovery_codes WHERE user_id = :user_id",
-		sql.Named("user_id", user.ID),
-	)
-	if err != nil {
-		return err
-	}
-
-	for _, rc := range user.HashedRecoveryCodes {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__recovery_codes (
-				user_id,
-				hashed_code,
-				created_at
-			) VALUES (
-				:user_id,
-				:hashed_code,
-				:created_at
-			)
-		`,
-			sql.Named("user_id", user.ID),
-			sql.Named("hashed_code", rc),
-			sql.Named("created_at", Time(tx.now.UTC())),
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err = tx.ExecContext(ctx,
-		"DELETE FROM account__user_roles WHERE user_id = :user_id",
-		sql.Named("user_id", user.ID),
-	)
-	if err != nil {
-		return err
-	}
-
-	for _, role := range user.Roles {
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__user_roles (
-				user_id,
-				role_id,
-				created_at
-			) VALUES (
-				:user_id,
-				:role_id,
-				:created_at
-			)
-		`,
-			sql.Named("user_id", user.ID),
-			sql.Named("role_id", role.ID),
-			sql.Named("created_at", Time(tx.now.UTC())),
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err = tx.ExecContext(ctx,
-		"DELETE FROM account__user_grants WHERE user_id = :user_id",
-		sql.Named("user_id", user.ID),
-	)
-	if err != nil {
-		return err
-	}
-
-	for _, grant := range user.Grants {
-		permissionID, err := r.upsertPermission(ctx, tx, grant)
-		if err != nil {
-			return fmt.Errorf("upsert permission: %w", err)
-		}
-
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__user_grants (
-				user_id,
-				permission_id,
-				created_at
-			) VALUES (
-				:user_id,
-				:permission_id,
-				:created_at
-			)
-		`,
-			sql.Named("user_id", user.ID),
-			sql.Named("permission_id", permissionID),
-			sql.Named("created_at", Time(tx.now.UTC())),
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err = tx.ExecContext(ctx,
-		"DELETE FROM account__user_denials WHERE user_id = :user_id",
-		sql.Named("user_id", user.ID),
-	)
-	if err != nil {
-		return err
-	}
-
-	for _, denial := range user.Denials {
-		permissionID, err := r.upsertPermission(ctx, tx, denial)
-		if err != nil {
-			return fmt.Errorf("upsert permission: %w", err)
-		}
-
-		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__user_denials (
-				user_id,
-				permission_id,
-				created_at
-			) VALUES (
-				:user_id,
-				:permission_id,
-				:created_at
-			)
-		`,
-			sql.Named("user_id", user.ID),
-			sql.Named("permission_id", permissionID),
-			sql.Named("created_at", Time(tx.now.UTC())),
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

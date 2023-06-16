@@ -51,15 +51,15 @@ func RateLimit(capacity, replenish float64, config *RateLimitConfig) Middleware 
 	// Background goroutine to clean up expired clients
 	background.Go(func() {
 		secondsUntilFull := time.Duration(capacity/replenish) * time.Second
-		lifespan := secondsUntilFull * 2
+		ttl := secondsUntilFull * 2
 
-		for range time.Tick(lifespan) {
+		for range time.Tick(ttl) {
 			func() {
 				mu.Lock()
 				defer mu.Unlock()
 
 				for key, client := range clients {
-					if time.Since(client.seenAt) > lifespan {
+					if time.Since(client.seenAt) > ttl {
 						delete(clients, key)
 					}
 				}

@@ -19,6 +19,8 @@ type Reader interface {
 	CountUsersByRoleID(ctx context.Context, roleID int) (int, error)
 	FindUserByID(ctx context.Context, id int) (*User, error)
 	FindUserByEmail(ctx context.Context, email string) (*User, error)
+
+	FindSignInAttemptLogByEmail(ctx context.Context, email string) (*SignInAttemptLog, error)
 }
 
 type Writer interface {
@@ -28,6 +30,8 @@ type Writer interface {
 
 	AddUser(ctx context.Context, user *User) error
 	SaveUser(ctx context.Context, user *User) error
+
+	SaveSignInAttemptLog(ctx context.Context, log *SignInAttemptLog) error
 }
 
 type ReadWriter interface {

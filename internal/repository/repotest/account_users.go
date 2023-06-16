@@ -47,8 +47,6 @@ func AccountUsers(ctx context.Context, t *testing.T, newRepo func() account.Read
 				TOTPActivatedAt:     time.Now(),
 				SignedUpAt:          time.Now(),
 				ActivatedAt:         time.Now(),
-				SignInAttempts:      5,
-				LastSignInAttemptAt: time.Now(),
 				LastSignedInAt:      time.Now(),
 				LastSignedInMethod:  "Website",
 				HashedRecoveryCodes: [][]byte{[]byte("1"), []byte("2"), []byte("3")},
@@ -277,12 +275,6 @@ func accountUsersEqual(t *testing.T, want, got *account.User) {
 	}
 	if want, got := want.ActivatedAt, got.ActivatedAt; !want.Equal(got) {
 		t.Errorf("want activated at to be %v; got %v", want, got)
-	}
-	if want, got := want.SignInAttempts, got.SignInAttempts; want != got {
-		t.Errorf("want sign in attempts to be %v; got %v", want, got)
-	}
-	if want, got := want.LastSignInAttemptAt, got.LastSignInAttemptAt; !want.Equal(got) {
-		t.Errorf("want last sign in attempt at to be %v; got %v", want, got)
 	}
 	if want, got := want.LastSignedInAt, got.LastSignedInAt; !want.Equal(got) {
 		t.Errorf("want last signed in at to be %v; got %v", want, got)

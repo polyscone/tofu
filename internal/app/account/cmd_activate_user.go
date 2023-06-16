@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
@@ -34,6 +35,11 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 		}
 	}
 
+	log, err := s.repo.FindSignInAttemptLogByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("find sign in attempt log by email: %w", err)
+	}
+
 	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	if err != nil {
 		return fmt.Errorf("find user by email: %w", err)
@@ -52,6 +58,13 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 		if err := user.ChangeRoles([]*Role{SuperRole}, nil, nil); err != nil {
 			return fmt.Errorf("add super role to initial user: %w", err)
 		}
+	}
+
+	log.Attempts = 0
+	log.LastAttemptAt = time.Time{}
+
+	if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
+		return fmt.Errorf("save sign in attempt log: %w", err)
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

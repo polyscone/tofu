@@ -4,10 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
+
+const (
+	MaxFreeSignInAttempts  = 3
+	MaxSignInThrottleDelay = 30 * time.Minute
+)
+
+var ErrSignInThrottled = errors.New("sign in throttled")
+
+type SignInThrottleError struct {
+	Delay    time.Duration
+	UnlockAt time.Time
+}
+
+func (t SignInThrottleError) Error() string {
+	return fmt.Sprintf("delayed for %v: unlocking at %v", t.Delay, t.UnlockAt.Format("15:04:05 MST"))
+}
 
 func (s *Service) SignInWithPassword(ctx context.Context, email, password string) error {
 	var input struct {
@@ -30,8 +47,44 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 		}
 	}
 
+	log, err := s.repo.FindSignInAttemptLogByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("find sign in attempt log by email: %w", err)
+	}
+
+	if log.Attempts >= MaxFreeSignInAttempts {
+		shift := log.Attempts - (MaxFreeSignInAttempts - 1)
+		delay := (1 << shift) * time.Second
+		if delay > MaxSignInThrottleDelay {
+			delay = MaxSignInThrottleDelay
+		}
+
+		unlockAt := log.LastAttemptAt.Add(delay)
+		if time.Now().Before(unlockAt) {
+			throttle := &SignInThrottleError{
+				Delay:    delay,
+				UnlockAt: unlockAt,
+			}
+
+			return fmt.Errorf("%w: %w", ErrSignInThrottled, throttle)
+		}
+	}
+
+	// Even in the case where a user doesn't exist we always want to log
+	// failed sign in attempts to prevent leaking information about which
+	// users exist in the system
+	//
+	// These values are set to their zero values on a successful
+	// sign in or account activation
+	log.Attempts++
+	log.LastAttemptAt = time.Now()
+
 	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	if err != nil {
+		if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
+			return fmt.Errorf("save sign in attempt log: %w", err)
+		}
+
 		// We always hash a password even when we error finding a user to help
 		// prevent timing attacks that would allow enumeration of valid emails
 		if _, err := s.hasher.EncodedPasswordHash(input.password.data); err != nil {
@@ -44,12 +97,23 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 	_, err = user.SignInWithPassword(input.password, s.hasher)
 	if err != nil {
 		if errors.Is(err, ErrNotActivated) || errors.Is(err, ErrInvalidPassword) {
+			if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
+				return fmt.Errorf("save sign in attempt log: %w", err)
+			}
+
 			if err := s.repo.SaveUser(ctx, user); err != nil {
 				return fmt.Errorf("save user: %w", err)
 			}
 		}
 
 		return err
+	}
+
+	log.Attempts = 0
+	log.LastAttemptAt = time.Time{}
+
+	if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
+		return fmt.Errorf("save sign in attempt log: %w", err)
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {

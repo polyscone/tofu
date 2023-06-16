@@ -10,4 +10,5 @@ import (
 func Account(ctx context.Context, t *testing.T, newRepo func() account.ReadWriter) {
 	t.Run("roles", func(t *testing.T) { AccountRoles(ctx, t, newRepo) })
 	t.Run("users", func(t *testing.T) { AccountUsers(ctx, t, newRepo) })
+	t.Run("sign in attempts", func(t *testing.T) { AccountSignInAttemptLogs(ctx, t, newRepo) })
 }

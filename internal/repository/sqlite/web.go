@@ -29,7 +29,7 @@ type WebRepo struct {
 	db *DB
 }
 
-func NewWebRepo(ctx context.Context, db *sql.DB, sessionLifespan time.Duration) (*WebRepo, error) {
+func NewWebRepo(ctx context.Context, db *sql.DB, sessionTTL time.Duration) (*WebRepo, error) {
 	migrations, err := fs.Sub(migrations, "migrations/web")
 	if err != nil {
 		return nil, fmt.Errorf("initialise web migrations FS: %w", err)
@@ -45,8 +45,8 @@ func NewWebRepo(ctx context.Context, db *sql.DB, sessionLifespan time.Duration) 
 	background.Go(func() {
 		ctx := context.Background()
 
-		for range time.Tick(sessionLifespan) {
-			if err := r.DestroyExpiredSessions(ctx, sessionLifespan); err != nil {
+		for range time.Tick(5 * time.Minute) {
+			if err := r.DestroyExpiredSessions(ctx, sessionTTL); err != nil {
 				slog.Error("web repo: destroy expired sessions", "error", err)
 			}
 		}
@@ -112,14 +112,14 @@ func (r *WebRepo) DestroySession(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *WebRepo) DestroyExpiredSessions(ctx context.Context, lifespan time.Duration) error {
+func (r *WebRepo) DestroyExpiredSessions(ctx context.Context, ttl time.Duration) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	if err := r.destroyExpiredSessions(ctx, tx, lifespan); err != nil {
+	if err := r.destroyExpiredSessions(ctx, tx, ttl); err != nil {
 		return err
 	}
 
@@ -324,12 +324,12 @@ func (r *WebRepo) destroySession(ctx context.Context, tx *Tx, id string) error {
 	return err
 }
 
-func (r *WebRepo) destroyExpiredSessions(ctx context.Context, tx *Tx, lifespan time.Duration) error {
+func (r *WebRepo) destroyExpiredSessions(ctx context.Context, tx *Tx, ttl time.Duration) error {
 	_, err := tx.ExecContext(ctx, `
 		DELETE FROM web__sessions
-		WHERE updated_at <= :expires_at
+		WHERE updated_at <= :valid_window_start
 	`,
-		sql.Named("expires_at", Time(tx.now.Add(-lifespan).UTC())),
+		sql.Named("valid_window_start", Time(tx.now.Add(-ttl).UTC())),
 	)
 
 	return err
