@@ -40,6 +40,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	}
 
 	databases.mu.Lock()
+	defer databases.mu.Unlock()
 
 	db := databases.data[data.Alias]
 	if db == nil {
@@ -52,8 +53,6 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 		databases.data[data.Alias] = db
 	}
-
-	databases.mu.Unlock()
 
 	broker := event.NewMemoryBroker()
 
