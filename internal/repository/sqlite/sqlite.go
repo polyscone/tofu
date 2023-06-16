@@ -373,10 +373,6 @@ func (t *Time) Scan(value any) error {
 }
 
 func (t Time) Value() (driver.Value, error) {
-	if time.Time(t).IsZero() {
-		return time.Time{}.Format(RFC3339NanoZero), nil
-	}
-
 	return time.Time(t).Format(RFC3339NanoZero), nil
 }
 
@@ -420,12 +416,103 @@ func (t NullTime) Value() (driver.Value, error) {
 	return time.Time(t).Format(RFC3339NanoZero), nil
 }
 
+type Duration time.Duration
+
+func (d Duration) String() string {
+	return time.Duration(d).String()
+}
+
+func (d *Duration) Scan(value any) error {
+	switch value := value.(type) {
+	case nil:
+		*d = Duration(0)
+
+	case time.Duration:
+		*d = Duration(value)
+
+	case *time.Duration:
+		*d = Duration(*value)
+
+	case int64:
+		*d = Duration(value)
+
+	case string:
+		parsed, err := time.ParseDuration(value)
+		if err != nil {
+			return fmt.Errorf("parse duration: %w", err)
+		}
+
+		*d = Duration(parsed)
+
+	default:
+		return fmt.Errorf("%T: cannot scan to time.Duration: %T", Duration(0), value)
+	}
+
+	return nil
+}
+
+func (d Duration) Value() (driver.Value, error) {
+	return time.Duration(d).String(), nil
+}
+
+type NullDuration time.Duration
+
+func (d NullDuration) String() string {
+	return time.Duration(d).String()
+}
+
+func (d *NullDuration) Scan(value any) error {
+	switch value := value.(type) {
+	case nil:
+		*d = NullDuration(0)
+
+	case time.Duration:
+		*d = NullDuration(value)
+
+	case *time.Duration:
+		*d = NullDuration(*value)
+
+	case int64:
+		*d = NullDuration(value)
+
+	case string:
+		parsed, err := time.ParseDuration(value)
+		if err != nil {
+			return fmt.Errorf("parse duration: %w", err)
+		}
+
+		*d = NullDuration(parsed)
+
+	default:
+		return fmt.Errorf("%T: cannot scan to time.Duration: %T", NullDuration(0), value)
+	}
+
+	return nil
+}
+
+func (d NullDuration) Value() (driver.Value, error) {
+	if d == 0 {
+		return nil, nil
+	}
+
+	return time.Duration(d).String(), nil
+}
+
 func validateArg(arg any) error {
 	switch arg := arg.(type) {
-	case time.Time, *time.Time, **time.Time:
+	case time.Time, *time.Time, **time.Time, sql.NullTime, *sql.NullTime, **sql.NullTime:
 		return fmt.Errorf(
 			"cannot use %T as an arg; convert to one of: %T, %T, %T, or %T instead",
 			arg, Time{}, &Time{}, NullTime{}, &NullTime{},
+		)
+
+	case time.Duration, *time.Duration, **time.Duration:
+		d1 := Duration(0)
+		d2 := NullDuration(0)
+
+		return fmt.Errorf(
+			"cannot use %T as an arg; convert to one of: %T, %T, %T, or %T instead",
+			arg, d1, &d1, d2, &d2,
 		)
 
 	case sql.NamedArg:
