@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
@@ -181,6 +182,29 @@ func TestManager(t *testing.T, newRepo func() ReadWriter) {
 			}
 			if want, got := []string(nil), sm.PopStrings(ctx, "keyblah"); !equal(want, got) {
 				t.Errorf("want %q; got %q", want, got)
+			}
+
+			errsx.Must(sm.Commit(ctx))
+		})
+
+		t.Run("time.Time", func(t *testing.T) {
+			ctx = errsx.Must(sm.Load(ctx, id))
+
+			now := time.Now()
+
+			sm.Set(ctx, "key", now)
+
+			errsx.Must(sm.Commit(ctx))
+			ctx = errsx.Must(sm.Load(ctx, id))
+
+			if want, got := now, sm.GetTime(ctx, "key"); !want.Equal(got) {
+				t.Errorf("want %v; got %v", want, got)
+			}
+			if want, got := now, sm.PopTime(ctx, "key"); !want.Equal(got) {
+				t.Errorf("want %v; got %v", want, got)
+			}
+			if want, got := (time.Time{}), sm.PopTime(ctx, "key"); !want.Equal(got) {
+				t.Errorf("want %v; got %v", want, got)
 			}
 
 			errsx.Must(sm.Commit(ctx))

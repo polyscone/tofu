@@ -231,49 +231,77 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 	}
 }
 
+func signInSetThrottleError(err error) handler.ViewDataFunc {
+	return func(data *handler.ViewData) {
+		var throttle *account.SignInThrottleError
+		if errors.As(err, &throttle) {
+			var wait string
+			remaining := time.Until(throttle.UnlockAt)
+
+			minutes := int(remaining.Minutes())
+			if minutes == 1 {
+				wait += fmt.Sprintf("%v minute", minutes)
+			} else if minutes > 1 {
+				wait += fmt.Sprintf("%v minutes", minutes)
+			}
+
+			seconds := int(math.Mod(remaining.Seconds(), 60))
+			if seconds > 0 {
+				if wait != "" {
+					wait += " and "
+				}
+
+				if seconds == 1 {
+					wait += fmt.Sprintf("%v second", seconds)
+				} else {
+					wait += fmt.Sprintf("%v seconds", seconds)
+				}
+			}
+
+			if wait != "" {
+				wait = " in " + wait
+			}
+
+			data.ErrorMessage = fmt.Sprintf("Too many failed sign in attempts. Please try again%v.", wait)
+		} else {
+			data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
+		}
+	}
+}
+
 func signInWithPassword(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email, password string) {
 	log := h.Logger(ctx)
 
-	err := h.Account.SignInWithPassword(ctx, email, password)
-	if err != nil {
-		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", func(data *handler.ViewData) {
-			var throttle *account.SignInThrottleError
-			if errors.As(err, &throttle) {
-				var wait string
-				remaining := time.Until(throttle.UnlockAt)
+	attempts := h.Sessions.GetInt(ctx, sess.SignInAttempts)
+	lastAttemptAt := h.Sessions.GetTime(ctx, sess.LastSignInAttemptAt)
+	if time.Since(lastAttemptAt) > 24*time.Hour {
+		attempts = 0
+		lastAttemptAt = time.Time{}
+	}
 
-				minutes := int(remaining.Minutes())
-				if minutes == 1 {
-					wait += fmt.Sprintf("%v minute", minutes)
-				} else if minutes > 1 {
-					wait += fmt.Sprintf("%v minutes", minutes)
-				}
+	if err := h.Account.CheckSignInThrottle(attempts, lastAttemptAt); err != nil {
+		err = fmt.Errorf("check session sign in throttle: %w", err)
 
-				seconds := int(math.Mod(remaining.Seconds(), 60))
-				if seconds > 0 {
-					if wait != "" {
-						wait += " and "
-					}
-
-					if seconds == 1 {
-						wait += fmt.Sprintf("%v second", seconds)
-					} else {
-						wait += fmt.Sprintf("%v seconds", seconds)
-					}
-				}
-
-				if wait != "" {
-					wait = " in " + wait
-				}
-
-				data.ErrorMessage = fmt.Sprintf("Too many failed sign in attempts. Please try again%v.", wait)
-			} else {
-				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
-			}
-		})
+		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", signInSetThrottleError(err))
 
 		return
 	}
+
+	err := h.Account.SignInWithPassword(ctx, email, password)
+	if err != nil {
+		attempts++
+		lastAttemptAt = time.Now().UTC()
+
+		h.Sessions.Set(ctx, sess.SignInAttempts, attempts)
+		h.Sessions.Set(ctx, sess.LastSignInAttemptAt, lastAttemptAt)
+
+		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", signInSetThrottleError(err))
+
+		return
+	}
+
+	h.Sessions.Delete(ctx, sess.SignInAttempts)
+	h.Sessions.Delete(ctx, sess.LastSignInAttemptAt)
 
 	_, err = h.RenewSession(ctx)
 	if err != nil {

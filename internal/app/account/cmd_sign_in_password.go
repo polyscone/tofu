@@ -52,22 +52,8 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 		return fmt.Errorf("find sign in attempt log by email: %w", err)
 	}
 
-	if log.Attempts >= MaxFreeSignInAttempts {
-		shift := log.Attempts - (MaxFreeSignInAttempts - 1)
-		delay := (1 << shift) * time.Second
-		if delay > MaxSignInThrottleDelay {
-			delay = MaxSignInThrottleDelay
-		}
-
-		unlockAt := log.LastAttemptAt.Add(delay)
-		if time.Now().Before(unlockAt) {
-			throttle := &SignInThrottleError{
-				Delay:    delay,
-				UnlockAt: unlockAt,
-			}
-
-			return fmt.Errorf("%w: %w", ErrSignInThrottled, throttle)
-		}
+	if err := s.CheckSignInThrottle(log.Attempts, log.LastAttemptAt); err != nil {
+		return fmt.Errorf("check sign in throttle: %w", err)
 	}
 
 	// Even in the case where a user doesn't exist we always want to log
@@ -121,6 +107,28 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 	}
 
 	s.broker.Flush(&user.Events)
+
+	return nil
+}
+
+func (s *Service) CheckSignInThrottle(attempts int, lastAttemptAt time.Time) error {
+	if attempts >= MaxFreeSignInAttempts {
+		shift := attempts - (MaxFreeSignInAttempts - 1)
+		delay := (1 << shift) * time.Second
+		if delay > MaxSignInThrottleDelay {
+			delay = MaxSignInThrottleDelay
+		}
+
+		unlockAt := lastAttemptAt.Add(delay)
+		if time.Now().Before(unlockAt) {
+			throttle := &SignInThrottleError{
+				Delay:    delay,
+				UnlockAt: unlockAt,
+			}
+
+			return fmt.Errorf("%w: %w", ErrSignInThrottled, throttle)
+		}
+	}
 
 	return nil
 }

@@ -16,4 +16,6 @@ const (
 	IsAwaitingTOTP           = "account.is_awaiting_totp"
 	IsSignedIn               = "account.is_signed_in"
 	KnownPasswordBreachCount = "account.password_known_breach_count"
+	SignInAttempts           = "account.sign_in_attempts"
+	LastSignInAttemptAt      = "account.last_sign_in_attempt_at"
 )

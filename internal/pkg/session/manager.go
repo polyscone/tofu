@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type ctxKey int
@@ -159,6 +160,10 @@ func (m *Manager) Set(ctx context.Context, key string, value any) {
 	s := getSession(ctx)
 	if s.Data == nil {
 		s.Data = make(Data)
+	}
+
+	if t, ok := value.(time.Time); ok {
+		value = t.Format(time.RFC3339Nano)
 	}
 
 	s.Data[key] = value
@@ -355,6 +360,26 @@ func (m *Manager) GetStrings(ctx context.Context, key string) []string {
 // If the given key does not exist then the zero value is returned.
 func (m *Manager) PopStrings(ctx context.Context, key string) []string {
 	value := m.GetStrings(ctx, key)
+
+	m.Delete(ctx, key)
+
+	return value
+}
+
+// GetTime fetches a time.Time from the session's data.
+// If the given key does not exist then the zero value is returned.
+func (m *Manager) GetTime(ctx context.Context, key string) time.Time {
+	value, _ := m.Get(ctx, key).(string)
+	t, _ := time.Parse(time.RFC3339Nano, value)
+
+	return t
+}
+
+// PopTime fetches a time.Time from the session's data.
+// After fetching the value it is then deleted from the session.
+// If the given key does not exist then the zero value is returned.
+func (m *Manager) PopTime(ctx context.Context, key string) time.Time {
+	value := m.GetTime(ctx, key)
 
 	m.Delete(ctx, key)
 
