@@ -160,7 +160,7 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		logger := h.Log.With(
-			"id", requestID,
+			"id", requestID.String(),
 			"method", r.Method,
 			"remoteAddr", remoteAddr,
 			"url", r.URL.String(),
