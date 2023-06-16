@@ -16,6 +16,6 @@ func (h *PasswordHasher) CheckPasswordHash(password, encodedHash []byte) (bool, 
 	return bytes.Equal(password, encodedHash), false, nil
 }
 
-func (h *PasswordHasher) CheckDummyPasswordHash(password []byte) error {
+func (h *PasswordHasher) CheckDummyPasswordHash() error {
 	return nil
 }

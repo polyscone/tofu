@@ -238,11 +238,6 @@ func EncodedHash(r io.Reader, password []byte, p Params) ([]byte, error) {
 // Check will check to see whether the given password matches the given encoded
 // hash or not.
 //
-// The given password will be hashed according to the parameters available in
-// the given encoded hash that it's to be compared to, and the final comparison
-// of both encoded hashes will be done using the standard library's
-// subtle.ConstantTimeCompare function to help protect against timing attacks.
-//
 // If a preferred argument is provided then the rehash return value will be
 // set based on whether any of those parameters are different from the encoded
 // hash's because preferred is treated as the "preferred" parameters.
@@ -299,8 +294,6 @@ func Check(password, encodedHash []byte, preferred *Params) (bool, bool, error) 
 		return isValid, rehash, fmt.Errorf("encode hash with salt: %w", err)
 	}
 
-	// Use the standard library's subtle.ConstantTimeCompare function to
-	// help avoid timing attacks
 	isValid = subtle.ConstantTimeCompare(encodedPassword, encodedHash) == 1
 
 	if isValid && preferred != nil {

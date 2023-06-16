@@ -71,9 +71,9 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 			return fmt.Errorf("save sign in attempt log: %w", err)
 		}
 
-		// We always check a password even when we error finding a user to help
-		// prevent timing attacks that would allow enumeration of valid emails
-		if err := s.hasher.CheckDummyPasswordHash(input.password.data); err != nil {
+		// Always check a password even when we error finding a user to help
+		// avoid leaking info that would allow enumeration of valid emails
+		if err := s.hasher.CheckDummyPasswordHash(); err != nil {
 			return fmt.Errorf("check dummy password hash: %w", err)
 		}
 

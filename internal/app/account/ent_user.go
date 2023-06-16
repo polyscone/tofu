@@ -416,8 +416,9 @@ func (u *User) checkPassword(password Password, hasher Hasher) (rehashed bool, _
 
 func (u *User) SignInWithPassword(password Password, hasher Hasher) (rehashed bool, _ error) {
 	if u.ActivatedAt.IsZero() {
-		// Always check a password of some kind to help prevent timing attacks
-		if err := hasher.CheckDummyPasswordHash(password.data); err != nil {
+		// Always check a password even when we error finding a user to help
+		// avoid leaking info that would allow enumeration of valid emails
+		if err := hasher.CheckDummyPasswordHash(); err != nil {
 			return false, fmt.Errorf("check dummy password hash: %w", err)
 		}
 

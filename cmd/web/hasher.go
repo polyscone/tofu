@@ -28,8 +28,8 @@ func (h *Hasher) CheckPasswordHash(password, encodedHash []byte) (ok, rehash boo
 	return argon2.Check(password, encodedHash, &h.params)
 }
 
-func (h *Hasher) CheckDummyPasswordHash(password []byte) error {
-	_, _, err := argon2.Check(password, h.dummy, &h.params)
+func (h *Hasher) CheckDummyPasswordHash() error {
+	_, _, err := argon2.Check([]byte("password"), h.dummy, &h.params)
 
 	return err
 }
@@ -67,7 +67,7 @@ func initHasher() error {
 		return fmt.Errorf("invalid argon2 params: %w", err)
 	}
 
-	dummy, err := argon2.EncodedHash(nil, []byte("password"), params)
+	dummy, err := argon2.EncodedHash(nil, []byte("correct horse battery staple"), params)
 	if err != nil {
 		return fmt.Errorf("new dummy hash: %w", err)
 	}
