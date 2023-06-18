@@ -41,13 +41,14 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		if !passport.CanUpdateConfig() {
+		if !passport.System.CanUpdateConfig() {
 			h.ErrorView(w, r, "can update config", app.ErrUnauthorised, "error", nil)
 
 			return
 		}
 
-		_, err := h.System.UpdateConfig(ctx, passport,
+		_, err := h.System.UpdateConfig(ctx,
+			passport.System,
 			input.SystemEmail,
 			input.GoogleSignInClientID,
 			input.TwilioSID,

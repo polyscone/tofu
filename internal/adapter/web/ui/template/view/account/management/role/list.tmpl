@@ -16,7 +16,7 @@
 		<th>Name</th>
 		<th>Description</th>
 		<th class="text-right no-wrap">
-			{{if .Passport.CanCreateRoles}}
+			{{if .Passport.Account.CanCreateRoles}}
 				<a href="{{Path "account.management.role.new"}}{{$.URL.Query.String}}">Create role</a>
 			{{end}}
 		</th>
@@ -28,11 +28,11 @@
 			<td>{{.Description}}</td>
 			<td class="text-right no-wrap">
 				{{if not (eq .ID $.Vars.Super.ID)}}
-					{{if $.Passport.CanUpdateRoles}}
+					{{if $.Passport.Account.CanUpdateRoles}}
 						<a href="{{Path "account.management.role.edit" ":roleID" .ID}}{{$.URL.Query.String}}">Edit</a>
 					{{end}}
 
-					{{if $.Passport.CanDeleteRoles}}
+					{{if $.Passport.Account.CanDeleteRoles}}
 						<a href="{{Path "account.management.role.delete" ":roleID" .ID}}{{$.URL.Query.String}}">Delete</a>
 					{{end}}
 				{{end}}

@@ -121,7 +121,7 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		err := h.Account.SetupTOTP(ctx, passport, user.ID)
+		err := h.Account.SetupTOTP(ctx, passport.Account, user.ID)
 		if err != nil {
 			h.ErrorView(w, r, "setup TOTP", err, "error", nil)
 
@@ -211,7 +211,7 @@ func totpSetupAppPost(h *handler.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		codes, err := h.Account.VerifyTOTP(ctx, passport, user.ID, input.TOTP, "app")
+		codes, err := h.Account.VerifyTOTP(ctx, passport.Account, user.ID, input.TOTP, "app")
 		if err != nil {
 			h.ErrorView(w, r, "verify TOTP", err, "account/totp/setup/app", nil)
 
@@ -279,7 +279,7 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Account.ChangeTOTPTel(ctx, passport, user.ID, input.Tel)
+		err = h.Account.ChangeTOTPTel(ctx, passport.Account, user.ID, input.Tel)
 		if err != nil {
 			h.ErrorView(w, r, "change TOTP tel", err, "account/totp/setup/sms", nil)
 
@@ -319,7 +319,7 @@ func totpSetupSMSVerifyPost(h *handler.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		codes, err := h.Account.VerifyTOTP(ctx, passport, user.ID, input.TOTP, "sms")
+		codes, err := h.Account.VerifyTOTP(ctx, passport.Account, user.ID, input.TOTP, "sms")
 		if err != nil {
 			h.ErrorView(w, r, "verify TOTP", err, "account/totp/setup/sms_verify", nil)
 
@@ -356,7 +356,7 @@ func totpSetupActivatePost(h *handler.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		err := h.Account.ActivateTOTP(ctx, passport, user.ID)
+		err := h.Account.ActivateTOTP(ctx, passport.Account, user.ID)
 		if err != nil {
 			h.ErrorView(w, r, "activate TOTP", err, "error", nil)
 
@@ -405,7 +405,7 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		err := h.Account.DisableTOTP(ctx, passport, user.ID, input.Password)
+		err := h.Account.DisableTOTP(ctx, passport.Account, user.ID, input.Password)
 		if err != nil {
 			if errors.Is(err, account.ErrInvalidPassword) {
 				err = fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
@@ -478,7 +478,7 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		codes, err := h.Account.RegenerateRecoveryCodes(ctx, passport, user.ID, input.TOTP)
+		codes, err := h.Account.RegenerateRecoveryCodes(ctx, passport.Account, user.ID, input.TOTP)
 		if err != nil {
 			h.ErrorView(w, r, "regenerate recovery codes", err, "account/totp/recovery_codes/regenerate", nil)
 

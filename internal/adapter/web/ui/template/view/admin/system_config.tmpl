@@ -12,7 +12,7 @@
 
 {{define "view_body"}}
 
-{{$disable := not .Passport.CanUpdateConfig}}
+{{$disable := not .Passport.System.CanUpdateConfig}}
 
 <div class="center">
 	<form action="{{Path "system.config.post"}}" method="POST">

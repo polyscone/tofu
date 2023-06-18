@@ -15,12 +15,12 @@ import (
 
 func UserManagement(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/users", func(mux *router.ServeMux) {
-		mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanViewUsers() }))
+		mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanViewUsers() }))
 
 		mux.Get("/", userListGet(h), "account.management.user.list")
 
 		mux.Prefix("/:userID", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanEditUsers() }))
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanEditUsers() }))
 
 			mux.Get("/", userEditGet(h), "account.management.user.edit")
 			mux.Post("/", userEditPost(h), "account.management.user.edit.post")
@@ -119,7 +119,7 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Account.ChangeRoles(ctx, passport, userID, input.RoleIDs, input.Grants, input.Denials)
+		err = h.Account.ChangeRoles(ctx, passport.Account, userID, input.RoleIDs, input.Grants, input.Denials)
 		if err != nil {
 			h.ErrorView(w, r, "change roles", err, "account/management/user/edit", nil)
 

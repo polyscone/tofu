@@ -16,25 +16,25 @@ import (
 
 func RoleManagement(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/roles", func(mux *router.ServeMux) {
-		mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanViewRoles() }))
+		mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanViewRoles() }))
 
 		mux.Get("/", roleListGet(h), "account.management.role.list")
 
 		mux.Prefix("/new", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanCreateRoles() }))
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanCreateRoles() }))
 
 			mux.Get("/", roleNewGet(h), "account.management.role.new")
 			mux.Post("/", roleNewPost(h), "account.management.role.new.post")
 		})
 
 		mux.Prefix("/:roleID", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanUpdateRoles() }))
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanUpdateRoles() }))
 
 			mux.Get("/", roleEditGet(h), "account.management.role.edit")
 			mux.Post("/", roleEditPost(h), "account.management.role.edit.post")
 
 			mux.Prefix("/delete", func(mux *router.ServeMux) {
-				mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanDeleteRoles() }))
+				mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanDeleteRoles() }))
 
 				mux.Get("/", roleDeleteGet(h), "account.management.role.delete")
 				mux.Post("/", roleDeletePost(h), "account.management.role.delete.post")
@@ -94,7 +94,7 @@ func roleNewPost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		role, err := h.Account.CreateRole(ctx, passport, input.Name, input.Description, input.Permissions)
+		role, err := h.Account.CreateRole(ctx, passport.Account, input.Name, input.Description, input.Permissions)
 		if err != nil {
 			h.ErrorView(w, r, "create role", err, "account/management/role/new", nil)
 
@@ -170,7 +170,7 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		role, err := h.Account.UpdateRole(ctx, passport, roleID, input.Name, input.Description, input.Permissions)
+		role, err := h.Account.UpdateRole(ctx, passport.Account, roleID, input.Name, input.Description, input.Permissions)
 		if err != nil {
 			h.ErrorView(w, r, "update role", err, "account/management/role/edit", nil)
 
@@ -241,7 +241,7 @@ func roleDeletePost(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		role, err := h.Account.DeleteRole(ctx, passport, roleID)
+		role, err := h.Account.DeleteRole(ctx, passport.Account, roleID)
 		if err != nil {
 			h.ErrorView(w, r, "delete role", err, "error", nil)
 

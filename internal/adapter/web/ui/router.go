@@ -154,8 +154,8 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 		})
 
 		mux.Prefix("/system", func(mux *router.ServeMux) {
-			mux.Before(h.RequireSignInIf(func(p guard.Passport) bool { return !p.CanViewConfig() }))
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.CanViewConfig() }))
+			mux.Before(h.RequireSignInIf(func(p guard.Passport) bool { return !p.System.CanViewConfig() }))
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
 
 			admin.SystemConfig(h, mux)
 		})

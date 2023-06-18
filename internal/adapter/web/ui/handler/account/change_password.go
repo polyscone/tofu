@@ -59,7 +59,7 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		err := h.Account.ChangePassword(ctx,
-			passport,
+			passport.Account,
 			user.ID,
 			input.OldPassword,
 			input.NewPassword,

@@ -134,7 +134,7 @@ func resetPasswordNewPasswordPost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Account.ResetPassword(ctx, passport, user.ID, input.NewPassword, input.NewPasswordCheck)
+		err = h.Account.ResetPassword(ctx, passport.Account, user.ID, input.NewPassword, input.NewPasswordCheck)
 		if err != nil {
 			h.ErrorView(w, r, "reset password", err, "account/reset_password/new_password", nil)
 

@@ -28,7 +28,7 @@
 				{{end}}
 			</td>
 			<td class="text-right">
-				{{if $.Passport.CanEditUsers}}
+				{{if $.Passport.Account.CanEditUsers}}
 					<a href="{{Path "account.management.user.edit" ":userID" .ID}}{{$.URL.Query.String}}">Edit</a>
 				{{end}}
 			</td>

@@ -10,8 +10,8 @@
 
 {{$isEditUserSuper := .Vars.User.IsSuper}}
 {{$isEditUserActivated := not .Vars.User.ActivatedAt.IsZero}}
-{{$canAssignSuperRole := .Passport.CanAssignSuperRole $.Vars.User.ID}}
-{{$canChangeRoles := .Passport.CanChangeRoles $.Vars.User.ID}}
+{{$canAssignSuperRole := .Passport.Account.CanAssignSuperRole $.Vars.User.ID}}
+{{$canChangeRoles := .Passport.Account.CanChangeRoles $.Vars.User.ID}}
 {{$cannotChangeRoles := not $canChangeRoles}}
 {{$canUpdate := $canChangeRoles}}
 
