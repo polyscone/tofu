@@ -39,10 +39,10 @@ var opts struct {
 	}
 
 	server struct {
-		addr         Addr
-		insecure     bool
-		insecureHTTP bool
-		proxies      Proxies
+		addr              Addr
+		insecure          bool
+		behindSecureProxy bool
+		proxies           Proxies
 	}
 }
 
@@ -65,7 +65,7 @@ func main() {
 	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json|dev)")
 	flag.Var(&opts.server.addr, "addr", "The address to run the build server on, for example :8080; random if empty")
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
-	flag.BoolVar(&opts.server.insecureHTTP, "insecure-http", false, "Run in secure mode but without HTTPS")
+	flag.BoolVar(&opts.server.behindSecureProxy, "behind-secure-proxy", false, "Run without HTTPS but assume a reverse proxy with HTTPS")
 	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
 	flag.Parse()
 
@@ -94,7 +94,7 @@ func main() {
 	}
 
 	if opts.server.insecure {
-		opts.server.insecureHTTP = true
+		opts.server.behindSecureProxy = true
 	}
 
 	if opts.log.style == "" {
@@ -117,7 +117,7 @@ func main() {
 
 	slog.SetDefault(logger)
 
-	opts.server.addr.insecure = opts.server.insecureHTTP
+	opts.server.addr.insecure = opts.server.behindSecureProxy
 
 	// Required flag checks
 	var requiredMessages []string
@@ -180,7 +180,7 @@ func main() {
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
-		Handler:      web.NewMultiTenantHandler(logger, opts.log.style, newTenant),
+		Handler:      web.NewMultiTenantHandler(opts.server.behindSecureProxy, logger, opts.log.style, newTenant),
 	}
 
 	go func() {

@@ -18,19 +18,21 @@ var ErrTenantNotFound = errors.New("not found")
 type NewTenantFunc func(hostname string) (*handler.Tenant, error)
 
 type MultiTenantHandler struct {
-	logger    *slog.Logger
-	logStyle  slogger.Style
-	newTenant NewTenantFunc
-	muxesMu   sync.RWMutex
-	muxes     map[string]http.Handler
+	behindSecureProxy bool
+	logger            *slog.Logger
+	logStyle          slogger.Style
+	newTenant         NewTenantFunc
+	muxesMu           sync.RWMutex
+	muxes             map[string]http.Handler
 }
 
-func NewMultiTenantHandler(logger *slog.Logger, logStyle slogger.Style, newTenant NewTenantFunc) *MultiTenantHandler {
+func NewMultiTenantHandler(behindSecureProxy bool, logger *slog.Logger, logStyle slogger.Style, newTenant NewTenantFunc) *MultiTenantHandler {
 	return &MultiTenantHandler{
-		logger:    logger,
-		logStyle:  logStyle,
-		newTenant: newTenant,
-		muxes:     make(map[string]http.Handler),
+		behindSecureProxy: behindSecureProxy,
+		logger:            logger,
+		logStyle:          logStyle,
+		newTenant:         newTenant,
+		muxes:             make(map[string]http.Handler),
 	}
 }
 
@@ -65,7 +67,7 @@ func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 	}
 	tenant.Log = logger
 
-	if r.TLS != nil {
+	if r.TLS != nil || h.behindSecureProxy {
 		tenant.Scheme = "https"
 	} else {
 		tenant.Scheme = "http"
