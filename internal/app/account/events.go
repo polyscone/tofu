@@ -4,6 +4,10 @@ type SignedUp struct {
 	Email string
 }
 
+type SignedUpWithGoogle struct {
+	Email string
+}
+
 type Activated struct {
 	Email string
 }
@@ -17,6 +21,10 @@ type SignedInWithTOTP struct {
 }
 
 type SignedInWithRecoveryCode struct {
+	Email string
+}
+
+type SignedInWithGoogle struct {
 	Email string
 }
 
@@ -35,6 +43,10 @@ type TOTPTelChanged struct {
 }
 
 type PasswordChanged struct {
+	Email string
+}
+
+type PasswordChosen struct {
 	Email string
 }
 

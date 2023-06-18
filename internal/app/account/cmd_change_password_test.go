@@ -25,7 +25,7 @@ func TestChangePassword(t *testing.T) {
 	validGuard := changePasswordGuard{value: true}
 	invalidGuard := changePasswordGuard{value: false}
 
-	t.Run("success with activated user", func(t *testing.T) {
+	t.Run("success with old password", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 

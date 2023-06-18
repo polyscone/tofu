@@ -63,12 +63,14 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 	err := tx.QueryRowContext(ctx, `
 		SELECT
 			system_email,
+			google_sign_in_client_id,
 			twilio_sid,
 			twilio_token,
 			twilio_from_tel
 		FROM system__config
 	`).Scan(
 		&config.SystemEmail,
+		&config.GoogleSignInClientID,
 		&config.TwilioSID,
 		&config.TwilioToken,
 		&config.TwilioFromTel,
@@ -87,6 +89,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 		INSERT INTO system__config (
 			id,
 			system_email,
+			google_sign_in_client_id,
 			twilio_sid,
 			twilio_token,
 			twilio_from_tel,
@@ -94,6 +97,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 		) VALUES (
 			:id,
 			:system_email,
+			:google_sign_in_client_id,
 			:twilio_sid,
 			:twilio_token,
 			:twilio_from_tel,
@@ -102,6 +106,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 		ON CONFLICT DO
 			UPDATE SET
 				system_email = :system_email,
+				google_sign_in_client_id = :google_sign_in_client_id,
 				twilio_sid = :twilio_sid,
 				twilio_token = :twilio_token,
 				twilio_from_tel = :twilio_from_tel,
@@ -109,6 +114,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 	`,
 		sql.Named("id", 1),
 		sql.Named("system_email", config.SystemEmail),
+		sql.Named("google_sign_in_client_id", config.GoogleSignInClientID),
 		sql.Named("twilio_sid", config.TwilioSID),
 		sql.Named("twilio_token", config.TwilioToken),
 		sql.Named("twilio_from_tel", config.TwilioFromTel),

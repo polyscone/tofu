@@ -22,6 +22,10 @@
 		<input id="config__system-email" type="email" name="system-email" value="{{.Form.GetOr "system-email" .Config.SystemEmail}}" placeholder="email@example.com" autocomplete="email" required pattern=".+?@.+?(\..+?)+" maxlength="100"{{if $disable}} disabled{{end}}>
 		<p class="error">{{.Errors.Get "system email"}}</p>
 
+		<label for="config__google-sign-in-client-id">Google sign in client id</label>
+		<input id="config__google-sign-in-client-id" type="text" name="google-sign-in-client-id" value="{{.Form.GetOr "google-sign-in-client-id" .Config.GoogleSignInClientID}}" placeholder="ABCDEFG123456789" pattern=".+" maxlength="100"{{if $disable}} disabled{{end}}>
+		<p class="error">{{.Errors.Get "google sign in client id"}}</p>
+
 		<label for="config__twilio-sid">Twilio SID</label>
 		<input id="config__twilio-sid" type="text" name="twilio-sid" value="{{.Form.GetOr "twilio-sid" .Config.TwilioSID}}" placeholder="AC0123456789abcdef0123456789abcdef" pattern="AC[0-9a-f]{32}" minlength="34" maxlength="34"{{if $disable}} disabled{{end}}>
 		<p class="error">{{.Errors.Get "twilio sid"}}</p>

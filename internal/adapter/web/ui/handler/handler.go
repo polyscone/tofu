@@ -134,9 +134,12 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 		isAwaitingTOTP := h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP)
 		if userID != 0 {
-			var err error
-			user, err = h.Repo.Account.FindUserByID(ctx, userID)
-			if err != nil && !errors.Is(err, repository.ErrNotFound) {
+			u, err := h.Repo.Account.FindUserByID(ctx, userID)
+			switch {
+			case err == nil:
+				user = u
+
+			case err != nil && !errors.Is(err, repository.ErrNotFound):
 				h.Log.Error("handler middleware: find user by id", "error", err)
 			}
 		}
@@ -437,6 +440,7 @@ func (h *Handler) view(name string) *template.Template {
 func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc ViewDataFunc) {
 	ctx := r.Context()
 	config := h.Config(ctx)
+	user := h.User(ctx)
 	passport := h.Passport(ctx)
 
 	data := ViewData{
@@ -473,6 +477,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, v
 			KnownPasswordBreachCount: h.Sessions.GetInt(ctx, sess.KnownPasswordBreachCount),
 		},
 		Config:   config,
+		User:     user,
 		Passport: passport,
 	}
 

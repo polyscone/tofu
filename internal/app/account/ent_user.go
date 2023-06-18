@@ -12,7 +12,11 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/otp"
 )
 
-const SignInMethodWebsite = "Website"
+const (
+	SignInMethodNone    = ""
+	SignInMethodWebsite = "Website"
+	SignInMethodGoogle  = "Google"
+)
 
 var (
 	ErrNotActivated    = errors.New("account is not activated")
@@ -121,6 +125,22 @@ func (u *User) SignUp() error {
 	return nil
 }
 
+func (u *User) SignUpWithGoogle() error {
+	now := time.Now().UTC()
+
+	if u.SignedUpAt.IsZero() {
+		u.SignedUpAt = now
+	}
+
+	if u.ActivatedAt.IsZero() {
+		u.ActivatedAt = now
+	}
+
+	u.Events.Enqueue(SignedUpWithGoogle{Email: u.Email})
+
+	return u.SignInWithGoogle()
+}
+
 func (u *User) Activate(password Password, hasher Hasher) error {
 	if !u.ActivatedAt.IsZero() {
 		return errors.New("already activated")
@@ -164,6 +184,24 @@ func (u *User) ChangePassword(oldPassword, newPassword Password, hasher Hasher) 
 	}
 
 	u.Events.Enqueue(PasswordChanged{Email: u.Email})
+
+	return nil
+}
+
+func (u *User) ChoosePassword(newPassword Password, hasher Hasher) error {
+	if u.ActivatedAt.IsZero() {
+		return errors.New("cannot choose password until activated")
+	}
+
+	if len(u.HashedPassword) != 0 {
+		return fmt.Errorf("cannot replace an already chosen password")
+	}
+
+	if err := u.setPassword(newPassword, hasher); err != nil {
+		return fmt.Errorf("set password: %w", err)
+	}
+
+	u.Events.Enqueue(PasswordChosen{Email: u.Email})
 
 	return nil
 }
@@ -490,6 +528,21 @@ func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
 	u.LastSignedInAt = time.Now().UTC()
 
 	u.Events.Enqueue(SignedInWithRecoveryCode{Email: u.Email})
+
+	return nil
+}
+
+func (u *User) SignInWithGoogle() error {
+	if u.ActivatedAt.IsZero() {
+		return ErrNotActivated
+	}
+
+	if !u.HasActivatedTOTP() {
+		u.LastSignedInAt = time.Now().UTC()
+		u.LastSignedInMethod = SignInMethodGoogle
+	}
+
+	u.Events.Enqueue(SignedInWithGoogle{Email: u.Email})
 
 	return nil
 }

@@ -26,12 +26,13 @@ func systemConfigGet(h *handler.Handler) http.HandlerFunc {
 func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			SystemEmail   string
-			TwilioSID     string
-			TwilioToken   string
-			TwilioFromTel string
+			SystemEmail          string
+			GoogleSignInClientID string
+			TwilioSID            string
+			TwilioToken          string
+			TwilioFromTel        string
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
@@ -48,6 +49,7 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 
 		_, err := h.System.UpdateConfig(ctx, passport,
 			input.SystemEmail,
+			input.GoogleSignInClientID,
 			input.TwilioSID,
 			input.TwilioToken,
 			input.TwilioFromTel,

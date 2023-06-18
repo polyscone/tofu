@@ -22,6 +22,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/size"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -81,10 +82,24 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 	mux.Use(middleware.NoContent)
 	mux.Use(middleware.SecurityHeaders)
 	mux.Use(middleware.ETag)
-	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
-		Insecure:     tenant.Insecure,
-		ErrorHandler: errorHandler("CSRF middleware"),
-	}))
+	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
+		csrf := middleware.CSRF(&middleware.CSRFConfig{
+			Insecure:     tenant.Insecure,
+			ErrorHandler: errorHandler("CSRF middleware"),
+		})
+
+		return func(w http.ResponseWriter, r *http.Request) {
+			exceptions := []string{
+				mux.Path("account.sign_in.google.post"),
+			}
+
+			if slices.Contains(exceptions, r.URL.Path) {
+				next(w, r)
+			} else {
+				csrf(next)(w, r)
+			}
+		}
+	})
 	mux.Use(middleware.Heartbeat("/meta/health"))
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
 		switch r.Method {
@@ -116,6 +131,7 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 		account.Activate(h, mux)
 		account.ChangePassword(h, mux)
+		account.ChoosePassword(h, mux)
 		account.Dashboard(h, mux)
 		account.ResetPassword(h, mux)
 		account.SignUp(h, mux)

@@ -13,6 +13,28 @@ import (
 func TestSignUp(t *testing.T) {
 	ctx := context.Background()
 
+	t.Run("success", func(t *testing.T) {
+		svc, broker, repo := NewTestEnv(ctx)
+
+		events := testutil.NewEventLog(broker)
+		defer events.Check(t)
+
+		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
+			t.Fatal(err)
+		}
+
+		events.Expect(account.SignedUp{Email: "foo@example.com"})
+
+		user, err := repo.FindUserByEmail(ctx, "foo@example.com")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if user.SignedUpAt.IsZero() {
+			t.Error("want signed up at to be populated")
+		}
+	})
+
 	t.Run("errors", func(t *testing.T) {
 		svc, broker, repo := NewTestEnv(ctx)
 

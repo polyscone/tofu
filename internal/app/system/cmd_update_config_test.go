@@ -31,11 +31,12 @@ func TestUpdateConfig(t *testing.T) {
 		defer events.Check(t)
 
 		systemEmail := "foo@example.com"
+		googleSignInClientID := "1234abcd"
 		twilioSID := ""
 		twilioToken := ""
 		twilioFromTel := ""
 
-		_, err := svc.UpdateConfig(ctx, validGuard, systemEmail, twilioSID, twilioToken, twilioFromTel)
+		_, err := svc.UpdateConfig(ctx, validGuard, systemEmail, googleSignInClientID, twilioSID, twilioToken, twilioFromTel)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -44,6 +45,9 @@ func TestUpdateConfig(t *testing.T) {
 
 		if want, got := systemEmail, config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)
+		}
+		if want, got := googleSignInClientID, config.GoogleSignInClientID; want != got {
+			t.Errorf("want google sign in client id to be %q; got %q", want, got)
 		}
 		if want, got := twilioSID, config.TwilioSID; want != got {
 			t.Errorf("want twilio sid to be %q; got %q", want, got)
@@ -56,11 +60,12 @@ func TestUpdateConfig(t *testing.T) {
 		}
 
 		systemEmail = "bar@example.com"
+		googleSignInClientID = "xyz"
 		twilioSID = "AC0123456789abcdef0123456789abcdef"
 		twilioToken = "0123456789abcdef0123456789abcdef"
 		twilioFromTel = "+00 00 0000 0000"
 
-		_, err = svc.UpdateConfig(ctx, validGuard, systemEmail, twilioSID, twilioToken, twilioFromTel)
+		_, err = svc.UpdateConfig(ctx, validGuard, systemEmail, googleSignInClientID, twilioSID, twilioToken, twilioFromTel)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -69,6 +74,9 @@ func TestUpdateConfig(t *testing.T) {
 
 		if want, got := systemEmail, config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)
+		}
+		if want, got := googleSignInClientID, config.GoogleSignInClientID; want != got {
+			t.Errorf("want google sign in client id to be %q; got %q", want, got)
 		}
 		if want, got := twilioSID, config.TwilioSID; want != got {
 			t.Errorf("want twilio sid to be %q; got %q", want, got)
@@ -102,6 +110,7 @@ func TestUpdateConfig(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				_, err := svc.UpdateConfig(ctx, tc.guard,
 					tc.config.SystemEmail,
+					tc.config.GoogleSignInClientID,
 					tc.config.TwilioSID,
 					tc.config.TwilioToken,
 					tc.config.TwilioFromTel,

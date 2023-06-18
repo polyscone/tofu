@@ -14,12 +14,8 @@ var (
 	ErrExpectedJSON = errors.New("expected content-type application/json")
 )
 
-func DecodeJSON(dst any, r *http.Request) error {
-	if !strings.HasPrefix(r.Header.Get("content-type"), "application/json") {
-		return ErrExpectedJSON
-	}
-
-	d := json.NewDecoder(r.Body)
+func DecodeJSON(dst any, r io.Reader) error {
+	d := json.NewDecoder(r)
 
 	d.DisallowUnknownFields()
 
@@ -63,4 +59,12 @@ func DecodeJSON(dst any, r *http.Request) error {
 	}
 
 	return nil
+}
+
+func DecodeRequestJSON(dst any, r *http.Request) error {
+	if !strings.HasPrefix(r.Header.Get("content-type"), "application/json") {
+		return ErrExpectedJSON
+	}
+
+	return DecodeJSON(dst, r.Body)
 }

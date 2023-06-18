@@ -96,7 +96,7 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 			Grants  []string
 			Denials []string
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return

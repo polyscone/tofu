@@ -130,7 +130,7 @@ func (w *timeoutWriter) Write(p []byte) (int, error) {
 
 func (w *timeoutWriter) writeHeaderLocked(code int) {
 	if code < 100 || code > 999 {
-		panic(fmt.Sprintf("invalid WriteHeader code %v", code))
+		panic(fmt.Sprintf("timeout writer: invalid WriteHeader code %v", code))
 	}
 
 	switch {
@@ -139,7 +139,7 @@ func (w *timeoutWriter) writeHeaderLocked(code int) {
 
 	case w.wroteHeader:
 		if w.req != nil {
-			slog.Error("superfluous response.WriteHeader call")
+			slog.Error("timeout writer: superfluous response.WriteHeader call")
 		}
 
 	default:

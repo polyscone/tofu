@@ -8,10 +8,6 @@ import (
 )
 
 func New(style Style, level *slog.LevelVar) (*slog.Logger, error) {
-	if level == nil {
-		level = &slog.LevelVar{}
-	}
-
 	handler, err := NewHandler(style, level)
 	if err != nil {
 		return nil, fmt.Errorf("new handler: %w", err)

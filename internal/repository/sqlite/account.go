@@ -602,7 +602,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 	user.ID = int(id)
 
 	for _, rc := range user.HashedRecoveryCodes {
-		_, err = tx.ExecContext(ctx, `
+		_, err := tx.ExecContext(ctx, `
 			INSERT INTO account__recovery_codes (
 				user_id,
 				hashed_code,
@@ -623,7 +623,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 	}
 
 	for _, role := range user.Roles {
-		_, err = tx.ExecContext(ctx, `
+		_, err := tx.ExecContext(ctx, `
 			INSERT INTO account__user_roles (
 				user_id,
 				role_id,
@@ -754,7 +754,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 	}
 
 	for _, rc := range user.HashedRecoveryCodes {
-		_, err = tx.ExecContext(ctx, `
+		_, err := tx.ExecContext(ctx, `
 			INSERT INTO account__recovery_codes (
 				user_id,
 				hashed_code,
@@ -783,7 +783,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 	}
 
 	for _, role := range user.Roles {
-		_, err = tx.ExecContext(ctx, `
+		_, err := tx.ExecContext(ctx, `
 			INSERT INTO account__user_roles (
 				user_id,
 				role_id,

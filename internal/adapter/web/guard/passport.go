@@ -34,6 +34,10 @@ func (p Passport) CanChangePassword(userID int) bool {
 	return p.userID == userID
 }
 
+func (p Passport) CanChoosePassword(userID int) bool {
+	return p.userID == userID
+}
+
 func (p Passport) CanResetPassword(userID int) bool {
 	return p.userID == userID
 }

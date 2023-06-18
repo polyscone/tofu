@@ -2,7 +2,11 @@
 
 <nav>
 	<ul>
-		<li><a href="{{Path "account.change_password"}}">Change password</a></li>
+		{{if .User.HashedPassword}}
+			<li><a href="{{Path "account.change_password"}}">Change password</a></li>
+		{{else}}
+			<li><a href="{{Path "account.choose_password"}}">Choose a password</a></li>
+		{{end}}
 
 		{{if .Session.HasActivatedTOTP}}
 			<li><a href="{{Path "account.totp.recovery_codes"}}">Generate new recovery codes</a></li>

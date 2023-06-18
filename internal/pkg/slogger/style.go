@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"strings"
 	"sync"
 
@@ -52,6 +53,10 @@ type DevHandler struct {
 }
 
 func NewDevHandler(w io.Writer, level slog.Leveler) *DevHandler {
+	if level == nil || reflect.TypeOf(level).Kind() == reflect.Ptr && reflect.ValueOf(level).IsNil() {
+		level = &slog.LevelVar{}
+	}
+
 	return &DevHandler{
 		level: level,
 		mu:    new(sync.Mutex),
@@ -60,12 +65,7 @@ func NewDevHandler(w io.Writer, level slog.Leveler) *DevHandler {
 }
 
 func (h *DevHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	minLevel := slog.LevelInfo
-	if h.level != nil {
-		minLevel = h.level.Level()
-	}
-
-	return level >= minLevel
+	return level >= h.level.Level()
 }
 
 func (h *DevHandler) Handle(ctx context.Context, r slog.Record) error {

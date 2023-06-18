@@ -42,7 +42,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			Email string
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return

@@ -439,6 +439,31 @@
 		color: var(--clr-danger-400);
 	}
 
+	.sign-in-alt__title {
+		display: flex;
+		flex-direction: row;
+		gap: 1rem;
+		font-weight: bold;
+		text-transform: uppercase;
+		color: var(--clr-black-100);
+	}
+
+	.sign-in-alt__title::before,
+	.sign-in-alt__title::after {
+		content: "";
+		flex: 1 1;
+		border-bottom: 1px solid var(--clr-black-100);
+		margin: auto;
+	}
+
+	.g_id_signin {
+		display: inline-block;
+	}
+
+	.g_id_signin > div > div:first-child{
+		display: none;
+	}
+
 	.totp__qrcode {
 		font-family: monospace;
 		font-size: 1.2rem;
@@ -511,6 +536,10 @@
 	.center {
 		max-width: 550px;
 		margin-inline: auto;
+	}
+
+	.text-center {
+		text-align: center;
 	}
 
 	.text-right {

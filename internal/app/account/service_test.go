@@ -25,13 +25,14 @@ func NewTestEnv(ctx context.Context) (*account.Service, event.Broker, account.Re
 }
 
 type TestUser struct {
-	Email        string
-	Password     string
-	Activate     bool
-	SetupTOTP    bool
-	SetupTOTPTel bool
-	VerifyTOTP   bool
-	ActivateTOTP bool
+	Email              string
+	Password           string
+	Activate           bool
+	ActivateNoPassword bool
+	SetupTOTP          bool
+	SetupTOTPTel       bool
+	VerifyTOTP         bool
+	ActivateTOTP       bool
 }
 
 func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.ReadWriter, tu TestUser) (*account.User, []string) {
@@ -41,10 +42,23 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 	tu.SetupTOTP = tu.SetupTOTP || tu.SetupTOTPTel || tu.VerifyTOTP || tu.ActivateTOTP
 	tu.Activate = tu.Activate || tu.SetupTOTP || tu.VerifyTOTP
 
+	if tu.ActivateNoPassword {
+		tu.Password = ""
+		tu.Activate = false
+		tu.SetupTOTP = false
+		tu.SetupTOTPTel = false
+		tu.VerifyTOTP = false
+		tu.ActivateTOTP = false
+	}
+
 	var codes []string
 	user := account.NewUser(errsx.Must(account.NewEmail(tu.Email)))
 
-	errsx.Must0(user.SignUp())
+	if tu.ActivateNoPassword {
+		errsx.Must0(user.SignUpWithGoogle())
+	} else {
+		errsx.Must0(user.SignUp())
+	}
 
 	if tu.Activate {
 		if tu.Password == "" {

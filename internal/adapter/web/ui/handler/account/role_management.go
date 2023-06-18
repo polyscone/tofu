@@ -85,7 +85,7 @@ func roleNewPost(h *handler.Handler) http.HandlerFunc {
 			Description string
 			Permissions []string
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
@@ -148,7 +148,7 @@ func roleEditPost(h *handler.Handler) http.HandlerFunc {
 			Description string
 			Permissions []string
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return

@@ -5,11 +5,12 @@ import "github.com/polyscone/tofu/internal/pkg/aggregate"
 type Config struct {
 	aggregate.Root
 
-	SystemEmail   string
-	TwilioSID     string
-	TwilioToken   string
-	TwilioFromTel string
-	RequiresSetup bool
+	SystemEmail          string
+	GoogleSignInClientID string
+	TwilioSID            string
+	TwilioToken          string
+	TwilioFromTel        string
+	RequiresSetup        bool
 }
 
 func (c *Config) HasSMS() bool {
@@ -18,6 +19,10 @@ func (c *Config) HasSMS() bool {
 
 func (c *Config) ChangeSystemEmail(systemEmail Email) {
 	c.SystemEmail = systemEmail.String()
+}
+
+func (c *Config) ChangeGoogleSignInClientID(googleSignInClientID GoogleClientID) {
+	c.GoogleSignInClientID = googleSignInClientID.String()
 }
 
 func (c *Config) ChangeTwilioAPI(twilioSID TwilioSID, twilioToken TwilioToken, twilioFromTel TwilioTel) {

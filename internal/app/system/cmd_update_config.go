@@ -12,12 +12,13 @@ type UpdateConfigGuard interface {
 	CanUpdateConfig() bool
 }
 
-func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard, systemEmail, twilioSID, twilioToken, twilioFromTel string) (*Config, error) {
+func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard, systemEmail, googleSignInClientID, twilioSID, twilioToken, twilioFromTel string) (*Config, error) {
 	var input struct {
-		systemEmail   Email
-		twilioSID     TwilioSID
-		twilioToken   TwilioToken
-		twilioFromTel TwilioTel
+		systemEmail          Email
+		googleSignInClientID GoogleClientID
+		twilioSID            TwilioSID
+		twilioToken          TwilioToken
+		twilioFromTel        TwilioTel
 	}
 	{
 		if !guard.CanUpdateConfig() {
@@ -29,6 +30,9 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard, sys
 
 		if input.systemEmail, err = NewEmail(systemEmail); err != nil {
 			errs.Set("system email", err)
+		}
+		if input.googleSignInClientID, err = NewGoogleClientID(googleSignInClientID); err != nil {
+			errs.Set("google sign in client id", err)
 		}
 		if input.twilioSID, err = NewTwilioSID(twilioSID); err != nil {
 			errs.Set("twilio sid", err)
@@ -51,6 +55,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard, sys
 	}
 
 	config.ChangeSystemEmail(input.systemEmail)
+	config.ChangeGoogleSignInClientID(input.googleSignInClientID)
 	config.ChangeTwilioAPI(input.twilioSID, input.twilioToken, input.twilioFromTel)
 
 	if err := s.repo.SaveConfig(ctx, config); err != nil {

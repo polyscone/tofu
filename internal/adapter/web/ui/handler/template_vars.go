@@ -8,6 +8,7 @@ import (
 	"net/url"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/app/system"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
@@ -113,6 +114,7 @@ type ViewData struct {
 	App          AppData
 	Session      SessionData
 	Config       *system.Config
+	User         *account.User
 	Passport     guard.Passport
 	ComData      any
 	Vars         Vars

@@ -213,7 +213,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 	return nil
 }
 
-func DecodeForm(dst any, r *http.Request) error {
+func DecodeRequestForm(dst any, r *http.Request) error {
 	return DecodeRequest(dst, r, "form", func(r *http.Request, fieldName, tagValue string) ([]string, error) {
 		key := tagValue
 		if key == "" {
@@ -233,7 +233,7 @@ func DecodeForm(dst any, r *http.Request) error {
 	})
 }
 
-func DecodeQuery(dst any, r *http.Request) error {
+func DecodeRequestQuery(dst any, r *http.Request) error {
 	return DecodeRequest(dst, r, "query", func(r *http.Request, fieldName, tagValue string) ([]string, error) {
 		key := tagValue
 		if key == "" {

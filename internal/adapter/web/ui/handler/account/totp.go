@@ -27,6 +27,22 @@ import (
 func TOTP(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/totp", func(mux *router.ServeMux) {
 		mux.Before(h.RequireSignIn)
+		mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
+			ctx := r.Context()
+			user := h.User(ctx)
+
+			if len(user.HashedPassword) == 0 {
+				h.AddFlashf(ctx, "You need to choose a password before you can setup two-factor authentication.")
+
+				h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+
+				http.Redirect(w, r, h.Path("account.choose_password"), http.StatusSeeOther)
+
+				return false
+			}
+
+			return true
+		})
 
 		mux.Prefix("/setup", func(mux *router.ServeMux) {
 			mux.Get("/", totpSetupGet(h), "account.totp.setup")
@@ -89,7 +105,7 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			Method string
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
@@ -185,7 +201,7 @@ func totpSetupAppPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
@@ -238,7 +254,7 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			Tel string
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
@@ -293,7 +309,7 @@ func totpSetupSMSVerifyPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
@@ -379,7 +395,7 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			Password string
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
@@ -402,8 +418,7 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		_, err = h.RenewSession(ctx)
-		if err != nil {
+		if _, err := h.RenewSession(ctx); err != nil {
 			h.ErrorView(w, r, "renew session", err, "error", nil)
 
 			return
@@ -453,7 +468,7 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return

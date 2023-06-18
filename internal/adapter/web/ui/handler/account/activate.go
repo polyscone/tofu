@@ -28,7 +28,7 @@ func activatePost(h *handler.Handler) http.HandlerFunc {
 			Password      string
 			PasswordCheck string `form:"password"` // The UI doesn't include a check field
 		}
-		if err := httputil.DecodeForm(&input, r); err != nil {
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
