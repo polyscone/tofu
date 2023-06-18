@@ -17,6 +17,10 @@ func New(style Style, level *slog.LevelVar) (*slog.Logger, error) {
 }
 
 func NewHandler(style Style, level *slog.LevelVar) (slog.Handler, error) {
+	if level == nil {
+		level = &slog.LevelVar{}
+	}
+
 	switch style {
 	case StyleJSON:
 		return slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}), nil
