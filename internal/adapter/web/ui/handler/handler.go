@@ -324,11 +324,7 @@ func (h *Handler) template(name string, patterns ...string) *template.Template {
 	return tmpl
 }
 
-func (h *Handler) email(name string) *template.Template {
-	return h.template(name, "email/"+name+".tmpl")
-}
-
-func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailContent, error) {
+func (h *Handler) SendEmail(ctx context.Context, recipients EmailRecipients, view string, vars Vars) error {
 	var content emailContent
 
 	data := emailData{
@@ -338,18 +334,17 @@ func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailCo
 			Hostname: h.Tenant.Hostname,
 			Port:     h.Tenant.Port,
 		},
+		App: AppData{
+			Name:        app.Name,
+			Description: app.Description,
+		},
+		Vars: vars,
 	}
-
-	if dataFunc != nil {
-		dataFunc(&data)
-	}
-
-	email := h.email(name)
 
 	var buf bytes.Buffer
-
-	for _, name := range []string{"subject", "plain", "html"} {
-		tmpl := email.Lookup(name)
+	email := h.template(view, "email/"+view+".tmpl")
+	for _, view := range []string{"subject", "plain", "html"} {
+		tmpl := email.Lookup(view)
 		if tmpl == nil {
 			continue
 		}
@@ -357,10 +352,10 @@ func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailCo
 		buf.Reset()
 
 		if err := tmpl.Execute(&buf, data); err != nil {
-			return content, fmt.Errorf("execute email template: %w", err)
+			return fmt.Errorf("execute email template: %w", err)
 		}
 
-		switch name {
+		switch view {
 		case "subject":
 			content.Subject = buf.String()
 
@@ -370,21 +365,6 @@ func (h *Handler) emailContentFunc(name string, dataFunc emailDataFunc) (emailCo
 		case "html":
 			content.HTML = buf.String()
 		}
-	}
-
-	return content, nil
-}
-
-func (h *Handler) emailContent(view string, vars Vars) (emailContent, error) {
-	return h.emailContentFunc(view, func(data *emailData) {
-		data.Vars = data.Vars.Merge(vars)
-	})
-}
-
-func (h *Handler) SendEmail(ctx context.Context, recipients EmailRecipients, view string, vars Vars) error {
-	content, err := h.emailContent(view, vars)
-	if err != nil {
-		return fmt.Errorf("email content: %w", err)
 	}
 
 	msg := smtp.Msg{
@@ -431,10 +411,6 @@ func (h *Handler) SendTOTPSMS(email, tel string) error {
 	}
 
 	return h.SendSMS(ctx, tel, totp)
-}
-
-func (h *Handler) view(name string) *template.Template {
-	return h.template(name, "partial/*.tmpl", "view/"+name+".tmpl", "master.tmpl")
 }
 
 func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc ViewDataFunc) {
@@ -499,9 +475,16 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, v
 	// Make sure the current view name isn't overwritten by a user function
 	data.View = view
 
-	var buf bytes.Buffer
+	if data.Master == "" {
+		data.Master = "view"
+	}
+	if data.ContentType == "" {
+		data.ContentType = "text/plain"
+	}
 
-	if err := h.view(view).ExecuteTemplate(&buf, "master", data); err != nil {
+	var buf bytes.Buffer
+	tmpl := h.template(view, "partial/*.tmpl", "view/"+view+".tmpl", "master.tmpl")
+	if err := tmpl.ExecuteTemplate(&buf, data.Master, data); err != nil {
 		h.Logger(ctx).Error("execute view template", "error", err)
 
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -509,7 +492,7 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, v
 		return
 	}
 
-	w.Header().Set("content-type", "text/html")
+	w.Header().Set("content-type", data.ContentType)
 	w.WriteHeader(status)
 
 	if _, err := buf.WriteTo(w); err != nil {
@@ -519,8 +502,30 @@ func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, v
 
 func (h *Handler) View(w http.ResponseWriter, r *http.Request, status int, view string, vars Vars) {
 	h.ViewFunc(w, r, status, view, func(data *ViewData) {
+		data.Master = "master"
+		data.ContentType = "text/html"
 		data.Vars = data.Vars.Merge(vars)
 	})
+}
+
+func (h *Handler) HandleView(view string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.View(w, r, http.StatusOK, view, nil)
+	}
+}
+
+func (h *Handler) Plain(w http.ResponseWriter, r *http.Request, status int, view string, vars Vars) {
+	h.ViewFunc(w, r, status, view, func(data *ViewData) {
+		data.Master = "view"
+		data.ContentType = "text/plain"
+		data.Vars = data.Vars.Merge(vars)
+	})
+}
+
+func (h *Handler) HandlePlain(view string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.Plain(w, r, http.StatusOK, view, nil)
+	}
 }
 
 func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg string, err error, view string, dataFunc ViewDataFunc) {
@@ -531,6 +536,9 @@ func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg stri
 	status := httputil.ErrorStatus(err)
 
 	h.ViewFunc(w, r, status, view, func(data *ViewData) {
+		data.Master = "master"
+		data.ContentType = "text/html"
+
 		switch {
 		case errors.Is(err, httputil.ErrNotFound):
 			data.ErrorMessage = "The page you were looking for could not be found."

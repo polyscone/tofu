@@ -104,7 +104,9 @@ type SessionData struct {
 }
 
 type ViewData struct {
+	Master       string
 	View         string
+	ContentType  string
 	Status       int
 	CSRF         CSRF
 	ErrorMessage string
@@ -130,6 +132,7 @@ type ViewDataFunc func(data *ViewData)
 
 type emailData struct {
 	URL  URL
+	App  AppData
 	Vars Vars
 }
 

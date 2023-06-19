@@ -28,17 +28,22 @@ func TestMux(t *testing.T) {
 	mux.Patch("/", echoHandler)
 	mux.Delete("/", echoHandler)
 
-	mux.Prefix("/route", func(mux *router.ServeMux) {
-		mux.Prefix("/test", func(mux *router.ServeMux) {
-			mux.Options("/", emptyHandler)
-			mux.Connect("/", emptyHandler)
-			mux.Trace("/", emptyHandler)
-			mux.Head("/", emptyHandler)
-			mux.Get("/", emptyHandler)
-			mux.Post("/", emptyHandler)
-			mux.Put("/", emptyHandler)
-			mux.Patch("/", emptyHandler)
-			mux.Delete("/", emptyHandler)
+	mux.Prefix("/", func(mux *router.ServeMux) {
+		mux.Get("/consecutive-slashes", emptyHandler)
+
+		mux.Prefix("/route", func(mux *router.ServeMux) {
+
+			mux.Prefix("/test", func(mux *router.ServeMux) {
+				mux.Options("/", emptyHandler)
+				mux.Connect("/", emptyHandler)
+				mux.Trace("/", emptyHandler)
+				mux.Head("/", emptyHandler)
+				mux.Get("/", emptyHandler)
+				mux.Post("/", emptyHandler)
+				mux.Put("/", emptyHandler)
+				mux.Patch("/", emptyHandler)
+				mux.Delete("/", emptyHandler)
+			})
 		})
 	})
 
@@ -232,6 +237,7 @@ func TestMux(t *testing.T) {
 		{"put method ok", http.MethodPut, "/route/test", "", http.StatusOK},
 		{"patch method ok", http.MethodPatch, "/route/test", "", http.StatusOK},
 		{"delete method ok", http.MethodDelete, "/route/test", "", http.StatusOK},
+		{"get method with consecutive slashes ok", http.MethodGet, "/consecutive-slashes", "", http.StatusOK},
 
 		{"options method not found", http.MethodOptions, "/not/found", "", http.StatusNotFound},
 		{"connect method not found", http.MethodConnect, "/not/found", "", http.StatusNotFound},

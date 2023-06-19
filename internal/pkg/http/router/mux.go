@@ -15,8 +15,9 @@ import (
 )
 
 var (
-	reParams    = regexp.MustCompile(`:([^/]+)`)
-	reLastParam = regexp.MustCompile(`:([^/]+)$`)
+	reParams     = regexp.MustCompile(`:([^/]+)`)
+	reLastParam  = regexp.MustCompile(`:([^/]+)$`)
+	reMultiSlash = regexp.MustCompile(`//+`)
 )
 
 type ctxKey int
@@ -307,6 +308,7 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 	}
 
 	path = mux.prefix + path
+	path = reMultiSlash.ReplaceAllString(path, "/")
 	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
 
 	if path == "" {

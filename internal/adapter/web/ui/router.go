@@ -15,7 +15,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/account"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/admin"
-	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/page"
 	"github.com/polyscone/tofu/internal/pkg/dev"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/fstack"
@@ -122,8 +121,13 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 	// Rewrites
 	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")
 
-	// Pages
-	page.Home(h, mux)
+	// Pages and files
+	mux.Prefix("/", func(mux *router.ServeMux) {
+		mux.Get("/", h.HandleView("page/home"), "page.home")
+
+		mux.Get("/robots.txt", h.HandlePlain("file/robots"))
+		mux.Get("/.well-known/security.txt", h.HandlePlain("file/security"))
+	})
 
 	// Account
 	mux.Prefix("/account", func(mux *router.ServeMux) {
