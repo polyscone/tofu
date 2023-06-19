@@ -30,8 +30,8 @@ const (
 	templateDir = "template"
 )
 
-//go:embed "public"
-//go:embed "template"
+//go:embed "all:public"
+//go:embed "all:template"
 var files embed.FS
 
 func NewRouter(tenant *handler.Tenant) http.Handler {

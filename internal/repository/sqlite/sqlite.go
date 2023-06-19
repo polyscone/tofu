@@ -20,7 +20,7 @@ import (
 	"github.com/polyscone/tofu/internal/repository"
 )
 
-//go:embed "migrations"
+//go:embed "all:migrations"
 var migrations embed.FS
 
 const driverName = "sqlite3_custom"
