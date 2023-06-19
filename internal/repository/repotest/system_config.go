@@ -16,12 +16,32 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 			t.Fatal(err)
 		}
 
-		if want, got := true, config.RequiresSetup; want != got {
+		if want, got := true, config.RequireSetup; want != got {
 			t.Errorf("want require setup to be %v; got %v", want, got)
+		}
+		if want, got := "", config.SystemEmail; want != got {
+			t.Errorf("want system email to be %q; got %q", want, got)
+		}
+		if want, got := false, config.RequireTOTP; want != got {
+			t.Errorf("want require TOTP to be %v; got %v", want, got)
+		}
+		if want, got := "", config.GoogleSignInClientID; want != got {
+			t.Errorf("want Google sign in client id to be %q; got %q", want, got)
+		}
+		if want, got := "", config.TwilioSID; want != got {
+			t.Errorf("want twilio sid to be %q; got %q", want, got)
+		}
+		if want, got := "", config.TwilioToken; want != got {
+			t.Errorf("want twilio token to be %q; got %q", want, got)
+		}
+		if want, got := "", config.TwilioFromTel; want != got {
+			t.Errorf("want twilio from tel to be %q; got %q", want, got)
 		}
 
 		err = repo.SaveConfig(ctx, &system.Config{
+			RequireSetup:         true,
 			SystemEmail:          "1",
+			RequireTOTP:          true,
 			GoogleSignInClientID: "2",
 			TwilioSID:            "3",
 			TwilioToken:          "4",
@@ -36,11 +56,14 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 			t.Fatal(err)
 		}
 
-		if want, got := false, config.RequiresSetup; want != got {
+		if want, got := false, config.RequireSetup; want != got {
 			t.Errorf("want require setup to be %v; got %v", want, got)
 		}
 		if want, got := "1", config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)
+		}
+		if want, got := true, config.RequireTOTP; want != got {
+			t.Errorf("want require TOTP to be %v; got %v", want, got)
 		}
 		if want, got := "2", config.GoogleSignInClientID; want != got {
 			t.Errorf("want Google sign in client id to be %q; got %q", want, got)

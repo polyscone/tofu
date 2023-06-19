@@ -27,6 +27,7 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			SystemEmail          string
+			RequireTOTP          bool `compare:"true"`
 			GoogleSignInClientID string
 			TwilioSID            string
 			TwilioToken          string
@@ -50,6 +51,7 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 		_, err := h.System.UpdateConfig(ctx,
 			passport.System,
 			input.SystemEmail,
+			input.RequireTOTP,
 			input.GoogleSignInClientID,
 			input.TwilioSID,
 			input.TwilioToken,

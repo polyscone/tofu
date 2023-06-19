@@ -132,8 +132,9 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 
 		user := &account.User{}
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
+		isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
 		isAwaitingTOTP := h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP)
-		if userID != 0 {
+		if isSignedIn {
 			u, err := h.Repo.Account.FindUserByID(ctx, userID)
 			switch {
 			case err == nil:
@@ -145,10 +146,10 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var passport guard.Passport
-		if user.ID == 0 || isAwaitingTOTP {
-			passport = guard.NewPassport(config.RequiresSetup, guard.User{})
+		if !isSignedIn || isAwaitingTOTP {
+			passport = guard.NewPassport(config.RequireSetup, guard.User{})
 		} else {
-			passport = guard.NewPassport(config.RequiresSetup, guard.User{
+			passport = guard.NewPassport(config.RequireSetup, guard.User{
 				ID:          user.ID,
 				IsSuper:     user.IsSuper(),
 				Permissions: user.Permissions(),
@@ -177,8 +178,17 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		r = r.WithContext(ctx)
 
 		systemConfigPath := h.mux.Path(h.systemConfigPathName)
-		if r.Method == http.MethodGet && config.RequiresSetup && r.URL.Path != systemConfigPath && filepath.Ext(r.URL.Path) == "" {
+		if r.Method == http.MethodGet && config.RequireSetup && r.URL.Path != systemConfigPath && filepath.Ext(r.URL.Path) == "" {
 			http.Redirect(w, r, systemConfigPath, http.StatusSeeOther)
+
+			return
+		}
+
+		isInTOTP := h.HasPathPrefix(r.URL.Path, "account.totp.section")
+		if !isInTOTP && isSignedIn && config.RequireTOTP && !user.HasActivatedTOTP() {
+			h.AddFlashf(ctx, "Two-factor authentication is required to use this application.")
+
+			http.Redirect(w, r, h.Path("account.totp.setup"), http.StatusSeeOther)
 
 			return
 		}
@@ -269,13 +279,20 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Pass
 
 	config := h.Config(ctx)
 
-	p := guard.NewPassport(config.RequiresSetup, guard.User{
+	p := guard.NewPassport(config.RequireSetup, guard.User{
 		ID:          user.ID,
 		IsSuper:     user.IsSuper(),
 		Permissions: user.Permissions(),
 	})
 
 	return p, nil
+}
+
+func (h *Handler) HasPathPrefix(value string, name string, paramArgPairs ...any) bool {
+	p := h.Path(name, paramArgPairs...)
+	p = strings.TrimSuffix(p, "/")
+
+	return value == p || strings.HasPrefix(value, p+"/")
 }
 
 func (h *Handler) Path(name string, paramArgPairs ...any) string {

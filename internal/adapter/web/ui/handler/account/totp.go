@@ -26,6 +26,8 @@ import (
 
 func TOTP(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/totp", func(mux *router.ServeMux) {
+		mux.Name("account.totp.section")
+
 		mux.Before(h.RequireSignIn)
 		mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
 			ctx := r.Context()
@@ -402,8 +404,15 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		config := h.Config(ctx)
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
+
+		if config.RequireTOTP {
+			h.ErrorView(w, r, "disable TOTP", app.ErrForbidden, "error", nil)
+
+			return
+		}
 
 		err := h.Account.DisableTOTP(ctx, passport.Account, user.ID, input.Password)
 		if err != nil {

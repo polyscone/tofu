@@ -9,19 +9,23 @@
 {{define "view_body"}}
 
 <div class="center">
-	<p>Enter your password to verify your identity and disable two-factor authentication.</p>
+	{{if .Config.RequireTOTP}}
+		<p>Two-factor authentication is required and can't be disabled.</p>
+	{{else}}
+		<p>Enter your password to verify your identity and disable two-factor authentication.</p>
 
-	<form action="{{Path "account.totp.disable.post"}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		<form action="{{Path "account.totp.disable.post"}}" method="POST">
+			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
-		<label for="totp__password">Password</label>
-		<input id="totp__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern=".{8,1000}" minlength="8" maxlength="1000">
-		<p class="error">{{.Errors.Get "password"}}</p>
+			<label for="totp__password">Password</label>
+			<input id="totp__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern=".{8,1000}" minlength="8" maxlength="1000">
+			<p class="error">{{.Errors.Get "password"}}</p>
 
-		<div class="bag reverse">
-			<button type="submit">Disable two-factor authentication</button>
-		</div>
-	</form>
+			<div class="bag reverse">
+				<button type="submit">Disable two-factor authentication</button>
+			</div>
+		</form>
+	{{end}}
 </div>
 
 {{end}}

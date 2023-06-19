@@ -42,7 +42,12 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 
 		switch typ := typeField.Type; typ.Kind() {
 		case reflect.Bool:
-			field.SetBool(str == "1" || str == "on")
+			compare := typeField.Tag.Get("compare")
+			if compare == "" {
+				panic(fmt.Sprintf("want `compare` value tag for field %q", typeField.Name))
+			}
+
+			field.SetBool(str == compare)
 
 		case reflect.Float32:
 			var value float64
