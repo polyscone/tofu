@@ -28,6 +28,10 @@
 				{{end}}
 			</td>
 			<td class="text-right">
+				{{if and (not .TOTPResetRequestedAt.IsZero) $.Passport.Account.CanReviewTOTPResets}}
+					<a href="{{Path "account.management.user.totp_reset_review" ":userID" .ID}}{{$.URL.Query.String}}">Review 2FA reset request</a>
+				{{end}}
+
 				{{if $.Passport.Account.CanEditUsers}}
 					<a href="{{Path "account.management.user.edit" ":userID" .ID}}{{$.URL.Query.String}}">Edit</a>
 				{{end}}

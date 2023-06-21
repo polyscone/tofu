@@ -32,6 +32,22 @@ type TOTPDisabled struct {
 	Email string
 }
 
+type TOTPResetRequested struct {
+	Email string
+}
+
+type TOTPResetRequestApproved struct {
+	Email string
+}
+
+type TOTPResetRequestDenied struct {
+	Email string
+}
+
+type TOTPReset struct {
+	Email string
+}
+
 type RecoveryCodesRegenerated struct {
 	Email string
 }

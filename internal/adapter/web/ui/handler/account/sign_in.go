@@ -20,6 +20,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
+	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/human"
@@ -36,6 +37,20 @@ func SignIn(h *handler.Handler, mux *router.ServeMux) {
 		mux.Prefix("/totp", func(mux *router.ServeMux) {
 			mux.Get("/", signInTOTPGet(h), "account.sign_in.totp")
 			mux.Post("/", signInTOTPPost(h), "account.sign_in.totp.post")
+
+			mux.Prefix("/reset", func(mux *router.ServeMux) {
+				mux.Get("/", signInTOTPResetGet(h), "account.sign_in.totp.reset")
+				mux.Post("/", signInTOTPResetPost(h), "account.sign_in.totp.reset.post")
+
+				mux.Get("/email-sent", signInTOTPResetEmailSentGet(h), "account.sign_in.totp.reset.email_sent")
+
+				mux.Prefix("/request", func(mux *router.ServeMux) {
+					mux.Get("/", signInTOTPResetRequestGet(h), "account.sign_in.totp.reset.request")
+					mux.Post("/", signInTOTPResetRequestPost(h), "account.sign_in.totp.reset.request.post")
+
+					mux.Get("/sent", signInTOTPResetRequestSentGet(h), "account.sign_in.totp.reset.request.sent")
+				})
+			})
 		})
 
 		mux.Prefix("/recovery-code", func(mux *router.ServeMux) {
@@ -154,6 +169,117 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 		h.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
 
 		signInSuccessRedirect(h, w, r)
+	}
+}
+
+func signInTOTPResetGet(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		if !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+			http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
+
+			return
+		}
+
+		h.View(w, r, http.StatusOK, "account/totp/reset/verify", nil)
+	}
+}
+
+func signInTOTPResetPost(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		log := h.Logger(ctx)
+		config := h.Config(ctx)
+		email := h.Sessions.GetString(ctx, sess.Email)
+
+		if email == "" || !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+			http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
+
+			return
+		}
+
+		background.Go(func() {
+			// We can't use the request context here because it will have already
+			// been cancelled after the main request handler finished
+			ctx := context.Background()
+
+			tok, err := h.Repo.Web.AddTOTPResetVerifyToken(ctx, email, 2*time.Hour)
+			if err != nil {
+				log.Error("TOTP reset: add verify email token", "error", err)
+
+				return
+			}
+
+			recipients := handler.EmailRecipients{
+				From: config.SystemEmail,
+				To:   []string{email},
+			}
+			vars := handler.Vars{
+				"Token": tok,
+			}
+			if err := h.SendEmail(ctx, recipients, "totp_reset_verify_email", vars); err != nil {
+				log.Error("TOTP reset: send email", "error", err)
+			}
+		})
+
+		http.Redirect(w, r, h.Path("account.sign_in.totp.reset.email_sent"), http.StatusSeeOther)
+	}
+}
+
+func signInTOTPResetEmailSentGet(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.View(w, r, http.StatusOK, "account/totp/reset/email_sent", nil)
+	}
+}
+
+func signInTOTPResetRequestGet(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.View(w, r, http.StatusOK, "account/totp/reset/request", nil)
+	}
+}
+
+func signInTOTPResetRequestPost(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Token string
+		}
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+			h.ErrorView(w, r, "decode form", err, "error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		email, err := h.Repo.Web.FindTOTPResetVerifyTokenEmail(ctx, input.Token)
+		if err != nil {
+			h.ErrorView(w, r, "find TOTP reset verify token email", err, "error", nil)
+
+			return
+		}
+
+		err = h.Account.RequestTOTPReset(ctx, email)
+		if err != nil {
+			h.ErrorView(w, r, "request TOTP reset", err, "account/totp/reset/request", nil)
+
+			return
+		}
+
+		err = h.Repo.Web.ConsumeTOTPResetVerifyToken(ctx, input.Token)
+		if err != nil {
+			h.ErrorView(w, r, "consume TOTP reset verify token", err, "error", nil)
+
+			return
+		}
+
+		http.Redirect(w, r, h.Path("account.sign_in.totp.reset.request.sent"), http.StatusSeeOther)
+	}
+}
+
+func signInTOTPResetRequestSentGet(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.View(w, r, http.StatusOK, "account/totp/reset/request_sent", nil)
 	}
 }
 

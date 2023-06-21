@@ -26,25 +26,27 @@ var (
 type User struct {
 	aggregate.Root
 
-	ID                  int
-	Email               string
-	HashedPassword      []byte
-	TOTPMethod          string
-	TOTPTel             string
-	TOTPKey             []byte
-	TOTPAlgorithm       string
-	TOTPDigits          int
-	TOTPPeriod          time.Duration
-	TOTPVerifiedAt      time.Time
-	TOTPActivatedAt     time.Time
-	SignedUpAt          time.Time
-	ActivatedAt         time.Time
-	LastSignedInAt      time.Time
-	LastSignedInMethod  string
-	HashedRecoveryCodes [][]byte
-	Roles               []*Role
-	Grants              []string
-	Denials             []string
+	ID                   int
+	Email                string
+	HashedPassword       []byte
+	TOTPMethod           string
+	TOTPTel              string
+	TOTPKey              []byte
+	TOTPAlgorithm        string
+	TOTPDigits           int
+	TOTPPeriod           time.Duration
+	TOTPVerifiedAt       time.Time
+	TOTPActivatedAt      time.Time
+	TOTPResetRequestedAt time.Time
+	TOTPResetApprovedAt  time.Time
+	SignedUpAt           time.Time
+	ActivatedAt          time.Time
+	LastSignedInAt       time.Time
+	LastSignedInMethod   string
+	HashedRecoveryCodes  [][]byte
+	Roles                []*Role
+	Grants               []string
+	Denials              []string
 }
 
 type UserFilter struct {
@@ -414,6 +416,65 @@ func (u *User) DisableTOTP(password Password, hasher Hasher) error {
 	u.disableTOTP()
 
 	u.Events.Enqueue(TOTPDisabled{Email: u.Email})
+
+	return nil
+}
+
+func (u *User) ResetTOTP(password Password, hasher Hasher) error {
+	if !u.HasActivatedTOTP() {
+		return errors.New("cannot reset an unactivated TOTP")
+	}
+
+	if u.TOTPResetApprovedAt.IsZero() {
+		return errors.New("cannot approve a TOTP reset request that is still awaiting review")
+	}
+
+	if _, err := u.checkPassword(password, hasher); err != nil {
+		return fmt.Errorf("check password: %w", err)
+	}
+
+	u.disableTOTP()
+
+	u.TOTPResetApprovedAt = time.Time{}
+
+	u.Events.Enqueue(TOTPReset{Email: u.Email})
+
+	return nil
+}
+
+func (u *User) RequestTOTPReset() error {
+	if !u.HasActivatedTOTP() {
+		return errors.New("cannot request a reset for an unactivated TOTP")
+	}
+
+	u.TOTPResetRequestedAt = time.Now().UTC()
+
+	u.Events.Enqueue(TOTPResetRequested{Email: u.Email})
+
+	return nil
+}
+
+func (u *User) ApproveTOTPResetRequest() error {
+	if !u.HasActivatedTOTP() {
+		return errors.New("cannot request a reset for an unactivated TOTP")
+	}
+
+	u.TOTPResetRequestedAt = time.Time{}
+	u.TOTPResetApprovedAt = time.Now().UTC()
+
+	u.Events.Enqueue(TOTPResetRequestApproved{Email: u.Email})
+
+	return nil
+}
+
+func (u *User) DenyTOTPResetRequest() error {
+	if u.TOTPResetRequestedAt.IsZero() {
+		return errors.New("cannot deny a non-existent TOTP reset request")
+	}
+
+	u.TOTPResetRequestedAt = time.Time{}
+
+	u.Events.Enqueue(TOTPResetRequestDenied{Email: u.Email})
 
 	return nil
 }

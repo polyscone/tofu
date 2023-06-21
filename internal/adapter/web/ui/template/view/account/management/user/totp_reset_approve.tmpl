@@ -1,0 +1,26 @@
+{{define "view_head"}}
+
+<div class="center">
+	<h1>Approve {{.Vars.User.Email}}</h1>
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+{{$action := .URL.Query.Get "action"}}
+
+<div class="center">
+	<p>Are you sure you want to send a link to {{.Vars.User.Email}} that would allow them to reset two-factor authentication?</p>
+
+	<form action="{{Path "account.management.user.totp_reset_approve.post" ":userID" .Vars.User.ID}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<div class="bag reverse">
+			<button type="submit">Yes, send a reset link</button>
+			<a href="{{Path "account.management.user.totp_reset_review" ":userID" .Vars.User.ID}}" class="btn btn--alt push-inline-end">No, go back</a>
+		</div>
+	</form>
+</div>
+
+{{end}}

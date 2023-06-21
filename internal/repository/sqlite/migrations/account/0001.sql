@@ -1,23 +1,32 @@
 CREATE TABLE account__users (
-	id                    INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-	email                 TEXT NOT NULL UNIQUE COLLATE NOCASE,
-	hashed_password       TEXT,
-	totp_method           TEXT NOT NULL,
-	totp_tel              TEXT NOT NULL,
-	totp_key              TEXT,
-	totp_algorithm        TEXT NOT NULL,
-	totp_digits           INTEGER NOT NULL,
-	totp_period           TEXT NOT NULL,
-	totp_verified_at      DATETIME,
-	totp_activated_at     DATETIME,
-	signed_up_at          DATETIME NOT NULL,
-	activated_at          DATETIME,
-	last_signed_in_at     DATETIME,
-	last_signed_in_method TEXT NOT NULL,
-	created_at            DATETIME NOT NULL,
-	updated_at            DATETIME
+	id                      INTEGER NOT NULL PRIMARY KEY,
+	email                   TEXT NOT NULL UNIQUE COLLATE NOCASE,
+	hashed_password         TEXT,
+	totp_method             TEXT NOT NULL,
+	totp_tel                TEXT NOT NULL,
+	totp_key                TEXT,
+	totp_algorithm          TEXT NOT NULL,
+	totp_digits             INTEGER NOT NULL,
+	totp_period             TEXT NOT NULL,
+	totp_verified_at        DATETIME,
+	totp_activated_at       DATETIME,
+	signed_up_at            DATETIME NOT NULL,
+	activated_at            DATETIME,
+	last_signed_in_at       DATETIME,
+	last_signed_in_method   TEXT NOT NULL,
+	created_at              DATETIME NOT NULL,
+	updated_at              DATETIME
 );
-CREATE INDEX idx_account__users_email ON account__users (email);
+CREATE INDEX idx_account__users_email ON account__users(email);
+
+CREATE TABLE account__totp_reset_requests (
+	user_id      INTEGER NOT NULL PRIMARY KEY,
+	requested_at DATETIME,
+	approved_at  DATETIME,
+	created_at   DATETIME NOT NULL,
+	updated_at   DATETIME,
+	FOREIGN KEY (user_id) REFERENCES account__users(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
 
 CREATE TABLE account__sign_in_attempt_logs (
 	email           TEXT NOT NULL PRIMARY KEY,
@@ -47,8 +56,8 @@ CREATE TABLE account__role_permissions (
 	permission_id INTEGER NOT NULL,
 	created_at    DATETIME NOT NULL,
 	updated_at    DATETIME,
-	FOREIGN KEY (role_id) REFERENCES account__roles (id) ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY (permission_id) REFERENCES account__permissions (id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (role_id) REFERENCES account__roles(id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (permission_id) REFERENCES account__permissions(id) ON DELETE CASCADE ON UPDATE CASCADE,
 	PRIMARY KEY (role_id, permission_id)
 );
 
@@ -57,8 +66,8 @@ CREATE TABLE account__user_roles (
 	role_id    INTEGER NOT NULL,
 	created_at DATETIME NOT NULL,
 	updated_at DATETIME,
-	FOREIGN KEY (user_id) REFERENCES account__users (id) ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY (role_id) REFERENCES account__roles (id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (user_id) REFERENCES account__users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (role_id) REFERENCES account__roles(id) ON DELETE CASCADE ON UPDATE CASCADE,
 	PRIMARY KEY (user_id, role_id)
 );
 
@@ -67,8 +76,8 @@ CREATE TABLE account__user_grants (
 	permission_id INTEGER NOT NULL,
 	created_at    DATETIME NOT NULL,
 	updated_at    DATETIME,
-	FOREIGN KEY (user_id) REFERENCES account__users (id) ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY (permission_id) REFERENCES account__permissions (id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (user_id) REFERENCES account__users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (permission_id) REFERENCES account__permissions(id) ON DELETE CASCADE ON UPDATE CASCADE,
 	PRIMARY KEY (user_id, permission_id)
 );
 
@@ -77,8 +86,8 @@ CREATE TABLE account__user_denials (
 	permission_id INTEGER NOT NULL,
 	created_at    DATETIME NOT NULL,
 	updated_at    DATETIME,
-	FOREIGN KEY (user_id) REFERENCES account__users (id) ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY (permission_id) REFERENCES account__permissions (id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (user_id) REFERENCES account__users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (permission_id) REFERENCES account__permissions(id) ON DELETE CASCADE ON UPDATE CASCADE,
 	PRIMARY KEY (user_id, permission_id)
 );
 
@@ -87,6 +96,6 @@ CREATE TABLE account__recovery_codes (
 	hashed_code TEXT NOT NULL,
 	created_at  DATETIME NOT NULL,
 	updated_at  DATETIME,
-	FOREIGN KEY (user_id) REFERENCES account__users (id) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY (user_id) REFERENCES account__users(id) ON DELETE CASCADE ON UPDATE CASCADE,
 	PRIMARY KEY (user_id, hashed_code)
 );

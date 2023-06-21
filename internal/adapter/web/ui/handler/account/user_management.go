@@ -3,6 +3,7 @@ package account
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
@@ -24,6 +25,25 @@ func UserManagement(h *handler.Handler, mux *router.ServeMux) {
 
 			mux.Get("/", userEditGet(h), "account.management.user.edit")
 			mux.Post("/", userEditPost(h), "account.management.user.edit.post")
+
+		})
+
+		mux.Prefix("/:userID", func(mux *router.ServeMux) {
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }))
+
+			mux.Prefix("/totp-reset-review", func(mux *router.ServeMux) {
+				mux.Get("/", userTOTPResetReviewGet(h), "account.management.user.totp_reset_review")
+
+				mux.Prefix("/approve", func(mux *router.ServeMux) {
+					mux.Get("/", userTOTPResetApproveGet(h), "account.management.user.totp_reset_approve")
+					mux.Post("/", userTOTPResetApprovePost(h), "account.management.user.totp_reset_approve.post")
+				})
+
+				mux.Prefix("/deny", func(mux *router.ServeMux) {
+					mux.Get("/", userTOTPResetDenyGet(h), "account.management.user.totp_reset_deny")
+					mux.Post("/", userTOTPResetDenyPost(h), "account.management.user.totp_reset_deny.post")
+				})
+			})
 		})
 	})
 }
@@ -129,6 +149,158 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 		h.AddFlashf(ctx, "User %v updated successfully.", user.Email)
 
 		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
+
+		http.Redirect(w, r, h.Path("account.management.user.list"), http.StatusSeeOther)
+	}
+}
+
+func userTOTPResetReviewGet(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := router.URLParamAs[int](r, "userID")
+		if err != nil {
+			h.ErrorView(w, r, "URL param as", err, "error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		if err != nil {
+			h.ErrorView(w, r, "find user by id", err, "error", nil)
+
+			return
+		}
+
+		h.View(w, r, http.StatusOK, "account/management/user/totp_reset_review", handler.Vars{
+			"User": user,
+		})
+	}
+}
+
+func userTOTPResetApproveGet(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := router.URLParamAs[int](r, "userID")
+		if err != nil {
+			h.ErrorView(w, r, "URL param as", err, "error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		if err != nil {
+			h.ErrorView(w, r, "find user by id", err, "error", nil)
+
+			return
+		}
+
+		h.View(w, r, http.StatusOK, "account/management/user/totp_reset_approve", handler.Vars{
+			"User": user,
+		})
+	}
+}
+
+func userTOTPResetApprovePost(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := router.URLParamAs[int](r, "userID")
+		if err != nil {
+			h.ErrorView(w, r, "URL param as", err, "error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+		log := h.Logger(ctx)
+		config := h.Config(ctx)
+
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		if err != nil {
+			h.ErrorView(w, r, "find user by id", err, "error", nil)
+
+			return
+		}
+
+		if err := h.Account.ApproveTOTPResetRequest(ctx, user.ID); err != nil {
+			h.ErrorView(w, r, "approve TOTP reset request", err, "error", nil)
+
+			return
+		}
+
+		tok, err := h.Repo.Web.AddResetTOTPToken(ctx, user.Email, 48*time.Hour)
+		if err != nil {
+			log.Error("reset password: add reset password token", "error", err)
+
+			return
+		}
+
+		recipients := handler.EmailRecipients{
+			From: config.SystemEmail,
+			To:   []string{user.Email},
+		}
+		vars := handler.Vars{
+			"Token": tok,
+		}
+		if err := h.SendEmail(ctx, recipients, "totp_reset_approved", vars); err != nil {
+			log.Error("reset password: send email", "error", err)
+		}
+
+		h.AddFlashf(ctx, "Two-factor authentication reset request approved for %v.", user.Email)
+
+		http.Redirect(w, r, h.Path("account.management.user.list"), http.StatusSeeOther)
+	}
+}
+
+func userTOTPResetDenyGet(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := router.URLParamAs[int](r, "userID")
+		if err != nil {
+			h.ErrorView(w, r, "URL param as", err, "error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		if err != nil {
+			h.ErrorView(w, r, "find user by id", err, "error", nil)
+
+			return
+		}
+
+		h.View(w, r, http.StatusOK, "account/management/user/totp_reset_deny", handler.Vars{
+			"User": user,
+		})
+	}
+}
+
+func userTOTPResetDenyPost(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := router.URLParamAs[int](r, "userID")
+		if err != nil {
+			h.ErrorView(w, r, "URL param as", err, "error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		if err != nil {
+			h.ErrorView(w, r, "find user by id", err, "error", nil)
+
+			return
+		}
+
+		if err := h.Account.DenyTOTPResetRequest(ctx, user.ID); err != nil {
+			h.ErrorView(w, r, "deny TOTP reset request", err, "error", nil)
+
+			return
+		}
+
+		h.AddFlashf(ctx, "Two-factor authentication reset request denied for %v.", user.Email)
 
 		http.Redirect(w, r, h.Path("account.management.user.list"), http.StatusSeeOther)
 	}

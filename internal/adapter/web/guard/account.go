@@ -20,6 +20,10 @@ func (a Account) CanDisableTOTP(userID int) bool {
 	return a.userID == userID
 }
 
+func (a Account) CanResetTOTP(userID int) bool {
+	return a.userID == userID
+}
+
 func (a Account) CanRegenerateRecoveryCodes(userID int) bool {
 	return a.userID == userID
 }
@@ -70,4 +74,8 @@ func (a Account) CanViewUsers() bool {
 
 func (a Account) CanEditUsers() bool {
 	return a.can(editUsers)
+}
+
+func (a Account) CanReviewTOTPResets() bool {
+	return a.can(reviewTOTPResets)
 }

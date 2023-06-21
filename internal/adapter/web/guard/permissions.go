@@ -6,9 +6,10 @@ const (
 	updateRoles = "account:roles:update"
 	deleteRoles = "account:roles:delete"
 
-	viewUsers   = "account:users:view"
-	editUsers   = "account:users:update"
-	changeRoles = "account:users:update:roles"
+	viewUsers        = "account:users:view"
+	editUsers        = "account:users:update"
+	changeRoles      = "account:users:update:roles"
+	reviewTOTPResets = "account:users:review_totp_reset"
 
 	viewConfig   = "web:config:view"
 	updateConfig = "web:config:update"
@@ -30,6 +31,7 @@ var PermissionGroups = []PermissionGroup{
 			{DisplayName: "View users", Name: viewUsers},
 			{DisplayName: "Edit users", Name: editUsers},
 			{DisplayName: "Change user roles", Name: changeRoles},
+			{DisplayName: "Review 2FA resets", Name: reviewTOTPResets},
 		},
 	},
 	{

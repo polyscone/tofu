@@ -28,63 +28,70 @@ func TOTP(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/totp", func(mux *router.ServeMux) {
 		mux.Name("account.totp.section")
 
-		mux.Before(h.RequireSignIn)
-		mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
-			ctx := r.Context()
-			user := h.User(ctx)
-
-			if len(user.HashedPassword) == 0 {
-				h.AddFlashf(ctx, "You need to choose a password before you can setup two-factor authentication.")
-
-				h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
-
-				http.Redirect(w, r, h.Path("account.choose_password"), http.StatusSeeOther)
-
-				return false
-			}
-
-			return true
+		mux.Prefix("/reset", func(mux *router.ServeMux) {
+			mux.Get("/", totpResetGet(h), "account.totp.reset")
+			mux.Post("/", totpResetPost(h), "account.totp.reset.post")
 		})
 
-		mux.Prefix("/setup", func(mux *router.ServeMux) {
-			mux.Get("/", totpSetupGet(h), "account.totp.setup")
-			mux.Post("/", totpSetupPost(h), "account.totp.setup.post")
+		mux.Prefix("/", func(mux *router.ServeMux) {
+			mux.Before(h.RequireSignIn)
+			mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
+				ctx := r.Context()
+				user := h.User(ctx)
 
-			mux.Prefix("/app", func(mux *router.ServeMux) {
-				mux.Get("/", totpSetupAppGet(h), "account.totp.setup.app")
-				mux.Post("/", totpSetupAppPost(h), "account.totp.setup.app.post")
+				if len(user.HashedPassword) == 0 {
+					h.AddFlashf(ctx, "You need to choose a password before you can setup two-factor authentication.")
+
+					h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+
+					http.Redirect(w, r, h.Path("account.choose_password"), http.StatusSeeOther)
+
+					return false
+				}
+
+				return true
 			})
 
-			mux.Prefix("/sms", func(mux *router.ServeMux) {
-				mux.Get("/", totpSetupSMSGet(h), "account.totp.setup.sms")
-				mux.Post("/", totpSetupSMSPost(h), "account.totp.setup.sms.post")
+			mux.Prefix("/setup", func(mux *router.ServeMux) {
+				mux.Get("/", totpSetupGet(h), "account.totp.setup")
+				mux.Post("/", totpSetupPost(h), "account.totp.setup.post")
 
-				mux.Prefix("/verify", func(mux *router.ServeMux) {
-					mux.Get("/", totpSetupSMSVerifyGet(h), "account.totp.setup.sms.verify")
-					mux.Post("/", totpSetupSMSVerifyPost(h), "account.totp.setup.sms.verify.post")
+				mux.Prefix("/app", func(mux *router.ServeMux) {
+					mux.Get("/", totpSetupAppGet(h), "account.totp.setup.app")
+					mux.Post("/", totpSetupAppPost(h), "account.totp.setup.app.post")
 				})
+
+				mux.Prefix("/sms", func(mux *router.ServeMux) {
+					mux.Get("/", totpSetupSMSGet(h), "account.totp.setup.sms")
+					mux.Post("/", totpSetupSMSPost(h), "account.totp.setup.sms.post")
+
+					mux.Prefix("/verify", func(mux *router.ServeMux) {
+						mux.Get("/", totpSetupSMSVerifyGet(h), "account.totp.setup.sms.verify")
+						mux.Post("/", totpSetupSMSVerifyPost(h), "account.totp.setup.sms.verify.post")
+					})
+				})
+
+				mux.Prefix("/activate", func(mux *router.ServeMux) {
+					mux.Post("/", totpSetupActivatePost(h), "account.totp.setup.activate.post")
+				})
+
+				mux.Get("/success", totpSetupSuccessGet(h), "account.totp.setup.success")
 			})
 
-			mux.Prefix("/activate", func(mux *router.ServeMux) {
-				mux.Post("/", totpSetupActivatePost(h), "account.totp.setup.activate.post")
+			mux.Prefix("/disable", func(mux *router.ServeMux) {
+				mux.Get("/", totpDisableGet(h), "account.totp.disable")
+				mux.Post("/", totpDisablePost(h), "account.totp.disable.post")
+
+				mux.Get("/success", totpDisableSuccessGet(h), "account.totp.disable.success")
 			})
 
-			mux.Get("/success", totpSetupSuccessGet(h), "account.totp.setup.success")
+			mux.Prefix("/recovery-codes", func(mux *router.ServeMux) {
+				mux.Get("/", totpRecoveryCodesGet(h), "account.totp.recovery_codes")
+				mux.Post("/", totpRecoveryCodesPost(h), "account.totp.recovery_codes.post")
+			})
+
+			mux.Post("/send-sms", totpSendSMSPost(h), "account.totp.sms.send_passcode.post")
 		})
-
-		mux.Prefix("/disable", func(mux *router.ServeMux) {
-			mux.Get("/", totpDisableGet(h), "account.totp.disable")
-			mux.Post("/", totpDisablePost(h), "account.totp.disable.post")
-
-			mux.Get("/success", totpDisableSuccessGet(h), "account.totp.disable.success")
-		})
-
-		mux.Prefix("/recovery-codes", func(mux *router.ServeMux) {
-			mux.Get("/", totpRecoveryCodesGet(h), "account.totp.recovery_codes")
-			mux.Post("/", totpRecoveryCodesPost(h), "account.totp.recovery_codes.post")
-		})
-
-		mux.Post("/send-sms", totpSendSMSPost(h), "account.totp.sms.send_passcode.post")
 	})
 }
 
@@ -443,6 +450,69 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 func totpDisableSuccessGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		h.View(w, r, http.StatusOK, "account/totp/disable/success", nil)
+	}
+}
+
+func totpResetGet(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.View(w, r, http.StatusOK, "account/totp/reset/reset", nil)
+	}
+}
+
+func totpResetPost(h *handler.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Token    string
+			Password string
+		}
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+			h.ErrorView(w, r, "decode form", err, "error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		email, err := h.Repo.Web.FindResetTOTPTokenEmail(ctx, input.Token)
+		if err != nil {
+			h.ErrorView(w, r, "find reset TOTP token email", err, "error", nil)
+
+			return
+		}
+
+		user, err := h.Repo.Account.FindUserByEmail(ctx, email)
+		if err != nil {
+			h.ErrorView(w, r, "find user by email", err, "error", nil)
+
+			return
+		}
+
+		passport, err := h.PassportByEmail(ctx, email)
+		if err != nil {
+			h.ErrorView(w, r, "passport by email", err, "error", nil)
+
+			return
+		}
+
+		err = h.Account.ResetTOTP(ctx, passport.Account, user.ID, input.Password)
+		if err != nil {
+			h.ErrorViewFunc(w, r, "reset TOTP", err, "account/totp/reset/reset", func(data *handler.ViewData) {
+				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
+			})
+
+			return
+		}
+
+		err = h.Repo.Web.ConsumeResetTOTPToken(ctx, input.Token)
+		if err != nil {
+			h.ErrorView(w, r, "consume reset TOTP token", err, "error", nil)
+
+			return
+		}
+
+		h.AddFlashf(ctx, "Two-factor authentication has been disabled for your account.")
+
+		signInWithPassword(ctx, h, w, r, email, input.Password)
 	}
 }
 

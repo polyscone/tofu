@@ -31,6 +31,14 @@ type WebReadWriter interface {
 	AddResetPasswordToken(ctx context.Context, email string, ttl time.Duration) (string, error)
 	FindResetPasswordTokenEmail(ctx context.Context, token string) (string, error)
 	ConsumeResetPasswordToken(ctx context.Context, token string) error
+
+	AddTOTPResetVerifyToken(ctx context.Context, email string, ttl time.Duration) (string, error)
+	FindTOTPResetVerifyTokenEmail(ctx context.Context, token string) (string, error)
+	ConsumeTOTPResetVerifyToken(ctx context.Context, token string) error
+
+	AddResetTOTPToken(ctx context.Context, email string, ttl time.Duration) (string, error)
+	FindResetTOTPTokenEmail(ctx context.Context, token string) (string, error)
+	ConsumeResetTOTPToken(ctx context.Context, token string) error
 }
 
 type Repo struct {

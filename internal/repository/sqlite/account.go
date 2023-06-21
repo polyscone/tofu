@@ -411,11 +411,14 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 		where, args = append(where, "ur.role_id = ?"), append(args, *v)
 	}
 
+	joins = append(joins, "LEFT JOIN account__totp_reset_requests AS tr ON u.id = tr.user_id")
+
 	var sorts []string
 	if filter.SortTopID != 0 {
-		sorts, args = append(sorts, "CASE id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
+		sorts, args = append(sorts, "CASE u.id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
 	}
-	sorts = append(sorts, "email ASC")
+
+	sorts = append(sorts, "tr.requested_at DESC, u.email ASC")
 
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
@@ -434,6 +437,8 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			u.activated_at,
 			u.last_signed_in_at,
 			u.last_signed_in_method,
+			tr.requested_at,
+			tr.approved_at,
 			COUNT(1) OVER () AS total
 		FROM account__users AS u
 		`+strings.Join(joins, "\n")+`
@@ -468,6 +473,8 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			(*NullTime)(&user.ActivatedAt),
 			(*NullTime)(&user.LastSignedInAt),
 			&user.LastSignedInMethod,
+			(*NullTime)(&user.TOTPResetRequestedAt),
+			(*NullTime)(&user.TOTPResetApprovedAt),
 			&total,
 		)
 		if err != nil {
@@ -601,6 +608,30 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 	}
 	user.ID = int(id)
 
+	if !user.TOTPResetRequestedAt.IsZero() || !user.TOTPResetApprovedAt.IsZero() {
+		_, err := tx.ExecContext(ctx, `
+			INSERT INTO account__totp_reset_requests (
+				user_id,
+				requested_at,
+				approved_at,
+				created_at
+			) VALUES (
+				:user_id,
+				:requested_at,
+				:approved_at,
+				:created_at
+			)
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("requested_at", NullTime(user.TOTPResetRequestedAt)),
+			sql.Named("approved_at", NullTime(user.TOTPResetApprovedAt)),
+			sql.Named("created_at", Time(tx.now.UTC())),
+		)
+		if err != nil {
+			return err
+		}
+	}
+
 	for _, rc := range user.HashedRecoveryCodes {
 		_, err := tx.ExecContext(ctx, `
 			INSERT INTO account__recovery_codes (
@@ -733,7 +764,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		sql.Named("activated_at", NullTime(user.ActivatedAt)),
 		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
 		sql.Named("last_signed_in_method", user.LastSignedInMethod),
-		sql.Named("updated_at", Time(tx.now.UTC())),
+		sql.Named("updated_at", NullTime(tx.now.UTC())),
 	)
 	if err != nil {
 		if errors.Is(err, repository.ErrConflict) {
@@ -743,6 +774,44 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		}
 
 		return err
+	}
+
+	if user.TOTPResetRequestedAt.IsZero() && user.TOTPResetApprovedAt.IsZero() {
+		_, err := tx.ExecContext(ctx,
+			"DELETE FROM account__totp_reset_requests WHERE user_id = :user_id",
+			sql.Named("user_id", user.ID),
+		)
+		if err != nil {
+			return err
+		}
+	} else {
+		_, err := tx.ExecContext(ctx, `
+			INSERT INTO account__totp_reset_requests (
+				user_id,
+				requested_at,
+				approved_at,
+				created_at
+			) VALUES (
+				:user_id,
+				:requested_at,
+				:approved_at,
+				:created_at
+			)
+			ON CONFLICT DO
+				UPDATE SET
+					requested_at = :requested_at,
+					approved_at = :approved_at,
+					updated_at = :updated_at
+		`,
+			sql.Named("user_id", user.ID),
+			sql.Named("requested_at", NullTime(user.TOTPResetRequestedAt)),
+			sql.Named("approved_at", NullTime(user.TOTPResetApprovedAt)),
+			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("updated_at", NullTime(tx.now.UTC())),
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	_, err = tx.ExecContext(ctx,
@@ -919,7 +988,7 @@ func (r *AccountRepo) upsertSignInAttemptLog(ctx context.Context, tx *Tx, log *a
 		sql.Named("attempts", log.Attempts),
 		sql.Named("last_attempt_at", Time(log.LastAttemptAt.UTC())),
 		sql.Named("created_at", Time(tx.now.UTC())),
-		sql.Named("updated_at", Time(tx.now.UTC())),
+		sql.Named("updated_at", NullTime(tx.now.UTC())),
 	)
 
 	return err
@@ -1025,7 +1094,7 @@ func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string)
 	`,
 		sql.Named("name", name),
 		sql.Named("created_at", Time(tx.now.UTC())),
-		sql.Named("updated_at", Time(tx.now.UTC())),
+		sql.Named("updated_at", NullTime(tx.now.UTC())),
 	).Scan(&id)
 
 	return id, err
@@ -1181,7 +1250,7 @@ func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role
 		sql.Named("id", role.ID),
 		sql.Named("name", role.Name),
 		sql.Named("description", role.Description),
-		sql.Named("updated_at", Time(tx.now.UTC())),
+		sql.Named("updated_at", NullTime(tx.now.UTC())),
 	)
 	if errors.Is(err, repository.ErrConflict) {
 		return fmt.Errorf("%w: %w", err, &repository.ConflictError{

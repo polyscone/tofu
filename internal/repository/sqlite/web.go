@@ -21,8 +21,10 @@ import (
 )
 
 const (
-	webTokenKindActivation    = "activation"
-	webTokenKindResetPassword = "reset_password"
+	webTokenKindActivation      = "activation"
+	webTokenKindResetPassword   = "reset_password"
+	webTokenKindTOTPResetVerify = "totp_reset_verify"
+	webTokenKindTOTPReset       = "totp_reset"
 )
 
 type WebRepo struct {
@@ -140,16 +142,6 @@ func (r *WebRepo) FindActivationTokenEmail(ctx context.Context, token string) (s
 	return r.findToken(ctx, tx, token, webTokenKindActivation)
 }
 
-func (r *WebRepo) FindResetPasswordTokenEmail(ctx context.Context, token string) (string, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return "", fmt.Errorf("begin tx: %w", err)
-	}
-	defer tx.Rollback()
-
-	return r.findToken(ctx, tx, token, webTokenKindResetPassword)
-}
-
 func (r *WebRepo) AddActivationToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -158,25 +150,6 @@ func (r *WebRepo) AddActivationToken(ctx context.Context, email string, ttl time
 	defer tx.Rollback()
 
 	token, err := r.createToken(ctx, tx, email, ttl, webTokenKindActivation)
-	if err != nil {
-		return "", fmt.Errorf("create token: %w", err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return "", fmt.Errorf("tx commit: %w", err)
-	}
-
-	return token, nil
-}
-
-func (r *WebRepo) AddResetPasswordToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
-	if err != nil {
-		return "", fmt.Errorf("begin tx: %w", err)
-	}
-	defer tx.Rollback()
-
-	token, err := r.createToken(ctx, tx, email, ttl, webTokenKindResetPassword)
 	if err != nil {
 		return "", fmt.Errorf("create token: %w", err)
 	}
@@ -211,6 +184,35 @@ func (r *WebRepo) ConsumeActivationToken(ctx context.Context, token string) erro
 	return nil
 }
 
+func (r *WebRepo) FindResetPasswordTokenEmail(ctx context.Context, token string) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	return r.findToken(ctx, tx, token, webTokenKindResetPassword)
+}
+
+func (r *WebRepo) AddResetPasswordToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	token, err := r.createToken(ctx, tx, email, ttl, webTokenKindResetPassword)
+	if err != nil {
+		return "", fmt.Errorf("create token: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return "", fmt.Errorf("tx commit: %w", err)
+	}
+
+	return token, nil
+}
+
 func (r *WebRepo) ConsumeResetPasswordToken(ctx context.Context, token string) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -224,6 +226,110 @@ func (r *WebRepo) ConsumeResetPasswordToken(ctx context.Context, token string) e
 	}
 
 	if err := r.deleteTokensByKind(ctx, tx, email, webTokenKindResetPassword); err != nil {
+		return fmt.Errorf("delete tokens for email: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
+}
+
+func (r *WebRepo) FindTOTPResetVerifyTokenEmail(ctx context.Context, token string) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	return r.findToken(ctx, tx, token, webTokenKindTOTPResetVerify)
+}
+
+func (r *WebRepo) AddTOTPResetVerifyToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	token, err := r.createToken(ctx, tx, email, ttl, webTokenKindTOTPResetVerify)
+	if err != nil {
+		return "", fmt.Errorf("create token: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return "", fmt.Errorf("tx commit: %w", err)
+	}
+
+	return token, nil
+}
+
+func (r *WebRepo) ConsumeTOTPResetVerifyToken(ctx context.Context, token string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	email, err := r.consumeToken(ctx, tx, token, webTokenKindTOTPResetVerify)
+	if err != nil {
+		return err
+	}
+
+	if err := r.deleteTokensByKind(ctx, tx, email, webTokenKindTOTPResetVerify); err != nil {
+		return fmt.Errorf("delete tokens for email: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
+}
+
+func (r *WebRepo) FindResetTOTPTokenEmail(ctx context.Context, token string) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	return r.findToken(ctx, tx, token, webTokenKindTOTPReset)
+}
+
+func (r *WebRepo) AddResetTOTPToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	token, err := r.createToken(ctx, tx, email, ttl, webTokenKindTOTPReset)
+	if err != nil {
+		return "", fmt.Errorf("create token: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return "", fmt.Errorf("tx commit: %w", err)
+	}
+
+	return token, nil
+}
+
+func (r *WebRepo) ConsumeResetTOTPToken(ctx context.Context, token string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	email, err := r.consumeToken(ctx, tx, token, webTokenKindTOTPReset)
+	if err != nil {
+		return err
+	}
+
+	if err := r.deleteTokensByKind(ctx, tx, email, webTokenKindTOTPReset); err != nil {
 		return fmt.Errorf("delete tokens for email: %w", err)
 	}
 
