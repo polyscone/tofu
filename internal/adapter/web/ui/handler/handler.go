@@ -134,7 +134,7 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		userID := h.Sessions.GetInt(ctx, sess.UserID)
 		isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
 		isAwaitingTOTP := h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP)
-		if isSignedIn {
+		if isSignedIn || isAwaitingTOTP {
 			u, err := h.Repo.Account.FindUserByID(ctx, userID)
 			switch {
 			case err == nil:
@@ -146,7 +146,7 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var passport guard.Passport
-		if !isSignedIn || isAwaitingTOTP {
+		if !isSignedIn {
 			passport = guard.NewPassport(config.RequireSetup, guard.User{})
 		} else {
 			passport = guard.NewPassport(config.RequireSetup, guard.User{

@@ -390,15 +390,7 @@ func (u *User) RegenerateRecoveryCodes(totp TOTP) ([]string, error) {
 	return codes, nil
 }
 
-func (u *User) DisableTOTP(password Password, hasher Hasher) error {
-	if !u.HasActivatedTOTP() {
-		return errors.New("cannot disable an unactivated TOTP")
-	}
-
-	if _, err := u.checkPassword(password, hasher); err != nil {
-		return fmt.Errorf("check password: %w", err)
-	}
-
+func (u *User) disableTOTP() {
 	u.TOTPMethod = TOTPMethodNone.String()
 	u.TOTPTel = ""
 	u.TOTPKey = nil
@@ -408,27 +400,20 @@ func (u *User) DisableTOTP(password Password, hasher Hasher) error {
 	u.TOTPVerifiedAt = time.Time{}
 	u.TOTPActivatedAt = time.Time{}
 	u.HashedRecoveryCodes = nil
-
-	u.Events.Enqueue(DisabledTOTP{Email: u.Email})
-
-	return nil
 }
 
-func (u *User) DisableTOTPWithRecoveryCode(code RecoveryCode) error {
-	if err := u.useRecoveryCode(code); err != nil {
-		return fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
-			"recovery code": errors.New("invalid recovery code"),
-		})
+func (u *User) DisableTOTP(password Password, hasher Hasher) error {
+	if !u.HasActivatedTOTP() {
+		return errors.New("cannot disable an unactivated TOTP")
 	}
 
-	u.TOTPKey = nil
-	u.TOTPAlgorithm = ""
-	u.TOTPDigits = 0
-	u.TOTPPeriod = 0
-	u.TOTPVerifiedAt = time.Time{}
-	u.HashedRecoveryCodes = nil
+	if _, err := u.checkPassword(password, hasher); err != nil {
+		return fmt.Errorf("check password: %w", err)
+	}
 
-	u.Events.Enqueue(DisabledTOTP{Email: u.Email})
+	u.disableTOTP()
+
+	u.Events.Enqueue(TOTPDisabled{Email: u.Email})
 
 	return nil
 }

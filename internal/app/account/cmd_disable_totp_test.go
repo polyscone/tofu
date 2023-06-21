@@ -38,11 +38,11 @@ func TestDisableTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.DisabledTOTP{Email: user.Email})
+		events.Expect(account.TOTPDisabled{Email: user.Email})
 
 		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 		if want, got := []byte(nil), user.TOTPKey; !bytes.Equal(want, got) {
-			t.Errorf("want %q; got %q", want, got)
+			t.Errorf("want TOTP key %q; got %q", want, got)
 		}
 		if user.TOTPMethod != account.TOTPMethodNone.String() {
 			t.Error("want TOTP method to be cleared")
@@ -91,7 +91,7 @@ func TestDisableTOTP(t *testing.T) {
 			want     error
 		}{
 			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
-			{"incorrect password", validGuard, user2.ID, "12345678", nil},
+			{"incorrect password", validGuard, user2.ID, "12345678", app.ErrUnauthorised},
 			{"unactivated TOTP", validGuard, user1.ID, "password", nil},
 		}
 		for _, tc := range tt {

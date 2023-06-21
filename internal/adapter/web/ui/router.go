@@ -112,7 +112,7 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 	// Event listeners
 	tenant.Broker.Listen(accountSignedInWithPasswordHandler(h))
-	tenant.Broker.Listen(accountDisabledTOTPHandler(h))
+	tenant.Broker.Listen(accountTOTPDisabledHandler(h))
 	tenant.Broker.Listen(accountSignedUpHandler(h))
 
 	// Redirects

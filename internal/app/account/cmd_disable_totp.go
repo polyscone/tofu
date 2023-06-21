@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
@@ -42,6 +43,10 @@ func (s *Service) DisableTOTP(ctx context.Context, guard DisableTOTPGuard, userI
 	}
 
 	if err := user.DisableTOTP(input.password, s.hasher); err != nil {
+		if errors.Is(err, ErrInvalidPassword) {
+			return fmt.Errorf("%w: %w", app.ErrUnauthorised, err)
+		}
+
 		return err
 	}
 

@@ -28,7 +28,7 @@ type SignedInWithGoogle struct {
 	Email string
 }
 
-type DisabledTOTP struct {
+type TOTPDisabled struct {
 	Email string
 }
 

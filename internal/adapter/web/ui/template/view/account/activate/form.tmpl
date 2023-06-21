@@ -3,10 +3,8 @@
 <div class="center">
 	{{if .ErrorMessage}}
 		<h1>Account activation error</h1>
-	{{else if .URL.Query.Get "token"}}
-		<h1>Account activation</h1>
 	{{else}}
-		<h1>Account activation error</h1>
+		<h1>Account activation</h1>
 	{{end}}
 </div>
 
@@ -17,10 +15,10 @@
 <div class="center">
 	{{if .ErrorMessage}}
 		<p>Either the account you're trying to activate has already been activated or you've provided an invalid activation token.</p>
-	{{else if .URL.Query.Get "token"}}
+	{{else}}
 		<p>Almost done! Use the form below to choose a password and we can activate your account.</p>
 
-		<form action="{{Path "account.activate.post"}}" method="POST" id="account-activate-form">
+		<form action="{{Path "account.activate.post"}}{{.URL.Query.String}}" method="POST" id="account-activate-form">
 			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
@@ -32,8 +30,6 @@
 				<button type="submit">Use this password and activate account</button>
 			</div>
 		</form>
-	{{else}}
-		<p>An account can't be activated without an activation token.</p>
 	{{end}}
 </div>
 

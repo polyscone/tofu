@@ -30,8 +30,8 @@ func accountSignedInWithPasswordHandler(h *handler.Handler) any {
 	}
 }
 
-func accountDisabledTOTPHandler(h *handler.Handler) any {
-	return func(evt account.DisabledTOTP) {
+func accountTOTPDisabledHandler(h *handler.Handler) any {
+	return func(evt account.TOTPDisabled) {
 		background.Go(func() {
 			ctx := context.Background()
 
@@ -46,7 +46,7 @@ func accountDisabledTOTPHandler(h *handler.Handler) any {
 				From: config.SystemEmail,
 				To:   []string{evt.Email},
 			}
-			if err := h.SendEmail(ctx, recipients, "disabled_totp", nil); err != nil {
+			if err := h.SendEmail(ctx, recipients, "totp_disabled", nil); err != nil {
 				h.Log.Error("disabled TOTP: send email", "error", err)
 			}
 		})
