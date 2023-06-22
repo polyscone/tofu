@@ -76,13 +76,10 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 		errsx.Must0(user.ChangeTOTPTel("+00 00 0000 0000"))
 	}
 	if tu.VerifyTOTP {
-		alg := errsx.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
-		tb := errsx.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
-		totp := errsx.Must(account.NewTOTP(errsx.Must(tb.Generate(user.TOTPKey, time.Now()))))
+		totp := errsx.Must(user.GenerateTOTP())
+		codes = errsx.Must(user.VerifyTOTP(errsx.Must(account.NewTOTP(totp)), "app"))
 
-		codes = errsx.Must(user.VerifyTOTP(totp, "app"))
-
-		otp.CleanUsedTOTP(totp.String())
+		otp.CleanUsedTOTP(totp)
 	}
 	if tu.ActivateTOTP {
 		errsx.Must0(user.ActivateTOTP())

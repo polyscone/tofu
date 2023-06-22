@@ -5,12 +5,10 @@ import (
 	"errors"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/repository"
 )
@@ -36,9 +34,7 @@ func TestVerifyTOTP(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		alg := errsx.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
-		tb := errsx.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
-		totp := errsx.Must(tb.Generate(user.TOTPKey, time.Now()))
+		totp := errsx.Must(user.GenerateTOTP())
 
 		// Deliberately set the method to SMS so we can check it's changed by the service
 		user.TOTPMethod = account.TOTPMethodSMS.String()
@@ -77,9 +73,7 @@ func TestVerifyTOTP(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		alg := errsx.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
-		tb := errsx.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
-		totp := errsx.Must(tb.Generate(user.TOTPKey, time.Now()))
+		totp := errsx.Must(user.GenerateTOTP())
 
 		// Deliberately set the method to app so we can check it's changed by the service
 		user.TOTPMethod = account.TOTPMethodSMS.String()
@@ -137,9 +131,7 @@ func TestVerifyTOTP(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				totp := "000000"
 				if tc.totpUser != nil {
-					alg := errsx.Must(otp.NewAlgorithm(tc.totpUser.TOTPAlgorithm))
-					tb := errsx.Must(otp.NewTimeBased(tc.totpUser.TOTPDigits, alg, time.Unix(0, 0), tc.totpUser.TOTPPeriod))
-					totp = errsx.Must(tb.Generate(tc.totpUser.TOTPKey, time.Now()))
+					totp = errsx.Must(tc.totpUser.GenerateTOTP())
 				}
 
 				_, err := svc.VerifyTOTP(ctx, tc.guard, tc.userID, totp, account.TOTPMethodApp.String())

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
@@ -43,9 +42,7 @@ func TestSignInWithTOTP(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		alg := errsx.Must(otp.NewAlgorithm(user.TOTPAlgorithm))
-		tb := errsx.Must(otp.NewTimeBased(user.TOTPDigits, alg, time.Unix(0, 0), user.TOTPPeriod))
-		totp := errsx.Must(tb.Generate(user.TOTPKey, time.Now()))
+		totp := errsx.Must(user.GenerateTOTP())
 
 		otp.CleanUsedTOTP(totp)
 
@@ -95,9 +92,7 @@ func TestSignInWithTOTP(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				totp := "000000"
 				if tc.totpUser != nil {
-					alg := errsx.Must(otp.NewAlgorithm(tc.totpUser.TOTPAlgorithm))
-					tb := errsx.Must(otp.NewTimeBased(tc.totpUser.TOTPDigits, alg, time.Unix(0, 0), tc.totpUser.TOTPPeriod))
-					totp = errsx.Must(tb.Generate(tc.totpUser.TOTPKey, time.Now()))
+					totp = errsx.Must(tc.totpUser.GenerateTOTP())
 				}
 
 				err := svc.SignInWithTOTP(ctx, tc.userID, totp)
