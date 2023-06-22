@@ -20,6 +20,8 @@
 	--clr-accent-100: hsl(170 45% 97%);
 	--clr-accent-400: hsl(170 45% 30%);
 
+	--clr-hint-400: hsl(0 0% 30%);
+
 	--clr-disabled-400: hsl(240 6% 79%);
 
 	--clr-focus-400: hsl(59 100% 95%);
@@ -196,7 +198,7 @@
 	}
 
 	label small {
-		color: gray;
+		color: var(--clr-hint-400);
 	}
 
 	label small::before {
