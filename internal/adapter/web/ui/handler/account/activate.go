@@ -10,15 +10,9 @@ import (
 
 func Activate(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/activate", func(mux *router.ServeMux) {
-		mux.Get("/", activateGet(h), "account.activate")
+		mux.Get("/", h.HandleView("account/activate/form"), "account.activate")
 		mux.Post("/", activatePost(h), "account.activate.post")
 	})
-}
-
-func activateGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/activate/form", nil)
-	}
 }
 
 func activatePost(h *handler.Handler) http.HandlerFunc {

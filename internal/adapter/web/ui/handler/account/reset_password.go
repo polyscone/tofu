@@ -17,20 +17,14 @@ import (
 
 func ResetPassword(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/reset-password", func(mux *router.ServeMux) {
-		mux.Get("/", resetPasswordGet(h), "account.reset_password")
+		mux.Get("/", h.HandleView("account/reset_password/request"), "account.reset_password")
 		mux.Post("/", resetPasswordPost(h), "account.reset_password.post")
 
-		mux.Get("/email-sent", resetPasswordEmailSentGet(h), "account.reset_password.email_sent")
+		mux.Get("/email-sent", h.HandleView("account/reset_password/email_sent"), "account.reset_password.email_sent")
 
-		mux.Get("/new-password", resetPasswordNewPasswordGet(h), "account.reset_password.new_password")
+		mux.Get("/new-password", h.HandleView("account/reset_password/new_password"), "account.reset_password.new_password")
 		mux.Post("/new-password", resetPasswordNewPasswordPost(h), "account.reset_password.new_password.post")
 	})
-}
-
-func resetPasswordGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/reset_password/request", nil)
-	}
 }
 
 func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
@@ -83,18 +77,6 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 		})
 
 		http.Redirect(w, r, h.Path("account.reset_password.email_sent"), http.StatusSeeOther)
-	}
-}
-
-func resetPasswordEmailSentGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/reset_password/email_sent", nil)
-	}
-}
-
-func resetPasswordNewPasswordGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/reset_password/new_password", nil)
 	}
 }
 

@@ -12,15 +12,9 @@ import (
 
 func SystemConfig(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/config", func(mux *router.ServeMux) {
-		mux.Get("/", systemConfigGet(h), "system.config")
+		mux.Get("/", h.HandleView("admin/system_config"), "system.config")
 		mux.Post("/", systemConfigPost(h), "system.config.post")
 	})
-}
-
-func systemConfigGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "admin/system_config", nil)
-	}
 }
 
 func systemConfigPost(h *handler.Handler) http.HandlerFunc {

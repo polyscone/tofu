@@ -26,15 +26,9 @@ func ChoosePassword(h *handler.Handler, mux *router.ServeMux) {
 			return true
 		})
 
-		mux.Get("/", choosePasswordGet(h), "account.choose_password")
+		mux.Get("/", h.HandleView("account/choose_password/form"), "account.choose_password")
 		mux.Post("/", choosePasswordPost(h), "account.choose_password.post")
 	})
-}
-
-func choosePasswordGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/choose_password/form", nil)
-	}
 }
 
 func choosePasswordPost(h *handler.Handler) http.HandlerFunc {

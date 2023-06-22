@@ -42,13 +42,13 @@ func SignIn(h *handler.Handler, mux *router.ServeMux) {
 				mux.Get("/", signInTOTPResetGet(h), "account.sign_in.totp.reset")
 				mux.Post("/", signInTOTPResetPost(h), "account.sign_in.totp.reset.post")
 
-				mux.Get("/email-sent", signInTOTPResetEmailSentGet(h), "account.sign_in.totp.reset.email_sent")
+				mux.Get("/email-sent", h.HandleView("account/totp/reset/email_sent"), "account.sign_in.totp.reset.email_sent")
 
 				mux.Prefix("/request", func(mux *router.ServeMux) {
-					mux.Get("/", signInTOTPResetRequestGet(h), "account.sign_in.totp.reset.request")
+					mux.Get("/", h.HandleView("account/totp/reset/request"), "account.sign_in.totp.reset.request")
 					mux.Post("/", signInTOTPResetRequestPost(h), "account.sign_in.totp.reset.request.post")
 
-					mux.Get("/sent", signInTOTPResetRequestSentGet(h), "account.sign_in.totp.reset.request.sent")
+					mux.Get("/sent", h.HandleView("account/totp/reset/request_sent"), "account.sign_in.totp.reset.request.sent")
 				})
 			})
 		})
@@ -227,18 +227,6 @@ func signInTOTPResetPost(h *handler.Handler) http.HandlerFunc {
 	}
 }
 
-func signInTOTPResetEmailSentGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/totp/reset/email_sent", nil)
-	}
-}
-
-func signInTOTPResetRequestGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/totp/reset/request", nil)
-	}
-}
-
 func signInTOTPResetRequestPost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
@@ -274,12 +262,6 @@ func signInTOTPResetRequestPost(h *handler.Handler) http.HandlerFunc {
 		}
 
 		http.Redirect(w, r, h.Path("account.sign_in.totp.reset.request.sent"), http.StatusSeeOther)
-	}
-}
-
-func signInTOTPResetRequestSentGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/totp/reset/request_sent", nil)
 	}
 }
 

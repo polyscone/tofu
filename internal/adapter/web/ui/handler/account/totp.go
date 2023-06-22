@@ -29,7 +29,7 @@ func TOTP(h *handler.Handler, mux *router.ServeMux) {
 		mux.Name("account.totp.section")
 
 		mux.Prefix("/reset", func(mux *router.ServeMux) {
-			mux.Get("/", totpResetGet(h), "account.totp.reset")
+			mux.Get("/", h.HandleView("account/totp/reset/reset"), "account.totp.reset")
 			mux.Post("/", totpResetPost(h), "account.totp.reset.post")
 		})
 
@@ -75,14 +75,14 @@ func TOTP(h *handler.Handler, mux *router.ServeMux) {
 					mux.Post("/", totpSetupActivatePost(h), "account.totp.setup.activate.post")
 				})
 
-				mux.Get("/success", totpSetupSuccessGet(h), "account.totp.setup.success")
+				mux.Get("/success", h.HandleView("account/totp/setup/success"), "account.totp.setup.success")
 			})
 
 			mux.Prefix("/disable", func(mux *router.ServeMux) {
 				mux.Get("/", totpDisableGet(h), "account.totp.disable")
 				mux.Post("/", totpDisablePost(h), "account.totp.disable.post")
 
-				mux.Get("/success", totpDisableSuccessGet(h), "account.totp.disable.success")
+				mux.Get("/success", h.HandleView("account/totp/disable/success"), "account.totp.disable.success")
 			})
 
 			mux.Prefix("/recovery-codes", func(mux *router.ServeMux) {
@@ -379,12 +379,6 @@ func totpSetupActivatePost(h *handler.Handler) http.HandlerFunc {
 	}
 }
 
-func totpSetupSuccessGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/totp/setup/success", nil)
-	}
-}
-
 func totpDisableGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -444,18 +438,6 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 		h.Sessions.Set(ctx, sess.HasActivatedTOTP, false)
 
 		http.Redirect(w, r, h.Path("account.totp.disable.success"), http.StatusSeeOther)
-	}
-}
-
-func totpDisableSuccessGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/totp/disable/success", nil)
-	}
-}
-
-func totpResetGet(h *handler.Handler) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, "account/totp/reset/reset", nil)
 	}
 }
 
