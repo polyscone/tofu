@@ -13,12 +13,13 @@ type UpdateConfigGuard interface {
 }
 
 func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
-	systemEmail string,
+	systemEmail, securityEmail string,
 	requireTOTP bool,
 	googleSignInClientID, twilioSID, twilioToken, twilioFromTel string,
 ) (*Config, error) {
 	var input struct {
 		systemEmail          Email
+		securityEmail        Email
 		requireTOTP          bool
 		googleSignInClientID GoogleClientID
 		twilioSID            TwilioSID
@@ -35,6 +36,9 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 
 		if input.systemEmail, err = NewEmail(systemEmail); err != nil {
 			errs.Set("system email", err)
+		}
+		if input.securityEmail, err = NewEmail(securityEmail); err != nil {
+			errs.Set("security email", err)
 		}
 
 		input.requireTOTP = requireTOTP
@@ -63,6 +67,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	}
 
 	config.ChangeSystemEmail(input.systemEmail)
+	config.ChangeSecurityEmail(input.securityEmail)
 	config.ChangeRequireTOTP(input.requireTOTP)
 	config.ChangeGoogleSignInClientID(input.googleSignInClientID)
 	config.ChangeTwilioAPI(input.twilioSID, input.twilioToken, input.twilioFromTel)

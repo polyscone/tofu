@@ -6,6 +6,7 @@ type Config struct {
 	aggregate.Root
 
 	SystemEmail          string
+	SecurityEmail        string
 	RequireTOTP          bool
 	GoogleSignInClientID string
 	TwilioSID            string
@@ -20,6 +21,10 @@ func (c *Config) HasSMS() bool {
 
 func (c *Config) ChangeSystemEmail(systemEmail Email) {
 	c.SystemEmail = systemEmail.String()
+}
+
+func (c *Config) ChangeSecurityEmail(securityEmail Email) {
+	c.SecurityEmail = securityEmail.String()
 }
 
 func (c *Config) ChangeRequireTOTP(requireTOTP bool) {

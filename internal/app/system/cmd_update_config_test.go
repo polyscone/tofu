@@ -31,6 +31,7 @@ func TestUpdateConfig(t *testing.T) {
 		defer events.Check(t)
 
 		systemEmail := "foo@example.com"
+		securityEmail := "bar@example.com"
 		requireTOTP := true
 		googleSignInClientID := "1234abcd"
 		twilioSID := ""
@@ -39,6 +40,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		_, err := svc.UpdateConfig(ctx, validGuard,
 			systemEmail,
+			securityEmail,
 			requireTOTP,
 			googleSignInClientID,
 			twilioSID,
@@ -53,6 +55,9 @@ func TestUpdateConfig(t *testing.T) {
 
 		if want, got := systemEmail, config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)
+		}
+		if want, got := securityEmail, config.SecurityEmail; want != got {
+			t.Errorf("want security email to be %q; got %q", want, got)
 		}
 		if want, got := requireTOTP, config.RequireTOTP; want != got {
 			t.Errorf("want require TOTP to be %v; got %v", want, got)
@@ -71,6 +76,7 @@ func TestUpdateConfig(t *testing.T) {
 		}
 
 		systemEmail = "bar@example.com"
+		securityEmail = "baz@example.com"
 		requireTOTP = false
 		googleSignInClientID = "xyz"
 		twilioSID = "AC0123456789abcdef0123456789abcdef"
@@ -79,6 +85,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		_, err = svc.UpdateConfig(ctx, validGuard,
 			systemEmail,
+			securityEmail,
 			requireTOTP,
 			googleSignInClientID,
 			twilioSID,
@@ -93,6 +100,9 @@ func TestUpdateConfig(t *testing.T) {
 
 		if want, got := systemEmail, config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)
+		}
+		if want, got := securityEmail, config.SecurityEmail; want != got {
+			t.Errorf("want security email to be %q; got %q", want, got)
 		}
 		if want, got := requireTOTP, config.RequireTOTP; want != got {
 			t.Errorf("want require TOTP to be %v; got %v", want, got)
@@ -126,12 +136,14 @@ func TestUpdateConfig(t *testing.T) {
 		}{
 			{"unauthorised", invalidGuard, system.Config{}, app.ErrUnauthorised},
 			{"empty email", validGuard, system.Config{}, app.ErrMalformedInput},
-			{"malformed email", validGuard, system.Config{SystemEmail: "a"}, app.ErrMalformedInput},
+			{"malformed system email", validGuard, system.Config{SystemEmail: "a"}, app.ErrMalformedInput},
+			{"malformed security email", validGuard, system.Config{SecurityEmail: "a"}, app.ErrMalformedInput},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				_, err := svc.UpdateConfig(ctx, tc.guard,
 					tc.config.SystemEmail,
+					tc.config.SecurityEmail,
 					tc.config.RequireTOTP,
 					tc.config.GoogleSignInClientID,
 					tc.config.TwilioSID,

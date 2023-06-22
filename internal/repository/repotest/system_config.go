@@ -22,6 +22,9 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		if want, got := "", config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)
 		}
+		if want, got := "", config.SecurityEmail; want != got {
+			t.Errorf("want security email to be %q; got %q", want, got)
+		}
 		if want, got := false, config.RequireTOTP; want != got {
 			t.Errorf("want require TOTP to be %v; got %v", want, got)
 		}
@@ -41,11 +44,12 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		err = repo.SaveConfig(ctx, &system.Config{
 			RequireSetup:         true,
 			SystemEmail:          "1",
+			SecurityEmail:        "2",
 			RequireTOTP:          true,
-			GoogleSignInClientID: "2",
-			TwilioSID:            "3",
-			TwilioToken:          "4",
-			TwilioFromTel:        "5",
+			GoogleSignInClientID: "3",
+			TwilioSID:            "4",
+			TwilioToken:          "5",
+			TwilioFromTel:        "6",
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -62,19 +66,22 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		if want, got := "1", config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)
 		}
+		if want, got := "2", config.SecurityEmail; want != got {
+			t.Errorf("want security email to be %q; got %q", want, got)
+		}
 		if want, got := true, config.RequireTOTP; want != got {
 			t.Errorf("want require TOTP to be %v; got %v", want, got)
 		}
-		if want, got := "2", config.GoogleSignInClientID; want != got {
+		if want, got := "3", config.GoogleSignInClientID; want != got {
 			t.Errorf("want Google sign in client id to be %q; got %q", want, got)
 		}
-		if want, got := "3", config.TwilioSID; want != got {
+		if want, got := "4", config.TwilioSID; want != got {
 			t.Errorf("want twilio sid to be %q; got %q", want, got)
 		}
-		if want, got := "4", config.TwilioToken; want != got {
+		if want, got := "5", config.TwilioToken; want != got {
 			t.Errorf("want twilio token to be %q; got %q", want, got)
 		}
-		if want, got := "5", config.TwilioFromTel; want != got {
+		if want, got := "6", config.TwilioFromTel; want != got {
 			t.Errorf("want twilio from tel to be %q; got %q", want, got)
 		}
 	})

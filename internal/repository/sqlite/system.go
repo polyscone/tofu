@@ -63,6 +63,7 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 	err := tx.QueryRowContext(ctx, `
 		SELECT
 			system_email,
+			security_email,
 			require_totp,
 			google_sign_in_client_id,
 			twilio_sid,
@@ -71,6 +72,7 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 		FROM system__config
 	`).Scan(
 		&config.SystemEmail,
+		&config.SecurityEmail,
 		&config.RequireTOTP,
 		&config.GoogleSignInClientID,
 		&config.TwilioSID,
@@ -91,6 +93,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 		INSERT INTO system__config (
 			id,
 			system_email,
+			security_email,
 			require_totp,
 			google_sign_in_client_id,
 			twilio_sid,
@@ -100,6 +103,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 		) VALUES (
 			:id,
 			:system_email,
+			:security_email,
 			:require_totp,
 			:google_sign_in_client_id,
 			:twilio_sid,
@@ -110,6 +114,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 		ON CONFLICT DO
 			UPDATE SET
 				system_email = :system_email,
+				security_email = :security_email,
 				require_totp = :require_totp,
 				google_sign_in_client_id = :google_sign_in_client_id,
 				twilio_sid = :twilio_sid,
@@ -119,6 +124,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 	`,
 		sql.Named("id", 1),
 		sql.Named("system_email", config.SystemEmail),
+		sql.Named("security_email", config.SecurityEmail),
 		sql.Named("require_totp", config.RequireTOTP),
 		sql.Named("google_sign_in_client_id", config.GoogleSignInClientID),
 		sql.Named("twilio_sid", config.TwilioSID),

@@ -22,6 +22,10 @@
 		<input id="config__system-email" type="email" name="system-email" value="{{.Form.GetOr "system-email" .Config.SystemEmail}}" placeholder="email@example.com" autocomplete="email" required pattern=".+?@.+?(\..+?)+" maxlength="100"{{if $disable}} disabled{{end}}>
 		<p class="error">{{.Errors.Get "system email"}}</p>
 
+		<label for="config__security-email">System email</label>
+		<input id="config__security-email" type="email" name="security-email" value="{{.Form.GetOr "security-email" .Config.SecurityEmail}}" placeholder="email@example.com" autocomplete="email" required pattern=".+?@.+?(\..+?)+" maxlength="100"{{if $disable}} disabled{{end}}>
+		<p class="error">{{.Errors.Get "security email"}}</p>
+
 		<label for="config__require-totp">Require two-factor authentication</label>
 		<select id="config__require-totp" name="require-totp">
 			<option value="false"{{if eq (.Form.GetOr "require-totp" .Config.RequireTOTP) "false"}} selected{{end}}>No</option>
