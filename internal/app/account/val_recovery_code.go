@@ -41,7 +41,7 @@ func NewRecoveryCode(code string) (RecoveryCode, error) {
 	}
 
 	if matches := invalidRecoveryCodeChars.FindAllString(code, -1); len(matches) != 0 {
-		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
 	}
 
 	if !validRecoveryCodeSeq.MatchString(code) {

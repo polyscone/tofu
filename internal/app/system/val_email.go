@@ -60,7 +60,7 @@ func NewEmail(email string) (Email, error) {
 	}
 
 	if matches := invalidEmailChars.FindAllString(addr.Address, -1); len(matches) != 0 {
-		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
 	}
 
 	if !validEmailSeq.MatchString(addr.Address) {

@@ -36,7 +36,7 @@ func NewRoleName(name string) (RoleName, error) {
 	}
 
 	if matches := invalidRoleNameChars.FindAllString(name, -1); len(matches) != 0 {
-		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
 	}
 
 	if !validRoleNameSeq.MatchString(name) {

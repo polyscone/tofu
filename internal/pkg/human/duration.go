@@ -3,7 +3,6 @@ package human
 import (
 	"fmt"
 	"math"
-	"strings"
 	"time"
 )
 
@@ -31,5 +30,5 @@ func Duration(d time.Duration) string {
 		parts = append(parts, fmt.Sprintf("%v seconds", seconds))
 	}
 
-	return strings.Join(parts, " ")
+	return AndList(parts)
 }

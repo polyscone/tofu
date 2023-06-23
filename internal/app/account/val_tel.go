@@ -22,7 +22,7 @@ func NewTel(tel string) (Tel, error) {
 	}
 
 	if matches := invalidTelChars.FindAllString(tel, -1); len(matches) != 0 {
-		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
 	}
 
 	if !validTelSeq.MatchString(tel) {
