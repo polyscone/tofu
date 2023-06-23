@@ -1,17 +1,33 @@
 package account
 
 import (
-	"errors"
+	"fmt"
 	"regexp"
+	"unicode/utf8"
+
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
-var validTOTP = regexp.MustCompile(`^\d{6}$`)
+const totpLength = 6
+
+var (
+	invalidTOTPChars = regexp.MustCompile(`[^\d]`)
+	validTOTPSeq     = regexp.MustCompile(`^\d+$`)
+)
 
 type TOTP string
 
 func NewTOTP(totp string) (TOTP, error) {
-	if !validTOTP.MatchString(totp) {
-		return "", errors.New("must be 6 digits")
+	if rc := utf8.RuneCountInString(totp); rc != totpLength {
+		return "", fmt.Errorf("must be %v characters in length", totpLength)
+	}
+
+	if matches := invalidTelChars.FindAllString(totp, -1); len(matches) != 0 {
+		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+	}
+
+	if !validTOTPSeq.MatchString(totp) {
+		return "", fmt.Errorf("must be %v digits", totpLength)
 	}
 
 	return TOTP(totp), nil

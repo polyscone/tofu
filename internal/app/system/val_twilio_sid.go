@@ -2,10 +2,19 @@ package system
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
+	"unicode/utf8"
+
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
-var validTwilioSID = regexp.MustCompile(`^AC[0-9a-f]{32}$`)
+const twilioSIDLength = 34
+
+var (
+	invalidTwilioSIDChars = regexp.MustCompile(`[^AC0-9a-f]`)
+	validTwilioSIDSeq     = regexp.MustCompile(`^AC[0-9a-f]+$`)
+)
 
 type TwilioSID string
 
@@ -14,8 +23,16 @@ func NewTwilioSID(sid string) (TwilioSID, error) {
 		return "", nil
 	}
 
-	if !validTwilioSID.MatchString(sid) {
-		return "", errors.New("must begin with AC and be followed by 32 hex characters")
+	if rc := utf8.RuneCountInString(sid); rc != twilioSIDLength {
+		return "", fmt.Errorf("must be %v characters in length", twilioSIDLength)
+	}
+
+	if matches := invalidTwilioSIDChars.FindAllString(sid, -1); len(matches) != 0 {
+		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+	}
+
+	if !validTwilioSIDSeq.MatchString(sid) {
+		return "", errors.New("must begin with AC and be followed by 32 hexadecimal characters")
 	}
 
 	return TwilioSID(sid), nil

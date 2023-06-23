@@ -2,10 +2,16 @@ package system
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
+
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
-var validTwilioTel = regexp.MustCompile(`^\+\d(\d| )+$`)
+var (
+	invalidTwilioTelChars = regexp.MustCompile(`[^\d+ ]`)
+	validTwilioTelSeq     = regexp.MustCompile(`^\+\d(\d| )+$`)
+)
 
 type TwilioTel string
 
@@ -14,8 +20,12 @@ func NewTwilioTel(tel string) (TwilioTel, error) {
 		return "", nil
 	}
 
-	if !validTwilioTel.MatchString(tel) {
-		return "", errors.New("invalid phone number")
+	if matches := invalidTwilioTelChars.FindAllString(tel, -1); len(matches) != 0 {
+		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+	}
+
+	if !validTwilioTelSeq.MatchString(tel) {
+		return "", errors.New("must be in the format +12 3456 7890")
 	}
 
 	return TwilioTel(tel), nil

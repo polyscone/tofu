@@ -2,23 +2,40 @@ package system
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
+	"unicode/utf8"
+
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
-var validTwilioToken = regexp.MustCompile(`^[0-9a-f]{32}$`)
+const twilioTokenLength = 32
+
+var (
+	invalidTwilioTokenChars = regexp.MustCompile(`[^0-9a-f]`)
+	validTwilioTokenSeq     = regexp.MustCompile(`^[0-9a-f]+$`)
+)
 
 type TwilioToken string
 
-func NewTwilioToken(sid string) (TwilioToken, error) {
-	if sid == "" {
+func NewTwilioToken(token string) (TwilioToken, error) {
+	if token == "" {
 		return "", nil
 	}
 
-	if !validTwilioToken.MatchString(sid) {
-		return "", errors.New("must be exactly 32 hex characters")
+	if rc := utf8.RuneCountInString(token); rc != twilioTokenLength {
+		return "", fmt.Errorf("must be %v characters in length", twilioTokenLength)
 	}
 
-	return TwilioToken(sid), nil
+	if matches := invalidTwilioTokenChars.FindAllString(token, -1); len(matches) != 0 {
+		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+	}
+
+	if !validTwilioTokenSeq.MatchString(token) {
+		return "", errors.New("must be exactly 32 hexadecimal characters")
+	}
+
+	return TwilioToken(token), nil
 }
 
 func (e TwilioToken) String() string {

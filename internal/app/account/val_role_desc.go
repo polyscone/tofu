@@ -1,26 +1,38 @@
 package account
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"unicode/utf8"
+
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
 const roleDescMaxLength = 100
 
-var validRoleDesc = regexp.MustCompile(`^[[:print:]]*$`)
+var (
+	invalidRoleDescChars = regexp.MustCompile(`[^[:print:]]`)
+	validRoleDescSeq     = regexp.MustCompile(`^[[:print:]]+$`)
+)
 
 type RoleDesc string
 
 func NewRoleDesc(desc string) (RoleDesc, error) {
+	if desc == "" {
+		return "", nil
+	}
+
 	rc := utf8.RuneCountInString(desc)
 	if rc > roleDescMaxLength {
 		return "", fmt.Errorf("cannot be a over %v characters in length", roleDescMaxLength)
 	}
 
-	if !validRoleDesc.MatchString(desc) {
-		return "", errors.New("contains invalid characters")
+	if matches := invalidRoleDescChars.FindAllString(desc, -1); len(matches) != 0 {
+		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+	}
+
+	if !validRoleDescSeq.MatchString(desc) {
+		return "", fmt.Errorf("can only be a maximum of %v printable characters", roleDescMaxLength)
 	}
 
 	return RoleDesc(desc), nil

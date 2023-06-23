@@ -23,7 +23,7 @@
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
 			<label for="activate__password">Choose a password</label>
-			<input id="activate__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern=".{8,1000}" minlength="8" maxlength="1000">
+			<input id="activate__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern="^.+$" minlength="8" maxlength="1000">
 			<p class="error">{{.Errors.Get "password"}}</p>
 
 			<div class="bag reverse">

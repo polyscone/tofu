@@ -9,15 +9,43 @@ import (
 	"fmt"
 	"io"
 	"regexp"
+	"strings"
+	"unicode/utf8"
+
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
-var validCode = regexp.MustCompile(`^[A-Z2-7]+$`)
+const recoveryCodeLength = 13
+
+var (
+	invalidRecoveryCodeChars = regexp.MustCompile(`[^A-Z2-7]`)
+	validRecoveryCodeSeq     = regexp.MustCompile(`^[A-Z2-7]+$`)
+)
 
 type RecoveryCode string
 
 func NewRecoveryCode(code string) (RecoveryCode, error) {
-	if !validCode.MatchString(code) {
-		return "", errors.New("contains invalid characters")
+	if strings.TrimSpace(code) == "" {
+		return "", errors.New("cannot be empty")
+	}
+
+	if strings.ContainsAny(code, " \t\n\r") {
+		return "", errors.New("cannot contain whitespace")
+	}
+	if strings.ContainsAny(code, `"'`) {
+		return "", errors.New("cannot contain quotes")
+	}
+
+	if rc := utf8.RuneCountInString(code); rc != recoveryCodeLength {
+		return "", fmt.Errorf("must be %v characters in length", recoveryCodeLength)
+	}
+
+	if matches := invalidRecoveryCodeChars.FindAllString(code, -1); len(matches) != 0 {
+		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+	}
+
+	if !validRecoveryCodeSeq.MatchString(code) {
+		return "", errors.New("can only contain uppercase characters between A-Z and 2-7")
 	}
 
 	return RecoveryCode(code), nil

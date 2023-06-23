@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
 const (
@@ -13,20 +15,16 @@ const (
 	roleNameMaxLength = 30
 )
 
-var validRoleName = regexp.MustCompile(`^[ a-zA-Z0-9!#&()*+,./:_\-\\]{1,30}$`)
+var (
+	invalidRoleNameChars = regexp.MustCompile(`[^[:print:]]`)
+	validRoleNameSeq     = regexp.MustCompile(`^[[:print:]]+$`)
+)
 
 type RoleName string
 
 func NewRoleName(name string) (RoleName, error) {
 	if strings.TrimSpace(name) == "" {
 		return "", errors.New("cannot be empty")
-	}
-
-	if strings.ContainsAny(name, "\n\r") {
-		return "", errors.New("cannot contain line breaks")
-	}
-	if strings.ContainsAny(name, `"'`) {
-		return "", errors.New("cannot contain quotes")
 	}
 
 	rc := utf8.RuneCountInString(name)
@@ -37,8 +35,12 @@ func NewRoleName(name string) (RoleName, error) {
 		return "", fmt.Errorf("cannot be a over %v characters in length", roleNameMaxLength)
 	}
 
-	if !validRoleName.MatchString(name) {
-		return "", errors.New("contains invalid characters")
+	if matches := invalidRoleNameChars.FindAllString(name, -1); len(matches) != 0 {
+		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+	}
+
+	if !validRoleNameSeq.MatchString(name) {
+		return "", fmt.Errorf("can only be a maximum of %v printable characters", roleDescMaxLength)
 	}
 
 	return RoleName(name), nil

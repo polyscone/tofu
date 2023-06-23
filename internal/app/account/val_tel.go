@@ -2,11 +2,17 @@ package account
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
-var validTel = regexp.MustCompile(`^\+\d(\d| )+$`)
+var (
+	invalidTelChars = regexp.MustCompile(`[^\d+ ]`)
+	validTelSeq     = regexp.MustCompile(`^\+\d(\d| )+$`)
+)
 
 type Tel string
 
@@ -15,8 +21,12 @@ func NewTel(tel string) (Tel, error) {
 		return "", errors.New("cannot be empty")
 	}
 
-	if !validTel.MatchString(tel) {
-		return "", errors.New("invalid phone number")
+	if matches := invalidTelChars.FindAllString(tel, -1); len(matches) != 0 {
+		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+	}
+
+	if !validTelSeq.MatchString(tel) {
+		return "", errors.New("must be in the format +12 3456 7890")
 	}
 
 	return Tel(tel), nil

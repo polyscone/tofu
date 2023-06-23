@@ -14,7 +14,7 @@ const (
 	passwordMaxLength = 1000
 )
 
-var validPassword = regexp.MustCompile(`^.{8,1000}$`)
+var validPasswordSeq = regexp.MustCompile(`^.+$`)
 
 type Password struct {
 	_ [0]func() // Disallow comparison
@@ -27,20 +27,16 @@ func NewPassword(password string) (zero Password, _ error) {
 		return zero, errors.New("cannot be empty")
 	}
 
-	if strings.ContainsAny(password, "\n\r") {
-		return zero, errors.New("cannot contain line breaks")
-	}
-
 	rc := utf8.RuneCountInString(password)
 	if rc < passwordMinLength {
-		return zero, fmt.Errorf("must be at least %v characters", passwordMinLength)
+		return zero, fmt.Errorf("must be at least %v characters in length", passwordMinLength)
 	}
 	if rc > passwordMaxLength {
 		return zero, fmt.Errorf("cannot be a over %v characters in length", passwordMaxLength)
 	}
 
-	if !validPassword.MatchString(password) {
-		return zero, errors.New("contains invalid characters")
+	if !validPasswordSeq.MatchString(password) {
+		return zero, fmt.Errorf("must be between %v and %v characters in length", passwordMinLength, passwordMaxLength)
 	}
 
 	return Password{data: []byte(password)}, nil

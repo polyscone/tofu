@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
 const (
@@ -13,7 +15,10 @@ const (
 	permissionMaxLength = 50
 )
 
-var validPermission = regexp.MustCompile(`^[a-z0-9:_]{1,50}$`)
+var (
+	invalidPermissionChars = regexp.MustCompile(`[^a-z0-9:_]`)
+	validPermission        = regexp.MustCompile(`^[a-z0-9:_]{1,50}$`)
+)
 
 type Permission string
 
@@ -22,8 +27,8 @@ func NewPermission(name string) (Permission, error) {
 		return "", errors.New("cannot be empty")
 	}
 
-	if strings.ContainsAny(name, "\n\r") {
-		return "", errors.New("cannot contain line breaks")
+	if strings.ContainsAny(name, " \t\n\r") {
+		return "", errors.New("cannot contain whitespace")
 	}
 	if strings.ContainsAny(name, `"'`) {
 		return "", errors.New("cannot contain quotes")
@@ -37,8 +42,12 @@ func NewPermission(name string) (Permission, error) {
 		return "", fmt.Errorf("cannot be a over %v characters in length", permissionMaxLength)
 	}
 
+	if matches := invalidPermissionChars.FindAllString(name, -1); len(matches) != 0 {
+		return "", fmt.Errorf("contains invalid characters: %v", human.List(matches))
+	}
+
 	if !validPermission.MatchString(name) {
-		return "", errors.New("contains invalid characters")
+		return "", errors.New("can only contain letters, numbers, underscores, and colons, e.g. abc_123:def_456")
 	}
 
 	return Permission(name), nil

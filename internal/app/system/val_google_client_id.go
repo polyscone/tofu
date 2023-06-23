@@ -5,7 +5,7 @@ import (
 	"regexp"
 )
 
-var validGoogleClientID = regexp.MustCompile(`^.+`)
+var validGoogleClientIDSeq = regexp.MustCompile(`^.+$`)
 
 type GoogleClientID string
 
@@ -14,7 +14,7 @@ func NewGoogleClientID(id string) (GoogleClientID, error) {
 		return "", nil
 	}
 
-	if !validGoogleClientID.MatchString(id) {
+	if !validGoogleClientIDSeq.MatchString(id) {
 		return "", errors.New("invalid client id")
 	}
 

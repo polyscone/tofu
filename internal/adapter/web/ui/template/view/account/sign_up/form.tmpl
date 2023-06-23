@@ -15,7 +15,7 @@
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
 		<label for="sign-up__email">Email</label>
-		<input id="sign-up__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="email@example.com" autocomplete="email" required pattern=".+?@.+?(\..+?)+" maxlength="100">
+		<input id="sign-up__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="email@example.com" autocomplete="email" required pattern="^[a-zA-Z0-9+._~\-]+@[a-zA-Z0-9+._~\-]+(\.[a-zA-Z0-9+._~\-]+)+$" maxlength="100">
 		<p class="error">{{.Errors.Get "email"}}</p>
 
 		<div class="bag reverse">

@@ -116,15 +116,15 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			code         string
 			isValidInput bool
 		}{
-			{"valid inputs", "AZ234567", true},
+			{"valid inputs", "ABCDXYZ234567", true},
 
 			{"invalid passcode empty", "", false},
 			{"invalid passcode whitespace", "      ", false},
-			{"invalid passcode lowercase letter", "a234567", false},
-			{"invalid passcode invalid base32 number 1", "1234567", false},
-			{"invalid passcode invalid base32 number 8", "8234567", false},
-			{"invalid passcode invalid base32 number 9", "9234567", false},
-			{"invalid passcode invalid base32 number 0", "0234567", false},
+			{"invalid passcode lowercase letter", "a234567222222", false},
+			{"invalid passcode invalid base32 number 1", "1234567222222", false},
+			{"invalid passcode invalid base32 number 8", "8234567222222", false},
+			{"invalid passcode invalid base32 number 9", "9234567222222", false},
+			{"invalid passcode invalid base32 number 0", "0234567222222", false},
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

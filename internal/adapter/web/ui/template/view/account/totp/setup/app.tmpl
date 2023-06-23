@@ -44,7 +44,7 @@
 		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
 
 		<label for="totp__passcode">Passcode</label>
-		<input id="totp__passcode" type="text" name="totp" placeholder="123456" autocomplete="off" required pattern="\d{6}" minlength="6" maxlength="6">
+		<input id="totp__passcode" type="text" name="totp" placeholder="123456" autocomplete="off" required pattern="^\d+$" minlength="6" maxlength="6">
 		<p class="error">{{.Errors.Get "totp"}}</p>
 
 		<div class="bag reverse">
