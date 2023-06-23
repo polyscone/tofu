@@ -40,7 +40,7 @@ func NewRoleName(name string) (RoleName, error) {
 	}
 
 	if !validRoleNameSeq.MatchString(name) {
-		return "", fmt.Errorf("can only be a maximum of %v printable characters", roleDescMaxLength)
+		return "", errors.New("can only contain latin characters")
 	}
 
 	return RoleName(name), nil

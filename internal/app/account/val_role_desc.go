@@ -1,6 +1,7 @@
 package account
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"unicode/utf8"
@@ -32,7 +33,7 @@ func NewRoleDesc(desc string) (RoleDesc, error) {
 	}
 
 	if !validRoleDescSeq.MatchString(desc) {
-		return "", fmt.Errorf("can only be a maximum of %v printable characters", roleDescMaxLength)
+		return "", errors.New("can only contain latin characters")
 	}
 
 	return RoleDesc(desc), nil
