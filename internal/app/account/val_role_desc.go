@@ -12,7 +12,7 @@ const roleDescMaxLength = 100
 
 var (
 	invalidRoleDescChars = regexp.MustCompile(`[^[:print:]]`)
-	validRoleDescSeq     = regexp.MustCompile(`^[[:print:]]+$`)
+	validRoleDescSeq     = regexp.MustCompile(`^[[:print:]]*$`)
 )
 
 type RoleDesc string
