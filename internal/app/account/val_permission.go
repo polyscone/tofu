@@ -17,7 +17,7 @@ const (
 
 var (
 	invalidPermissionChars = regexp.MustCompile(`[^a-z0-9:_]`)
-	validPermission        = regexp.MustCompile(`^[a-z0-9:_]{1,50}$`)
+	validPermissionSeq     = regexp.MustCompile(`^[a-z0-9:_]+$`)
 )
 
 type Permission string
@@ -46,7 +46,7 @@ func NewPermission(name string) (Permission, error) {
 		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
 	}
 
-	if !validPermission.MatchString(name) {
+	if !validPermissionSeq.MatchString(name) {
 		return "", errors.New("can only contain letters, numbers, underscores, and colons, e.g. abc_123:def_456")
 	}
 
