@@ -65,6 +65,8 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 	log.Attempts++
 	log.LastAttemptAt = time.Now()
 
+	nextThrottle := s.CheckSignInThrottle(log.Attempts, time.Now())
+
 	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	if err != nil {
 		if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
@@ -74,11 +76,11 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 		// Always check a password even when we error finding a user to help
 		// avoid leaking info that would allow enumeration of valid emails
 		if err := s.hasher.CheckDummyPasswordHash(); err != nil {
-			if errors.Is(err, ErrInvalidPassword) {
-				return fmt.Errorf("%w: check dummy password hash: %w", app.ErrUnauthorised, err)
-			}
-
 			return fmt.Errorf("check dummy password hash: %w", err)
+		}
+
+		if nextThrottle != nil {
+			err = fmt.Errorf("%w: %w", err, nextThrottle)
 		}
 
 		return fmt.Errorf("find user by email: %w", err)
@@ -92,6 +94,10 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 
 			if err := s.repo.SaveUser(ctx, user); err != nil {
 				return fmt.Errorf("save user: %w", err)
+			}
+
+			if nextThrottle != nil {
+				err = fmt.Errorf("%w: %w", err, nextThrottle)
 			}
 		}
 
