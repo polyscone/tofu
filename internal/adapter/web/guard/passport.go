@@ -1,5 +1,7 @@
 package guard
 
+import "golang.org/x/exp/slices"
+
 type User struct {
 	ID          int
 	IsSuper     bool
@@ -44,11 +46,5 @@ func (p Passport) CanAccessAdmin() bool {
 }
 
 func (p Passport) can(query string) bool {
-	for _, permission := range p.permissions {
-		if query == permission {
-			return true
-		}
-	}
-
-	return false
+	return slices.Contains(p.permissions, query)
 }
