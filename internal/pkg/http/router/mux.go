@@ -34,6 +34,7 @@ type BeforeHook struct {
 // Route represents a registered route and handler.
 type Route struct {
 	key      string
+	host     string
 	path     string
 	pattern  *regexp.Regexp
 	parts    []string
@@ -111,6 +112,7 @@ func (r *Route) Replace(paramArgPairs ...any) string {
 
 // ServeMux represents an HTTP router.
 type ServeMux struct {
+	host             string
 	prefix           string
 	middlewares      []middleware.Middleware
 	handler          http.Handler
@@ -132,6 +134,10 @@ func NewServeMux() *ServeMux {
 
 func (mux *ServeMux) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, route := range mux.routes {
+		if route.host != "" && route.host != r.Host {
+			continue
+		}
+
 		matches := route.pattern.FindStringSubmatch(r.URL.Path)
 		if matches == nil {
 			continue
@@ -233,6 +239,19 @@ func (mux *ServeMux) Before(before BeforeHookFunc, paths ...string) {
 	}
 }
 
+// Host will scope handlers to a specific request host value.
+func (mux *ServeMux) Host(host string, routeGroup func(mux *ServeMux)) {
+	if mux.host != "" {
+		panic("nested calls to ServeMux.Host()")
+	}
+
+	mux.host = host
+
+	routeGroup(mux)
+
+	mux.host = ""
+}
+
 // Prefix will automatically prefix any path patterns that are registered in
 // given the route group function with the given prefix.
 func (mux *ServeMux) Prefix(prefix string, routeGroup func(mux *ServeMux)) {
@@ -262,10 +281,10 @@ func (mux *ServeMux) Route(name string) *Route {
 	return mux.named[name]
 }
 
-func (mux *ServeMux) Path(key string, paramArgPairs ...any) string {
-	route := mux.Route(key)
+func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
+	route := mux.Route(name)
 	if route == nil {
-		panic(fmt.Sprintf("route %q does not exist", key))
+		panic(fmt.Sprintf("route %q does not exist", name))
 	}
 
 	if len(paramArgPairs) != 0 {
@@ -274,7 +293,7 @@ func (mux *ServeMux) Path(key string, paramArgPairs ...any) string {
 
 	str := route.String()
 	if strings.Contains(str, "/:") {
-		panic(fmt.Sprintf("route %q must use the replace method to replace parameters", key))
+		panic(fmt.Sprintf("route %q must use the replace method to replace parameters", name))
 	}
 
 	return str
@@ -323,7 +342,7 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 		restGroup = `(?P<$1>[^/]*)`
 	}
 
-	key := reParams.ReplaceAllString(path, "*")
+	key := mux.host + "/" + reParams.ReplaceAllString(path, "*")
 
 	for _, route := range mux.routes {
 		if route.key != key {
@@ -360,6 +379,7 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 
 	route := &Route{
 		key:      key,
+		host:     mux.host,
 		path:     path,
 		pattern:  compiled,
 		parts:    parts,
