@@ -42,7 +42,7 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 	errorHandler := func(msg string) middleware.ErrorHandler {
 		return func(w http.ResponseWriter, r *http.Request, err error) {
-			h.ErrorView(w, r, msg, err, "error", nil)
+			h.HTML.ErrorView(w, r, msg, err, "error", nil)
 		}
 	}
 
@@ -123,10 +123,10 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 	// Pages and files
 	mux.Prefix("/", func(mux *router.ServeMux) {
-		mux.Get("/", h.HandleView("page/home"), "page.home")
+		mux.Get("/", h.HTML.Handler("page/home"), "page.home")
 
-		mux.Get("/robots.txt", h.HandlePlain("file/robots"))
-		mux.Get("/.well-known/security.txt", h.HandlePlain("file/security"))
+		mux.Get("/robots.txt", h.Plain.Handler("file/robots"))
+		mux.Get("/.well-known/security.txt", h.Plain.Handler("file/security"))
 	})
 
 	// Account
@@ -180,16 +180,16 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 		if err != nil {
 			switch {
 			case errors.Is(err, fs.ErrNotExist):
-				h.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrNotFound, err), "error", nil)
+				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrNotFound, err), "error", nil)
 
 			default:
-				h.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrInternalServerError, err), "error", nil)
+				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrInternalServerError, err), "error", nil)
 			}
 
 			return
 		}
 		if stat.IsDir() {
-			h.ErrorView(w, r, "static directory", httputil.ErrForbidden, "error", nil)
+			h.HTML.ErrorView(w, r, "static directory", httputil.ErrForbidden, "error", nil)
 
 			return
 		}
@@ -199,12 +199,12 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 	// Generic not found handler
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		h.ErrorView(w, r, "handler", httputil.ErrNotFound, "error", nil)
+		h.HTML.ErrorView(w, r, "handler", httputil.ErrNotFound, "error", nil)
 	})
 
 	// Generic method not allowed handler
 	mux.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-		h.ErrorView(w, r, "handler", httputil.ErrMethodNotAllowed, "error", nil)
+		h.HTML.ErrorView(w, r, "handler", httputil.ErrMethodNotAllowed, "error", nil)
 	})
 
 	return mux

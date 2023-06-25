@@ -6,5 +6,5 @@ import (
 )
 
 func Dashboard(h *handler.Handler, mux *router.ServeMux) {
-	mux.Get("/", h.HandleView("admin/dashboard"), "admin.dashboard")
+	mux.Get("/", h.HTML.Handler("admin/dashboard"), "admin.dashboard")
 }

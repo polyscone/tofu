@@ -28,12 +28,12 @@ func signUpGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
-			h.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
+			h.HTML.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
 
 			return
 		}
 
-		h.View(w, r, http.StatusOK, "account/sign_up/form", nil)
+		h.HTML.View(w, r, http.StatusOK, "account/sign_up/form", nil)
 	}
 }
 
@@ -43,7 +43,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 			Email string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -81,7 +81,7 @@ func signUpPost(h *handler.Handler) http.HandlerFunc {
 				})
 
 			default:
-				h.ErrorView(w, r, "sign up", err, "account/sign_up/form", nil)
+				h.HTML.ErrorView(w, r, "sign up", err, "account/sign_up/form", nil)
 
 				return
 			}
@@ -97,7 +97,7 @@ func signUpSuccessGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		h.View(w, r, http.StatusOK, "account/sign_up/success", handler.Vars{
+		h.HTML.View(w, r, http.StatusOK, "account/sign_up/success", handler.Vars{
 			"Email": h.Sessions.PopString(ctx, "account.sign_up.email"),
 		})
 	}

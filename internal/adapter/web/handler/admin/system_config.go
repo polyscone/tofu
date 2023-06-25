@@ -12,7 +12,7 @@ import (
 
 func SystemConfig(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/config", func(mux *router.ServeMux) {
-		mux.Get("/", h.HandleView("admin/system_config"), "system.config")
+		mux.Get("/", h.HTML.Handler("admin/system_config"), "system.config")
 		mux.Post("/", systemConfigPost(h), "system.config.post")
 	})
 }
@@ -29,7 +29,7 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 			TwilioFromTel        string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -38,7 +38,7 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		if !passport.System.CanUpdateConfig() {
-			h.ErrorView(w, r, "can update config", app.ErrUnauthorised, "error", nil)
+			h.HTML.ErrorView(w, r, "can update config", app.ErrUnauthorised, "error", nil)
 
 			return
 		}
@@ -54,7 +54,7 @@ func systemConfigPost(h *handler.Handler) http.HandlerFunc {
 			input.TwilioFromTel,
 		)
 		if err != nil {
-			h.ErrorView(w, r, "update config", err, "admin/system_config", nil)
+			h.HTML.ErrorView(w, r, "update config", err, "admin/system_config", nil)
 
 			return
 		}

@@ -23,7 +23,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/rate"
 	"github.com/polyscone/tofu/internal/pkg/realip"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/sms"
@@ -71,6 +70,8 @@ type Handler struct {
 	viewVarsFuncs        map[string]ViewVarsFunc
 	mux                  *router.ServeMux
 	Sessions             *session.Manager
+	Plain                *Renderer
+	HTML                 *Renderer
 }
 
 func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName, systemConfigPathName string) *Handler {
@@ -95,7 +96,7 @@ func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName, syst
 		"UnescapeHTML":  tmplUnescapeHTML,
 	}
 
-	return &Handler{
+	h := Handler{
 		Tenant:               tenant,
 		signInPathName:       signInPathName,
 		systemConfigPathName: systemConfigPathName,
@@ -106,6 +107,11 @@ func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName, syst
 		mux:                  mux,
 		Sessions:             sessions,
 	}
+
+	h.Plain = NewRenderer(&h, "view", "text/plain")
+	h.HTML = NewRenderer(&h, "master", "text/html")
+
+	return &h
 }
 
 func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
@@ -184,8 +190,8 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		isInTOTP := h.HasPathPrefix(r.URL.Path, "account.totp.section")
-		if !isInTOTP && isSignedIn && config.RequireTOTP && !user.HasActivatedTOTP() {
+		isInTOTPSection := h.HasPathPrefix(r.URL.Path, "account.totp.section")
+		if !isInTOTPSection && isSignedIn && config.RequireTOTP && !user.HasActivatedTOTP() {
 			h.AddFlashf(ctx, "Two-factor authentication is required to use this application.")
 
 			http.Redirect(w, r, h.Path("account.totp.setup"), http.StatusSeeOther)
@@ -430,188 +436,6 @@ func (h *Handler) SendTOTPSMS(email, tel string) error {
 	return h.SendSMS(ctx, tel, totp)
 }
 
-func (h *Handler) ViewFunc(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc ViewDataFunc) {
-	ctx := r.Context()
-	config := h.Config(ctx)
-	user := h.User(ctx)
-	passport := h.Passport(ctx)
-
-	data := ViewData{
-		View:   view,
-		Status: status,
-		CSRF:   CSRF{ctx: ctx},
-		Form:   Form{Values: r.PostForm},
-		URL: URL{
-			Scheme:   h.Tenant.Scheme,
-			Host:     h.Tenant.Host,
-			Hostname: h.Tenant.Hostname,
-			Port:     h.Tenant.Port,
-			Path:     template.URL(r.URL.Path),
-			Query:    Query{Values: r.URL.Query()},
-		},
-		App: AppData{
-			Name:        app.Name,
-			Description: app.Description,
-		},
-		Session: SessionData{
-			// Global session keys
-			Flash:          h.Sessions.PopStrings(ctx, sess.Flash),
-			FlashImportant: h.Sessions.PopStrings(ctx, sess.FlashImportant),
-			Redirect:       h.Sessions.GetString(ctx, sess.Redirect),
-			HighlightID:    h.Sessions.PopInt(ctx, sess.HighlightID),
-
-			// Account session keys
-			UserID:                   h.Sessions.GetInt(ctx, sess.UserID),
-			Email:                    h.Sessions.GetString(ctx, sess.Email),
-			TOTPMethod:               h.Sessions.GetString(ctx, sess.TOTPMethod),
-			HasActivatedTOTP:         h.Sessions.GetBool(ctx, sess.HasActivatedTOTP),
-			IsAwaitingTOTP:           h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
-			IsSignedIn:               h.Sessions.GetBool(ctx, sess.IsSignedIn),
-			KnownPasswordBreachCount: h.Sessions.GetInt(ctx, sess.KnownPasswordBreachCount),
-		},
-		Config:   config,
-		User:     user,
-		Passport: passport,
-	}
-
-	if vars, ok := h.viewVarsFuncs[view]; ok {
-		defaults, err := vars(r)
-		if err != nil {
-			h.ErrorView(w, r, "vars", err, "error", nil)
-
-			return
-		}
-
-		data.Vars = data.Vars.Merge(defaults)
-	}
-
-	if dataFunc != nil {
-		dataFunc(&data)
-	}
-
-	// Make sure the current view name isn't overwritten by a user function
-	data.View = view
-
-	if data.Master == "" {
-		data.Master = "view"
-	}
-	if data.ContentType == "" {
-		data.ContentType = "text/plain"
-	}
-
-	var buf bytes.Buffer
-	tmpl := h.template(view, "partial/*.tmpl", "view/"+view+".tmpl", "master.tmpl")
-	if err := tmpl.ExecuteTemplate(&buf, data.Master, data); err != nil {
-		h.Logger(ctx).Error("execute view template", "error", err)
-
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-
-		return
-	}
-
-	w.Header().Set("content-type", data.ContentType)
-	w.WriteHeader(status)
-
-	if _, err := buf.WriteTo(w); err != nil {
-		h.Logger(ctx).Error("write view template response", "error", err)
-	}
-}
-
-func (h *Handler) View(w http.ResponseWriter, r *http.Request, status int, view string, vars Vars) {
-	h.ViewFunc(w, r, status, view, func(data *ViewData) {
-		data.Master = "master"
-		data.ContentType = "text/html"
-		data.Vars = data.Vars.Merge(vars)
-	})
-}
-
-func (h *Handler) HandleView(view string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.View(w, r, http.StatusOK, view, nil)
-	}
-}
-
-func (h *Handler) Plain(w http.ResponseWriter, r *http.Request, status int, view string, vars Vars) {
-	h.ViewFunc(w, r, status, view, func(data *ViewData) {
-		data.Master = "view"
-		data.ContentType = "text/plain"
-		data.Vars = data.Vars.Merge(vars)
-	})
-}
-
-func (h *Handler) HandlePlain(view string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		h.Plain(w, r, http.StatusOK, view, nil)
-	}
-}
-
-func (h *Handler) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg string, err error, view string, dataFunc ViewDataFunc) {
-	ctx := r.Context()
-
-	h.Logger(ctx).Error(msg, "error", err)
-
-	status := httputil.ErrorStatus(err)
-
-	h.ViewFunc(w, r, status, view, func(data *ViewData) {
-		data.Master = "master"
-		data.ContentType = "text/html"
-
-		switch {
-		case errors.Is(err, httputil.ErrNotFound):
-			data.ErrorMessage = "The page you were looking for could not be found."
-
-		case errors.Is(err, httputil.ErrMethodNotAllowed):
-			data.ErrorMessage = "Method not allowed."
-
-		case errors.Is(err, httputil.ErrForbidden),
-			errors.Is(err, app.ErrForbidden):
-
-			data.ErrorMessage = "You do not have permission to access this resource."
-
-		case errors.Is(err, http.ErrHandlerTimeout):
-			data.ErrorMessage = "The server took too long to respond."
-
-		case errors.Is(err, app.ErrUnauthorised):
-			data.ErrorMessage = "You do not have sufficient permissions."
-
-		case errors.Is(err, app.ErrMalformedInput),
-			errors.Is(err, app.ErrInvalidInput),
-			errors.Is(err, app.ErrConflictingInput):
-
-			data.ErrorMessage = "Invalid input."
-
-			var errs errsx.Map
-			if errors.As(err, &errs) {
-				data.Errors = errs
-			}
-
-		case errors.Is(err, csrf.ErrEmptyToken):
-			data.ErrorMessage = "Empty CSRF token."
-
-		case errors.Is(err, csrf.ErrInvalidToken):
-			data.ErrorMessage = "Invalid CSRF token."
-
-		case errors.Is(err, rate.ErrInsufficientTokens),
-			errors.Is(err, account.ErrSignInThrottled):
-
-			data.ErrorMessage = "You have made too many consecutive requests. Please try again later."
-
-		default:
-			data.ErrorMessage = "An error has occurred."
-		}
-
-		if dataFunc != nil {
-			dataFunc(data)
-		}
-	})
-}
-
-func (h *Handler) ErrorView(w http.ResponseWriter, r *http.Request, msg string, err error, view string, vars Vars) {
-	h.ErrorViewFunc(w, r, msg, err, view, func(data *ViewData) {
-		data.Vars = data.Vars.Merge(vars)
-	})
-}
-
 func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, err error) {
 	ctx := r.Context()
 
@@ -725,7 +549,7 @@ func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
 		passport := h.Passport(ctx)
 
 		if !check(passport) {
-			h.ErrorView(w, r, "require auth", app.ErrUnauthorised, "error", nil)
+			h.HTML.ErrorView(w, r, "require auth", app.ErrUnauthorised, "error", nil)
 
 			return false
 		}

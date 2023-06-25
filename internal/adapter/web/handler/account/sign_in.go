@@ -42,13 +42,13 @@ func SignIn(h *handler.Handler, mux *router.ServeMux) {
 				mux.Get("/", signInTOTPResetGet(h), "account.sign_in.totp.reset")
 				mux.Post("/", signInTOTPResetPost(h), "account.sign_in.totp.reset.post")
 
-				mux.Get("/email-sent", h.HandleView("account/totp/reset/email_sent"), "account.sign_in.totp.reset.email_sent")
+				mux.Get("/email-sent", h.HTML.Handler("account/totp/reset/email_sent"), "account.sign_in.totp.reset.email_sent")
 
 				mux.Prefix("/request", func(mux *router.ServeMux) {
-					mux.Get("/", h.HandleView("account/totp/reset/request"), "account.sign_in.totp.reset.request")
+					mux.Get("/", h.HTML.Handler("account/totp/reset/request"), "account.sign_in.totp.reset.request")
 					mux.Post("/", signInTOTPResetRequestPost(h), "account.sign_in.totp.reset.request.post")
 
-					mux.Get("/sent", h.HandleView("account/totp/reset/request_sent"), "account.sign_in.totp.reset.request.sent")
+					mux.Get("/sent", h.HTML.Handler("account/totp/reset/request_sent"), "account.sign_in.totp.reset.request.sent")
 				})
 			})
 		})
@@ -67,12 +67,12 @@ func signInGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
-			h.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
+			h.HTML.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
 
 			return
 		}
 
-		h.View(w, r, http.StatusOK, "account/sign_in/password", nil)
+		h.HTML.View(w, r, http.StatusOK, "account/sign_in/password", nil)
 	}
 }
 
@@ -83,7 +83,7 @@ func signInPost(h *handler.Handler) http.HandlerFunc {
 			Password string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -105,12 +105,12 @@ func signInTOTPGet(h *handler.Handler) http.HandlerFunc {
 		}
 
 		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
-			h.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
+			h.HTML.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
 
 			return
 		}
 
-		h.View(w, r, http.StatusOK, "account/sign_in/totp", nil)
+		h.HTML.View(w, r, http.StatusOK, "account/sign_in/totp", nil)
 	}
 }
 
@@ -120,7 +120,7 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 			TOTP string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -136,13 +136,13 @@ func signInTOTPPost(h *handler.Handler) http.HandlerFunc {
 
 		err := h.Account.SignInWithTOTP(ctx, user.ID, input.TOTP)
 		if err != nil {
-			h.ErrorView(w, r, "sign in with TOTP", err, "account/sign_in/totp", nil)
+			h.HTML.ErrorView(w, r, "sign in with TOTP", err, "account/sign_in/totp", nil)
 
 			return
 		}
 
 		if _, err := h.RenewSession(ctx); err != nil {
-			h.ErrorView(w, r, "renew session", err, "error", nil)
+			h.HTML.ErrorView(w, r, "renew session", err, "error", nil)
 
 			return
 		}
@@ -182,7 +182,7 @@ func signInTOTPResetGet(h *handler.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.View(w, r, http.StatusOK, "account/totp/reset/verify", nil)
+		h.HTML.View(w, r, http.StatusOK, "account/totp/reset/verify", nil)
 	}
 }
 
@@ -233,7 +233,7 @@ func signInTOTPResetRequestPost(h *handler.Handler) http.HandlerFunc {
 			Token string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -242,21 +242,21 @@ func signInTOTPResetRequestPost(h *handler.Handler) http.HandlerFunc {
 
 		email, err := h.Repo.Web.FindTOTPResetVerifyTokenEmail(ctx, input.Token)
 		if err != nil {
-			h.ErrorView(w, r, "find TOTP reset verify token email", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find TOTP reset verify token email", err, "error", nil)
 
 			return
 		}
 
 		err = h.Account.RequestTOTPReset(ctx, email)
 		if err != nil {
-			h.ErrorView(w, r, "request TOTP reset", err, "account/totp/reset/request", nil)
+			h.HTML.ErrorView(w, r, "request TOTP reset", err, "account/totp/reset/request", nil)
 
 			return
 		}
 
 		err = h.Repo.Web.ConsumeTOTPResetVerifyToken(ctx, input.Token)
 		if err != nil {
-			h.ErrorView(w, r, "consume TOTP reset verify token", err, "error", nil)
+			h.HTML.ErrorView(w, r, "consume TOTP reset verify token", err, "error", nil)
 
 			return
 		}
@@ -276,12 +276,12 @@ func signInRecoveryCodeGet(h *handler.Handler) http.HandlerFunc {
 		}
 
 		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
-			h.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
+			h.HTML.View(w, r, http.StatusOK, "account/sign_out/signed_in", nil)
 
 			return
 		}
 
-		h.View(w, r, http.StatusOK, "account/sign_in/recovery_code", nil)
+		h.HTML.View(w, r, http.StatusOK, "account/sign_in/recovery_code", nil)
 	}
 }
 
@@ -291,7 +291,7 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 			RecoveryCode string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
 
 			return
 		}
@@ -307,13 +307,13 @@ func signInRecoveryCodePost(h *handler.Handler) http.HandlerFunc {
 
 		err := h.Account.SignInWithRecoveryCode(ctx, user.ID, input.RecoveryCode)
 		if err != nil {
-			h.ErrorView(w, r, "sign in with recovery code", err, "account/sign_in/recovery_code", nil)
+			h.HTML.ErrorView(w, r, "sign in with recovery code", err, "account/sign_in/recovery_code", nil)
 
 			return
 		}
 
 		if _, err := h.RenewSession(ctx); err != nil {
-			h.ErrorView(w, r, "renew session", err, "error", nil)
+			h.HTML.ErrorView(w, r, "renew session", err, "error", nil)
 
 			return
 		}
@@ -358,14 +358,14 @@ func signInGooglePost(h *handler.Handler) http.HandlerFunc {
 
 		if config.GoogleSignInClientID == "" {
 			err := errors.New("Google sign in client id has not be set")
-			h.ErrorView(w, r, "check config", err, "error", nil)
+			h.HTML.ErrorView(w, r, "check config", err, "error", nil)
 
 			return
 		}
 
 		c, err := r.Cookie("g_csrf_token")
 		if err != nil {
-			h.ErrorView(w, r, "get Google CSRF cookie", err, "error", nil)
+			h.HTML.ErrorView(w, r, "get Google CSRF cookie", err, "error", nil)
 
 			return
 		}
@@ -373,7 +373,7 @@ func signInGooglePost(h *handler.Handler) http.HandlerFunc {
 		csrfCookieToken := c.Value
 		csrfFormToken := r.PostFormValue("g_csrf_token")
 		if csrfCookieToken != csrfFormToken {
-			h.ErrorView(w, r, "check CSRF", csrf.ErrInvalidToken, "error", nil)
+			h.HTML.ErrorView(w, r, "check CSRF", csrf.ErrInvalidToken, "error", nil)
 
 			return
 		}
@@ -381,7 +381,7 @@ func signInGooglePost(h *handler.Handler) http.HandlerFunc {
 		// TODO: Check cache-control
 		res, err := client.Get("https://www.googleapis.com/oauth2/v1/certs")
 		if err != nil {
-			h.ErrorView(w, r, "fetch Google OAuth2 certs", err, "error", nil)
+			h.HTML.ErrorView(w, r, "fetch Google OAuth2 certs", err, "error", nil)
 
 			return
 		}
@@ -389,7 +389,7 @@ func signInGooglePost(h *handler.Handler) http.HandlerFunc {
 
 		certs := make(map[string]string)
 		if err := httputil.DecodeJSON(&certs, res.Body); err != nil {
-			h.ErrorView(w, r, "decode Google OAuth2 certs JSON", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode Google OAuth2 certs JSON", err, "error", nil)
 
 			return
 		}
@@ -398,7 +398,7 @@ func signInGooglePost(h *handler.Handler) http.HandlerFunc {
 		parts := strings.Split(token, ".")
 		if want, got := 3, len(parts); want != got {
 			err := fmt.Errorf("want %v parts in JWT; got %v", want, got)
-			h.ErrorView(w, r, "decode JWT", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode JWT", err, "error", nil)
 
 			return
 		}
@@ -409,25 +409,25 @@ func signInGooglePost(h *handler.Handler) http.HandlerFunc {
 			Typ string
 		}
 		if b, err := base64.RawURLEncoding.DecodeString(parts[0]); err != nil {
-			h.ErrorView(w, r, "decode JWT header", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode JWT header", err, "error", nil)
 
 			return
 		} else if json.Unmarshal(b, &header); err != nil {
-			h.ErrorView(w, r, "unmarshal JWT header", err, "error", nil)
+			h.HTML.ErrorView(w, r, "unmarshal JWT header", err, "error", nil)
 
 			return
 		}
 
 		if header.Typ != "JWT" {
 			err := fmt.Errorf("want JWT type; got %q", header.Typ)
-			h.ErrorView(w, r, "check JWT header", err, "error", nil)
+			h.HTML.ErrorView(w, r, "check JWT header", err, "error", nil)
 
 			return
 		}
 
 		if header.Alg != "RS256" {
 			err := fmt.Errorf("want RS256 algorithm; got %q", header.Alg)
-			h.ErrorView(w, r, "check JWT header", err, "error", nil)
+			h.HTML.ErrorView(w, r, "check JWT header", err, "error", nil)
 
 			return
 		}
@@ -435,14 +435,14 @@ func signInGooglePost(h *handler.Handler) http.HandlerFunc {
 		block, _ := pem.Decode([]byte([]byte(certs[header.Kid])))
 		if block == nil {
 			err := errors.New("unable to decode")
-			h.ErrorView(w, r, "decode certificate PEM", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode certificate PEM", err, "error", nil)
 
 			return
 		}
 
 		cert, err := x509.ParseCertificate(block.Bytes)
 		if err != nil {
-			h.ErrorView(w, r, "parse Google OAuth2 cert", err, "error", nil)
+			h.HTML.ErrorView(w, r, "parse Google OAuth2 cert", err, "error", nil)
 
 			return
 		}
@@ -450,14 +450,14 @@ func signInGooglePost(h *handler.Handler) http.HandlerFunc {
 		rsaPublicKey, ok := cert.PublicKey.(*rsa.PublicKey)
 		if !ok {
 			err := fmt.Errorf("could not assert cert.PublicKey as %T", rsaPublicKey)
-			h.ErrorView(w, r, "extract RSA public key", err, "error", nil)
+			h.HTML.ErrorView(w, r, "extract RSA public key", err, "error", nil)
 
 			return
 		}
 
 		payload := sha256.New()
 		if _, err := payload.Write([]byte(parts[0] + "." + parts[1])); err != nil {
-			h.ErrorView(w, r, "new JWT payload hash", err, "error", nil)
+			h.HTML.ErrorView(w, r, "new JWT payload hash", err, "error", nil)
 
 			return
 		}
@@ -465,13 +465,13 @@ func signInGooglePost(h *handler.Handler) http.HandlerFunc {
 
 		signature, err := base64.RawURLEncoding.DecodeString(parts[2])
 		if err != nil {
-			h.ErrorView(w, r, "decode JWT signature", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode JWT signature", err, "error", nil)
 
 			return
 		}
 
 		if err := rsa.VerifyPKCS1v15(rsaPublicKey, crypto.SHA256, hashed, signature); err != nil {
-			h.ErrorView(w, r, "check JWT signature", err, "error", nil)
+			h.HTML.ErrorView(w, r, "check JWT signature", err, "error", nil)
 
 			return
 		}
@@ -484,25 +484,25 @@ func signInGooglePost(h *handler.Handler) http.HandlerFunc {
 			Email string
 		}
 		if b, err := base64.RawURLEncoding.DecodeString(parts[1]); err != nil {
-			h.ErrorView(w, r, "decode JWT claims", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode JWT claims", err, "error", nil)
 
 			return
 		} else if json.Unmarshal(b, &claims); err != nil {
-			h.ErrorView(w, r, "unmarshal JWT claims", err, "error", nil)
+			h.HTML.ErrorView(w, r, "unmarshal JWT claims", err, "error", nil)
 
 			return
 		}
 
 		if claims.Aud != config.GoogleSignInClientID {
 			err := errors.New("invalid client id")
-			h.ErrorView(w, r, "check JWT claims", err, "error", nil)
+			h.HTML.ErrorView(w, r, "check JWT claims", err, "error", nil)
 
 			return
 		}
 
 		if claims.Iss != "accounts.google.com" && claims.Iss != "https://accounts.google.com" {
 			err := fmt.Errorf("invalid issuer %q", claims.Iss)
-			h.ErrorView(w, r, "check JWT claims", err, "error", nil)
+			h.HTML.ErrorView(w, r, "check JWT claims", err, "error", nil)
 
 			return
 		}
@@ -510,31 +510,31 @@ func signInGooglePost(h *handler.Handler) http.HandlerFunc {
 		now := time.Now().Unix()
 		if claims.Exp > 0 && claims.Exp <= now {
 			err := errors.New("expired")
-			h.ErrorView(w, r, "check JWT claims", err, "error", nil)
+			h.HTML.ErrorView(w, r, "check JWT claims", err, "error", nil)
 
 			return
 		}
 		if claims.Nbf > 0 && claims.Nbf > now {
 			err := errors.New("used too soon")
-			h.ErrorView(w, r, "check JWT claims", err, "error", nil)
+			h.HTML.ErrorView(w, r, "check JWT claims", err, "error", nil)
 
 			return
 		}
 
 		if err := h.Account.SignInWithGoogle(ctx, claims.Email); err != nil {
-			h.ErrorView(w, r, "sign in wih Google", err, "error", nil)
+			h.HTML.ErrorView(w, r, "sign in wih Google", err, "error", nil)
 
 			return
 		}
 
 		if _, err := h.RenewSession(ctx); err != nil {
-			h.ErrorView(w, r, "renew session", err, "error", nil)
+			h.HTML.ErrorView(w, r, "renew session", err, "error", nil)
 
 			return
 		}
 
 		if err := signInSetSession(ctx, h, w, r, claims.Email); err != nil {
-			h.ErrorView(w, r, "sign in set session", err, "error", nil)
+			h.HTML.ErrorView(w, r, "sign in set session", err, "error", nil)
 
 			return
 		}
@@ -579,7 +579,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 	if err := h.Account.CheckSignInThrottle(attempts, lastAttemptAt); err != nil {
 		err = fmt.Errorf("check session sign in throttle: %w", err)
 
-		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", signInWithPasswordErrors(err))
+		h.HTML.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", signInWithPasswordErrors(err))
 
 		return
 	}
@@ -592,7 +592,7 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 		h.Sessions.Set(ctx, sess.SignInAttempts, attempts)
 		h.Sessions.Set(ctx, sess.LastSignInAttemptAt, lastAttemptAt)
 
-		h.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", signInWithPasswordErrors(err))
+		h.HTML.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/password", signInWithPasswordErrors(err))
 
 		return
 	}
@@ -601,13 +601,13 @@ func signInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 	h.Sessions.Delete(ctx, sess.LastSignInAttemptAt)
 
 	if _, err := h.RenewSession(ctx); err != nil {
-		h.ErrorView(w, r, "renew session", err, "error", nil)
+		h.HTML.ErrorView(w, r, "renew session", err, "error", nil)
 
 		return
 	}
 
 	if err := signInSetSession(ctx, h, w, r, email); err != nil {
-		h.ErrorView(w, r, "sign in set session", err, "error", nil)
+		h.HTML.ErrorView(w, r, "sign in set session", err, "error", nil)
 
 		return
 	}
