@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web"
-	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
+	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/app/system"

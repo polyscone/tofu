@@ -3,8 +3,8 @@ package account
 import (
 	"net/http"
 
+	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 

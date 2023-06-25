@@ -1,4 +1,4 @@
-package ui
+package web
 
 import (
 	"embed"
@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
+	"github.com/polyscone/tofu/internal/adapter/web/handler"
+	"github.com/polyscone/tofu/internal/adapter/web/handler/account"
+	"github.com/polyscone/tofu/internal/adapter/web/handler/admin"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
-	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/account"
-	"github.com/polyscone/tofu/internal/adapter/web/ui/handler/admin"
 	"github.com/polyscone/tofu/internal/pkg/dev"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/fstack"

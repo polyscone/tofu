@@ -1,10 +1,10 @@
-package ui
+package web
 
 import (
 	"context"
 	"time"
 
-	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
+	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/background"
 )

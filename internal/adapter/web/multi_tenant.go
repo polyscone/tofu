@@ -7,8 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/polyscone/tofu/internal/adapter/web/ui"
-	"github.com/polyscone/tofu/internal/adapter/web/ui/handler"
+	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/pkg/slogger"
 	"golang.org/x/exp/slog"
 )
@@ -79,7 +78,7 @@ func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 
 	mux := http.NewServeMux()
 
-	mux.Handle("/", ui.NewRouter(tenant))
+	mux.Handle("/", NewRouter(tenant))
 
 	h.muxes[hostname] = mux
 
