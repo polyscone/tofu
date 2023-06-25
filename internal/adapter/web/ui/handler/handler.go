@@ -654,20 +654,18 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 	}
 
 	if err := json.NewEncoder(w).Encode(detail); err != nil {
-		h.Logger(ctx).Error("write JSON response", "error", err)
+		h.Logger(ctx).Error("write error JSON response", "error", err)
 	}
 }
 
-func (h *Handler) JSON(w http.ResponseWriter, r *http.Request, data any) bool {
+func (h *Handler) JSON(w http.ResponseWriter, r *http.Request, data any) {
+	ctx := r.Context()
+
 	w.Header().Set("content-type", "application/json")
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
-		h.ErrorJSON(w, r, "encode JSON", err)
-
-		return false
+		h.Logger(ctx).Error("write JSON response", "error", err)
 	}
-
-	return true
 }
 
 func (h *Handler) AddFlashf(ctx context.Context, format string, a ...any) {
