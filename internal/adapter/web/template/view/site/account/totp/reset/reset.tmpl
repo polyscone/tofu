@@ -1,0 +1,30 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<div class="center">
+	<h1>Reset two-factor authentication</h1>
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
+	<p>Enter your password in the form below to reset two-factor authentication for your account.</p>
+
+	<form action="{{Path "account.totp.reset.post"}}{{.URL.Query.String}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
+
+		<label for="totp-reset__password">Choose a password</label>
+		<input id="totp-reset__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern="^.+$" minlength="8" maxlength="1000">
+		<p class="error">{{.Errors.Get "password"}}</p>
+
+		<div class="bag reverse">
+			<button type="submit">Reset two-factor authentication</button>
+		</div>
+	</form>
+</div>
+
+{{end}}

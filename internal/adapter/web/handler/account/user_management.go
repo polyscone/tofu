@@ -57,19 +57,19 @@ func userListGet(h *handler.Handler) http.HandlerFunc {
 		page, size := httputil.Pagination(r)
 		users, total, err := h.Repo.Account.FindUsersPageBySearch(ctx, sortTopID, search, page, size)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find users page by search", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find users page by search", err, "site/error", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/management/user/list", handler.Vars{
+		h.HTML.View(w, r, http.StatusOK, "site/account/management/user/list", handler.Vars{
 			"Users": repository.NewBook(users, page, size, total),
 		})
 	}
 }
 
 func userEditGet(h *handler.Handler) http.HandlerFunc {
-	h.SetViewVars("account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
+	h.SetViewVars("site/account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
 		userID, err := router.URLParamAs[int](r, "userID")
 		if err != nil {
 			return nil, fmt.Errorf("URL param as: %w", err)
@@ -105,7 +105,7 @@ func userEditGet(h *handler.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.View(w, r, http.StatusOK, "account/management/user/edit", nil)
+		h.HTML.View(w, r, http.StatusOK, "site/account/management/user/edit", nil)
 	}
 }
 
@@ -117,14 +117,14 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 			Denials []string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
 		}
 
 		userID, err := router.URLParamAs[int](r, "userID")
 		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "error", nil)
+			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
 
 			return
 		}
@@ -134,14 +134,14 @@ func userEditPost(h *handler.Handler) http.HandlerFunc {
 
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by id", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
 
 			return
 		}
 
 		err = h.Account.ChangeRoles(ctx, passport.Account, userID, input.RoleIDs, input.Grants, input.Denials)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "change roles", err, "account/management/user/edit", nil)
+			h.HTML.ErrorView(w, r, "change roles", err, "site/account/management/user/edit", nil)
 
 			return
 		}
@@ -158,7 +158,7 @@ func userTOTPResetReviewGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := router.URLParamAs[int](r, "userID")
 		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "error", nil)
+			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
 
 			return
 		}
@@ -167,12 +167,12 @@ func userTOTPResetReviewGet(h *handler.Handler) http.HandlerFunc {
 
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by id", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/management/user/totp_reset_review", handler.Vars{
+		h.HTML.View(w, r, http.StatusOK, "site/account/management/user/totp_reset_review", handler.Vars{
 			"User": user,
 		})
 	}
@@ -182,7 +182,7 @@ func userTOTPResetApproveGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := router.URLParamAs[int](r, "userID")
 		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "error", nil)
+			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
 
 			return
 		}
@@ -191,12 +191,12 @@ func userTOTPResetApproveGet(h *handler.Handler) http.HandlerFunc {
 
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by id", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/management/user/totp_reset_approve", handler.Vars{
+		h.HTML.View(w, r, http.StatusOK, "site/account/management/user/totp_reset_approve", handler.Vars{
 			"User": user,
 		})
 	}
@@ -206,7 +206,7 @@ func userTOTPResetApprovePost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := router.URLParamAs[int](r, "userID")
 		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "error", nil)
+			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
 
 			return
 		}
@@ -217,13 +217,13 @@ func userTOTPResetApprovePost(h *handler.Handler) http.HandlerFunc {
 
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by id", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
 
 			return
 		}
 
 		if err := h.Account.ApproveTOTPResetRequest(ctx, user.ID); err != nil {
-			h.HTML.ErrorView(w, r, "approve TOTP reset request", err, "error", nil)
+			h.HTML.ErrorView(w, r, "approve TOTP reset request", err, "site/error", nil)
 
 			return
 		}
@@ -256,7 +256,7 @@ func userTOTPResetDenyGet(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := router.URLParamAs[int](r, "userID")
 		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "error", nil)
+			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
 
 			return
 		}
@@ -265,12 +265,12 @@ func userTOTPResetDenyGet(h *handler.Handler) http.HandlerFunc {
 
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by id", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/management/user/totp_reset_deny", handler.Vars{
+		h.HTML.View(w, r, http.StatusOK, "site/account/management/user/totp_reset_deny", handler.Vars{
 			"User": user,
 		})
 	}
@@ -280,7 +280,7 @@ func userTOTPResetDenyPost(h *handler.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		userID, err := router.URLParamAs[int](r, "userID")
 		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "error", nil)
+			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
 
 			return
 		}
@@ -289,13 +289,13 @@ func userTOTPResetDenyPost(h *handler.Handler) http.HandlerFunc {
 
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by id", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
 
 			return
 		}
 
 		if err := h.Account.DenyTOTPResetRequest(ctx, user.ID); err != nil {
-			h.HTML.ErrorView(w, r, "deny TOTP reset request", err, "error", nil)
+			h.HTML.ErrorView(w, r, "deny TOTP reset request", err, "site/error", nil)
 
 			return
 		}

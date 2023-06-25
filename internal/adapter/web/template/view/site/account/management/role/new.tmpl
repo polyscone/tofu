@@ -1,0 +1,54 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<div class="center">
+	<h1>New role</h1>
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
+	<form action="{{Path "account.management.role.new.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<label for="role__name">Name</label>
+		<input id="role__name" type="text" name="name" value="{{.Form.Get "name"}}" placeholder="Role name" required pattern="^[ -~]+$" minlength="1" maxlength="30">
+		<p class="error">{{.Errors.Get "name"}}</p>
+
+		<label for="role__description">Description</label>
+		<input id="role__description" type="text" name="description" value="{{.Form.Get "description"}}" placeholder="A role description." pattern="^[ -~]*$" maxlength="100">
+		<p class="error">{{.Errors.Get "description"}}</p>
+
+		<div class="cols-50-50">
+			{{$permissions := $.Form.GetAll "permissions"}}
+			{{range .Vars.PermissionGroups}}
+				<div class="form">
+					<b>{{.Name}}</b>
+
+					{{range .Permissions}}
+						<label>
+							<input
+								type="checkbox"
+								name="permissions"
+								value="{{.Name}}"
+								{{if HasString $permissions .Name}}checked{{end}}
+							>
+							{{.DisplayName}}
+						</label>
+					{{end}}
+				</div>
+			{{end}}
+		</div>
+
+		<div class="bag reverse">
+			<button type="submit" class="push-inline-end">Add role</button>
+
+			<a href="{{Path "account.management.role.list"}}{{.URL.Query.String}}">Cancel</a>
+		</div>
+	</form>
+</div>
+
+{{end}}

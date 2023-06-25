@@ -1,0 +1,27 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<div class="center">
+	<h1>Reset two-factor authentication request</h1>
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
+	<p>If you're locked out of your account because you've lost access to your authentication device you can use the form below to request two-factor authentication be reset for your account.</p>
+	<p>After verifying your email address your case will need to be manually reviewed.</p>
+	<p>If the person reviewing your case believes it to be a legitimate request you'll be sent another link by email to reset two-factor authentication.</p>
+
+	<form action="{{Path "account.sign_in.totp.reset.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<div class="bag reverse">
+			<button type="submit">I understand, send a verification link</button>
+		</div>
+	</form>
+</div>
+
+{{end}}

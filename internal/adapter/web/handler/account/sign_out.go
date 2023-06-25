@@ -17,7 +17,7 @@ func signOutPost(h *handler.Handler) http.HandlerFunc {
 
 		_, err := h.RenewSession(ctx)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "renew session", err, "error", nil)
+			h.HTML.ErrorView(w, r, "renew session", err, "site/error", nil)
 
 			return
 		}

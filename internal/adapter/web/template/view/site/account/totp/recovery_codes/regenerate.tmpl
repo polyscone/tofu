@@ -1,0 +1,74 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<div class="center">
+	{{if .Vars.RecoveryCodes}}
+		<h1>Your new recovery codes</h1>
+	{{else}}
+		<h1>Generate new recovery codes</h1>
+	{{end}}
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
+	{{if .Vars.RecoveryCodes}}
+		<div class="warning-banner">
+			<p>Your previous recovery codes are no longer valid.</p>
+			<p>Please download, print, copy, or photograph your new recovery codes and store them in a safe place separate from your authentication device.</p>
+			<p>
+				If possible, we recommend storing them in a password manager, such as
+				<a href="https://1password.com/" target="_blank" rel="noopener noreferrer">1Password</a>,
+				<a href="https://www.lastpass.com/" target="_blank" rel="noopener noreferrer">LastPass</a>, or
+				<a href="https://www.keepersecurity.com" target="_blank" rel="noopener noreferrer">Keeper</a>.
+			</p>
+		</div>
+
+		{{template "com_recovery_codes" .WithComData .Vars.RecoveryCodes}}
+	{{else}}
+		{{if ge (len .Vars.HashedRecoveryCodes) 1}}
+			{{if eq (len .Vars.HashedRecoveryCodes) 1}}
+				<p>You have {{len .Vars.HashedRecoveryCodes}} recovery code remaining.</p>
+			{{else}}
+				<p>You have {{len .Vars.HashedRecoveryCodes}} recovery codes remaining.</p>
+			{{end}}
+
+			<p>If you'd like to generate new recovery codes you'll need to verify your identity by entering a valid passcode in the form below.</p>
+		{{end}}
+
+		{{if eq (len .Vars.HashedRecoveryCodes) 0}}
+			<div class="error-banner">
+				<p>You do not have any recovery codes. Please use the form below to generate new ones.</p>
+			</div>
+		{{else}}
+			<div class="warning-banner">
+				<p>If you choose to generate new recovery codes your previous ones will no longer be valid and you won't be able to use them.</p>
+			</div>
+		{{end}}
+
+		<form action="{{Path "account.totp.recovery_codes.post"}}" method="POST">
+			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+			<label for="recovery-codes__passcode">Passcode</label>
+			<input id="recovery-codes__passcode" type="text" name="totp" placeholder="123456" autocomplete="one-time-code" required pattern="^\d+$" minlength="6" maxlength="6">
+			<p class="error">{{.Errors.Get "totp"}}</p>
+
+			<div class="bag reverse">
+				{{if eq (len .Vars.HashedRecoveryCodes) 0}}
+					<button type="submit">Generate Recovery Codes</button>
+				{{else}}
+					<button type="submit">Replace Recovery Codes</button>
+				{{end}}
+
+				{{if eq .Session.TOTPMethod "sms"}}
+					<button type="submit" formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt">Send passcode SMS</button>
+				{{end}}
+			</div>
+		</form>
+	{{end}}
+</div>
+
+{{end}}

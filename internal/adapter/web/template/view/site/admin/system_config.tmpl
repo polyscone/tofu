@@ -1,0 +1,64 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<div class="center">
+	{{if .Config.RequireSetup}}
+		<h1>Initial system configuration</h1>
+	{{else}}
+		<h1>System configuration</h1>
+	{{end}}
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+{{$disable := not .Passport.System.CanUpdateConfig}}
+
+<div class="center">
+	<form action="{{Path "system.config.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<label for="config__system-email">System email</label>
+		<input id="config__system-email" type="email" name="system-email" value="{{.Form.GetOr "system-email" .Config.SystemEmail}}" placeholder="email@example.com" autocomplete="email" required pattern="^[a-zA-Z0-9+._~\-]+@[a-zA-Z0-9+._~\-]+(\.[a-zA-Z0-9+._~\-]+)+$" maxlength="100"{{if $disable}} disabled{{end}}>
+		<p class="error">{{.Errors.Get "system email"}}</p>
+
+		<label for="config__security-email">Security email</label>
+		<input id="config__security-email" type="email" name="security-email" value="{{.Form.GetOr "security-email" .Config.SecurityEmail}}" placeholder="email@example.com" autocomplete="email" required pattern="^[a-zA-Z0-9+._~\-]+@[a-zA-Z0-9+._~\-]+(\.[a-zA-Z0-9+._~\-]+)+$" maxlength="100"{{if $disable}} disabled{{end}}>
+		<p class="error">{{.Errors.Get "security email"}}</p>
+
+		<label for="config__require-totp">Require two-factor authentication</label>
+		<select id="config__require-totp" name="require-totp">
+			<option value="false"{{if eq (.Form.GetOr "require-totp" .Config.RequireTOTP) "false"}} selected{{end}}>No</option>
+			<option value="true"{{if eq (.Form.GetOr "require-totp" .Config.RequireTOTP) "true"}} selected{{end}}>Yes</option>
+		</select>
+		<p class="error">{{.Errors.Get "require totp"}}</p>
+
+		<label for="config__google-sign-in-client-id">Google sign in client id</label>
+		<input id="config__google-sign-in-client-id" type="text" name="google-sign-in-client-id" value="{{.Form.GetOr "google-sign-in-client-id" .Config.GoogleSignInClientID}}" placeholder="ABCDEFG123456789" pattern="^.+$" maxlength="100"{{if $disable}} disabled{{end}}>
+		<p class="error">{{.Errors.Get "google sign in client id"}}</p>
+
+		<label for="config__twilio-sid">Twilio SID</label>
+		<input id="config__twilio-sid" type="text" name="twilio-sid" value="{{.Form.GetOr "twilio-sid" .Config.TwilioSID}}" placeholder="AC0123456789abcdef0123456789abcdef" pattern="^AC[0-9a-f]+$" minlength="34" maxlength="34"{{if $disable}} disabled{{end}}>
+		<p class="error">{{.Errors.Get "twilio sid"}}</p>
+
+		<label for="config__twilio-token">Twilio token</label>
+		<input id="config__twilio-token" type="text" name="twilio-token" value="{{.Form.GetOr "twilio-token" .Config.TwilioToken}}" placeholder="0123456789abcdef0123456789abcdef" pattern="^[0-9a-f]+$" minlength="32" maxlength="32"{{if $disable}} disabled{{end}}>
+		<p class="error">{{.Errors.Get "twilio token"}}</p>
+
+		<label for="config__twilio-from-tel">Twilio from phone</label>
+		<input id="config__twilio-from-tel" type="tel" name="twilio-from-tel" value="{{.Form.GetOr "twilio-from-tel" .Config.TwilioFromTel}}" placeholder="+00 00 0000 0000" autocomplete="tel" pattern="^\+\d(\d| )+$" minlength="4" maxlength="25"{{if $disable}} disabled{{end}}>
+		<p class="error">{{.Errors.Get "twilio from tel"}}</p>
+
+		<div class="bag reverse">
+			{{if .Config.RequireSetup}}
+				<button type="submit" class="push-inline-end">Finish setup</button>
+			{{else}}
+				<button type="submit" class="push-inline-end"{{if $disable}} disabled{{end}}>Update configuration</button>
+			{{end}}
+		</div>
+	</form>
+</div>
+
+{{end}}

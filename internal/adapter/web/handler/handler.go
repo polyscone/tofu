@@ -108,8 +108,8 @@ func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName, syst
 		Sessions:             sessions,
 	}
 
-	h.Plain = NewRenderer(&h, "view", "text/plain")
-	h.HTML = NewRenderer(&h, "master", "text/html")
+	h.Plain = NewRenderer(&h, "text/plain")
+	h.HTML = NewRenderer(&h, "text/html")
 
 	return &h
 }
@@ -549,7 +549,7 @@ func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
 		passport := h.Passport(ctx)
 
 		if !check(passport) {
-			h.HTML.ErrorView(w, r, "require auth", app.ErrUnauthorised, "error", nil)
+			h.HTML.ErrorView(w, r, "require auth", app.ErrUnauthorised, "site/error", nil)
 
 			return false
 		}

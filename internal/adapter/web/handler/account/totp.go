@@ -29,7 +29,7 @@ func TOTP(h *handler.Handler, mux *router.ServeMux) {
 		mux.Name("account.totp.section")
 
 		mux.Prefix("/reset", func(mux *router.ServeMux) {
-			mux.Get("/", h.HTML.Handler("account/totp/reset/reset"), "account.totp.reset")
+			mux.Get("/", h.HTML.Handler("site/account/totp/reset/reset"), "account.totp.reset")
 			mux.Post("/", totpResetPost(h), "account.totp.reset.post")
 		})
 
@@ -75,14 +75,14 @@ func TOTP(h *handler.Handler, mux *router.ServeMux) {
 					mux.Post("/", totpSetupActivatePost(h), "account.totp.setup.activate.post")
 				})
 
-				mux.Get("/success", h.HTML.Handler("account/totp/setup/success"), "account.totp.setup.success")
+				mux.Get("/success", h.HTML.Handler("site/account/totp/setup/success"), "account.totp.setup.success")
 			})
 
 			mux.Prefix("/disable", func(mux *router.ServeMux) {
 				mux.Get("/", totpDisableGet(h), "account.totp.disable")
 				mux.Post("/", totpDisablePost(h), "account.totp.disable.post")
 
-				mux.Get("/success", h.HTML.Handler("account/totp/disable/success"), "account.totp.disable.success")
+				mux.Get("/success", h.HTML.Handler("site/account/totp/disable/success"), "account.totp.disable.success")
 			})
 
 			mux.Prefix("/recovery-codes", func(mux *router.ServeMux) {
@@ -100,12 +100,12 @@ func totpSetupGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
-			h.HTML.View(w, r, http.StatusOK, "account/totp/setup/enabled", nil)
+			h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/enabled", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/totp/setup/methods", nil)
+		h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/methods", nil)
 	}
 }
 
@@ -115,13 +115,13 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 			Method string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
 		}
 
 		if input.Method != "app" && input.Method != "sms" {
-			h.HTML.ErrorView(w, r, "TOTP setup", app.ErrBadRequest, "error", nil)
+			h.HTML.ErrorView(w, r, "TOTP setup", app.ErrBadRequest, "site/error", nil)
 
 			return
 		}
@@ -132,7 +132,7 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 
 		err := h.Account.SetupTOTP(ctx, passport.Account, user.ID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "setup TOTP", err, "error", nil)
+			h.HTML.ErrorView(w, r, "setup TOTP", err, "site/error", nil)
 
 			return
 		}
@@ -145,13 +145,13 @@ func totpSetupPost(h *handler.Handler) http.HandlerFunc {
 			http.Redirect(w, r, h.Path("account.totp.setup.sms"), http.StatusSeeOther)
 
 		default:
-			h.HTML.ErrorView(w, r, "TOTP setup", app.ErrBadRequest, "error", nil)
+			h.HTML.ErrorView(w, r, "TOTP setup", app.ErrBadRequest, "site/error", nil)
 		}
 	}
 }
 
 func totpSetupAppGet(h *handler.Handler) http.HandlerFunc {
-	h.SetViewVars("account/totp/setup/app", func(r *http.Request) (handler.Vars, error) {
+	h.SetViewVars("site/account/totp/setup/app", func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 		user := h.User(ctx)
 
@@ -196,12 +196,12 @@ func totpSetupAppGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
-			h.HTML.View(w, r, http.StatusOK, "account/totp/setup/enabled", nil)
+			h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/enabled", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/totp/setup/app", nil)
+		h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/app", nil)
 	}
 }
 
@@ -211,7 +211,7 @@ func totpSetupAppPost(h *handler.Handler) http.HandlerFunc {
 			TOTP string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
 		}
@@ -222,19 +222,19 @@ func totpSetupAppPost(h *handler.Handler) http.HandlerFunc {
 
 		codes, err := h.Account.VerifyTOTP(ctx, passport.Account, user.ID, input.TOTP, "app")
 		if err != nil {
-			h.HTML.ErrorView(w, r, "verify TOTP", err, "account/totp/setup/app", nil)
+			h.HTML.ErrorView(w, r, "verify TOTP", err, "site/account/totp/setup/app", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/totp/setup/activate", handler.Vars{
+		h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/activate", handler.Vars{
 			"RecoveryCodes": codes,
 		})
 	}
 }
 
 func totpSetupSMSGet(h *handler.Handler) http.HandlerFunc {
-	h.SetViewVars("account/totp/setup/sms", func(r *http.Request) (handler.Vars, error) {
+	h.SetViewVars("site/account/totp/setup/sms", func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 		user := h.User(ctx)
 
@@ -249,12 +249,12 @@ func totpSetupSMSGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
-			h.HTML.View(w, r, http.StatusOK, "account/totp/setup/enabled", nil)
+			h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/enabled", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/totp/setup/sms", nil)
+		h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/sms", nil)
 	}
 }
 
@@ -264,7 +264,7 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 			Tel string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
 		}
@@ -283,14 +283,14 @@ func totpSetupSMSPost(h *handler.Handler) http.HandlerFunc {
 				})
 			}
 
-			h.HTML.ErrorView(w, r, "send TOTP SMS", err, "account/totp/setup/sms", nil)
+			h.HTML.ErrorView(w, r, "send TOTP SMS", err, "site/account/totp/setup/sms", nil)
 
 			return
 		}
 
 		err = h.Account.ChangeTOTPTel(ctx, passport.Account, user.ID, input.Tel)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "change TOTP tel", err, "account/totp/setup/sms", nil)
+			h.HTML.ErrorView(w, r, "change TOTP tel", err, "site/account/totp/setup/sms", nil)
 
 			return
 		}
@@ -304,12 +304,12 @@ func totpSetupSMSVerifyGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
-			h.HTML.View(w, r, http.StatusOK, "account/totp/setup/enabled", nil)
+			h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/enabled", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/totp/setup/sms_verify", nil)
+		h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/sms_verify", nil)
 	}
 }
 
@@ -319,7 +319,7 @@ func totpSetupSMSVerifyPost(h *handler.Handler) http.HandlerFunc {
 			TOTP string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
 		}
@@ -330,12 +330,12 @@ func totpSetupSMSVerifyPost(h *handler.Handler) http.HandlerFunc {
 
 		codes, err := h.Account.VerifyTOTP(ctx, passport.Account, user.ID, input.TOTP, "sms")
 		if err != nil {
-			h.HTML.ErrorView(w, r, "verify TOTP", err, "account/totp/setup/sms_verify", nil)
+			h.HTML.ErrorView(w, r, "verify TOTP", err, "site/account/totp/setup/sms_verify", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/totp/setup/activate", handler.Vars{
+		h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/activate", handler.Vars{
 			"RecoveryCodes": codes,
 		})
 	}
@@ -367,7 +367,7 @@ func totpSetupActivatePost(h *handler.Handler) http.HandlerFunc {
 
 		err := h.Account.ActivateTOTP(ctx, passport.Account, user.ID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "activate TOTP", err, "error", nil)
+			h.HTML.ErrorView(w, r, "activate TOTP", err, "site/error", nil)
 
 			return
 		}
@@ -384,12 +384,12 @@ func totpDisableGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		if !h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
-			h.HTML.View(w, r, http.StatusOK, "account/totp/disable/disabled", nil)
+			h.HTML.View(w, r, http.StatusOK, "site/account/totp/disable/disabled", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/totp/disable/verify", nil)
+		h.HTML.View(w, r, http.StatusOK, "site/account/totp/disable/verify", nil)
 	}
 }
 
@@ -399,7 +399,7 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 			Password string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
 		}
@@ -410,7 +410,7 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		if config.RequireTOTP {
-			h.HTML.ErrorView(w, r, "disable TOTP", app.ErrForbidden, "error", nil)
+			h.HTML.ErrorView(w, r, "disable TOTP", app.ErrForbidden, "site/error", nil)
 
 			return
 		}
@@ -423,13 +423,13 @@ func totpDisablePost(h *handler.Handler) http.HandlerFunc {
 				})
 			}
 
-			h.HTML.ErrorViewFunc(w, r, "disable TOTP", err, "account/totp/disable/verify", nil)
+			h.HTML.ErrorViewFunc(w, r, "disable TOTP", err, "site/account/totp/disable/verify", nil)
 
 			return
 		}
 
 		if _, err := h.RenewSession(ctx); err != nil {
-			h.HTML.ErrorView(w, r, "renew session", err, "error", nil)
+			h.HTML.ErrorView(w, r, "renew session", err, "site/error", nil)
 
 			return
 		}
@@ -448,7 +448,7 @@ func totpResetPost(h *handler.Handler) http.HandlerFunc {
 			Password string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
 		}
@@ -457,28 +457,28 @@ func totpResetPost(h *handler.Handler) http.HandlerFunc {
 
 		email, err := h.Repo.Web.FindResetTOTPTokenEmail(ctx, input.Token)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find reset TOTP token email", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find reset TOTP token email", err, "site/error", nil)
 
 			return
 		}
 
 		user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by email", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find user by email", err, "site/error", nil)
 
 			return
 		}
 
 		passport, err := h.PassportByEmail(ctx, email)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "passport by email", err, "error", nil)
+			h.HTML.ErrorView(w, r, "passport by email", err, "site/error", nil)
 
 			return
 		}
 
 		err = h.Account.ResetTOTP(ctx, passport.Account, user.ID, input.Password)
 		if err != nil {
-			h.HTML.ErrorViewFunc(w, r, "reset TOTP", err, "account/totp/reset/reset", func(data *handler.ViewData) {
+			h.HTML.ErrorViewFunc(w, r, "reset TOTP", err, "site/account/totp/reset/reset", func(data *handler.ViewData) {
 				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
 			})
 
@@ -487,7 +487,7 @@ func totpResetPost(h *handler.Handler) http.HandlerFunc {
 
 		err = h.Repo.Web.ConsumeResetTOTPToken(ctx, input.Token)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "consume reset TOTP token", err, "error", nil)
+			h.HTML.ErrorView(w, r, "consume reset TOTP token", err, "site/error", nil)
 
 			return
 		}
@@ -499,7 +499,7 @@ func totpResetPost(h *handler.Handler) http.HandlerFunc {
 }
 
 func totpRecoveryCodesGet(h *handler.Handler) http.HandlerFunc {
-	h.SetViewVars("account/totp/recovery_codes/regenerate", func(r *http.Request) (handler.Vars, error) {
+	h.SetViewVars("site/account/totp/recovery_codes/regenerate", func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 		user := h.User(ctx)
 
@@ -515,12 +515,12 @@ func totpRecoveryCodesGet(h *handler.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		if !h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
-			h.HTML.View(w, r, http.StatusOK, "account/totp/recovery_codes/setup_required", nil)
+			h.HTML.View(w, r, http.StatusOK, "site/account/totp/recovery_codes/setup_required", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/totp/recovery_codes/regenerate", nil)
+		h.HTML.View(w, r, http.StatusOK, "site/account/totp/recovery_codes/regenerate", nil)
 	}
 }
 
@@ -530,7 +530,7 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 			TOTP string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
 		}
@@ -541,12 +541,12 @@ func totpRecoveryCodesPost(h *handler.Handler) http.HandlerFunc {
 
 		codes, err := h.Account.RegenerateRecoveryCodes(ctx, passport.Account, user.ID, input.TOTP)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "regenerate recovery codes", err, "account/totp/recovery_codes/regenerate", nil)
+			h.HTML.ErrorView(w, r, "regenerate recovery codes", err, "site/account/totp/recovery_codes/regenerate", nil)
 
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "account/totp/recovery_codes/regenerate", handler.Vars{
+		h.HTML.View(w, r, http.StatusOK, "site/account/totp/recovery_codes/regenerate", handler.Vars{
 			"RecoveryCodes": codes,
 		})
 	}

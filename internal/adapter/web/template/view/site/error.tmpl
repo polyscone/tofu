@@ -1,0 +1,15 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<h2>{{StatusText .Status}}</h2>
+
+{{end}}
+
+{{define "view_body"}}
+
+<p class="error-message">{{.ErrorMessage}}</p>
+
+{{end}}
+
+{{template "master" .}}

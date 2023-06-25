@@ -26,7 +26,7 @@ func ChangePassword(h *handler.Handler, mux *router.ServeMux) {
 			return true
 		})
 
-		mux.Get("/", h.HTML.Handler("account/change_password/form"), "account.change_password")
+		mux.Get("/", h.HTML.Handler("site/account/change_password/form"), "account.change_password")
 		mux.Post("/", changePasswordPost(h), "account.change_password.post")
 	})
 
@@ -42,7 +42,7 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
 		}
@@ -60,13 +60,13 @@ func changePasswordPost(h *handler.Handler) http.HandlerFunc {
 			input.NewPasswordCheck,
 		)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "change password", err, "account/change_password/form", nil)
+			h.HTML.ErrorView(w, r, "change password", err, "site/account/change_password/form", nil)
 
 			return
 		}
 
 		if _, err := h.RenewSession(ctx); err != nil {
-			h.HTML.ErrorView(w, r, "renew session", err, "error", nil)
+			h.HTML.ErrorView(w, r, "renew session", err, "site/error", nil)
 
 			return
 		}

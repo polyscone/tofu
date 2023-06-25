@@ -42,7 +42,7 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 	errorHandler := func(msg string) middleware.ErrorHandler {
 		return func(w http.ResponseWriter, r *http.Request, err error) {
-			h.HTML.ErrorView(w, r, msg, err, "error", nil)
+			h.HTML.ErrorView(w, r, msg, err, "site/error", nil)
 		}
 	}
 
@@ -121,47 +121,47 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 	// Rewrites
 	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")
 
-	// Pages and files
+	// Site
 	mux.Prefix("/", func(mux *router.ServeMux) {
-		mux.Get("/", h.HTML.Handler("page/home"), "page.home")
-
+		// Pages and files
+		mux.Get("/", h.HTML.Handler("site/page/home"), "page.home")
 		mux.Get("/robots.txt", h.Plain.Handler("file/robots"))
 		mux.Get("/.well-known/security.txt", h.Plain.Handler("file/security"))
-	})
 
-	// Account
-	mux.Prefix("/account", func(mux *router.ServeMux) {
-		mux.Name("account.section")
-
-		account.Activate(h, mux)
-		account.ChangePassword(h, mux)
-		account.ChoosePassword(h, mux)
-		account.Dashboard(h, mux)
-		account.ResetPassword(h, mux)
-		account.SignUp(h, mux)
-		account.SignIn(h, mux)
-		account.SignOut(h, mux)
-		account.TOTP(h, mux)
-	})
-
-	// Admin
-	mux.Prefix("/admin", func(mux *router.ServeMux) {
-		mux.Name("admin.section")
-
-		admin.Dashboard(h, mux)
-
+		// Account
 		mux.Prefix("/account", func(mux *router.ServeMux) {
-			mux.Before(h.RequireSignIn)
+			mux.Name("account.section")
 
-			account.RoleManagement(h, mux)
-			account.UserManagement(h, mux)
+			account.Activate(h, mux)
+			account.ChangePassword(h, mux)
+			account.ChoosePassword(h, mux)
+			account.Dashboard(h, mux)
+			account.ResetPassword(h, mux)
+			account.SignUp(h, mux)
+			account.SignIn(h, mux)
+			account.SignOut(h, mux)
+			account.TOTP(h, mux)
 		})
 
-		mux.Prefix("/system", func(mux *router.ServeMux) {
-			mux.Before(h.RequireSignInIf(func(p guard.Passport) bool { return !p.System.CanViewConfig() }))
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
+		// Admin
+		mux.Prefix("/admin", func(mux *router.ServeMux) {
+			mux.Name("admin.section")
 
-			admin.SystemConfig(h, mux)
+			admin.Dashboard(h, mux)
+
+			mux.Prefix("/account", func(mux *router.ServeMux) {
+				mux.Before(h.RequireSignIn)
+
+				account.RoleManagement(h, mux)
+				account.UserManagement(h, mux)
+			})
+
+			mux.Prefix("/system", func(mux *router.ServeMux) {
+				mux.Before(h.RequireSignInIf(func(p guard.Passport) bool { return !p.System.CanViewConfig() }))
+				mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
+
+				admin.SystemConfig(h, mux)
+			})
 		})
 	})
 
@@ -180,16 +180,16 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 		if err != nil {
 			switch {
 			case errors.Is(err, fs.ErrNotExist):
-				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrNotFound, err), "error", nil)
+				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrNotFound, err), "site/error", nil)
 
 			default:
-				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrInternalServerError, err), "error", nil)
+				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrInternalServerError, err), "site/error", nil)
 			}
 
 			return
 		}
 		if stat.IsDir() {
-			h.HTML.ErrorView(w, r, "static directory", httputil.ErrForbidden, "error", nil)
+			h.HTML.ErrorView(w, r, "static directory", httputil.ErrForbidden, "site/error", nil)
 
 			return
 		}
@@ -199,12 +199,12 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 	// Generic not found handler
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.ErrorView(w, r, "handler", httputil.ErrNotFound, "error", nil)
+		h.HTML.ErrorView(w, r, "handler", httputil.ErrNotFound, "site/error", nil)
 	})
 
 	// Generic method not allowed handler
 	mux.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.ErrorView(w, r, "handler", httputil.ErrMethodNotAllowed, "error", nil)
+		h.HTML.ErrorView(w, r, "handler", httputil.ErrMethodNotAllowed, "site/error", nil)
 	})
 
 	return mux

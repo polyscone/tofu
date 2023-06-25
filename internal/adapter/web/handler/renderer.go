@@ -17,14 +17,12 @@ import (
 
 type Renderer struct {
 	h           *Handler
-	tmpl        string
 	contentType string
 }
 
-func NewRenderer(h *Handler, tmpl, contentType string) *Renderer {
+func NewRenderer(h *Handler, contentType string) *Renderer {
 	return &Renderer{
 		h:           h,
-		tmpl:        tmpl,
 		contentType: contentType,
 	}
 }
@@ -76,7 +74,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	if vars, ok := rn.h.viewVarsFuncs[view]; ok {
 		defaults, err := vars(r)
 		if err != nil {
-			rn.ErrorView(w, r, "vars", err, "error", nil)
+			rn.ErrorView(w, r, "vars", err, "site/error", nil)
 
 			return
 		}
@@ -93,7 +91,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 
 	var buf bytes.Buffer
 	tmpl := rn.h.template(view, "partial/*.tmpl", "view/"+view+".tmpl", "master/*.tmpl")
-	if err := tmpl.ExecuteTemplate(&buf, rn.tmpl, data); err != nil {
+	if err := tmpl.ExecuteTemplate(&buf, "master", data); err != nil {
 		rn.h.Logger(ctx).Error("execute view template", "error", err)
 
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)

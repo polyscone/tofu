@@ -1,0 +1,176 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<div class="center">
+	<h1>Editing {{.Vars.User.Email}}</h1>
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+{{$isEditUserSuper := .Vars.User.IsSuper}}
+{{$isEditUserActivated := not .Vars.User.ActivatedAt.IsZero}}
+{{$canAssignSuperRole := .Passport.Account.CanAssignSuperRole $.Vars.User.ID}}
+{{$canChangeRoles := .Passport.Account.CanChangeRoles $.Vars.User.ID}}
+{{$cannotChangeRoles := not $canChangeRoles}}
+{{$canUpdate := $canChangeRoles}}
+
+<div class="center">
+	{{if eq .Vars.User.ID .Session.UserID}}
+		<div class="warning-banner">
+			<p>You're currently editing yourself.</p>
+			<p>Any changes you make here may affect your current browsing session, so be careful to avoid making any changes you're unsure of.</p>
+		</div>
+	{{end}}
+
+	{{if $isEditUserActivated}}
+		<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}" method="POST">
+			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+			{{if $isEditUserSuper}}
+				<input type="hidden" name="roles" value="{{.Vars.SuperRole.ID}}">
+			{{end}}
+
+			<b>Roles</b>
+
+			{{$roleIDs := $.Form.GetAllOr "roles" .Vars.UserRoleIDs}}
+			{{if $cannotChangeRoles}}
+				{{$roleIDs = ToStrings .Vars.UserRoleIDs}}
+			{{end}}
+
+			{{range .Vars.Roles}}
+				{{$isSuperRole := eq .ID $.Vars.SuperRole.ID}}
+				{{if and $isSuperRole (not $isEditUserSuper)}}
+					{{continue}}
+				{{end}}
+
+				{{$isChecked := HasString $roleIDs .ID}}
+				{{$isDisabled := or $cannotChangeRoles $isSuperRole}}
+
+				<label>
+					<input
+						type="checkbox"
+						name="roles"
+						value="{{.ID}}"
+						{{if $isChecked}}checked{{end}}
+						{{if $isDisabled}}disabled{{end}}
+					>
+					{{.Name}}
+				</label>
+			{{end}}
+
+			{{if and $canAssignSuperRole (not $isEditUserSuper)}}
+				<details>
+					<summary>I want to give this user the super role</summary>
+
+					<div class="warning-box">
+						<p>Once a user has been given the super role it <i>can't be removed</i>.</p>
+						<p>Please think carefully about whether this is actually what you need to do, or whether another role would be more appropriate.</p>
+
+						<p>
+							<label>
+								<input type="checkbox" name="roles" value="{{.Vars.SuperRole.ID}}">
+								I understand this <b>can't be undone</b>, give this user the super role
+							</label>
+						</p>
+					</div>
+				</details>
+			{{end}}
+
+			{{if not $isEditUserSuper}}
+				<div class="cols-50-50">
+					<div class="form">
+						<b>Grants</b>
+
+						{{$grants := $.Form.GetAllOr "grants" .Vars.User.Grants}}
+						{{range .Vars.PermissionGroups}}
+							<div class="form">
+								<b>{{.Name}}</b>
+
+								{{range .Permissions}}
+									<label>
+										<input
+											type="checkbox"
+											name="grants"
+											value="{{.Name}}"
+											{{if HasString $grants .Name}}checked{{end}}
+										>
+										{{.DisplayName}}
+									</label>
+								{{end}}
+							</div>
+						{{end}}
+					</div>
+
+					<div class="form">
+						<b>Denials</b>
+
+						{{$denials := $.Form.GetAllOr "denials" .Vars.User.Denials}}
+						{{range .Vars.PermissionGroups}}
+							<div class="form">
+								<b>{{.Name}}</b>
+
+								{{range .Permissions}}
+									<label>
+										<input
+											type="checkbox"
+											name="denials"
+											value="{{.Name}}"
+											{{if HasString $denials .Name}}checked{{end}}
+										>
+										{{.DisplayName}}
+									</label>
+								{{end}}
+							</div>
+						{{end}}
+					</div>
+
+					<script>
+						onMount("input[name='denials']", node => {
+							node.addEventListener("change", e => {
+								if (!node.checked) {
+									return
+								}
+
+								const denial = node.value
+								const checkboxes = Array.from(document.querySelectorAll(`input[name="grants"][value="${denial}"]`))
+
+								for (const checkbox of checkboxes) {
+									checkbox.checked = false
+								}
+							})
+						})
+
+						onMount("input[name='grants']", node => {
+							node.addEventListener("change", e => {
+								if (!node.checked) {
+									return
+								}
+
+								const grant = node.value
+								const checkboxes = Array.from(document.querySelectorAll(`input[name="denials"][value="${grant}"]`))
+
+								for (const checkbox of checkboxes) {
+									checkbox.checked = false
+								}
+							})
+						})
+					</script>
+				</div>
+			{{end}}
+
+			<div class="bag reverse">
+				<button type="submit" class="push-inline-end"{{if not $canUpdate}} disabled{{end}}>Update user</button>
+
+				<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+			</div>
+		</form>
+	{{else}}
+		<p>This user hasn't been activated yet.</p>
+		<p><a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Go back</a></p>
+	{{end}}
+</div>
+
+{{end}}

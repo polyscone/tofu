@@ -1,0 +1,36 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<div class="center">
+	<h1>Verify your setup</h1>
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
+	<div class="warning-banner">
+		<p>Using SMS for two-factor authentication is only recommended when you can't use an authenticator app on your phone.</p>
+		<p><a href="{{Path "account.totp.setup.app"}}">Don't want to use SMS? Click here to use an app.</a></p>
+	</div>
+
+	<p>Enter the 6 digit passcode you received via SMS to verify that phone number is setup correctly.</p>
+
+	<form action="{{Path "account.totp.setup.sms.verify.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<label for="totp__passcode">Passcode</label>
+		<input id="totp__passcode" type="text" name="totp" placeholder="123456" autocomplete="off" required pattern="^\d+$" minlength="6" maxlength="6">
+		<p class="error">{{.Errors.Get "totp"}}</p>
+
+		<div class="bag reverse">
+			<button type="submit">Verify setup</button>
+			<button type="submit" formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt push-inline-end">Resend passcode SMS</button>
+			<a href="{{Path "account.totp.setup.sms"}}">Change phone number</a>
+		</div>
+	</form>
+</div>
+
+{{end}}

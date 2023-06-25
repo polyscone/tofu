@@ -17,12 +17,12 @@ import (
 
 func ResetPassword(h *handler.Handler, mux *router.ServeMux) {
 	mux.Prefix("/reset-password", func(mux *router.ServeMux) {
-		mux.Get("/", h.HTML.Handler("account/reset_password/request"), "account.reset_password")
+		mux.Get("/", h.HTML.Handler("site/account/reset_password/request"), "account.reset_password")
 		mux.Post("/", resetPasswordPost(h), "account.reset_password.post")
 
-		mux.Get("/email-sent", h.HTML.Handler("account/reset_password/email_sent"), "account.reset_password.email_sent")
+		mux.Get("/email-sent", h.HTML.Handler("site/account/reset_password/email_sent"), "account.reset_password.email_sent")
 
-		mux.Get("/new-password", h.HTML.Handler("account/reset_password/new_password"), "account.reset_password.new_password")
+		mux.Get("/new-password", h.HTML.Handler("site/account/reset_password/new_password"), "account.reset_password.new_password")
 		mux.Post("/new-password", resetPasswordNewPasswordPost(h), "account.reset_password.new_password.post")
 	})
 }
@@ -33,7 +33,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 			Email string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
 		}
@@ -43,7 +43,7 @@ func resetPasswordPost(h *handler.Handler) http.HandlerFunc {
 				"email": err,
 			})
 
-			h.HTML.ErrorView(w, r, "new email", err, "account/reset_password/request", nil)
+			h.HTML.ErrorView(w, r, "new email", err, "site/account/reset_password/request", nil)
 
 			return
 		}
@@ -88,7 +88,7 @@ func resetPasswordNewPasswordPost(h *handler.Handler) http.HandlerFunc {
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
 		}
@@ -97,35 +97,35 @@ func resetPasswordNewPasswordPost(h *handler.Handler) http.HandlerFunc {
 
 		email, err := h.Repo.Web.FindResetPasswordTokenEmail(ctx, input.Token)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find reset password token email", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find reset password token email", err, "site/error", nil)
 
 			return
 		}
 
 		user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by email", err, "error", nil)
+			h.HTML.ErrorView(w, r, "find user by email", err, "site/error", nil)
 
 			return
 		}
 
 		passport, err := h.PassportByEmail(ctx, email)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "passport by email", err, "error", nil)
+			h.HTML.ErrorView(w, r, "passport by email", err, "site/error", nil)
 
 			return
 		}
 
 		err = h.Account.ResetPassword(ctx, passport.Account, user.ID, input.NewPassword, input.NewPasswordCheck)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "reset password", err, "account/reset_password/new_password", nil)
+			h.HTML.ErrorView(w, r, "reset password", err, "site/account/reset_password/new_password", nil)
 
 			return
 		}
 
 		err = h.Repo.Web.ConsumeResetPasswordToken(ctx, input.Token)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "consume reset password token", err, "error", nil)
+			h.HTML.ErrorView(w, r, "consume reset password token", err, "site/error", nil)
 
 			return
 		}

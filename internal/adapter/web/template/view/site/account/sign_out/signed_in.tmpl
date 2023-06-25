@@ -1,0 +1,25 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<div class="center">
+	<h1>Sign out</h1>
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
+	<p>You're already signed in.</p>
+
+	<form action="{{Path "account.sign_out.post"}}" method="POST">
+		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+		<div class="bag">
+			<button type="submit" class="btn--link">Click here to sign out.</button>
+		</div>
+	</form>
+</div>
+
+{{end}}
