@@ -8,10 +8,9 @@
 		<title>{{block "meta_title" .}}{{.App.Name}}{{end}}</title>
 		<meta name="description" content="{{block "meta_description" .}}{{.App.Description}}{{end}}">
 		<link rel="stylesheet" href="/css/style.css">
+		<script src="/js/components.js" async defer></script>
 	</head>
 	<body>
-		{{template "com_js" .}}
-
 		<a href="#main-content" class="skip-nav-link">Skip navigation</a>
 
 		{{template "header" .}}
