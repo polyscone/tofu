@@ -8,6 +8,7 @@ import (
 const (
 	Name              = "App"
 	Description       = "This is a boilerplate project for applications written in Go."
+	SessionTTL        = 2 * time.Hour
 	SignInThrottleTTL = 30 * time.Minute
 )
 

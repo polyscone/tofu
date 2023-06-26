@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
@@ -66,7 +65,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		return nil, fmt.Errorf("new system repo: %w", err)
 	}
 
-	webRepo, err := sqlite.NewWebRepo(ctx, db, 2*time.Hour)
+	webRepo, err := sqlite.NewWebRepo(ctx, db, app.SessionTTL)
 	if err != nil {
 		return nil, fmt.Errorf("new web repo: %w", err)
 	}
