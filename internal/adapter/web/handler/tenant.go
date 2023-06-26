@@ -52,6 +52,7 @@ type Email struct {
 }
 
 type Tenant struct {
+	Kind     string
 	Scheme   string
 	Host     string
 	Hostname string

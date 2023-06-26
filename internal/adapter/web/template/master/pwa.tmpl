@@ -1,0 +1,37 @@
+{{define "master_pwa" -}}
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>{{block "meta_title" .}}{{.App.Name}}{{end}}</title>
+		<meta name="description" content="{{block "meta_description" .}}{{.App.Description}}{{end}}">
+		<link rel="stylesheet" href="/css/style.css">
+		<script src="/js/mithril/v2.2.2.min.js"></script>
+	</head>
+	<body>
+		<script>
+			const root = document.body
+
+			const Root = {
+				view: () => [
+					m("h1", "PWA"),
+				],
+			}
+
+			const NotFound = {
+				view: () => m("h1", "Not found"),
+			}
+
+			m.route.prefix = ""
+
+			m.route(root, "/", {
+				"/": Root,
+				"/:rest...": NotFound,
+			})
+		</script>
+	</body>
+</html>
+
+{{- end}}

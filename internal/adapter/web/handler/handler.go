@@ -9,7 +9,6 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
-	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -61,20 +60,19 @@ type ViewVarsFunc func(r *http.Request) (Vars, error)
 
 type Handler struct {
 	*Tenant
-	signInPathName       string
-	systemConfigPathName string
-	files                fs.FS
-	templatesMu          sync.RWMutex
-	templates            map[string]*template.Template
-	funcs                template.FuncMap
-	viewVarsFuncs        map[string]ViewVarsFunc
-	mux                  *router.ServeMux
-	Sessions             *session.Manager
-	Plain                *Renderer
-	HTML                 *Renderer
+	signInPath    func() string
+	files         fs.FS
+	templatesMu   sync.RWMutex
+	templates     map[string]*template.Template
+	funcs         template.FuncMap
+	viewVarsFuncs map[string]ViewVarsFunc
+	mux           *router.ServeMux
+	Sessions      *session.Manager
+	Plain         *Renderer
+	HTML          *Renderer
 }
 
-func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName, systemConfigPathName string) *Handler {
+func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPath func() string) *Handler {
 	sessions := session.NewManager(tenant.Repo.Web)
 	funcs := template.FuncMap{
 		"Add":           tmplAdd,
@@ -97,15 +95,14 @@ func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName, syst
 	}
 
 	h := Handler{
-		Tenant:               tenant,
-		signInPathName:       signInPathName,
-		systemConfigPathName: systemConfigPathName,
-		files:                files,
-		templates:            make(map[string]*template.Template),
-		funcs:                funcs,
-		viewVarsFuncs:        make(map[string]ViewVarsFunc),
-		mux:                  mux,
-		Sessions:             sessions,
+		Tenant:        tenant,
+		signInPath:    signInPath,
+		files:         files,
+		templates:     make(map[string]*template.Template),
+		funcs:         funcs,
+		viewVarsFuncs: make(map[string]ViewVarsFunc),
+		mux:           mux,
+		Sessions:      sessions,
 	}
 
 	h.Plain = NewRenderer(&h, "text/plain")
@@ -114,18 +111,9 @@ func New(mux *router.ServeMux, tenant *Tenant, files fs.FS, signInPathName, syst
 	return &h
 }
 
-func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
+func (h *Handler) SetupMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		requestID, err := uuid.NewV4()
-		if err != nil {
-			h.Log.Error("handler middleware: new v4 UUID", "error", err)
-
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-
-			return
-		}
 
 		config, err := h.Repo.System.FindConfig(ctx)
 		if err != nil {
@@ -162,6 +150,15 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 			})
 		}
 
+		requestID, err := uuid.NewV4()
+		if err != nil {
+			h.Log.Error("handler middleware: new v4 UUID", "error", err)
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+
+			return
+		}
+
 		remoteAddr, err := realip.FromRequest(r, h.Proxies...)
 		if err != nil {
 			remoteAddr = r.RemoteAddr
@@ -182,22 +179,6 @@ func (h *Handler) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		ctx = context.WithValue(ctx, ctxUser, user)
 		ctx = context.WithValue(ctx, ctxPassport, passport)
 		r = r.WithContext(ctx)
-
-		systemConfigPath := h.mux.Path(h.systemConfigPathName)
-		if r.Method == http.MethodGet && config.RequireSetup && r.URL.Path != systemConfigPath && filepath.Ext(r.URL.Path) == "" {
-			http.Redirect(w, r, systemConfigPath, http.StatusSeeOther)
-
-			return
-		}
-
-		isInTOTPSection := h.HasPathPrefix(r.URL.Path, "account.totp.section")
-		if !isInTOTPSection && isSignedIn && config.RequireTOTP && !user.HasActivatedTOTP() {
-			h.AddFlashf(ctx, "Two-factor authentication is required to use this application.")
-
-			http.Redirect(w, r, h.Path("account.totp.setup"), http.StatusSeeOther)
-
-			return
-		}
 
 		// The redirect key in the session is supposed to be a one-time temporary
 		// redirect target, so we ensure it's deleted if we're visiting the target
@@ -517,7 +498,7 @@ func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
 	if !isSignedIn {
 		h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
-		http.Redirect(w, r, h.mux.Path(h.signInPathName), http.StatusSeeOther)
+		http.Redirect(w, r, h.signInPath(), http.StatusSeeOther)
 
 		return false
 	}
@@ -534,7 +515,7 @@ func (h *Handler) RequireSignInIf(check PredicateFunc) router.BeforeHookFunc {
 		if !isSignedIn && check(passport) {
 			h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
-			http.Redirect(w, r, h.mux.Path(h.signInPathName), http.StatusSeeOther)
+			http.Redirect(w, r, h.signInPath(), http.StatusSeeOther)
 
 			return false
 		}

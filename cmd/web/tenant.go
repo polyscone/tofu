@@ -87,6 +87,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	}
 
 	tenant := handler.Tenant{
+		Kind:     data.Kind,
 		Dev:      opts.dev,
 		Insecure: opts.server.insecure,
 		Proxies:  opts.server.proxies,
@@ -107,9 +108,10 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 }
 
 type Tenant struct {
-	Alias      string   `json:"-"`
-	Hostnames  []string `json:"hostnames"`
-	IsDisabled bool     `json:"isDisabled"`
+	Alias      string            `json:"-"`
+	Kind       string            `json:"-"`
+	Hostnames  map[string]string `json:"hostnames"`
+	IsDisabled bool              `json:"isDisabled"`
 }
 
 func initTenants(tenantsPath string) error {
@@ -130,7 +132,10 @@ func initTenants(tenantsPath string) error {
 		if info.Size() == 0 {
 			example := map[string]Tenant{
 				"example": {
-					Hostnames:  []string{"localhost", "local.example.com"},
+					Hostnames: map[string]string{
+						"www.example.com": "site",
+						"app.example.com": "pwa",
+					},
 					IsDisabled: true,
 				},
 			}
@@ -168,19 +173,20 @@ func initTenants(tenantsPath string) error {
 		}
 
 		if alias == "" && len(tenant.Hostnames) != 0 {
-			for _, hostname := range tenant.Hostnames {
+			for hostname := range tenant.Hostnames {
 				errs.Set("hostname "+hostname, "alias cannot be empty")
 			}
 
 			continue
 		}
 
-		for _, hostname := range tenant.Hostnames {
+		for hostname, kind := range tenant.Hostnames {
 			if dupe, ok := tenants[hostname]; ok {
 				errs.Set(hostname, fmt.Sprintf("cannot associate with %q; already associated with %q", alias, dupe.Alias))
 			}
 
 			tenant.Alias = alias
+			tenant.Kind = kind
 
 			if !tenant.IsDisabled {
 				tenants[hostname] = tenant

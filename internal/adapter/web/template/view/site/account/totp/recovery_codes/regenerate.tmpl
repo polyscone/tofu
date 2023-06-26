@@ -27,7 +27,7 @@
 			</p>
 		</div>
 
-		{{template "com_recovery_codes" .WithComData .Vars.RecoveryCodes}}
+		{{template "site_com_recovery_codes" .WithComData .Vars.RecoveryCodes}}
 	{{else}}
 		{{if ge (len .Vars.HashedRecoveryCodes) 1}}
 			{{if eq (len .Vars.HashedRecoveryCodes) 1}}

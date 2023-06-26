@@ -1,4 +1,4 @@
-{{define "com_pagination"}}
+{{define "site_com_pagination"}}
 
 {{$startEntry := Add 1 (Mul .ComData.PageSize (Sub .ComData.Page.Number 1))}}
 {{$endEntry := Add (Sub $startEntry 1) (len .ComData.Page.Rows)}}
