@@ -28,7 +28,8 @@ const (
 )
 
 type WebRepo struct {
-	db *DB
+	db         *DB
+	sessionTTL time.Duration
 }
 
 func NewWebRepo(ctx context.Context, db *sql.DB, sessionTTL time.Duration) (*WebRepo, error) {
@@ -41,14 +42,17 @@ func NewWebRepo(ctx context.Context, db *sql.DB, sessionTTL time.Duration) (*Web
 		return nil, fmt.Errorf("migrate web: %w", err)
 	}
 
-	r := WebRepo{db: newDB(db)}
+	r := WebRepo{
+		db:         newDB(db),
+		sessionTTL: sessionTTL,
+	}
 
 	// Background goroutine to clean up expired sessions
 	background.Go(func() {
 		ctx := context.Background()
 
 		for range time.Tick(5 * time.Minute) {
-			if err := r.DestroyExpiredSessions(ctx, sessionTTL); err != nil {
+			if err := r.DestroyExpiredSessions(ctx); err != nil {
 				slog.Error("web repo: destroy expired sessions", "error", err)
 			}
 		}
@@ -114,14 +118,14 @@ func (r *WebRepo) DestroySession(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *WebRepo) DestroyExpiredSessions(ctx context.Context, ttl time.Duration) error {
+func (r *WebRepo) DestroyExpiredSessions(ctx context.Context) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	if err := r.destroyExpiredSessions(ctx, tx, ttl); err != nil {
+	if err := r.destroyExpiredSessions(ctx, tx); err != nil {
 		return err
 	}
 
@@ -363,9 +367,12 @@ func (r *WebRepo) findSessionDataByID(ctx context.Context, tx *Tx, id string) (s
 	err := tx.QueryRowContext(ctx, `
 		SELECT data
 		FROM web__sessions
-		WHERE id = :id
+		WHERE
+			id = :id AND
+			updated_at > :valid_window_start
 	`,
 		sql.Named("id", id),
+		sql.Named("valid_window_start", Time(tx.now.Add(-r.sessionTTL).UTC())),
 	).Scan(&data)
 	if err != nil {
 		if errors.Is(err, repository.ErrNotFound) {
@@ -430,12 +437,12 @@ func (r *WebRepo) destroySession(ctx context.Context, tx *Tx, id string) error {
 	return err
 }
 
-func (r *WebRepo) destroyExpiredSessions(ctx context.Context, tx *Tx, ttl time.Duration) error {
+func (r *WebRepo) destroyExpiredSessions(ctx context.Context, tx *Tx) error {
 	_, err := tx.ExecContext(ctx, `
 		DELETE FROM web__sessions
 		WHERE updated_at <= :valid_window_start
 	`,
-		sql.Named("valid_window_start", Time(tx.now.Add(-ttl).UTC())),
+		sql.Named("valid_window_start", Time(tx.now.Add(-r.sessionTTL).UTC())),
 	)
 
 	return err
