@@ -21,7 +21,7 @@ type AccountReader interface {
 	FindUsersPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.User, int, error)
 }
 
-type WebReadWriter interface {
+type ReadWriter interface {
 	session.ReadWriter
 
 	AddActivationToken(ctx context.Context, email string, ttl time.Duration) (string, error)
@@ -41,14 +41,15 @@ type WebReadWriter interface {
 	ConsumeResetTOTPToken(ctx context.Context, token string) error
 }
 
+type Svc struct {
+	Account *account.Service
+	System  *system.Service
+}
+
 type Repo struct {
 	Account AccountReader
 	System  system.Reader
-	Web     WebReadWriter
-}
-
-type Email struct {
-	Mailer smtp.Mailer
+	Web     ReadWriter
 }
 
 type Tenant struct {
@@ -61,11 +62,9 @@ type Tenant struct {
 	Insecure bool
 	Proxies  []string
 	Broker   event.Broker
-	Email    Email
+	Email    smtp.Mailer
 	Log      *slog.Logger
 
-	Account *account.Service
-	System  *system.Service
-
+	Svc  Svc
 	Repo Repo
 }

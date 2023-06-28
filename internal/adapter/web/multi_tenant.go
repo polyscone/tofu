@@ -76,9 +76,7 @@ func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 	tenant.Hostname = hostname
 	tenant.Port = port
 
-	mux := http.NewServeMux()
-
-	mux.Handle("/", NewRouter(tenant))
+	mux := NewRouter(tenant)
 
 	h.muxes[hostname] = mux
 

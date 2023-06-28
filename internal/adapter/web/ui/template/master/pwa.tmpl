@@ -1,0 +1,20 @@
+{{define "master_pwa" -}}
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>{{block "meta_title" .}}{{.App.Name}}{{end}}</title>
+		<meta name="description" content="{{block "meta_description" .}}{{.App.Description}}{{end}}">
+		<link rel="stylesheet" href="/css/style.css">
+		<link rel="stylesheet" href="/css/pwa.css">
+	</head>
+	<body>
+		<script>window.appData = {{MarshalJSON .App}}</script>
+		<script src="/js/mithril/v2.2.2.min.js"></script>
+		<script src="/js/pwa/main.js" type="module"></script>
+	</body>
+</html>
+
+{{- end}}

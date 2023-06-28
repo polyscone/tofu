@@ -4,17 +4,24 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/size"
 )
 
-func setupPWARoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.ServeMux) {
+func NewPWARouter(base *handler.Handler) http.Handler {
+	mux := router.NewServeMux()
+	h := ui.NewHandler(base, mux, func() string {
+		return "/sign-in"
+	})
+
 	errorHandler := func(msg string) middleware.ErrorHandler {
 		return func(w http.ResponseWriter, r *http.Request, err error) {
 			ctx := r.Context()
@@ -31,40 +38,20 @@ func setupPWARoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.Serv
 	mux.Use(middleware.RemoveTrailingSlash)
 	mux.Use(middleware.MethodOverride)
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
-		Consume: func(r *http.Request) bool {
-			whitelist := []string{
-				".css",
-				".gif",
-				".ico",
-				".jpeg",
-				".jpg",
-				".js",
-				".png",
-			}
-
-			for _, ext := range whitelist {
-				if strings.HasSuffix(r.URL.Path, ext) {
-					return false
-				}
-			}
-
-			return true
-		},
 		ErrorHandler:   errorHandler("rate limit middleware"),
-		TrustedProxies: tenant.Proxies,
+		TrustedProxies: h.Proxies,
 	}))
 	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
-		Insecure:     tenant.Insecure,
+		Insecure:     h.Insecure,
 		ErrorHandler: errorHandler("session middleware"),
 	}))
 	mux.Use(middleware.NoContent)
 	mux.Use(middleware.SecurityHeaders)
 	mux.Use(middleware.ETag)
 	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
-		Insecure:     tenant.Insecure,
+		Insecure:     h.Insecure,
 		ErrorHandler: errorHandler("CSRF middleware"),
 	}))
-	mux.Use(middleware.Heartbeat("/meta/health"))
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
 		switch r.Method {
 		case http.MethodPost, http.MethodPut, http.MethodPatch:
@@ -73,22 +60,48 @@ func setupPWARoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.Serv
 
 		return 0
 	}))
-	mux.Use(h.SetupMiddleware)
+	mux.Use(h.AttachContext)
 
-	setupPublicFileServerRoute(h, mux, func(w http.ResponseWriter, r *http.Request, err error) {
-		switch {
-		case errors.Is(err, fs.ErrNotExist), errors.Is(err, fs.ErrInvalid):
+	mux.Redirect(http.MethodGet, "/security.txt", "/.well-known/security.txt", http.StatusMovedPermanently)
+
+	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")
+
+	mux.Get("/robots.txt", h.Plain.Handler("file/robots"))
+	mux.Get("/.well-known/security.txt", h.Plain.Handler("file/security"))
+
+	publicFilesRoot := http.FS(publicFiles)
+	fileServer := http.FileServer(publicFilesRoot)
+	mux.GetHandler("/:rest*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		upath := r.URL.Path
+		if !strings.HasPrefix(upath, "/") {
+			upath = "/" + upath
+			r.URL.Path = upath
+		}
+		upath = path.Clean(upath)
+
+		stat, err := fs.Stat(publicFiles, strings.TrimPrefix(upath, "/"))
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) {
+				h.HTML.View(w, r, http.StatusOK, "pwa/root", nil)
+			} else {
+				ctx := r.Context()
+				logger := h.Logger(ctx)
+
+				logger.Error("static file", "error", err)
+
+				http.Redirect(w, r, "/error", http.StatusSeeOther)
+			}
+
+			return
+		}
+		if stat.IsDir() {
 			h.HTML.View(w, r, http.StatusOK, "pwa/root", nil)
 
-		default:
-			ctx := r.Context()
-			logger := h.Logger(ctx)
-
-			logger.Error("static file", "error", err)
-
-			http.Redirect(w, r, "/error", http.StatusSeeOther)
+			return
 		}
-	})
+
+		fileServer.ServeHTTP(w, r)
+	}))
 
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -107,4 +120,6 @@ func setupPWARoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.Serv
 
 		http.Redirect(w, r, "/error", http.StatusSeeOther)
 	})
+
+	return mux
 }

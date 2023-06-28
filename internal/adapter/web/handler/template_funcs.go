@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -12,27 +13,27 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func tmplAdd(a, b int) int {
+func TmplAdd(a, b int) int {
 	return a + b
 }
 
-func tmplSub(a, b int) int {
+func TmplSub(a, b int) int {
 	return a - b
 }
 
-func tmplMul(a, b int) int {
+func TmplMul(a, b int) int {
 	return a * b
 }
 
-func tmplDiv(a, b int) int {
+func TmplDiv(a, b int) int {
 	return a / b
 }
 
-func tmplMod(a, b int) int {
+func TmplMod(a, b int) int {
 	return a % b
 }
 
-func tmplInts(start, end int) []int {
+func TmplInts(start, end int) []int {
 	n := end - start
 	ints := make([]int, n)
 	for i := 0; i < n; i++ {
@@ -42,19 +43,19 @@ func tmplInts(start, end int) []int {
 	return ints
 }
 
-func tmplStatusText(code int) string {
+func TmplStatusText(code int) string {
 	return strings.ReplaceAll(http.StatusText(code), "z", "s")
 }
 
 type tmplPathFunc func(name string, paramArgPairs ...any) template.URL
 
-func tmplPath(mux *router.ServeMux) tmplPathFunc {
+func TmplPath(mux *router.ServeMux) tmplPathFunc {
 	return func(name string, paramArgPairs ...any) template.URL {
 		return template.URL(mux.Path(name, paramArgPairs...))
 	}
 }
 
-func tmplQueryReplace(q url.Values, pairs ...any) (url.Values, error) {
+func TmplQueryReplace(q url.Values, pairs ...any) (url.Values, error) {
 	if len(pairs)%2 == 1 {
 		return nil, fmt.Errorf("QueryReplace: want pairs of key value replacements")
 	}
@@ -81,7 +82,7 @@ func tmplQueryReplace(q url.Values, pairs ...any) (url.Values, error) {
 	return q, nil
 }
 
-func tmplQueryURL(q url.Values) template.URL {
+func TmplQueryURL(q url.Values) template.URL {
 	value := q.Encode()
 
 	if value == "" {
@@ -95,8 +96,8 @@ func tmplQueryURL(q url.Values) template.URL {
 	return template.URL(value)
 }
 
-func tmplQueryString(q url.Values, pairs ...any) (template.URL, error) {
-	q, err := tmplQueryReplace(q, pairs...)
+func TmplQueryString(q url.Values, pairs ...any) (template.URL, error) {
+	q, err := TmplQueryReplace(q, pairs...)
 	if err != nil {
 		return "", fmt.Errorf("QueryString: %w", err)
 	}
@@ -116,10 +117,10 @@ func tmplQueryString(q url.Values, pairs ...any) (template.URL, error) {
 		}
 	}
 
-	return tmplQueryURL(q), nil
+	return TmplQueryURL(q), nil
 }
 
-func tmplFormatTime(t time.Time, format string) string {
+func TmplFormatTime(t time.Time, format string) string {
 	switch format {
 	case "DateTime":
 		return t.Format(time.DateTime)
@@ -131,14 +132,14 @@ func tmplFormatTime(t time.Time, format string) string {
 	return t.Format(format)
 }
 
-func tmplHasPrefix(value, prefix any) bool {
+func TmplHasPrefix(value, prefix any) bool {
 	v := fmt.Sprintf("%v", value)
 	p := fmt.Sprintf("%v", prefix)
 
 	return strings.HasPrefix(v, p)
 }
 
-func tmplHasSuffix(value, suffix any) bool {
+func TmplHasSuffix(value, suffix any) bool {
 	v := fmt.Sprintf("%v", value)
 	s := fmt.Sprintf("%v", suffix)
 
@@ -147,7 +148,7 @@ func tmplHasSuffix(value, suffix any) bool {
 
 type tmplHasPathPrefixFunc func(value any, name string, paramArgPairs ...any) bool
 
-func tmplHasPathPrefix(mux *router.ServeMux) tmplHasPathPrefixFunc {
+func TmplHasPathPrefix(mux *router.ServeMux) tmplHasPathPrefixFunc {
 	return func(value any, name string, paramArgPairs ...any) bool {
 		v := fmt.Sprintf("%v", value)
 		p := mux.Path(name, paramArgPairs...)
@@ -157,7 +158,7 @@ func tmplHasPathPrefix(mux *router.ServeMux) tmplHasPathPrefixFunc {
 	}
 }
 
-func tmplHasString(haystack []string, value any) bool {
+func TmplHasString(haystack []string, value any) bool {
 	needle := fmt.Sprintf("%v", value)
 
 	for _, value := range haystack {
@@ -169,7 +170,7 @@ func tmplHasString(haystack []string, value any) bool {
 	return false
 }
 
-func tmplToStrings(value any) ([]string, error) {
+func TmplToStrings(value any) ([]string, error) {
 	switch value := value.(type) {
 	case nil:
 		return nil, nil
@@ -190,10 +191,16 @@ func tmplToStrings(value any) ([]string, error) {
 	}
 }
 
-func tmplJoin(strs []string, sep string) string {
+func TmplJoin(strs []string, sep string) string {
 	return strings.Join(strs, sep)
 }
 
-func tmplUnescapeHTML(s string) template.HTML {
+func TmplMarshalJSON(value any) (template.JS, error) {
+	b, err := json.Marshal(value)
+
+	return template.JS(b), err
+}
+
+func TmplUnescapeHTML(s string) template.HTML {
 	return template.HTML(s)
 }

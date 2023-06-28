@@ -5,23 +5,33 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
-	"github.com/polyscone/tofu/internal/adapter/web/handler/account"
-	"github.com/polyscone/tofu/internal/adapter/web/handler/admin"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
+	"github.com/polyscone/tofu/internal/adapter/web/ui"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/account"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/admin"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/size"
-	"golang.org/x/exp/slices"
 )
 
-func setupSiteRoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.ServeMux) {
+func NewSiteRouter(base *handler.Handler) http.Handler {
+	mux := router.NewServeMux()
+	h := ui.NewHandler(base, mux, func() string {
+		return mux.Path("account.sign_in")
+	})
+
+	h.Broker.Listen(account.SignedInWithPasswordHandler(h))
+	h.Broker.Listen(account.SignedUpHandler(h))
+	h.Broker.Listen(account.TOTPDisabledHandler(h))
+
 	errorHandler := func(msg string) middleware.ErrorHandler {
 		return func(w http.ResponseWriter, r *http.Request, err error) {
 			h.HTML.ErrorView(w, r, msg, err, "site/error", nil)
@@ -53,10 +63,10 @@ func setupSiteRoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.Ser
 			return true
 		},
 		ErrorHandler:   errorHandler("rate limit middleware"),
-		TrustedProxies: tenant.Proxies,
+		TrustedProxies: h.Proxies,
 	}))
 	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
-		Insecure:     tenant.Insecure,
+		Insecure:     h.Insecure,
 		ErrorHandler: errorHandler("session middleware"),
 	}))
 	mux.Use(middleware.NoContent)
@@ -64,23 +74,20 @@ func setupSiteRoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.Ser
 	mux.Use(middleware.ETag)
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		csrf := middleware.CSRF(&middleware.CSRFConfig{
-			Insecure:     tenant.Insecure,
+			Insecure:     h.Insecure,
 			ErrorHandler: errorHandler("CSRF middleware"),
 		})
 
 		return func(w http.ResponseWriter, r *http.Request) {
-			exceptions := []string{
-				mux.Path("account.sign_in.google.post"),
-			}
-
-			if slices.Contains(exceptions, r.URL.Path) {
+			// Google sign in provides its own CSRF token which is checked
+			// in the POST handler
+			if r.URL.Path == mux.Path("account.sign_in.google.post") {
 				next(w, r)
 			} else {
 				csrf(next)(w, r)
 			}
 		}
 	})
-	mux.Use(middleware.Heartbeat("/meta/health"))
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
 		switch r.Method {
 		case http.MethodPost, http.MethodPut, http.MethodPatch:
@@ -89,7 +96,7 @@ func setupSiteRoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.Ser
 
 		return 0
 	}))
-	mux.Use(h.SetupMiddleware)
+	mux.Use(h.AttachContext)
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -98,7 +105,7 @@ func setupSiteRoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.Ser
 
 			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
 
-			systemConfigPath := h.Path("system.config")
+			systemConfigPath := mux.Path("system.config")
 			if r.Method == http.MethodGet && config.RequireSetup && r.URL.Path != systemConfigPath && filepath.Ext(r.URL.Path) == "" {
 				http.Redirect(w, r, systemConfigPath, http.StatusSeeOther)
 
@@ -109,7 +116,7 @@ func setupSiteRoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.Ser
 			if !isInTOTPSection && isSignedIn && config.RequireTOTP && !user.HasActivatedTOTP() {
 				h.AddFlashf(ctx, "Two-factor authentication is required to use this application.")
 
-				http.Redirect(w, r, h.Path("account.totp.setup"), http.StatusSeeOther)
+				http.Redirect(w, r, mux.Path("account.totp.setup"), http.StatusSeeOther)
 
 				return
 			}
@@ -117,6 +124,13 @@ func setupSiteRoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.Ser
 			next(w, r)
 		}
 	})
+
+	mux.Redirect(http.MethodGet, "/security.txt", "/.well-known/security.txt", http.StatusMovedPermanently)
+
+	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")
+
+	mux.Get("/robots.txt", h.Plain.Handler("file/robots"))
+	mux.Get("/.well-known/security.txt", h.Plain.Handler("file/security"))
 
 	mux.Get("/", h.HTML.Handler("site/page/home"), "page.home")
 
@@ -154,18 +168,34 @@ func setupSiteRoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.Ser
 		})
 	})
 
-	setupPublicFileServerRoute(h, mux, func(w http.ResponseWriter, r *http.Request, err error) {
-		switch {
-		case errors.Is(err, fs.ErrNotExist):
-			h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrNotFound, err), "site/error", nil)
+	publicFilesRoot := http.FS(publicFiles)
+	fileServer := http.FileServer(publicFilesRoot)
+	mux.GetHandler("/:rest*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		upath := r.URL.Path
+		if !strings.HasPrefix(upath, "/") {
+			upath = "/" + upath
+			r.URL.Path = upath
+		}
+		upath = path.Clean(upath)
 
-		case errors.Is(err, httputil.ErrForbidden):
+		stat, err := fs.Stat(publicFiles, strings.TrimPrefix(upath, "/"))
+		if err != nil {
+			if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) {
+				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrNotFound, err), "site/error", nil)
+			} else {
+				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrInternalServerError, err), "site/error", nil)
+			}
+
+			return
+		}
+		if stat.IsDir() {
 			h.HTML.ErrorView(w, r, "static file", httputil.ErrForbidden, "site/error", nil)
 
-		default:
-			h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrInternalServerError, err), "site/error", nil)
+			return
 		}
-	})
+
+		fileServer.ServeHTTP(w, r)
+	}))
 
 	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		h.HTML.ErrorView(w, r, "handler", httputil.ErrNotFound, "site/error", nil)
@@ -174,4 +204,6 @@ func setupSiteRoutes(tenant *handler.Tenant, h *handler.Handler, mux *router.Ser
 	mux.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
 		h.HTML.ErrorView(w, r, "handler", httputil.ErrMethodNotAllowed, "site/error", nil)
 	})
+
+	return mux
 }

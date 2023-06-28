@@ -91,11 +91,11 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		Insecure: opts.server.insecure,
 		Proxies:  opts.server.proxies,
 		Broker:   broker,
-		Email: handler.Email{
-			Mailer: mailer,
+		Email:    mailer,
+		Svc: handler.Svc{
+			Account: accountService,
+			System:  systemService,
 		},
-		Account: accountService,
-		System:  systemService,
 		Repo: handler.Repo{
 			Account: accountRepo,
 			System:  systemRepo,

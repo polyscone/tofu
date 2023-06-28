@@ -116,7 +116,7 @@ func TestResetTOTP(t *testing.T) {
 			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
 			{"unactivated TOTP", validGuard, user1.ID, "password", nil},
 			{"no reset requested approved", validGuard, user2.ID, "password", nil},
-			{"incorrect password", validGuard, user3.ID, "123123123", app.ErrUnauthorised},
+			{"incorrect password", validGuard, user3.ID, "123123123", nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

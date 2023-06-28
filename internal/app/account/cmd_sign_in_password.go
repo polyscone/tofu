@@ -8,6 +8,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
 const (
@@ -18,8 +19,10 @@ const (
 var ErrSignInThrottled = errors.New("sign in throttled")
 
 type SignInThrottleError struct {
+	InLast   string
 	Delay    time.Duration
 	UnlockAt time.Time
+	UnlockIn string
 }
 
 func (t SignInThrottleError) Error() string {
@@ -65,8 +68,6 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 	log.Attempts++
 	log.LastAttemptAt = time.Now()
 
-	nextThrottle := s.CheckSignInThrottle(log.Attempts, time.Now())
-
 	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	if err != nil {
 		if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
@@ -77,10 +78,6 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 		// avoid leaking info that would allow enumeration of valid emails
 		if err := s.hasher.CheckDummyPasswordHash(); err != nil {
 			return fmt.Errorf("check dummy password hash: %w", err)
-		}
-
-		if nextThrottle != nil {
-			err = fmt.Errorf("%w: %w", err, nextThrottle)
 		}
 
 		return fmt.Errorf("find user by email: %w", err)
@@ -95,14 +92,6 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 			if err := s.repo.SaveUser(ctx, user); err != nil {
 				return fmt.Errorf("save user: %w", err)
 			}
-
-			if nextThrottle != nil {
-				err = fmt.Errorf("%w: %w", err, nextThrottle)
-			}
-		}
-
-		if errors.Is(err, ErrInvalidPassword) {
-			return fmt.Errorf("%w: %w", app.ErrUnauthorised, err)
 		}
 
 		return err
@@ -135,8 +124,10 @@ func (s *Service) CheckSignInThrottle(attempts int, lastAttemptAt time.Time) err
 		unlockAt := lastAttemptAt.Add(delay)
 		if time.Now().Before(unlockAt) {
 			throttle := &SignInThrottleError{
+				InLast:   human.Duration(app.SignInThrottleTTL),
 				Delay:    delay,
 				UnlockAt: unlockAt,
+				UnlockIn: human.Duration(time.Until(unlockAt)),
 			}
 
 			return fmt.Errorf("%w: %w", ErrSignInThrottled, throttle)

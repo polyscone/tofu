@@ -91,7 +91,7 @@ func TestDisableTOTP(t *testing.T) {
 			want     error
 		}{
 			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
-			{"incorrect password", validGuard, user2.ID, "12345678", app.ErrUnauthorised},
+			{"incorrect password", validGuard, user2.ID, "12345678", nil},
 			{"unactivated TOTP", validGuard, user1.ID, "password", nil},
 		}
 		for _, tc := range tt {

@@ -9,6 +9,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/size"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -86,12 +87,9 @@ func CSRF(config *CSRFConfig) Middleware {
 				}
 			}
 
-			var found bool
-			for _, value := range w.Header().Values("vary") {
-				if found = strings.ToLower(value) == "cookie"; found {
-					break
-				}
-			}
+			found := slices.ContainsFunc(w.Header().Values("vary"), func(el string) bool {
+				return strings.ToLower(el) == "cookie"
+			})
 			if !found {
 				w.Header().Add("vary", "cookie")
 			}

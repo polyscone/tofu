@@ -26,7 +26,8 @@ func ErrorStatus(err error) int {
 		errors.Is(err, app.ErrInvalidInput),
 		errors.Is(err, app.ErrBadRequest),
 		errors.Is(err, csrf.ErrEmptyToken),
-		errors.Is(err, csrf.ErrInvalidToken):
+		errors.Is(err, csrf.ErrInvalidToken),
+		errors.Is(err, ErrBadJSON):
 
 		return http.StatusBadRequest
 
@@ -43,6 +44,9 @@ func ErrorStatus(err error) int {
 
 	case errors.Is(err, ErrMethodNotAllowed):
 		return http.StatusMethodNotAllowed
+
+	case errors.Is(err, ErrExpectedJSON):
+		return http.StatusUnsupportedMediaType
 
 	case errors.Is(err, rate.ErrInsufficientTokens),
 		errors.Is(err, account.ErrSignInThrottled):

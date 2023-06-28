@@ -41,7 +41,7 @@ func TestSignInWithPassword(t *testing.T) {
 		if user.LastSignedInAt.IsZero() {
 			t.Error("want last signed in at to be populated; got zero")
 		}
-		if want, got := account.SignInMethodWebsite, user.LastSignedInMethod; want != got {
+		if want, got := account.SignInMethodForm, user.LastSignedInMethod; want != got {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 	})
@@ -69,16 +69,6 @@ func TestSignInWithPassword(t *testing.T) {
 						err := svc.SignInWithPassword(ctx, tc.user.Email, "foobarbaz")
 						if err == nil {
 							t.Error("want error; got <nil>")
-						}
-
-						if i+1 == account.MaxFreeSignInAttempts {
-							var throttle *account.SignInThrottleError
-							if !errors.As(err, &throttle) {
-								t.Errorf("want %T; got %T", throttle, err)
-							}
-							if !errors.Is(err, account.ErrSignInThrottled) {
-								t.Errorf("want error: %v; got %v", account.ErrSignInThrottled, err)
-							}
 						}
 
 						log, err := repo.FindSignInAttemptLogByEmail(ctx, tc.user.Email)
@@ -149,7 +139,7 @@ func TestSignInWithPassword(t *testing.T) {
 			{"email without @ sign", "joebloggs.com", "password", app.ErrMalformedInput},
 			{"non-existent email", "foo@bar.com", "password", nil},
 			{"short password", "joe@bloggs.com", "0123456", app.ErrMalformedInput},
-			{"incorrect password", user2.Email, "0123456789", app.ErrUnauthorised},
+			{"incorrect password", user2.Email, "0123456789", nil},
 			{"unactivated user bad request", user1.Email, "password", nil},
 			{"unactivated user", user1.Email, "password", account.ErrNotActivated},
 		}

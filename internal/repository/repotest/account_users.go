@@ -50,7 +50,7 @@ func AccountUsers(ctx context.Context, t *testing.T, newRepo func() account.Read
 				SignedUpAt:           time.Now(),
 				ActivatedAt:          time.Now(),
 				LastSignedInAt:       time.Now(),
-				LastSignedInMethod:   "Website",
+				LastSignedInMethod:   "Form",
 				HashedRecoveryCodes:  [][]byte{[]byte("1"), []byte("2"), []byte("3")},
 				Roles:                []*account.Role{role1, role2},
 				Grants:               []string{"a", "b"},
