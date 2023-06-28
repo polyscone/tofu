@@ -34,7 +34,7 @@ func SignInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 		h.Sessions.Set(ctx, sess.SignInAttempts, attempts)
 		h.Sessions.Set(ctx, sess.LastSignInAttemptAt, lastAttemptAt)
 
-		return fmt.Errorf("sign in with password: %w", err)
+		return err
 	}
 
 	h.Sessions.Delete(ctx, sess.SignInAttempts)
@@ -44,7 +44,7 @@ func SignInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 		return fmt.Errorf("renew session: %w", err)
 	}
 
-	if err := SessionSignIn(ctx, h, w, r, email); err != nil {
+	if err := SignInSetSession(ctx, h, w, r, email); err != nil {
 		return fmt.Errorf("sign in set session: %w", err)
 	}
 
@@ -59,7 +59,25 @@ func SignInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 	return nil
 }
 
-func SessionSignIn(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email string) error {
+func SignInWithTOTP(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, totp string) error {
+	user := h.User(ctx)
+
+	err := h.Svc.Account.SignInWithTOTP(ctx, user.ID, totp)
+	if err != nil {
+		return err
+	}
+
+	if _, err := h.RenewSession(ctx); err != nil {
+		return fmt.Errorf("renew session: %w", err)
+	}
+
+	h.Sessions.Set(ctx, sess.IsSignedIn, true)
+	h.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
+
+	return nil
+}
+
+func SignInSetSession(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email string) error {
 	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return fmt.Errorf("find user by email: %w", err)

@@ -1,6 +1,6 @@
 import Layout from "./layout.js"
 import Home from "./home.js"
-import SignIn from "./sign_in.js"
+import { SignInPassword, SignInTOTP } from "./sign_in.js"
 import NotFound from "./not_found.js"
 import api from "./api.js"
 import { show, hide } from "./loading.js"
@@ -9,13 +9,19 @@ window.app = {
 	name: appData.Name,
 	description: appData.Description,
 	auth: {
+		redirect: "",
 		set isSignedIn (value) {
 			sessionStorage.setItem("isSignedIn", JSON.stringify(value))
 		},
 		get isSignedIn () {
 			return JSON.parse(sessionStorage.getItem("isSignedIn"))
 		},
-		redirect: "",
+		set isAwaitingTOTP (value) {
+			sessionStorage.setItem("isAwaitingTOTP", JSON.stringify(value))
+		},
+		get isAwaitingTOTP () {
+			return JSON.parse(sessionStorage.getItem("isAwaitingTOTP"))
+		},
 	},
 	api,
 	loading: {
@@ -32,7 +38,8 @@ m.route.prefix = ""
 
 m.route(document.body, "/", {
 	"/": handle(Home),
-	"/sign-in": handle(SignIn),
+	"/sign-in": handle(SignInPassword),
+	"/sign-in/totp": handle(SignInTOTP),
 	"/:rest...": handle(NotFound),
 })
 
@@ -48,11 +55,18 @@ function handle (component) {
 			}
 
 			const signInPath = "/sign-in"
+			const signInTOTPPath = "/sign-in/totp"
 
-			if (!app.auth.isSignedIn && requestedPath !== signInPath) {
+			if (!app.auth.isSignedIn && !app.auth.isAwaitingTOTP && requestedPath !== signInPath) {
 				app.auth.redirect = requestedPath
 
 				m.route.set(signInPath)
+			}
+
+			if (app.auth.isAwaitingTOTP && requestedPath !== signInTOTPPath) {
+				app.auth.redirect = requestedPath
+
+				m.route.set(signInTOTPPath)
 			}
 		},
 		render: () => m(Layout, m(component)),

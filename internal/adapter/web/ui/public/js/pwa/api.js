@@ -52,10 +52,16 @@ async function getCSRFToken () {
 
 export default {
 	auth: {
-		async signIn (email, password) {
+		async signInWithPassword (email, password) {
 			return await request("/api/v1/account/sign-in", {
 				method: "POST",
 				body: { email, password },
+			})
+		},
+		async signInWithTOTP (totp) {
+			return await request("/api/v1/account/sign-in/totp", {
+				method: "POST",
+				body: { totp },
 			})
 		},
 		async signOut (email, password) {

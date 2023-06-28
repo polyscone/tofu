@@ -133,15 +133,8 @@ func signInTOTPPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		err := h.Svc.Account.SignInWithTOTP(ctx, user.ID, input.TOTP)
-		if err != nil {
+		if err := auth.SignInWithTOTP(ctx, h.Handler, w, r, input.TOTP); err != nil {
 			h.HTML.ErrorView(w, r, "sign in with TOTP", err, "site/account/sign_in/totp", nil)
-
-			return
-		}
-
-		if _, err := h.RenewSession(ctx); err != nil {
-			h.HTML.ErrorView(w, r, "renew session", err, "site/error", nil)
 
 			return
 		}
@@ -163,9 +156,6 @@ func signInTOTPPost(h *ui.Handler) http.HandlerFunc {
 				as soon as you can.
 			`)
 		}
-
-		h.Sessions.Set(ctx, sess.IsSignedIn, true)
-		h.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
 
 		signInSuccessRedirect(h, w, r)
 	}
@@ -526,7 +516,7 @@ func signInGooglePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if err := auth.SessionSignIn(ctx, h.Handler, w, r, claims.Email); err != nil {
+		if err := auth.SignInSetSession(ctx, h.Handler, w, r, claims.Email); err != nil {
 			h.HTML.ErrorView(w, r, "sign in set session", err, "site/error", nil)
 
 			return

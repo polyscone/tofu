@@ -34,3 +34,22 @@ export const PasswordInput = {
 		}),
 	]
 }
+
+export const TOTPInput = {
+	view: (vnode) => [
+		vnode.attrs.label ? m("label", {
+			for: vnode.attrs.id,
+		}, vnode.attrs.label) : null,
+		m("input[type=text]", {
+			oninput: vnode.attrs.oninput,
+			value: vnode.attrs.value,
+			id: vnode.attrs.id,
+			required: vnode.attrs.required,
+			placeholder: "123456",
+			autocomplete: vnode.attrs.autocomplete,
+			pattern: "^\\d+$",
+			minlength: 6,
+			maxlength: 6,
+		}),
+	]
+}

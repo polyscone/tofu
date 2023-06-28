@@ -1,18 +1,24 @@
 import { ErrorBanner } from "./error.js"
-import { EmailInput, PasswordInput } from "./forms.js"
+import { EmailInput, PasswordInput, TOTPInput } from "./forms.js"
 
 const state = {
-	error: '',
-	email: '',
-	password: '',
+	error: "",
+	errors: {},
+	email: "",
+	password: "",
+	totp: "",
 }
 
-const SignIn = {
-	view: () => app.auth.isSignedIn ? [
+const SignOut = {
+	view: () => [
 		m("p", "You are already signed in."),
 		m("a", { href: "?sign-out", onclick: signOut }, "Click here to sign out."),
-	] : [
-		m("form", { onsubmit: signIn }, [
+	],
+}
+
+export const SignInPassword = {
+	view: () => app.auth.isSignedIn ? m(SignOut) : [
+		m("form", { onsubmit: signInWithPassword }, [
 			state.error ? m(ErrorBanner, state.error) : null,
 			m(EmailInput, {
 				label: "Email",
@@ -21,6 +27,7 @@ const SignIn = {
 				value: state.email,
 				oninput (e) { state.email = e.target.value },
 			}),
+			m("p.error", state.errors.email),
 			m(PasswordInput, {
 				label: "Password",
 				id: "sign-in__password",
@@ -29,26 +36,51 @@ const SignIn = {
 				value: state.password,
 				oninput (e) { state.password = e.target.value },
 			}),
+			m("p.error", state.errors.password),
 			m("button[type=submit]", "Sign in"),
 		])
 	]
 }
 
-async function signIn (e) {
+export const SignInTOTP = {
+	view: () => app.auth.isSignedIn ? m(SignOut) : [
+		m("form", { onsubmit: signInWithTOTP }, [
+			state.error ? m(ErrorBanner, state.error) : null,
+			m(TOTPInput, {
+				label: "Passcode",
+				id: "sign-in__totp",
+				required: true,
+				autocomplete: "one-time-code",
+				value: state.totp,
+				oninput (e) { state.totp = e.target.value },
+			}),
+			m("p.error", state.errors.totp),
+			m("button[type=submit]", "Sign in"),
+		])
+	]
+}
+
+async function signInWithPassword (e) {
 	e.preventDefault()
 
 	app.loading.show()
 
-	const res = await app.api.auth.signIn(state.email, state.password)
+	const res = await app.api.auth.signInWithPassword(state.email, state.password)
+
+	state.error = ""
+	state.errors = res.body.fields || {}
 
 	if (res.ok) {
-		app.auth.isSignedIn = true
+		app.auth.isSignedIn = res.body.isSignedIn
+		app.auth.isAwaitingTOTP = res.body.isAwaitingTOTP
 
-		if (!app.auth.redirect) {
-			app.auth.redirect = "/"
+		let redirect = app.auth.redirect || "/"
+
+		if (app.auth.isAwaitingTOTP) {
+			redirect = "/sign-in/totp"
 		}
 
-		m.route.set(app.auth.redirect)
+		m.route.set(redirect)
 	} else {
 		switch (res.status) {
 		case app.http.tooManyRequests:
@@ -70,6 +102,26 @@ async function signIn (e) {
 	app.loading.hide()
 }
 
+async function signInWithTOTP (e) {
+	e.preventDefault()
+
+	app.loading.show()
+
+	const res = await app.api.auth.signInWithTOTP(state.totp)
+
+	state.error = ""
+	state.errors = res.body.fields || {}
+
+	if (res.ok) {
+		app.auth.isSignedIn = res.body.isSignedIn
+		app.auth.isAwaitingTOTP = false
+
+		m.route.set(app.auth.redirect || "/")
+	}
+
+	app.loading.hide()
+}
+
 async function signOut (e) {
 	e.preventDefault()
 
@@ -77,11 +129,12 @@ async function signOut (e) {
 
 	const res = await app.api.auth.signOut()
 
+	state.error = ""
+	state.errors = {}
+
 	if (res.ok) {
 		app.auth.isSignedIn = false
 	}
 
 	app.loading.hide()
 }
-
-export default SignIn
