@@ -134,6 +134,8 @@ async function signOut (e) {
 
 	if (res.ok) {
 		app.auth.isSignedIn = false
+
+		m.route.set("/sign-in")
 	}
 
 	app.loading.hide()
