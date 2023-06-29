@@ -16,6 +16,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/pkg/slogger"
+	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
 
@@ -154,6 +155,14 @@ func main() {
 		slog.Error("make data directory", "error", err)
 
 		os.Exit(1)
+	}
+
+	// We always implicitly trust localhost
+	if ip := "::1"; !slices.Contains(opts.server.proxies, ip) {
+		opts.server.proxies = append(opts.server.proxies, ip)
+	}
+	if ip := "127.0.0.1"; !slices.Contains(opts.server.proxies, ip) {
+		opts.server.proxies = append(opts.server.proxies, ip)
 	}
 
 	if err := initHasher(); err != nil {
