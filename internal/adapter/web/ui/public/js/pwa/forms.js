@@ -53,3 +53,22 @@ export const TOTPInput = {
 		}),
 	]
 }
+
+export const RecoveryCodeInput = {
+	view: (vnode) => [
+		vnode.attrs.label ? m("label", {
+			for: vnode.attrs.id,
+		}, vnode.attrs.label) : null,
+		m("input[type=text]", {
+			oninput: vnode.attrs.oninput,
+			value: vnode.attrs.value,
+			id: vnode.attrs.id,
+			required: vnode.attrs.required,
+			placeholder: "ABCDEFGHIJKLM",
+			autocomplete: "off",
+			pattern: "^[A-Z2-7]+$",
+			minlength: 13,
+			maxlength: 13,
+		}),
+	]
+}

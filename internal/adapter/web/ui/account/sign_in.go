@@ -288,15 +288,8 @@ func signInRecoveryCodePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		err := h.Svc.Account.SignInWithRecoveryCode(ctx, user.ID, input.RecoveryCode)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "sign in with recovery code", err, "site/account/sign_in/recovery_code", nil)
-
-			return
-		}
-
-		if _, err := h.RenewSession(ctx); err != nil {
-			h.HTML.ErrorView(w, r, "renew session", err, "site/error", nil)
+		if err := auth.SignInWithRecoveryCode(ctx, h.Handler, w, r, input.RecoveryCode); err != nil {
+			h.HTML.ErrorView(w, r, "sign in with recovery code", err, "site/account/sign_in/totp", nil)
 
 			return
 		}
@@ -324,9 +317,6 @@ func signInRecoveryCodePost(h *ui.Handler) http.HandlerFunc {
 				as soon as you can.
 			`)
 		}
-
-		h.Sessions.Set(ctx, sess.IsSignedIn, true)
-		h.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
 
 		signInSuccessRedirect(h, w, r)
 	}

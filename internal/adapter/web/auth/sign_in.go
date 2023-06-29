@@ -77,6 +77,24 @@ func SignInWithTOTP(ctx context.Context, h *handler.Handler, w http.ResponseWrit
 	return nil
 }
 
+func SignInWithRecoveryCode(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, recoveryCode string) error {
+	user := h.User(ctx)
+
+	err := h.Svc.Account.SignInWithRecoveryCode(ctx, user.ID, recoveryCode)
+	if err != nil {
+		return err
+	}
+
+	if _, err := h.RenewSession(ctx); err != nil {
+		return fmt.Errorf("renew session: %w", err)
+	}
+
+	h.Sessions.Set(ctx, sess.IsSignedIn, true)
+	h.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
+
+	return nil
+}
+
 func SignInSetSession(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email string) error {
 	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {

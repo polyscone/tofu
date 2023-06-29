@@ -1,5 +1,5 @@
 import { ErrorBanner } from "./error.js"
-import { EmailInput, PasswordInput, TOTPInput } from "./forms.js"
+import { EmailInput, PasswordInput, TOTPInput, RecoveryCodeInput } from "./forms.js"
 
 const state = {
 	error: "",
@@ -7,12 +7,13 @@ const state = {
 	email: "",
 	password: "",
 	totp: "",
+	recoveryCode: "",
 }
 
 const SignOut = {
 	view: () => [
 		m("p", "You are already signed in."),
-		m("a", { href: "?sign-out", onclick: signOut }, "Click here to sign out."),
+		m(m.route.Link, { href: "?sign-out", onclick: signOut }, "Click here to sign out."),
 	],
 }
 
@@ -55,9 +56,47 @@ export const SignInTOTP = {
 				oninput (e) { state.totp = e.target.value },
 			}),
 			m("p.error", state.errors.totp),
+			m(m.route.Link, { href: "/sign-in/recovery-code" }, "Use a recovery code"),
 			m("button[type=submit]", "Sign in"),
 		])
 	]
+}
+
+export const SignInRecoveryCode = {
+	view: () => app.auth.isSignedIn ? m(SignOut) : [
+		m("form", { onsubmit: signInWithRecoveryCode }, [
+			state.error ? m(ErrorBanner, state.error) : null,
+			m(RecoveryCodeInput, {
+				label: "Recovery code",
+				id: "sign-in__recovery-code",
+				required: true,
+				value: state.recoveryCode,
+				oninput (e) { state.recoveryCode = e.target.value },
+			}),
+			m("p.error", state.errors.recoveryCode),
+			m(m.route.Link, { href: "/sign-in/totp" }, "Use a passcode"),
+			m("button[type=submit]", "Sign in"),
+		])
+	]
+}
+
+async function signOut (e) {
+	e.preventDefault()
+
+	app.loading.show()
+
+	const res = await app.api.auth.signOut()
+
+	state.error = ""
+	state.errors = {}
+
+	if (res.ok) {
+		app.auth.isSignedIn = false
+
+		m.route.set("/sign-in")
+	}
+
+	app.loading.hide()
 }
 
 async function signInWithPassword (e) {
@@ -122,20 +161,21 @@ async function signInWithTOTP (e) {
 	app.loading.hide()
 }
 
-async function signOut (e) {
+async function signInWithRecoveryCode (e) {
 	e.preventDefault()
 
 	app.loading.show()
 
-	const res = await app.api.auth.signOut()
+	const res = await app.api.auth.signInWithRecoveryCode(state.recoveryCode)
 
 	state.error = ""
-	state.errors = {}
+	state.errors = res.body.fields || {}
 
 	if (res.ok) {
-		app.auth.isSignedIn = false
+		app.auth.isSignedIn = res.body.isSignedIn
+		app.auth.isAwaitingTOTP = false
 
-		m.route.set("/sign-in")
+		m.route.set(app.auth.next || "/")
 	}
 
 	app.loading.hide()

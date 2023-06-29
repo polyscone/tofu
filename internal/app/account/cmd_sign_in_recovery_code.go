@@ -8,10 +8,10 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, code string) error {
+func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, recoveryCode string) error {
 	var input struct {
-		userID int
-		code   RecoveryCode
+		userID       int
+		recoveryCode RecoveryCode
 	}
 	{
 		var err error
@@ -19,7 +19,7 @@ func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, code s
 
 		input.userID = userID
 
-		if input.code, err = NewRecoveryCode(code); err != nil {
+		if input.recoveryCode, err = NewRecoveryCode(recoveryCode); err != nil {
 			errs.Set("recovery code", err)
 		}
 
@@ -33,7 +33,7 @@ func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, code s
 		return fmt.Errorf("find user by id: %w", err)
 	}
 
-	if err := user.SignInWithRecoveryCode(input.code); err != nil {
+	if err := user.SignInWithRecoveryCode(input.recoveryCode); err != nil {
 		return err
 	}
 

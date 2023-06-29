@@ -1,6 +1,6 @@
 import Layout from "./layout.js"
 import Home from "./home.js"
-import { SignInPassword, SignInTOTP } from "./sign_in.js"
+import { SignInPassword, SignInTOTP, SignInRecoveryCode } from "./sign_in.js"
 import NotFound from "./not_found.js"
 import api from "./api.js"
 import { show, hide } from "./loading.js"
@@ -52,6 +52,7 @@ m.route(document.body, "/", {
 	"/": handle(Home),
 	"/sign-in": handle(SignInPassword),
 	"/sign-in/totp": handle(SignInTOTP),
+	"/sign-in/recovery-code": handle(SignInRecoveryCode),
 	"/:rest...": handle(NotFound),
 })
 
@@ -69,7 +70,8 @@ function handle (component) {
 			let redirect = ""
 			const signInPath = "/sign-in"
 			const signInTOTPPath = "/sign-in/totp"
-			const isSignInRoute = [signInPath, signInTOTPPath].includes(requestedPath)
+			const signInRecoveryCodePath = "/sign-in/recovery-code"
+			const isSignInRoute = [signInPath, signInTOTPPath, signInRecoveryCodePath].includes(requestedPath)
 
 			if (!app.auth.isSignedIn && !isSignInRoute) {
 				app.auth.next = requestedPath

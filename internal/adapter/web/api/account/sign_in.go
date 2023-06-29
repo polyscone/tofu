@@ -19,6 +19,7 @@ func SignIn(h *api.Handler, mux *router.ServeMux) {
 	mux.Prefix("/sign-in", func(mux *router.ServeMux) {
 		mux.Post("/", signInPost(h))
 		mux.Post("/totp", signInTOTPPost(h))
+		mux.Post("/recovery-code", signInRecoveryCodePost(h))
 	})
 }
 
@@ -71,6 +72,33 @@ func signInTOTPPost(h *api.Handler) http.HandlerFunc {
 
 		if err := auth.SignInWithTOTP(ctx, h.Handler, w, r, input.TOTP); err != nil {
 			h.ErrorJSON(w, r, "sign in with TOTP", err)
+
+			return
+		}
+
+		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+
+		h.JSON(w, r, map[string]any{
+			"isSignedIn": h.Sessions.GetBool(ctx, sess.IsSignedIn),
+		})
+	}
+}
+
+func signInRecoveryCodePost(h *api.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			RecoveryCode string
+		}
+		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+			h.ErrorJSON(w, r, "decode JSON", err)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		if err := auth.SignInWithRecoveryCode(ctx, h.Handler, w, r, input.RecoveryCode); err != nil {
+			h.ErrorJSON(w, r, "sign in with recovery code", err)
 
 			return
 		}
