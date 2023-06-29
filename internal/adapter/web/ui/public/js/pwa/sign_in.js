@@ -74,13 +74,13 @@ async function signInWithPassword (e) {
 		app.auth.isSignedIn = res.body.isSignedIn
 		app.auth.isAwaitingTOTP = res.body.isAwaitingTOTP
 
-		let redirect = app.auth.redirect || "/"
+		let next = app.auth.next || "/"
 
 		if (app.auth.isAwaitingTOTP) {
-			redirect = "/sign-in/totp"
+			next = "/sign-in/totp"
 		}
 
-		m.route.set(redirect)
+		m.route.set(next)
 	} else {
 		switch (res.status) {
 		case app.http.tooManyRequests:
@@ -116,7 +116,7 @@ async function signInWithTOTP (e) {
 		app.auth.isSignedIn = res.body.isSignedIn
 		app.auth.isAwaitingTOTP = false
 
-		m.route.set(app.auth.redirect || "/")
+		m.route.set(app.auth.next || "/")
 	}
 
 	app.loading.hide()

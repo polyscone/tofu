@@ -9,18 +9,30 @@ window.app = {
 	name: appData.Name,
 	description: appData.Description,
 	auth: {
-		redirect: "",
+		next: "",
 		set isSignedIn (value) {
 			sessionStorage.setItem("isSignedIn", JSON.stringify(value))
 		},
 		get isSignedIn () {
-			return JSON.parse(sessionStorage.getItem("isSignedIn"))
+			const value = sessionStorage.getItem("isSignedIn")
+
+			if (!value) {
+				return false
+			}
+
+			return JSON.parse(value)
 		},
 		set isAwaitingTOTP (value) {
 			sessionStorage.setItem("isAwaitingTOTP", JSON.stringify(value))
 		},
 		get isAwaitingTOTP () {
-			return JSON.parse(sessionStorage.getItem("isAwaitingTOTP"))
+			const value = sessionStorage.getItem("isAwaitingTOTP")
+
+			if (!value) {
+				return false
+			}
+
+			return JSON.parse(value)
 		},
 	},
 	api,
@@ -50,23 +62,26 @@ function handle (component) {
 				return new Promise(() => {})
 			}
 
-			if (app.auth.redirect === requestedPath) {
-				app.auth.redirect = ""
+			if (app.auth.next === requestedPath) {
+				app.auth.next = ""
 			}
 
+			let redirect = ""
 			const signInPath = "/sign-in"
 			const signInTOTPPath = "/sign-in/totp"
+			const isSignInRoute = [signInPath, signInTOTPPath].includes(requestedPath)
 
-			if (!app.auth.isSignedIn && !app.auth.isAwaitingTOTP && requestedPath !== signInPath) {
-				app.auth.redirect = requestedPath
-
-				m.route.set(signInPath)
+			if (!app.auth.isSignedIn && !isSignInRoute) {
+				app.auth.next = requestedPath
+				redirect = signInPath
 			}
 
-			if (app.auth.isAwaitingTOTP && requestedPath !== signInTOTPPath) {
-				app.auth.redirect = requestedPath
+			if (!app.auth.isAwaitingTOTP && requestedPath === signInTOTPPath) {
+				redirect = signInPath
+			}
 
-				m.route.set(signInTOTPPath)
+			if (redirect) {
+				m.route.set(redirect)
 			}
 		},
 		render: () => m(Layout, m(component)),
