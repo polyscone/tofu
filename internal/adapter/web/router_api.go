@@ -27,20 +27,21 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.Recover(errorHandler("recover middleware")))
 	mux.Use(middleware.Timeout(5*time.Second, errorHandler("timeout middleware")))
 	mux.Use(middleware.RemoveTrailingSlash)
-	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
-		ErrorHandler:   errorHandler("rate limit middleware"),
-		TrustedProxies: h.Proxies,
-	}))
+	mux.Use(middleware.NoContent)
+	mux.Use(middleware.SecurityHeaders)
+	mux.Use(middleware.ETag)
 	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
 		Insecure:     h.Insecure,
 		ErrorHandler: errorHandler("session middleware"),
 	}))
-	mux.Use(middleware.NoContent)
-	mux.Use(middleware.SecurityHeaders)
-	mux.Use(middleware.ETag)
+	mux.Use(h.AttachContext)
 	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
 		Insecure:     h.Insecure,
 		ErrorHandler: errorHandler("CSRF middleware"),
+	}))
+	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
+		ErrorHandler:   errorHandler("rate limit middleware"),
+		TrustedProxies: h.Proxies,
 	}))
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
 		switch r.Method {
@@ -50,7 +51,6 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 
 		return 0
 	}))
-	mux.Use(h.AttachContext)
 
 	mux.Prefix("/account", func(mux *router.ServeMux) {
 		account.SignIn(h, mux)

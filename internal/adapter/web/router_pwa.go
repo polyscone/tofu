@@ -38,6 +38,18 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.Timeout(5*time.Second, errorHandler("timeout middleware")))
 	mux.Use(middleware.RemoveTrailingSlash)
 	mux.Use(middleware.MethodOverride)
+	mux.Use(middleware.NoContent)
+	mux.Use(middleware.SecurityHeaders)
+	mux.Use(middleware.ETag)
+	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
+		Insecure:     h.Insecure,
+		ErrorHandler: errorHandler("session middleware"),
+	}))
+	mux.Use(h.AttachContext)
+	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
+		Insecure:     h.Insecure,
+		ErrorHandler: errorHandler("CSRF middleware"),
+	}))
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
 		Consume: func(r *http.Request) bool {
 			whitelist := []string{".css", ".gif", ".ico", ".jpeg", ".jpg", ".js", ".png"}
@@ -49,17 +61,6 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		ErrorHandler:   errorHandler("rate limit middleware"),
 		TrustedProxies: h.Proxies,
 	}))
-	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
-		Insecure:     h.Insecure,
-		ErrorHandler: errorHandler("session middleware"),
-	}))
-	mux.Use(middleware.NoContent)
-	mux.Use(middleware.SecurityHeaders)
-	mux.Use(middleware.ETag)
-	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
-		Insecure:     h.Insecure,
-		ErrorHandler: errorHandler("CSRF middleware"),
-	}))
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
 		switch r.Method {
 		case http.MethodPost, http.MethodPut, http.MethodPatch:
@@ -68,7 +69,6 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 		return 0
 	}))
-	mux.Use(h.AttachContext)
 
 	mux.Redirect(http.MethodGet, "/security.txt", "/.well-known/security.txt", http.StatusMovedPermanently)
 

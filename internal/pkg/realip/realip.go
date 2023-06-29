@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 	"strings"
+
+	"golang.org/x/exp/slices"
 )
 
 var ErrTooManyAddresses = errors.New("too many addresses")
@@ -45,20 +47,10 @@ func FromRequest(r *http.Request, proxies ...string) (string, error) {
 	for i := len(addrs) - 1; i >= 0; i-- {
 		addr := strings.TrimSpace(addrs[i])
 
-		if !has(proxies, addr) {
+		if !slices.Contains(proxies, addr) {
 			return addr, nil
 		}
 	}
 
 	return addrs[0], nil
-}
-
-func has(haystack []string, needle string) bool {
-	for _, value := range haystack {
-		if value == needle {
-			return true
-		}
-	}
-
-	return false
 }

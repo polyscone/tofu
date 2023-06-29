@@ -50,10 +50,11 @@ func New(tenant *Tenant) *Handler {
 func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		logger := h.Logger(ctx)
 
 		config, err := h.Repo.System.FindConfig(ctx)
 		if err != nil {
-			h.Log.Error("handler middleware: find config", "error", err)
+			logger.Error("handler middleware: find config", "error", err)
 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 
@@ -71,12 +72,12 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 				user = u
 
 			case err != nil && !errors.Is(err, repository.ErrNotFound):
-				h.Log.Error("handler middleware: find user by id", "error", err)
+				logger.Error("handler middleware: find user by id", "error", err)
 			}
 		}
 
 		var passport guard.Passport
-		if !isSignedIn {
+		if !h.Sessions.GetBool(ctx, sess.IsSignedIn) {
 			passport = guard.NewPassport(config.RequireSetup, guard.User{})
 		} else {
 			passport = guard.NewPassport(config.RequireSetup, guard.User{
@@ -88,7 +89,7 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 
 		requestID, err := uuid.NewV4()
 		if err != nil {
-			h.Log.Error("handler middleware: new v4 UUID", "error", err)
+			logger.Error("handler middleware: new v4 UUID", "error", err)
 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 
@@ -99,10 +100,10 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 		if err != nil {
 			remoteAddr = r.RemoteAddr
 
-			h.Log.Error("handler middleware: realip from request", "error", err)
+			logger.Error("handler middleware: realip from request", "error", err)
 		}
 
-		logger := h.Log.With(
+		logger = logger.With(
 			"id", requestID.String(),
 			"method", r.Method,
 			"remoteAddr", remoteAddr,
@@ -129,7 +130,7 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 func (h *Handler) Logger(ctx context.Context) *slog.Logger {
 	value := ctx.Value(ctxLogger)
 	if value == nil {
-		return slog.Default()
+		return h.Log
 	}
 
 	logger, ok := value.(*slog.Logger)
