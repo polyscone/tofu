@@ -14,6 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/size"
+	"golang.org/x/exp/slices"
 )
 
 func NewPWARouter(base *handler.Handler) http.Handler {
@@ -38,6 +39,13 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.RemoveTrailingSlash)
 	mux.Use(middleware.MethodOverride)
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
+		Consume: func(r *http.Request) bool {
+			whitelist := []string{".css", ".gif", ".ico", ".jpeg", ".jpg", ".js", ".png"}
+
+			return !slices.ContainsFunc(whitelist, func(el string) bool {
+				return strings.HasSuffix(r.URL.Path, el)
+			})
+		},
 		ErrorHandler:   errorHandler("rate limit middleware"),
 		TrustedProxies: h.Proxies,
 	}))
