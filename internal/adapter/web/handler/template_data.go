@@ -78,7 +78,9 @@ type URL struct {
 
 type AppData struct {
 	Name        string
+	ShortName   string
 	Description string
+	ThemeColour string
 }
 
 type SessionData struct {

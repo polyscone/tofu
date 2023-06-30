@@ -78,7 +78,9 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 		},
 		App: handler.AppData{
 			Name:        app.Name,
+			ShortName:   app.ShortName,
 			Description: app.Description,
+			ThemeColour: app.ThemeColour,
 		},
 		Session: handler.SessionData{
 			// Global session keys

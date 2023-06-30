@@ -1,11 +1,13 @@
+import SignIn from "./sign_in.js"
 import Loading from "./loading.js"
 
 const Layout = {
 	view: vnode => [
-		m("header", [
-			m("h1", `${app.name} PWA`),
+		m("header.header", [
+			m("h1", "PWA"),
 		]),
-		vnode.children,
+		m("main.main", vnode.children),
+		!app.session.isSignedIn ? m(SignIn) : null,
 		m(Loading),
 	],
 }

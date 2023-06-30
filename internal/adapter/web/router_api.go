@@ -53,6 +53,7 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	}))
 
 	mux.Prefix("/account", func(mux *router.ServeMux) {
+		account.Session(h, mux)
 		account.SignIn(h, mux)
 		account.SignOut(h, mux)
 	})

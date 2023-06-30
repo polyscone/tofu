@@ -5,18 +5,46 @@
 }
 
 @layer universal {
-	body {
-		max-width: 420px;
-		margin-inline: auto;
+	html {
+		font-size: 1.4rem;
 	}
 
-	button,
-	label {
-		user-select: none;
+	@media screen and (display-mode: standalone) {
+		h1, h2, h3, h4, h5, h6, p, a
+		button,
+		label {
+			user-select: none;
+		}
+
+		a {
+			color: linktext;
+		}
 	}
 }
 
 @layer components {
+	.header,
+	.main,
+	.footer {
+		max-width: 960px;
+		margin-inline: auto;
+	}
+
+	.sign-in-splash {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		padding-inline: 1rem;
+		background: var(--clr-white-400);
+	}
+
+	.sign-in-splash > * {
+		max-width: 420px;
+		margin-inline: auto;
+	}
+
 	.loading {
 		display: flex;
 		align-items: center;
@@ -39,17 +67,17 @@
 
 	.loading__spinner {
 		display: block;
-		width: 80px;
-		height: 80px;
+		width: 150px;
+		height: 150px;
 	}
 
 	.loading__spinner::after {
 		content: " ";
 		display: block;
-		width: 64px;
-		height: 64px;
+		width: 100%;
+		height: 100%;
 		border-radius: 50%;
-		border: 5px solid transparent;
+		border: 15px solid transparent;
 		transition: border-color 300ms;
 		animation: loading__spinner 1.2s ease-in-out infinite;
 	}

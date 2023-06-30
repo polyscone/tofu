@@ -27,5 +27,7 @@ func signOutPost(h *api.Handler) http.HandlerFunc {
 		h.Sessions.Destroy(r.Context())
 
 		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+
+		h.JSON(w, r, SessionData(ctx, h))
 	}
 }

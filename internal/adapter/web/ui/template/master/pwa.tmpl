@@ -7,13 +7,14 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>{{block "meta_title" .}}{{.App.Name}}{{end}}</title>
 		<meta name="description" content="{{block "meta_description" .}}{{.App.Description}}{{end}}">
-		<link rel="stylesheet" href="/css/style.css">
+		<link rel="manifest" href="/app.webmanifest">
+		<link rel="stylesheet" href="/css/common.css">
 		<link rel="stylesheet" href="/css/pwa.css">
+		<meta name="theme-color" content="{{.App.ThemeColour}}">
 	</head>
 	<body>
-		<script>window.appData = {{MarshalJSON .App}}</script>
 		<script src="/js/mithril/v2.2.2.min.js"></script>
-		<script src="/js/pwa/main.js" type="module"></script>
+		<script src="/js/pwa/app.js" type="module"></script>
 	</body>
 </html>
 

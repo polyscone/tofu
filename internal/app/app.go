@@ -6,8 +6,11 @@ import (
 )
 
 const (
-	Name              = "App"
-	Description       = "This is a boilerplate project for applications written in Go."
+	Name        = "App"
+	ShortName   = "App"
+	Description = "This is a boilerplate project for applications written in Go."
+	ThemeColour = "hsl(170, 45%, 30%)"
+
 	SessionTTL        = 2 * time.Hour
 	SignInThrottleTTL = 30 * time.Minute
 )

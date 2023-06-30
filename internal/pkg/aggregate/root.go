@@ -8,3 +8,7 @@ import "github.com/polyscone/tofu/internal/pkg/event"
 type Root struct {
 	Events event.MemoryQueue
 }
+
+func (r *Root) MarshalJSON() ([]byte, error) {
+	return []byte("null"), nil
+}

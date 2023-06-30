@@ -11,37 +11,37 @@
 		"Apple Color Emoji",
 		"Segoe UI Emoji";
 
-	--clr-black-100: hsl(170 0% 80%);
-	--clr-black-200: hsl(170 0% 60%);
-	--clr-black-400: hsl(170 0% 5%);
+	--clr-black-100: hsl(170, 0%, 80%);
+	--clr-black-200: hsl(170, 0%, 60%);
+	--clr-black-400: hsl(170, 0%, 5%);
 
-	--clr-white-400: hsl(170 0% 100%);
+	--clr-white-400: hsl(170, 0%, 100%);
 
-	--clr-accent-100: hsl(170 45% 97%);
-	--clr-accent-400: hsl(170 45% 30%);
+	--clr-accent-100: hsl(170, 45%, 97%);
+	--clr-accent-400: hsl(170, 45%, 30%);
 
-	--clr-hint-400: hsl(0 0% 30%);
+	--clr-hint-400: hsl(0, 0%, 30%);
 
-	--clr-disabled-400: hsl(240 6% 79%);
+	--clr-disabled-400: hsl(240, 6%, 79%);
 
-	--clr-focus-400: hsl(59 100% 95%);
+	--clr-focus-400: hsl(59, 100%, 95%);
 
 	--clr-valid-400: transparent;
 
-	--clr-invalid-100: hsl(0 100% 95%);
-	--clr-invalid-400: hsl(0 100% 50%);
+	--clr-invalid-100: hsl(0, 100%, 95%);
+	--clr-invalid-400: hsl(0, 100%, 50%);
 
-	--clr-warning-100: hsl(45 100% 95%);
-	--clr-warning-400: hsl(40 100% 50%);
+	--clr-warning-100: hsl(45, 100%, 95%);
+	--clr-warning-400: hsl(40, 100%, 50%);
 
-	--clr-danger-100: hsl(0 45% 95%);
-	--clr-danger-400: hsl(0 45% 54%);
+	--clr-danger-100: hsl(0, 45%, 95%);
+	--clr-danger-400: hsl(0, 45%, 54%);
 
-	--clr-error-100: hsl(0 100% 95%);
-	--clr-error-400: hsl(0 100% 50%);
+	--clr-error-100: hsl(0, 100%, 95%);
+	--clr-error-400: hsl(0, 100%, 50%);
 
-	--clr-highlight-100: hsl(43 100% 90%);
-	--clr-highlight-400: hsl(43 100% 85%);
+	--clr-highlight-100: hsl(43, 100%, 90%);
+	--clr-highlight-400: hsl(43, 100%, 85%);
 
 	--icon-external-link: url(
 		'data:image/svg+xml,\
@@ -219,28 +219,6 @@
 }
 
 @layer components {
-	.skip-nav-link {
-		position: absolute;
-		top: 0;
-		left: 0;
-		padding: 1rem;
-		background: var(--clr-white-400);
-		transform: translateY(-150%);
-		transition: transform 300ms ease-in;
-	}
-
-	.skip-nav-link:focus {
-		transform: translateY(0);
-	}
-
-	.site-title {
-		margin: 0;
-		padding-block: 0.6rem;
-		font-weight: bold;
-		font-size: 1.5rem;
-		text-align: center;
-	}
-
 	.bag {
 		display: flex;
 		flex-wrap: wrap;
@@ -253,61 +231,10 @@
 		flex-direction: row-reverse;
 	}
 
-	.header,
-	.main,
-	.footer {
-		max-width: 960px;
-		margin-inline: auto;
-	}
-
-	.header {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.main {
-		padding-block-end: 1.5rem;
-		border-block: 1px solid var(--clr-black-200);
-	}
-
-	.footer {
-		display: grid;
-		gap: 1rem;
-	}
-
-	.nav ul {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 0.5rem;
-		margin: 0;
-		padding: 0;
-	}
-
-	.nav li {
-		list-style: none;
-	}
-
-	.nav a,
-	.nav button {
-		display: block;
-		padding-block: 1rem;
-		padding-inline: 1rem;
-	}
-
-	.cols-50-50 {
-		display: grid;
-		gap: 1rem;
-	}
-
 	.warning-box {
 		padding-inline: 1rem;
 		background: var(--clr-warning-100);
 		border: 1px solid var(--clr-warning-400);
-	}
-
-	details .warning-box {
-		margin-block-start: 1rem;
 	}
 
 	.flash-banner,
@@ -354,55 +281,6 @@
 		border: 1px solid var(--clr-error-400);
 		color: var(--clr-black-400);
 		text-align: center;
-	}
-
-	.top-bar ul {
-		display: flex;
-		justify-content: center;
-		padding: 0;
-		list-style: none;
-		gap: 1rem;
-	}
-
-	.management {
-		width: 100%;
-		margin-block-start: 1rem;
-	}
-
-	.management tr:hover td {
-		background: var(--clr-accent-100);
-	}
-
-	.management th {
-		border-bottom: 1px solid var(--clr-black-100);
-	}
-
-	.management .management__empty td {
-		text-align: center;
-		font-style: italic;
-	}
-
-	.management .management__highlight td {
-		background: var(--clr-highlight-100);
-	}
-
-	.management .management__highlight:hover td {
-		background: var(--clr-highlight-400);
-	}
-
-	.pagination {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		padding-block-start: 1rem;
-	}
-
-	.pagination__links {
-		display: flex;
-		justify-content: end;
-		gap: 0.7rem;
-		margin: 0;
-		padding: 0;
-		list-style: none;
 	}
 
 	button, .btn {
@@ -465,79 +343,11 @@
 	.g_id_signin > div > div:first-child{
 		display: none;
 	}
-
-	.totp__qrcode {
-		font-family: monospace;
-		font-size: 1.2rem;
-		text-align: center;
-	}
-
-	.totp__qrcode img {
-		display: inline-block;
-	}
-
-	.recovery-code-list {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		margin-block: 1rem;
-	}
-
-	.recovery-code-list__codes {
-		font-family: monospace;
-		margin-block: 0;
-		padding: 0;
-	}
-
-	.recovery-code-list__actions {
-		margin-block-start: 1rem;
-	}
-
-	@media screen and (min-width: 400px) {
-		.header {
-			flex-direction: row;
-		}
-
-		.nav {
-			margin-inline-start: auto;
-		}
-
-		.top-bar ul {
-			justify-content: flex-start;
-		}
-
-		.footer {
-			grid-template-columns: repeat(2, 1fr);
-		}
-
-		.footer__col:nth-child(2n) {
-			text-align: right;
-		}
-
-		.cols-50-50 {
-			grid-template-columns: repeat(2, 1fr);
-		}
-	}
-
-	@media screen and (min-width: 600px) {
-		.footer {
-			grid-template-columns: repeat(4, 1fr);
-		}
-
-		.footer__col:nth-child(-n+2) {
-			text-align: left;
-		}
-
-		.footer__col:nth-last-child(-n+2) {
-			text-align: right;
-		}
-	}
 }
 
 @layer utility {
-	.center {
-		max-width: 550px;
-		margin-inline: auto;
+	.text-left {
+		text-align: left;
 	}
 
 	.text-center {

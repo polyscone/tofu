@@ -8,7 +8,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/api"
 	"github.com/polyscone/tofu/internal/adapter/web/auth"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
-	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
@@ -49,11 +48,7 @@ func signInPost(h *api.Handler) http.HandlerFunc {
 
 		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
 
-		h.JSON(w, r, map[string]any{
-			"isSignedIn":     h.Sessions.GetBool(ctx, sess.IsSignedIn),
-			"isAwaitingTOTP": h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
-			"totpMethod":     h.Sessions.GetString(ctx, sess.TOTPMethod),
-		})
+		h.JSON(w, r, SessionData(ctx, h))
 	}
 }
 
@@ -78,9 +73,7 @@ func signInTOTPPost(h *api.Handler) http.HandlerFunc {
 
 		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
 
-		h.JSON(w, r, map[string]any{
-			"isSignedIn": h.Sessions.GetBool(ctx, sess.IsSignedIn),
-		})
+		h.JSON(w, r, SessionData(ctx, h))
 	}
 }
 
@@ -105,8 +98,6 @@ func signInRecoveryCodePost(h *api.Handler) http.HandlerFunc {
 
 		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
 
-		h.JSON(w, r, map[string]any{
-			"isSignedIn": h.Sessions.GetBool(ctx, sess.IsSignedIn),
-		})
+		h.JSON(w, r, SessionData(ctx, h))
 	}
 }

@@ -13,7 +13,11 @@ async function request (url, opts) {
 
 	if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(opts.method)) {
 		if (!csrfToken) {
-			csrfToken = await getCSRFToken()
+			const res = await request("/api/v1/security/csrf")
+
+			if (res.ok) {
+				csrfToken = res.body.csrfToken
+			}
 		}
 
 		opts.headers ||= {}
@@ -57,34 +61,70 @@ async function request (url, opts) {
 	return ret
 }
 
-async function getCSRFToken () {
-	const res = await request("/api/v1/security/csrf")
+let updateSessionHandle = null
 
-	return res.body.csrfToken
-}
+const api = {
+	account: {
+		session () {
+			const value = localStorage.getItem("pwa.session")
 
-export default {
-	auth: {
+			if (!value) {
+				return {}
+			}
+
+			return JSON.parse(value)
+		},
+		async updateSession () {
+			clearTimeout(updateSessionHandle)
+
+			if (navigator.onLine) {
+				const res = await request("/api/v1/account/session")
+
+				if (res.ok) {
+					localStorage.setItem("pwa.session", JSON.stringify(res.body))
+				}
+			}
+
+			updateSessionHandle = setTimeout(api.account.updateSession, 1 * 60 * 1000)
+		},
 		async signInWithPassword (email, password) {
-			return await request("/api/v1/account/sign-in", {
+			const res = await request("/api/v1/account/sign-in", {
 				method: "POST",
 				body: { email, password },
 			})
+
+			await api.account.updateSession()
+
+			return res
 		},
 		async signInWithTOTP (totp) {
-			return await request("/api/v1/account/sign-in/totp", {
+			const res = await request("/api/v1/account/sign-in/totp", {
 				method: "POST",
 				body: { totp },
 			})
+
+			await api.account.updateSession()
+
+			return res
 		},
 		async signInWithRecoveryCode (recoveryCode) {
-			return await request("/api/v1/account/sign-in/recovery-code", {
+			const res = await request("/api/v1/account/sign-in/recovery-code", {
 				method: "POST",
 				body: { recoveryCode },
 			})
+
+			await api.account.updateSession()
+
+			return res
 		},
 		async signOut (email, password) {
-			return await request("/api/v1/account/sign-out", { method: "POST" })
+			const res = await request("/api/v1/account/sign-out", { method: "POST" })
+
+			await api.account.updateSession()
+
+			return res
 		},
 	},
 }
+
+export default api

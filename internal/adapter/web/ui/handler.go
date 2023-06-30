@@ -42,6 +42,7 @@ type Handler struct {
 	viewVarsFuncs map[string]ViewVarsFunc
 	Plain         *Renderer
 	HTML          *Renderer
+	JSON          *Renderer
 }
 
 func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() string) *Handler {
@@ -62,7 +63,6 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		"HasString":     handler.TmplHasString,
 		"ToStrings":     handler.TmplToStrings,
 		"Join":          handler.TmplJoin,
-		"MarshalJSON":   handler.TmplMarshalJSON,
 		"UnescapeHTML":  handler.TmplUnescapeHTML,
 	}
 
@@ -76,6 +76,7 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 
 	h.Plain = NewRenderer(&h, "text/plain")
 	h.HTML = NewRenderer(&h, "text/html")
+	h.JSON = NewRenderer(&h, "application/json")
 
 	return &h
 }
@@ -94,7 +95,9 @@ func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, v
 		},
 		App: handler.AppData{
 			Name:        app.Name,
+			ShortName:   app.ShortName,
 			Description: app.Description,
+			ThemeColour: app.ThemeColour,
 		},
 		Vars: vars,
 	}

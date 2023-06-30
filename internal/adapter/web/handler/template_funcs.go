@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -193,12 +192,6 @@ func TmplToStrings(value any) ([]string, error) {
 
 func TmplJoin(strs []string, sep string) string {
 	return strings.Join(strs, sep)
-}
-
-func TmplMarshalJSON(value any) (template.JS, error) {
-	b, err := json.Marshal(value)
-
-	return template.JS(b), err
 }
 
 func TmplUnescapeHTML(s string) template.HTML {

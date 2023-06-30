@@ -1,5 +1,5 @@
 export const EmailInput = {
-	view: (vnode) => [
+	view: vnode => [
 		vnode.attrs.label ? m("label", {
 			for: vnode.attrs.id,
 		}, vnode.attrs.label) : null,
@@ -17,7 +17,7 @@ export const EmailInput = {
 }
 
 export const PasswordInput = {
-	view: (vnode) => [
+	view: vnode => [
 		vnode.attrs.label ? m("label", {
 			for: vnode.attrs.id,
 		}, vnode.attrs.label) : null,
@@ -36,7 +36,7 @@ export const PasswordInput = {
 }
 
 export const TOTPInput = {
-	view: (vnode) => [
+	view: vnode => [
 		vnode.attrs.label ? m("label", {
 			for: vnode.attrs.id,
 		}, vnode.attrs.label) : null,
@@ -55,7 +55,7 @@ export const TOTPInput = {
 }
 
 export const RecoveryCodeInput = {
-	view: (vnode) => [
+	view: vnode => [
 		vnode.attrs.label ? m("label", {
 			for: vnode.attrs.id,
 		}, vnode.attrs.label) : null,

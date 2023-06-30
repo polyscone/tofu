@@ -76,6 +76,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 	mux.Get("/robots.txt", h.Plain.Handler("file/robots"))
 	mux.Get("/.well-known/security.txt", h.Plain.Handler("file/security"))
+	mux.Get("/app.webmanifest", h.JSON.Handler("file/pwa_webmanifest"))
 
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)
