@@ -84,11 +84,13 @@ const api = {
 
 			return JSON.parse(value)
 		},
-		async updateSession () {
+		async updateSession (res) {
 			clearTimeout(updateSessionHandle)
 
 			if (app.online) {
-				const res = await request("/api/v1/account/session")
+				if (!res) {
+					res = await request("/api/v1/account/session")
+				}
 
 				if (res.ok) {
 					localStorage.setItem("pwa.session", JSON.stringify(res.body))
@@ -103,7 +105,7 @@ const api = {
 				body: { email, password },
 			})
 
-			await api.account.updateSession()
+			await api.account.updateSession(res)
 
 			return res
 		},
@@ -113,7 +115,7 @@ const api = {
 				body: { totp },
 			})
 
-			await api.account.updateSession()
+			await api.account.updateSession(res)
 
 			return res
 		},
@@ -123,14 +125,14 @@ const api = {
 				body: { recoveryCode },
 			})
 
-			await api.account.updateSession()
+			await api.account.updateSession(res)
 
 			return res
 		},
 		async signOut (email, password) {
 			const res = await request("/api/v1/account/sign-out", { method: "POST" })
 
-			await api.account.updateSession()
+			await api.account.updateSession(res)
 
 			return res
 		},
