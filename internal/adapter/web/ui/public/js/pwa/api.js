@@ -46,7 +46,7 @@ async function request (url, opts) {
 	} catch (error) {
 		ret.error = error
 
-		console.error(`api fetch failed: ${error}`)
+		console.error(`api fetch failed: ${error}: ${url}`)
 	}
 
 	if (!ret.ok && ret.body?.csrf && !opts.refreshCSRF) {

@@ -43,7 +43,7 @@ self.addEventListener("fetch", event => {
 
 			return res
 		}).catch(error => {
-			console.error(`service worker fetch failed: ${error}`)
+			console.error(`service worker fetch failed: ${error}: ${event.request.url}`)
 		})
 
 		return cached || fetched
