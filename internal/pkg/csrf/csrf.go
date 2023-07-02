@@ -106,12 +106,12 @@ func Check(ctx context.Context, maskedCmp []byte) error {
 
 	unmasked, err := unmask(MaskedToken(ctx))
 	if err != nil {
-		return fmt.Errorf("unmask: %w", err)
+		return fmt.Errorf("%w: unmask: %w", ErrInvalidToken, err)
 	}
 
 	unmaskedCmp, err := unmask(maskedCmp)
 	if err != nil {
-		return fmt.Errorf("unmask comparison: %w", err)
+		return fmt.Errorf("%w: unmask comparison: %w", ErrInvalidToken, err)
 	}
 
 	if subtle.ConstantTimeCompare(unmasked, unmaskedCmp) != 1 {
