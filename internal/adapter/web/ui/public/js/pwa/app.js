@@ -22,6 +22,7 @@ router()
 
 ;(async () => {
 	await app.api.account.updateSession()
+	await app.api.security.updateCSRFToken()
 
 	m.redraw()
 })()

@@ -1,5 +1,13 @@
 var csrfToken = null
 
+async function updateCSRFToken () {
+	const res = await request("/api/v1/security/csrf")
+
+	if (res.ok) {
+		csrfToken = res.body.csrfToken
+	}
+}
+
 async function request (url, opts) {
 	opts ||= {}
 	opts.method ||= "GET"
@@ -9,11 +17,7 @@ async function request (url, opts) {
 	}
 
 	if (opts.refreshCSRF) {
-		const res = await request("/api/v1/security/csrf")
-
-		if (res.ok) {
-			csrfToken = res.body.csrfToken
-		}
+		await updateCSRFToken()
 	}
 
 	if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(opts.method)) {
@@ -134,6 +138,9 @@ const api = {
 
 			return res
 		},
+	},
+	security: {
+		updateCSRFToken,
 	},
 }
 

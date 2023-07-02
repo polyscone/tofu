@@ -28,11 +28,17 @@ self.addEventListener("activate", event => {})
 self.addEventListener("fetch", event => {
 	const url = new URL(event.request.url)
 
-	if (strats.network.includes(url.pathname) || event.request.method !== "GET") {
-		return
-	}
-
 	async function handle () {
+		if (strats.network.includes(url.pathname) || event.request.method !== "GET") {
+			try {
+				return await fetch(event.request)
+			} catch (error) {
+				console.error(`service worker fetch failed: ${error}: ${event.request.url}`)
+
+				return new Response("", { status: 500, statusText: "Offline" })
+			}
+		}
+
 		const cached = await caches.match(event.request)
 		const fetched = fetch(event.request).then(res => {
 			const clone = res.clone()
@@ -44,6 +50,8 @@ self.addEventListener("fetch", event => {
 			return res
 		}).catch(error => {
 			console.error(`service worker fetch failed: ${error}: ${event.request.url}`)
+
+			return new Response("", { status: 500, statusText: "Offline" })
 		})
 
 		return cached || fetched
