@@ -10,6 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
+	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"golang.org/x/exp/slices"
 )
@@ -18,6 +19,8 @@ var publicErrors = []error{
 	account.ErrSignInThrottled,
 	app.ErrInvalidInput,
 	app.ErrMalformedInput,
+	csrf.ErrEmptyToken,
+	csrf.ErrInvalidToken,
 }
 
 type Handler struct {
@@ -64,6 +67,14 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 		if errors.As(err, &throttled) {
 			detail["inLast"] = throttled.InLast
 			detail["unlockIn"] = throttled.UnlockIn
+		}
+
+		switch {
+		case errors.Is(err, csrf.ErrEmptyToken):
+			detail["csrf"] = "empty"
+
+		case errors.Is(err, csrf.ErrInvalidToken):
+			detail["csrf"] = "invalid"
 		}
 	}
 

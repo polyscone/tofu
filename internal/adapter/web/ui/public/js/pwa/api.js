@@ -2,29 +2,23 @@ var csrfToken = null
 
 async function request (url, opts) {
 	opts ||= {}
+	opts.method ||= "GET"
 
-	if (!opts.method) {
-		opts.method = "GET"
-	}
-
-	if (opts.body) {
+	if (opts.body && typeof opts.body !== "string") {
 		opts.body = JSON.stringify(opts.body)
 	}
 
+	if (opts.refreshCSRF) {
+		const res = await request("/api/v1/security/csrf")
+
+		if (res.ok) {
+			csrfToken = res.body.csrfToken
+		}
+	}
+
 	if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(opts.method)) {
-		if (!csrfToken) {
-			const res = await request("/api/v1/security/csrf")
-
-			if (res.ok) {
-				csrfToken = res.body.csrfToken
-			}
-		}
-
 		opts.headers ||= {}
-
-		if (!opts.headers["x-csrf-token"]) {
-			opts.headers["x-csrf-token"] = csrfToken
-		}
+		opts.headers["x-csrf-token"] ||= csrfToken
 	}
 
 	const ret = {
@@ -52,7 +46,13 @@ async function request (url, opts) {
 	} catch (error) {
 		ret.error = error
 
-		console.log(`api fetch failed: ${error}`)
+		console.error(`api fetch failed: ${error}`)
+	}
+
+	if (!ret.ok && ret.body?.csrf && !opts.refreshCSRF) {
+		opts.refreshCSRF = true
+
+		return request(url, opts)
 	}
 
 	if (!ret.error && !ret.ok && ret.body?.fields) {
@@ -84,13 +84,11 @@ const api = {
 
 			return JSON.parse(value)
 		},
-		async updateSession (res) {
+		async updateSession () {
 			clearTimeout(updateSessionHandle)
 
 			if (app.online) {
-				if (!res) {
-					res = await request("/api/v1/account/session")
-				}
+				const res = await request("/api/v1/account/session")
 
 				if (res.ok) {
 					localStorage.setItem("pwa.session", JSON.stringify(res.body))
@@ -105,7 +103,7 @@ const api = {
 				body: { email, password },
 			})
 
-			await api.account.updateSession(res)
+			await api.account.updateSession()
 
 			return res
 		},
@@ -115,7 +113,7 @@ const api = {
 				body: { totp },
 			})
 
-			await api.account.updateSession(res)
+			await api.account.updateSession()
 
 			return res
 		},
@@ -125,14 +123,14 @@ const api = {
 				body: { recoveryCode },
 			})
 
-			await api.account.updateSession(res)
+			await api.account.updateSession()
 
 			return res
 		},
 		async signOut (email, password) {
 			const res = await request("/api/v1/account/sign-out", { method: "POST" })
 
-			await api.account.updateSession(res)
+			await api.account.updateSession()
 
 			return res
 		},
