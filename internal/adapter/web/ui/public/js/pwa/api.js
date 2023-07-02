@@ -27,25 +27,35 @@ async function request (url, opts) {
 		}
 	}
 
-	const res = await fetch(url, opts)
-
-	csrfToken = res.headers.get("x-csrf-token") || csrfToken
-
 	const ret = {
-		status: res.status,
-		ok: res.ok,
+		status: 0,
+		ok: false,
 		body: null,
+		error: null,
 	}
 
-	if (res.status !== app.http.noContent) {
-		if (res.headers.get("content-type") === "application/json") {
-			ret.body = await res.json()
-		} else {
-			ret.body = await res.text()
+	try {
+		const res = await fetch(url, opts)
+
+		csrfToken = res.headers.get("x-csrf-token") || csrfToken
+
+		ret.status = res.status
+		ret.ok = res.ok
+
+		if (res.status !== app.http.noContent) {
+			if (res.headers.get("content-type") === "application/json") {
+				ret.body = await res.json()
+			} else {
+				ret.body = await res.text()
+			}
 		}
+	} catch (error) {
+		ret.error = error
+
+		console.log(`api fetch failed: ${error}`)
 	}
 
-	if (!ret.ok && ret.body?.fields) {
+	if (!ret.error && !ret.ok && ret.body?.fields) {
 		for (const key in ret.body.fields) {
 			// Convert the key from space separated keys to camel case
 			const newKey = key.replace(/\s+([a-z])/g, group => group.trim().toUpperCase())
@@ -77,7 +87,7 @@ const api = {
 		async updateSession () {
 			clearTimeout(updateSessionHandle)
 
-			if (navigator.onLine) {
+			if (app.online) {
 				const res = await request("/api/v1/account/session")
 
 				if (res.ok) {

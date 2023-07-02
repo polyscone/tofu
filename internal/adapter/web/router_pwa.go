@@ -23,6 +23,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		return "/sign-in"
 	})
 
+	routePrefix := "#!"
 	errorHandler := func(msg string) middleware.ErrorHandler {
 		return func(w http.ResponseWriter, r *http.Request, err error) {
 			ctx := r.Context()
@@ -30,7 +31,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 			logger.Error(msg, "error", err)
 
-			http.Redirect(w, r, "/error", http.StatusSeeOther)
+			http.Redirect(w, r, routePrefix+"/error/500", http.StatusSeeOther)
 		}
 	}
 
@@ -78,6 +79,10 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	mux.Get("/.well-known/security.txt", h.Plain.Handler("file/security"))
 	mux.Get("/app.webmanifest", h.JSON.Handler("file/pwa_webmanifest"))
 
+	rootVars := handler.Vars{
+		"prefix": routePrefix,
+	}
+
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)
 	mux.GetHandler("/:rest*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -91,20 +96,20 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		stat, err := fs.Stat(publicFiles, strings.TrimPrefix(upath, "/"))
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) {
-				h.HTML.View(w, r, http.StatusOK, "pwa/root", nil)
+				h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars)
 			} else {
 				ctx := r.Context()
 				logger := h.Logger(ctx)
 
 				logger.Error("static file", "error", err)
 
-				http.Redirect(w, r, "/error", http.StatusSeeOther)
+				http.Redirect(w, r, routePrefix+"/error/500", http.StatusSeeOther)
 			}
 
 			return
 		}
 		if stat.IsDir() {
-			h.HTML.View(w, r, http.StatusOK, "pwa/root", nil)
+			h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars)
 
 			return
 		}
@@ -118,7 +123,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 		logger.Error("handler", "error", httputil.ErrNotFound)
 
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		http.Redirect(w, r, routePrefix+"/error/404", http.StatusSeeOther)
 	})
 
 	mux.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +132,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 		logger.Error("handler", "error", httputil.ErrMethodNotAllowed)
 
-		http.Redirect(w, r, "/error", http.StatusSeeOther)
+		http.Redirect(w, r, routePrefix+"/error/405", http.StatusSeeOther)
 	})
 
 	return mux

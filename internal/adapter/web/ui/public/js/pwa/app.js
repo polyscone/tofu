@@ -15,6 +15,7 @@ window.app = {
 		noContent: 204,
 		tooManyRequests: 429,
 	},
+	online: navigator.onLine,
 }
 
 router()
@@ -24,3 +25,25 @@ router()
 
 	m.redraw()
 })()
+
+window.addEventListener("load", () => {
+	app.online = navigator.onLine
+
+	m.redraw()
+})
+
+window.addEventListener("online", () => {
+	app.online = navigator.onLine
+
+	m.redraw()
+})
+
+window.addEventListener("offline", () => {
+	app.online = navigator.onLine
+
+	m.redraw()
+})
+
+if ("serviceWorker" in navigator) {
+	navigator.serviceWorker.register("/pwa_service_worker.js")
+}

@@ -34,8 +34,8 @@
 		const copy = node.querySelector(".recovery-codes-copy")
 
 		if (download) {
-			download.addEventListener("click", e => {
-				e.preventDefault()
+			download.addEventListener("click", event => {
+				event.preventDefault()
 
 				let data = ""
 
@@ -61,8 +61,8 @@
 		}
 
 		if (print) {
-			print.addEventListener("click", e => {
-				e.preventDefault()
+			print.addEventListener("click", event => {
+				event.preventDefault()
 
 				const screenStyleId = "recovery-codes-screen-style"
 				const printStyleId = "recovery-codes-print-style"
@@ -147,8 +147,8 @@
 		}
 
 		if (copy) {
-			copy.addEventListener("click", e => {
-				e.preventDefault()
+			copy.addEventListener("click", event => {
+				event.preventDefault()
 
 				let data = ""
 
@@ -171,9 +171,9 @@
 				const result = document.execCommand("copy")
 
 				if (result) {
-					e.target.innerText = "Copied"
+					event.target.innerText = "Copied"
 				} else {
-					e.target.innerText = "Failed"
+					event.target.innerText = "Failed"
 				}
 
 				textarea.parentNode.removeChild(textarea)

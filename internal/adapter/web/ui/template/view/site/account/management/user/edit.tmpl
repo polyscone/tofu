@@ -129,7 +129,7 @@
 
 					<script>
 						onMount("input[name='denials']", node => {
-							node.addEventListener("change", e => {
+							node.addEventListener("change", () => {
 								if (!node.checked) {
 									return
 								}
@@ -144,7 +144,7 @@
 						})
 
 						onMount("input[name='grants']", node => {
-							node.addEventListener("change", e => {
+							node.addEventListener("change", () => {
 								if (!node.checked) {
 									return
 								}

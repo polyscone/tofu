@@ -14,7 +14,7 @@ function handle (component) {
 }
 
 export default function () {
-	m.route.prefix = ""
+	m.route.prefix = config.prefix
 
 	m.route(document.body, "/", {
 		"/": handle(Home),

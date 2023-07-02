@@ -66,6 +66,10 @@ const SignInRecoveryCode = {
 	])
 }
 
+const SignInOffline = {
+	view: () => m("p", "You must be online to sign in.")
+}
+
 const SignIn = {
 	view () {
 		let Component = null
@@ -90,6 +94,10 @@ const SignIn = {
 			Component = SignInPassword
 		}
 
+		if (!app.online) {
+			Component = SignInOffline
+		}
+
 		if (Component) {
 			return m(".sign-in-splash", [
 				m("h1", "Sign in"),
@@ -109,7 +117,7 @@ async function signInWithPassword (e) {
 	const res = await app.api.account.signInWithPassword(state.email, state.password)
 
 	state.error = ""
-	state.errors = res.body.fields || {}
+	state.errors = res.body?.fields || {}
 
 	if (res.ok) {
 		if (app.session.isAwaitingTOTP) {
@@ -144,7 +152,7 @@ async function signInWithTOTP (e) {
 	const res = await app.api.account.signInWithTOTP(state.totp)
 
 	state.error = ""
-	state.errors = res.body.fields || {}
+	state.errors = res.body?.fields || {}
 
 	app.loading.hide()
 }
@@ -157,14 +165,14 @@ async function signInWithRecoveryCode (e) {
 	const res = await app.api.account.signInWithRecoveryCode(state.recoveryCode)
 
 	state.error = ""
-	state.errors = res.body.fields || {}
+	state.errors = res.body?.fields || {}
 
 	app.loading.hide()
 }
 
 function setScreen (screen) {
-	return e => {
-		e.preventDefault()
+	return event => {
+		event.preventDefault()
 
 		state.error = ""
 		state.errors = {}
