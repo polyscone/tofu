@@ -18,7 +18,17 @@ Tenant configuration is stored in the data directory's `tenants.json` file in th
 
 ```json
 {
-	"app1": { "hostnames": ["localhost"] },
-	"app2": { "hostnames": ["local.example.com", "foo.example.com"] }
+	"app1": {
+		"hostnames": {
+			"foo.com": "site",
+			"app.foo.com": "pwa"
+		}
+	},
+	"app2": {
+		"hostnames": {
+			"bar.com": "site",
+			"app.bar.com": "pwa"
+		}
+	}
 }
 ```
