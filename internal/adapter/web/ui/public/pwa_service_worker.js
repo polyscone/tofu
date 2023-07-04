@@ -1,6 +1,6 @@
 const cacheName = "pwa.assets"
 const strats = {
-	network: [
+	networkOnly: [
 		"/api/v1/account/session",
 		"/api/v1/security/csrf",
 	],
@@ -29,7 +29,7 @@ self.addEventListener("fetch", event => {
 	const url = new URL(event.request.url)
 
 	async function handle () {
-		if (strats.network.includes(url.pathname) || event.request.method !== "GET") {
+		if (strats.networkOnly.includes(url.pathname) || event.request.method !== "GET") {
 			try {
 				return await fetch(event.request)
 			} catch (error) {
@@ -39,22 +39,26 @@ self.addEventListener("fetch", event => {
 			}
 		}
 
-		const cached = await caches.match(event.request)
-		const fetched = fetch(event.request).then(res => {
-			const clone = res.clone()
+		try {
+			const fetched = await fetch(event.request)
+			const clone = fetched.clone()
 
 			caches.open(cacheName).then(cache => {
 				cache.put(event.request, clone)
 			})
 
-			return res
-		}).catch(error => {
+			return fetched
+		} catch (error) {
+			const cached = await caches.match(event.request)
+
+			if (cached) {
+				return cached
+			}
+
 			console.error(`service worker fetch failed: ${error}: ${event.request.url}`)
 
 			return new Response("", { status: 500, statusText: "Offline" })
-		})
-
-		return cached || fetched
+		}
 	}
 
 	event.respondWith(handle())
