@@ -19,6 +19,7 @@ func SignIn(h *api.Handler, mux *router.ServeMux) {
 		mux.Post("/", signInPost(h))
 		mux.Post("/totp", signInTOTPPost(h))
 		mux.Post("/recovery-code", signInRecoveryCodePost(h))
+		mux.Post("/google", signInGooglePost(h))
 	})
 }
 
@@ -97,6 +98,29 @@ func signInRecoveryCodePost(h *api.Handler) http.HandlerFunc {
 		}
 
 		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+
+		h.JSON(w, r, SessionData(ctx, h))
+	}
+}
+
+func signInGooglePost(h *api.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			JWT string
+		}
+		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+			h.ErrorJSON(w, r, "decode JSON", err)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		if err := auth.SignInWithGoogle(ctx, h.Handler, w, r, input.JWT); err != nil {
+			h.ErrorJSON(w, r, "sign in with Google", err)
+
+			return
+		}
 
 		h.JSON(w, r, SessionData(ctx, h))
 	}

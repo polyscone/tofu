@@ -2,17 +2,9 @@ package account
 
 import (
 	"context"
-	"crypto"
-	"crypto/rsa"
-	"crypto/sha256"
-	"crypto/x509"
-	"encoding/base64"
-	"encoding/json"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/auth"
@@ -323,18 +315,8 @@ func signInRecoveryCodePost(h *ui.Handler) http.HandlerFunc {
 }
 
 func signInGooglePost(h *ui.Handler) http.HandlerFunc {
-	client := http.Client{Timeout: 10 * time.Second}
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		config := h.Config(ctx)
-
-		if config.GoogleSignInClientID == "" {
-			err := errors.New("Google sign in client id has not be set")
-			h.HTML.ErrorView(w, r, "check config", err, "site/error", nil)
-
-			return
-		}
 
 		c, err := r.Cookie("g_csrf_token")
 		if err != nil {
@@ -351,169 +333,9 @@ func signInGooglePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		// TODO: Check cache-control
-		res, err := client.Get("https://www.googleapis.com/oauth2/v1/certs")
-		if err != nil {
-			h.HTML.ErrorView(w, r, "fetch Google OAuth2 certs", err, "site/error", nil)
-
-			return
-		}
-		defer res.Body.Close()
-
-		certs := make(map[string]string)
-		if err := httputil.DecodeJSON(&certs, res.Body); err != nil {
-			h.HTML.ErrorView(w, r, "decode Google OAuth2 certs JSON", err, "site/error", nil)
-
-			return
-		}
-
-		token := r.PostFormValue("credential")
-		parts := strings.Split(token, ".")
-		if want, got := 3, len(parts); want != got {
-			err := fmt.Errorf("want %v parts in JWT; got %v", want, got)
-			h.HTML.ErrorView(w, r, "decode JWT", err, "site/error", nil)
-
-			return
-		}
-
-		var header struct {
-			Alg string
-			Kid string // Key ID to use from Google's public keys
-			Typ string
-		}
-		if b, err := base64.RawURLEncoding.DecodeString(parts[0]); err != nil {
-			h.HTML.ErrorView(w, r, "decode JWT header", err, "site/error", nil)
-
-			return
-		} else if json.Unmarshal(b, &header); err != nil {
-			h.HTML.ErrorView(w, r, "unmarshal JWT header", err, "site/error", nil)
-
-			return
-		}
-
-		if header.Typ != "JWT" {
-			err := fmt.Errorf("want JWT type; got %q", header.Typ)
-			h.HTML.ErrorView(w, r, "check JWT header", err, "site/error", nil)
-
-			return
-		}
-
-		if header.Alg != "RS256" {
-			err := fmt.Errorf("want RS256 algorithm; got %q", header.Alg)
-			h.HTML.ErrorView(w, r, "check JWT header", err, "site/error", nil)
-
-			return
-		}
-
-		block, _ := pem.Decode([]byte([]byte(certs[header.Kid])))
-		if block == nil {
-			err := errors.New("unable to decode")
-			h.HTML.ErrorView(w, r, "decode certificate PEM", err, "site/error", nil)
-
-			return
-		}
-
-		cert, err := x509.ParseCertificate(block.Bytes)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "parse Google OAuth2 cert", err, "site/error", nil)
-
-			return
-		}
-
-		rsaPublicKey, ok := cert.PublicKey.(*rsa.PublicKey)
-		if !ok {
-			err := fmt.Errorf("could not assert cert.PublicKey as %T", rsaPublicKey)
-			h.HTML.ErrorView(w, r, "extract RSA public key", err, "site/error", nil)
-
-			return
-		}
-
-		payload := sha256.New()
-		if _, err := payload.Write([]byte(parts[0] + "." + parts[1])); err != nil {
-			h.HTML.ErrorView(w, r, "new JWT payload hash", err, "site/error", nil)
-
-			return
-		}
-		hashed := payload.Sum(nil)
-
-		signature, err := base64.RawURLEncoding.DecodeString(parts[2])
-		if err != nil {
-			h.HTML.ErrorView(w, r, "decode JWT signature", err, "site/error", nil)
-
-			return
-		}
-
-		if err := rsa.VerifyPKCS1v15(rsaPublicKey, crypto.SHA256, hashed, signature); err != nil {
-			h.HTML.ErrorView(w, r, "check JWT signature", err, "site/error", nil)
-
-			return
-		}
-
-		var claims struct {
-			Aud   string // Client ID
-			Iss   string // accounts.google.com or https://accounts.google.com
-			Exp   int64
-			Nbf   int64
-			Email string
-		}
-		if b, err := base64.RawURLEncoding.DecodeString(parts[1]); err != nil {
-			h.HTML.ErrorView(w, r, "decode JWT claims", err, "site/error", nil)
-
-			return
-		} else if json.Unmarshal(b, &claims); err != nil {
-			h.HTML.ErrorView(w, r, "unmarshal JWT claims", err, "site/error", nil)
-
-			return
-		}
-
-		if claims.Aud != config.GoogleSignInClientID {
-			err := errors.New("invalid client id")
-			h.HTML.ErrorView(w, r, "check JWT claims", err, "site/error", nil)
-
-			return
-		}
-
-		if claims.Iss != "accounts.google.com" && claims.Iss != "https://accounts.google.com" {
-			err := fmt.Errorf("invalid issuer %q", claims.Iss)
-			h.HTML.ErrorView(w, r, "check JWT claims", err, "site/error", nil)
-
-			return
-		}
-
-		now := time.Now().Unix()
-		if claims.Exp > 0 && claims.Exp <= now {
-			err := errors.New("expired")
-			h.HTML.ErrorView(w, r, "check JWT claims", err, "site/error", nil)
-
-			return
-		}
-		if claims.Nbf > 0 && claims.Nbf > now {
-			err := errors.New("used too soon")
-			h.HTML.ErrorView(w, r, "check JWT claims", err, "site/error", nil)
-
-			return
-		}
-
-		if err := h.Svc.Account.SignInWithGoogle(ctx, claims.Email); err != nil {
-			h.HTML.ErrorView(w, r, "sign in wih Google", err, "site/error", nil)
-
-			return
-		}
-
-		if _, err := h.RenewSession(ctx); err != nil {
-			h.HTML.ErrorView(w, r, "renew session", err, "site/error", nil)
-
-			return
-		}
-
-		if err := auth.SignInSetSession(ctx, h.Handler, w, r, claims.Email); err != nil {
-			h.HTML.ErrorView(w, r, "sign in set session", err, "site/error", nil)
-
-			return
-		}
-
-		if h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
-			http.Redirect(w, r, h.Path("account.sign_in.totp"), http.StatusSeeOther)
+		jwt := r.PostFormValue("credential")
+		if err := auth.SignInWithGoogle(ctx, h.Handler, w, r, jwt); err != nil {
+			h.HTML.ErrorView(w, r, "sign in with Google", err, "site/error", nil)
 
 			return
 		}
@@ -541,28 +363,29 @@ func signInWithPassword(ctx context.Context, h *ui.Handler, w http.ResponseWrite
 		return
 	}
 
-	if h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
-		http.Redirect(w, r, h.Path("account.sign_in.totp"), http.StatusSeeOther)
-
-		return
-	}
-
 	signInSuccessRedirect(h, w, r)
 }
 
 func signInSuccessRedirect(h *ui.Handler, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	knownBreachCount := h.Sessions.GetInt(ctx, sess.KnownPasswordBreachCount)
+	if h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+		http.Redirect(w, r, h.Path("account.sign_in.totp"), http.StatusSeeOther)
 
-	var redirect string
-	if knownBreachCount > 0 {
-		redirect = h.Path("account.change_password")
-	} else if r := h.Sessions.PopString(ctx, sess.Redirect); r != "" {
-		redirect = r
-	} else {
-		redirect = h.Path("account.dashboard")
+		return
 	}
 
-	http.Redirect(w, r, redirect, http.StatusSeeOther)
+	if h.Sessions.GetInt(ctx, sess.KnownPasswordBreachCount) > 0 {
+		http.Redirect(w, r, h.Path("account.change_password"), http.StatusSeeOther)
+
+		return
+	}
+
+	if redirect := h.Sessions.PopString(ctx, sess.Redirect); redirect != "" {
+		http.Redirect(w, r, redirect, http.StatusSeeOther)
+
+		return
+	}
+
+	http.Redirect(w, r, h.Path("account.dashboard"), http.StatusSeeOther)
 }

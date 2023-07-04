@@ -79,8 +79,16 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	mux.Get("/.well-known/security.txt", h.Plain.Handler("file/security"))
 	mux.Get("/app.webmanifest", h.JSON.Handler("file/pwa_webmanifest"))
 
-	rootVars := handler.Vars{
-		"prefix": routePrefix,
+	rootVars := func(h *ui.Handler, r *http.Request) handler.Vars {
+		ctx := r.Context()
+		config := h.Config(ctx)
+
+		return handler.Vars{
+			"Config": map[string]any{
+				"prefix":               routePrefix,
+				"googleSignInClientId": config.GoogleSignInClientID,
+			},
+		}
 	}
 
 	publicFilesRoot := http.FS(publicFiles)
@@ -96,7 +104,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		stat, err := fs.Stat(publicFiles, strings.TrimPrefix(upath, "/"))
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) {
-				h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars)
+				h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars(h, r))
 			} else {
 				ctx := r.Context()
 				logger := h.Logger(ctx)
@@ -109,7 +117,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 			return
 		}
 		if stat.IsDir() {
-			h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars)
+			h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars(h, r))
 
 			return
 		}

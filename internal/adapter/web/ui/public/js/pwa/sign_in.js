@@ -11,6 +11,31 @@ const state = {
 	recoveryCode: "",
 }
 
+const SignInGoogle = {
+	onupdate () {
+		if (window.google) {
+			const parent = document.getElementById("sign-in__gsi_button")
+
+			if (parent) {
+				google.accounts.id.renderButton(parent, {
+					type: "standard",
+					shape: "rectangle",
+					theme: "outline",
+					text: "signin_with",
+					size: "large",
+					logo_alignment: "center",
+				})
+			}
+		}
+	},
+	view: () => !window.google ? null : [
+		m("p.sign-in-alt__title", "Or"),
+		m(".sign-in-alt.text-center", [
+			m("#sign-in__gsi_button.g_id_signin"),
+		]),
+	],
+}
+
 const SignInPassword = {
 	view: () => m("form", { onsubmit: signInWithPassword }, [
 		state.error ? m(ErrorBanner, state.error) : null,
@@ -30,6 +55,7 @@ const SignInPassword = {
 		}),
 		m("p.error", state.errors.password),
 		m("button[type=submit]", "Sign in"),
+		m(SignInGoogle),
 	])
 }
 
@@ -71,6 +97,33 @@ const SignInOffline = {
 }
 
 const SignIn = {
+	oncreate () {
+		if (config.googleSignInClientId && !window.gsiLoaded) {
+			window.gsiLoaded = true
+
+			const s = document.createElement("script")
+
+			s.src = "https://accounts.google.com/gsi/client"
+			s.async = true
+			s.defer = true
+			s.onload = function () {
+				google.accounts.id.initialize({
+					client_id: config.googleSignInClientId,
+					context: "signin",
+					ux_mode: "popup",
+					async callback (res) {
+						await signInWithGoogle(res.credential)
+
+						m.redraw()
+					},
+				})
+
+				m.redraw()
+			}
+
+			document.body.appendChild(s)
+		}
+	},
 	view () {
 		let Component = null
 
@@ -163,6 +216,17 @@ async function signInWithRecoveryCode (e) {
 	app.loading.show()
 
 	const res = await app.api.account.signInWithRecoveryCode(state.recoveryCode)
+
+	state.error = ""
+	state.errors = res.body?.fields || {}
+
+	app.loading.hide()
+}
+
+async function signInWithGoogle (jwt) {
+	app.loading.show()
+
+	const res = await app.api.account.signInWithGoogle(jwt)
 
 	state.error = ""
 	state.errors = res.body?.fields || {}

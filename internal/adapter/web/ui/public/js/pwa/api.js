@@ -59,6 +59,8 @@ async function request (url, opts) {
 		return request(url, opts)
 	}
 
+	delete opts.refreshCSRF
+
 	if (!ret.error && !ret.ok && ret.body?.fields) {
 		for (const key in ret.body.fields) {
 			// Convert the key from space separated keys to camel case
@@ -125,6 +127,16 @@ const api = {
 			const res = await request("/api/v1/account/sign-in/recovery-code", {
 				method: "POST",
 				body: { recoveryCode },
+			})
+
+			await api.account.updateSession()
+
+			return res
+		},
+		async signInWithGoogle (jwt) {
+			const res = await request("/api/v1/account/sign-in/google", {
+				method: "POST",
+				body: { jwt },
 			})
 
 			await api.account.updateSession()
