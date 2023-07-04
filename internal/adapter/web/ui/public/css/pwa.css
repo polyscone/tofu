@@ -38,6 +38,7 @@
 		height: 100%;
 		padding-inline: 1rem;
 		background: var(--clr-white-400);
+		overflow: auto;
 	}
 
 	.sign-in-splash > * {
