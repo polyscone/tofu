@@ -15,7 +15,7 @@ window.app = {
 		noContent: 204,
 		tooManyRequests: 429,
 	},
-	online: navigator.onLine,
+	isOnline: navigator.onLine,
 }
 
 router()
@@ -28,19 +28,19 @@ router()
 })()
 
 window.addEventListener("load", () => {
-	app.online = navigator.onLine
+	app.isOnline = navigator.onLine
 
 	m.redraw()
 })
 
 window.addEventListener("online", () => {
-	app.online = navigator.onLine
+	app.isOnline = navigator.onLine
 
 	m.redraw()
 })
 
 window.addEventListener("offline", () => {
-	app.online = navigator.onLine
+	app.isOnline = navigator.onLine
 
 	m.redraw()
 })

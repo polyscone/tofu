@@ -93,7 +93,7 @@ const api = {
 		async updateSession () {
 			clearTimeout(updateSessionHandle)
 
-			if (app.online) {
+			if (app.isOnline) {
 				const res = await request("/api/v1/account/session")
 
 				if (res.ok) {

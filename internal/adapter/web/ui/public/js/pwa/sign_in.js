@@ -147,7 +147,7 @@ const SignIn = {
 			Component = SignInPassword
 		}
 
-		if (!app.online) {
+		if (!app.isOnline) {
 			Component = SignInOffline
 		}
 
