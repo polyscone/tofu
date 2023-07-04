@@ -149,7 +149,7 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 		return fmt.Errorf("check JWT header: want RS256 algorithm; got %q", header.Alg)
 	}
 
-	block, _ := pem.Decode([]byte([]byte(certs[header.Kid])))
+	block, _ := pem.Decode([]byte(certs[header.Kid]))
 	if block == nil {
 		return fmt.Errorf("unable to decode certificate PEM")
 	}
