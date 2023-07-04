@@ -1,6 +1,9 @@
 @layer reset, universal, utility, components;
 
 :root {
+	--fs-min: 0.875rem;
+	--fs-max: 1.4rem;
+
 	--ff-primary:
 		-apple-system,
 		BlinkMacSystemFont,
@@ -87,7 +90,7 @@
 @layer universal {
 	html {
 		font-family: var(--ff-primary);
-		font-size: 0.875rem;
+		font-size: var(--fs-min);
 	}
 
 	body {

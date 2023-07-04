@@ -6,7 +6,7 @@
 
 @layer universal {
 	html {
-		font-size: 1.4rem;
+		font-size: clamp(var(--fs-min), 2rem - 2vw, var(--fs-max));
 	}
 
 	@media screen and (display-mode: standalone) {
