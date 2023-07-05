@@ -15,17 +15,17 @@ type SystemRepo struct {
 	db *DB
 }
 
-func NewSystemRepo(ctx context.Context, db *sql.DB) (*SystemRepo, error) {
+func NewSystemRepo(ctx context.Context, db *DB) (*SystemRepo, error) {
 	migrations, err := fs.Sub(migrations, "migrations/system")
 	if err != nil {
 		return nil, fmt.Errorf("initialise system migrations FS: %w", err)
 	}
 
-	if err := migrateFS(ctx, db, "system", migrations); err != nil {
+	if err := migrateFS(ctx, db.DB, "system", migrations); err != nil {
 		return nil, fmt.Errorf("migrate system: %w", err)
 	}
 
-	r := SystemRepo{db: newDB(db)}
+	r := SystemRepo{db: db}
 
 	return &r, nil
 }

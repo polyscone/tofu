@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -24,8 +23,8 @@ var tenants = make(map[string]Tenant)
 
 var databases = struct {
 	mu   sync.Mutex
-	data map[string]*sql.DB
-}{data: make(map[string]*sql.DB)}
+	data map[string]*sqlite.DB
+}{data: make(map[string]*sqlite.DB)}
 
 func newTenant(hostname string) (*handler.Tenant, error) {
 	ctx := context.Background()

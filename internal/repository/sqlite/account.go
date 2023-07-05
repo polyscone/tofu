@@ -20,17 +20,17 @@ type AccountRepo struct {
 	db *DB
 }
 
-func NewAccountRepo(ctx context.Context, db *sql.DB, signInThrottleTTL time.Duration) (*AccountRepo, error) {
+func NewAccountRepo(ctx context.Context, db *DB, signInThrottleTTL time.Duration) (*AccountRepo, error) {
 	migrations, err := fs.Sub(migrations, "migrations/account")
 	if err != nil {
 		return nil, fmt.Errorf("initialise account migrations FS: %w", err)
 	}
 
-	if err := migrateFS(ctx, db, "account", migrations); err != nil {
+	if err := migrateFS(ctx, db.DB, "account", migrations); err != nil {
 		return nil, fmt.Errorf("migrate account: %w", err)
 	}
 
-	r := AccountRepo{db: newDB(db)}
+	r := AccountRepo{db: db}
 
 	// Background goroutine to clean up stale sign in attempt logs
 	background.Go(func() {

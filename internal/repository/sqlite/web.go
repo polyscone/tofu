@@ -32,18 +32,18 @@ type WebRepo struct {
 	sessionTTL time.Duration
 }
 
-func NewWebRepo(ctx context.Context, db *sql.DB, sessionTTL time.Duration) (*WebRepo, error) {
+func NewWebRepo(ctx context.Context, db *DB, sessionTTL time.Duration) (*WebRepo, error) {
 	migrations, err := fs.Sub(migrations, "migrations/web")
 	if err != nil {
 		return nil, fmt.Errorf("initialise web migrations FS: %w", err)
 	}
 
-	if err := migrateFS(ctx, db, "web", migrations); err != nil {
+	if err := migrateFS(ctx, db.DB, "web", migrations); err != nil {
 		return nil, fmt.Errorf("migrate web: %w", err)
 	}
 
 	r := WebRepo{
-		db:         newDB(db),
+		db:         db,
 		sessionTTL: sessionTTL,
 	}
 

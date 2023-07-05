@@ -53,10 +53,10 @@ const (
 
 var databases = struct {
 	mu   sync.RWMutex
-	data map[string]*sql.DB
-}{data: make(map[string]*sql.DB)}
+	data map[string]*DB
+}{data: make(map[string]*DB)}
 
-func Open(ctx context.Context, kind Kind, filename string) (*sql.DB, error) {
+func Open(ctx context.Context, kind Kind, filename string) (*DB, error) {
 	var dsn string
 	switch kind {
 	case KindFile:
@@ -126,10 +126,12 @@ func Open(ctx context.Context, kind Kind, filename string) (*sql.DB, error) {
 		db.Close()
 	}
 
-	db, err := sql.Open(driverName, dsn)
+	sqlDB, err := sql.Open(driverName, dsn)
 	if err != nil {
 		return nil, err
 	}
+
+	db := &DB{DB: sqlDB}
 
 	if err := db.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("ping: %w", err)
@@ -140,7 +142,7 @@ func Open(ctx context.Context, kind Kind, filename string) (*sql.DB, error) {
 	return db, nil
 }
 
-func OpenInMemoryTestDatabase(ctx context.Context) *sql.DB {
+func OpenInMemoryTestDatabase(ctx context.Context) *DB {
 	randomName := errsx.Must(uuid.NewV4()).String() + ".sqlite"
 
 	return errsx.Must(Open(ctx, KindMemory, randomName))
@@ -637,10 +639,6 @@ func (c *Conn) QueryRowContext(ctx context.Context, query string, args ...any) *
 
 type DB struct {
 	*sql.DB
-}
-
-func newDB(db *sql.DB) *DB {
-	return &DB{DB: db}
 }
 
 func (db *DB) Conn(ctx context.Context) (*Conn, error) {
