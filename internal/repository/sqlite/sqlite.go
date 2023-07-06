@@ -622,7 +622,7 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args ...any) (*Ro
 		return nil, repoerr(err)
 	}
 
-	return &Rows{rows: rows}, nil
+	return &Rows{Rows: rows}, nil
 }
 
 func (c *Conn) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
@@ -776,7 +776,7 @@ func (db *DB) Query(query string, args ...any) (*Rows, error) {
 		return nil, repoerr(err)
 	}
 
-	return &Rows{rows: rows}, nil
+	return &Rows{Rows: rows}, nil
 }
 
 func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
@@ -791,7 +791,7 @@ func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Row
 		return nil, repoerr(err)
 	}
 
-	return &Rows{rows: rows}, nil
+	return &Rows{Rows: rows}, nil
 }
 
 func (db *DB) QueryRow(query string, args ...any) *Row {
@@ -864,7 +864,7 @@ func (stmt *Stmt) Query(args ...any) (*Rows, error) {
 		return nil, repoerr(err)
 	}
 
-	return &Rows{rows: rows}, nil
+	return &Rows{Rows: rows}, nil
 }
 
 func (stmt *Stmt) QueryContext(ctx context.Context, args ...any) (*Rows, error) {
@@ -879,7 +879,7 @@ func (stmt *Stmt) QueryContext(ctx context.Context, args ...any) (*Rows, error) 
 		return nil, repoerr(err)
 	}
 
-	return &Rows{rows: rows}, nil
+	return &Rows{Rows: rows}, nil
 }
 
 func (stmt *Stmt) QueryRow(args ...any) *Row {
@@ -987,7 +987,7 @@ func (tx *Tx) Query(query string, args ...any) (*Rows, error) {
 		return nil, repoerr(err)
 	}
 
-	return &Rows{rows: rows}, nil
+	return &Rows{Rows: rows}, nil
 }
 
 func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
@@ -1002,7 +1002,7 @@ func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Row
 		return nil, repoerr(err)
 	}
 
-	return &Rows{rows: rows}, nil
+	return &Rows{Rows: rows}, nil
 }
 
 func (tx *Tx) QueryRow(query string, args ...any) *Row {
@@ -1051,21 +1051,21 @@ func (r *Row) Scan(dst ...any) error {
 }
 
 type Rows struct {
-	rows *sql.Rows
+	*sql.Rows
 }
 
 func (rs *Rows) Close() error {
-	return repoerr(rs.rows.Close())
+	return repoerr(rs.Rows.Close())
 }
 
 func (rs *Rows) Err() error {
-	return repoerr(rs.rows.Err())
+	return repoerr(rs.Rows.Err())
 }
 
 func (rs *Rows) Next() bool {
-	return rs.rows.Next()
+	return rs.Rows.Next()
 }
 
 func (rs *Rows) Scan(dst ...any) error {
-	return repoerr(rs.rows.Scan(dst...))
+	return repoerr(rs.Rows.Scan(dst...))
 }
