@@ -37,19 +37,19 @@ func (m *MailClient) Send(ctx context.Context, _msgs ...Msg) error {
 			}
 		}
 
-		if len(msg.To) != 0 {
+		if len(msg.To) > 0 {
 			if err := m.To(msg.To...); err != nil {
 				return fmt.Errorf("to address: %w", err)
 			}
 		}
 
-		if len(msg.Cc) != 0 {
+		if len(msg.Cc) > 0 {
 			if err := m.Cc(msg.Cc...); err != nil {
 				return fmt.Errorf("cc address: %w", err)
 			}
 		}
 
-		if len(msg.Bcc) != 0 {
+		if len(msg.Bcc) > 0 {
 			if err := m.Bcc(msg.Bcc...); err != nil {
 				return fmt.Errorf("bcc address: %w", err)
 			}

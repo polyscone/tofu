@@ -195,7 +195,7 @@ func (u *User) ChoosePassword(newPassword Password, hasher Hasher) error {
 		return errors.New("cannot choose password until activated")
 	}
 
-	if len(u.HashedPassword) != 0 {
+	if len(u.HashedPassword) > 0 {
 		return fmt.Errorf("cannot replace an already chosen password")
 	}
 

@@ -170,7 +170,7 @@ func initTenants(tenantsPath string) error {
 			errs.Set(alias+".hostnames", "must be populated with at least one hostname")
 		}
 
-		if alias == "" && len(tenant.Hostnames) != 0 {
+		if alias == "" && len(tenant.Hostnames) > 0 {
 			for hostname := range tenant.Hostnames {
 				errs.Set("hostname "+hostname, "alias cannot be empty")
 			}

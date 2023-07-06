@@ -17,7 +17,7 @@ func ChoosePassword(h *ui.Handler, mux *router.ServeMux) {
 			ctx := r.Context()
 			user := h.User(ctx)
 
-			if len(user.HashedPassword) != 0 {
+			if len(user.HashedPassword) > 0 {
 				http.Redirect(w, r, h.Path("account.change_password"), http.StatusSeeOther)
 
 				return false

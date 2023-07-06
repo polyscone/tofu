@@ -70,7 +70,7 @@ func main() {
 	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
 	flag.Parse()
 
-	if flag.NArg() != 0 && flag.Arg(0) != "version" {
+	if flag.NArg() > 0 && flag.Arg(0) != "version" {
 		fmt.Fprintf(flag.CommandLine.Output(), "Unknown command %q\n", flag.Arg(0))
 		flag.Usage()
 
@@ -144,7 +144,7 @@ func main() {
 			fail(name, f.Value.String(), f.Value.Set(f.Value.String()))
 		}
 	}
-	if len(requiredMessages) != 0 {
+	if len(requiredMessages) > 0 {
 		fmt.Println(strings.Join(requiredMessages, "\n"))
 		flag.Usage()
 

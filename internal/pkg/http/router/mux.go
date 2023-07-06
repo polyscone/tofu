@@ -287,7 +287,7 @@ func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
 		panic(fmt.Sprintf("route %q does not exist", name))
 	}
 
-	if len(paramArgPairs) != 0 {
+	if len(paramArgPairs) > 0 {
 		return route.Replace(paramArgPairs...)
 	}
 
@@ -300,7 +300,7 @@ func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
 }
 
 func (mux *ServeMux) nameRoute(route *Route, names ...string) {
-	if len(names) != 0 {
+	if len(names) > 0 {
 		if mux.named == nil {
 			mux.named = make(map[string]*Route)
 		}

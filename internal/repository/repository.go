@@ -50,7 +50,7 @@ func NewBook[T any](rows []T, page, size, totalRows int) *Book[T] {
 	}
 
 	b.TotalPages = b.TotalRows / b.PageSize
-	if b.TotalRows%b.PageSize != 0 {
+	if b.TotalRows%b.PageSize > 0 {
 		b.TotalPages++
 	}
 

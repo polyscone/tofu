@@ -36,7 +36,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 		}
 
 		var str string
-		if len(strs) != 0 {
+		if len(strs) > 0 {
 			str = strs[0]
 		}
 
