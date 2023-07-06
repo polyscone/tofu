@@ -11,22 +11,29 @@ const state = {
 	recoveryCode: "",
 }
 
-const SignInGoogle = {
-	onupdate () {
-		if (window.google) {
-			const parent = document.getElementById("sign-in__gsi_button")
+function initGoogleSignIn () {
+	if (window.google) {
+		const parent = document.getElementById("sign-in__gsi_button")
 
-			if (parent) {
-				google.accounts.id.renderButton(parent, {
-					type: "standard",
-					shape: "rectangle",
-					theme: "outline",
-					text: "signin_with",
-					size: "large",
-					logo_alignment: "center",
-				})
-			}
+		if (parent) {
+			google.accounts.id.renderButton(parent, {
+				type: "standard",
+				shape: "rectangle",
+				theme: "outline",
+				text: "signin_with",
+				size: "large",
+				logo_alignment: "center",
+			})
 		}
+	}
+}
+
+const SignInGoogle = {
+	oncreate () {
+		initGoogleSignIn()
+	},
+	onupdate () {
+		initGoogleSignIn()
 	},
 	view: () => !window.google ? null : [
 		m("p.sign-in-alt__title", "Or"),
