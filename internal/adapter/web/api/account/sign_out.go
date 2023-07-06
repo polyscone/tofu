@@ -28,6 +28,6 @@ func signOutPost(h *api.Handler) http.HandlerFunc {
 
 		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
 
-		h.JSON(w, r, SessionData(ctx, h))
+		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
 }

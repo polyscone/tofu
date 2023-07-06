@@ -17,7 +17,7 @@ func sessionGet(h *api.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		h.JSON(w, r, SessionData(ctx, h))
+		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
 }
 

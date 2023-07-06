@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -31,14 +32,22 @@ func NewHandler(base *handler.Handler) *Handler {
 	return &Handler{Handler: base}
 }
 
-func (h *Handler) JSON(w http.ResponseWriter, r *http.Request, data any) {
+func (h *Handler) JSON(w http.ResponseWriter, r *http.Request, status int, data any) {
 	ctx := r.Context()
 
 	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
 		h.Logger(ctx).Error("write JSON response", "error", err)
 	}
+}
+
+func (h *Handler) RawJSON(w http.ResponseWriter, r *http.Request, status int, data string) {
+	w.Header().Set("content-type", "application/json")
+	w.WriteHeader(status)
+
+	fmt.Fprint(w, data)
 }
 
 func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, err error) {

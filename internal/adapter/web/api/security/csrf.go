@@ -18,7 +18,7 @@ func csrfGet(h *api.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		h.JSON(w, r, map[string]any{
+		h.JSON(w, r, http.StatusOK, map[string]any{
 			"csrfToken": httputil.MaskedCSRFToken(ctx),
 		})
 	}

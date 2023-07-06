@@ -49,7 +49,7 @@ func signInPost(h *api.Handler) http.HandlerFunc {
 
 		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
 
-		h.JSON(w, r, SessionData(ctx, h))
+		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
 }
 
@@ -74,7 +74,7 @@ func signInTOTPPost(h *api.Handler) http.HandlerFunc {
 
 		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
 
-		h.JSON(w, r, SessionData(ctx, h))
+		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
 }
 
@@ -99,7 +99,7 @@ func signInRecoveryCodePost(h *api.Handler) http.HandlerFunc {
 
 		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
 
-		h.JSON(w, r, SessionData(ctx, h))
+		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
 }
 
@@ -122,6 +122,6 @@ func signInGooglePost(h *api.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.JSON(w, r, SessionData(ctx, h))
+		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
 }
