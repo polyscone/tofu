@@ -77,7 +77,7 @@ async function request (url, opts) {
 	return ret
 }
 
-let updateSessionHandle = null
+let pollSessionHandle = null
 
 const api = {
 	account: {
@@ -90,8 +90,8 @@ const api = {
 
 			return JSON.parse(value)
 		},
-		async updateSession () {
-			clearTimeout(updateSessionHandle)
+		async pollSession () {
+			clearTimeout(pollSessionHandle)
 
 			if (app.isOnline) {
 				const res = await request("/api/v1/account/session")
@@ -101,7 +101,7 @@ const api = {
 				}
 			}
 
-			updateSessionHandle = setTimeout(api.account.updateSession, 1 * 60 * 1000)
+			pollSessionHandle = setTimeout(api.account.pollSession, 1 * 60 * 1000)
 		},
 		async signInWithPassword (email, password) {
 			const res = await request("/api/v1/account/sign-in", {
@@ -109,7 +109,7 @@ const api = {
 				body: { email, password },
 			})
 
-			await api.account.updateSession()
+			await api.account.pollSession()
 
 			return res
 		},
@@ -119,7 +119,7 @@ const api = {
 				body: { totp },
 			})
 
-			await api.account.updateSession()
+			await api.account.pollSession()
 
 			return res
 		},
@@ -129,7 +129,7 @@ const api = {
 				body: { recoveryCode },
 			})
 
-			await api.account.updateSession()
+			await api.account.pollSession()
 
 			return res
 		},
@@ -139,20 +139,40 @@ const api = {
 				body: { jwt },
 			})
 
-			await api.account.updateSession()
+			await api.account.pollSession()
 
 			return res
 		},
 		async signOut (email, password) {
 			const res = await request("/api/v1/account/sign-out", { method: "POST" })
 
-			await api.account.updateSession()
+			await api.account.pollSession()
 
 			return res
 		},
 	},
 	security: {
 		updateCSRFToken,
+	},
+	meta: {
+		async updateOnlineStatus () {
+			// We can't rely on navigator.onLine because when navigator.onLine is true
+			// it doesn't necessarily mean we have a connection to the internet, we
+			// could just be connected to any network
+			//
+			// We also want app.isOnline to reflect whether we can even contact
+			// the server properly, so we need to ping an endpoint in the API anyway
+			try {
+				const res = await request("/api/v1/meta/health")
+
+				// If res.ok is true then we got a valid response
+				// Otherwise we assume we can't make a connection to the server
+				app.isOnline = res.ok
+			} catch {
+				// A call to fetch will usually throw if we can't even send the request
+				app.isOnline = false
+			}
+		},
 	},
 }
 
