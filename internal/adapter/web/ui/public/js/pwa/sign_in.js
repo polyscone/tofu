@@ -220,7 +220,7 @@ async function signInWithPassword (e) {
 			if (res.networkError) {
 				state.error = "Sign in failed because either the server was offline, or you have no internet connection, please try again."
 			} else {
-				state.error = "Either this account does not exist, or your credentials are incorrect."
+				state.error = "Your credentials are incorrect."
 			}
 		}
 	}

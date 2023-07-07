@@ -356,7 +356,7 @@ func signInWithPassword(ctx context.Context, h *ui.Handler, w http.ResponseWrite
 
 				data.ErrorMessage = fmt.Sprintf("Too many failed sign in attempts in the last %v. Please try again%v.", throttle.InLast, wait)
 			} else {
-				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
+				data.ErrorMessage = "Your credentials are incorrect."
 			}
 		})
 

@@ -480,7 +480,7 @@ func totpResetPost(h *ui.Handler) http.HandlerFunc {
 		err = h.Svc.Account.ResetTOTP(ctx, passport.Account, user.ID, input.Password)
 		if err != nil {
 			h.HTML.ErrorViewFunc(w, r, "reset TOTP", err, "site/account/totp/reset/reset", func(data *ui.ViewData) {
-				data.ErrorMessage = "Either this account does not exist, or your credentials are incorrect."
+				data.ErrorMessage = "Your credentials are incorrect."
 			})
 
 			return
