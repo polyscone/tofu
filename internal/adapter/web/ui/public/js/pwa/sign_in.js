@@ -11,11 +11,13 @@ const state = {
 	recoveryCode: "",
 }
 
-function initGoogleSignIn () {
-	if (window.google) {
-		const parent = document.getElementById("sign-in__gsi_button")
+function SignInGoogle () {
+	let rendered = false
 
-		if (parent) {
+	function renderButton (vnode) {
+		if (window.google && !rendered) {
+			const parent = vnode.dom.querySelector("#sign-in__gsi_button")
+
 			google.accounts.id.renderButton(parent, {
 				type: "standard",
 				shape: "rectangle",
@@ -24,23 +26,24 @@ function initGoogleSignIn () {
 				size: "large",
 				logo_alignment: "center",
 			})
+
+			rendered = true
 		}
 	}
-}
 
-const SignInGoogle = {
-	oncreate () {
-		initGoogleSignIn()
-	},
-	onupdate () {
-		initGoogleSignIn()
-	},
-	view: () => !window.google ? null : [
-		m("p.sign-in-alt__title", "Or"),
-		m(".sign-in-alt.text-center", [
-			m("#sign-in__gsi_button.g_id_signin"),
+	return {
+		oncreate: renderButton,
+		onupdate: renderButton,
+		onremove () {
+			rendered = false
+		},
+		view: () => !window.google ? null : m("div", [
+			m("p.sign-in-alt__title", "Or"),
+			m(".sign-in-alt.text-center", [
+				m("#sign-in__gsi_button.g_id_signin"),
+			]),
 		]),
-	],
+	}
 }
 
 const SignInPassword = {
@@ -103,6 +106,10 @@ const SignInOffline = {
 	view: () => m("p", "You must be online to sign in.")
 }
 
+const SignInDisconnected = {
+	view: () => m("p", "The server is currently offline, please try again later.")
+}
+
 const SignIn = {
 	oncreate () {
 		if (config.googleSignInClientId && !window.gsiLoaded) {
@@ -154,8 +161,16 @@ const SignIn = {
 			Component = SignInPassword
 		}
 
-		if (!app.isOnline) {
+		switch (app.network) {
+		case "offline":
 			Component = SignInOffline
+
+			break
+
+		case "disconnected":
+			Component = SignInDisconnected
+
+			break
 		}
 
 		if (Component) {
@@ -196,8 +211,17 @@ async function signInWithPassword (e) {
 
 			break
 
+		case app.http.badGateway:
+			state.error = "Sign in failed because the server was offline, please try again."
+
+			break
+
 		default:
-			state.error = "Either this account does not exist, or your credentials are incorrect."
+			if (res.networkError) {
+				state.error = "Sign in failed because either the server was offline, or you have no internet connection, please try again."
+			} else {
+				state.error = "Either this account does not exist, or your credentials are incorrect."
+			}
 		}
 	}
 

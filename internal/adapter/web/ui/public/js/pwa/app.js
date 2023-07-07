@@ -14,36 +14,21 @@ window.app = {
 	http: {
 		noContent: 204,
 		tooManyRequests: 429,
+		badGateway: 502,
 	},
-	isOnline: navigator.onLine,
+	network: "connected", // "offline" | "disconnected" | "connected"
 }
 
 window.addEventListener("load", async () => {
-	// Although navigator.onLine is only reliable when its value is false
-	// we set it here anyway just to make sure we have an initial value whilst
-	// we wait for an API call to verify actually connectivity
-	app.isOnline = navigator.onLine
-
-	await app.api.meta.updateOnlineStatus()
+	await app.api.meta.pollNetworkStatus()
 	await app.api.account.pollSession()
 	await app.api.security.updateCSRFToken()
 
 	m.redraw()
 })
 
-window.addEventListener("online", async () => {
-	await app.api.meta.updateOnlineStatus()
-
-	m.redraw()
-})
-
-window.addEventListener("offline", async () => {
-	// Going offline is the only time navigator.onLine is reliable, so we
-	// can just set the value directly instead of waiting for an API call
-	app.isOnline = navigator.onLine
-
-	m.redraw()
-})
+window.addEventListener("online", app.api.meta.pollNetworkStatus)
+window.addEventListener("offline", app.api.meta.pollNetworkStatus)
 
 router()
 

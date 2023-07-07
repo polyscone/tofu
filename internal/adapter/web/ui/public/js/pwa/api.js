@@ -1,13 +1,3 @@
-var csrfToken = null
-
-async function updateCSRFToken () {
-	const res = await request("/api/v1/security/csrf")
-
-	if (res.ok) {
-		csrfToken = res.body.csrfToken
-	}
-}
-
 async function request (url, opts) {
 	opts ||= {}
 	opts.method ||= "GET"
@@ -17,25 +7,25 @@ async function request (url, opts) {
 	}
 
 	if (opts.refreshCSRF) {
-		await updateCSRFToken()
+		await api.security.updateCSRFToken()
 	}
 
 	if (!["GET", "HEAD", "OPTIONS", "TRACE"].includes(opts.method)) {
 		opts.headers ||= {}
-		opts.headers["x-csrf-token"] ||= csrfToken
+		opts.headers["x-csrf-token"] ||= api.security.csrfToken
 	}
 
 	const ret = {
 		status: 0,
 		ok: false,
 		body: null,
-		error: null,
+		networkError: null,
 	}
 
 	try {
 		const res = await fetch(url, opts)
 
-		csrfToken = res.headers.get("x-csrf-token") || csrfToken
+		api.security.csrfToken = res.headers.get("x-csrf-token") || api.security.csrfToken
 
 		ret.status = res.status
 		ret.ok = res.ok
@@ -48,9 +38,15 @@ async function request (url, opts) {
 			}
 		}
 	} catch (error) {
-		ret.error = error
+		ret.networkError = error
 
 		console.error(`api fetch failed: ${error}: ${url}`)
+	}
+
+	const maybeServerDown = ret.status === app.http.badGateway || ret.networkError
+
+	if (maybeServerDown && !api.meta.pollingNetworkStatus) {
+		await api.meta.pollNetworkStatus()
 	}
 
 	if (!ret.ok && ret.body?.csrf && !opts.refreshCSRF) {
@@ -61,7 +57,7 @@ async function request (url, opts) {
 
 	delete opts.refreshCSRF
 
-	if (!ret.error && !ret.ok && ret.body?.fields) {
+	if (!ret.networkError && !ret.ok && ret.body?.fields) {
 		for (const key in ret.body.fields) {
 			// Convert the key from space separated keys to camel case
 			const newKey = key.replace(/\s+([a-z])/g, group => group.trim().toUpperCase())
@@ -78,6 +74,7 @@ async function request (url, opts) {
 }
 
 let pollSessionHandle = null
+let pollNetworkStatusHandle = null
 
 const api = {
 	account: {
@@ -93,7 +90,7 @@ const api = {
 		async pollSession () {
 			clearTimeout(pollSessionHandle)
 
-			if (app.isOnline) {
+			if (app.network === "connected") {
 				const res = await request("/api/v1/account/session")
 
 				if (res.ok) {
@@ -152,26 +149,42 @@ const api = {
 		},
 	},
 	security: {
-		updateCSRFToken,
+		csrfToken: null,
+		async updateCSRFToken () {
+			const res = await request("/api/v1/security/csrf")
+
+			if (res.ok) {
+				api.security.csrfToken = res.body.csrfToken
+			}
+		},
 	},
 	meta: {
-		async updateOnlineStatus () {
-			// We can't rely on navigator.onLine because when navigator.onLine is true
-			// it doesn't necessarily mean we have a connection to the internet, we
-			// could just be connected to any network
-			//
-			// We also want app.isOnline to reflect whether we can even contact
-			// the server properly, so we need to ping an endpoint in the API anyway
-			try {
-				const res = await request("/api/v1/meta/health")
+		pollingNetworkStatus: false,
+		async pollNetworkStatus () {
+			api.meta.pollingNetworkStatus = true
 
-				// If res.ok is true then we got a valid response
-				// Otherwise we assume we can't make a connection to the server
-				app.isOnline = res.ok
-			} catch {
-				// A call to fetch will usually throw if we can't even send the request
-				app.isOnline = false
+			clearTimeout(pollNetworkStatusHandle)
+
+			const prev = app.network
+
+			// navigator.onLine is only reliable when it's false
+			// In this case we can just assume the network is offline and return
+			if (!navigator.onLine) {
+				app.network = "offline"
+			} else {
+				// If navigator.onLine is not false then we have to make an actual
+				// request to determine the actual status of network connectivity
+				const res = await request("/api/v1/meta/health", { method: "HEAD" })
+
+				app.network = res.ok ? "connected" : "disconnected"
 			}
+
+			if (app.network !== prev) {
+				m.redraw()
+			}
+
+			pollNetworkStatusHandle = setTimeout(api.meta.pollNetworkStatus, 1 * 10 * 1000)
+			api.meta.pollingNetworkStatus = false
 		},
 	},
 }
