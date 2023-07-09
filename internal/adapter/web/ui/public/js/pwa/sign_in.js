@@ -107,7 +107,7 @@ const SignInOffline = {
 }
 
 const SignInDisconnected = {
-	view: () => m("p", "The server is currently offline, please try again later.")
+	view: () => m("p", "Either the server is offline, or you have no internet connection, please try again later.")
 }
 
 const SignIn = {
