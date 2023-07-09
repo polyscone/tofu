@@ -63,8 +63,11 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		"HasString":     handler.TmplHasString,
 		"ToStrings":     handler.TmplToStrings,
 		"Join":          handler.TmplJoin,
+		"ReplaceAll":    handler.TmplReplaceAll,
 		"MarshalJSON":   handler.TmplMarshalJSON,
 		"UnescapeHTML":  handler.TmplUnescapeHTML,
+		"Slice":         handler.TmplSlice,
+		"Map":           handler.TmplMap,
 	}
 
 	h := Handler{

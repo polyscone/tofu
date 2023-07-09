@@ -27,7 +27,7 @@
 			</p>
 		</div>
 
-		{{template "site_com_recovery_codes" .WithComData .Vars.RecoveryCodes}}
+		{{template "com_recovery_codes" .WithComData "Codes" .Vars.RecoveryCodes}}
 	{{else}}
 		{{if ge (len .Vars.HashedRecoveryCodes) 1}}
 			{{if eq (len .Vars.HashedRecoveryCodes) 1}}
@@ -50,11 +50,14 @@
 		{{end}}
 
 		<form action="{{Path "account.totp.recovery_codes.post"}}" method="POST">
-			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+			{{template "com_csrf_input" .}}
 
-			<label for="recovery-codes__passcode">Passcode</label>
-			<input id="recovery-codes__passcode" type="text" name="totp" placeholder="123456" autocomplete="one-time-code" required pattern="^\d+$" minlength="6" maxlength="6">
-			<p class="error">{{.Errors.Get "totp"}}</p>
+			{{template "com_passcode_input" .WithComData
+				"Label" "Passcode"
+				"Name" "totp"
+				"Required" true
+				"Autocomplete" "one-time-code"
+			}}
 
 			<div class="bag reverse">
 				{{if eq (len .Vars.HashedRecoveryCodes) 0}}

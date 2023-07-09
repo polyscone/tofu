@@ -1,0 +1,46 @@
+{{define "com_form_input" -}}
+
+{{$type := .ComData.Type}}
+{{$name := .ComData.Name}}
+{{$id := or .ComData.ID (printf "form__%v" (ReplaceAll $name " " "-"))}}
+{{$label := .ComData.Label}}
+{{$hint := .ComData.Hint}}
+{{$placeholder := .ComData.Placeholder}}
+{{$value := or .ComData.Value (.Form.Get $name)}}
+{{$required := .ComData.Required}}
+{{$autocomplete := .ComData.Autocomplete}}
+{{$autofocus := .ComData.Autofocus}}
+{{$disabled := .ComData.Disabled}}
+{{$pattern := .ComData.Pattern}}
+{{$minlength := .ComData.MinLength}}
+{{$maxlength := .ComData.MaxLength}}
+{{$error := .Errors.Get (ReplaceAll $name "-" " ")}}
+
+{{if and $type $name}}
+	{{if $label}}
+		<label for="{{$id}}">
+			{{$label}}
+			{{if $hint}}<small>{{$hint}}</small>{{end}}
+		</label>
+	{{end}}
+
+	<input
+		{{if or $id $label}}id="{{$id}}"{{end}}
+		type="{{$type}}"
+		name="{{$name}}"
+		{{if $value}}value="{{$value}}"{{end}}
+		{{if $placeholder}}placeholder="{{$placeholder}}"{{end}}
+		{{if $autocomplete}}autocomplete="{{$autocomplete}}"{{end}}
+		{{if $autofocus}}autofocus{{end}}
+		{{if $pattern}}pattern="{{$pattern}}"{{end}}
+		{{if $minlength}}minlength="{{$minlength}}"{{end}}
+		{{if $maxlength}}maxlength="{{$maxlength}}"{{end}}
+		{{if $required}}required{{end}}
+		{{if $disabled}}disabled{{end}}
+	>
+	<p class="error">{{$error}}</p>
+{{else}}
+	<p>Form input component: required fields: Type, Name.</p>
+{{end}}
+
+{{- end}}

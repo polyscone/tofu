@@ -14,7 +14,7 @@
 	<p>You're already signed in.</p>
 
 	<form action="{{Path "account.sign_out.post"}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 
 		<div class="bag">
 			<button type="submit" class="btn--link">Click here to sign out.</button>

@@ -1,0 +1,12 @@
+{{define "com_passcode_input" -}}
+
+{{template "com_form_input" .WithComData
+	"ComData" .ComData
+	"Type" "text"
+	"Placeholder" "123456"
+	"Pattern" `^\d+$`
+	"MinLength" 6
+	"MaxLength" 6
+}}
+
+{{- end}}

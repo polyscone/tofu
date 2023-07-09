@@ -25,10 +25,10 @@
 		</p>
 	</div>
 
-	{{template "site_com_recovery_codes" .WithComData .Vars.RecoveryCodes}}
+	{{template "com_recovery_codes" .WithComData "Codes" .Vars.RecoveryCodes}}
 
 	<form action="{{Path "account.totp.setup.activate.post"}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 
 		<button type="submit" class="align-self-center">I have saved my recovery codes</button>
 	</form>

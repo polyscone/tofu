@@ -21,12 +21,15 @@
 		<p>Almost done! Use the form below to choose a password and we can activate your account.</p>
 
 		<form action="{{Path "account.activate.post"}}{{.URL.Query.String}}" method="POST" id="account-activate-form">
-			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+			{{template "com_csrf_input" .}}
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
-			<label for="activate__password">Choose a password</label>
-			<input id="activate__password" type="password" name="password" value="{{.Form.Get "password"}}" placeholder="password" autocomplete="current-password" required pattern="^.+$" minlength="8" maxlength="1000">
-			<p class="error">{{.Errors.Get "password"}}</p>
+			{{template "com_password_input" .WithComData
+				"Label" "Choose a password"
+				"Name" "password"
+				"Required" true
+				"Autocomplete" "new-password"
+			}}
 
 			<div class="bag reverse">
 				<button type="submit">Use this password and activate account</button>

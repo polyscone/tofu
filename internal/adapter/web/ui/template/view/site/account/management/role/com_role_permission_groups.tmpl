@@ -1,0 +1,29 @@
+{{define "com_role_permission_groups" -}}
+
+{{$name := .ComData.Name}}
+{{$groups := .ComData.Groups}}
+{{$selected := .ComData.Selected}}
+
+{{if and $name $groups}}
+	{{range $groups}}
+		<div class="form">
+			<b>{{.Name}}</b>
+
+			{{range .Permissions}}
+				<label>
+					<input
+						type="checkbox"
+						name="{{$name}}"
+						value="{{.Name}}"
+						{{if HasString $selected .Name}}checked{{end}}
+					>
+					{{.DisplayName}}
+				</label>
+			{{end}}
+		</div>
+	{{end}}
+{{else}}
+	<p>Role permission groups component: required fields: Name, Groups.</p>
+{{end}}
+
+{{- end}}

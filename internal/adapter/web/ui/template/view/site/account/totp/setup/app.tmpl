@@ -43,11 +43,14 @@
 	<p>After scanning the QR code, or manually entering the secret key, your app will display a 6 digit passcode that you can enter below to verify your authenticator app is setup correctly.</p>
 
 	<form action="{{Path "account.totp.setup.app.post"}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 
-		<label for="totp__passcode">Passcode</label>
-		<input id="totp__passcode" type="text" name="totp" placeholder="123456" autocomplete="off" required pattern="^\d+$" minlength="6" maxlength="6">
-		<p class="error">{{.Errors.Get "totp"}}</p>
+		{{template "com_passcode_input" .WithComData
+			"Label" "Passcode"
+			"Name" "totp"
+			"Required" true
+			"Autocomplete" "off"
+		}}
 
 		<div class="bag reverse">
 			<button type="submit">Verify setup</button>

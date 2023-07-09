@@ -1,0 +1,12 @@
+{{define "com_recovery_code_input" -}}
+
+{{template "com_form_input" .WithComData
+	"ComData" .ComData
+	"Type" "text"
+	"Placeholder" "ABCDEFGHIJKLM"
+	"Pattern" `^[A-Z2-7]+$`
+	"MinLength" 13
+	"MaxLength" 13
+}}
+
+{{- end}}

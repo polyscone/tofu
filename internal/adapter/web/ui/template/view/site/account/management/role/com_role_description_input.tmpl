@@ -1,0 +1,11 @@
+{{define "com_role_description_input" -}}
+
+{{template "com_form_input" .WithComData
+	"ComData" .ComData
+	"Type" "text"
+	"Placeholder" "A role description."
+	"Pattern" `^[ -~]*$`
+	"MaxLength" "100"
+}}
+
+{{- end}}

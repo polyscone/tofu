@@ -17,11 +17,14 @@
 	</p>
 
 	<form action="{{Path "account.sign_in.recovery_code.post"}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 
-		<label for="sign-in__recovery-code">Recovery code</label>
-		<input id="sign-in__recovery-code" type="text" name="recovery-code" value="{{.Form.Get "recovery-code"}}" placeholder="ABCDEFGHIJKLM" autocomplete="off" required pattern="^[A-Z2-7]+$" minlength="13" maxlength="13">
-		<p class="error">{{.Errors.Get "recovery code"}}</p>
+		{{template "com_recovery_code_input" .WithComData
+			"Label" "Recovery code"
+			"Name" "recovery-code"
+			"Required" true
+			"Autocomplete" "off"
+		}}
 
 		<div class="bag reverse">
 			<button type="submit" class="push-inline-end">Sign in</button>

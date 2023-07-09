@@ -22,15 +22,21 @@
 	{{end}}
 
 	<form action="{{Path "account.change_password.post"}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 
-		<label for="change-password__old-password">Old password</label>
-		<input id="change-password__old-password" type="password" name="old-password" value="{{.Form.Get "old-password"}}" placeholder="old password" autocomplete="current-password" required pattern="^.+$" minlength="8" maxlength="1000">
-		<p class="error">{{.Errors.Get "old password"}}</p>
+		{{template "com_password_input" .WithComData
+			"Label" "Old password"
+			"Name" "old-password"
+			"Required" true
+			"Autocomplete" "current-password"
+		}}
 
-		<label for="change-password__new-password">New password</label>
-		<input id="change-password__new-password" type="password" name="new-password" value="{{.Form.Get "new-password"}}" placeholder="new password" autocomplete="new-password" required pattern="^.+$" minlength="8" maxlength="1000">
-		<p class="error">{{.Errors.Get "new password"}}</p>
+		{{template "com_password_input" .WithComData
+			"Label" "New password"
+			"Name" "new-password"
+			"Required" true
+			"Autocomplete" "new-password"
+		}}
 
 		<div class="bag reverse">
 			<button type="submit">Update password{{if .Session.Redirect}} and continue{{end}}</button>

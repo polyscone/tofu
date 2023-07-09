@@ -88,20 +88,25 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	}))
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+			if filepath.Ext(r.URL.Path) != "" {
+				next(w, r)
+
+				return
+			}
+
 			ctx := r.Context()
 			config := h.Config(ctx)
 			user := h.User(ctx)
 
-			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
-
 			systemConfigPath := mux.Path("system.config")
-			if r.Method == http.MethodGet && config.RequireSetup && r.URL.Path != systemConfigPath && filepath.Ext(r.URL.Path) == "" {
+			if r.Method == http.MethodGet && config.RequireSetup && r.URL.Path != systemConfigPath {
 				http.Redirect(w, r, systemConfigPath, http.StatusSeeOther)
 
 				return
 			}
 
 			isInTOTPSection := h.HasPathPrefix(r.URL.Path, "account.totp.section")
+			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
 			if !isInTOTPSection && isSignedIn && config.RequireTOTP && !user.HasActivatedTOTP() {
 				h.AddFlashf(ctx, "Two-factor authentication is required to use this application.")
 

@@ -16,7 +16,7 @@
 	<p>If the person reviewing your case believes it to be a legitimate request you'll be sent another link by email to reset two-factor authentication.</p>
 
 	<form action="{{Path "account.sign_in.totp.reset.post"}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 
 		<div class="bag reverse">
 			<button type="submit">I understand, send a verification link</button>

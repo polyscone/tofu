@@ -16,7 +16,7 @@
 	<p>Are you sure you want to send a link to {{.Vars.User.Email}} that would allow them to reset two-factor authentication?</p>
 
 	<form action="{{Path "account.management.user.totp_reset_approve.post" ":userID" .Vars.User.ID}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 
 		<div class="bag reverse">
 			<button type="submit">Yes, send a reset link</button>

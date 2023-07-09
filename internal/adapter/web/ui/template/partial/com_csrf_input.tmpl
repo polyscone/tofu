@@ -1,0 +1,5 @@
+{{define "com_csrf_input" -}}
+
+<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+
+{{- end}}

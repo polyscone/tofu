@@ -1,0 +1,11 @@
+{{define "com_email_input" -}}
+
+{{template "com_form_input" .WithComData
+	"ComData" .ComData
+	"Type" "email"
+	"Placeholder" "email@example.com"
+	"Pattern" `^[a-zA-Z0-9+._~\-]+@[a-zA-Z0-9+._~\-]+(\.[a-zA-Z0-9+._~\-]+)+$`
+	"MaxLength" "100"
+}}
+
+{{- end}}

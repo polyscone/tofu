@@ -21,7 +21,7 @@
 				<p>Use an app on your phone or computer to get passcodes when prompted <b>(recommended)</b>.</p>
 
 				<form action="{{Path "account.totp.setup.post"}}" method="POST">
-					<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+					{{template "com_csrf_input" .}}
 					<input type="hidden" name="method" value="app">
 
 					<button type="submit">Setup using an app</button>
@@ -32,7 +32,7 @@
 				<p>We'll send you an SMS message with a passcode when prompted (only use this if you can't use an app).</p>
 
 				<form action="{{Path "account.totp.setup.post"}}" method="POST">
-					<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+					{{template "com_csrf_input" .}}
 					<input type="hidden" name="method" value="sms">
 
 					<button type="submit" class="btn--alt">Setup using SMS</button>
@@ -43,7 +43,7 @@
 		<p>You can use two-factor authentication through an app on your phone or computer.</p>
 
 		<form action="{{Path "account.totp.setup.post"}}" method="POST">
-			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+			{{template "com_csrf_input" .}}
 			<input type="hidden" name="method" value="app">
 
 			<button type="submit">Start setup</button>

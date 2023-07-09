@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -57,7 +58,7 @@ func TmplPath(mux *router.ServeMux) tmplPathFunc {
 
 func TmplQueryReplace(q url.Values, pairs ...any) (url.Values, error) {
 	if len(pairs)%2 == 1 {
-		return nil, fmt.Errorf("QueryReplace: want pairs of key value replacements")
+		return nil, errors.New("QueryReplace: want pairs of key value replacements")
 	}
 
 	u, err := url.Parse("?" + q.Encode())
@@ -195,6 +196,12 @@ func TmplJoin(strs []string, sep string) string {
 	return strings.Join(strs, sep)
 }
 
+func TmplReplaceAll(value any, old, new string) string {
+	str := fmt.Sprintf("%v", value)
+
+	return strings.ReplaceAll(str, old, new)
+}
+
 func TmplMarshalJSON(value any) (string, error) {
 	b, err := json.Marshal(value)
 	if err != nil {
@@ -206,4 +213,24 @@ func TmplMarshalJSON(value any) (string, error) {
 
 func TmplUnescapeHTML(s string) template.HTML {
 	return template.HTML(s)
+}
+
+func TmplSlice(elements ...any) []any {
+	return elements
+}
+
+func TmplMap(pairs ...any) (map[string]any, error) {
+	if len(pairs)%2 == 1 {
+		return nil, errors.New("Map: want key value pairs")
+	}
+
+	m := make(map[string]any, len(pairs)/2)
+	for i := 0; i < len(pairs); i += 2 {
+		key := fmt.Sprintf("%v", pairs[i])
+		value := pairs[i+1]
+
+		m[key] = value
+	}
+
+	return m, nil
 }

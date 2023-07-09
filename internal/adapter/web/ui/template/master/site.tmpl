@@ -33,7 +33,7 @@
 
 						<li>
 							<form action="{{Path "account.sign_out.post"}}" method="POST">
-								<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+								{{template "com_csrf_input" .}}
 
 								<button type="submit" class="btn--link">Sign out</button>
 							</form>

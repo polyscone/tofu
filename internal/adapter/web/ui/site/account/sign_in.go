@@ -281,7 +281,7 @@ func signInRecoveryCodePost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		if err := auth.SignInWithRecoveryCode(ctx, h.Handler, w, r, input.RecoveryCode); err != nil {
-			h.HTML.ErrorView(w, r, "sign in with recovery code", err, "site/account/sign_in/totp", nil)
+			h.HTML.ErrorView(w, r, "sign in with recovery code", err, "site/account/sign_in/recovery_code", nil)
 
 			return
 		}

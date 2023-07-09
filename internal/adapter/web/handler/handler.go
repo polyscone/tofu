@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"html/template"
 	"io/fs"
 	"net/http"
+	"strings"
 	"sync"
-	"text/template"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
@@ -229,7 +230,15 @@ func (h *Handler) Template(files fs.FS, funcs template.FuncMap, name string, pat
 	tmpl := template.New(name).Option("missingkey=default").Funcs(funcs)
 
 	for _, pattern := range patterns {
-		tmpl = errsx.Must(tmpl.ParseFS(files, pattern))
+		if strings.Contains(pattern, "/com_*") {
+			// Ignore errors for com_* because not all folders will have them
+			fsTmpl, err := tmpl.ParseFS(files, pattern)
+			if err == nil {
+				tmpl = fsTmpl
+			}
+		} else {
+			tmpl = errsx.Must(tmpl.ParseFS(files, pattern))
+		}
 	}
 
 	h.templates[name] = tmpl

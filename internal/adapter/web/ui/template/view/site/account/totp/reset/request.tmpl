@@ -15,7 +15,7 @@
 	<p>If the person reviewing your case believes it to be legitimate you will receive another email with a link to reset two-factor authentication for your account.</p>
 
 	<form action="{{Path "account.sign_in.totp.reset.request.post"}}{{.URL.Query.String}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 		<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
 		<div class="bag reverse">

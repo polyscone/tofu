@@ -19,11 +19,14 @@
 	<p>Enter the phone number that you'd like to use below and we'll send you a passcode to verify your phone number has been entered correctly.</p>
 
 	<form action="{{Path "account.totp.setup.sms.post"}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 
-		<label for="totp__tel">Phone number <small>Full number with country code</small></label>
-		<input id="totp__tel" type="tel" name="tel" value="{{.Form.GetOr "tel" .Vars.TOTPTel}}" placeholder="+00 00 0000 0000" autocomplete="tel" required pattern="^\+\d(\d| )+$" minlength="4" maxlength="25">
-		<p class="error">{{.Errors.Get "new phone"}}</p>
+		{{template "com_sms_tel_input" .WithComData
+			"Label" "Phone number"
+			"Name" "tel"
+			"Value" (.Form.GetOr "tel" .Vars.TOTPTel)
+			"Autocomplete" "tel"
+		}}
 
 		<div class="bag reverse">
 			<button type="submit">Use this phone number and send a passcode</button>

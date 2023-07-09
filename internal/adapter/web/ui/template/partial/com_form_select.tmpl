@@ -1,0 +1,64 @@
+{{define "com_form_select" -}}
+
+{{$name := .ComData.Name}}
+{{$id := or .ComData.ID (printf "form__%v" (ReplaceAll $name " " "-"))}}
+{{$label := .ComData.Label}}
+{{$hint := .ComData.Hint}}
+{{$placeholder := .ComData.Placeholder}}
+{{$value := or .ComData.Value (.Form.Get $name)}}
+{{$options := .ComData.Options}}
+{{$multiple := .ComData.Multiple}}
+{{$size := .ComData.Size}}
+{{$required := .ComData.Required}}
+{{$autocomplete := .ComData.Autocomplete}}
+{{$autofocus := .ComData.Autofocus}}
+{{$disabled := .ComData.Disabled}}
+{{$error := .Errors.Get (ReplaceAll $name "-" " ")}}
+
+{{if and $name $options}}
+	{{if $label}}
+		<label for="{{$id}}">
+			{{$label}}
+			{{if $hint}}<small>{{$hint}}</small>{{end}}
+		</label>
+	{{end}}
+
+	<select
+		{{if or $id $label}}id="{{$id}}"{{end}}
+		name="{{$name}}"
+		{{if $value}}value="{{$value}}"{{end}}
+		{{if $multiple}}multiple{{end}}
+		{{if $size}}size="{{$size}}"{{end}}
+		{{if $autocomplete}}autocomplete="{{$autocomplete}}"{{end}}
+		{{if $autofocus}}autofocus{{end}}
+		{{if $required}}required{{end}}
+		{{if $disabled}}disabled{{end}}
+	>
+		{{if $placeholder}}
+			<option value="">{{$placeholder}}</option>
+		{{end}}
+
+		{{range $option := $options}}
+			{{if $option.Options}}
+				<optgroup label="{{$option.Value}}">
+					{{range $option := $option.Options}}
+						{{$optval := or $option.Value $option.Label $option}}
+						{{$optlabel := or $option.Label $option.Value $option}}
+
+						<option value="{{$optval}}"{{if eq $optval $value}} selected{{end}}>{{$optlabel}}</option>
+					{{end}}
+				</optgroup>
+			{{else}}
+				{{$optval := or $option.Value $option.Label $option}}
+				{{$optlabel := or $option.Label $option.Value $option}}
+
+				<option value="{{$optval}}"{{if eq $optval $value}} selected{{end}}>{{$optlabel}}</option>
+			{{end}}
+		{{end}}
+	</select>
+	<p class="error">{{$error}}</p>
+{{else}}
+	<p>Form select component: required fields: Name, Options.</p>
+{{end}}
+
+{{- end}}

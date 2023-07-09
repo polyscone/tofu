@@ -14,11 +14,14 @@
 	<p>You'll be able to choose your password after verifying your email address.</p>
 
 	<form action="{{Path "account.sign_up.post"}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 
-		<label for="sign-up__email">Email</label>
-		<input id="sign-up__email" type="email" name="email" value="{{.Form.Get "email"}}" placeholder="email@example.com" autocomplete="email" required pattern="^[a-zA-Z0-9+._~\-]+@[a-zA-Z0-9+._~\-]+(\.[a-zA-Z0-9+._~\-]+)+$" maxlength="100">
-		<p class="error">{{.Errors.Get "email"}}</p>
+		{{template "com_email_input" .WithComData
+			"Label" "Email"
+			"Name" "email"
+			"Required" true
+			"Autocomplete" "username"
+		}}
 
 		<div class="bag reverse">
 			<button type="submit" class="push-inline-end">Sign up</button>

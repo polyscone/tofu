@@ -12,35 +12,27 @@
 
 <div class="center">
 	<form action="{{Path "account.management.role.edit.post" ":roleID" .Vars.Role.ID}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 
-		<label for="role__name">Name</label>
-		<input id="role__name" type="text" name="name" value="{{.Form.GetOr "name" .Vars.Role.Name}}" placeholder="Role name" required pattern="^[ -~]+$" minlength="1" maxlength="30">
-		<p class="error">{{.Errors.Get "name"}}</p>
+		{{template "com_role_name_input" .WithComData
+			"Label" "Name"
+			"Name" "name"
+			"Required" true
+			"Value" (.Form.GetOr "name" .Vars.Role.Name)
+		}}
 
-		<label for="role__description">Description</label>
-		<input id="role__description" type="text" name="description" value="{{.Form.GetOr "description" .Vars.Role.Description}}" placeholder="A role description." pattern="^[ -~]*$" maxlength="100">
-		<p class="error">{{.Errors.Get "description"}}</p>
+		{{template "com_role_description_input" .WithComData
+			"Label" "Description"
+			"Name" "description"
+			"Value" (.Form.GetOr "description" .Vars.Role.Description)
+		}}
 
 		<div class="cols-50-50">
-			{{$permissions := $.Form.GetAllOr "permissions" .Vars.Role.Permissions}}
-			{{range .Vars.PermissionGroups}}
-				<div class="form">
-					<b>{{.Name}}</b>
-
-					{{range .Permissions}}
-						<label>
-							<input
-								type="checkbox"
-								name="permissions"
-								value="{{.Name}}"
-								{{if HasString $permissions .Name}}checked{{end}}
-							>
-							{{.DisplayName}}
-						</label>
-					{{end}}
-				</div>
-			{{end}}
+			{{template "com_role_permission_groups" .WithComData
+				"Name" "permissions"
+				"Groups" .Vars.PermissionGroups
+				"Selected" ($.Form.GetAllOr "permissions" .Vars.Role.Permissions)
+			}}
 		</div>
 
 		<div class="bag reverse">

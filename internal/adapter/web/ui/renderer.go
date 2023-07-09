@@ -3,8 +3,10 @@ package ui
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
+	"path"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
@@ -33,14 +35,35 @@ type ViewData struct {
 	Config       *system.Config
 	User         *account.User
 	Passport     guard.Passport
-	ComData      any
+	ComData      map[string]any
 	Vars         handler.Vars
 }
 
-func (v ViewData) WithComData(data any) ViewData {
-	v.ComData = data
+func (v ViewData) WithComData(pairs ...any) (ViewData, error) {
+	if len(pairs)%2 == 1 {
+		return v, errors.New("WithComData: want key value pairs")
+	}
 
-	return v
+	v.ComData = make(map[string]any, len(pairs)/2)
+	for i := 0; i < len(pairs); i += 2 {
+		key := fmt.Sprintf("%v", pairs[i])
+		value := pairs[i+1]
+
+		if key == "ComData" {
+			comData, ok := value.(map[string]any)
+			if ok {
+				for key, value := range comData {
+					v.ComData[key] = value
+				}
+
+				continue
+			}
+		}
+
+		v.ComData[key] = value
+	}
+
+	return v, nil
 }
 
 type ViewDataFunc func(data *ViewData)
@@ -121,8 +144,15 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	// Make sure the current view name isn't overwritten by a user function
 	data.View = view
 
+	dir := path.Dir(view)
+	tmpl := rn.h.Template(templateFiles, rn.h.funcs, view,
+		"partial/*.tmpl",
+		"view/"+dir+"/com_*.tmpl",
+		"view/"+view+".tmpl",
+		"master/*.tmpl",
+	)
+
 	var buf bytes.Buffer
-	tmpl := rn.h.Template(templateFiles, rn.h.funcs, view, "partial/*.tmpl", "view/"+view+".tmpl", "master/*.tmpl")
 	if err := tmpl.ExecuteTemplate(&buf, "master", data); err != nil {
 		rn.h.Logger(ctx).Error("execute view template", "error", err)
 

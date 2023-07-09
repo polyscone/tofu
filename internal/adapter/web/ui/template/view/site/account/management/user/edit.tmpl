@@ -27,7 +27,7 @@
 
 	{{if $isEditUserActivated}}
 		<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}" method="POST">
-			<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+			{{template "com_csrf_input" .}}
 
 			{{if $isEditUserSuper}}
 				<input type="hidden" name="roles" value="{{.Vars.SuperRole.ID}}">

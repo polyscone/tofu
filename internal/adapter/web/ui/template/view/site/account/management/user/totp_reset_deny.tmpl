@@ -16,7 +16,7 @@
 	<p>Are you sure you want to deny this request?</p>
 
 	<form action="{{Path "account.management.user.totp_reset_deny.post" ":userID" .Vars.User.ID}}" method="POST">
-		<input type="hidden" name="_csrf" value="{{.CSRF.Token}}">
+		{{template "com_csrf_input" .}}
 
 		<div class="bag reverse">
 			<button type="submit">Yes, deny this request</button>
