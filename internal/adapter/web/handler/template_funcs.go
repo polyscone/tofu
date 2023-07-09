@@ -215,6 +215,10 @@ func TmplUnescapeHTML(s string) template.HTML {
 	return template.HTML(s)
 }
 
+func TmplUnescapeJS(s string) template.JS {
+	return template.JS(s)
+}
+
 func TmplSlice(elements ...any) []any {
 	return elements
 }

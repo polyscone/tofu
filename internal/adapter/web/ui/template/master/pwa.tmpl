@@ -13,7 +13,7 @@
 		<meta name="theme-color" content="{{.App.ThemeColour}}">
 	</head>
 	<body>
-		<script>const config = {{MarshalJSON .Vars.Config}}</script>
+		<script>const config = {{UnescapeJS (MarshalJSON .Vars.Config)}}</script>
 		<script src="/js/mithril/v2.2.2.min.js"></script>
 		<script src="/js/pwa/app.js" type="module"></script>
 	</body>
