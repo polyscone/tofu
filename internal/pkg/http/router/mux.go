@@ -335,8 +335,8 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 	}
 
 	var restGroup string
-	if rest := reLastParam.FindString(path); strings.HasSuffix(rest, "*") {
-		path = strings.TrimSuffix(path, "*")
+	if rest := reLastParam.FindString(path); strings.HasSuffix(rest, "...") {
+		path = strings.TrimSuffix(path, "...")
 		restGroup = `(?P<$1>.*)`
 	} else {
 		restGroup = `(?P<$1>[^/]*)`

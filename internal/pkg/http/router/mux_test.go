@@ -196,7 +196,7 @@ func TestMux(t *testing.T) {
 		w.Write([]byte(router.URLParam(r, "first") + "/" + router.URLParam(r, "rest")))
 	})
 
-	mux.Get("/greedy/:first/rest/:rest*", func(w http.ResponseWriter, r *http.Request) {
+	mux.Get("/greedy/:first/rest/:rest...", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(router.URLParam(r, "first") + "/" + router.URLParam(r, "rest")))
 	})
 
