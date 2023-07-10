@@ -41,6 +41,18 @@ func TestMux(t *testing.T) {
 		mux.Delete("/", echoWithHostHandler)
 	})
 
+	mux.Get("/order/:rest...", echoHandler)
+	mux.Get("/order/independent/:rest...", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("greedy rest: " + r.URL.Path))
+	})
+
+	mux.Get("/order/independent/long/:rest...", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("long greedy rest: " + r.URL.Path))
+	})
+
+	mux.Get("/order/independent/foo", echoHandler)
+	mux.Get("/order/independent/foo/bar", echoHandler)
+
 	mux.Options("/", echoHandler)
 	mux.Connect("/", echoHandler)
 	mux.Trace("/", echoHandler)
@@ -304,6 +316,15 @@ func TestMux(t *testing.T) {
 		{"dynamic url with greedy rest no match", http.MethodGet, "/greedy/foo/bar/rest/baz/qux", "", http.StatusNotFound},
 		{"dynamic url overlap", http.MethodGet, "/overlap-prefix/bar/overlap-suffix", "bar", http.StatusOK},
 
+		{"order independence no rest 1", http.MethodGet, "/order/independent", "/order/independent", http.StatusOK},
+		{"order independence no rest 2", http.MethodGet, "/order/independent/foo", "/order/independent/foo", http.StatusOK},
+		{"order independence no rest 3", http.MethodGet, "/order/independent/foo/bar", "/order/independent/foo/bar", http.StatusOK},
+		{"order independence rest overlap 1", http.MethodGet, "/order/foo/bar/baz/qux", "/order/foo/bar/baz/qux", http.StatusOK},
+		{"order independence rest overlap 2", http.MethodGet, "/order/independent/foo/baz", "greedy rest: /order/independent/foo/baz", http.StatusOK},
+		{"order independence rest overlap 3", http.MethodGet, "/order/independent/foo/bar/baz", "greedy rest: /order/independent/foo/bar/baz", http.StatusOK},
+		{"order independence rest no overlap", http.MethodGet, "/order/independent/qux/quxx/quxxx", "greedy rest: /order/independent/qux/quxx/quxxx", http.StatusOK},
+		{"order independence rest long overlap", http.MethodGet, "/order/independent/long/quxx/quxxx", "long greedy rest: /order/independent/long/quxx/quxxx", http.StatusOK},
+
 		{"route string param replacement", http.MethodGet, route.Replace(":b", "123", ":d", "456"), "/a/123/c/456", http.StatusOK},
 		{"mux object route string param replacement", http.MethodGet, mux.Route("foo.bar").Replace(":b", "x", ":d", "y"), "/a/x/c/y", http.StatusOK},
 		{"mux object route string param replacement post method", http.MethodPost, mux.Route("foo.bar.post").Replace(":b", "x", ":d", "y"), "/a/x/c/y", http.StatusOK},
@@ -492,6 +513,18 @@ func TestMuxPanics(t *testing.T) {
 
 		mux.Get("/hello", emptyHandler, "hello")
 		mux.Post("/hello", emptyHandler, "hello")
+	})
+
+	t.Run("panic on greedy param that is not the last one", func(t *testing.T) {
+		defer func() {
+			if recover() == nil {
+				t.Error("want panic; got <nil>")
+			}
+		}()
+
+		mux := router.NewServeMux()
+
+		mux.Get("/hello/:foo.../world", emptyHandler)
 	})
 
 	t.Run("panic on invalid route path parameter replacements", func(t *testing.T) {

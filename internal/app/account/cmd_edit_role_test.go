@@ -3,12 +3,12 @@ package account_test
 import (
 	"context"
 	"errors"
-	"sort"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
+	"golang.org/x/exp/slices"
 )
 
 type updateRoleGuard struct {
@@ -94,8 +94,8 @@ func TestUpdateRole(t *testing.T) {
 				if want, got := tc.after.Permissions, after.Permissions; len(want) != len(got) {
 					t.Errorf("want %v permissions; got %v", len(want), len(got))
 				} else {
-					sort.Strings(want)
-					sort.Strings(got)
+					slices.Sort(want)
+					slices.Sort(got)
 
 					for i, wantPermission := range want {
 						gotPermission := got[i]

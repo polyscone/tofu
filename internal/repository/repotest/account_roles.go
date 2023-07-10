@@ -3,12 +3,12 @@ package repotest
 import (
 	"context"
 	"errors"
-	"sort"
 	"strconv"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/repository"
+	"golang.org/x/exp/slices"
 )
 
 func AccountRoles(ctx context.Context, t *testing.T, newRepo func() account.ReadWriter) {
@@ -190,8 +190,8 @@ func accountRolesEqual(t *testing.T, want, got *account.Role) {
 	if want, got := want.Permissions, got.Permissions; len(want) != len(got) {
 		t.Errorf("want %v permissions; got %v", len(want), len(got))
 	} else {
-		sort.Strings(want)
-		sort.Strings(got)
+		slices.Sort(want)
+		slices.Sort(got)
 
 		for i, wantPermission := range want {
 			gotPermission := got[i]

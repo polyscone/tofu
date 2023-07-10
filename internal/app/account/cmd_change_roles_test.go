@@ -3,7 +3,6 @@ package account_test
 import (
 	"context"
 	"errors"
-	"sort"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
@@ -11,6 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/repository"
+	"golang.org/x/exp/slices"
 )
 
 type setRolesGuard struct {
@@ -57,8 +57,8 @@ func TestChangeRoles(t *testing.T) {
 		if want, got := []*account.Role{role1, role2}, user.Roles; len(want) != len(got) {
 			t.Errorf("want %v roles; got %v", len(want), len(got))
 		} else {
-			sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
-			sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
+			slices.SortFunc(want, func(a, b *account.Role) bool { return a.ID < b.ID })
+			slices.SortFunc(got, func(a, b *account.Role) bool { return a.ID < b.ID })
 
 			for i, wantRole := range want {
 				gotRole := got[i]
@@ -72,8 +72,8 @@ func TestChangeRoles(t *testing.T) {
 		if want, got := []string{"a"}, user.Grants; len(want) != len(got) {
 			t.Errorf("want %v grants; got %v", len(want), len(got))
 		} else {
-			sort.Strings(want)
-			sort.Strings(got)
+			slices.Sort(want)
+			slices.Sort(got)
 
 			for i, wantGrant := range want {
 				gotGrant := got[i]
@@ -87,8 +87,8 @@ func TestChangeRoles(t *testing.T) {
 		if want, got := []string{"b", "c", "d"}, user.Denials; len(want) != len(got) {
 			t.Errorf("want %v denials; got %v", len(want), len(got))
 		} else {
-			sort.Strings(want)
-			sort.Strings(got)
+			slices.Sort(want)
+			slices.Sort(got)
 
 			for i, wantDenial := range want {
 				gotDenial := got[i]
@@ -127,8 +127,8 @@ func TestChangeRoles(t *testing.T) {
 		if want, got := []*account.Role{role1, role2, superRole}, user.Roles; len(want) != len(got) {
 			t.Errorf("want %v roles; got %v", len(want), len(got))
 		} else {
-			sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
-			sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
+			slices.SortFunc(want, func(a, b *account.Role) bool { return a.ID < b.ID })
+			slices.SortFunc(got, func(a, b *account.Role) bool { return a.ID < b.ID })
 
 			for i, wantRole := range want {
 				gotRole := got[i]
@@ -142,8 +142,8 @@ func TestChangeRoles(t *testing.T) {
 		if want, got := []string{}, user.Grants; len(want) != len(got) {
 			t.Errorf("want %v grants; got %v", len(want), len(got))
 		} else {
-			sort.Strings(want)
-			sort.Strings(got)
+			slices.Sort(want)
+			slices.Sort(got)
 
 			for i, wantGrant := range want {
 				gotGrant := got[i]
@@ -157,8 +157,8 @@ func TestChangeRoles(t *testing.T) {
 		if want, got := []string{}, user.Denials; len(want) != len(got) {
 			t.Errorf("want %v denials; got %v", len(want), len(got))
 		} else {
-			sort.Strings(want)
-			sort.Strings(got)
+			slices.Sort(want)
+			slices.Sort(got)
 
 			for i, wantDenial := range want {
 				gotDenial := got[i]

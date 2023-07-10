@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"reflect"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
+	"golang.org/x/exp/slices"
 )
 
 var (
@@ -38,6 +38,7 @@ type Route struct {
 	path     string
 	pattern  *regexp.Regexp
 	parts    []string
+	isGreedy bool
 	handlers map[string]http.Handler
 	methods  []string
 }
@@ -145,7 +146,12 @@ func (mux *ServeMux) serveHTTP(w http.ResponseWriter, r *http.Request) {
 
 		handler := route.handlers[r.Method]
 		if handler == nil {
-			w.Header().Set("allow", strings.Join(route.methods, ", "))
+			methods := strings.Join(route.methods, ", ")
+			if !slices.Contains(route.methods, http.MethodOptions) {
+				methods += ", " + http.MethodOptions
+			}
+
+			w.Header().Set("allow", methods)
 
 			switch {
 			case r.Method == http.MethodOptions:
@@ -334,15 +340,21 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 		panic("route must not be empty")
 	}
 
+	if strings.Contains(path, ".../") {
+		panic("greedy ... syntax can only appear after the final named parameter")
+	}
+
 	var restGroup string
+	var isGreedy bool
 	if rest := reLastParam.FindString(path); strings.HasSuffix(rest, "...") {
 		path = strings.TrimSuffix(path, "...")
 		restGroup = `(?P<$1>.*)`
+		isGreedy = true
 	} else {
 		restGroup = `(?P<$1>[^/]*)`
 	}
 
-	key := mux.host + "/" + reParams.ReplaceAllString(path, "*")
+	key := mux.host + reParams.ReplaceAllString(path, "*")
 
 	for _, route := range mux.routes {
 		if route.key != key {
@@ -383,15 +395,43 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 		path:     path,
 		pattern:  compiled,
 		parts:    parts,
+		isGreedy: isGreedy,
 		handlers: map[string]http.Handler{method: handler},
-		methods:  []string{http.MethodOptions},
+		methods:  []string{method},
 	}
 
 	mux.routes = append(mux.routes, route)
 
+	slices.SortFunc(mux.routes, func(a, b *Route) bool {
+		if a.isGreedy == b.isGreedy {
+			// Reverse string length sort so the longest key comes first within lazy/greedy groups
+			return utf8.RuneCountInString(b.key) < utf8.RuneCountInString(a.key)
+		}
+
+		return !a.isGreedy || b.isGreedy
+	})
+
 	mux.nameRoute(route, names...)
 
 	return route
+}
+
+// Routes returns a slice of strings describing the registered routes in the
+// order they will be evaluated.
+func (mux *ServeMux) Routes() []string {
+	routes := make([]string, 0, len(mux.routes))
+	for _, route := range mux.routes {
+		for _, method := range route.methods {
+			key := route.key
+			if route.isGreedy {
+				key = strings.TrimSuffix(key, "*") + "..."
+			}
+
+			routes = append(routes, fmt.Sprintf("%-7v %v", method, key))
+		}
+	}
+
+	return routes
 }
 
 // OptionsHandler registers a handler that can be used to serve any OPTIONS
@@ -570,9 +610,9 @@ func (mux *ServeMux) Rewrite(method, src, dst string) {
 				keys = append(keys, key)
 			}
 
-			sort.Slice(keys, func(i, j int) bool {
+			slices.SortFunc(keys, func(a, b string) bool {
 				// Reverse string length sort so the longest key comes first
-				return utf8.RuneCountInString(keys[j]) < utf8.RuneCountInString(keys[i])
+				return utf8.RuneCountInString(b) < utf8.RuneCountInString(a)
 			})
 
 			for _, key := range keys {
@@ -609,9 +649,9 @@ func (mux *ServeMux) Redirect(method, src, dst string, code int) {
 				keys = append(keys, key)
 			}
 
-			sort.Slice(keys, func(i, j int) bool {
+			slices.SortFunc(keys, func(a, b string) bool {
 				// Reverse string length sort so the longest key comes first
-				return utf8.RuneCountInString(keys[j]) < utf8.RuneCountInString(keys[i])
+				return utf8.RuneCountInString(b) < utf8.RuneCountInString(a)
 			})
 
 			for _, key := range keys {

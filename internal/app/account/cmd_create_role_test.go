@@ -3,7 +3,6 @@ package account_test
 import (
 	"context"
 	"errors"
-	"sort"
 	"strings"
 	"testing"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
+	"golang.org/x/exp/slices"
 )
 
 type createRoleGuard struct {
@@ -69,8 +69,8 @@ func TestCreateRole(t *testing.T) {
 				if want, got := created.Permissions, found.Permissions; len(want) != len(got) {
 					t.Errorf("want %v permissions; got %v", len(want), len(got))
 				} else {
-					sort.Strings(want)
-					sort.Strings(got)
+					slices.Sort(want)
+					slices.Sort(got)
 
 					for i, wantPermission := range want {
 						gotPermission := got[i]
