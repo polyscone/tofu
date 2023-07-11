@@ -37,12 +37,12 @@ function SignInGoogle () {
 		onremove () {
 			rendered = false
 		},
-		view: () => !window.google ? null : m("div", [
+		view: () => (config.googleSignInEnabled && window.google) ? m("div", [
 			m("p.sign-in-alt__title", "Or"),
 			m(".sign-in-alt.text-center", [
 				m("#sign-in__gsi_button.g_id_signin"),
 			]),
-		]),
+		]) : null,
 	}
 }
 
@@ -112,7 +112,7 @@ const SignInDisconnected = {
 
 const SignIn = {
 	oncreate () {
-		if (config.googleSignInClientId && !window.gsiLoaded) {
+		if (config.googleSignInEnabled && config.googleSignInClientId && !window.gsiLoaded) {
 			window.gsiLoaded = true
 
 			const s = document.createElement("script")

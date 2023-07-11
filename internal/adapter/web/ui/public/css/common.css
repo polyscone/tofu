@@ -164,6 +164,8 @@
 		outline-color: transparent;
 	}
 
+	:is(input, textarea).invalid:placeholder-shown,
+	:is(input, textarea).invalid:not(:placeholder-shown),
 	:is(input, textarea):invalid:not(:placeholder-shown),
 	[data-invalid] :is(input, textarea):invalid {
 		background: var(--clr-invalid-100);
@@ -182,7 +184,7 @@
 		background: white;
 	}
 
-	label:has(+ [required])::after {
+	label.required::after {
 		content: "*";
 		color: var(--clr-invalid-400);
 		margin-inline-start: 0.2em;

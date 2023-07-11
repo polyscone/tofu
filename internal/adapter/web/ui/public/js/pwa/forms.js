@@ -2,6 +2,7 @@ export const EmailInput = {
 	view: vnode => [
 		vnode.attrs.label ? m("label", {
 			for: vnode.attrs.id,
+			class: vnode.attrs.required ? "required" : null,
 		}, vnode.attrs.label) : null,
 		m("input[type=email]", {
 			oninput: vnode.attrs.oninput,
@@ -20,6 +21,7 @@ export const PasswordInput = {
 	view: vnode => [
 		vnode.attrs.label ? m("label", {
 			for: vnode.attrs.id,
+			class: vnode.attrs.required ? "required" : null,
 		}, vnode.attrs.label) : null,
 		m("input[type=password]", {
 			oninput: vnode.attrs.oninput,
@@ -39,6 +41,7 @@ export const TOTPInput = {
 	view: vnode => [
 		vnode.attrs.label ? m("label", {
 			for: vnode.attrs.id,
+			class: vnode.attrs.required ? "required" : null,
 		}, vnode.attrs.label) : null,
 		m("input[type=text]", {
 			oninput: vnode.attrs.oninput,
@@ -58,6 +61,7 @@ export const RecoveryCodeInput = {
 	view: vnode => [
 		vnode.attrs.label ? m("label", {
 			for: vnode.attrs.id,
+			class: vnode.attrs.required ? "required" : null,
 		}, vnode.attrs.label) : null,
 		m("input[type=text]", {
 			oninput: vnode.attrs.oninput,

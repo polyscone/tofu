@@ -15,12 +15,14 @@ type UpdateConfigGuard interface {
 func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	systemEmail, securityEmail string,
 	requireTOTP bool,
-	googleSignInClientID, twilioSID, twilioToken, twilioFromTel string,
+	googleSignInEnabled bool, googleSignInClientID string,
+	twilioSID, twilioToken, twilioFromTel string,
 ) (*Config, error) {
 	var input struct {
 		systemEmail          Email
 		securityEmail        Email
 		requireTOTP          bool
+		googleSignInEnabled  bool
 		googleSignInClientID GoogleClientID
 		twilioSID            TwilioSID
 		twilioToken          TwilioToken
@@ -42,6 +44,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		}
 
 		input.requireTOTP = requireTOTP
+		input.googleSignInEnabled = googleSignInEnabled
 
 		if input.googleSignInClientID, err = NewGoogleClientID(googleSignInClientID); err != nil {
 			errs.Set("google sign in client id", err)
@@ -69,7 +72,16 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	config.ChangeSystemEmail(input.systemEmail)
 	config.ChangeSecurityEmail(input.securityEmail)
 	config.ChangeRequireTOTP(input.requireTOTP)
+
 	config.ChangeGoogleSignInClientID(input.googleSignInClientID)
+	if input.googleSignInEnabled {
+		if err := config.EnableGoogleSignIn(); err != nil {
+			return nil, fmt.Errorf("enable Google sign in: %w", err)
+		}
+	} else {
+		config.DisableGoogleSignIn()
+	}
+
 	config.ChangeTwilioAPI(input.twilioSID, input.twilioToken, input.twilioFromTel)
 
 	if err := s.repo.SaveConfig(ctx, config); err != nil {

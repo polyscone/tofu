@@ -1,6 +1,13 @@
 package system
 
-import "github.com/polyscone/tofu/internal/pkg/aggregate"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/pkg/aggregate"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
+)
 
 type Config struct {
 	aggregate.Root
@@ -8,6 +15,7 @@ type Config struct {
 	SystemEmail          string
 	SecurityEmail        string
 	RequireTOTP          bool
+	GoogleSignInEnabled  bool
 	GoogleSignInClientID string
 	TwilioSID            string
 	TwilioToken          string
@@ -31,8 +39,24 @@ func (c *Config) ChangeRequireTOTP(requireTOTP bool) {
 	c.RequireTOTP = requireTOTP
 }
 
-func (c *Config) ChangeGoogleSignInClientID(googleSignInClientID GoogleClientID) {
-	c.GoogleSignInClientID = googleSignInClientID.String()
+func (c *Config) ChangeGoogleSignInClientID(clientID GoogleClientID) {
+	c.GoogleSignInClientID = clientID.String()
+}
+
+func (c *Config) EnableGoogleSignIn() error {
+	if c.GoogleSignInClientID == "" {
+		return fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
+			"google sign in client id": errors.New("required when Google sign in is enabled"),
+		})
+	}
+
+	c.GoogleSignInEnabled = true
+
+	return nil
+}
+
+func (c *Config) DisableGoogleSignIn() {
+	c.GoogleSignInEnabled = false
 }
 
 func (c *Config) ChangeTwilioAPI(twilioSID TwilioSID, twilioToken TwilioToken, twilioFromTel TwilioTel) {

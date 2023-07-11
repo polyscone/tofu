@@ -23,6 +23,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			SystemEmail          string
 			SecurityEmail        string
 			RequireTOTP          bool `compare:"true"`
+			GoogleSignInEnabled  bool `compare:"true"`
 			GoogleSignInClientID string
 			TwilioSID            string
 			TwilioToken          string
@@ -48,6 +49,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			input.SystemEmail,
 			input.SecurityEmail,
 			input.RequireTOTP,
+			input.GoogleSignInEnabled,
 			input.GoogleSignInClientID,
 			input.TwilioSID,
 			input.TwilioToken,

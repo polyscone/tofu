@@ -24,6 +24,7 @@
 			"Label" "System email"
 			"Name" "system-email"
 			"Value" (.Form.GetOr "system-email" .Config.SystemEmail)
+			"Required" true
 			"Autocomplete" "email"
 			"Disabled" $disabled
 		}}
@@ -32,6 +33,7 @@
 			"Label" "Security email"
 			"Name" "security-email"
 			"Value" (.Form.GetOr "security-email" .Config.SecurityEmail)
+			"Required" true
 			"Autocomplete" "email"
 			"Disabled" $disabled
 		}}
@@ -40,6 +42,17 @@
 			"Label" "Require two-factor authentication"
 			"Name" "require-totp"
 			"Value" (.Form.GetOr "require-totp" .Config.RequireTOTP)
+			"Options" (Slice
+				(Map "Label" "No" "Value" "false")
+				(Map "Label" "Yes" "Value" "true")
+			)
+			"Disabled" $disabled
+		}}
+
+		{{template "com_form_select" .WithComData
+			"Label" "Enable Google sign in"
+			"Name" "google-sign-in-enabled"
+			"Value" (.Form.GetOr "google-sign-in-enabled" .Config.GoogleSignInEnabled)
 			"Options" (Slice
 				(Map "Label" "No" "Value" "false")
 				(Map "Label" "Yes" "Value" "true")

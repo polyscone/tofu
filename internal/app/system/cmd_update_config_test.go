@@ -3,6 +3,7 @@ package system_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
@@ -33,6 +34,7 @@ func TestUpdateConfig(t *testing.T) {
 		systemEmail := "foo@example.com"
 		securityEmail := "bar@example.com"
 		requireTOTP := true
+		googleSignInEnabled := true
 		googleSignInClientID := "1234abcd"
 		twilioSID := ""
 		twilioToken := ""
@@ -42,6 +44,7 @@ func TestUpdateConfig(t *testing.T) {
 			systemEmail,
 			securityEmail,
 			requireTOTP,
+			googleSignInEnabled,
 			googleSignInClientID,
 			twilioSID,
 			twilioToken,
@@ -62,6 +65,9 @@ func TestUpdateConfig(t *testing.T) {
 		if want, got := requireTOTP, config.RequireTOTP; want != got {
 			t.Errorf("want require TOTP to be %v; got %v", want, got)
 		}
+		if want, got := googleSignInEnabled, config.GoogleSignInEnabled; want != got {
+			t.Errorf("want google sign in enabled to be %v; got %v", want, got)
+		}
 		if want, got := googleSignInClientID, config.GoogleSignInClientID; want != got {
 			t.Errorf("want google sign in client id to be %q; got %q", want, got)
 		}
@@ -78,6 +84,7 @@ func TestUpdateConfig(t *testing.T) {
 		systemEmail = "bar@example.com"
 		securityEmail = "baz@example.com"
 		requireTOTP = false
+		googleSignInEnabled = false
 		googleSignInClientID = "xyz"
 		twilioSID = "AC0123456789abcdef0123456789abcdef"
 		twilioToken = "0123456789abcdef0123456789abcdef"
@@ -87,6 +94,7 @@ func TestUpdateConfig(t *testing.T) {
 			systemEmail,
 			securityEmail,
 			requireTOTP,
+			googleSignInEnabled,
 			googleSignInClientID,
 			twilioSID,
 			twilioToken,
@@ -106,6 +114,9 @@ func TestUpdateConfig(t *testing.T) {
 		}
 		if want, got := requireTOTP, config.RequireTOTP; want != got {
 			t.Errorf("want require TOTP to be %v; got %v", want, got)
+		}
+		if want, got := googleSignInEnabled, config.GoogleSignInEnabled; want != got {
+			t.Errorf("want google sign in enabled to be %v; got %v", want, got)
 		}
 		if want, got := googleSignInClientID, config.GoogleSignInClientID; want != got {
 			t.Errorf("want google sign in client id to be %q; got %q", want, got)
@@ -128,31 +139,62 @@ func TestUpdateConfig(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
+		type vals map[string]any
+		c := func(overrides vals) system.Config {
+			config := system.Config{
+				SystemEmail:   "a@a.com",
+				SecurityEmail: "b@b.com",
+			}
+
+			for key, value := range overrides {
+				switch key {
+				case "SystemEmail":
+					config.SystemEmail = value.(string)
+
+				case "SecurityEmail":
+					config.SecurityEmail = value.(string)
+
+				case "GoogleSignInEnabled":
+					config.GoogleSignInEnabled = value.(bool)
+
+				default:
+					panic(fmt.Sprintf("unknown test key %q", key))
+				}
+			}
+
+			return config
+		}
+
 		tt := []struct {
-			name   string
-			guard  updateConfigGuard
-			config system.Config
-			want   error
+			name      string
+			guard     updateConfigGuard
+			overrides vals
+			want      error
 		}{
-			{"unauthorised", invalidGuard, system.Config{}, app.ErrUnauthorised},
-			{"empty email", validGuard, system.Config{}, app.ErrMalformedInput},
-			{"malformed system email", validGuard, system.Config{SystemEmail: "a"}, app.ErrMalformedInput},
-			{"malformed security email", validGuard, system.Config{SecurityEmail: "a"}, app.ErrMalformedInput},
+			{"unauthorised", invalidGuard, nil, app.ErrUnauthorised},
+			{"empty system email", validGuard, vals{"SystemEmail": ""}, app.ErrMalformedInput},
+			{"malformed system email", validGuard, vals{"SystemEmail": "a"}, app.ErrMalformedInput},
+			{"empty security email", validGuard, vals{"SecurityEmail": ""}, app.ErrMalformedInput},
+			{"malformed security email", validGuard, vals{"SecurityEmail": "a"}, app.ErrMalformedInput},
+			{"google sign in enabled without client id", validGuard, vals{"GoogleSignInEnabled": true}, app.ErrInvalidInput},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
+				config := c(tc.overrides)
+
 				_, err := svc.UpdateConfig(ctx, tc.guard,
-					tc.config.SystemEmail,
-					tc.config.SecurityEmail,
-					tc.config.RequireTOTP,
-					tc.config.GoogleSignInClientID,
-					tc.config.TwilioSID,
-					tc.config.TwilioToken,
-					tc.config.TwilioFromTel,
+					config.SystemEmail,
+					config.SecurityEmail,
+					config.RequireTOTP,
+					config.GoogleSignInEnabled,
+					config.GoogleSignInClientID,
+					config.TwilioSID,
+					config.TwilioToken,
+					config.TwilioFromTel,
 				)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")

@@ -18,9 +18,12 @@
 
 {{if and $type $name}}
 	{{if $label}}
-		<label for="{{$id}}">
+		<label
+			for="{{$id}}"
+			{{if $required}}class="required"{{end}}
+		>
 			{{$label}}
-			{{if $hint}}<small>{{$hint}}</small>{{end}}
+			{{- if $hint}} <small>{{$hint}}</small>{{end -}}
 		</label>
 	{{end}}
 
@@ -37,6 +40,7 @@
 		{{if $maxlength}}maxlength="{{$maxlength}}"{{end}}
 		{{if $required}}required{{end}}
 		{{if $disabled}}disabled{{end}}
+		{{if $error}}class="invalid"{{end}}
 	>
 	<p class="error">{{$error}}</p>
 {{else}}

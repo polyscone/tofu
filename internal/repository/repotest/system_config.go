@@ -28,6 +28,9 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		if want, got := false, config.RequireTOTP; want != got {
 			t.Errorf("want require TOTP to be %v; got %v", want, got)
 		}
+		if want, got := false, config.GoogleSignInEnabled; want != got {
+			t.Errorf("want Google sign in enabled to be %v; got %v", want, got)
+		}
 		if want, got := "", config.GoogleSignInClientID; want != got {
 			t.Errorf("want Google sign in client id to be %q; got %q", want, got)
 		}
@@ -46,6 +49,7 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 			SystemEmail:          "1",
 			SecurityEmail:        "2",
 			RequireTOTP:          true,
+			GoogleSignInEnabled:  true,
 			GoogleSignInClientID: "3",
 			TwilioSID:            "4",
 			TwilioToken:          "5",
@@ -71,6 +75,9 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		}
 		if want, got := true, config.RequireTOTP; want != got {
 			t.Errorf("want require TOTP to be %v; got %v", want, got)
+		}
+		if want, got := true, config.GoogleSignInEnabled; want != got {
+			t.Errorf("want Google sign in enabled to be %v; got %v", want, got)
 		}
 		if want, got := "3", config.GoogleSignInClientID; want != got {
 			t.Errorf("want Google sign in client id to be %q; got %q", want, got)

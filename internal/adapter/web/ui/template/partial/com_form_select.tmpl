@@ -17,9 +17,12 @@
 
 {{if and $name $options}}
 	{{if $label}}
-		<label for="{{$id}}">
+		<label
+			for="{{$id}}"
+			{{if $required}}class="required"{{end}}
+		>
 			{{$label}}
-			{{if $hint}}<small>{{$hint}}</small>{{end}}
+			{{- if $hint}} <small>{{$hint}}</small>{{end -}}
 		</label>
 	{{end}}
 
@@ -33,6 +36,7 @@
 		{{if $autofocus}}autofocus{{end}}
 		{{if $required}}required{{end}}
 		{{if $disabled}}disabled{{end}}
+		{{if $error}}class="invalid"{{end}}
 	>
 		{{if $placeholder}}
 			<option value="">{{$placeholder}}</option>

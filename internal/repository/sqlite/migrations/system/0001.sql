@@ -3,6 +3,7 @@ CREATE TABLE system__config (
 	system_email             TEXT NOT NULL,
 	security_email           TEXT NOT NULL,
 	require_totp             INTEGER NOT NULL,
+	google_sign_in_enabled   INTEGER NOT NULL,
 	google_sign_in_client_id TEXT NOT NULL,
 	twilio_sid               TEXT NOT NULL,
 	twilio_token             TEXT NOT NULL,

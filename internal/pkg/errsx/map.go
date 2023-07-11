@@ -18,6 +18,12 @@ func (m Map) Get(key string) string {
 	return ""
 }
 
+func (m *Map) Has(key string) bool {
+	_, ok := (*m)[key]
+
+	return ok
+}
+
 // Set associates the given error with the given key.
 // The map is lazily instantiated if it is nil.
 func (m *Map) Set(key string, msg any) {

@@ -110,6 +110,9 @@ func SignInWithRecoveryCode(ctx context.Context, h *handler.Handler, w http.Resp
 func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, jwt string) error {
 	config := h.Config(ctx)
 
+	if !config.GoogleSignInEnabled {
+		return errors.New("Google sign in is disabled")
+	}
 	if config.GoogleSignInClientID == "" {
 		return errors.New("Google sign in client id has not be set")
 	}
