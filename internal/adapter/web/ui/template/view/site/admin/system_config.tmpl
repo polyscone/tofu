@@ -3,7 +3,7 @@
 {{define "view_head"}}
 
 <div class="center">
-	{{if .Config.RequireSetup}}
+	{{if .Config.SetupRequired}}
 		<h1>Initial system configuration</h1>
 	{{else}}
 		<h1>System configuration</h1>
@@ -104,7 +104,7 @@
 		}}
 
 		<div class="bag reverse">
-			{{if .Config.RequireSetup}}
+			{{if .Config.SetupRequired}}
 				<button type="submit" class="push-inline-end">Finish setup</button>
 			{{else}}
 				<button type="submit" class="push-inline-end"{{if $disabled}} disabled{{end}}>Update configuration</button>

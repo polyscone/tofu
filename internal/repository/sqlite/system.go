@@ -85,7 +85,7 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 		return nil, err
 	}
 
-	config.RequireSetup = errors.Is(err, repository.ErrNotFound)
+	config.SetupRequired = errors.Is(err, repository.ErrNotFound)
 
 	return &config, nil
 }

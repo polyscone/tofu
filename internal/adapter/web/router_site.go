@@ -99,7 +99,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 			user := h.User(ctx)
 
 			systemConfigPath := mux.Path("system.config")
-			if r.Method == http.MethodGet && config.RequireSetup && r.URL.Path != systemConfigPath {
+			if r.Method == http.MethodGet && config.SetupRequired && r.URL.Path != systemConfigPath {
 				http.Redirect(w, r, systemConfigPath, http.StatusSeeOther)
 
 				return

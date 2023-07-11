@@ -16,8 +16,8 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 			t.Fatal(err)
 		}
 
-		if want, got := true, config.RequireSetup; want != got {
-			t.Errorf("want require setup to be %v; got %v", want, got)
+		if want, got := true, config.SetupRequired; want != got {
+			t.Errorf("want setup required to be %v; got %v", want, got)
 		}
 		if want, got := "", config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)
@@ -45,7 +45,7 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		}
 
 		err = repo.SaveConfig(ctx, &system.Config{
-			RequireSetup:         true,
+			SetupRequired:        true,
 			SystemEmail:          "1",
 			SecurityEmail:        "2",
 			TOTPRequired:         true,
@@ -64,8 +64,8 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 			t.Fatal(err)
 		}
 
-		if want, got := false, config.RequireSetup; want != got {
-			t.Errorf("want require setup to be %v; got %v", want, got)
+		if want, got := false, config.SetupRequired; want != got {
+			t.Errorf("want setup required to be %v; got %v", want, got)
 		}
 		if want, got := "1", config.SystemEmail; want != got {
 			t.Errorf("want system email to be %q; got %q", want, got)

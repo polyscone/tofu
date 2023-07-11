@@ -79,9 +79,9 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 
 		var passport guard.Passport
 		if !h.Sessions.GetBool(ctx, sess.IsSignedIn) {
-			passport = guard.NewPassport(config.RequireSetup, guard.User{})
+			passport = guard.NewPassport(config.SetupRequired, guard.User{})
 		} else {
-			passport = guard.NewPassport(config.RequireSetup, guard.User{
+			passport = guard.NewPassport(config.SetupRequired, guard.User{
 				ID:          user.ID,
 				IsSuper:     user.IsSuper(),
 				Permissions: user.Permissions(),
@@ -192,7 +192,7 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Pass
 
 	config := h.Config(ctx)
 
-	p := guard.NewPassport(config.RequireSetup, guard.User{
+	p := guard.NewPassport(config.SetupRequired, guard.User{
 		ID:          user.ID,
 		IsSuper:     user.IsSuper(),
 		Permissions: user.Permissions(),
