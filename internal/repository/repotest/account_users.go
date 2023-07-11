@@ -43,13 +43,14 @@ func AccountUsers(ctx context.Context, t *testing.T, newRepo func() account.Read
 				TOTPAlgorithm:        "TOTPAlgorithm",
 				TOTPDigits:           123,
 				TOTPPeriod:           456,
-				TOTPVerifiedAt:       time.Now(),
-				TOTPActivatedAt:      time.Now(),
-				TOTPResetRequestedAt: time.Now(),
-				TOTPResetApprovedAt:  time.Now(),
-				SignedUpAt:           time.Now(),
-				ActivatedAt:          time.Now(),
-				LastSignedInAt:       time.Now(),
+				TOTPVerifiedAt:       time.Now().Add(-1 * time.Second),
+				TOTPActivatedAt:      time.Now().Add(-2 * time.Second),
+				TOTPResetRequestedAt: time.Now().Add(-3 * time.Second),
+				TOTPResetApprovedAt:  time.Now().Add(-4 * time.Second),
+				InvitedAt:            time.Now().Add(-5 * time.Second),
+				SignedUpAt:           time.Now().Add(-6 * time.Second),
+				ActivatedAt:          time.Now().Add(-7 * time.Second),
+				LastSignedInAt:       time.Now().Add(-8 * time.Second),
 				LastSignedInMethod:   "Form",
 				HashedRecoveryCodes:  [][]byte{[]byte("1"), []byte("2"), []byte("3")},
 				Roles:                []*account.Role{role1, role2},
@@ -277,6 +278,9 @@ func accountUsersEqual(t *testing.T, want, got *account.User) {
 	}
 	if want, got := want.TOTPResetApprovedAt, got.TOTPResetApprovedAt; !want.Equal(got) {
 		t.Errorf("want totp reset approved at to be %v; got %v", want, got)
+	}
+	if want, got := want.InvitedAt, got.InvitedAt; !want.Equal(got) {
+		t.Errorf("want invited at to be %v; got %v", want, got)
 	}
 	if want, got := want.SignedUpAt, got.SignedUpAt; !want.Equal(got) {
 		t.Errorf("want signed up at to be %v; got %v", want, got)

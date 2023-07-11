@@ -11,11 +11,8 @@
 {{define "view_body"}}
 
 {{$isEditUserSuper := .Vars.User.IsSuper}}
-{{$isEditUserActivated := not .Vars.User.ActivatedAt.IsZero}}
 {{$canAssignSuperRole := .Passport.Account.CanAssignSuperRole $.Vars.User.ID}}
 {{$canChangeRoles := .Passport.Account.CanChangeRoles $.Vars.User.ID}}
-{{$cannotChangeRoles := not $canChangeRoles}}
-{{$canUpdate := $canChangeRoles}}
 
 <div class="center">
 	{{if eq .Vars.User.ID .Session.UserID}}
@@ -25,10 +22,10 @@
 		</div>
 	{{end}}
 
-	{{if $isEditUserActivated}}
-		<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}" method="POST">
-			{{template "com_csrf_input" .}}
+	<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}" method="POST">
+		{{template "com_csrf_input" .}}
 
+		{{if $canChangeRoles}}
 			{{if $isEditUserSuper}}
 				<input type="hidden" name="roles" value="{{.Vars.SuperRole.ID}}">
 			{{end}}
@@ -36,7 +33,7 @@
 			<b>Roles</b>
 
 			{{$roleIDs := $.Form.GetAllOr "roles" .Vars.UserRoleIDs}}
-			{{if $cannotChangeRoles}}
+			{{if (not $canChangeRoles)}}
 				{{$roleIDs = ToStrings .Vars.UserRoleIDs}}
 			{{end}}
 
@@ -47,7 +44,7 @@
 				{{end}}
 
 				{{$isChecked := HasString $roleIDs .ID}}
-				{{$isDisabled := or $cannotChangeRoles $isSuperRole}}
+				{{$isDisabled := $isSuperRole}}
 
 				<label>
 					<input
@@ -159,18 +156,15 @@
 						})
 					</script>
 				</div>
+
+				<div class="bag reverse">
+					<button type="submit" class="push-inline-end">Update user</button>
+
+					<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+				</div>
 			{{end}}
-
-			<div class="bag reverse">
-				<button type="submit" class="push-inline-end"{{if not $canUpdate}} disabled{{end}}>Update user</button>
-
-				<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
-			</div>
-		</form>
-	{{else}}
-		<p>This user hasn't been activated yet.</p>
-		<p><a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Go back</a></p>
-	{{end}}
+		{{end}}
+	</form>
 </div>
 
 {{end}}

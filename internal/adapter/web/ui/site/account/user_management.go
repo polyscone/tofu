@@ -21,18 +21,23 @@ func UserManagement(h *ui.Handler, mux *router.ServeMux) {
 
 		mux.Get("/", userListGet(h), "account.management.user.list")
 
-		mux.Prefix("/:userID", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanEditUsers() }))
+		mux.Prefix("/new", func(mux *router.ServeMux) {
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanInviteUsers() }))
 
-			mux.Get("/", userEditGet(h), "account.management.user.edit")
-			mux.Post("/", userEditPost(h), "account.management.user.edit.post")
+			mux.Get("/", userNewGet(h), "account.management.user.new")
+			mux.Post("/", userNewPost(h), "account.management.user.new.post")
 
 		})
 
 		mux.Prefix("/:userID", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }))
+			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanUpdateUsers() }))
+
+			mux.Get("/", userEditGet(h), "account.management.user.edit")
+			mux.Post("/", userEditPost(h), "account.management.user.edit.post")
 
 			mux.Prefix("/totp-reset-review", func(mux *router.ServeMux) {
+				mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }))
+
 				mux.Get("/", userTOTPResetReviewGet(h), "account.management.user.totp_reset_review")
 
 				mux.Prefix("/approve", func(mux *router.ServeMux) {
@@ -69,6 +74,59 @@ func userListGet(h *ui.Handler) http.HandlerFunc {
 	}
 }
 
+func userNewGet(h *ui.Handler) http.HandlerFunc {
+	h.SetViewVars("site/account/management/user/new", func(r *http.Request) (handler.Vars, error) {
+		ctx := r.Context()
+
+		roles, _, err := h.Repo.Account.FindRoles(ctx, account.SuperRole.ID)
+		if err != nil {
+			return nil, fmt.Errorf("find roles: %w", err)
+		}
+
+		vars := handler.Vars{
+			"Roles":            roles,
+			"SuperRole":        account.SuperRole,
+			"PermissionGroups": guard.PermissionGroups,
+		}
+
+		return vars, nil
+	})
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "site/account/management/user/new", nil)
+	}
+}
+
+func userNewPost(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Email string
+		}
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+		passport := h.Passport(ctx)
+
+		user, err := h.Svc.Account.InviteUser(ctx, passport.Account, input.Email)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "invite", err, "site/account/management/user/new", nil)
+
+			return
+		}
+
+		h.AddFlashf(ctx, "An invite to activate an account has been sent to %q.", user.Email)
+
+		h.Sessions.Set(ctx, sess.SortTopID, user.ID)
+		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
+
+		http.Redirect(w, r, h.Path("account.management.user.edit", ":userID", user.ID), http.StatusSeeOther)
+	}
+}
+
 func userEditGet(h *ui.Handler) http.HandlerFunc {
 	h.SetViewVars("site/account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
 		userID, err := router.URLParamAs[int](r, "userID")
@@ -93,6 +151,9 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 		}
 
 		roles, _, err := h.Repo.Account.FindRoles(ctx, account.SuperRole.ID)
+		if err != nil {
+			return nil, fmt.Errorf("find roles: %w", err)
+		}
 
 		vars := handler.Vars{
 			"User":             user,

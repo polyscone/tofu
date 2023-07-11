@@ -7,7 +7,8 @@ const (
 	deleteRoles = "account:roles:delete"
 
 	viewUsers        = "account:users:view"
-	editUsers        = "account:users:update"
+	inviteUsers      = "account:users:invite"
+	updateUsers      = "account:users:update"
 	changeRoles      = "account:users:update:roles"
 	reviewTOTPResets = "account:users:review_totp_reset"
 
@@ -29,7 +30,8 @@ var PermissionGroups = []PermissionGroup{
 		Name: "Account users",
 		Permissions: []Permission{
 			{DisplayName: "View users", Name: viewUsers},
-			{DisplayName: "Edit users", Name: editUsers},
+			{DisplayName: "Invite users", Name: inviteUsers},
+			{DisplayName: "Edit users", Name: updateUsers},
 			{DisplayName: "Change user roles", Name: changeRoles},
 			{DisplayName: "Review 2FA resets", Name: reviewTOTPResets},
 		},

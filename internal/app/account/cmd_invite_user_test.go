@@ -10,38 +10,52 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
-func TestSignUp(t *testing.T) {
-	ctx := context.Background()
+type inviteUserGuard struct {
+	value bool
+}
+
+func (g inviteUserGuard) CanInviteUsers() bool {
+	return g.value
+}
+
+func TestInviteUser(t *testing.T) {
+	validGuard := inviteUserGuard{value: true}
+	invalidGuard := inviteUserGuard{value: false}
 
 	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
+		if _, err := svc.InviteUser(ctx, validGuard, "foo@example.com"); err != nil {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.SignedUp{Email: "foo@example.com"})
+		events.Expect(account.Invited{Email: "foo@example.com"})
 
 		user, err := repo.FindUserByEmail(ctx, "foo@example.com")
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if user.SignedUpAt.IsZero() {
-			t.Error("want signed up at to be populated")
+		if user.InvitedAt.IsZero() {
+			t.Error("want invited at to be populated")
+		}
+		if !user.SignedUpAt.IsZero() {
+			t.Error("want signed up at to be zero")
 		}
 
-		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
+		if _, err := svc.InviteUser(ctx, validGuard, "foo@example.com"); err != nil {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.SignedUp{Email: "foo@example.com"})
+		events.Expect(account.Invited{Email: "foo@example.com"})
 	})
 
-	t.Run("success activated", func(t *testing.T) {
+	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Activate: true})
@@ -49,11 +63,27 @@ func TestSignUp(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.SignUp(ctx, user.Email); err != nil {
-			t.Fatal(err)
+		tt := []struct {
+			name  string
+			guard inviteUserGuard
+			email string
+			want  error
+		}{
+			{"unauthorised", invalidGuard, "", app.ErrUnauthorised},
+			{"authenticated user", validGuard, user.Email, nil},
 		}
+		for _, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				_, err := svc.InviteUser(ctx, tc.guard, tc.email)
+				switch {
+				case tc.want != nil && !errors.Is(err, tc.want):
+					t.Errorf("want %q; got %q", tc.want, err)
 
-		events.Expect(account.AlreadySignedUp{Email: user.Email})
+				case err == nil:
+					t.Error("want error; got <nil>")
+				}
+			})
+		}
 	})
 
 	t.Run("input validation", func(t *testing.T) {
@@ -80,10 +110,10 @@ func TestSignUp(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := svc.SignUp(ctx, tc.email)
+				_, err := svc.InviteUser(ctx, validGuard, tc.email)
 				switch {
 				case err == nil:
-					events.Expect(account.SignedUp{Email: tc.email})
+					events.Expect(account.Invited{Email: tc.email})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)

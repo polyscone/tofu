@@ -1,5 +1,9 @@
 package account
 
+type Invited struct {
+	Email string
+}
+
 type SignedUp struct {
 	Email string
 }

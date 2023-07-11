@@ -1,0 +1,32 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<div class="center">
+	<h1>Invite user</h1>
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
+	<form action="{{Path "account.management.user.new.post"}}" method="POST">
+		{{template "com_csrf_input" .}}
+
+		{{template "com_email_input" .WithComData
+			"Label" "Email"
+			"Name" "email"
+			"Required" true
+			"Autocomplete" "off"
+		}}
+
+		<div class="bag reverse">
+			<button type="submit" class="push-inline-end">Create user and send invite email</button>
+
+			<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+		</div>
+	</form>
+</div>
+
+{{end}}

@@ -39,6 +39,7 @@ type User struct {
 	TOTPActivatedAt      time.Time
 	TOTPResetRequestedAt time.Time
 	TOTPResetApprovedAt  time.Time
+	InvitedAt            time.Time
 	SignedUpAt           time.Time
 	ActivatedAt          time.Time
 	LastSignedInAt       time.Time
@@ -111,6 +112,20 @@ func (u *User) HasVerifiedTOTP() bool {
 
 func (u *User) HasActivatedTOTP() bool {
 	return !u.TOTPActivatedAt.IsZero()
+}
+
+func (u *User) InviteUser() error {
+	if !u.ActivatedAt.IsZero() {
+		return errors.New("cannot invite an already activated user")
+	}
+
+	if u.InvitedAt.IsZero() {
+		u.InvitedAt = time.Now().UTC()
+	}
+
+	u.Events.Enqueue(Invited{Email: u.Email})
+
+	return nil
 }
 
 func (u *User) SignUp() error {
@@ -596,10 +611,6 @@ func (u *User) SignInWithGoogle() error {
 }
 
 func (u *User) ChangeRoles(roles []*Role, grants, denials []Permission) error {
-	if u.ActivatedAt.IsZero() {
-		return errors.New("cannot change roles until activated")
-	}
-
 	var containsSuper bool
 	for _, role := range roles {
 		if containsSuper = role.ID == SuperRole.ID; containsSuper {

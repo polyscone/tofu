@@ -17,7 +17,11 @@
 	<tr>
 		<th>Email</th>
 		<th>Last sign in</th>
-		<th></th>
+		<th class="text-right no-wrap">
+			{{if .Passport.Account.CanInviteUsers}}
+				<a href="{{Path "account.management.user.new"}}{{$.URL.Query.String}}">Invite user</a>
+			{{end}}
+		</th>
 	</tr>
 
 	{{range .Vars.Users.Page.Rows}}
@@ -34,7 +38,7 @@
 					<a href="{{Path "account.management.user.totp_reset_review" ":userID" .ID}}{{$.URL.Query.String}}">Review 2FA reset request</a>
 				{{end}}
 
-				{{if $.Passport.Account.CanEditUsers}}
+				{{if $.Passport.Account.CanUpdateUsers}}
 					<a href="{{Path "account.management.user.edit" ":userID" .ID}}{{$.URL.Query.String}}">Edit</a>
 				{{end}}
 			</td>
