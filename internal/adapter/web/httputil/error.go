@@ -22,7 +22,8 @@ func ErrorStatus(err error) int {
 	case errors.Is(err, http.ErrHandlerTimeout):
 		return http.StatusGatewayTimeout
 
-	case errors.Is(err, app.ErrMalformedInput),
+	case errors.Is(err, account.ErrGoogleSignUpDisabled),
+		errors.Is(err, app.ErrMalformedInput),
 		errors.Is(err, app.ErrInvalidInput),
 		errors.Is(err, app.ErrBadRequest),
 		errors.Is(err, csrf.ErrEmptyToken),

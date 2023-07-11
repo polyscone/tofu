@@ -66,6 +66,12 @@
 				</div>
 			{{end}}
 
+			{{range $flash := .Session.FlashError}}
+				<div class="error-banner center">
+					<p>{{UnescapeHTML $flash}}</p>
+				</div>
+			{{end}}
+
 			{{range $flash := .Session.FlashImportant}}
 				<div class="flash-banner flash-banner--important center">
 					<p>{{UnescapeHTML $flash}}</p>

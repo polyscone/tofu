@@ -264,6 +264,22 @@ async function signInWithGoogle (jwt) {
 	state.error = ""
 	state.errors = res.body?.fields || {}
 
+	if (!res.ok) {
+		switch (res.status) {
+		case app.http.badGateway:
+			state.error = "Sign in failed because the server was offline, please try again."
+
+			break
+
+		default:
+			if (res.networkError) {
+				state.error = "Sign in failed because either the server was offline, or you have no internet connection, please try again."
+			} else {
+				state.error = "Your credentials are incorrect."
+			}
+		}
+	}
+
 	app.loading.hide()
 }
 

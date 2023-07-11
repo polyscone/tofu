@@ -20,7 +20,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.SignInWithGoogle(ctx, user1.Email)
+		err := svc.SignInWithGoogle(ctx, user1.Email, account.GoogleSignInOnly)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -39,7 +39,7 @@ func TestSignInWithGoogle(t *testing.T) {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
-		err = svc.SignInWithGoogle(ctx, "bar@example.com")
+		err = svc.SignInWithGoogle(ctx, "bar@example.com", account.GoogleAllowSignUp)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -68,7 +68,7 @@ func TestSignInWithGoogle(t *testing.T) {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
-		err = svc.SignInWithGoogle(ctx, "bar@example.com")
+		err = svc.SignInWithGoogle(ctx, "bar@example.com", account.GoogleSignInOnly)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -86,6 +86,21 @@ func TestSignInWithGoogle(t *testing.T) {
 		if want, got := account.SignInMethodGoogle, user2.LastSignedInMethod; want != got {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
+	})
+
+	t.Run("error cases", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, _ := NewTestEnv(ctx)
+
+		t.Run("sign in only with non-existent user", func(t *testing.T) {
+			events := testutil.NewEventLog(broker)
+			defer events.Check(t)
+
+			err := svc.SignInWithGoogle(ctx, "non@existent.com", account.GoogleSignInOnly)
+			if !errors.Is(err, account.ErrGoogleSignUpDisabled) {
+				t.Errorf("want error: %v; got <nil>", account.ErrGoogleSignUpDisabled)
+			}
+		})
 	})
 
 	t.Run("input validation", func(t *testing.T) {
@@ -114,7 +129,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.SignInWithGoogle(ctx, tc.email)
+				err := svc.SignInWithGoogle(ctx, tc.email, account.GoogleAllowSignUp)
 				switch {
 				case err == nil:
 					events.Expect(account.SignedInWithGoogle{Email: tc.email})

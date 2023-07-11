@@ -109,6 +109,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 			// Global session keys
 			Flash:          rn.h.Sessions.PopStrings(ctx, sess.Flash),
 			FlashImportant: rn.h.Sessions.PopStrings(ctx, sess.FlashImportant),
+			FlashError:     rn.h.Sessions.PopStrings(ctx, sess.FlashError),
 			Redirect:       rn.h.Sessions.GetString(ctx, sess.Redirect),
 			HighlightID:    rn.h.Sessions.PopInt(ctx, sess.HighlightID),
 

@@ -53,6 +53,12 @@ func signUpPost(h *ui.Handler) http.HandlerFunc {
 		logger := h.Logger(ctx)
 		config := h.Config(ctx)
 
+		if !config.SignUpEnabled {
+			h.HTML.ErrorView(w, r, "sign up", app.ErrForbidden, "site/error", nil)
+
+			return
+		}
+
 		_, err := h.Svc.Account.SignUp(ctx, input.Email)
 		if err != nil {
 			switch {

@@ -22,6 +22,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			SystemEmail          string
 			SecurityEmail        string
+			SignUpEnabled        bool `compare:"true"`
 			TOTPRequired         bool `compare:"true"`
 			GoogleSignInEnabled  bool `compare:"true"`
 			GoogleSignInClientID string
@@ -37,6 +38,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 		passport := h.Passport(ctx)
+		config := h.Config(ctx)
 
 		if !passport.System.CanUpdateConfig() {
 			h.HTML.ErrorView(w, r, "can update config", app.ErrUnauthorised, "site/error", nil)
@@ -44,10 +46,17 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
+		if config.SetupRequired {
+			// We force sign up enabled to be true when the config is first
+			// being setup because it's required for the first user to be created
+			input.SignUpEnabled = true
+		}
+
 		_, err := h.Svc.System.UpdateConfig(ctx,
 			passport.System,
 			input.SystemEmail,
 			input.SecurityEmail,
+			input.SignUpEnabled,
 			input.TOTPRequired,
 			input.GoogleSignInEnabled,
 			input.GoogleSignInClientID,

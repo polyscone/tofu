@@ -11,24 +11,28 @@
 {{define "view_body"}}
 
 <div class="center">
-	<p>You'll be able to choose your password after verifying your email address.</p>
+	{{if .Config.SignUpEnabled}}
+		<p>You'll be able to choose your password after verifying your email address.</p>
 
-	<form action="{{Path "account.sign_up.post"}}" method="POST">
-		{{template "com_csrf_input" .}}
+		<form action="{{Path "account.sign_up.post"}}" method="POST">
+			{{template "com_csrf_input" .}}
 
-		{{template "com_email_input" .WithComData
-			"Label" "Email"
-			"Name" "email"
-			"Required" true
-			"Autocomplete" "username"
-		}}
+			{{template "com_email_input" .WithComData
+				"Label" "Email"
+				"Name" "email"
+				"Required" true
+				"Autocomplete" "username"
+			}}
 
-		<div class="bag reverse">
-			<button type="submit" class="push-inline-end">Sign up</button>
+			<div class="bag reverse">
+				<button type="submit" class="push-inline-end">Sign up</button>
 
-			<a href="{{Path "account.sign_in"}}">Already have an account?</a>
-		</div>
-	</form>
+				<a href="{{Path "account.sign_in"}}">Already have an account?</a>
+			</div>
+		</form>
+	{{else}}
+		<p>Sign up is disabled for this application.</p>
+	{{end}}
 </div>
 
 {{end}}

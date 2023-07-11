@@ -140,7 +140,7 @@ func (u *User) SignUpWithGoogle() error {
 
 	u.Events.Enqueue(SignedUpWithGoogle{Email: u.Email})
 
-	return u.SignInWithGoogle()
+	return nil
 }
 
 func (u *User) Activate(password Password, hasher Hasher) error {

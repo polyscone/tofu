@@ -14,6 +14,7 @@ type Config struct {
 
 	SystemEmail          string
 	SecurityEmail        string
+	SignUpEnabled        bool
 	TOTPRequired         bool
 	GoogleSignInEnabled  bool
 	GoogleSignInClientID string
@@ -33,6 +34,14 @@ func (c *Config) ChangeSystemEmail(systemEmail Email) {
 
 func (c *Config) ChangeSecurityEmail(securityEmail Email) {
 	c.SecurityEmail = securityEmail.String()
+}
+
+func (c *Config) EnableSignUp() {
+	c.SignUpEnabled = true
+}
+
+func (c *Config) DisableSignUp() {
+	c.SignUpEnabled = false
 }
 
 func (c *Config) EnableRequireTOTP() {

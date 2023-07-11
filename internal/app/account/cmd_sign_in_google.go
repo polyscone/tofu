@@ -10,7 +10,16 @@ import (
 	"github.com/polyscone/tofu/internal/repository"
 )
 
-func (s *Service) SignInWithGoogle(ctx context.Context, email string) error {
+type GoogleSignInBehaviour byte
+
+const (
+	GoogleSignInOnly GoogleSignInBehaviour = iota
+	GoogleAllowSignUp
+)
+
+var ErrGoogleSignUpDisabled = errors.New("Google sign up disabled")
+
+func (s *Service) SignInWithGoogle(ctx context.Context, email string, behaviour GoogleSignInBehaviour) error {
 	var input struct {
 		email Email
 	}
@@ -39,8 +48,16 @@ func (s *Service) SignInWithGoogle(ctx context.Context, email string) error {
 		}
 
 	case errors.Is(err, repository.ErrNotFound):
+		if behaviour == GoogleSignInOnly {
+			return ErrGoogleSignUpDisabled
+		}
+
 		user = NewUser(input.email)
 		if err := user.SignUpWithGoogle(); err != nil {
+			return err
+		}
+
+		if err := user.SignInWithGoogle(); err != nil {
 			return err
 		}
 
@@ -54,7 +71,7 @@ func (s *Service) SignInWithGoogle(ctx context.Context, email string) error {
 		}
 
 	default:
-		return fmt.Errorf("find user by id: %w", err)
+		return fmt.Errorf("find user by email: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)

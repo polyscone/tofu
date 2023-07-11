@@ -39,9 +39,20 @@
 		}}
 
 		{{template "com_form_select" .WithComData
+			"Label" "Enable sign up"
+			"Name" "sign-up-enabled"
+			"Value" (.Form.GetOr "sign-up-enabled" .Config.SignUpEnabled)
+			"Options" (Slice
+				(Map "Label" "No" "Value" "false")
+				(Map "Label" "Yes" "Value" "true")
+			)
+			"Disabled" (or $disabled .Config.SetupRequired)
+		}}
+
+		{{template "com_form_select" .WithComData
 			"Label" "Require two-factor authentication"
-			"Name" "require-totp"
-			"Value" (.Form.GetOr "require-totp" .Config.TOTPRequired)
+			"Name" "totp-required"
+			"Value" (.Form.GetOr "totp-required" .Config.TOTPRequired)
 			"Options" (Slice
 				(Map "Label" "No" "Value" "false")
 				(Map "Label" "Yes" "Value" "true")

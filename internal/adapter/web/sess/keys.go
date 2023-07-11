@@ -4,6 +4,7 @@ const (
 	// Global session keys
 	Flash          = "global.flash"
 	FlashImportant = "global.flash_important"
+	FlashError     = "global.flash_error"
 	Redirect       = "global.redirect"
 	SortTopID      = "global.sort_top_id"
 	HighlightID    = "global.highlight_id"

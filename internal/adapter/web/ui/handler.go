@@ -221,6 +221,14 @@ func (h *Handler) AddFlashImportantf(ctx context.Context, format string, a ...an
 	h.Sessions.Set(ctx, sess.FlashImportant, flash)
 }
 
+func (h *Handler) AddFlashErrorf(ctx context.Context, format string, a ...any) {
+	flash := h.Sessions.GetStrings(ctx, sess.FlashError)
+
+	flash = append(flash, fmt.Sprintf(format, a...))
+
+	h.Sessions.Set(ctx, sess.FlashError, flash)
+}
+
 type PredicateFunc func(p guard.Passport) bool
 
 func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {

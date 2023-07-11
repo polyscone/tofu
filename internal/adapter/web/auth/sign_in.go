@@ -19,6 +19,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
 )
 
@@ -211,7 +212,12 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 		return fmt.Errorf("JWT used too soon")
 	}
 
-	if err := h.Svc.Account.SignInWithGoogle(ctx, claims.Email); err != nil {
+	behaviour := account.GoogleSignInOnly
+	if config.SignUpEnabled {
+		behaviour = account.GoogleAllowSignUp
+	}
+
+	if err := h.Svc.Account.SignInWithGoogle(ctx, claims.Email, behaviour); err != nil {
 		return fmt.Errorf("sign in wih Google: %w", err)
 	}
 

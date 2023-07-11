@@ -33,6 +33,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		systemEmail := "foo@example.com"
 		securityEmail := "bar@example.com"
+		signUpEnabled := true
 		totpRequired := true
 		googleSignInEnabled := true
 		googleSignInClientID := "1234abcd"
@@ -43,6 +44,7 @@ func TestUpdateConfig(t *testing.T) {
 		_, err := svc.UpdateConfig(ctx, validGuard,
 			systemEmail,
 			securityEmail,
+			signUpEnabled,
 			totpRequired,
 			googleSignInEnabled,
 			googleSignInClientID,
@@ -61,6 +63,9 @@ func TestUpdateConfig(t *testing.T) {
 		}
 		if want, got := securityEmail, config.SecurityEmail; want != got {
 			t.Errorf("want security email to be %q; got %q", want, got)
+		}
+		if want, got := signUpEnabled, config.SignUpEnabled; want != got {
+			t.Errorf("want sign up enabled to be %v; got %v", want, got)
 		}
 		if want, got := totpRequired, config.TOTPRequired; want != got {
 			t.Errorf("want TOTP required to be %v; got %v", want, got)
@@ -83,6 +88,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		systemEmail = "bar@example.com"
 		securityEmail = "baz@example.com"
+		signUpEnabled = false
 		totpRequired = false
 		googleSignInEnabled = false
 		googleSignInClientID = "xyz"
@@ -93,6 +99,7 @@ func TestUpdateConfig(t *testing.T) {
 		_, err = svc.UpdateConfig(ctx, validGuard,
 			systemEmail,
 			securityEmail,
+			signUpEnabled,
 			totpRequired,
 			googleSignInEnabled,
 			googleSignInClientID,
@@ -111,6 +118,9 @@ func TestUpdateConfig(t *testing.T) {
 		}
 		if want, got := securityEmail, config.SecurityEmail; want != got {
 			t.Errorf("want security email to be %q; got %q", want, got)
+		}
+		if want, got := signUpEnabled, config.SignUpEnabled; want != got {
+			t.Errorf("want sign up enabled to be %v; got %v", want, got)
 		}
 		if want, got := totpRequired, config.TOTPRequired; want != got {
 			t.Errorf("want TOTP required to be %v; got %v", want, got)
@@ -185,6 +195,7 @@ func TestUpdateConfig(t *testing.T) {
 				_, err := svc.UpdateConfig(ctx, tc.guard,
 					config.SystemEmail,
 					config.SecurityEmail,
+					config.SignUpEnabled,
 					config.TOTPRequired,
 					config.GoogleSignInEnabled,
 					config.GoogleSignInClientID,

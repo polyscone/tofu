@@ -87,6 +87,7 @@ type SessionData struct {
 	// General session keys
 	Flash          []string
 	FlashImportant []string
+	FlashError     []string
 	Redirect       string
 	HighlightID    int
 

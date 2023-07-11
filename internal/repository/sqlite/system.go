@@ -64,6 +64,7 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 		SELECT
 			system_email,
 			security_email,
+			sign_up_enabled,
 			totp_required,
 			google_sign_in_enabled,
 			google_sign_in_client_id,
@@ -74,6 +75,7 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 	`).Scan(
 		&config.SystemEmail,
 		&config.SecurityEmail,
+		&config.SignUpEnabled,
 		&config.TOTPRequired,
 		&config.GoogleSignInEnabled,
 		&config.GoogleSignInClientID,
@@ -85,7 +87,10 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 		return nil, err
 	}
 
-	config.SetupRequired = errors.Is(err, repository.ErrNotFound)
+	if errors.Is(err, repository.ErrNotFound) {
+		config.SetupRequired = true
+		config.SignUpEnabled = true
+	}
 
 	return &config, nil
 }
@@ -96,6 +101,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 			id,
 			system_email,
 			security_email,
+			sign_up_enabled,
 			totp_required,
 			google_sign_in_enabled,
 			google_sign_in_client_id,
@@ -107,6 +113,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 			:id,
 			:system_email,
 			:security_email,
+			:sign_up_enabled,
 			:totp_required,
 			:google_sign_in_enabled,
 			:google_sign_in_client_id,
@@ -119,6 +126,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 			UPDATE SET
 				system_email = :system_email,
 				security_email = :security_email,
+				sign_up_enabled = :sign_up_enabled,
 				totp_required = :totp_required,
 				google_sign_in_enabled = :google_sign_in_enabled,
 				google_sign_in_client_id = :google_sign_in_client_id,
@@ -130,6 +138,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 		sql.Named("id", 1),
 		sql.Named("system_email", config.SystemEmail),
 		sql.Named("security_email", config.SecurityEmail),
+		sql.Named("sign_up_enabled", config.SignUpEnabled),
 		sql.Named("totp_required", config.TOTPRequired),
 		sql.Named("google_sign_in_enabled", config.GoogleSignInEnabled),
 		sql.Named("google_sign_in_client_id", config.GoogleSignInClientID),
