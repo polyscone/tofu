@@ -33,31 +33,32 @@ func TestSignUp(t *testing.T) {
 		if user.SignedUpAt.IsZero() {
 			t.Error("want signed up at to be populated")
 		}
+
+		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
+			t.Fatal(err)
+		}
+
+		events.Expect(account.SignedUp{Email: "foo@example.com"})
+
+		user, err = repo.FindUserByEmail(ctx, "foo@example.com")
+		if err != nil {
+			t.Fatal(err)
+		}
 	})
 
-	t.Run("errors", func(t *testing.T) {
+	t.Run("success activated", func(t *testing.T) {
 		svc, broker, repo := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
+		if _, err := svc.SignUp(ctx, user.Email); err != nil {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.SignedUp{Email: "foo@example.com"})
-
-		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
-			t.Fatal(err)
-		}
-
-		events.Expect(account.SignedUp{Email: "foo@example.com"})
-
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "bar@example.com", Activate: true})
-		_, err := svc.SignUp(ctx, user.Email)
-		if want := app.ErrConflictingInput; !errors.Is(err, want) {
-			t.Fatalf("want error: %v; got %v", want, err)
-		}
+		events.Expect(account.AlreadySignedUp{Email: user.Email})
 	})
 
 	t.Run("input validation", func(t *testing.T) {

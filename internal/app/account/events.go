@@ -4,6 +4,10 @@ type SignedUp struct {
 	Email string
 }
 
+type AlreadySignedUp struct {
+	Email string
+}
+
 type SignedUpWithGoogle struct {
 	Email string
 }

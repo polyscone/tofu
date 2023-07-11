@@ -115,6 +115,8 @@ func (u *User) HasActivatedTOTP() bool {
 
 func (u *User) SignUp() error {
 	if !u.ActivatedAt.IsZero() {
+		u.Events.Enqueue(AlreadySignedUp{Email: u.Email})
+
 		return nil
 	}
 

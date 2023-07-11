@@ -1,17 +1,13 @@
 package account
 
 import (
-	"context"
-	"errors"
 	"net/http"
-	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
@@ -50,7 +46,6 @@ func signUpPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		logger := h.Logger(ctx)
 		config := h.Config(ctx)
 
 		if !config.SignUpEnabled {
@@ -61,31 +56,9 @@ func signUpPost(h *ui.Handler) http.HandlerFunc {
 
 		_, err := h.Svc.Account.SignUp(ctx, input.Email)
 		if err != nil {
-			switch {
-			case errors.Is(err, app.ErrConflictingInput):
-				background.Go(func() {
-					// We can't use the request context here because it will have already
-					// been cancelled after the main request handler finished
-					ctx := context.Background()
+			h.HTML.ErrorView(w, r, "sign up", err, "site/account/sign_up/form", nil)
 
-					tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
-					if err != nil {
-						logger.Error("sign up: add reset password token: %v", "error", err)
-
-						return
-					}
-
-					vars := handler.Vars{"Token": tok}
-					if err := h.SendEmail(ctx, config.SystemEmail, input.Email, "sign_up_reset_password", vars); err != nil {
-						logger.Error("sign up: send email: %v", "error", err)
-					}
-				})
-
-			default:
-				h.HTML.ErrorView(w, r, "sign up", err, "site/account/sign_up/form", nil)
-
-				return
-			}
+			return
 		}
 
 		h.Sessions.Set(ctx, "account.sign_up.email", input.Email)

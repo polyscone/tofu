@@ -31,6 +31,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 	h.Broker.Listen(account.SignedInWithPasswordHandler(h))
 	h.Broker.Listen(account.SignedUpHandler(h))
+	h.Broker.Listen(account.AlreadySignedUpHandler(h))
 	h.Broker.Listen(account.TOTPDisabledHandler(h))
 
 	errorHandler := func(msg string) middleware.ErrorHandler {
