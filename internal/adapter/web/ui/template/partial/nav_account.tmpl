@@ -11,7 +11,7 @@
 		{{if .Session.HasActivatedTOTP}}
 			<li><a href="{{Path "account.totp.recovery_codes"}}">Generate new recovery codes</a></li>
 
-			{{if not .Config.RequireTOTP}}
+			{{if not .Config.TOTPRequired}}
 				<li><a href="{{Path "account.totp.disable"}}">Disable two-factor authentication</a></li>
 			{{end}}
 		{{else}}

@@ -41,7 +41,7 @@
 		{{template "com_form_select" .WithComData
 			"Label" "Require two-factor authentication"
 			"Name" "require-totp"
-			"Value" (.Form.GetOr "require-totp" .Config.RequireTOTP)
+			"Value" (.Form.GetOr "require-totp" .Config.TOTPRequired)
 			"Options" (Slice
 				(Map "Label" "No" "Value" "false")
 				(Map "Label" "Yes" "Value" "true")

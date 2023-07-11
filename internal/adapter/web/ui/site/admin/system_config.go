@@ -22,7 +22,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			SystemEmail          string
 			SecurityEmail        string
-			RequireTOTP          bool `compare:"true"`
+			TOTPRequired         bool `compare:"true"`
 			GoogleSignInEnabled  bool `compare:"true"`
 			GoogleSignInClientID string
 			TwilioSID            string
@@ -48,7 +48,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			passport.System,
 			input.SystemEmail,
 			input.SecurityEmail,
-			input.RequireTOTP,
+			input.TOTPRequired,
 			input.GoogleSignInEnabled,
 			input.GoogleSignInClientID,
 			input.TwilioSID,

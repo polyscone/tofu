@@ -2,7 +2,7 @@ CREATE TABLE system__config (
 	id                       TEXT NOT NULL PRIMARY KEY,
 	system_email             TEXT NOT NULL,
 	security_email           TEXT NOT NULL,
-	require_totp             INTEGER NOT NULL,
+	totp_required            INTEGER NOT NULL,
 	google_sign_in_enabled   INTEGER NOT NULL,
 	google_sign_in_client_id TEXT NOT NULL,
 	twilio_sid               TEXT NOT NULL,

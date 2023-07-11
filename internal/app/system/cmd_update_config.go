@@ -14,14 +14,14 @@ type UpdateConfigGuard interface {
 
 func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	systemEmail, securityEmail string,
-	requireTOTP bool,
+	totpRequired bool,
 	googleSignInEnabled bool, googleSignInClientID string,
 	twilioSID, twilioToken, twilioFromTel string,
 ) (*Config, error) {
 	var input struct {
 		systemEmail          Email
 		securityEmail        Email
-		requireTOTP          bool
+		totpRequired         bool
 		googleSignInEnabled  bool
 		googleSignInClientID GoogleClientID
 		twilioSID            TwilioSID
@@ -43,7 +43,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 			errs.Set("security email", err)
 		}
 
-		input.requireTOTP = requireTOTP
+		input.totpRequired = totpRequired
 		input.googleSignInEnabled = googleSignInEnabled
 
 		if input.googleSignInClientID, err = NewGoogleClientID(googleSignInClientID); err != nil {
@@ -71,7 +71,12 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 
 	config.ChangeSystemEmail(input.systemEmail)
 	config.ChangeSecurityEmail(input.securityEmail)
-	config.ChangeRequireTOTP(input.requireTOTP)
+
+	if input.totpRequired {
+		config.EnableRequireTOTP()
+	} else {
+		config.DisableRequireTOTP()
+	}
 
 	config.ChangeGoogleSignInClientID(input.googleSignInClientID)
 	if input.googleSignInEnabled {

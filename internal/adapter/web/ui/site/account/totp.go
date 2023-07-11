@@ -410,7 +410,7 @@ func totpDisablePost(h *ui.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		if config.RequireTOTP {
+		if config.TOTPRequired {
 			h.HTML.ErrorView(w, r, "disable TOTP", app.ErrForbidden, "site/error", nil)
 
 			return

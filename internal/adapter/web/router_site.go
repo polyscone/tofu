@@ -107,7 +107,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 			isInTOTPSection := h.HasPathPrefix(r.URL.Path, "account.totp.section")
 			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
-			if !isInTOTPSection && isSignedIn && config.RequireTOTP && !user.HasActivatedTOTP() {
+			if !isInTOTPSection && isSignedIn && config.TOTPRequired && !user.HasActivatedTOTP() {
 				h.AddFlashf(ctx, "Two-factor authentication is required to use this application.")
 
 				http.Redirect(w, r, mux.Path("account.totp.setup"), http.StatusSeeOther)

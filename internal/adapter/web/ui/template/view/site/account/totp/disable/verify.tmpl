@@ -11,7 +11,7 @@
 {{define "view_body"}}
 
 <div class="center">
-	{{if .Config.RequireTOTP}}
+	{{if .Config.TOTPRequired}}
 		<p>Two-factor authentication is required and can't be disabled.</p>
 	{{else}}
 		<p>Enter your password to verify your identity and disable two-factor authentication.</p>

@@ -33,7 +33,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		systemEmail := "foo@example.com"
 		securityEmail := "bar@example.com"
-		requireTOTP := true
+		totpRequired := true
 		googleSignInEnabled := true
 		googleSignInClientID := "1234abcd"
 		twilioSID := ""
@@ -43,7 +43,7 @@ func TestUpdateConfig(t *testing.T) {
 		_, err := svc.UpdateConfig(ctx, validGuard,
 			systemEmail,
 			securityEmail,
-			requireTOTP,
+			totpRequired,
 			googleSignInEnabled,
 			googleSignInClientID,
 			twilioSID,
@@ -62,8 +62,8 @@ func TestUpdateConfig(t *testing.T) {
 		if want, got := securityEmail, config.SecurityEmail; want != got {
 			t.Errorf("want security email to be %q; got %q", want, got)
 		}
-		if want, got := requireTOTP, config.RequireTOTP; want != got {
-			t.Errorf("want require TOTP to be %v; got %v", want, got)
+		if want, got := totpRequired, config.TOTPRequired; want != got {
+			t.Errorf("want TOTP required to be %v; got %v", want, got)
 		}
 		if want, got := googleSignInEnabled, config.GoogleSignInEnabled; want != got {
 			t.Errorf("want google sign in enabled to be %v; got %v", want, got)
@@ -83,7 +83,7 @@ func TestUpdateConfig(t *testing.T) {
 
 		systemEmail = "bar@example.com"
 		securityEmail = "baz@example.com"
-		requireTOTP = false
+		totpRequired = false
 		googleSignInEnabled = false
 		googleSignInClientID = "xyz"
 		twilioSID = "AC0123456789abcdef0123456789abcdef"
@@ -93,7 +93,7 @@ func TestUpdateConfig(t *testing.T) {
 		_, err = svc.UpdateConfig(ctx, validGuard,
 			systemEmail,
 			securityEmail,
-			requireTOTP,
+			totpRequired,
 			googleSignInEnabled,
 			googleSignInClientID,
 			twilioSID,
@@ -112,8 +112,8 @@ func TestUpdateConfig(t *testing.T) {
 		if want, got := securityEmail, config.SecurityEmail; want != got {
 			t.Errorf("want security email to be %q; got %q", want, got)
 		}
-		if want, got := requireTOTP, config.RequireTOTP; want != got {
-			t.Errorf("want require TOTP to be %v; got %v", want, got)
+		if want, got := totpRequired, config.TOTPRequired; want != got {
+			t.Errorf("want TOTP required to be %v; got %v", want, got)
 		}
 		if want, got := googleSignInEnabled, config.GoogleSignInEnabled; want != got {
 			t.Errorf("want google sign in enabled to be %v; got %v", want, got)
@@ -185,7 +185,7 @@ func TestUpdateConfig(t *testing.T) {
 				_, err := svc.UpdateConfig(ctx, tc.guard,
 					config.SystemEmail,
 					config.SecurityEmail,
-					config.RequireTOTP,
+					config.TOTPRequired,
 					config.GoogleSignInEnabled,
 					config.GoogleSignInClientID,
 					config.TwilioSID,

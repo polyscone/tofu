@@ -14,7 +14,7 @@ type Config struct {
 
 	SystemEmail          string
 	SecurityEmail        string
-	RequireTOTP          bool
+	TOTPRequired         bool
 	GoogleSignInEnabled  bool
 	GoogleSignInClientID string
 	TwilioSID            string
@@ -35,8 +35,12 @@ func (c *Config) ChangeSecurityEmail(securityEmail Email) {
 	c.SecurityEmail = securityEmail.String()
 }
 
-func (c *Config) ChangeRequireTOTP(requireTOTP bool) {
-	c.RequireTOTP = requireTOTP
+func (c *Config) EnableRequireTOTP() {
+	c.TOTPRequired = true
+}
+
+func (c *Config) DisableRequireTOTP() {
+	c.TOTPRequired = false
 }
 
 func (c *Config) ChangeGoogleSignInClientID(clientID GoogleClientID) {
