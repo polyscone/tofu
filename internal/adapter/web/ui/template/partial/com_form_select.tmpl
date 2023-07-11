@@ -1,7 +1,7 @@
 {{define "com_form_select" -}}
 
 {{$name := .ComData.Name}}
-{{$id := or .ComData.ID (printf "form__%v" (ReplaceAll $name " " "-"))}}
+{{$id := or .ComData.ID (printf "form__%v" $name)}}
 {{$label := .ComData.Label}}
 {{$hint := .ComData.Hint}}
 {{$placeholder := .ComData.Placeholder}}

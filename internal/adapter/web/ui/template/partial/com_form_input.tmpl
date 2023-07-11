@@ -2,7 +2,7 @@
 
 {{$type := .ComData.Type}}
 {{$name := .ComData.Name}}
-{{$id := or .ComData.ID (printf "form__%v" (ReplaceAll $name " " "-"))}}
+{{$id := or .ComData.ID (printf "form__%v" $name)}}
 {{$label := .ComData.Label}}
 {{$hint := .ComData.Hint}}
 {{$placeholder := .ComData.Placeholder}}
