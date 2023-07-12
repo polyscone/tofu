@@ -29,8 +29,6 @@
 
 	--clr-focus-400: hsl(59, 100%, 95%);
 
-	--clr-valid-400: transparent;
-
 	--clr-invalid-100: hsl(0, 100%, 95%);
 	--clr-invalid-400: hsl(0, 100%, 50%);
 
@@ -158,26 +156,17 @@
 		border: none;
 	}
 
-	:focus-visible:is(input, textarea) {
-		outline-width: 1px;
-		outline-style: solid;
-		outline-color: transparent;
-	}
-
 	:is(input, textarea).invalid:placeholder-shown,
 	:is(input, textarea).invalid:not(:placeholder-shown),
 	:is(input, textarea):invalid:not(:placeholder-shown),
 	[data-invalid] :is(input, textarea):invalid {
 		background: var(--clr-invalid-100);
-		outline-color: var(--clr-invalid-400);
+		border-color: var(--clr-invalid-400);
 	}
 
+	:is(input, textarea).invalid:focus,
 	:is(input, textarea):invalid:focus {
 		background: var(--clr-focus-400);
-	}
-
-	:is(input, textarea):valid:focus {
-		outline-color: var(--clr-valid-400);
 	}
 
 	:is(input, textarea):placeholder-shown {

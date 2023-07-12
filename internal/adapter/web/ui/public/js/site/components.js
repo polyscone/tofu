@@ -20,6 +20,12 @@ onMount("input, textarea", node => {
 	})
 })
 
+onMount(".invalid", node => {
+	node.addEventListener("input", () => {
+		node.classList.remove("invalid")
+	})
+})
+
 onMount("[data-locale-number]", node => {
 	const str = node.innerText.trim()
 
