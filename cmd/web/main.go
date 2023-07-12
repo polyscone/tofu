@@ -226,10 +226,10 @@ func main() {
 		slog.Error("shut down", "error", err)
 	}
 
-	databases.mu.Lock()
-	defer databases.mu.Unlock()
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
 
-	for alias, db := range databases.data {
+	for alias, db := range cache.dbs {
 		if err := db.Close(); err != nil {
 			slog.Error("close database connection", "alias", alias, "error", err)
 		}

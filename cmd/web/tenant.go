@@ -21,11 +21,31 @@ import (
 
 var tenants = make(map[string]Tenant)
 
-var databases = struct {
-	mu   sync.Mutex
-	data map[string]*sqlite.DB
-}{data: make(map[string]*sqlite.DB)}
+type sqliteRepo struct {
+	account *sqlite.AccountRepo
+	system  *sqlite.SystemRepo
+	web     *sqlite.WebRepo
+}
 
+var cache = struct {
+	mu     sync.Mutex
+	repos  map[string]sqliteRepo
+	dbs    map[string]*sqlite.DB
+	mailer smtp.Mailer
+}{
+	repos: make(map[string]sqliteRepo),
+	dbs:   make(map[string]*sqlite.DB),
+}
+
+// newTenant returns a tenant where the hostname is mapped to a shared alias.
+//
+// Tenants share repositories along with their underlying database connection
+// pools based on the alias, and all tenants share an SMTP mailer regardless
+// of alias.
+//
+// Every tenant gets its own event broker regardless of alias so that different
+// adapters, even for those handling the same hostname, can respond to
+// application events differently if required.
 func newTenant(hostname string) (*handler.Tenant, error) {
 	ctx := context.Background()
 
@@ -37,49 +57,61 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		return nil, fmt.Errorf("alias name for the tenant %v is empty", hostname)
 	}
 
-	databases.mu.Lock()
-	defer databases.mu.Unlock()
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
 
-	db := databases.data[data.Alias]
-	if db == nil {
+	repo, ok := cache.repos[data.Alias]
+	if !ok {
 		var err error
-		p := filepath.Join(opts.data, data.Alias, "main.sqlite")
-		db, err = sqlite.Open(ctx, sqlite.KindFile, p)
-		if err != nil {
-			return nil, fmt.Errorf("open database: %w", err)
+
+		db := cache.dbs[data.Alias]
+		if db == nil {
+			p := filepath.Join(opts.data, data.Alias, "main.sqlite")
+			db, err = sqlite.Open(ctx, sqlite.KindFile, p)
+			if err != nil {
+				return nil, fmt.Errorf("open database: %w", err)
+			}
+
+			cache.dbs[data.Alias] = db
 		}
 
-		databases.data[data.Alias] = db
+		repo.account, err = sqlite.NewAccountRepo(ctx, db, app.SignInThrottleTTL)
+		if err != nil {
+			return nil, fmt.Errorf("new account repo: %w", err)
+		}
+
+		repo.system, err = sqlite.NewSystemRepo(ctx, db)
+		if err != nil {
+			return nil, fmt.Errorf("new system repo: %w", err)
+		}
+
+		repo.web, err = sqlite.NewWebRepo(ctx, db, app.SessionTTL)
+		if err != nil {
+			return nil, fmt.Errorf("new web repo: %w", err)
+		}
+
+		cache.repos[data.Alias] = repo
 	}
+
+	if cache.mailer == nil {
+		var err error
+		cache.mailer, err = smtp.NewMailClient("localhost", 25)
+		if err != nil {
+			return nil, fmt.Errorf("new SMTP client: %w", err)
+		}
+	}
+
+	var svc handler.Svc
+	var err error
 
 	broker := event.NewMemoryBroker()
 
-	accountRepo, err := sqlite.NewAccountRepo(ctx, db, app.SignInThrottleTTL)
-	if err != nil {
-		return nil, fmt.Errorf("new account repo: %w", err)
-	}
-
-	systemRepo, err := sqlite.NewSystemRepo(ctx, db)
-	if err != nil {
-		return nil, fmt.Errorf("new system repo: %w", err)
-	}
-
-	webRepo, err := sqlite.NewWebRepo(ctx, db, app.SessionTTL)
-	if err != nil {
-		return nil, fmt.Errorf("new web repo: %w", err)
-	}
-
-	mailer, err := smtp.NewMailClient("localhost", 25)
-	if err != nil {
-		return nil, fmt.Errorf("new SMTP client: %w", err)
-	}
-
-	accountService, err := account.NewService(broker, accountRepo, hasher)
+	svc.Account, err = account.NewService(broker, repo.account, hasher)
 	if err != nil {
 		return nil, fmt.Errorf("new account service: %w", err)
 	}
 
-	systemService, err := system.NewService(broker, systemRepo)
+	svc.System, err = system.NewService(broker, repo.system)
 	if err != nil {
 		return nil, fmt.Errorf("new system service: %w", err)
 	}
@@ -90,15 +122,12 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		Insecure: opts.server.insecure,
 		Proxies:  opts.server.proxies,
 		Broker:   broker,
-		Email:    mailer,
-		Svc: handler.Svc{
-			Account: accountService,
-			System:  systemService,
-		},
+		Email:    cache.mailer,
+		Svc:      svc,
 		Repo: handler.Repo{
-			Account: accountRepo,
-			System:  systemRepo,
-			Web:     webRepo,
+			Account: repo.account,
+			System:  repo.system,
+			Web:     repo.web,
 		},
 	}
 
