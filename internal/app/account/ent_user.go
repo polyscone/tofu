@@ -10,6 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/aggregate"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/otp"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -67,13 +68,9 @@ func NewUser(email Email) *User {
 }
 
 func (u *User) IsSuper() bool {
-	for _, role := range u.Roles {
-		if role.ID == SuperRole.ID {
-			return true
-		}
-	}
-
-	return false
+	return slices.ContainsFunc(u.Roles, func(role *Role) bool {
+		return role.ID == SuperRole.ID
+	})
 }
 
 func (u *User) Permissions() []string {
@@ -611,12 +608,9 @@ func (u *User) SignInWithGoogle() error {
 }
 
 func (u *User) ChangeRoles(roles []*Role, grants, denials []Permission) error {
-	var containsSuper bool
-	for _, role := range roles {
-		if containsSuper = role.ID == SuperRole.ID; containsSuper {
-			break
-		}
-	}
+	containsSuper := slices.ContainsFunc(roles, func(role *Role) bool {
+		return role.ID == SuperRole.ID
+	})
 
 	if u.IsSuper() && !containsSuper {
 		return errors.New("cannot remove super role")
