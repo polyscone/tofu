@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/http"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -55,9 +56,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		Consume: func(r *http.Request) bool {
 			whitelist := []string{".css", ".gif", ".ico", ".jpeg", ".jpg", ".js", ".png"}
 
-			return !slices.ContainsFunc(whitelist, func(el string) bool {
-				return strings.HasSuffix(r.URL.Path, el)
-			})
+			return !slices.Contains(whitelist, filepath.Ext(r.URL.Path))
 		},
 		ErrorHandler:   errorHandler("rate limit middleware"),
 		TrustedProxies: h.Proxies,

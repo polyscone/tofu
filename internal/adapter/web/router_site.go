@@ -73,9 +73,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		Consume: func(r *http.Request) bool {
 			whitelist := []string{".css", ".gif", ".ico", ".jpeg", ".jpg", ".js", ".png"}
 
-			return !slices.ContainsFunc(whitelist, func(el string) bool {
-				return strings.HasSuffix(r.URL.Path, el)
-			})
+			return !slices.Contains(whitelist, filepath.Ext(r.URL.Path))
 		},
 		ErrorHandler:   errorHandler("rate limit middleware"),
 		TrustedProxies: h.Proxies,
@@ -158,7 +156,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 		mux.Prefix("/system", func(mux *router.ServeMux) {
 			mux.Before(h.RequireSignInIf(func(p guard.Passport) bool { return !p.System.CanViewConfig() }))
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
+			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
 
 			admin.SystemConfig(h, mux)
 		})

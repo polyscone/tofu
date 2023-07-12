@@ -17,25 +17,25 @@ import (
 
 func RoleManagement(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/roles", func(mux *router.ServeMux) {
-		mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanViewRoles() }))
+		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewRoles() }))
 
 		mux.Get("/", roleListGet(h), "account.management.role.list")
 
 		mux.Prefix("/new", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanCreateRoles() }))
+			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanCreateRoles() }))
 
 			mux.Get("/", roleNewGet(h), "account.management.role.new")
 			mux.Post("/", roleNewPost(h), "account.management.role.new.post")
 		})
 
 		mux.Prefix("/:roleID", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanUpdateRoles() }))
+			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanUpdateRoles() }))
 
 			mux.Get("/", roleEditGet(h), "account.management.role.edit")
 			mux.Post("/", roleEditPost(h), "account.management.role.edit.post")
 
 			mux.Prefix("/delete", func(mux *router.ServeMux) {
-				mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanDeleteRoles() }))
+				mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanDeleteRoles() }))
 
 				mux.Get("/", roleDeleteGet(h), "account.management.role.delete")
 				mux.Post("/", roleDeletePost(h), "account.management.role.delete.post")

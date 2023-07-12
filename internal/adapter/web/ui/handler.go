@@ -229,8 +229,6 @@ func (h *Handler) AddFlashErrorf(ctx context.Context, format string, a ...any) {
 	h.Sessions.Set(ctx, sess.FlashError, flash)
 }
 
-type PredicateFunc func(p guard.Passport) bool
-
 func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
 	ctx := r.Context()
 	isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
@@ -245,6 +243,8 @@ func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
 
 	return true
 }
+
+type PredicateFunc func(p guard.Passport) bool
 
 func (h *Handler) RequireSignInIf(check PredicateFunc) router.BeforeHookFunc {
 	return func(w http.ResponseWriter, r *http.Request) bool {
@@ -264,7 +264,7 @@ func (h *Handler) RequireSignInIf(check PredicateFunc) router.BeforeHookFunc {
 	}
 }
 
-func (h *Handler) RequireAuth(check PredicateFunc) router.BeforeHookFunc {
+func (h *Handler) CanAccess(check PredicateFunc) router.BeforeHookFunc {
 	return func(w http.ResponseWriter, r *http.Request) bool {
 		ctx := r.Context()
 		passport := h.Passport(ctx)

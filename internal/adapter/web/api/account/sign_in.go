@@ -122,6 +122,8 @@ func signInGooglePost(h *api.Handler) http.HandlerFunc {
 			return
 		}
 
+		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+
 		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
 }

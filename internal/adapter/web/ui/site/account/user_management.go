@@ -17,12 +17,12 @@ import (
 
 func UserManagement(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/users", func(mux *router.ServeMux) {
-		mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanViewUsers() }))
+		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewUsers() }))
 
 		mux.Get("/", userListGet(h), "account.management.user.list")
 
 		mux.Prefix("/new", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanInviteUsers() }))
+			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanInviteUsers() }))
 
 			mux.Get("/", userNewGet(h), "account.management.user.new")
 			mux.Post("/", userNewPost(h), "account.management.user.new.post")
@@ -30,13 +30,13 @@ func UserManagement(h *ui.Handler, mux *router.ServeMux) {
 		})
 
 		mux.Prefix("/:userID", func(mux *router.ServeMux) {
-			mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanUpdateUsers() }))
+			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanUpdateUsers() }))
 
 			mux.Get("/", userEditGet(h), "account.management.user.edit")
 			mux.Post("/", userEditPost(h), "account.management.user.edit.post")
 
 			mux.Prefix("/totp-reset-review", func(mux *router.ServeMux) {
-				mux.Before(h.RequireAuth(func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }))
+				mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }))
 
 				mux.Get("/", userTOTPResetReviewGet(h), "account.management.user.totp_reset_review")
 

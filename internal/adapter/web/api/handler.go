@@ -7,12 +7,15 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"golang.org/x/exp/slices"
 )
 
@@ -89,5 +92,44 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 
 	if err := json.NewEncoder(w).Encode(detail); err != nil {
 		h.Logger(ctx).Error("write error JSON response", "error", err)
+	}
+}
+
+func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
+	ctx := r.Context()
+	isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+
+	if !isSignedIn {
+		h.ErrorJSON(w, r, "require sign in", app.ErrUnauthorised)
+
+		return false
+	}
+
+	config := h.Config(ctx)
+	user := h.User(ctx)
+
+	if config.TOTPRequired && !user.HasActivatedTOTP() {
+		h.ErrorJSON(w, r, "require TOTP", app.ErrUnauthorised)
+
+		return false
+	}
+
+	return true
+}
+
+type PredicateFunc func(p guard.Passport) bool
+
+func (h *Handler) CanAccess(check PredicateFunc) router.BeforeHookFunc {
+	return func(w http.ResponseWriter, r *http.Request) bool {
+		ctx := r.Context()
+		passport := h.Passport(ctx)
+
+		if !check(passport) {
+			h.ErrorJSON(w, r, "require auth", app.ErrUnauthorised)
+
+			return false
+		}
+
+		return true
 	}
 }

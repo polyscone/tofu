@@ -22,9 +22,12 @@ func sessionGet(h *api.Handler) http.HandlerFunc {
 }
 
 func SessionData(ctx context.Context, h *api.Handler) map[string]any {
+	config := h.Config(ctx)
+
 	return map[string]any{
 		"isSignedIn":     h.Sessions.GetBool(ctx, sess.IsSignedIn),
 		"isAwaitingTOTP": h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
 		"totpMethod":     h.Sessions.GetString(ctx, sess.TOTPMethod),
+		"isTOTPRequired": config.TOTPRequired,
 	}
 }
