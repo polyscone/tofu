@@ -14,9 +14,9 @@ import (
 )
 
 const (
-	SignInMethodNone   = ""
-	SignInMethodForm   = "Form"
-	SignInMethodGoogle = "Google"
+	SignInMethodNone    = ""
+	SignInMethodWebform = "Webform"
+	SignInMethodGoogle  = "Google"
 )
 
 var (
@@ -530,7 +530,7 @@ func (u *User) SignInWithPassword(password Password, hasher Hasher) (rehashed bo
 
 	if !u.HasActivatedTOTP() {
 		u.LastSignedInAt = time.Now().UTC()
-		u.LastSignedInMethod = SignInMethodForm
+		u.LastSignedInMethod = SignInMethodWebform
 	}
 
 	u.Events.Enqueue(SignedInWithPassword{Email: u.Email})
