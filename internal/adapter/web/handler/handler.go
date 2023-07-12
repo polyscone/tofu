@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
@@ -18,10 +19,13 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/realip"
 	"github.com/polyscone/tofu/internal/pkg/session"
+	"github.com/polyscone/tofu/internal/pkg/sms"
 	"github.com/polyscone/tofu/internal/pkg/uuid"
 	"github.com/polyscone/tofu/internal/repository"
 	"golang.org/x/exp/slog"
 )
+
+var httpClient = http.Client{Timeout: 10 * time.Second}
 
 type ctxKey int
 
@@ -244,4 +248,36 @@ func (h *Handler) Template(files fs.FS, funcs template.FuncMap, name string, pat
 	h.templates[name] = tmpl
 
 	return tmpl
+}
+
+func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
+	config, err := h.Repo.System.FindConfig(ctx)
+	if err != nil {
+		return fmt.Errorf("find config: %w", err)
+	}
+
+	// TODO: Reuse client for as long as Twilio config hasn't changed
+	messager := sms.NewTwilioClient(&httpClient, config.TwilioSID, config.TwilioToken)
+
+	return messager.Send(ctx, config.TwilioFromTel, to, body)
+}
+
+func (h *Handler) SendTOTPSMS(email, tel string) error {
+	ctx := context.Background()
+
+	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
+	if err != nil {
+		return fmt.Errorf("find user by email: %w", err)
+	}
+
+	totp, err := user.GenerateTOTP()
+	if err != nil {
+		return fmt.Errorf("generate TOTP: %w", err)
+	}
+
+	if tel == "" {
+		tel = user.TOTPTel
+	}
+
+	return h.SendSMS(ctx, tel, totp)
 }

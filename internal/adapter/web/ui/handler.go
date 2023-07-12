@@ -9,7 +9,6 @@ import (
 	"io/fs"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
@@ -19,7 +18,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/fstack"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/sms"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
 )
 
@@ -29,8 +27,6 @@ var files embed.FS
 const templateDir = "template"
 
 var templateFiles = fstack.New(dev.RelDirFS(templateDir), errsx.Must(fs.Sub(files, templateDir)))
-
-var httpClient = http.Client{Timeout: 10 * time.Second}
 
 type ViewVarsFunc func(r *http.Request) (handler.Vars, error)
 
@@ -143,38 +139,6 @@ func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, v
 	}
 
 	return h.Email.Send(ctx, msg)
-}
-
-func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
-	config, err := h.Repo.System.FindConfig(ctx)
-	if err != nil {
-		return fmt.Errorf("find config: %w", err)
-	}
-
-	// TODO: Reuse client for as long as Twilio config hasn't changed
-	messager := sms.NewTwilioClient(&httpClient, config.TwilioSID, config.TwilioToken)
-
-	return messager.Send(ctx, config.TwilioFromTel, to, body)
-}
-
-func (h *Handler) SendTOTPSMS(email, tel string) error {
-	ctx := context.Background()
-
-	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
-	if err != nil {
-		return fmt.Errorf("find user by email: %w", err)
-	}
-
-	totp, err := user.GenerateTOTP()
-	if err != nil {
-		return fmt.Errorf("generate TOTP: %w", err)
-	}
-
-	if tel == "" {
-		tel = user.TOTPTel
-	}
-
-	return h.SendSMS(ctx, tel, totp)
 }
 
 func (h *Handler) HasPathPrefix(value string, name string, paramArgPairs ...any) bool {

@@ -12,6 +12,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/pwa/event"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/size"
@@ -23,6 +24,8 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	h := ui.NewHandler(base, mux, func() string {
 		return "/sign-in"
 	})
+
+	h.Broker.Listen(event.SignedInWithPasswordHandler(h))
 
 	routePrefix := "#!"
 	errorHandler := func(msg string) middleware.ErrorHandler {

@@ -17,6 +17,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/site/account"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/site/admin"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/site/event"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/size"
@@ -29,11 +30,11 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		return mux.Path("account.sign_in")
 	})
 
-	h.Broker.Listen(account.SignedInWithPasswordHandler(h))
-	h.Broker.Listen(account.InvitedHandler(h))
-	h.Broker.Listen(account.SignedUpHandler(h))
-	h.Broker.Listen(account.AlreadySignedUpHandler(h))
-	h.Broker.Listen(account.TOTPDisabledHandler(h))
+	h.Broker.Listen(event.SignedInWithPasswordHandler(h))
+	h.Broker.Listen(event.InvitedHandler(h))
+	h.Broker.Listen(event.SignedUpHandler(h))
+	h.Broker.Listen(event.AlreadySignedUpHandler(h))
+	h.Broker.Listen(event.TOTPDisabledHandler(h))
 
 	errorHandler := func(msg string) middleware.ErrorHandler {
 		return func(w http.ResponseWriter, r *http.Request, err error) {
