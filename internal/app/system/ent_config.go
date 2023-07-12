@@ -16,6 +16,7 @@ type Config struct {
 	SecurityEmail        string
 	SignUpEnabled        bool
 	TOTPRequired         bool
+	TOTPSMSEnabled       bool
 	GoogleSignInEnabled  bool
 	GoogleSignInClientID string
 	TwilioSID            string
@@ -44,12 +45,38 @@ func (c *Config) DisableSignUp() {
 	c.SignUpEnabled = false
 }
 
-func (c *Config) EnableRequireTOTP() {
+func (c *Config) EnableTOTPRequired() {
 	c.TOTPRequired = true
 }
 
-func (c *Config) DisableRequireTOTP() {
+func (c *Config) DisableTOTPRequired() {
 	c.TOTPRequired = false
+}
+
+func (c *Config) EnableTOTPSMS() error {
+	var errs errsx.Map
+
+	if c.TwilioSID == "" {
+		errs.Set("twilio sid", "required when two-factor authentication SMS is enabled")
+	}
+	if c.TwilioToken == "" {
+		errs.Set("twilio token", "required when two-factor authentication SMS is enabled")
+	}
+	if c.TwilioFromTel == "" {
+		errs.Set("twilio from tel", "required when two-factor authentication SMS is enabled")
+	}
+
+	if errs != nil {
+		return fmt.Errorf("%w: %w", app.ErrInvalidInput, errs)
+	}
+
+	c.TOTPSMSEnabled = true
+
+	return nil
+}
+
+func (c *Config) DisableTOTPSMS() {
+	c.TOTPSMSEnabled = false
 }
 
 func (c *Config) ChangeGoogleSignInClientID(clientID GoogleClientID) {

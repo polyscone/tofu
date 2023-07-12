@@ -61,6 +61,17 @@
 		}}
 
 		{{template "com_form_select" .WithComData
+			"Label" "Enable SMS for two-factor authentication"
+			"Name" "totp-sms-enabled"
+			"Value" (.Form.GetOr "totp-sms-enabled" .Config.TOTPSMSEnabled)
+			"Options" (Slice
+				(Map "Label" "No" "Value" "false")
+				(Map "Label" "Yes" "Value" "true")
+			)
+			"Disabled" $disabled
+		}}
+
+		{{template "com_form_select" .WithComData
 			"Label" "Enable Google sign in"
 			"Name" "google-sign-in-enabled"
 			"Value" (.Form.GetOr "google-sign-in-enabled" .Config.GoogleSignInEnabled)

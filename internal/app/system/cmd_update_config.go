@@ -15,7 +15,7 @@ type UpdateConfigGuard interface {
 func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	systemEmail, securityEmail string,
 	signUpEnabled bool,
-	totpRequired bool,
+	totpRequired, totpSMSEnabled bool,
 	googleSignInEnabled bool, googleSignInClientID string,
 	twilioSID, twilioToken, twilioFromTel string,
 ) (*Config, error) {
@@ -24,6 +24,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		securityEmail        Email
 		signUpEnabled        bool
 		totpRequired         bool
+		totpSMSEnabled       bool
 		googleSignInEnabled  bool
 		googleSignInClientID GoogleClientID
 		twilioSID            TwilioSID
@@ -47,6 +48,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 
 		input.signUpEnabled = signUpEnabled
 		input.totpRequired = totpRequired
+		input.totpSMSEnabled = totpSMSEnabled
 		input.googleSignInEnabled = googleSignInEnabled
 
 		if input.googleSignInClientID, err = NewGoogleClientID(googleSignInClientID); err != nil {
@@ -82,9 +84,9 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	}
 
 	if input.totpRequired {
-		config.EnableRequireTOTP()
+		config.EnableTOTPRequired()
 	} else {
-		config.DisableRequireTOTP()
+		config.DisableTOTPRequired()
 	}
 
 	config.ChangeGoogleSignInClientID(input.googleSignInClientID)
@@ -97,6 +99,14 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	}
 
 	config.ChangeTwilioAPI(input.twilioSID, input.twilioToken, input.twilioFromTel)
+
+	if input.totpSMSEnabled {
+		if err := config.EnableTOTPSMS(); err != nil {
+			return nil, fmt.Errorf("enable TOTP SMS: %w", err)
+		}
+	} else {
+		config.DisableTOTPSMS()
+	}
 
 	if err := s.repo.SaveConfig(ctx, config); err != nil {
 		return nil, fmt.Errorf("save config: %w", err)

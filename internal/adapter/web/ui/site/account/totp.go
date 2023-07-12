@@ -271,8 +271,15 @@ func totpSetupSMSPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		config := h.Config(ctx)
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
+
+		if !config.TOTPSMSEnabled {
+			h.HTML.ErrorView(w, r, "TOTP setup SMS", app.ErrForbidden, "site/error", nil)
+
+			return
+		}
 
 		// We try to send the TOTP SMS first because we don't want to save
 		// a phone number that the SMS provider thinks is invalid
@@ -326,8 +333,15 @@ func totpSetupSMSVerifyPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		config := h.Config(ctx)
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
+
+		if !config.TOTPSMSEnabled {
+			h.HTML.ErrorView(w, r, "TOTP verify SMS", app.ErrForbidden, "site/error", nil)
+
+			return
+		}
 
 		codes, err := h.Svc.Account.VerifyTOTP(ctx, passport.Account, user.ID, input.TOTP, "sms")
 		if err != nil {

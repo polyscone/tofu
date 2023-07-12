@@ -35,17 +35,19 @@ func TestUpdateConfig(t *testing.T) {
 		securityEmail := "bar@example.com"
 		signUpEnabled := true
 		totpRequired := true
+		totpSMSEnabled := true
 		googleSignInEnabled := true
 		googleSignInClientID := "1234abcd"
-		twilioSID := ""
-		twilioToken := ""
-		twilioFromTel := ""
+		twilioSID := "AC0123456789abcdef0123456789abcdef"
+		twilioToken := "0123456789abcdef0123456789abcdef"
+		twilioFromTel := "+00 00 0000 0000"
 
 		_, err := svc.UpdateConfig(ctx, validGuard,
 			systemEmail,
 			securityEmail,
 			signUpEnabled,
 			totpRequired,
+			totpSMSEnabled,
 			googleSignInEnabled,
 			googleSignInClientID,
 			twilioSID,
@@ -70,6 +72,9 @@ func TestUpdateConfig(t *testing.T) {
 		if want, got := totpRequired, config.TOTPRequired; want != got {
 			t.Errorf("want TOTP required to be %v; got %v", want, got)
 		}
+		if want, got := totpSMSEnabled, config.TOTPSMSEnabled; want != got {
+			t.Errorf("want TOTP SMS enabled to be %v; got %v", want, got)
+		}
 		if want, got := googleSignInEnabled, config.GoogleSignInEnabled; want != got {
 			t.Errorf("want google sign in enabled to be %v; got %v", want, got)
 		}
@@ -90,17 +95,19 @@ func TestUpdateConfig(t *testing.T) {
 		securityEmail = "baz@example.com"
 		signUpEnabled = false
 		totpRequired = false
+		totpSMSEnabled = false
 		googleSignInEnabled = false
 		googleSignInClientID = "xyz"
-		twilioSID = "AC0123456789abcdef0123456789abcdef"
-		twilioToken = "0123456789abcdef0123456789abcdef"
-		twilioFromTel = "+00 00 0000 0000"
+		twilioSID = ""
+		twilioToken = ""
+		twilioFromTel = ""
 
 		_, err = svc.UpdateConfig(ctx, validGuard,
 			systemEmail,
 			securityEmail,
 			signUpEnabled,
 			totpRequired,
+			totpSMSEnabled,
 			googleSignInEnabled,
 			googleSignInClientID,
 			twilioSID,
@@ -124,6 +131,9 @@ func TestUpdateConfig(t *testing.T) {
 		}
 		if want, got := totpRequired, config.TOTPRequired; want != got {
 			t.Errorf("want TOTP required to be %v; got %v", want, got)
+		}
+		if want, got := totpSMSEnabled, config.TOTPSMSEnabled; want != got {
+			t.Errorf("want TOTP SMS enabled to be %v; got %v", want, got)
 		}
 		if want, got := googleSignInEnabled, config.GoogleSignInEnabled; want != got {
 			t.Errorf("want google sign in enabled to be %v; got %v", want, got)
@@ -154,6 +164,9 @@ func TestUpdateConfig(t *testing.T) {
 			config := system.Config{
 				SystemEmail:   "a@a.com",
 				SecurityEmail: "b@b.com",
+				TwilioSID:     "AC0123456789abcdef0123456789abcdef",
+				TwilioToken:   "0123456789abcdef0123456789abcdef",
+				TwilioFromTel: "+00 00 0000 0000",
 			}
 
 			for key, value := range overrides {
@@ -164,8 +177,20 @@ func TestUpdateConfig(t *testing.T) {
 				case "SecurityEmail":
 					config.SecurityEmail = value.(string)
 
+				case "TOTPSMSEnabled":
+					config.TOTPSMSEnabled = value.(bool)
+
 				case "GoogleSignInEnabled":
 					config.GoogleSignInEnabled = value.(bool)
+
+				case "TwilioSID":
+					config.TwilioSID = value.(string)
+
+				case "TwilioToken":
+					config.TwilioToken = value.(string)
+
+				case "TwilioFromTel":
+					config.TwilioFromTel = value.(string)
 
 				default:
 					panic(fmt.Sprintf("unknown test key %q", key))
@@ -186,6 +211,9 @@ func TestUpdateConfig(t *testing.T) {
 			{"malformed system email", validGuard, vals{"SystemEmail": "a"}, app.ErrMalformedInput},
 			{"empty security email", validGuard, vals{"SecurityEmail": ""}, app.ErrMalformedInput},
 			{"malformed security email", validGuard, vals{"SecurityEmail": "a"}, app.ErrMalformedInput},
+			{"TOTP SMS enabled without Twilio SID", validGuard, vals{"TOTPSMSEnabled": true, "TwilioSID": ""}, app.ErrInvalidInput},
+			{"TOTP SMS enabled without Twilio token", validGuard, vals{"TOTPSMSEnabled": true, "TwilioToken": ""}, app.ErrInvalidInput},
+			{"TOTP SMS enabled without Twilio from tel", validGuard, vals{"TOTPSMSEnabled": true, "TwilioFromTel": ""}, app.ErrInvalidInput},
 			{"google sign in enabled without client id", validGuard, vals{"GoogleSignInEnabled": true}, app.ErrInvalidInput},
 		}
 		for _, tc := range tt {
@@ -197,6 +225,7 @@ func TestUpdateConfig(t *testing.T) {
 					config.SecurityEmail,
 					config.SignUpEnabled,
 					config.TOTPRequired,
+					config.TOTPSMSEnabled,
 					config.GoogleSignInEnabled,
 					config.GoogleSignInClientID,
 					config.TwilioSID,
