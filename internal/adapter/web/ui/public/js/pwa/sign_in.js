@@ -104,6 +104,10 @@ const SignInRecoveryCode = {
 	])
 }
 
+const SignInTOTPRequired = {
+	view: () => m("p", "Two-factor authentication on sign in is required to use this application.")
+}
+
 const SignInOffline = {
 	view: () => m("p", "You must be online to sign in.")
 }
@@ -141,7 +145,13 @@ const SignIn = {
 		}
 	},
 	view () {
-		let Component = null
+		const showSignIn = !app.session.isSignedIn || app.session.isTOTPRequired && !app.session.totpMethod
+
+		if (!showSignIn) {
+			return null
+		}
+
+		let Component = SignInPassword
 
 		switch (state.screen) {
 		case "password":
@@ -159,8 +169,10 @@ const SignIn = {
 
 			break
 
-		default:
-			Component = SignInPassword
+		case "totpRequired":
+			Component = SignInTOTPRequired
+
+			break
 		}
 
 		switch (app.network) {
@@ -175,14 +187,10 @@ const SignIn = {
 			break
 		}
 
-		if (Component) {
-			return m(".sign-in-splash", [
-				m("h1", "Sign in"),
-				m(Component),
-			])
-		}
-
-		return null
+		return m(".sign-in-splash", [
+			m("h1", "Sign in"),
+			m(Component),
+		])
 	}
 }
 
@@ -199,6 +207,8 @@ async function signInWithPassword (e) {
 	if (res.ok) {
 		if (app.session.isAwaitingTOTP) {
 			state.screen = "totp"
+		} else if (app.session.isTOTPRequired) {
+			state.screen = "totpRequired"
 		}
 	} else {
 		switch (res.status) {

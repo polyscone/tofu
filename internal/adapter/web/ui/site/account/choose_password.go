@@ -12,6 +12,8 @@ import (
 
 func ChoosePassword(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/choose-password", func(mux *router.ServeMux) {
+		mux.Name("account.choose_password.section")
+
 		mux.Before(h.RequireSignIn)
 		mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
 			ctx := r.Context()

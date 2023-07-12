@@ -106,9 +106,12 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 				return
 			}
 
-			isInTOTPSection := h.HasPathPrefix(r.URL.Path, "account.totp.section")
+			isTOTPSection := h.HasPathPrefix(r.URL.Path, "account.totp.section")
+			isChoosePasswordSection := h.HasPathPrefix(r.URL.Path, "account.choose_password.section")
+			isSignOut := r.URL.Path == h.Path("account.sign_out.post")
+			isAllowedPath := isTOTPSection || isChoosePasswordSection || isSignOut
 			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
-			if !isInTOTPSection && isSignedIn && config.TOTPRequired && !user.HasActivatedTOTP() {
+			if isSignedIn && config.TOTPRequired && !user.HasActivatedTOTP() && !isAllowedPath {
 				h.AddFlashf(ctx, "Two-factor authentication is required to use this application.")
 
 				http.Redirect(w, r, mux.Path("account.totp.setup"), http.StatusSeeOther)

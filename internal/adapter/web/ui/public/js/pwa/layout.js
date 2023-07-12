@@ -7,7 +7,7 @@ const Layout = {
 			m("h1", "PWA"),
 		]),
 		m("main.main", vnode.children),
-		!app.session.isSignedIn ? m(SignIn) : null,
+		m(SignIn),
 		m(Loading),
 	],
 }
