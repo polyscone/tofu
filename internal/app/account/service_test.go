@@ -29,6 +29,7 @@ type TestUser struct {
 	Password         string
 	Verify           bool
 	VerifyNoPassword bool
+	Activate         bool
 	SetupTOTP        bool
 	SetupTOTPTel     bool
 	VerifyTOTP       bool
@@ -40,7 +41,8 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 
 	tu.VerifyTOTP = tu.VerifyTOTP || tu.ActivateTOTP
 	tu.SetupTOTP = tu.SetupTOTP || tu.SetupTOTPTel || tu.VerifyTOTP || tu.ActivateTOTP
-	tu.Verify = tu.Verify || tu.SetupTOTP || tu.VerifyTOTP
+	tu.Activate = tu.Activate || tu.SetupTOTP || tu.VerifyTOTP
+	tu.Verify = tu.Verify || tu.Activate
 
 	if tu.VerifyNoPassword {
 		tu.Password = ""
@@ -68,6 +70,9 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 		password := errsx.Must(account.NewPassword(tu.Password))
 
 		errsx.Must0(user.Verify(password, hasher))
+	}
+	if tu.Activate {
+		errsx.Must0(user.Activate())
 	}
 	if tu.SetupTOTP {
 		errsx.Must0(user.SetupTOTP())

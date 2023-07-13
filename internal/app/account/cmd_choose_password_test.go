@@ -29,7 +29,7 @@ func TestChoosePassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyNoPassword: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyNoPassword: true, Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -53,8 +53,9 @@ func TestChoosePassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", VerifyNoPassword: true})
-		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "alan@doe.com", Verify: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", VerifyNoPassword: true, Activate: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "alan@doe.com", Verify: true, Activate: true})
+		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@doe.com", VerifyNoPassword: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -69,13 +70,14 @@ func TestChoosePassword(t *testing.T) {
 			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
 			{"empty new password", validGuard, user1.ID, "", app.ErrMalformedInput},
 			{"already has a password", validGuard, user2.ID, "password123", nil},
+			{"not activated", validGuard, user3.ID, "password123", nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				err := svc.ChoosePassword(ctx, tc.guard, tc.userID, tc.newPassword, tc.newPassword)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want error: %v; got %v", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")
@@ -108,7 +110,7 @@ func TestChoosePassword(t *testing.T) {
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Verify: true})
+				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Activate: true})
 
 				err := svc.ChoosePassword(ctx, validGuard, user.ID, tc.newPassword, tc.newPasswordCheck)
 				switch {

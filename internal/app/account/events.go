@@ -20,6 +20,10 @@ type Verified struct {
 	Email string
 }
 
+type Activated struct {
+	Email string
+}
+
 type SignedInWithPassword struct {
 	Email string
 }

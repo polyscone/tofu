@@ -62,7 +62,7 @@ func TestChangeTOTPTel(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com"})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -75,14 +75,14 @@ func TestChangeTOTPTel(t *testing.T) {
 			want   error
 		}{
 			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
-			{"verified user without TOTP setup", validGuard, user.ID, "+81 70 0000 0003", nil},
+			{"user without TOTP setup", validGuard, user.ID, "+81 70 0000 0003", nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				err := svc.ChangeTOTPTel(ctx, tc.guard, tc.userID, tc.newTel)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")

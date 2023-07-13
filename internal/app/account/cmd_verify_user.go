@@ -9,16 +9,32 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-func (s *Service) ActivateUser(ctx context.Context, email string) error {
+type VerifyUserBehaviour byte
+
+const (
+	VerifyUserOnly VerifyUserBehaviour = iota
+	VerifyUserActivate
+)
+
+func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck string, behaviour VerifyUserBehaviour) error {
 	var input struct {
-		email Email
+		email         Email
+		password      Password
+		passwordCheck Password
 	}
 	{
 		var err error
 		var errs errsx.Map
 
+		input.passwordCheck, _ = NewPassword(passwordCheck)
+
 		if input.email, err = NewEmail(email); err != nil {
 			errs.Set("email", err)
+		}
+		if input.password, err = NewPassword(password); err != nil {
+			errs.Set("password", err)
+		} else if !input.password.Equal(input.passwordCheck) {
+			errs.Set("password", "passwords do not match")
 		}
 
 		if errs != nil {
@@ -36,18 +52,13 @@ func (s *Service) ActivateUser(ctx context.Context, email string) error {
 		return fmt.Errorf("find user by email: %w", err)
 	}
 
-	superUserCount, err := s.repo.CountUsersByRoleID(ctx, SuperRole.ID)
-	if err != nil {
-		return fmt.Errorf("count users by role id: %w", err)
-	}
-
-	if err := user.Activate(); err != nil {
+	if err := user.Verify(input.password, s.hasher); err != nil {
 		return err
 	}
 
-	if superUserCount == 0 {
-		if err := user.ChangeRoles([]*Role{SuperRole}, nil, nil); err != nil {
-			return fmt.Errorf("add super role to initial user: %w", err)
+	if behaviour == VerifyUserActivate {
+		if err := user.Activate(); err != nil {
+			return err
 		}
 	}
 

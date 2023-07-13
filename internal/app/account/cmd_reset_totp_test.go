@@ -123,7 +123,7 @@ func TestResetTOTP(t *testing.T) {
 				err := svc.ResetTOTP(ctx, tc.guard, tc.userID, tc.password)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")

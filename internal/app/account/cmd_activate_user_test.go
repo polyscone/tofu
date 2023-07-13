@@ -3,7 +3,6 @@ package account_test
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
@@ -12,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
-func TestVerifyUser(t *testing.T) {
+func TestActivateUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
@@ -29,11 +28,16 @@ func TestVerifyUser(t *testing.T) {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
 
-		if err := svc.VerifyUser(ctx, user1.Email, "password", "password"); err != nil {
+		if err := svc.VerifyUser(ctx, user1.Email, "password", "password", account.VerifyUserOnly); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := svc.ActivateUser(ctx, user1.Email); err != nil {
 			t.Fatal(err)
 		}
 
 		events.Expect(account.Verified{Email: user1.Email})
+		events.Expect(account.Activated{Email: user1.Email})
 		events.Expect(account.RolesChanged{Email: user1.Email})
 
 		user1 = errsx.Must(repo.FindUserByEmail(ctx, user1.Email))
@@ -53,11 +57,16 @@ func TestVerifyUser(t *testing.T) {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
 
-		if err := svc.VerifyUser(ctx, user2.Email, "password", "password"); err != nil {
+		if err := svc.VerifyUser(ctx, user2.Email, "password", "password", account.VerifyUserOnly); err != nil {
+			t.Fatal(err)
+		}
+
+		if err := svc.ActivateUser(ctx, user2.Email); err != nil {
 			t.Fatal(err)
 		}
 
 		events.Expect(account.Verified{Email: user2.Email})
+		events.Expect(account.Activated{Email: user2.Email})
 
 		superUserCount = errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
 		if want, got := 1, superUserCount; want != got {
@@ -65,16 +74,16 @@ func TestVerifyUser(t *testing.T) {
 		}
 	})
 
-	t.Run("fail activating an already verified user", func(t *testing.T) {
+	t.Run("fail activating an already activated user", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		if err := svc.VerifyUser(ctx, user.Email, "password", "password"); err == nil {
+		if err := svc.ActivateUser(ctx, user.Email); err == nil {
 			t.Error("want error; got <nil>")
 		}
 	})
@@ -87,34 +96,26 @@ func TestVerifyUser(t *testing.T) {
 		defer events.Check(t)
 
 		tt := []struct {
-			name          string
-			email         string
-			password      string
-			passwordCheck string
-			isValidInput  bool
+			name         string
+			email        string
+			isValidInput bool
 		}{
-			{"valid inputs", "foo@example.com", "password", "password", true},
+			{"valid inputs", "foo@example.com", true},
 
-			{"invalid email empty", "", "password", "password", false},
-			{"invalid email whitespace", "   ", "password", "password", false},
-			{"invalid email missing @", "fooexample.com", "password", "password", false},
-			{"invalid email part before @", "@example.com", "password", "password", false},
-			{"invalid email part after @", "foo@", "password", "password", false},
-			{"invalid email includes name", "Foo Bar <foo@example.com>", "password", "password", false},
-			{"invalid email missing TLD", "foo@example.", "password", "password", false},
-
-			{"invalid password empty", "foo@example.com", "", "", false},
-			{"invalid password whitespace", "foo@example.com", "        ", "        ", false},
-			{"invalid password too short", "foo@example.com", ".......", ".......", false},
-			{"invalid password too long", "foo@example.com", strings.Repeat(".", 1001), strings.Repeat(".", 1001), false},
-			{"invalid password check mismatch", "foo@example.com", "password", "password1", false},
+			{"invalid email empty", "", false},
+			{"invalid email whitespace", "   ", false},
+			{"invalid email missing @", "fooexample.com", false},
+			{"invalid email part before @", "@example.com", false},
+			{"invalid email part after @", "foo@", false},
+			{"invalid email includes name", "Foo Bar <foo@example.com>", false},
+			{"invalid email missing TLD", "foo@example.", false},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.VerifyUser(ctx, tc.email, tc.password, tc.passwordCheck)
+				err := svc.ActivateUser(ctx, tc.email)
 				switch {
 				case err == nil:
-					events.Expect(account.Verified{Email: tc.email})
+					events.Expect(account.Activated{Email: tc.email})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)

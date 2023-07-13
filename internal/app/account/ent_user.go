@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	ErrNotVerified     = errors.New("account is not verified")
+	ErrNotActivated    = errors.New("account is not activated")
 	ErrInvalidPassword = errors.New("invalid password")
 )
 
@@ -43,6 +43,7 @@ type User struct {
 	InvitedAt            time.Time
 	SignedUpAt           time.Time
 	VerifiedAt           time.Time
+	ActivatedAt          time.Time
 	LastSignedInAt       time.Time
 	LastSignedInMethod   string
 	HashedRecoveryCodes  [][]byte
@@ -126,7 +127,7 @@ func (u *User) InviteUser() error {
 }
 
 func (u *User) SignUp() error {
-	if !u.VerifiedAt.IsZero() {
+	if !u.ActivatedAt.IsZero() {
 		u.Events.Enqueue(AlreadySignedUp{Email: u.Email})
 
 		return nil
@@ -173,6 +174,18 @@ func (u *User) Verify(password Password, hasher Hasher) error {
 	return nil
 }
 
+func (u *User) Activate() error {
+	if !u.ActivatedAt.IsZero() {
+		return errors.New("already activated")
+	}
+
+	u.ActivatedAt = time.Now().UTC()
+
+	u.Events.Enqueue(Activated{Email: u.Email})
+
+	return nil
+}
+
 func (u *User) setPassword(newPassword Password, hasher Hasher) error {
 	hashedPassword, err := hasher.EncodedPasswordHash(newPassword.data)
 	if err != nil {
@@ -205,8 +218,8 @@ func (u *User) ChangePassword(oldPassword, newPassword Password, hasher Hasher) 
 }
 
 func (u *User) ChoosePassword(newPassword Password, hasher Hasher) error {
-	if u.VerifiedAt.IsZero() {
-		return errors.New("cannot choose password until verified")
+	if u.ActivatedAt.IsZero() {
+		return errors.New("cannot choose password until activated")
 	}
 
 	if len(u.HashedPassword) > 0 {
@@ -223,8 +236,8 @@ func (u *User) ChoosePassword(newPassword Password, hasher Hasher) error {
 }
 
 func (u *User) ResetPassword(newPassword Password, hasher Hasher) error {
-	if u.VerifiedAt.IsZero() {
-		return errors.New("cannot change password until verified")
+	if u.ActivatedAt.IsZero() {
+		return errors.New("cannot change password until activated")
 	}
 
 	if err := u.setPassword(newPassword, hasher); err != nil {
@@ -237,6 +250,10 @@ func (u *User) ResetPassword(newPassword Password, hasher Hasher) error {
 }
 
 func (u *User) SetupTOTP() error {
+	if u.ActivatedAt.IsZero() {
+		return errors.New("cannot setup TOTP until activated")
+	}
+
 	if u.HasActivatedTOTP() {
 		return errors.New("TOTP already setup and activated")
 	}
@@ -513,14 +530,14 @@ func (u *User) checkPassword(password Password, hasher Hasher) (rehashed bool, _
 }
 
 func (u *User) SignInWithPassword(password Password, hasher Hasher) (rehashed bool, _ error) {
-	if u.VerifiedAt.IsZero() {
+	if u.ActivatedAt.IsZero() {
 		// Always check a password even when we error finding a user to help
 		// avoid leaking info that would allow enumeration of valid emails
 		if err := hasher.CheckDummyPasswordHash(); err != nil {
 			return false, fmt.Errorf("check dummy password hash: %w", err)
 		}
 
-		return false, ErrNotVerified
+		return false, ErrNotActivated
 	}
 
 	rehashed, err := u.checkPassword(password, hasher)
@@ -539,12 +556,12 @@ func (u *User) SignInWithPassword(password Password, hasher Hasher) (rehashed bo
 }
 
 func (u *User) SignInWithTOTP(totp TOTP) error {
-	if !u.HasActivatedTOTP() {
-		return errors.New("account does not have TOTP")
+	if u.ActivatedAt.IsZero() {
+		return ErrNotActivated
 	}
 
-	if u.VerifiedAt.IsZero() {
-		return ErrNotVerified
+	if !u.HasActivatedTOTP() {
+		return errors.New("account does not have TOTP")
 	}
 
 	if err := u.checkTOTP(totp); err != nil {
@@ -571,12 +588,12 @@ func (u *User) useRecoveryCode(code RecoveryCode) error {
 }
 
 func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
-	if !u.HasActivatedTOTP() {
-		return errors.New("account cannot use recovery codes")
+	if u.ActivatedAt.IsZero() {
+		return ErrNotActivated
 	}
 
-	if u.VerifiedAt.IsZero() {
-		return ErrNotVerified
+	if !u.HasActivatedTOTP() {
+		return errors.New("account cannot use recovery codes")
 	}
 
 	if err := u.useRecoveryCode(code); err != nil {
@@ -593,8 +610,8 @@ func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
 }
 
 func (u *User) SignInWithGoogle() error {
-	if u.VerifiedAt.IsZero() {
-		return ErrNotVerified
+	if u.ActivatedAt.IsZero() {
+		return ErrNotActivated
 	}
 
 	if !u.HasActivatedTOTP() {

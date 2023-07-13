@@ -54,7 +54,7 @@ func TestRequestTOTPReset(t *testing.T) {
 				err := svc.RequestTOTPReset(ctx, tc.email)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")

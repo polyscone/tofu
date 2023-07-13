@@ -71,8 +71,9 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
 		user2, codes := MustAddUserRecoveryCodes(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@bloggs.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -87,15 +88,16 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		}{
 			{"empty user id correct recovery code", 0, codes[1], repository.ErrNotFound},
 			{"empty user id incorrect recovery code", 0, incorrectCode, repository.ErrNotFound},
-			{"verified user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
-			{"verified user id without TOTP setup", user1.ID, incorrectCode, nil},
+			{"activated user id without TOTP setup", user1.ID, incorrectCode, nil},
+			{"activated user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
+			{"unactivated user id", user3.ID, incorrectCode, account.ErrNotActivated},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				err := svc.SignInWithRecoveryCode(ctx, tc.userID, tc.recoveryCode)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")

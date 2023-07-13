@@ -75,7 +75,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
@@ -101,7 +101,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 				_, err := svc.RegenerateRecoveryCodes(ctx, tc.guard, tc.userID, totp)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")

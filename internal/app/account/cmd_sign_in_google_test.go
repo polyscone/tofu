@@ -39,12 +39,13 @@ func TestSignInWithGoogle(t *testing.T) {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
-		err = svc.SignInWithGoogle(ctx, "bar@example.com", account.GoogleAllowSignUp)
+		err = svc.SignInWithGoogle(ctx, "bar@example.com", account.GoogleAllowSignUpActivate)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		events.Expect(account.SignedUpWithGoogle{Email: "bar@example.com"})
+		events.Expect(account.Activated{Email: "bar@example.com"})
 		events.Expect(account.SignedInWithGoogle{Email: "bar@example.com"})
 
 		user2, err := repo.FindUserByEmail(ctx, "bar@example.com")
@@ -55,7 +56,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		if len(user2.HashedPassword) != 0 {
 			t.Error("want hashed password to be empty")
 		}
-		if user2.VerifiedAt.IsZero() {
+		if user2.ActivatedAt.IsZero() {
 			t.Error("want activated at to be populated")
 		}
 		if user2.SignedUpAt.IsZero() {
@@ -90,17 +91,36 @@ func TestSignInWithGoogle(t *testing.T) {
 
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, _ := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
-		t.Run("sign in only with non-existent user", func(t *testing.T) {
-			events := testutil.NewEventLog(broker)
-			defer events.Check(t)
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
 
-			err := svc.SignInWithGoogle(ctx, "non@existent.com", account.GoogleSignInOnly)
-			if !errors.Is(err, account.ErrGoogleSignUpDisabled) {
-				t.Errorf("want error: %v; got <nil>", account.ErrGoogleSignUpDisabled)
-			}
-		})
+		events := testutil.NewEventLog(broker)
+		defer events.Check(t)
+
+		tt := []struct {
+			name      string
+			email     string
+			behaviour account.GoogleSignInBehaviour
+			want      error
+		}{
+			{"empty email", "", account.GoogleSignInOnly, app.ErrMalformedInput},
+			{"email without @ sign", "joebloggs.com", account.GoogleSignInOnly, app.ErrMalformedInput},
+			{"sign in only with non-existent user", "foo@bar.com", account.GoogleSignInOnly, account.ErrGoogleSignUpDisabled},
+			{"unactivated", user1.Email, account.GoogleSignInOnly, account.ErrNotActivated},
+		}
+		for _, tc := range tt {
+			t.Run(tc.name, func(t *testing.T) {
+				err := svc.SignInWithGoogle(ctx, tc.email, tc.behaviour)
+				switch {
+				case tc.want != nil && !errors.Is(err, tc.want):
+					t.Errorf("want error: %v; got: %v", tc.want, err)
+
+				case err == nil:
+					t.Error("want error; got <nil>")
+				}
+			})
+		}
 	})
 
 	t.Run("input validation", func(t *testing.T) {
@@ -129,7 +149,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.SignInWithGoogle(ctx, tc.email, account.GoogleAllowSignUp)
+				err := svc.SignInWithGoogle(ctx, tc.email, account.GoogleAllowSignUpActivate)
 				switch {
 				case err == nil:
 					events.Expect(account.SignedInWithGoogle{Email: tc.email})

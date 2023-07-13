@@ -17,7 +17,7 @@ func TestSignInWithPassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -52,7 +52,8 @@ func TestSignInWithPassword(t *testing.T) {
 
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
-		user3 := account.NewUser(errsx.Must(account.NewEmail("not@found.com")))
+		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@bloggs.com", Activate: true})
+		user4 := account.NewUser(errsx.Must(account.NewEmail("not@found.com")))
 
 		tt := []struct {
 			name string
@@ -60,7 +61,8 @@ func TestSignInWithPassword(t *testing.T) {
 		}{
 			{"not verified", user1},
 			{"verified", user2},
-			{"does not exist", user3},
+			{"activated", user3},
+			{"does not exist", user4},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -123,6 +125,7 @@ func TestSignInWithPassword(t *testing.T) {
 
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com"})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
+		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -139,16 +142,17 @@ func TestSignInWithPassword(t *testing.T) {
 			{"email without @ sign", "joebloggs.com", "password", app.ErrMalformedInput},
 			{"non-existent email", "foo@bar.com", "password", nil},
 			{"short password", "joe@bloggs.com", "0123456", app.ErrMalformedInput},
-			{"incorrect password", user2.Email, "0123456789", nil},
+			{"unactivated", user2.Email, "password", account.ErrNotActivated},
+			{"incorrect password", user3.Email, "0123456789", nil},
 			{"unverified user bad request", user1.Email, "password", nil},
-			{"unverified user", user1.Email, "password", account.ErrNotVerified},
+			{"unverified user", user1.Email, "password", account.ErrNotActivated},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				err := svc.SignInWithPassword(ctx, tc.email, tc.password)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")
@@ -161,7 +165,7 @@ func TestSignInWithPassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Verify: true})
+		MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

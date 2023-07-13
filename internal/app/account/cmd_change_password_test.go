@@ -29,7 +29,7 @@ func TestChangePassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -53,7 +53,7 @@ func TestChangePassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", Verify: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -76,7 +76,7 @@ func TestChangePassword(t *testing.T) {
 				err := svc.ChangePassword(ctx, tc.guard, tc.userID, tc.oldPassword, tc.newPassword, tc.newPassword)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")
@@ -115,7 +115,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Verify: true})
+				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Activate: true})
 
 				err := svc.ChangePassword(ctx, validGuard, user.ID, tc.oldPassword, tc.newPassword, tc.newPasswordCheck)
 				switch {

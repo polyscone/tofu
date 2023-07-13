@@ -28,7 +28,7 @@ func TestSetupTOTP(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -119,7 +119,8 @@ func TestSetupTOTP(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@bloggs.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -131,14 +132,15 @@ func TestSetupTOTP(t *testing.T) {
 			want   error
 		}{
 			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
-			{"TOTP already setup and activated", validGuard, user.ID, nil},
+			{"TOTP already setup and activated", validGuard, user1.ID, nil},
+			{"unactivated user", validGuard, user2.ID, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				err := svc.SetupTOTP(ctx, tc.guard, tc.userID)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")

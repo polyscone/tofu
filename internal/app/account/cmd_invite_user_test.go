@@ -58,7 +58,8 @@ func TestInviteUser(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Verify: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Verify: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "bar@example.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -70,14 +71,15 @@ func TestInviteUser(t *testing.T) {
 			want  error
 		}{
 			{"unauthorised", invalidGuard, "", app.ErrUnauthorised},
-			{"authenticated user", validGuard, user.Email, nil},
+			{"verified user", validGuard, user1.Email, nil},
+			{"activated user", validGuard, user2.Email, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				_, err := svc.InviteUser(ctx, tc.guard, tc.email)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")

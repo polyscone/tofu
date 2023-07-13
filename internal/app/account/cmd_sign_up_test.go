@@ -41,10 +41,25 @@ func TestSignUp(t *testing.T) {
 		events.Expect(account.SignedUp{Email: "foo@example.com"})
 	})
 
-	t.Run("success verified", func(t *testing.T) {
+	t.Run("success already verified", func(t *testing.T) {
 		svc, broker, repo := NewTestEnv(ctx)
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Verify: true})
+
+		events := testutil.NewEventLog(broker)
+		defer events.Check(t)
+
+		if _, err := svc.SignUp(ctx, user.Email); err != nil {
+			t.Fatal(err)
+		}
+
+		events.Expect(account.SignedUp{Email: user.Email})
+	})
+
+	t.Run("success already activated", func(t *testing.T) {
+		svc, broker, repo := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

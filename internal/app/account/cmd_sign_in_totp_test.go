@@ -71,6 +71,7 @@ func TestSignInWithTOTP(t *testing.T) {
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", SetupTOTP: true})
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
 		user4 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
+		user5 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@jones.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -83,10 +84,11 @@ func TestSignInWithTOTP(t *testing.T) {
 		}{
 			{"empty user id correct TOTP", 0, user4, repository.ErrNotFound},
 			{"empty user id incorrect TOTP", 0, nil, repository.ErrNotFound},
-			{"verified user id incorrect TOTP", user4.ID, nil, app.ErrInvalidInput},
-			{"verified user id unverified correct TOTP", user2.ID, user2, nil},
-			{"verified user id without TOTP setup", user1.ID, nil, nil},
-			{"verified user id without TOTP activated", user3.ID, user3, nil},
+			{"activated user id no TOTP", user5.ID, nil, nil},
+			{"activated user id incorrect TOTP", user4.ID, nil, app.ErrInvalidInput},
+			{"activated user id unverified correct TOTP", user2.ID, user2, nil},
+			{"activated user id without TOTP activated", user3.ID, user3, nil},
+			{"verified user id without TOTP setup", user1.ID, nil, account.ErrNotActivated},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -98,7 +100,7 @@ func TestSignInWithTOTP(t *testing.T) {
 				err := svc.SignInWithTOTP(ctx, tc.userID, totp)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")

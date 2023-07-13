@@ -214,7 +214,7 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 
 	behaviour := account.GoogleSignInOnly
 	if config.SignUpEnabled {
-		behaviour = account.GoogleAllowSignUp
+		behaviour = account.GoogleAllowSignUpActivate
 	}
 
 	if err := h.Svc.Account.SignInWithGoogle(ctx, claims.Email, behaviour); err != nil {

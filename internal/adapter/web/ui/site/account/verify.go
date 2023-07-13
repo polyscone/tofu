@@ -5,6 +5,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
+	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
@@ -43,7 +44,7 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Svc.Account.VerifyUser(ctx, email, input.Password, input.PasswordCheck)
+		err = h.Svc.Account.VerifyUser(ctx, email, input.Password, input.PasswordCheck, account.VerifyUserActivate)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "verify user", err, "site/account/verify/form", nil)
 

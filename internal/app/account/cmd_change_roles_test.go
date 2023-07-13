@@ -113,7 +113,7 @@ func TestChangeRoles(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
 		role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))
@@ -192,8 +192,8 @@ func TestChangeRoles(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
-		super := MustAddUser(t, ctx, repo, TestUser{Email: "super@bloggs.com", Verify: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
+		super := MustAddUser(t, ctx, repo, TestUser{Email: "super@bloggs.com"})
 		role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))
@@ -222,7 +222,7 @@ func TestChangeRoles(t *testing.T) {
 				err := svc.ChangeRoles(ctx, tc.guard, tc.userID, tc.roleIDs, nil, nil)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
-					t.Errorf("want %q; got %q", tc.want, err)
+					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")

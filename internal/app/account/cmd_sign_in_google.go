@@ -15,6 +15,7 @@ type GoogleSignInBehaviour byte
 const (
 	GoogleSignInOnly GoogleSignInBehaviour = iota
 	GoogleAllowSignUp
+	GoogleAllowSignUpActivate
 )
 
 var ErrGoogleSignUpDisabled = errors.New("Google sign up disabled")
@@ -57,8 +58,14 @@ func (s *Service) SignInWithGoogle(ctx context.Context, email string, behaviour 
 			return err
 		}
 
-		if err := user.SignInWithGoogle(); err != nil {
-			return err
+		if behaviour == GoogleAllowSignUpActivate {
+			if err := user.Activate(); err != nil {
+				return err
+			}
+
+			if err := user.SignInWithGoogle(); err != nil {
+				return err
+			}
 		}
 
 		if err := s.repo.AddUser(ctx, user); err != nil {
