@@ -67,9 +67,7 @@ func roleListGet(h *ui.Handler) http.HandlerFunc {
 
 func roleNewGet(h *ui.Handler) http.HandlerFunc {
 	h.SetViewVars("site/account/management/role/new", func(r *http.Request) (handler.Vars, error) {
-		vars := handler.Vars{
-			"PermissionGroups": guard.PermissionGroups,
-		}
+		vars := handler.Vars{"PermissionGroups": guard.PermissionGroups}
 
 		return vars, nil
 	})

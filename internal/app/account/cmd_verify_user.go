@@ -56,7 +56,7 @@ func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck
 		return err
 	}
 
-	if behaviour == VerifyUserActivate {
+	if behaviour == VerifyUserActivate || !user.InvitedAt.IsZero() {
 		if err := user.Activate(); err != nil {
 			return err
 		}

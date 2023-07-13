@@ -1,0 +1,27 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<div class="center">
+	<h1>Activate {{.Vars.User.Email}}</h1>
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
+	<p>Are you sure you want to activate {{.Vars.User.Email}}?</p>
+
+	<form action="{{Path "account.management.user.activate.post" ":userID" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
+		{{template "com_csrf_input" .}}
+
+		<div class="bag reverse">
+			<button type="submit" class="push-inline-end">Yes, activate {{.Vars.User.Email}}</button>
+
+			<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+		</div>
+	</form>
+</div>
+
+{{end}}

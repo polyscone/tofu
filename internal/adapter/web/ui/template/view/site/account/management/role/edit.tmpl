@@ -11,7 +11,7 @@
 {{define "view_body"}}
 
 <div class="center">
-	<form action="{{Path "account.management.role.edit.post" ":roleID" .Vars.Role.ID}}" method="POST">
+	<form action="{{Path "account.management.role.edit.post" ":roleID" .Vars.Role.ID}}{{.URL.Query.String}}" method="POST">
 		{{template "com_csrf_input" .}}
 
 		{{template "com_role_name_input" .WithComData

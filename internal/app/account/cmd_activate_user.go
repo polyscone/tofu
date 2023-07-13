@@ -6,34 +6,32 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-func (s *Service) ActivateUser(ctx context.Context, email string) error {
+type ActivateUsersGuard interface {
+	CanActivateUsers() bool
+}
+
+func (s *Service) ActivateUser(ctx context.Context, guard ActivateUsersGuard, userID int) error {
 	var input struct {
-		email Email
+		userID int
 	}
 	{
-		var err error
-		var errs errsx.Map
-
-		if input.email, err = NewEmail(email); err != nil {
-			errs.Set("email", err)
+		if !guard.CanActivateUsers() {
+			return app.ErrUnauthorised
 		}
 
-		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
+		input.userID = userID
 	}
 
-	log, err := s.repo.FindSignInAttemptLogByEmail(ctx, email)
-	if err != nil {
-		return fmt.Errorf("find sign in attempt log by email: %w", err)
-	}
-
-	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by email: %w", err)
+	}
+
+	log, err := s.repo.FindSignInAttemptLogByEmail(ctx, user.Email)
+	if err != nil {
+		return fmt.Errorf("find sign in attempt log by email: %w", err)
 	}
 
 	superUserCount, err := s.repo.CountUsersByRoleID(ctx, SuperRole.ID)

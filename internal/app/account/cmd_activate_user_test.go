@@ -11,7 +11,18 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
+type activateUsersGuard struct {
+	value bool
+}
+
+func (g activateUsersGuard) CanActivateUsers() bool {
+	return g.value
+}
+
 func TestActivateUser(t *testing.T) {
+	validGuard := activateUsersGuard{value: true}
+	invalidGuard := activateUsersGuard{value: false}
+
 	t.Run("success", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
@@ -32,7 +43,7 @@ func TestActivateUser(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := svc.ActivateUser(ctx, user1.Email); err != nil {
+		if err := svc.ActivateUser(ctx, validGuard, user1.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -61,7 +72,7 @@ func TestActivateUser(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if err := svc.ActivateUser(ctx, user2.Email); err != nil {
+		if err := svc.ActivateUser(ctx, validGuard, user2.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -74,54 +85,33 @@ func TestActivateUser(t *testing.T) {
 		}
 	})
 
-	t.Run("fail activating an already activated user", func(t *testing.T) {
+	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
-
-		events := testutil.NewEventLog(broker)
-		defer events.Check(t)
-
-		if err := svc.ActivateUser(ctx, user.Email); err == nil {
-			t.Error("want error; got <nil>")
-		}
-	})
-
-	t.Run("input validation", func(t *testing.T) {
-		ctx := context.Background()
-		svc, broker, _ := NewTestEnv(ctx)
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {
-			name         string
-			email        string
-			isValidInput bool
+			name   string
+			guard  activateUsersGuard
+			userID int
+			want   error
 		}{
-			{"valid inputs", "foo@example.com", true},
-
-			{"invalid email empty", "", false},
-			{"invalid email whitespace", "   ", false},
-			{"invalid email missing @", "fooexample.com", false},
-			{"invalid email part before @", "@example.com", false},
-			{"invalid email part after @", "foo@", false},
-			{"invalid email includes name", "Foo Bar <foo@example.com>", false},
-			{"invalid email missing TLD", "foo@example.", false},
+			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
+			{"user already activated", validGuard, user.ID, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.ActivateUser(ctx, tc.email)
+				err := svc.ActivateUser(ctx, tc.guard, tc.userID)
 				switch {
+				case tc.want != nil && !errors.Is(err, tc.want):
+					t.Errorf("want error: %v; got: %v", tc.want, err)
+
 				case err == nil:
-					events.Expect(account.Activated{Email: tc.email})
-
-				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
-					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)
-
-				case !tc.isValidInput && !errors.Is(err, app.ErrMalformedInput):
-					t.Errorf("want error: %v; got %v", app.ErrMalformedInput, err)
+					t.Error("want error; got <nil>")
 				}
 			})
 		}

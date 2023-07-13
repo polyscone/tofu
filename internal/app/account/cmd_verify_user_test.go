@@ -61,6 +61,32 @@ func TestVerifyUser(t *testing.T) {
 		}
 	})
 
+	t.Run("success invited always activate", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, repo := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Invited: true})
+
+		events := testutil.NewEventLog(broker)
+		defer events.Check(t)
+
+		if err := svc.VerifyUser(ctx, user.Email, "password", "password", account.VerifyUserOnly); err != nil {
+			t.Fatal(err)
+		}
+
+		events.Expect(account.Verified{Email: user.Email})
+		events.Expect(account.Activated{Email: user.Email})
+
+		user = errsx.Must(repo.FindUserByEmail(ctx, user.Email))
+
+		if user.VerifiedAt.IsZero() {
+			t.Error("want non-zero verified at; got zero")
+		}
+		if user.ActivatedAt.IsZero() {
+			t.Error("want non-zero activated at; got zero")
+		}
+	})
+
 	t.Run("fail verifying an already verified user", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)

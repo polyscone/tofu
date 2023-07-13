@@ -30,10 +30,11 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		return mux.Path("account.sign_in")
 	})
 
-	h.Broker.Listen(event.SignedInWithPasswordHandler(h))
 	h.Broker.Listen(event.InvitedHandler(h))
 	h.Broker.Listen(event.SignedUpHandler(h))
 	h.Broker.Listen(event.AlreadySignedUpHandler(h))
+	h.Broker.Listen(event.ActivatedHandler(h))
+	h.Broker.Listen(event.SignedInWithPasswordHandler(h))
 	h.Broker.Listen(event.TOTPDisabledHandler(h))
 
 	errorHandler := func(msg string) middleware.ErrorHandler {

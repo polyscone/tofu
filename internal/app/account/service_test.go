@@ -27,6 +27,7 @@ func NewTestEnv(ctx context.Context) (*account.Service, event.Broker, account.Re
 type TestUser struct {
 	Email            string
 	Password         string
+	Invited          bool
 	Verify           bool
 	VerifyNoPassword bool
 	Activate         bool
@@ -56,9 +57,14 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 	var codes []string
 	user := account.NewUser(errsx.Must(account.NewEmail(tu.Email)))
 
-	if tu.VerifyNoPassword {
+	switch {
+	case tu.Invited:
+		errsx.Must0(user.InviteUser())
+
+	case tu.VerifyNoPassword:
 		errsx.Must0(user.SignUpWithGoogle())
-	} else {
+
+	default:
 		errsx.Must0(user.SignUp())
 	}
 

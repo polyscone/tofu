@@ -30,10 +30,26 @@ func UserManagement(h *ui.Handler, mux *router.ServeMux) {
 		})
 
 		mux.Prefix("/:userID", func(mux *router.ServeMux) {
-			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanUpdateUsers() }))
+			mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
+				userID, err := router.URLParamAs[int](r, "userID")
+				if err != nil {
+					return false
+				}
+
+				canAccess := h.CanAccess(func(p guard.Passport) bool {
+					return p.Account.CanChangeRoles(userID) || p.Account.CanActivateUsers()
+				})
+
+				return canAccess(w, r)
+			})
 
 			mux.Get("/", userEditGet(h), "account.management.user.edit")
 			mux.Post("/", userEditPost(h), "account.management.user.edit.post")
+
+			mux.Prefix("/activate", func(mux *router.ServeMux) {
+				mux.Get("/", userActivateGet(h), "account.management.user.activate")
+				mux.Post("/", userActivatePost(h), "account.management.user.activate.post")
+			})
 
 			mux.Prefix("/totp-reset-review", func(mux *router.ServeMux) {
 				mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }))
@@ -212,7 +228,65 @@ func userEditPost(h *ui.Handler) http.HandlerFunc {
 
 		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
 
-		http.Redirect(w, r, h.Path("account.management.user.list"), http.StatusSeeOther)
+		http.Redirect(w, r, h.PathQuery(r, "account.management.user.list"), http.StatusSeeOther)
+	}
+}
+
+func userActivateGet(h *ui.Handler) http.HandlerFunc {
+	h.SetViewVars("site/account/management/user/activate", func(r *http.Request) (handler.Vars, error) {
+		userID, err := router.URLParamAs[int](r, "userID")
+		if err != nil {
+			return nil, fmt.Errorf("URL param as: %w", err)
+		}
+
+		ctx := r.Context()
+
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		if err != nil {
+			return nil, fmt.Errorf("find user by id: %w", err)
+		}
+
+		vars := handler.Vars{"User": user}
+
+		return vars, nil
+	})
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "site/account/management/user/activate", nil)
+	}
+}
+
+func userActivatePost(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, err := router.URLParamAs[int](r, "userID")
+		if err != nil {
+			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+		passport := h.Passport(ctx)
+
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
+
+			return
+		}
+
+		err = h.Svc.Account.ActivateUser(ctx, passport.Account, userID)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "activate user", err, "site/account/management/user/activate", nil)
+
+			return
+		}
+
+		h.AddFlashf(ctx, "User %v activated successfully.", user.Email)
+
+		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
+
+		http.Redirect(w, r, h.PathQuery(r, "account.management.user.list"), http.StatusSeeOther)
 	}
 }
 

@@ -76,8 +76,8 @@ func (a Account) CanInviteUsers() bool {
 	return a.can(inviteUsers)
 }
 
-func (a Account) CanUpdateUsers() bool {
-	return a.can(updateUsers)
+func (a Account) CanActivateUsers() bool {
+	return a.can(activateUsers)
 }
 
 func (a Account) CanReviewTOTPResets() bool {
