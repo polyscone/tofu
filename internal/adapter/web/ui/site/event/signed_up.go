@@ -16,9 +16,9 @@ func SignedUpHandler(h *ui.Handler) any {
 			ctx := context.Background()
 			logger := h.Logger(ctx)
 
-			tok, err := h.Repo.Web.AddActivationToken(ctx, evt.Email, 2*time.Hour)
+			tok, err := h.Repo.Web.AddVerificationToken(ctx, evt.Email, 2*time.Hour)
 			if err != nil {
-				logger.Error("signed up: add activation token", "error", err)
+				logger.Error("signed up: add verification token", "error", err)
 
 				return
 			}
@@ -31,7 +31,7 @@ func SignedUpHandler(h *ui.Handler) any {
 			}
 
 			vars := handler.Vars{"Token": tok}
-			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "activate_account", vars); err != nil {
+			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "verify_account", vars); err != nil {
 				logger.Error("signed up: send email", "error", err)
 			}
 		})

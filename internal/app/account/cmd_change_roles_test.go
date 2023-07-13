@@ -32,17 +32,17 @@ func TestChangeRoles(t *testing.T) {
 	invalidGuard := setRolesGuard{}
 
 	t.Run("success", func(t *testing.T) {
-		for _, activate := range []bool{true, false} {
-			name := "unactivated"
-			if activate {
-				name = "activated"
+		for _, verify := range []bool{true, false} {
+			name := "unverified"
+			if verify {
+				name = "verified"
 			}
 
 			t.Run(name, func(t *testing.T) {
 				ctx := context.Background()
 				svc, broker, repo := NewTestEnv(ctx)
 
-				user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: activate})
+				user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: verify})
 				role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 				role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 
@@ -113,7 +113,7 @@ func TestChangeRoles(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
 		role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))
@@ -192,8 +192,8 @@ func TestChangeRoles(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
-		super := MustAddUser(t, ctx, repo, TestUser{Email: "super@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
+		super := MustAddUser(t, ctx, repo, TestUser{Email: "super@bloggs.com", Verify: true})
 		role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))

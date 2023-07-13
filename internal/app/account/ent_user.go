@@ -20,7 +20,7 @@ const (
 )
 
 var (
-	ErrNotActivated    = errors.New("account is not activated")
+	ErrNotVerified     = errors.New("account is not verified")
 	ErrInvalidPassword = errors.New("invalid password")
 )
 
@@ -42,7 +42,7 @@ type User struct {
 	TOTPResetApprovedAt  time.Time
 	InvitedAt            time.Time
 	SignedUpAt           time.Time
-	ActivatedAt          time.Time
+	VerifiedAt           time.Time
 	LastSignedInAt       time.Time
 	LastSignedInMethod   string
 	HashedRecoveryCodes  [][]byte
@@ -112,8 +112,8 @@ func (u *User) HasActivatedTOTP() bool {
 }
 
 func (u *User) InviteUser() error {
-	if !u.ActivatedAt.IsZero() {
-		return errors.New("cannot invite an already activated user")
+	if !u.VerifiedAt.IsZero() {
+		return errors.New("cannot invite an already verified user")
 	}
 
 	if u.InvitedAt.IsZero() {
@@ -126,7 +126,7 @@ func (u *User) InviteUser() error {
 }
 
 func (u *User) SignUp() error {
-	if !u.ActivatedAt.IsZero() {
+	if !u.VerifiedAt.IsZero() {
 		u.Events.Enqueue(AlreadySignedUp{Email: u.Email})
 
 		return nil
@@ -148,8 +148,8 @@ func (u *User) SignUpWithGoogle() error {
 		u.SignedUpAt = now
 	}
 
-	if u.ActivatedAt.IsZero() {
-		u.ActivatedAt = now
+	if u.VerifiedAt.IsZero() {
+		u.VerifiedAt = now
 	}
 
 	u.Events.Enqueue(SignedUpWithGoogle{Email: u.Email})
@@ -157,18 +157,18 @@ func (u *User) SignUpWithGoogle() error {
 	return nil
 }
 
-func (u *User) Activate(password Password, hasher Hasher) error {
-	if !u.ActivatedAt.IsZero() {
-		return errors.New("already activated")
+func (u *User) Verify(password Password, hasher Hasher) error {
+	if !u.VerifiedAt.IsZero() {
+		return errors.New("already verified")
 	}
 
 	if err := u.setPassword(password, hasher); err != nil {
 		return fmt.Errorf("set password: %w", err)
 	}
 
-	u.ActivatedAt = time.Now().UTC()
+	u.VerifiedAt = time.Now().UTC()
 
-	u.Events.Enqueue(Activated{Email: u.Email})
+	u.Events.Enqueue(Verified{Email: u.Email})
 
 	return nil
 }
@@ -185,8 +185,8 @@ func (u *User) setPassword(newPassword Password, hasher Hasher) error {
 }
 
 func (u *User) ChangePassword(oldPassword, newPassword Password, hasher Hasher) error {
-	if u.ActivatedAt.IsZero() {
-		return errors.New("cannot change password until activated")
+	if u.VerifiedAt.IsZero() {
+		return errors.New("cannot change password until verified")
 	}
 
 	if _, err := u.checkPassword(oldPassword, hasher); err != nil {
@@ -205,8 +205,8 @@ func (u *User) ChangePassword(oldPassword, newPassword Password, hasher Hasher) 
 }
 
 func (u *User) ChoosePassword(newPassword Password, hasher Hasher) error {
-	if u.ActivatedAt.IsZero() {
-		return errors.New("cannot choose password until activated")
+	if u.VerifiedAt.IsZero() {
+		return errors.New("cannot choose password until verified")
 	}
 
 	if len(u.HashedPassword) > 0 {
@@ -223,8 +223,8 @@ func (u *User) ChoosePassword(newPassword Password, hasher Hasher) error {
 }
 
 func (u *User) ResetPassword(newPassword Password, hasher Hasher) error {
-	if u.ActivatedAt.IsZero() {
-		return errors.New("cannot change password until activated")
+	if u.VerifiedAt.IsZero() {
+		return errors.New("cannot change password until verified")
 	}
 
 	if err := u.setPassword(newPassword, hasher); err != nil {
@@ -513,14 +513,14 @@ func (u *User) checkPassword(password Password, hasher Hasher) (rehashed bool, _
 }
 
 func (u *User) SignInWithPassword(password Password, hasher Hasher) (rehashed bool, _ error) {
-	if u.ActivatedAt.IsZero() {
+	if u.VerifiedAt.IsZero() {
 		// Always check a password even when we error finding a user to help
 		// avoid leaking info that would allow enumeration of valid emails
 		if err := hasher.CheckDummyPasswordHash(); err != nil {
 			return false, fmt.Errorf("check dummy password hash: %w", err)
 		}
 
-		return false, ErrNotActivated
+		return false, ErrNotVerified
 	}
 
 	rehashed, err := u.checkPassword(password, hasher)
@@ -543,8 +543,8 @@ func (u *User) SignInWithTOTP(totp TOTP) error {
 		return errors.New("account does not have TOTP")
 	}
 
-	if u.ActivatedAt.IsZero() {
-		return ErrNotActivated
+	if u.VerifiedAt.IsZero() {
+		return ErrNotVerified
 	}
 
 	if err := u.checkTOTP(totp); err != nil {
@@ -575,8 +575,8 @@ func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
 		return errors.New("account cannot use recovery codes")
 	}
 
-	if u.ActivatedAt.IsZero() {
-		return ErrNotActivated
+	if u.VerifiedAt.IsZero() {
+		return ErrNotVerified
 	}
 
 	if err := u.useRecoveryCode(code); err != nil {
@@ -593,8 +593,8 @@ func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
 }
 
 func (u *User) SignInWithGoogle() error {
-	if u.ActivatedAt.IsZero() {
-		return ErrNotActivated
+	if u.VerifiedAt.IsZero() {
+		return ErrNotVerified
 	}
 
 	if !u.HasActivatedTOTP() {

@@ -24,11 +24,11 @@ func TestSetupTOTP(t *testing.T) {
 	validGuard := setupTOTPGuard{value: true}
 	invalidGuard := setupTOTPGuard{value: false}
 
-	t.Run("success with activated user", func(t *testing.T) {
+	t.Run("success with verified user", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -76,7 +76,7 @@ func TestSetupTOTP(t *testing.T) {
 		}
 	})
 
-	t.Run("success with activated user and verified TOTP", func(t *testing.T) {
+	t.Run("success with verified user and verified TOTP", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 

@@ -29,7 +29,7 @@ func TestChangePassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -53,7 +53,7 @@ func TestChangePassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -115,7 +115,7 @@ func TestChangePassword(t *testing.T) {
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Activate: true})
+				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Verify: true})
 
 				err := svc.ChangePassword(ctx, validGuard, user.ID, tc.oldPassword, tc.newPassword, tc.newPasswordCheck)
 				switch {

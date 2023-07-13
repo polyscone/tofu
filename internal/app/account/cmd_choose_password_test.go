@@ -29,7 +29,7 @@ func TestChoosePassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateNoPassword: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyNoPassword: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -53,8 +53,8 @@ func TestChoosePassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", ActivateNoPassword: true})
-		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "alan@doe.com", Activate: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", VerifyNoPassword: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "alan@doe.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -108,7 +108,7 @@ func TestChoosePassword(t *testing.T) {
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Activate: true})
+				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Verify: true})
 
 				err := svc.ChoosePassword(ctx, validGuard, user.ID, tc.newPassword, tc.newPasswordCheck)
 				switch {

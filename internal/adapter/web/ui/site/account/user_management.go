@@ -118,7 +118,7 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "An invite to activate an account has been sent to %q.", user.Email)
+		h.AddFlashf(ctx, "An invite to verify an account has been sent to %q.", user.Email)
 
 		h.Sessions.Set(ctx, sess.SortTopID, user.ID)
 		h.Sessions.Set(ctx, sess.HighlightID, user.ID)

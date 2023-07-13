@@ -38,7 +38,7 @@ func TestActivateTOTP(t *testing.T) {
 
 		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
-		if user.ActivatedAt.IsZero() {
+		if user.VerifiedAt.IsZero() {
 			t.Error("want TOTP activated at to be populated; got zero")
 		}
 	})

@@ -58,7 +58,7 @@ func TestInviteUser(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

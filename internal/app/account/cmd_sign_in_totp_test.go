@@ -67,7 +67,7 @@ func TestSignInWithTOTP(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", SetupTOTP: true})
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
 		user4 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
@@ -83,10 +83,10 @@ func TestSignInWithTOTP(t *testing.T) {
 		}{
 			{"empty user id correct TOTP", 0, user4, repository.ErrNotFound},
 			{"empty user id incorrect TOTP", 0, nil, repository.ErrNotFound},
-			{"activated user id incorrect TOTP", user4.ID, nil, app.ErrInvalidInput},
-			{"activated user id unverified correct TOTP", user2.ID, user2, nil},
-			{"activated user id without TOTP setup", user1.ID, nil, nil},
-			{"activated user id without TOTP activated", user3.ID, user3, nil},
+			{"verified user id incorrect TOTP", user4.ID, nil, app.ErrInvalidInput},
+			{"verified user id unverified correct TOTP", user2.ID, user2, nil},
+			{"verified user id without TOTP setup", user1.ID, nil, nil},
+			{"verified user id without TOTP activated", user3.ID, user3, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

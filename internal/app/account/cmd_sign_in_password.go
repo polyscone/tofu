@@ -64,7 +64,7 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 	// users exist in the system
 	//
 	// These values are set to their zero values on a successful
-	// sign in or account activation
+	// sign in or account verification
 	log.Attempts++
 	log.LastAttemptAt = time.Now()
 
@@ -84,7 +84,7 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 	}
 
 	if _, err := user.SignInWithPassword(input.password, s.hasher); err != nil {
-		if errors.Is(err, ErrNotActivated) || errors.Is(err, ErrInvalidPassword) {
+		if errors.Is(err, ErrNotVerified) || errors.Is(err, ErrInvalidPassword) {
 			if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
 				return fmt.Errorf("save sign in attempt log: %w", err)
 			}

@@ -17,7 +17,7 @@ func TestSignInWithPassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -51,15 +51,15 @@ func TestSignInWithPassword(t *testing.T) {
 		svc, _, repo := NewTestEnv(ctx)
 
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
-		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
 		user3 := account.NewUser(errsx.Must(account.NewEmail("not@found.com")))
 
 		tt := []struct {
 			name string
 			user *account.User
 		}{
-			{"not activated", user1},
-			{"activated", user2},
+			{"not verified", user1},
+			{"verified", user2},
 			{"does not exist", user3},
 		}
 		for _, tc := range tt {
@@ -122,7 +122,7 @@ func TestSignInWithPassword(t *testing.T) {
 		svc, broker, repo := NewTestEnv(ctx)
 
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com"})
-		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -140,8 +140,8 @@ func TestSignInWithPassword(t *testing.T) {
 			{"non-existent email", "foo@bar.com", "password", nil},
 			{"short password", "joe@bloggs.com", "0123456", app.ErrMalformedInput},
 			{"incorrect password", user2.Email, "0123456789", nil},
-			{"unactivated user bad request", user1.Email, "password", nil},
-			{"unactivated user", user1.Email, "password", account.ErrNotActivated},
+			{"unverified user bad request", user1.Email, "password", nil},
+			{"unverified user", user1.Email, "password", account.ErrNotVerified},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -161,7 +161,7 @@ func TestSignInWithPassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Activate: true})
+		MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

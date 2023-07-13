@@ -16,9 +16,9 @@ func InvitedHandler(h *ui.Handler) any {
 			ctx := context.Background()
 			logger := h.Logger(ctx)
 
-			tok, err := h.Repo.Web.AddActivationToken(ctx, evt.Email, 48*time.Hour)
+			tok, err := h.Repo.Web.AddVerificationToken(ctx, evt.Email, 48*time.Hour)
 			if err != nil {
-				logger.Error("invited: add activation token", "error", err)
+				logger.Error("invited: add verification token", "error", err)
 
 				return
 			}
@@ -31,7 +31,7 @@ func InvitedHandler(h *ui.Handler) any {
 			}
 
 			vars := handler.Vars{"Token": tok}
-			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "invite_activate_account", vars); err != nil {
+			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "invite_verify_account", vars); err != nil {
 				logger.Error("invited: send email", "error", err)
 			}
 		})

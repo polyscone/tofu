@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-func (s *Service) ActivateUser(ctx context.Context, email, password, passwordCheck string) error {
+func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck string) error {
 	var input struct {
 		email         Email
 		password      Password
@@ -50,7 +50,7 @@ func (s *Service) ActivateUser(ctx context.Context, email, password, passwordChe
 		return fmt.Errorf("count users by role id: %w", err)
 	}
 
-	if err := user.Activate(input.password, s.hasher); err != nil {
+	if err := user.Verify(input.password, s.hasher); err != nil {
 		return err
 	}
 

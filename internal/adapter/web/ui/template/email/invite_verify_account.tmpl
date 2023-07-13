@@ -1,0 +1,24 @@
+{{define "subject"}}You've been invited to verify your account at {{.URL.Host}}{{end}}
+
+{{define "plain" -}}
+
+Verify your account
+
+You've been invited to choose a password and verify an account at {{.URL.Host}}.
+
+To verify your account paste the following URL into your browser:
+{{.URL.Scheme}}://{{.URL.Host}}{{Path "account.verify"}}?token={{.Vars.Token}}
+
+{{- end}}
+
+{{define "html" -}}
+
+<h1>Verify your account</h1>
+<p>You've been invited to choose a password and verify an account at {{.URL.Host}}.</p>
+<p><a href="{{.URL.Scheme}}://{{.URL.Host}}{{Path "account.verify"}}?token={{.Vars.Token}}">Click here</a> to verify your account.</p>
+<p>
+	If the link above does not work paste the following URL into your browser:<br>
+	{{.URL.Scheme}}://{{.URL.Host}}{{Path "account.verify"}}?token={{.Vars.Token}}
+</p>
+
+{{- end}}

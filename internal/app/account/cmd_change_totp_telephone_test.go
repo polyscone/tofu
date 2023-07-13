@@ -62,7 +62,7 @@ func TestChangeTOTPTel(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -75,7 +75,7 @@ func TestChangeTOTPTel(t *testing.T) {
 			want   error
 		}{
 			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
-			{"activated user without TOTP setup", validGuard, user.ID, "+81 70 0000 0003", nil},
+			{"verified user without TOTP setup", validGuard, user.ID, "+81 70 0000 0003", nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

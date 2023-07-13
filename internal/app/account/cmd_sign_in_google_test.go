@@ -55,7 +55,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		if len(user2.HashedPassword) != 0 {
 			t.Error("want hashed password to be empty")
 		}
-		if user2.ActivatedAt.IsZero() {
+		if user2.VerifiedAt.IsZero() {
 			t.Error("want activated at to be populated")
 		}
 		if user2.SignedUpAt.IsZero() {
@@ -107,7 +107,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Activate: true})
+		MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

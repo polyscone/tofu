@@ -135,7 +135,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	mux.Prefix("/account", func(mux *router.ServeMux) {
 		mux.Name("account.section")
 
-		account.Activate(h, mux)
+		account.Verify(h, mux)
 		account.ChangePassword(h, mux)
 		account.ChoosePassword(h, mux)
 		account.Dashboard(h, mux)

@@ -25,7 +25,7 @@ func TestVerifyTOTP(t *testing.T) {
 	validGuard := verifyTOTPGuard{value: true}
 	invalidGuard := verifyTOTPGuard{value: false}
 
-	t.Run("success with activated user with app TOTP setup", func(t *testing.T) {
+	t.Run("success with verified user with app TOTP setup", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
@@ -64,7 +64,7 @@ func TestVerifyTOTP(t *testing.T) {
 		}
 	})
 
-	t.Run("success with activated user with SMS TOTP setup", func(t *testing.T) {
+	t.Run("success with verified user with SMS TOTP setup", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
@@ -107,7 +107,7 @@ func TestVerifyTOTP(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", SetupTOTP: true})
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", ActivateTOTP: true})
 

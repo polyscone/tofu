@@ -4,9 +4,9 @@
 
 <div class="center">
 	{{if .ErrorMessage}}
-		<h1>Account activation error</h1>
+		<h1>Account verification error</h1>
 	{{else}}
-		<h1>Account activation</h1>
+		<h1>Account verification</h1>
 	{{end}}
 </div>
 
@@ -16,11 +16,11 @@
 
 <div class="center">
 	{{if .ErrorMessage}}
-		<p>Either the account you're trying to activate has already been activated or you've provided an invalid activation token.</p>
+		<p>Either the account you're trying to verify has already been verified or you've provided an invalid verification token.</p>
 	{{else}}
-		<p>Almost done! Use the form below to choose a password and we can activate your account.</p>
+		<p>Almost done! Use the form below to choose a password and we can verify your account.</p>
 
-		<form action="{{Path "account.activate.post"}}{{.URL.Query.String}}" method="POST" id="account-activate-form">
+		<form action="{{Path "account.verify.post"}}{{.URL.Query.String}}" method="POST" id="account-verify-form">
 			{{template "com_csrf_input" .}}
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
@@ -32,7 +32,7 @@
 			}}
 
 			<div class="bag reverse">
-				<button type="submit">Use this password and activate account</button>
+				<button type="submit">Use this password and verify account</button>
 			</div>
 		</form>
 	{{end}}

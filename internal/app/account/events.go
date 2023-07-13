@@ -16,7 +16,7 @@ type SignedUpWithGoogle struct {
 	Email string
 }
 
-type Activated struct {
+type Verified struct {
 	Email string
 }
 

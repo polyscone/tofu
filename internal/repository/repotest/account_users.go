@@ -49,7 +49,7 @@ func AccountUsers(ctx context.Context, t *testing.T, newRepo func() account.Read
 				TOTPResetApprovedAt:  time.Now().Add(-4 * time.Second),
 				InvitedAt:            time.Now().Add(-5 * time.Second),
 				SignedUpAt:           time.Now().Add(-6 * time.Second),
-				ActivatedAt:          time.Now().Add(-7 * time.Second),
+				VerifiedAt:           time.Now().Add(-7 * time.Second),
 				LastSignedInAt:       time.Now().Add(-8 * time.Second),
 				LastSignedInMethod:   "Form",
 				HashedRecoveryCodes:  [][]byte{[]byte("1"), []byte("2"), []byte("3")},
@@ -285,8 +285,8 @@ func accountUsersEqual(t *testing.T, want, got *account.User) {
 	if want, got := want.SignedUpAt, got.SignedUpAt; !want.Equal(got) {
 		t.Errorf("want signed up at to be %v; got %v", want, got)
 	}
-	if want, got := want.ActivatedAt, got.ActivatedAt; !want.Equal(got) {
-		t.Errorf("want activated at to be %v; got %v", want, got)
+	if want, got := want.VerifiedAt, got.VerifiedAt; !want.Equal(got) {
+		t.Errorf("want verified at to be %v; got %v", want, got)
 	}
 	if want, got := want.LastSignedInAt, got.LastSignedInAt; !want.Equal(got) {
 		t.Errorf("want last signed in at to be %v; got %v", want, got)

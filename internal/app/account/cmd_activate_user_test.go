@@ -12,7 +12,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
-func TestActivateUser(t *testing.T) {
+func TestVerifyUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
@@ -29,17 +29,17 @@ func TestActivateUser(t *testing.T) {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
 
-		if err := svc.ActivateUser(ctx, user1.Email, "password", "password"); err != nil {
+		if err := svc.VerifyUser(ctx, user1.Email, "password", "password"); err != nil {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.Activated{Email: user1.Email})
+		events.Expect(account.Verified{Email: user1.Email})
 		events.Expect(account.RolesChanged{Email: user1.Email})
 
 		user1 = errsx.Must(repo.FindUserByEmail(ctx, user1.Email))
 
-		if user1.ActivatedAt.IsZero() {
-			t.Error("want non-zero activated at; got zero")
+		if user1.VerifiedAt.IsZero() {
+			t.Error("want non-zero verified at; got zero")
 		}
 
 		if err := svc.SignInWithPassword(ctx, user1.Email, "password"); err != nil {
@@ -53,11 +53,11 @@ func TestActivateUser(t *testing.T) {
 			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
 
-		if err := svc.ActivateUser(ctx, user2.Email, "password", "password"); err != nil {
+		if err := svc.VerifyUser(ctx, user2.Email, "password", "password"); err != nil {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.Activated{Email: user2.Email})
+		events.Expect(account.Verified{Email: user2.Email})
 
 		superUserCount = errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
 		if want, got := 1, superUserCount; want != got {
@@ -65,16 +65,16 @@ func TestActivateUser(t *testing.T) {
 		}
 	})
 
-	t.Run("fail activating an already activated user", func(t *testing.T) {
+	t.Run("fail activating an already verified user", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		if err := svc.ActivateUser(ctx, user.Email, "password", "password"); err == nil {
+		if err := svc.VerifyUser(ctx, user.Email, "password", "password"); err == nil {
 			t.Error("want error; got <nil>")
 		}
 	})
@@ -111,10 +111,10 @@ func TestActivateUser(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.ActivateUser(ctx, tc.email, tc.password, tc.passwordCheck)
+				err := svc.VerifyUser(ctx, tc.email, tc.password, tc.passwordCheck)
 				switch {
 				case err == nil:
-					events.Expect(account.Activated{Email: tc.email})
+					events.Expect(account.Verified{Email: tc.email})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)

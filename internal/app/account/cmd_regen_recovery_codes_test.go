@@ -75,7 +75,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)

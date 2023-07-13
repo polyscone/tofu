@@ -71,7 +71,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
 		user2, codes := MustAddUserRecoveryCodes(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 
 		events := testutil.NewEventLog(broker)
@@ -87,8 +87,8 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		}{
 			{"empty user id correct recovery code", 0, codes[1], repository.ErrNotFound},
 			{"empty user id incorrect recovery code", 0, incorrectCode, repository.ErrNotFound},
-			{"activated user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
-			{"activated user id without TOTP setup", user1.ID, incorrectCode, nil},
+			{"verified user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
+			{"verified user id without TOTP setup", user1.ID, incorrectCode, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

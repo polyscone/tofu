@@ -12,7 +12,7 @@ CREATE TABLE account__users (
 	totp_activated_at     DATETIME,
 	invited_at            DATETIME,
 	signed_up_at          DATETIME,
-	activated_at          DATETIME,
+	verified_at           DATETIME,
 	last_signed_in_at     DATETIME,
 	last_signed_in_method TEXT NOT NULL,
 	created_at            DATETIME NOT NULL,

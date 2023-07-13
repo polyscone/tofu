@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	webTokenKindActivation      = "activation"
+	webTokenKindVerification    = "verification"
 	webTokenKindResetPassword   = "reset_password"
 	webTokenKindTOTPResetVerify = "totp_reset_verify"
 	webTokenKindTOTPReset       = "totp_reset"
@@ -136,24 +136,24 @@ func (r *WebRepo) DestroyExpiredSessions(ctx context.Context) error {
 	return nil
 }
 
-func (r *WebRepo) FindActivationTokenEmail(ctx context.Context, token string) (string, error) {
+func (r *WebRepo) FindVerificationTokenEmail(ctx context.Context, token string) (string, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	return r.findToken(ctx, tx, token, webTokenKindActivation)
+	return r.findToken(ctx, tx, token, webTokenKindVerification)
 }
 
-func (r *WebRepo) AddActivationToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+func (r *WebRepo) AddVerificationToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	token, err := r.createToken(ctx, tx, email, ttl, webTokenKindActivation)
+	token, err := r.createToken(ctx, tx, email, ttl, webTokenKindVerification)
 	if err != nil {
 		return "", fmt.Errorf("create token: %w", err)
 	}
@@ -165,19 +165,19 @@ func (r *WebRepo) AddActivationToken(ctx context.Context, email string, ttl time
 	return token, nil
 }
 
-func (r *WebRepo) ConsumeActivationToken(ctx context.Context, token string) error {
+func (r *WebRepo) ConsumeVerificationToken(ctx context.Context, token string) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	email, err := r.consumeToken(ctx, tx, token, webTokenKindActivation)
+	email, err := r.consumeToken(ctx, tx, token, webTokenKindVerification)
 	if err != nil {
 		return err
 	}
 
-	if err := r.deleteTokensByKind(ctx, tx, email, webTokenKindActivation); err != nil {
+	if err := r.deleteTokensByKind(ctx, tx, email, webTokenKindVerification); err != nil {
 		return fmt.Errorf("delete tokens for email: %w", err)
 	}
 
