@@ -50,6 +50,17 @@
 		}}
 
 		{{template "com_form_select" .WithComData
+			"Label" "Enable automatic account activation on sign up"
+			"Name" "sign-up-auto-activate-enabled"
+			"Value" (.Form.GetOr "sign-up-auto-activate-enabled" .Config.SignUpAutoActivateEnabled)
+			"Options" (Slice
+				(Map "Label" "No" "Value" "false")
+				(Map "Label" "Yes" "Value" "true")
+			)
+			"Disabled" (or $disabled .Config.SetupRequired)
+		}}
+
+		{{template "com_form_select" .WithComData
 			"Label" "Require two-factor authentication"
 			"Name" "totp-required"
 			"Value" (.Form.GetOr "totp-required" .Config.TOTPRequired)

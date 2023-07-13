@@ -33,7 +33,8 @@ func TestUpdateConfig(t *testing.T) {
 
 		systemEmail := "foo@example.com"
 		securityEmail := "bar@example.com"
-		signUpEnabled := true
+		signUpEnabled := false
+		signUpAutoActivateEnabled := false
 		totpRequired := true
 		totpSMSEnabled := true
 		googleSignInEnabled := true
@@ -46,6 +47,7 @@ func TestUpdateConfig(t *testing.T) {
 			systemEmail,
 			securityEmail,
 			signUpEnabled,
+			signUpAutoActivateEnabled,
 			totpRequired,
 			totpSMSEnabled,
 			googleSignInEnabled,
@@ -68,6 +70,9 @@ func TestUpdateConfig(t *testing.T) {
 		}
 		if want, got := signUpEnabled, config.SignUpEnabled; want != got {
 			t.Errorf("want sign up enabled to be %v; got %v", want, got)
+		}
+		if want, got := signUpAutoActivateEnabled, config.SignUpAutoActivateEnabled; want != got {
+			t.Errorf("want sign up auto activate enabled to be %v; got %v", want, got)
 		}
 		if want, got := totpRequired, config.TOTPRequired; want != got {
 			t.Errorf("want TOTP required to be %v; got %v", want, got)
@@ -93,7 +98,8 @@ func TestUpdateConfig(t *testing.T) {
 
 		systemEmail = "bar@example.com"
 		securityEmail = "baz@example.com"
-		signUpEnabled = false
+		signUpEnabled = true
+		signUpAutoActivateEnabled = true
 		totpRequired = false
 		totpSMSEnabled = false
 		googleSignInEnabled = false
@@ -106,6 +112,7 @@ func TestUpdateConfig(t *testing.T) {
 			systemEmail,
 			securityEmail,
 			signUpEnabled,
+			signUpAutoActivateEnabled,
 			totpRequired,
 			totpSMSEnabled,
 			googleSignInEnabled,
@@ -128,6 +135,9 @@ func TestUpdateConfig(t *testing.T) {
 		}
 		if want, got := signUpEnabled, config.SignUpEnabled; want != got {
 			t.Errorf("want sign up enabled to be %v; got %v", want, got)
+		}
+		if want, got := signUpAutoActivateEnabled, config.SignUpAutoActivateEnabled; want != got {
+			t.Errorf("want sign up auto activate enabled to be %v; got %v", want, got)
 		}
 		if want, got := totpRequired, config.TOTPRequired; want != got {
 			t.Errorf("want TOTP required to be %v; got %v", want, got)
@@ -224,6 +234,7 @@ func TestUpdateConfig(t *testing.T) {
 					config.SystemEmail,
 					config.SecurityEmail,
 					config.SignUpEnabled,
+					config.SignUpAutoActivateEnabled,
 					config.TOTPRequired,
 					config.TOTPSMSEnabled,
 					config.GoogleSignInEnabled,

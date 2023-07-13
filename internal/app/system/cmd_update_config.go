@@ -14,22 +14,23 @@ type UpdateConfigGuard interface {
 
 func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	systemEmail, securityEmail string,
-	signUpEnabled bool,
+	signUpEnabled, signUpAutoActivateEnabled bool,
 	totpRequired, totpSMSEnabled bool,
 	googleSignInEnabled bool, googleSignInClientID string,
 	twilioSID, twilioToken, twilioFromTel string,
 ) (*Config, error) {
 	var input struct {
-		systemEmail          Email
-		securityEmail        Email
-		signUpEnabled        bool
-		totpRequired         bool
-		totpSMSEnabled       bool
-		googleSignInEnabled  bool
-		googleSignInClientID GoogleClientID
-		twilioSID            TwilioSID
-		twilioToken          TwilioToken
-		twilioFromTel        TwilioTel
+		systemEmail               Email
+		securityEmail             Email
+		signUpEnabled             bool
+		signUpAutoActivateEnabled bool
+		totpRequired              bool
+		totpSMSEnabled            bool
+		googleSignInEnabled       bool
+		googleSignInClientID      GoogleClientID
+		twilioSID                 TwilioSID
+		twilioToken               TwilioToken
+		twilioFromTel             TwilioTel
 	}
 	{
 		if !guard.CanUpdateConfig() {
@@ -47,6 +48,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		}
 
 		input.signUpEnabled = signUpEnabled
+		input.signUpAutoActivateEnabled = signUpAutoActivateEnabled
 		input.totpRequired = totpRequired
 		input.totpSMSEnabled = totpSMSEnabled
 		input.googleSignInEnabled = googleSignInEnabled
@@ -81,6 +83,12 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		config.EnableSignUp()
 	} else {
 		config.DisableSignUp()
+	}
+
+	if input.signUpAutoActivateEnabled {
+		config.EnableSignUpAutoActivate()
+	} else {
+		config.DisableSignUpAutoActivate()
 	}
 
 	if input.totpRequired {

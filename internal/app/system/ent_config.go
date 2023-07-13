@@ -12,17 +12,18 @@ import (
 type Config struct {
 	aggregate.Root
 
-	SystemEmail          string
-	SecurityEmail        string
-	SignUpEnabled        bool
-	TOTPRequired         bool
-	TOTPSMSEnabled       bool
-	GoogleSignInEnabled  bool
-	GoogleSignInClientID string
-	TwilioSID            string
-	TwilioToken          string
-	TwilioFromTel        string
-	SetupRequired        bool
+	SystemEmail               string
+	SecurityEmail             string
+	SignUpEnabled             bool
+	SignUpAutoActivateEnabled bool
+	TOTPRequired              bool
+	TOTPSMSEnabled            bool
+	GoogleSignInEnabled       bool
+	GoogleSignInClientID      string
+	TwilioSID                 string
+	TwilioToken               string
+	TwilioFromTel             string
+	SetupRequired             bool
 }
 
 func (c *Config) HasSMS() bool {
@@ -43,6 +44,14 @@ func (c *Config) EnableSignUp() {
 
 func (c *Config) DisableSignUp() {
 	c.SignUpEnabled = false
+}
+
+func (c *Config) EnableSignUpAutoActivate() {
+	c.SignUpAutoActivateEnabled = true
+}
+
+func (c *Config) DisableSignUpAutoActivate() {
+	c.SignUpAutoActivateEnabled = false
 }
 
 func (c *Config) EnableTOTPRequired() {

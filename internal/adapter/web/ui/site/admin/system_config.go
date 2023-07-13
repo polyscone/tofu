@@ -20,16 +20,17 @@ func SystemConfig(h *ui.Handler, mux *router.ServeMux) {
 func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			SystemEmail          string
-			SecurityEmail        string
-			SignUpEnabled        bool `compare:"true"`
-			TOTPRequired         bool `compare:"true"`
-			TOTPSMSEnabled       bool `compare:"true" form:"totp-sms-enabled"`
-			GoogleSignInEnabled  bool `compare:"true"`
-			GoogleSignInClientID string
-			TwilioSID            string
-			TwilioToken          string
-			TwilioFromTel        string
+			SystemEmail               string
+			SecurityEmail             string
+			SignUpEnabled             bool `compare:"true"`
+			SignUpAutoActivateEnabled bool `compare:"true"`
+			TOTPRequired              bool `compare:"true"`
+			TOTPSMSEnabled            bool `compare:"true" form:"totp-sms-enabled"`
+			GoogleSignInEnabled       bool `compare:"true"`
+			GoogleSignInClientID      string
+			TwilioSID                 string
+			TwilioToken               string
+			TwilioFromTel             string
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -48,9 +49,11 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		if config.SetupRequired {
-			// We force sign up enabled to be true when the config is first
-			// being setup because it's required for the first user to be created
+			// We force sign up and sign up auto activate enabled to be true
+			// when the config is first being setup because it's required for
+			// the first user to be created
 			input.SignUpEnabled = true
+			input.SignUpAutoActivateEnabled = true
 		}
 
 		_, err := h.Svc.System.UpdateConfig(ctx,
@@ -58,6 +61,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			input.SystemEmail,
 			input.SecurityEmail,
 			input.SignUpEnabled,
+			input.SignUpAutoActivateEnabled,
 			input.TOTPRequired,
 			input.TOTPSMSEnabled,
 			input.GoogleSignInEnabled,

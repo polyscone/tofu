@@ -116,7 +116,7 @@ func signInGooglePost(h *api.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		if err := auth.SignInWithGoogle(ctx, h.Handler, w, r, input.JWT); err != nil {
+		if _, err := auth.SignInWithGoogle(ctx, h.Handler, w, r, input.JWT); err != nil {
 			h.ErrorJSON(w, r, "sign in with Google", err)
 
 			return

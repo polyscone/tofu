@@ -334,7 +334,8 @@ func signInGooglePost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		jwt := r.PostFormValue("credential")
-		if err := auth.SignInWithGoogle(ctx, h.Handler, w, r, jwt); err != nil {
+		signedIn, err := auth.SignInWithGoogle(ctx, h.Handler, w, r, jwt)
+		if err != nil {
 			if errors.Is(err, account.ErrGoogleSignUpDisabled) {
 				h.AddFlashErrorf(ctx, "Your credentials are incorrect.")
 
@@ -348,7 +349,11 @@ func signInGooglePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		signInSuccessRedirect(h, w, r)
+		if signedIn {
+			signInSuccessRedirect(h, w, r)
+		} else {
+			http.Redirect(w, r, h.Path("account.verify.success"), http.StatusSeeOther)
+		}
 	}
 }
 

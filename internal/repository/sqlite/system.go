@@ -65,6 +65,7 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 			system_email,
 			security_email,
 			sign_up_enabled,
+			sign_up_auto_activate_enabled,
 			totp_required,
 			totp_sms_enabled,
 			google_sign_in_enabled,
@@ -77,6 +78,7 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 		&config.SystemEmail,
 		&config.SecurityEmail,
 		&config.SignUpEnabled,
+		&config.SignUpAutoActivateEnabled,
 		&config.TOTPRequired,
 		&config.TOTPSMSEnabled,
 		&config.GoogleSignInEnabled,
@@ -92,6 +94,7 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 	if errors.Is(err, repository.ErrNotFound) {
 		config.SetupRequired = true
 		config.SignUpEnabled = true
+		config.SignUpAutoActivateEnabled = true
 	}
 
 	return &config, nil
@@ -104,6 +107,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 			system_email,
 			security_email,
 			sign_up_enabled,
+			sign_up_auto_activate_enabled,
 			totp_required,
 			totp_sms_enabled,
 			google_sign_in_enabled,
@@ -117,6 +121,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 			:system_email,
 			:security_email,
 			:sign_up_enabled,
+			:sign_up_auto_activate_enabled,
 			:totp_required,
 			:totp_sms_enabled,
 			:google_sign_in_enabled,
@@ -131,6 +136,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 				system_email = :system_email,
 				security_email = :security_email,
 				sign_up_enabled = :sign_up_enabled,
+				sign_up_auto_activate_enabled = :sign_up_auto_activate_enabled,
 				totp_required = :totp_required,
 				totp_sms_enabled = :totp_sms_enabled,
 				google_sign_in_enabled = :google_sign_in_enabled,
@@ -144,6 +150,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 		sql.Named("system_email", config.SystemEmail),
 		sql.Named("security_email", config.SecurityEmail),
 		sql.Named("sign_up_enabled", config.SignUpEnabled),
+		sql.Named("sign_up_auto_activate_enabled", config.SignUpAutoActivateEnabled),
 		sql.Named("totp_required", config.TOTPRequired),
 		sql.Named("totp_sms_enabled", config.TOTPSMSEnabled),
 		sql.Named("google_sign_in_enabled", config.GoogleSignInEnabled),

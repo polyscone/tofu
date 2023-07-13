@@ -28,6 +28,9 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		if want, got := true, config.SignUpEnabled; want != got {
 			t.Errorf("want sign up enabled to be %v; got %v", want, got)
 		}
+		if want, got := true, config.SignUpAutoActivateEnabled; want != got {
+			t.Errorf("want sign up auto activate enabled to be %v; got %v", want, got)
+		}
 		if want, got := false, config.TOTPRequired; want != got {
 			t.Errorf("want TOTP required to be %v; got %v", want, got)
 		}
@@ -51,17 +54,18 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		}
 
 		err = repo.SaveConfig(ctx, &system.Config{
-			SetupRequired:        true,
-			SystemEmail:          "1",
-			SecurityEmail:        "2",
-			SignUpEnabled:        false,
-			TOTPRequired:         true,
-			TOTPSMSEnabled:       true,
-			GoogleSignInEnabled:  true,
-			GoogleSignInClientID: "3",
-			TwilioSID:            "4",
-			TwilioToken:          "5",
-			TwilioFromTel:        "6",
+			SetupRequired:             true,
+			SystemEmail:               "1",
+			SecurityEmail:             "2",
+			SignUpEnabled:             false,
+			SignUpAutoActivateEnabled: false,
+			TOTPRequired:              true,
+			TOTPSMSEnabled:            true,
+			GoogleSignInEnabled:       true,
+			GoogleSignInClientID:      "3",
+			TwilioSID:                 "4",
+			TwilioToken:               "5",
+			TwilioFromTel:             "6",
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -83,6 +87,9 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		}
 		if want, got := false, config.SignUpEnabled; want != got {
 			t.Errorf("want sign up enabled to be %v; got %v", want, got)
+		}
+		if want, got := false, config.SignUpAutoActivateEnabled; want != got {
+			t.Errorf("want sign up auto activate enabled to be %v; got %v", want, got)
 		}
 		if want, got := true, config.TOTPRequired; want != got {
 			t.Errorf("want TOTP required to be %v; got %v", want, got)

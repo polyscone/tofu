@@ -108,31 +108,31 @@ func SignInWithRecoveryCode(ctx context.Context, h *handler.Handler, w http.Resp
 	return nil
 }
 
-func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, jwt string) error {
+func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, jwt string) (bool, error) {
 	config := h.Config(ctx)
 
 	if !config.GoogleSignInEnabled {
-		return errors.New("Google sign in is disabled")
+		return false, errors.New("Google sign in is disabled")
 	}
 	if config.GoogleSignInClientID == "" {
-		return errors.New("Google sign in client id has not be set")
+		return false, errors.New("Google sign in client id has not be set")
 	}
 
 	// TODO: Check cache-control
 	res, err := client.Get("https://www.googleapis.com/oauth2/v1/certs")
 	if err != nil {
-		return fmt.Errorf("fetch Google OAuth2 certs: %w", err)
+		return false, fmt.Errorf("fetch Google OAuth2 certs: %w", err)
 	}
 	defer res.Body.Close()
 
 	certs := make(map[string]string)
 	if err := httputil.DecodeJSON(&certs, res.Body); err != nil {
-		return fmt.Errorf("decode Google OAuth2 certs JSON: %w", err)
+		return false, fmt.Errorf("decode Google OAuth2 certs JSON: %w", err)
 	}
 
 	parts := strings.Split(jwt, ".")
 	if want, got := 3, len(parts); want != got {
-		return fmt.Errorf("want %v parts in JWT; got %v", want, got)
+		return false, fmt.Errorf("want %v parts in JWT; got %v", want, got)
 	}
 
 	var header struct {
@@ -141,46 +141,46 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 		Typ string
 	}
 	if b, err := base64.RawURLEncoding.DecodeString(parts[0]); err != nil {
-		return fmt.Errorf("decode JWT header: %w", err)
+		return false, fmt.Errorf("decode JWT header: %w", err)
 	} else if json.Unmarshal(b, &header); err != nil {
-		return fmt.Errorf("unmarshal JWT header: %w", err)
+		return false, fmt.Errorf("unmarshal JWT header: %w", err)
 	}
 
 	if header.Typ != "JWT" {
-		return fmt.Errorf("check JWT header: want JWT type; got %q", header.Typ)
+		return false, fmt.Errorf("check JWT header: want JWT type; got %q", header.Typ)
 	}
 	if header.Alg != "RS256" {
-		return fmt.Errorf("check JWT header: want RS256 algorithm; got %q", header.Alg)
+		return false, fmt.Errorf("check JWT header: want RS256 algorithm; got %q", header.Alg)
 	}
 
 	block, _ := pem.Decode([]byte(certs[header.Kid]))
 	if block == nil {
-		return fmt.Errorf("unable to decode certificate PEM")
+		return false, fmt.Errorf("unable to decode certificate PEM")
 	}
 
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return fmt.Errorf("parse Google OAuth2 cert: %w", err)
+		return false, fmt.Errorf("parse Google OAuth2 cert: %w", err)
 	}
 
 	rsaPublicKey, ok := cert.PublicKey.(*rsa.PublicKey)
 	if !ok {
-		return fmt.Errorf("could not assert cert.PublicKey as %T", rsaPublicKey)
+		return false, fmt.Errorf("could not assert cert.PublicKey as %T", rsaPublicKey)
 	}
 
 	payload := sha256.New()
 	if _, err := payload.Write([]byte(parts[0] + "." + parts[1])); err != nil {
-		return fmt.Errorf("new JWT payload hash: %w", err)
+		return false, fmt.Errorf("new JWT payload hash: %w", err)
 	}
 	hashed := payload.Sum(nil)
 
 	signature, err := base64.RawURLEncoding.DecodeString(parts[2])
 	if err != nil {
-		return fmt.Errorf("decode JWT signature: %w", err)
+		return false, fmt.Errorf("decode JWT signature: %w", err)
 	}
 
 	if err := rsa.VerifyPKCS1v15(rsaPublicKey, crypto.SHA256, hashed, signature); err != nil {
-		return fmt.Errorf("check JWT signature: %w", err)
+		return false, fmt.Errorf("check JWT signature: %w", err)
 	}
 
 	var claims struct {
@@ -191,45 +191,52 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 		Email string
 	}
 	if b, err := base64.RawURLEncoding.DecodeString(parts[1]); err != nil {
-		return fmt.Errorf("decode JWT claims: %w", err)
+		return false, fmt.Errorf("decode JWT claims: %w", err)
 	} else if json.Unmarshal(b, &claims); err != nil {
-		return fmt.Errorf("unmarshal JWT claims: %w", err)
+		return false, fmt.Errorf("unmarshal JWT claims: %w", err)
 	}
 
 	if claims.Aud != config.GoogleSignInClientID {
-		return fmt.Errorf("invalid client id in JWT claims")
+		return false, fmt.Errorf("invalid client id in JWT claims")
 	}
 
 	if claims.Iss != "accounts.google.com" && claims.Iss != "https://accounts.google.com" {
-		return fmt.Errorf("invalid issuer %q in JWT claims", claims.Iss)
+		return false, fmt.Errorf("invalid issuer %q in JWT claims", claims.Iss)
 	}
 
 	now := time.Now().Unix()
 	if claims.Exp > 0 && claims.Exp <= now {
-		return fmt.Errorf("JWT is expired")
+		return false, fmt.Errorf("JWT is expired")
 	}
 	if claims.Nbf > 0 && claims.Nbf > now {
-		return fmt.Errorf("JWT used too soon")
+		return false, fmt.Errorf("JWT used too soon")
 	}
 
 	behaviour := account.GoogleSignInOnly
 	if config.SignUpEnabled {
-		behaviour = account.GoogleAllowSignUpActivate
+		if config.SignUpAutoActivateEnabled {
+			behaviour = account.GoogleAllowSignUpActivate
+		} else {
+			behaviour = account.GoogleAllowSignUp
+		}
 	}
 
-	if err := h.Svc.Account.SignInWithGoogle(ctx, claims.Email, behaviour); err != nil {
-		return fmt.Errorf("sign in wih Google: %w", err)
+	signedIn, err := h.Svc.Account.SignInWithGoogle(ctx, claims.Email, behaviour)
+	if err != nil {
+		return false, fmt.Errorf("sign in wih Google: %w", err)
 	}
 
-	if _, err := h.RenewSession(ctx); err != nil {
-		return fmt.Errorf("renew session: %w", err)
+	if signedIn {
+		if _, err := h.RenewSession(ctx); err != nil {
+			return signedIn, fmt.Errorf("renew session: %w", err)
+		}
+
+		if err := SignInSetSession(ctx, h, w, r, claims.Email); err != nil {
+			return signedIn, fmt.Errorf("sign in set session: %w", err)
+		}
 	}
 
-	if err := SignInSetSession(ctx, h, w, r, claims.Email); err != nil {
-		return fmt.Errorf("sign in set session: %w", err)
-	}
-
-	return nil
+	return signedIn, nil
 }
 
 func SignInSetSession(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email string) error {

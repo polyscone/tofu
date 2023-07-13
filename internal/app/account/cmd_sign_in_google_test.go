@@ -20,9 +20,12 @@ func TestSignInWithGoogle(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.SignInWithGoogle(ctx, user1.Email, account.GoogleSignInOnly)
+		signedIn, err := svc.SignInWithGoogle(ctx, user1.Email, account.GoogleSignInOnly)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if !signedIn {
+			t.Error("want signed in to be true; got false")
 		}
 
 		events.Expect(account.SignedInWithGoogle{Email: user1.Email})
@@ -39,9 +42,12 @@ func TestSignInWithGoogle(t *testing.T) {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
-		err = svc.SignInWithGoogle(ctx, "bar@example.com", account.GoogleAllowSignUpActivate)
+		signedIn, err = svc.SignInWithGoogle(ctx, "bar@example.com", account.GoogleAllowSignUpActivate)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if !signedIn {
+			t.Error("want signed in to be true; got false")
 		}
 
 		events.Expect(account.SignedUpWithGoogle{Email: "bar@example.com"})
@@ -69,9 +75,12 @@ func TestSignInWithGoogle(t *testing.T) {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
-		err = svc.SignInWithGoogle(ctx, "bar@example.com", account.GoogleSignInOnly)
+		signedIn, err = svc.SignInWithGoogle(ctx, "bar@example.com", account.GoogleSignInOnly)
 		if err != nil {
 			t.Fatal(err)
+		}
+		if !signedIn {
+			t.Error("want signed in to be true; got false")
 		}
 
 		events.Expect(account.SignedInWithGoogle{Email: user2.Email})
@@ -111,13 +120,16 @@ func TestSignInWithGoogle(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.SignInWithGoogle(ctx, tc.email, tc.behaviour)
+				signedIn, err := svc.SignInWithGoogle(ctx, tc.email, tc.behaviour)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
 
 				case err == nil:
 					t.Error("want error; got <nil>")
+				}
+				if signedIn {
+					t.Error("want signed in to be false; got true")
 				}
 			})
 		}
@@ -149,7 +161,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.SignInWithGoogle(ctx, tc.email, account.GoogleAllowSignUpActivate)
+				signedIn, err := svc.SignInWithGoogle(ctx, tc.email, account.GoogleAllowSignUpActivate)
 				switch {
 				case err == nil:
 					events.Expect(account.SignedInWithGoogle{Email: tc.email})
@@ -159,6 +171,9 @@ func TestSignInWithGoogle(t *testing.T) {
 
 				case !tc.isValidInput && !errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want error: %v; got %v", app.ErrMalformedInput, err)
+				}
+				if signedIn {
+					t.Error("want signed in to be false; got true")
 				}
 			})
 		}

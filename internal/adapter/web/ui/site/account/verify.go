@@ -13,6 +13,8 @@ func Verify(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/verify", func(mux *router.ServeMux) {
 		mux.Get("/", h.HTML.Handler("site/account/verify/form"), "account.verify")
 		mux.Post("/", verifyPost(h), "account.verify.post")
+
+		mux.Get("/success", h.HTML.Handler("site/account/verify/success"), "account.verify.success")
 	})
 }
 
@@ -30,6 +32,7 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
+		config := h.Config(ctx)
 
 		if input.Token == "" {
 			http.Redirect(w, r, h.Path("account.verify"), http.StatusSeeOther)
@@ -44,7 +47,12 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Svc.Account.VerifyUser(ctx, email, input.Password, input.PasswordCheck, account.VerifyUserActivate)
+		behaviour := account.VerifyUserActivate
+		if !config.SignUpAutoActivateEnabled {
+			behaviour = account.VerifyUserOnly
+		}
+
+		err = h.Svc.Account.VerifyUser(ctx, email, input.Password, input.PasswordCheck, behaviour)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "verify user", err, "site/account/verify/form", nil)
 
@@ -60,6 +68,10 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 
 		h.AddFlashf(ctx, "Your account has been successfully verified.")
 
-		signInWithPassword(ctx, h, w, r, email, input.Password)
+		if behaviour == account.VerifyUserActivate {
+			signInWithPassword(ctx, h, w, r, email, input.Password)
+		} else {
+			http.Redirect(w, r, h.Path("account.verify.success"), http.StatusSeeOther)
+		}
 	}
 }
