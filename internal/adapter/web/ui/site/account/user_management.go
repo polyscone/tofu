@@ -1,6 +1,7 @@
 package account
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -26,14 +27,15 @@ func UserManagement(h *ui.Handler, mux *router.ServeMux) {
 
 			mux.Get("/", userNewGet(h), "account.management.user.new")
 			mux.Post("/", userNewPost(h), "account.management.user.new.post")
-
 		})
 
 		mux.Prefix("/:userID", func(mux *router.ServeMux) {
 			mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
-				userID, err := router.URLParamAs[int](r, "userID")
-				if err != nil {
-					return false
+				fmt.Println(123)
+
+				userID, ok := router.URLParamAs[int](r, "userID")
+				if !ok {
+					return true
 				}
 
 				canAccess := h.CanAccess(func(p guard.Passport) bool {
@@ -145,9 +147,9 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 
 func userEditGet(h *ui.Handler) http.HandlerFunc {
 	h.SetViewVars("site/account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
-		userID, err := router.URLParamAs[int](r, "userID")
-		if err != nil {
-			return nil, fmt.Errorf("URL param as: %w", err)
+		userID, ok := router.URLParamAs[int](r, "userID")
+		if !ok {
+			return nil, errors.New("URL param as: invalid int")
 		}
 
 		ctx := r.Context()
@@ -200,9 +202,9 @@ func userEditPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		userID, err := router.URLParamAs[int](r, "userID")
-		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
+		userID, ok := router.URLParamAs[int](r, "userID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
 			return
 		}
@@ -234,9 +236,9 @@ func userEditPost(h *ui.Handler) http.HandlerFunc {
 
 func userActivateGet(h *ui.Handler) http.HandlerFunc {
 	h.SetViewVars("site/account/management/user/activate", func(r *http.Request) (handler.Vars, error) {
-		userID, err := router.URLParamAs[int](r, "userID")
-		if err != nil {
-			return nil, fmt.Errorf("URL param as: %w", err)
+		userID, ok := router.URLParamAs[int](r, "userID")
+		if !ok {
+			return nil, errors.New("URL param as: invalid int")
 		}
 
 		ctx := r.Context()
@@ -258,9 +260,9 @@ func userActivateGet(h *ui.Handler) http.HandlerFunc {
 
 func userActivatePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := router.URLParamAs[int](r, "userID")
-		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
+		userID, ok := router.URLParamAs[int](r, "userID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
 			return
 		}
@@ -292,9 +294,9 @@ func userActivatePost(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetReviewGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := router.URLParamAs[int](r, "userID")
-		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
+		userID, ok := router.URLParamAs[int](r, "userID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
 			return
 		}
@@ -316,9 +318,9 @@ func userTOTPResetReviewGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetApproveGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := router.URLParamAs[int](r, "userID")
-		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
+		userID, ok := router.URLParamAs[int](r, "userID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
 			return
 		}
@@ -340,9 +342,9 @@ func userTOTPResetApproveGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := router.URLParamAs[int](r, "userID")
-		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
+		userID, ok := router.URLParamAs[int](r, "userID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
 			return
 		}
@@ -384,9 +386,9 @@ func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetDenyGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := router.URLParamAs[int](r, "userID")
-		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
+		userID, ok := router.URLParamAs[int](r, "userID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
 			return
 		}
@@ -408,9 +410,9 @@ func userTOTPResetDenyGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetDenyPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, err := router.URLParamAs[int](r, "userID")
-		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
+		userID, ok := router.URLParamAs[int](r, "userID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
 			return
 		}

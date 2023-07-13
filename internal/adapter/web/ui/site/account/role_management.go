@@ -1,6 +1,7 @@
 package account
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -111,9 +112,9 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 
 func roleEditGet(h *ui.Handler) http.HandlerFunc {
 	h.SetViewVars("site/account/management/role/edit", func(r *http.Request) (handler.Vars, error) {
-		roleID, err := router.URLParamAs[int](r, "roleID")
-		if err != nil {
-			return nil, fmt.Errorf("URL param as: %w", err)
+		roleID, ok := router.URLParamAs[int](r, "roleID")
+		if !ok {
+			return nil, errors.New("URL param as: invalid int")
 		}
 
 		if roleID == account.SuperRole.ID {
@@ -153,9 +154,9 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		roleID, err := router.URLParamAs[int](r, "roleID")
-		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
+		roleID, ok := router.URLParamAs[int](r, "roleID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
 			return
 		}
@@ -186,9 +187,9 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 
 func roleDeleteGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		roleID, err := router.URLParamAs[int](r, "roleID")
-		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
+		roleID, ok := router.URLParamAs[int](r, "roleID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
 			return
 		}
@@ -224,9 +225,9 @@ func roleDeleteGet(h *ui.Handler) http.HandlerFunc {
 
 func roleDeletePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		roleID, err := router.URLParamAs[int](r, "roleID")
-		if err != nil {
-			h.HTML.ErrorView(w, r, "URL param as", err, "site/error", nil)
+		roleID, ok := router.URLParamAs[int](r, "roleID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
 			return
 		}

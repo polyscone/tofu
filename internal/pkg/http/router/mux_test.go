@@ -141,14 +141,18 @@ func TestMux(t *testing.T) {
 		mux.Prefix("/hook", func(mux *router.ServeMux) {
 			mux.Prefix("/exact", func(mux *router.ServeMux) {
 				mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
-					w.Write([]byte(router.URLParam(r, "unreachable")))
+					w.Write([]byte("unreachable"))
 				})
 			})
 
 			mux.Prefix("/prefix", func(mux *router.ServeMux) {
+				mux.Get("/conflict", func(w http.ResponseWriter, r *http.Request) {
+					w.Write([]byte("before conflict"))
+				})
+
 				mux.Prefix("/:foo", func(mux *router.ServeMux) {
 					mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
-						foo := router.URLParam(r, "foo")
+						foo, _ := router.URLParam(r, "foo")
 						if foo == "abc" {
 							w.Write([]byte("123"))
 
@@ -160,7 +164,7 @@ func TestMux(t *testing.T) {
 
 					mux.Prefix("/bar", func(mux *router.ServeMux) {
 						mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
-							foo := router.URLParam(r, "foo")
+							foo, _ := router.URLParam(r, "foo")
 							if foo == "qux" {
 								w.Write([]byte("quxxxxx"))
 
@@ -171,7 +175,9 @@ func TestMux(t *testing.T) {
 						})
 
 						mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
-							w.Write([]byte(router.URLParam(r, "foo")))
+							param, _ := router.URLParam(r, "foo")
+
+							w.Write([]byte(param))
 						})
 					})
 				})
@@ -180,7 +186,9 @@ func TestMux(t *testing.T) {
 	})
 
 	mux.Get("/url/:ignore/:status/qux", func(w http.ResponseWriter, r *http.Request) {
-		switch router.URLParam(r, "status") {
+		status, _ := router.URLParam(r, "status")
+
+		switch status {
 		case "teapot":
 			w.WriteHeader(http.StatusTeapot)
 
@@ -198,18 +206,26 @@ func TestMux(t *testing.T) {
 
 			mux.Prefix("/overlap-suffix", func(mux *router.ServeMux) {
 				mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
-					w.Write([]byte(router.URLParam(r, "foo")))
+					param, _ := router.URLParam(r, "foo")
+
+					w.Write([]byte(param))
 				})
 			})
 		})
 	})
 
 	mux.Get("/lazy/:first/rest/:rest", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(router.URLParam(r, "first") + "/" + router.URLParam(r, "rest")))
+		first, _ := router.URLParam(r, "first")
+		rest, _ := router.URLParam(r, "rest")
+
+		w.Write([]byte(first + "/" + rest))
 	})
 
 	mux.Get("/greedy/:first/rest/:rest...", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(router.URLParam(r, "first") + "/" + router.URLParam(r, "rest")))
+		first, _ := router.URLParam(r, "first")
+		rest, _ := router.URLParam(r, "rest")
+
+		w.Write([]byte(first + "/" + rest))
 	})
 
 	mux.Get("/redirect/dst", func(w http.ResponseWriter, r *http.Request) {
@@ -236,11 +252,17 @@ func TestMux(t *testing.T) {
 	mux.Get("/aa/:bb/cc/:dd", echoHandler, "complex")
 
 	route := mux.Get("/a/:b/c/:d", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("/a/" + router.URLParam(r, "b") + "/c/" + router.URLParam(r, "d")))
+		b, _ := router.URLParam(r, "b")
+		d, _ := router.URLParam(r, "d")
+
+		w.Write([]byte("/a/" + b + "/c/" + d))
 	}, "foo.bar")
 
 	mux.Post("/a/:b/c/:d", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("/a/" + router.URLParam(r, "b") + "/c/" + router.URLParam(r, "d")))
+		b, _ := router.URLParam(r, "b")
+		d, _ := router.URLParam(r, "d")
+
+		w.Write([]byte("/a/" + b + "/c/" + d))
 	}, "foo.bar.post")
 
 	tt := []struct {
@@ -340,6 +362,7 @@ func TestMux(t *testing.T) {
 		{"prefix before hook no stop", http.MethodGet, "/before/hook/prefix/bar/bar", "bar", http.StatusOK},
 		{"prefix before hook stop abc", http.MethodGet, "/before/hook/prefix/abc/bar", "123", http.StatusOK},
 		{"prefix before hook stop qux", http.MethodGet, "/before/hook/prefix/qux/bar", "quxxxxx", http.StatusOK},
+		{"prefix before hook conflict", http.MethodGet, "/before/hook/prefix/conflict", "before conflict", http.StatusOK},
 
 		{"redirect get method ok", http.MethodGet, "/redirect/src", "redirected", http.StatusOK},
 		{"redirect with dynamic param", http.MethodGet, "/redirect/redirect/src/var", "redirected", http.StatusOK},

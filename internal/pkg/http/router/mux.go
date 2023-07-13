@@ -667,26 +667,27 @@ func (mux *ServeMux) Redirect(method, src, dst string, code int) {
 
 // URLParam returns the string value associated with the given parameter name in
 // the given request URL.
-// If the parameter name is not found then it panics.
-func URLParam(r *http.Request, name string) string {
+func URLParam(r *http.Request, name string) (string, bool) {
 	value, ok := r.Context().Value(ctxParams).(map[string]string)[name]
 	if !ok {
-		panic(fmt.Sprintf("required url parameter %q is missing for %q", name, r.URL))
+		return "", false
 	}
 
-	return value
+	return value, true
 }
 
 // URLParamAs returns the value associated with the given parameter name in
 // the given request URL after attempting to convert it to the given type T.
-// If the parameter name is not found then it panics.
-func URLParamAs[T any](r *http.Request, name string) (T, error) {
-	str := URLParam(r, name)
-
+func URLParamAs[T any](r *http.Request, name string) (T, bool) {
 	var res T
-	as := reflect.ValueOf(&res).Elem()
+
+	str, ok := URLParam(r, name)
+	if !ok {
+		return res, false
+	}
 
 	var err error
+	as := reflect.ValueOf(&res).Elem()
 	switch typ := as.Type(); typ.Kind() {
 	case reflect.Bool:
 		as.SetBool(str == "1" || str == "on")
@@ -696,7 +697,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseFloat(str, 32)
 			if err != nil {
-				return res, fmt.Errorf("parse float32: %w", err)
+				return res, false
 			}
 		}
 
@@ -707,7 +708,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseFloat(str, 64)
 			if err != nil {
-				return res, fmt.Errorf("parse float64: %w", err)
+				return res, false
 			}
 		}
 
@@ -718,7 +719,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseInt(str, 10, 8)
 			if err != nil {
-				return res, fmt.Errorf("parse int8: %w", err)
+				return res, false
 			}
 		}
 
@@ -729,7 +730,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseInt(str, 10, 16)
 			if err != nil {
-				return res, fmt.Errorf("parse int16: %w", err)
+				return res, false
 			}
 		}
 
@@ -740,7 +741,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseInt(str, 10, 32)
 			if err != nil {
-				return res, fmt.Errorf("parse int32: %w", err)
+				return res, false
 			}
 		}
 
@@ -751,7 +752,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseInt(str, 10, 64)
 			if err != nil {
-				return res, fmt.Errorf("parse int64: %w", err)
+				return res, false
 			}
 		}
 
@@ -762,7 +763,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseInt(str, 10, 64)
 			if err != nil {
-				return res, fmt.Errorf("parse int: %w", err)
+				return res, false
 			}
 		}
 
@@ -773,7 +774,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseUint(str, 10, 8)
 			if err != nil {
-				return res, fmt.Errorf("parse uint8: %w", err)
+				return res, false
 			}
 		}
 
@@ -784,7 +785,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseUint(str, 10, 16)
 			if err != nil {
-				return res, fmt.Errorf("parse uint16: %w", err)
+				return res, false
 			}
 		}
 
@@ -795,7 +796,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseUint(str, 10, 32)
 			if err != nil {
-				return res, fmt.Errorf("parse uint32: %w", err)
+				return res, false
 			}
 		}
 
@@ -806,7 +807,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseUint(str, 10, 64)
 			if err != nil {
-				return res, fmt.Errorf("parse uint64: %w", err)
+				return res, false
 			}
 		}
 
@@ -817,7 +818,7 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		if str != "" {
 			value, err = strconv.ParseUint(str, 10, 64)
 			if err != nil {
-				return res, fmt.Errorf("parse uint: %w", err)
+				return res, false
 			}
 		}
 
@@ -836,5 +837,5 @@ func URLParamAs[T any](r *http.Request, name string) (T, error) {
 		}
 	}
 
-	return res, nil
+	return res, true
 }
