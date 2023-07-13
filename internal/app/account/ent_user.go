@@ -20,6 +20,7 @@ const (
 )
 
 var (
+	ErrNotVerified     = errors.New("account is not verified")
 	ErrNotActivated    = errors.New("account is not activated")
 	ErrInvalidPassword = errors.New("invalid password")
 )
@@ -175,6 +176,10 @@ func (u *User) Verify(password Password, hasher Hasher) error {
 }
 
 func (u *User) Activate() error {
+	if u.VerifiedAt.IsZero() {
+		return ErrNotVerified
+	}
+
 	if !u.ActivatedAt.IsZero() {
 		return errors.New("already activated")
 	}
@@ -530,11 +535,15 @@ func (u *User) checkPassword(password Password, hasher Hasher) (rehashed bool, _
 }
 
 func (u *User) SignInWithPassword(password Password, hasher Hasher) (rehashed bool, _ error) {
-	if u.ActivatedAt.IsZero() {
+	if u.VerifiedAt.IsZero() || u.ActivatedAt.IsZero() {
 		// Always check a password even when we error finding a user to help
 		// avoid leaking info that would allow enumeration of valid emails
 		if err := hasher.CheckDummyPasswordHash(); err != nil {
 			return false, fmt.Errorf("check dummy password hash: %w", err)
+		}
+
+		if u.VerifiedAt.IsZero() {
+			return false, ErrNotVerified
 		}
 
 		return false, ErrNotActivated
@@ -610,6 +619,10 @@ func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
 }
 
 func (u *User) SignInWithGoogle() error {
+	if u.VerifiedAt.IsZero() {
+		return ErrNotVerified
+	}
+
 	if u.ActivatedAt.IsZero() {
 		return ErrNotActivated
 	}

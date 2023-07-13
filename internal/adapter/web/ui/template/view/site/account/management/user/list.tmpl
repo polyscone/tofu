@@ -38,7 +38,7 @@
 					<a href="{{Path "account.management.user.totp_reset_review" ":userID" .ID}}{{$.URL.Query.String}}">Review 2FA reset request</a>
 				{{end}}
 
-				{{if and .ActivatedAt.IsZero $.Passport.Account.CanActivateUsers}}
+				{{if and (not .VerifiedAt.IsZero) .ActivatedAt.IsZero $.Passport.Account.CanActivateUsers}}
 					<a href="{{Path "account.management.user.activate" ":userID" .ID}}{{$.URL.Query.String}}">Activate</a>
 				{{end}}
 

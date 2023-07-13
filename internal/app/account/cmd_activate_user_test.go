@@ -89,7 +89,8 @@ func TestActivateUser(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", Activate: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "john@doe.com"})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", Activate: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -101,7 +102,8 @@ func TestActivateUser(t *testing.T) {
 			want   error
 		}{
 			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
-			{"user already activated", validGuard, user.ID, nil},
+			{"user unverified", validGuard, user1.ID, account.ErrNotVerified},
+			{"user already activated", validGuard, user2.ID, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

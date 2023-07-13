@@ -102,7 +102,8 @@ func TestSignInWithGoogle(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
+		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
+		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@bloggs.com", Verify: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -116,7 +117,8 @@ func TestSignInWithGoogle(t *testing.T) {
 			{"empty email", "", account.GoogleSignInOnly, app.ErrMalformedInput},
 			{"email without @ sign", "joebloggs.com", account.GoogleSignInOnly, app.ErrMalformedInput},
 			{"sign in only with non-existent user", "foo@bar.com", account.GoogleSignInOnly, account.ErrGoogleSignUpDisabled},
-			{"unactivated", user1.Email, account.GoogleSignInOnly, account.ErrNotActivated},
+			{"unverified", user1.Email, account.GoogleSignInOnly, account.ErrNotVerified},
+			{"unactivated", user2.Email, account.GoogleSignInOnly, account.ErrNotActivated},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

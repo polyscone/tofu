@@ -84,7 +84,11 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 	}
 
 	if _, err := user.SignInWithPassword(input.password, s.hasher); err != nil {
-		if errors.Is(err, ErrNotActivated) || errors.Is(err, ErrInvalidPassword) {
+		switch {
+		case errors.Is(err, ErrNotVerified),
+			errors.Is(err, ErrNotActivated),
+			errors.Is(err, ErrInvalidPassword):
+
 			if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
 				return fmt.Errorf("save sign in attempt log: %w", err)
 			}

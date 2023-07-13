@@ -145,7 +145,7 @@ func TestSignInWithPassword(t *testing.T) {
 			{"unactivated", user2.Email, "password", account.ErrNotActivated},
 			{"incorrect password", user3.Email, "0123456789", nil},
 			{"unverified user bad request", user1.Email, "password", nil},
-			{"unverified user", user1.Email, "password", account.ErrNotActivated},
+			{"unverified user", user1.Email, "password", account.ErrNotVerified},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
