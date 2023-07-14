@@ -31,8 +31,6 @@ func UserManagement(h *ui.Handler, mux *router.ServeMux) {
 
 		mux.Prefix("/:userID", func(mux *router.ServeMux) {
 			mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
-				fmt.Println(123)
-
 				userID, ok := router.URLParamAs[int](r, "userID")
 				if !ok {
 					return true

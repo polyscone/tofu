@@ -11,13 +11,8 @@ import (
 	"unicode/utf8"
 
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
+	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
-)
-
-var (
-	reParams     = regexp.MustCompile(`:([^/]+)`)
-	reLastParam  = regexp.MustCompile(`:([^/]+)$`)
-	reMultiSlash = regexp.MustCompile(`//+`)
 )
 
 type ctxKey int
@@ -33,18 +28,14 @@ type BeforeHook struct {
 
 // Route represents a registered route and handler.
 type Route struct {
-	key      string
-	host     string
 	path     string
-	pattern  *regexp.Regexp
 	parts    []string
-	isGreedy bool
 	handlers map[string]http.Handler
 	methods  []string
 }
 
-func (r *Route) String() string {
-	return r.path
+func (rt *Route) String() string {
+	return rt.path
 }
 
 // Replace will create a path based on the route's pattern using the
@@ -56,7 +47,7 @@ func (r *Route) String() string {
 //
 // If a parameter in the route's pattern is missing it will panic.
 // Empty replacements will also panic.
-func (r *Route) Replace(paramArgPairs ...any) string {
+func (rt *Route) Replace(paramArgPairs ...any) string {
 	if len(paramArgPairs)%2 == 1 {
 		panic("route path substitution expects an equal number of arguments")
 	}
@@ -78,8 +69,12 @@ func (r *Route) Replace(paramArgPairs ...any) string {
 
 	var sb strings.Builder
 
+	if rt.parts == nil {
+		rt.parts = strings.Split(strings.TrimPrefix(rt.path, "/"), "/")
+	}
+
 	seen := make(map[string]struct{})
-	for _, part := range r.parts {
+	for _, part := range rt.parts {
 		sb.WriteRune('/')
 
 		if strings.HasPrefix(part, ":") {
@@ -111,14 +106,58 @@ func (r *Route) Replace(paramArgPairs ...any) string {
 	return sb.String()
 }
 
+func (rt *Route) handle(r *http.Request, w http.ResponseWriter, params map[string]string, befores []*BeforeHook, methodNotAllowed http.Handler) {
+	handler := rt.handlers[r.Method]
+	if handler == nil {
+		methods := strings.Join(rt.methods, ", ")
+		if !slices.Contains(rt.methods, http.MethodOptions) {
+			methods += ", " + http.MethodOptions
+		}
+
+		w.Header().Set("allow", methods)
+
+		switch {
+		case r.Method == http.MethodOptions:
+			w.WriteHeader(http.StatusNoContent)
+
+		case methodNotAllowed != nil:
+			methodNotAllowed.ServeHTTP(w, r)
+
+		default:
+			http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+		}
+
+		return
+	}
+
+	if params != nil {
+		ctx := context.WithValue(r.Context(), ctxParams, params)
+		r = r.WithContext(ctx)
+	}
+
+	for _, hook := range befores {
+		if ok := hook.fn(w, r); !ok {
+			return
+		}
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+type Node struct {
+	nodes   map[string]*Node
+	befores []*BeforeHook
+	route   *Route
+}
+
 // ServeMux represents an HTTP router.
 type ServeMux struct {
-	host             string
 	prefix           string
 	middlewares      []middleware.Middleware
 	handler          http.Handler
-	befores          []*BeforeHook
 	routes           []*Route
+	static           map[string]*Node
+	dynamic          map[string]*Node
 	named            map[string]*Route
 	notFound         http.Handler
 	methodNotAllowed http.Handler
@@ -129,64 +168,91 @@ func NewServeMux() *ServeMux {
 	var mux ServeMux
 
 	mux.handler = http.HandlerFunc(mux.serveHTTP)
+	mux.static = make(map[string]*Node)
+	mux.dynamic = make(map[string]*Node)
 
 	return &mux
 }
 
 func (mux *ServeMux) serveHTTP(w http.ResponseWriter, r *http.Request) {
-	for _, route := range mux.routes {
-		if route.host != "" && route.host != r.Host {
-			continue
+	var params map[string]string
+
+	var befores []*BeforeHook
+	node := mux.static[r.URL.Path]
+	if node != nil {
+		if len(node.befores) > 0 {
+			befores = append(befores, node.befores...)
+		}
+	} else {
+		params = make(map[string]string)
+		dynamic := mux.dynamic
+		parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
+		last := len(parts) - 1
+
+		type GreedyMatch struct {
+			node    *Node
+			befores []*BeforeHook
+			params  map[string]string
 		}
 
-		matches := route.pattern.FindStringSubmatch(r.URL.Path)
-		if matches == nil {
-			continue
-		}
+		var greedy *GreedyMatch
+		for i, part := range parts {
+			dynode := dynamic[part]
+			for key, n := range dynamic {
+				if strings.HasPrefix(key, ":") && strings.HasSuffix(key, "...") {
+					name := strings.TrimSuffix(key[1:], "...")
+					params[name] = strings.Join(parts[i:], "/")
 
-		handler := route.handlers[r.Method]
-		if handler == nil {
-			methods := strings.Join(route.methods, ", ")
-			if !slices.Contains(route.methods, http.MethodOptions) {
-				methods += ", " + http.MethodOptions
+					befores := slices.Clone(befores)
+					if len(n.befores) > 0 {
+						befores = append(befores, n.befores...)
+					}
+
+					greedy = &GreedyMatch{
+						node:    n,
+						befores: befores,
+						params:  maps.Clone(params),
+					}
+
+					break
+				}
 			}
 
-			w.Header().Set("allow", methods)
+			if dynode == nil {
+				for key, n := range dynamic {
+					if strings.HasPrefix(key, ":") && !strings.HasSuffix(key, "...") {
+						dynode = n
+						params[key[1:]] = part
 
-			switch {
-			case r.Method == http.MethodOptions:
-				w.WriteHeader(http.StatusNoContent)
-
-			case mux.methodNotAllowed != nil:
-				mux.methodNotAllowed.ServeHTTP(w, r)
-
-			default:
-				http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
+						break
+					}
+				}
 			}
 
-			return
-		}
-
-		params := make(map[string]string, len(matches))
-		names := route.pattern.SubexpNames()
-		for i, arg := range matches {
-			params[names[i]] = arg
-		}
-
-		ctx := context.WithValue(r.Context(), ctxParams, params)
-		r := r.WithContext(ctx)
-
-		for _, hook := range mux.befores {
-			if !hook.pattern.MatchString(r.URL.Path) {
-				continue
+			if dynode == nil {
+				break
 			}
 
-			if ok := hook.fn(w, r); !ok {
-				return
+			if len(dynode.befores) > 0 {
+				befores = append(befores, dynode.befores...)
+			}
+
+			if i == last {
+				node = dynode
+			} else {
+				dynamic = dynode.nodes
 			}
 		}
 
-		handler.ServeHTTP(w, r)
+		if (node == nil || node.route == nil) && greedy != nil {
+			node = greedy.node
+			befores = greedy.befores
+			params = greedy.params
+		}
+	}
+
+	if node != nil && node.route != nil {
+		node.route.handle(r, w, params, befores, mux.methodNotAllowed)
 
 		return
 	}
@@ -215,47 +281,16 @@ func (mux *ServeMux) Use(mw middleware.Middleware) {
 
 func (mux *ServeMux) Before(before BeforeHookFunc, paths ...string) {
 	if len(paths) == 0 {
-		if mux.prefix == "" {
-			panic("before hooks without exact paths must be registered in a non-empty prefix")
-		}
+		node := mux.node(mux.prefix)
 
-		pattern := regexp.QuoteMeta(mux.prefix)
-		pattern = reParams.ReplaceAllString(pattern, `([^/]+)`)
-		pattern = "^" + pattern
-
-		compiled := regexp.MustCompile(pattern)
-
-		mux.befores = append(mux.befores, &BeforeHook{
-			pattern: compiled,
-			fn:      before,
-		})
+		node.befores = append(node.befores, &BeforeHook{fn: before})
 	} else {
 		for _, path := range paths {
-			pattern := regexp.QuoteMeta(path)
-			pattern = reParams.ReplaceAllString(pattern, `([^/]+)`)
-			pattern = "^" + pattern + "$"
+			node := mux.node(path)
 
-			compiled := regexp.MustCompile(pattern)
-
-			mux.befores = append(mux.befores, &BeforeHook{
-				pattern: compiled,
-				fn:      before,
-			})
+			node.befores = append(node.befores, &BeforeHook{fn: before})
 		}
 	}
-}
-
-// Host will scope handlers to a specific request host value.
-func (mux *ServeMux) Host(host string, routeGroup func(mux *ServeMux)) {
-	if mux.host != "" {
-		panic("nested calls to ServeMux.Host()")
-	}
-
-	mux.host = host
-
-	routeGroup(mux)
-
-	mux.host = ""
 }
 
 // Prefix will automatically prefix any path patterns that are registered in
@@ -321,7 +356,55 @@ func (mux *ServeMux) nameRoute(route *Route, names ...string) {
 	}
 }
 
-func (mux *ServeMux) route(method string, path string, handler http.Handler, names ...string) *Route {
+func (mux *ServeMux) node(path string) *Node {
+	var node *Node
+	if strings.Contains(path, "/:") {
+		dynamic := mux.dynamic
+		parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
+		last := len(parts) - 1
+
+		for i, part := range parts {
+			if strings.HasPrefix(part, ":") {
+				for key := range dynamic {
+					if key == part || !strings.HasPrefix(key, ":") {
+						continue
+					}
+
+					panic(fmt.Sprintf("multiple parameters in the same position for %v", path))
+				}
+			}
+
+			if dynamic[part] == nil {
+				node = &Node{}
+
+				dynamic[part] = node
+			}
+
+			node = dynamic[part]
+
+			if i != last {
+				if node.nodes == nil {
+					node.nodes = make(map[string]*Node)
+				}
+
+				dynamic = node.nodes
+			}
+		}
+	} else {
+		node = mux.static[path]
+		if node == nil {
+			node = &Node{}
+
+			mux.static[path] = node
+		}
+	}
+
+	return node
+}
+
+var reMultiSlash = regexp.MustCompile(`//+`)
+
+func (mux *ServeMux) route(method, path string, handler http.Handler, names ...string) *Route {
 	method = strings.ToUpper(method)
 
 	if path == "" {
@@ -334,7 +417,6 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 
 	path = mux.prefix + path
 	path = reMultiSlash.ReplaceAllString(path, "/")
-	parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
 
 	if path == "" {
 		panic("route must not be empty")
@@ -344,72 +426,19 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 		panic("greedy ... syntax can only appear after the final named parameter")
 	}
 
-	var restGroup string
-	var isGreedy bool
-	if rest := reLastParam.FindString(path); strings.HasSuffix(rest, "...") {
-		path = strings.TrimSuffix(path, "...")
-		restGroup = `(?P<$1>.*)`
-		isGreedy = true
-	} else {
-		restGroup = `(?P<$1>[^/]*)`
+	node := mux.node(path)
+	if node.route == nil {
+		node.route = &Route{handlers: make(map[string]http.Handler)}
 	}
 
-	key := mux.host + reParams.ReplaceAllString(path, "*")
-
-	for _, route := range mux.routes {
-		if route.key != key {
-			continue
-		}
-
-		if _, ok := route.handlers[method]; ok {
-			panic(fmt.Sprintf("duplicate route registration for %q and %q (%v)", path, route.path, method))
-		}
-
-		route.handlers[method] = handler
-		route.methods = append(route.methods, method)
-
-		mux.nameRoute(route, names...)
-
-		return route
+	route := node.route
+	if _, ok := route.handlers[method]; ok {
+		panic(fmt.Sprintf("duplicate routes for %v %v", method, path))
 	}
 
-	pattern := regexp.QuoteMeta(path)
-	pattern = reLastParam.ReplaceAllString(pattern, restGroup)
-	pattern = reParams.ReplaceAllString(pattern, `(?P<$1>[^/]+)`)
-	pattern = "^" + pattern + "$"
-
-	compiled := regexp.MustCompile(pattern)
-
-	seen := make(map[string]struct{})
-	for _, name := range compiled.SubexpNames() {
-		if _, ok := seen[name]; ok {
-			panic(fmt.Sprintf("duplicate parameter name %q in route %q", name, path))
-		}
-
-		seen[name] = struct{}{}
-	}
-
-	route := &Route{
-		key:      key,
-		host:     mux.host,
-		path:     path,
-		pattern:  compiled,
-		parts:    parts,
-		isGreedy: isGreedy,
-		handlers: map[string]http.Handler{method: handler},
-		methods:  []string{method},
-	}
-
-	mux.routes = append(mux.routes, route)
-
-	slices.SortFunc(mux.routes, func(a, b *Route) bool {
-		if a.isGreedy == b.isGreedy {
-			// Reverse string length sort so the longest key comes first within lazy/greedy groups
-			return utf8.RuneCountInString(b.key) < utf8.RuneCountInString(a.key)
-		}
-
-		return !a.isGreedy || b.isGreedy
-	})
+	route.path = path
+	route.handlers[method] = handler
+	route.methods = append(route.methods, method)
 
 	mux.nameRoute(route, names...)
 
@@ -419,19 +448,7 @@ func (mux *ServeMux) route(method string, path string, handler http.Handler, nam
 // Routes returns a slice of strings describing the registered routes in the
 // order they will be evaluated.
 func (mux *ServeMux) Routes() []string {
-	routes := make([]string, 0, len(mux.routes))
-	for _, route := range mux.routes {
-		for _, method := range route.methods {
-			key := route.key
-			if route.isGreedy {
-				key = strings.TrimSuffix(key, "*") + "..."
-			}
-
-			routes = append(routes, fmt.Sprintf("%-7v %v", method, key))
-		}
-	}
-
-	return routes
+	return nil
 }
 
 // OptionsHandler registers a handler that can be used to serve any OPTIONS

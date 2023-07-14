@@ -3,7 +3,6 @@ package router_test
 import (
 	"io"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/pkg/errsx"
@@ -14,32 +13,13 @@ import (
 func TestMux(t *testing.T) {
 	mux := router.NewServeMux()
 
-	ts1 := testutil.NewServer(t, mux)
-	defer ts1.Close()
-
-	ts2 := testutil.NewServer(t, mux)
-	defer ts2.Close()
+	ts := testutil.NewServer(t, mux)
+	defer ts.Close()
 
 	emptyHandler := func(w http.ResponseWriter, r *http.Request) {}
 	echoHandler := func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(r.URL.Path))
 	}
-	echoWithHostHandler := func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(r.Host + r.URL.Path))
-	}
-
-	ts2Host := strings.TrimPrefix(ts2.URL, "http://")
-	mux.Host(ts2Host, func(mux *router.ServeMux) {
-		mux.Options("/", echoWithHostHandler)
-		mux.Connect("/", echoWithHostHandler)
-		mux.Trace("/", echoWithHostHandler)
-		mux.Head("/", echoWithHostHandler)
-		mux.Get("/", echoWithHostHandler)
-		mux.Post("/", echoWithHostHandler)
-		mux.Put("/", echoWithHostHandler)
-		mux.Patch("/", echoWithHostHandler)
-		mux.Delete("/", echoWithHostHandler)
-	})
 
 	mux.Get("/order/:rest...", echoHandler)
 	mux.Get("/order/independent/:rest...", func(w http.ResponseWriter, r *http.Request) {
@@ -370,8 +350,8 @@ func TestMux(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			req := errsx.Must(http.NewRequest(tc.method, ts1.URL+tc.path, nil))
-			res := errsx.Must(ts1.Client().Do(req))
+			req := errsx.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
+			res := errsx.Must(ts.Client().Do(req))
 
 			defer res.Body.Close()
 
@@ -391,47 +371,7 @@ func TestMux(t *testing.T) {
 		})
 	}
 
-	tt = []struct {
-		name       string
-		method     string
-		path       string
-		wantBody   string
-		wantStatus int
-	}{
-		{"host options method ok", http.MethodOptions, "/", ts2Host + "/", http.StatusOK},
-		{"host connect method ok", http.MethodConnect, "/", ts2Host + "/", http.StatusOK},
-		{"host trace method ok", http.MethodTrace, "/", ts2Host + "/", http.StatusOK},
-		{"host head method ok", http.MethodHead, "/", "", http.StatusOK},
-		{"host get method ok", http.MethodGet, "/", ts2Host + "/", http.StatusOK},
-		{"host post method ok", http.MethodPost, "/", ts2Host + "/", http.StatusOK},
-		{"host put method ok", http.MethodPut, "/", ts2Host + "/", http.StatusOK},
-		{"host patch method ok", http.MethodPatch, "/", ts2Host + "/", http.StatusOK},
-		{"host delete method ok", http.MethodDelete, "/", ts2Host + "/", http.StatusOK},
-	}
-	for _, tc := range tt {
-		t.Run(tc.name, func(t *testing.T) {
-			req := errsx.Must(http.NewRequest(tc.method, ts2.URL+tc.path, nil))
-			res := errsx.Must(ts2.Client().Do(req))
-
-			defer res.Body.Close()
-
-			if tc.wantBody != "" {
-				body, err := io.ReadAll(res.Body)
-				if err != nil {
-					t.Errorf("want <nil>; got %q", err)
-				}
-				if want, got := tc.wantBody, string(body); want != got {
-					t.Errorf("want %q; got %q", want, got)
-				}
-			}
-
-			if want, got := tc.wantStatus, res.StatusCode; want != got {
-				t.Errorf("want %v; got %v", want, got)
-			}
-		})
-	}
-
-	ts1.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
+	ts.Client().CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
 
@@ -448,8 +388,8 @@ func TestMux(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			req := errsx.Must(http.NewRequest(tc.method, ts1.URL+tc.path, nil))
-			res := errsx.Must(ts1.Client().Do(req))
+			req := errsx.Must(http.NewRequest(tc.method, ts.URL+tc.path, nil))
+			res := errsx.Must(ts.Client().Do(req))
 
 			defer res.Body.Close()
 
@@ -510,19 +450,7 @@ func TestMuxPanics(t *testing.T) {
 
 		mux.Get("/one/two/:foo/four", emptyHandler)
 		mux.Get("/one/two/:bar/four", emptyHandler)
-	})
-
-	t.Run("no panic on duplicate route paths with parameters and different methods", func(t *testing.T) {
-		defer func() {
-			if recover() != nil {
-				t.Error("want <nil>; got panic")
-			}
-		}()
-
-		mux := router.NewServeMux()
-
-		mux.Get("/one/two/:foo/four", emptyHandler)
-		mux.Post("/one/two/:bar/four", emptyHandler)
+		mux.Post("/one/two/:baz/four", emptyHandler)
 	})
 
 	t.Run("panic on duplicate route names", func(t *testing.T) {
@@ -618,21 +546,5 @@ func TestMuxPanics(t *testing.T) {
 				mux.Path("complex", tc.list...)
 			})
 		}
-	})
-
-	t.Run("panic on nested host registration", func(t *testing.T) {
-		defer func() {
-			if recover() == nil {
-				t.Error("want panic; got <nil>")
-			}
-		}()
-
-		mux := router.NewServeMux()
-
-		mux.Host("foo.bar.baz", func(mux *router.ServeMux) {
-			mux.Host("foo.bar.qux", func(mux *router.ServeMux) {
-				mux.Get("/hello", emptyHandler)
-			})
-		})
 	})
 }
