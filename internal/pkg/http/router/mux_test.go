@@ -22,6 +22,12 @@ func TestMux(t *testing.T) {
 	}
 
 	mux.Get("/order/:rest...", echoHandler)
+	mux.Get("/order/:foo", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("lazy param: " + r.URL.Path))
+	})
+	mux.Get("/order/static", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("static: " + r.URL.Path))
+	})
 	mux.Get("/order/independent/:rest...", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("greedy rest: " + r.URL.Path))
 	})
@@ -318,9 +324,11 @@ func TestMux(t *testing.T) {
 		{"dynamic url with greedy rest no match", http.MethodGet, "/greedy/foo/bar/rest/baz/qux", "", http.StatusNotFound},
 		{"dynamic url overlap", http.MethodGet, "/overlap-prefix/bar/overlap-suffix", "bar", http.StatusOK},
 
-		{"order independence no rest 1", http.MethodGet, "/order/independent", "/order/independent", http.StatusOK},
-		{"order independence no rest 2", http.MethodGet, "/order/independent/foo", "/order/independent/foo", http.StatusOK},
-		{"order independence no rest 3", http.MethodGet, "/order/independent/foo/bar", "/order/independent/foo/bar", http.StatusOK},
+		{"order independence no rest 1", http.MethodGet, "/order/foo", "lazy param: /order/foo", http.StatusOK},
+		{"order independence no rest 2", http.MethodGet, "/order/static", "static: /order/static", http.StatusOK},
+		{"order independence no rest 3", http.MethodGet, "/order/independent", "/order/independent", http.StatusOK},
+		{"order independence no rest 4", http.MethodGet, "/order/independent/foo", "/order/independent/foo", http.StatusOK},
+		{"order independence no rest 5", http.MethodGet, "/order/independent/foo/bar", "/order/independent/foo/bar", http.StatusOK},
 		{"order independence rest overlap 1", http.MethodGet, "/order/foo/bar/baz/qux", "/order/foo/bar/baz/qux", http.StatusOK},
 		{"order independence rest overlap 2", http.MethodGet, "/order/independent/foo/baz", "greedy rest: /order/independent/foo/baz", http.StatusOK},
 		{"order independence rest overlap 3", http.MethodGet, "/order/independent/foo/bar/baz", "greedy rest: /order/independent/foo/bar/baz", http.StatusOK},
@@ -451,6 +459,19 @@ func TestMuxPanics(t *testing.T) {
 		mux.Get("/one/two/:foo/four", emptyHandler)
 		mux.Get("/one/two/:bar/four", emptyHandler)
 		mux.Post("/one/two/:baz/four", emptyHandler)
+	})
+
+	t.Run("panic on duplicate route paths with greedy parameters", func(t *testing.T) {
+		defer func() {
+			if recover() == nil {
+				t.Error("want panic; got <nil>")
+			}
+		}()
+
+		mux := router.NewServeMux()
+
+		mux.Get("/one/two/:foo/four/:bar...", emptyHandler)
+		mux.Post("/one/two/:foo/four/:baz...", emptyHandler)
 	})
 
 	t.Run("panic on duplicate route names", func(t *testing.T) {

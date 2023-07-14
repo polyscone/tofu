@@ -365,12 +365,18 @@ func (mux *ServeMux) node(path string) *Node {
 
 		for i, part := range parts {
 			if strings.HasPrefix(part, ":") {
+				isGreedy := strings.HasSuffix(part, "...")
+
 				for key := range dynamic {
 					if key == part || !strings.HasPrefix(key, ":") {
 						continue
 					}
 
-					panic(fmt.Sprintf("multiple parameters in the same position for %v", path))
+					keyIsGreedy := strings.HasSuffix(key, "...")
+
+					if isGreedy && keyIsGreedy || !isGreedy && !keyIsGreedy {
+						panic(fmt.Sprintf("multiple parameters in the same position for %v", path))
+					}
 				}
 			}
 
