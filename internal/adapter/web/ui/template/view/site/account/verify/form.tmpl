@@ -16,7 +16,9 @@
 
 <div class="center">
 	{{if .ErrorMessage}}
-		<p>Either the account you're trying to verify has already been verified or you've provided an invalid verification token.</p>
+		<p>If your verification link has expired <a href="{{Path "account.sign_up"}}">sign up again</a> using the same email address and we'll send you a new one.</p>
+	{{else if not (.URL.Query.Get "token")}}
+		<p>Create an account using the <a href="{{Path "account.sign_up"}}">sign up form</a> we'll send you a link to verify your account.</p>
 	{{else}}
 		<p>Almost done! Use the form below to choose a password and we can verify your account.</p>
 

@@ -42,7 +42,7 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 
 		email, err := h.Repo.Web.FindVerificationTokenEmail(ctx, input.Token)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find verification token email", err, "site/error", nil)
+			h.HTML.ErrorView(w, r, "find verification token email", err, "site/account/verify/form", nil)
 
 			return
 		}
