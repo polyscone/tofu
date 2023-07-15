@@ -34,12 +34,16 @@
 				{{end}}
 			</td>
 			<td class="text-right">
-				{{if and (not .TOTPResetRequestedAt.IsZero) $.Passport.Account.CanReviewTOTPResets}}
-					<a href="{{Path "account.management.user.totp_reset_review" ":userID" .ID}}{{$.URL.Query.String}}">Review 2FA reset request</a>
+				{{if .VerifiedAt.IsZero}}
+					Unverified
 				{{end}}
 
 				{{if and (not .VerifiedAt.IsZero) .ActivatedAt.IsZero $.Passport.Account.CanActivateUsers}}
 					<a href="{{Path "account.management.user.activate" ":userID" .ID}}{{$.URL.Query.String}}">Activate</a>
+				{{end}}
+
+				{{if and (not .TOTPResetRequestedAt.IsZero) $.Passport.Account.CanReviewTOTPResets}}
+					<a href="{{Path "account.management.user.totp_reset_review" ":userID" .ID}}{{$.URL.Query.String}}">Review 2FA reset request</a>
 				{{end}}
 
 				{{if $.Passport.Account.CanChangeRoles .ID}}

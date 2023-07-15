@@ -22,6 +22,10 @@
 		</div>
 	{{end}}
 
+	{{if .Vars.User.VerifiedAt.IsZero}}
+		<p class="text-italic text-bold">This account has not yet been verified.</p>
+	{{end}}
+
 	{{if $canChangeRoles}}
 		<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
 			{{template "com_csrf_input" .}}

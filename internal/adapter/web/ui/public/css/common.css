@@ -340,6 +340,14 @@
 }
 
 @layer utility {
+	.text-italic {
+		font-style: italic;
+	}
+
+	.text-bold {
+		font-weight: bold;
+	}
+
 	.text-left {
 		text-align: left;
 	}
