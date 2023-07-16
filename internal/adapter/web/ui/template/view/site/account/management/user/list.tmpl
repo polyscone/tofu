@@ -36,10 +36,12 @@
 			<td class="text-right">
 				{{if .VerifiedAt.IsZero}}
 					Unverified
-				{{end}}
-
-				{{if and (not .VerifiedAt.IsZero) .ActivatedAt.IsZero $.Passport.Account.CanActivateUsers}}
-					<a href="{{Path "account.management.user.activate" ":userID" .ID}}{{$.URL.Query.String}}">Activate</a>
+				{{else if .ActivatedAt.IsZero}}
+					{{if $.Passport.Account.CanActivateUsers}}
+						<a href="{{Path "account.management.user.activate" ":userID" .ID}}{{$.URL.Query.String}}">Activate</a>
+					{{else}}
+						Unactivated
+					{{end}}
 				{{end}}
 
 				{{if and (not .TOTPResetRequestedAt.IsZero) $.Passport.Account.CanReviewTOTPResets}}
