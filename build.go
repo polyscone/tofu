@@ -53,6 +53,7 @@ var opts struct {
 	goarch            string
 	tags              string
 	testTags          string
+	optimisations     string
 	unoptimised       bool
 	debug             bool
 	race              bool
@@ -86,6 +87,7 @@ func main() {
 	flag.StringVar(&opts.goarch, "goarch", "", "Sets the GOARCH environment variable for the build")
 	flag.StringVar(&opts.tags, "tags", "", tagsDescription)
 	flag.StringVar(&opts.testTags, "test-tags", "", testTagsDescription)
+	flag.StringVar(&opts.optimisations, "optimisations", "", "Space separated list of packages to list optimisations for")
 	flag.BoolVar(&opts.unoptimised, "unoptimised", false, "Disable optimisations/inlining")
 	flag.BoolVar(&opts.debug, "debug", false, "Enable symbol table/DWARF generation and disable optimisations/inlining")
 	flag.BoolVar(&opts.race, "race", false, "Enable data race detection")
@@ -540,12 +542,6 @@ func vet() error {
 }
 
 func build(pkg string) error {
-	parts := strings.Split(pkg, "/")
-	binaryName := parts[len(parts)-1]
-	if opts.goos == "windows" {
-		binaryName += ".exe"
-	}
-
 	tagsMessage := opts.tags
 	if tagsMessage == "" {
 		tagsMessage = "-"
@@ -553,6 +549,7 @@ func build(pkg string) error {
 
 	args := []string{"build", "-o", ".", "-tags", opts.tags}
 	gcflags := []string{}
+	gcflagsopts := []string{}
 	ldflags := []string{
 		fmt.Sprintf("-X 'main.branch=%v'", commitBranch("")),
 		fmt.Sprintf("-X 'main.version=%v'", closestTag("")),
@@ -567,8 +564,15 @@ func build(pkg string) error {
 	if opts.debug || opts.unoptimised {
 		// -N disables all optimisations
 		// -l disables inlining
-		// See: go tool compile --help
-		gcflags = append(gcflags, "all=-N -l")
+		// See: go tool compile -help
+		gcflags = append(gcflags, "-N", "-l")
+	}
+
+	if opts.optimisations != "" {
+		pkgs := strings.Fields(opts.optimisations)
+		for _, pkg := range pkgs {
+			gcflagsopts = append(gcflagsopts, pkg+"=-m")
+		}
 	}
 
 	if opts.debug {
@@ -585,9 +589,8 @@ func build(pkg string) error {
 
 		// -s disables the symbol table
 		// -w disables DWARF generation
-		// See: go tool link --help
-		ldflags = append(ldflags, "-s")
-		ldflags = append(ldflags, "-w")
+		// See: go tool link -help
+		ldflags = append(ldflags, "-s", "-w")
 	}
 
 	if opts.race {
@@ -599,7 +602,16 @@ func build(pkg string) error {
 	}
 
 	if len(gcflags) > 0 {
-		args = append(args, "-gcflags", strings.Join(gcflags, " "))
+		// all= expands to all packages
+		// See: go help packages
+		args = append(args, "-gcflags", "all="+strings.Join(gcflags, " "))
+
+	}
+
+	if len(gcflagsopts) > 0 {
+		for _, gcflags := range gcflagsopts {
+			args = append(args, "-gcflags", gcflags)
+		}
 	}
 
 	if len(ldflags) > 0 {
@@ -655,7 +667,7 @@ func build(pkg string) error {
 
 		fmt.Printf("(%v)\n", strings.Join(info, "/"))
 
-		if len(out) > 0 && opts.verbose {
+		if len(out) > 0 && (opts.verbose || len(gcflagsopts) > 0) {
 			fmt.Println(string(out))
 		}
 	}
