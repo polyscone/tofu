@@ -451,12 +451,6 @@ func (mux *ServeMux) route(method, path string, handler http.Handler, names ...s
 	return route
 }
 
-// Routes returns a slice of strings describing the registered routes in the
-// order they will be evaluated.
-func (mux *ServeMux) Routes() []string {
-	return nil
-}
-
 // OptionsHandler registers a handler that can be used to serve any OPTIONS
 // request matching the given path pattern.
 func (mux *ServeMux) OptionsHandler(path string, handler http.Handler, names ...string) *Route {
