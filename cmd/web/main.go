@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"syscall"
 	"time"
@@ -18,16 +19,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/slogger"
 	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
-)
-
-// Build information is set at compile time using the `-X` ldflags.
-var (
-	version = "-"
-	branch  = "-"
-	commit  = "-"
-	tags    = "-"
-	target  = "-"
-	race    = "-"
 )
 
 var opts struct {
@@ -78,18 +69,43 @@ func main() {
 	}
 
 	if opts.version || flag.Arg(0) == "version" {
-		var info string
+		modified := false
+		revision := "-"
+		tags := "-"
+		race := "disabled"
 
-		info += fmt.Sprintln("Version:      ", version)
-		info += fmt.Sprintln("Branch:       ", branch)
-		info += fmt.Sprintln("Commit:       ", commit)
-		info += fmt.Sprintln("Tags:         ", tags)
-		info += fmt.Sprintln("Go version:   ", strings.TrimPrefix(runtime.Version(), "go"))
-		info += fmt.Sprintln("OS/Arch:      ", runtime.GOOS+"/"+runtime.GOARCH)
-		info += fmt.Sprintln("Target:       ", target)
-		info += fmt.Sprintln("Race detector:", race)
+		info, _ := debug.ReadBuildInfo()
+		for _, setting := range info.Settings {
+			switch setting.Key {
+			case "vcs.revision":
+				revision = setting.Value
 
-		fmt.Print(info)
+			case "vcs.modified":
+				modified = setting.Value == "true"
+
+			case "-tags":
+				tags = strings.ReplaceAll(setting.Value, ",", " ")
+
+			case "-race":
+				if setting.Value == "true" {
+					race = "enabled"
+				}
+			}
+		}
+
+		if modified {
+			revision += " (uncommitted changes)"
+		}
+
+		var version string
+
+		version += fmt.Sprintln("Revision:     ", revision)
+		version += fmt.Sprintln("Tags:         ", tags)
+		version += fmt.Sprintln("Go version:   ", strings.TrimPrefix(runtime.Version(), "go"))
+		version += fmt.Sprintln("OS/Arch:      ", runtime.GOOS+"/"+runtime.GOARCH)
+		version += fmt.Sprintln("Race detector:", race)
+
+		fmt.Print(version)
 
 		return
 	}
