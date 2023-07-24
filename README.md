@@ -19,6 +19,8 @@ The `OPTIMISATIONS` variable controls the package pattern to use when printing c
 
 The `CHECK_BCE` variable controls the package pattern to use when printing compiler bounds check elimination decisions. For example, `make CHECK_BCE=./internal/foo` will build with `-gcflags "./internal/foo=-d=ssa/check_bce"`.
 
+The benchmark count can be set via the `BENCH_COUNT` variable.
+
 If any binaries expect to be a Windows GUI without a terminal/console attached then setting the `WINDOWSGUI` variable to anything will build with `-ldflags "-H windowsgui"`.
 
 For all available `make` rules check the `Makefile` in the root of the project.

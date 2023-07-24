@@ -5,6 +5,7 @@ MAKEFLAGS += --no-print-directory
 PKG := ./...
 OUT := .
 TAGS := json1 fts5
+BENCH_COUNT := 3
 
 # Command values
 ADDR := :8080
@@ -71,6 +72,15 @@ vulncheck:
 
 .PHONY: audit
 audit: vet test vulncheck
+
+.PHONY: bench
+bench:
+ifeq ($(PKG),./...)
+	@echo Please set the PKG variable to the specific package you want to benchmark
+	@echo For example: make bench PKG=./internal/foo
+else
+	go test $(build_tags) -vet off -run no-tests -bench . -count $(BENCH_COUNT) $(PKG)
+endif
 
 .PHONY: fmt
 fmt:
