@@ -7,7 +7,7 @@ require (
 	github.com/mattn/go-sqlite3 v1.14.17
 	github.com/wneessen/go-mail v0.4.0
 	golang.org/x/crypto v0.11.0
-	golang.org/x/exp v0.0.0-20230711153332-06a737ee72cb
+	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1
 )
 
 require golang.org/x/sys v0.10.0 // indirect
