@@ -509,9 +509,7 @@ func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user 
 	if hashedCodes != nil {
 		user.HashedRecoveryCodes = make([][]byte, len(hashedCodes))
 
-		for i, rc := range hashedCodes {
-			user.HashedRecoveryCodes[i] = rc
-		}
+		copy(user.HashedRecoveryCodes, hashedCodes)
 	}
 
 	return nil
