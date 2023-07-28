@@ -22,7 +22,7 @@ func NewTOTP(totp string) (TOTP, error) {
 		return "", fmt.Errorf("must be %v characters in length", totpLength)
 	}
 
-	if matches := invalidTelChars.FindAllString(totp, -1); len(matches) != 0 {
+	if matches := invalidTOTPChars.FindAllString(totp, -1); len(matches) != 0 {
 		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
 	}
 
