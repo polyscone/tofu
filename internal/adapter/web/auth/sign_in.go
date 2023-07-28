@@ -142,7 +142,7 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 	}
 	if b, err := base64.RawURLEncoding.DecodeString(parts[0]); err != nil {
 		return false, fmt.Errorf("decode JWT header: %w", err)
-	} else if json.Unmarshal(b, &header); err != nil {
+	} else if err := json.Unmarshal(b, &header); err != nil {
 		return false, fmt.Errorf("unmarshal JWT header: %w", err)
 	}
 
@@ -192,7 +192,7 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 	}
 	if b, err := base64.RawURLEncoding.DecodeString(parts[1]); err != nil {
 		return false, fmt.Errorf("decode JWT claims: %w", err)
-	} else if json.Unmarshal(b, &claims); err != nil {
+	} else if err := json.Unmarshal(b, &claims); err != nil {
 		return false, fmt.Errorf("unmarshal JWT claims: %w", err)
 	}
 
