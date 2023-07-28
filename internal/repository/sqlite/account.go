@@ -253,6 +253,9 @@ func (r *AccountRepo) FindRoleByID(ctx context.Context, roleID int) (*account.Ro
 	defer tx.Rollback()
 
 	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{ID: &roleID})
+	if err != nil {
+		return nil, fmt.Errorf("find roles: %w", err)
+	}
 	if len(roles) == 0 {
 		return nil, repository.ErrNotFound
 	}
@@ -274,6 +277,9 @@ func (r *AccountRepo) FindRoleByName(ctx context.Context, name string) (*account
 	defer tx.Rollback()
 
 	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{Name: &name})
+	if err != nil {
+		return nil, fmt.Errorf("find roles: %w", err)
+	}
 	if len(roles) == 0 {
 		return nil, repository.ErrNotFound
 	}
