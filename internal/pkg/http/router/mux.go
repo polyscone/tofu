@@ -22,8 +22,7 @@ const ctxParams ctxKey = iota
 type BeforeHookFunc func(w http.ResponseWriter, r *http.Request) bool
 
 type BeforeHook struct {
-	pattern *regexp.Regexp
-	fn      BeforeHookFunc
+	fn BeforeHookFunc
 }
 
 // Route represents a registered route and handler.
@@ -155,7 +154,6 @@ type ServeMux struct {
 	prefix           string
 	middlewares      []middleware.Middleware
 	handler          http.Handler
-	routes           []*Route
 	static           map[string]*Node
 	dynamic          map[string]*Node
 	named            map[string]*Route
