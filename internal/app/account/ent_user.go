@@ -654,17 +654,15 @@ func (u *User) ChangeRoles(roles []*Role, grants, denials []Permission) error {
 	u.Roles = roles
 
 	u.Grants = nil
-	if grants != nil {
-	GrantLoop:
-		for _, grant := range grants {
-			for _, denial := range denials {
-				if grant == denial {
-					continue GrantLoop
-				}
+GrantLoop:
+	for _, grant := range grants {
+		for _, denial := range denials {
+			if grant == denial {
+				continue GrantLoop
 			}
-
-			u.Grants = append(u.Grants, grant.String())
 		}
+
+		u.Grants = append(u.Grants, grant.String())
 	}
 
 	u.Denials = nil
