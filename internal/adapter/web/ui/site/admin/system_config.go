@@ -20,17 +20,17 @@ func SystemConfig(h *ui.Handler, mux *router.ServeMux) {
 func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			SystemEmail               string
-			SecurityEmail             string
-			SignUpEnabled             bool `compare:"true"`
-			SignUpAutoActivateEnabled bool `compare:"true"`
-			TOTPRequired              bool `compare:"true"`
-			TOTPSMSEnabled            bool `compare:"true" form:"totp-sms-enabled"`
-			GoogleSignInEnabled       bool `compare:"true"`
-			GoogleSignInClientID      string
-			TwilioSID                 string
-			TwilioToken               string
-			TwilioFromTel             string
+			SystemEmail               string `form:"system-email"`
+			SecurityEmail             string `form:"security-email"`
+			SignUpEnabled             bool   `form:"sign-up-enabled" compare:"true"`
+			SignUpAutoActivateEnabled bool   `form:"sign-up-auto-activate-enabled" compare:"true"`
+			TOTPRequired              bool   `form:"totp-required" compare:"true"`
+			TOTPSMSEnabled            bool   `form:"totp-sms-enabled" compare:"true"`
+			GoogleSignInEnabled       bool   `form:"google-sign-in-enabled" compare:"true"`
+			GoogleSignInClientID      string `form:"google-sign-in-client-id"`
+			TwilioSID                 string `form:"twilio-sid"`
+			TwilioToken               string `form:"twilio-token"`
+			TwilioFromTel             string `form:"twilio-from-tel"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)

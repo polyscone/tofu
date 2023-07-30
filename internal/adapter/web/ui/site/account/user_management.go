@@ -116,7 +116,7 @@ func userNewGet(h *ui.Handler) http.HandlerFunc {
 func userNewPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Email string
+			Email string `form:"email"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -190,9 +190,9 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 func userEditPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			RoleIDs []int `form:"roles"`
-			Grants  []string
-			Denials []string
+			RoleIDs []int    `form:"roles"`
+			Grants  []string `form:"grants"`
+			Denials []string `form:"denials"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)

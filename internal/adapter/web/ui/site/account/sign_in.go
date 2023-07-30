@@ -70,8 +70,8 @@ func signInGet(h *ui.Handler) http.HandlerFunc {
 func signInPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Email    string
-			Password string
+			Email    string `form:"email"`
+			Password string `form:"password"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -108,7 +108,7 @@ func signInTOTPGet(h *ui.Handler) http.HandlerFunc {
 func signInTOTPPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			TOTP string
+			TOTP string `form:"totp"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -205,7 +205,7 @@ func signInTOTPResetPost(h *ui.Handler) http.HandlerFunc {
 func signInTOTPResetRequestPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Token string
+			Token string `form:"token"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -263,7 +263,7 @@ func signInRecoveryCodeGet(h *ui.Handler) http.HandlerFunc {
 func signInRecoveryCodePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			RecoveryCode string
+			RecoveryCode string `form:"recovery-code"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)

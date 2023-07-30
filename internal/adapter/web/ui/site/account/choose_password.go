@@ -36,7 +36,7 @@ func ChoosePassword(h *ui.Handler, mux *router.ServeMux) {
 func choosePasswordPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			NewPassword      string
+			NewPassword      string `form:"new-password"`
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {

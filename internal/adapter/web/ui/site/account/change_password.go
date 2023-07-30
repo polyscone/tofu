@@ -37,8 +37,8 @@ func ChangePassword(h *ui.Handler, mux *router.ServeMux) {
 func changePasswordPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			OldPassword      string
-			NewPassword      string
+			OldPassword      string `form:"old-password"`
+			NewPassword      string `form:"new-password"`
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {

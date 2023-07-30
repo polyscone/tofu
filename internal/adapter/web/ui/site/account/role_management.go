@@ -81,9 +81,9 @@ func roleNewGet(h *ui.Handler) http.HandlerFunc {
 func roleNewPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Name        string
-			Description string
-			Permissions []string
+			Name        string   `form:"name"`
+			Description string   `form:"description"`
+			Permissions []string `form:"permissions"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -144,9 +144,9 @@ func roleEditGet(h *ui.Handler) http.HandlerFunc {
 func roleEditPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Name        string
-			Description string
-			Permissions []string
+			Name        string   `form:"name"`
+			Description string   `form:"description"`
+			Permissions []string `form:"permissions"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)

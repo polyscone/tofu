@@ -21,8 +21,8 @@ func Verify(h *ui.Handler, mux *router.ServeMux) {
 func verifyPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Token         string
-			Password      string
+			Token         string `form:"token"`
+			Password      string `form:"password"`
 			PasswordCheck string `form:"password"` // The UI doesn't include a check field
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {

@@ -37,7 +37,7 @@ func signUpGet(h *ui.Handler) http.HandlerFunc {
 func signUpPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Email string
+			Email string `form:"email"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)

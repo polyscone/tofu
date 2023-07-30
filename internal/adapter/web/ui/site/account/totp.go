@@ -113,7 +113,7 @@ func totpSetupGet(h *ui.Handler) http.HandlerFunc {
 func totpSetupPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Method string
+			Method string `form:"method"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -209,7 +209,7 @@ func totpSetupAppGet(h *ui.Handler) http.HandlerFunc {
 func totpSetupAppPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			TOTP string
+			TOTP string `form:"totp"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -262,7 +262,7 @@ func totpSetupSMSGet(h *ui.Handler) http.HandlerFunc {
 func totpSetupSMSPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Tel string
+			Tel string `form:"tel"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -324,7 +324,7 @@ func totpSetupSMSVerifyGet(h *ui.Handler) http.HandlerFunc {
 func totpSetupSMSVerifyPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			TOTP string
+			TOTP string `form:"totp"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -411,7 +411,7 @@ func totpDisableGet(h *ui.Handler) http.HandlerFunc {
 func totpDisablePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Password string
+			Password string `form:"password"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -459,8 +459,8 @@ func totpDisablePost(h *ui.Handler) http.HandlerFunc {
 func totpResetPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Token    string
-			Password string
+			Token    string `form:"token"`
+			Password string `form:"password"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -542,7 +542,7 @@ func totpRecoveryCodesGet(h *ui.Handler) http.HandlerFunc {
 func totpRecoveryCodesPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			TOTP string
+			TOTP string `form:"totp"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)

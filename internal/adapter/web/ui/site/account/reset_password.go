@@ -31,7 +31,7 @@ func ResetPassword(h *ui.Handler, mux *router.ServeMux) {
 func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Email string
+			Email string `form:"email"`
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
@@ -78,8 +78,8 @@ func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
 func resetPasswordNewPasswordPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			Token            string
-			NewPassword      string
+			Token            string `form:"token"`
+			NewPassword      string `form:"new-password"`
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 		}
 		if err := httputil.DecodeRequestForm(&input, r); err != nil {
