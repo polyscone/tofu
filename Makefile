@@ -10,65 +10,65 @@ BENCH_COUNT := 3
 # Command values
 ADDR := :8080
 
-rm := rm
+RM := rm
 ifeq ($(OS),Windows_NT)
 	SHELL = cmd
-	rm := del
+	RM := del
 endif
 
-build_tags := $(TAGS)
+BUILD_TAGS := $(TAGS)
 ifdef TAGS
-	build_tags := -tags "$(TAGS)"
-	build_flags += $(build_tags)
+	BUILD_TAGS := -tags "$(TAGS)"
+	BUILD_FLAGS += $(BUILD_TAGS)
 endif
 
 ifdef RACE
-	build_flags += -race
+	BUILD_FLAGS += -race
 endif
 
 ifdef DEBUG
 	# -N disables all optimisations
 	# -l disables inlining
 	# See: go tool compile -help
-	build_flags += -gcflags "-N -l"
+	BUILD_FLAGS += -gcflags "-N -l"
 else
-	build_flags += -trimpath
+	BUILD_FLAGS += -trimpath
 endif
 
 ifdef OPTIMISATIONS
-	build_flags += -gcflags "$(OPTIMISATIONS)=-m"
+	BUILD_FLAGS += -gcflags "$(OPTIMISATIONS)=-m"
 endif
 
 ifdef CHECK_BCE
-	build_flags += -gcflags "$(CHECK_BCE)=-d=ssa/check_bce"
+	BUILD_FLAGS += -gcflags "$(CHECK_BCE)=-d=ssa/check_bce"
 endif
 
 ifndef DEBUG
 	# -s disables the symbol table
 	# -w disables DWARF generation
 	# See: go tool link -help
-	build_flags += -ldflags "-s -w"
+	BUILD_FLAGS += -ldflags "-s -w"
 endif
 
 ifdef WINDOWSGUI
-	build_flags += -ldflags "-H windowsgui"
+	BUILD_FLAGS += -ldflags "-H windowsgui"
 endif
 
 .PHONY: build
 build:
-	go build $(build_flags) -o $(OUT) $(PKG)
+	go build $(BUILD_FLAGS) -o $(OUT) $(PKG)
 
 .PHONY: vet
 vet:
-	go vet $(build_tags) $(PKG)
+	go vet $(BUILD_TAGS) $(PKG)
 
 .PHONY: test
 test:
-	go test $(build_tags) -race -vet off $(PKG)
+	go test $(BUILD_TAGS) -race -vet off $(PKG)
 
 .PHONY: vulncheck
 vulncheck:
-	govulncheck $(build_tags) $(PKG)
+	govulncheck $(BUILD_TAGS) $(PKG)
 
 .PHONY: audit
 audit: vet test vulncheck
@@ -79,7 +79,7 @@ ifeq ($(PKG),./...)
 	@echo Please set the PKG variable to the specific package you want to benchmark
 	@echo For example: make bench PKG=./internal/foo
 else
-	go test $(build_tags) -vet off -run no-tests -bench . -count $(BENCH_COUNT) $(PKG)
+	go test $(BUILD_TAGS) -vet off -run no-tests -bench . -count $(BENCH_COUNT) $(PKG)
 endif
 
 .PHONY: fmt
@@ -92,9 +92,9 @@ tidy: fmt
 
 .PHONY: cover
 cover:
-	go test $(build_tags) -vet off -coverprofile coverage.out $(PKG)
+	go test $(BUILD_TAGS) -vet off -coverprofile coverage.out $(PKG)
 	go tool cover -html=coverage.out
-	$(rm) coverage.out
+	$(RM) coverage.out
 
 .PHONY: run/web
 run/web:
