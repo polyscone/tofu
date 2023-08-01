@@ -1,4 +1,6 @@
+.ONESHELL:
 .DEFAULT_GOAL := build
+.SHELLFLAGS += -e
 MAKEFLAGS += --no-print-directory
 
 # Build values
