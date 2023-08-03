@@ -14,8 +14,7 @@ ADDR := :8080
 
 RM := rm
 ifeq ($(OS),Windows_NT)
-	SHELL = cmd
-	RM := del
+	RM := cmd //C del //Q //F
 endif
 
 BUILD_TAGS := $(TAGS)
