@@ -35,14 +35,20 @@ func TestVerifyUser(t *testing.T) {
 		}
 	})
 
-	t.Run("success and activate", func(t *testing.T) {
+	t.Run("success and activate first user", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
+		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
+
+		superUserCount := errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
+		if want, got := 0, superUserCount; want != got {
+			t.Fatalf("want super user count to be %v; got %v", want, got)
+		}
 
 		if err := svc.VerifyUser(ctx, user.Email, "password", "password", account.VerifyUserActivate); err != nil {
 			t.Fatal(err)
@@ -50,6 +56,7 @@ func TestVerifyUser(t *testing.T) {
 
 		events.Expect(account.Verified{Email: user.Email})
 		events.Expect(account.Activated{Email: user.Email})
+		events.Expect(account.RolesChanged{Email: user.Email})
 
 		user = errsx.Must(repo.FindUserByEmail(ctx, user.Email))
 
@@ -58,6 +65,11 @@ func TestVerifyUser(t *testing.T) {
 		}
 		if user.ActivatedAt.IsZero() {
 			t.Error("want non-zero activated at; got zero")
+		}
+
+		superUserCount = errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
+		if want, got := 1, superUserCount; want != got {
+			t.Fatalf("want super user count to be %v; got %v", want, got)
 		}
 	})
 
