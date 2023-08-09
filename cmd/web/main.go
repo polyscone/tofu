@@ -5,20 +5,20 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"runtime"
 	"runtime/debug"
+	"slices"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/pkg/slogger"
-	"golang.org/x/exp/slices"
-	"golang.org/x/exp/slog"
 )
 
 var opts struct {

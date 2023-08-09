@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 func SecurityHeaders(next http.HandlerFunc) http.HandlerFunc {

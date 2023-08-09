@@ -3,13 +3,13 @@ package web
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/pkg/slogger"
-	"golang.org/x/exp/slog"
 )
 
 var ErrTenantNotFound = errors.New("not found")

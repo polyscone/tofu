@@ -1,8 +1,10 @@
 package account_test
 
 import (
+	"cmp"
 	"context"
 	"errors"
+	"slices"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
@@ -10,7 +12,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 	"github.com/polyscone/tofu/internal/repository"
-	"golang.org/x/exp/slices"
 )
 
 type setRolesGuard struct {
@@ -64,8 +65,8 @@ func TestChangeRoles(t *testing.T) {
 				if want, got := []*account.Role{role1, role2}, user.Roles; len(want) != len(got) {
 					t.Errorf("want %v roles; got %v", len(want), len(got))
 				} else {
-					slices.SortFunc(want, func(a, b *account.Role) bool { return a.ID < b.ID })
-					slices.SortFunc(got, func(a, b *account.Role) bool { return a.ID < b.ID })
+					slices.SortFunc(want, func(a, b *account.Role) int { return cmp.Compare(a.ID, b.ID) })
+					slices.SortFunc(got, func(a, b *account.Role) int { return cmp.Compare(a.ID, b.ID) })
 
 					for i, wantRole := range want {
 						gotRole := got[i]
@@ -136,8 +137,8 @@ func TestChangeRoles(t *testing.T) {
 		if want, got := []*account.Role{role1, role2, superRole}, user.Roles; len(want) != len(got) {
 			t.Errorf("want %v roles; got %v", len(want), len(got))
 		} else {
-			slices.SortFunc(want, func(a, b *account.Role) bool { return a.ID < b.ID })
-			slices.SortFunc(got, func(a, b *account.Role) bool { return a.ID < b.ID })
+			slices.SortFunc(want, func(a, b *account.Role) int { return cmp.Compare(a.ID, b.ID) })
+			slices.SortFunc(got, func(a, b *account.Role) int { return cmp.Compare(a.ID, b.ID) })
 
 			for i, wantRole := range want {
 				gotRole := got[i]

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/repository"
-	"golang.org/x/exp/slog"
 )
 
 type AccountRepo struct {

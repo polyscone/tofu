@@ -1,6 +1,6 @@
 package background
 
-import "golang.org/x/exp/slog"
+import "log/slog"
 
 func Go(fn func()) {
 	go func() {

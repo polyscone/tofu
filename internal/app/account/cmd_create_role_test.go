@@ -3,6 +3,7 @@ package account_test
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"golang.org/x/exp/slices"
 )
 
 type createRoleGuard struct {

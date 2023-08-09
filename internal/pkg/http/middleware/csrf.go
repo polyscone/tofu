@@ -5,11 +5,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/size"
-	"golang.org/x/exp/slices"
 )
 
 const (

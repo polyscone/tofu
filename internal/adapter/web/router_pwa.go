@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/size"
-	"golang.org/x/exp/slices"
 )
 
 func NewPWARouter(base *handler.Handler) http.Handler {

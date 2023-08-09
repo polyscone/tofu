@@ -1,18 +1,19 @@
 package router
 
 import (
+	"cmp"
 	"context"
 	"fmt"
+	"maps"
 	"net/http"
 	"reflect"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 )
 
 type ctxKey int
@@ -625,9 +626,9 @@ func (mux *ServeMux) Rewrite(method, src, dst string) {
 				keys = append(keys, key)
 			}
 
-			slices.SortFunc(keys, func(a, b string) bool {
+			slices.SortFunc(keys, func(a, b string) int {
 				// Reverse string length sort so the longest key comes first
-				return utf8.RuneCountInString(b) < utf8.RuneCountInString(a)
+				return cmp.Compare(utf8.RuneCountInString(b), utf8.RuneCountInString(a))
 			})
 
 			for _, key := range keys {
@@ -664,9 +665,9 @@ func (mux *ServeMux) Redirect(method, src, dst string, code int) {
 				keys = append(keys, key)
 			}
 
-			slices.SortFunc(keys, func(a, b string) bool {
+			slices.SortFunc(keys, func(a, b string) int {
 				// Reverse string length sort so the longest key comes first
-				return utf8.RuneCountInString(b) < utf8.RuneCountInString(a)
+				return cmp.Compare(utf8.RuneCountInString(b), utf8.RuneCountInString(a))
 			})
 
 			for _, key := range keys {

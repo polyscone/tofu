@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
@@ -16,7 +17,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"golang.org/x/exp/slices"
 )
 
 var publicErrors = []error{

@@ -12,12 +12,12 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log/slog"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/repository"
-	"golang.org/x/exp/slog"
 )
 
 const (

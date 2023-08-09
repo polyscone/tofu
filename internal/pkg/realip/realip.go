@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"slices"
 	"strings"
-
-	"golang.org/x/exp/slices"
 )
 
 var ErrTooManyAddresses = errors.New("too many addresses")

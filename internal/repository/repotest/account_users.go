@@ -2,15 +2,16 @@ package repotest
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"errors"
+	"slices"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/repository"
-	"golang.org/x/exp/slices"
 )
 
 func AccountUsers(ctx context.Context, t *testing.T, newRepo func() account.ReadWriter) {
@@ -301,8 +302,8 @@ func accountUsersEqual(t *testing.T, want, got *account.User) {
 	if want, got := want.Roles, got.Roles; len(want) != len(got) {
 		t.Errorf("want %v roles; got %v", len(want), len(got))
 	} else {
-		slices.SortFunc(want, func(a, b *account.Role) bool { return a.ID < b.ID })
-		slices.SortFunc(got, func(a, b *account.Role) bool { return a.ID < b.ID })
+		slices.SortFunc(want, func(a, b *account.Role) int { return cmp.Compare(a.ID, b.ID) })
+		slices.SortFunc(got, func(a, b *account.Role) int { return cmp.Compare(a.ID, b.ID) })
 
 		for i, wantRole := range want {
 			gotRole := got[i]

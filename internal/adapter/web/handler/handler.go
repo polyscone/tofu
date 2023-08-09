@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"strings"
 	"sync"
@@ -22,7 +23,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/sms"
 	"github.com/polyscone/tofu/internal/pkg/uuid"
 	"github.com/polyscone/tofu/internal/repository"
-	"golang.org/x/exp/slog"
 )
 
 var httpClient = http.Client{Timeout: 10 * time.Second}

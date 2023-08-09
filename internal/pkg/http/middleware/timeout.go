@@ -4,12 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"runtime/debug"
 	"sync"
 	"time"
-
-	"golang.org/x/exp/slog"
 )
 
 func Timeout(dt time.Duration, errorHandler ErrorHandler) Middleware {

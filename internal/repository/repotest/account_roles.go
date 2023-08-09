@@ -3,12 +3,12 @@ package repotest
 import (
 	"context"
 	"errors"
+	"slices"
 	"strconv"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/repository"
-	"golang.org/x/exp/slices"
 )
 
 func AccountRoles(ctx context.Context, t *testing.T, newRepo func() account.ReadWriter) {

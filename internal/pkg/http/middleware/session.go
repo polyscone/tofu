@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/session"
-	"golang.org/x/exp/slices"
 )
 
 const SessionCookieName = "__Host-session"

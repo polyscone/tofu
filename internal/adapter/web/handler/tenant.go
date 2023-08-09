@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"github.com/polyscone/tofu/internal/app/account"
@@ -9,7 +10,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
-	"golang.org/x/exp/slog"
 )
 
 type AccountReader interface {

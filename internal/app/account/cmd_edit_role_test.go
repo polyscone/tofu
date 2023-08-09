@@ -3,12 +3,12 @@ package account_test
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"golang.org/x/exp/slices"
 )
 
 type updateRoleGuard struct {

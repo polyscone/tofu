@@ -5,11 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"reflect"
 	"strings"
 	"sync"
-
-	"golang.org/x/exp/slog"
 )
 
 const (

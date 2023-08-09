@@ -4,13 +4,13 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/aggregate"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/otp"
-	"golang.org/x/exp/slices"
 )
 
 const (

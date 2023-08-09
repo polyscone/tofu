@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 func ETag(next http.HandlerFunc) http.HandlerFunc {

@@ -1,6 +1,6 @@
 package guard
 
-import "golang.org/x/exp/slices"
+import "slices"
 
 type User struct {
 	ID          int

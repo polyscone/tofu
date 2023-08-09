@@ -2,9 +2,8 @@ package slogger
 
 import (
 	"fmt"
+	"log/slog"
 	"os"
-
-	"golang.org/x/exp/slog"
 )
 
 func New(style Style, level *slog.LevelVar) (*slog.Logger, error) {

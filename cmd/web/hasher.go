@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/pkg/password/argon2"
 	"github.com/polyscone/tofu/internal/pkg/size"
-	"golang.org/x/exp/slog"
 )
 
 var hasher *Hasher
