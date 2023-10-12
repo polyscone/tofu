@@ -69,7 +69,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 			p := filepath.Join(opts.data, data.Alias, "main.sqlite")
 			sqliteDB, err = sqlite.Open(ctx, sqlite.KindFile, p)
 			if err != nil {
-				return nil, fmt.Errorf("open database: %w", err)
+				return nil, fmt.Errorf("open SQLite database: %w", err)
 			}
 
 			cache.sqlite[data.Alias] = sqliteDB
