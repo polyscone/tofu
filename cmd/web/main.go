@@ -245,7 +245,7 @@ func main() {
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 
-	for alias, db := range cache.dbs {
+	for alias, db := range cache.sqlite {
 		if err := db.Close(); err != nil {
 			slog.Error("close database connection", "alias", alias, "error", err)
 		}

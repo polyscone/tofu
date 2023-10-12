@@ -21,7 +21,7 @@ import (
 
 var tenants = make(map[string]Tenant)
 
-type sqliteRepo struct {
+type repo struct {
 	account *sqlite.AccountRepo
 	system  *sqlite.SystemRepo
 	web     *sqlite.WebRepo
@@ -29,12 +29,12 @@ type sqliteRepo struct {
 
 var cache = struct {
 	mu     sync.Mutex
-	repos  map[string]sqliteRepo
-	dbs    map[string]*sqlite.DB
+	repos  map[string]repo
+	sqlite map[string]*sqlite.DB
 	mailer smtp.Mailer
 }{
-	repos: make(map[string]sqliteRepo),
-	dbs:   make(map[string]*sqlite.DB),
+	repos:  make(map[string]repo),
+	sqlite: make(map[string]*sqlite.DB),
 }
 
 // newTenant returns a tenant where the hostname is mapped to a shared alias.
@@ -64,28 +64,28 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	if !ok {
 		var err error
 
-		db := cache.dbs[data.Alias]
-		if db == nil {
+		sqliteDB := cache.sqlite[data.Alias]
+		if sqliteDB == nil {
 			p := filepath.Join(opts.data, data.Alias, "main.sqlite")
-			db, err = sqlite.Open(ctx, sqlite.KindFile, p)
+			sqliteDB, err = sqlite.Open(ctx, sqlite.KindFile, p)
 			if err != nil {
 				return nil, fmt.Errorf("open database: %w", err)
 			}
 
-			cache.dbs[data.Alias] = db
+			cache.sqlite[data.Alias] = sqliteDB
 		}
 
-		repo.account, err = sqlite.NewAccountRepo(ctx, db, app.SignInThrottleTTL)
+		repo.account, err = sqlite.NewAccountRepo(ctx, sqliteDB, app.SignInThrottleTTL)
 		if err != nil {
 			return nil, fmt.Errorf("new account repo: %w", err)
 		}
 
-		repo.system, err = sqlite.NewSystemRepo(ctx, db)
+		repo.system, err = sqlite.NewSystemRepo(ctx, sqliteDB)
 		if err != nil {
 			return nil, fmt.Errorf("new system repo: %w", err)
 		}
 
-		repo.web, err = sqlite.NewWebRepo(ctx, db, app.SessionTTL)
+		repo.web, err = sqlite.NewWebRepo(ctx, sqliteDB, app.SessionTTL)
 		if err != nil {
 			return nil, fmt.Errorf("new web repo: %w", err)
 		}
