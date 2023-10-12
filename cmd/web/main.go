@@ -247,7 +247,7 @@ func main() {
 
 	for alias, db := range cache.sqlite {
 		if err := db.Close(); err != nil {
-			slog.Error("close database connection", "alias", alias, "error", err)
+			slog.Error("close SQLite database connection", "alias", alias, "error", err)
 		}
 	}
 }
