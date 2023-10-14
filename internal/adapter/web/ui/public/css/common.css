@@ -179,10 +179,24 @@
 		margin-inline-start: 0.2em;
 	}
 
-	form, .form {
+	.form,
+	form,
+	fieldset {
 		display: flex;
 		flex-direction: column;
 		gap: 0.4rem;
+	}
+
+	fieldset {
+		padding: 0;
+		border: none;
+	}
+
+	legend {
+		font-size: 1.3rem;
+		font-weight: bold;
+		padding: 0;
+		padding-block-end: 0.5rem;
 	}
 
 	:is(form, .form) input:not([type="checkbox"]),
