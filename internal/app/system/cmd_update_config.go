@@ -98,10 +98,11 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	}
 
 	config.ChangeGoogleSignInClientID(input.googleSignInClientID)
+
+	var errs errsx.Slice
+
 	if input.googleSignInEnabled {
-		if err := config.EnableGoogleSignIn(); err != nil {
-			return nil, fmt.Errorf("enable Google sign in: %w", err)
-		}
+		errs.Append(config.EnableGoogleSignIn())
 	} else {
 		config.DisableGoogleSignIn()
 	}
@@ -109,11 +110,13 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	config.ChangeTwilioAPI(input.twilioSID, input.twilioToken, input.twilioFromTel)
 
 	if input.totpSMSEnabled {
-		if err := config.EnableTOTPSMS(); err != nil {
-			return nil, fmt.Errorf("enable TOTP SMS: %w", err)
-		}
+		errs.Append(config.EnableTOTPSMS())
 	} else {
 		config.DisableTOTPSMS()
+	}
+
+	if errs != nil {
+		return nil, errs
 	}
 
 	if err := s.repo.SaveConfig(ctx, config); err != nil {
