@@ -39,12 +39,12 @@
 		{{if $error}}class="invalid"{{end}}
 	>
 		{{if $placeholder}}
-			<option value="">{{$placeholder}}</option>
+			<option value="" hidden disabled{{if not $value}} selected{{end}}>{{$placeholder}}</option>
 		{{end}}
 
 		{{range $option := $options}}
 			{{if $option.Options}}
-				<optgroup label="{{$option.Value}}">
+				<optgroup label="{{$option.Label}}">
 					{{range $option := $option.Options}}
 						{{$optval := or $option.Value $option.Label $option}}
 						{{$optlabel := or $option.Label $option.Value $option}}
