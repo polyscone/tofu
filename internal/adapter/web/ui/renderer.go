@@ -215,7 +215,11 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 			errors.Is(err, app.ErrInvalidInput),
 			errors.Is(err, app.ErrConflictingInput):
 
-			data.ErrorMessage = "Invalid input."
+			if errors.Is(err, app.ErrMalformedInput) {
+				data.ErrorMessage = "Malformed input."
+			} else {
+				data.ErrorMessage = "Invalid input."
+			}
 
 			var errs errsx.Map
 			if errors.As(err, &errs) {
