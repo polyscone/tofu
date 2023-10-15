@@ -18,6 +18,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/rate"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 type ViewData struct {
@@ -236,6 +237,9 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 			errors.Is(err, account.ErrSignInThrottled):
 
 			data.ErrorMessage = "You have made too many consecutive requests. Please try again later."
+
+		case errors.Is(err, repository.ErrLogin):
+			data.ErrorMessage = "Could not connect to datasource."
 
 		default:
 			data.ErrorMessage = "An error has occurred."

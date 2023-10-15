@@ -128,13 +128,13 @@ func Open(ctx context.Context, kind Kind, filename string) (*DB, error) {
 
 	sqlDB, err := sql.Open(driverName, dsn)
 	if err != nil {
-		return nil, err
+		return nil, repoerr(err)
 	}
 
 	db := &DB{DB: sqlDB}
 
 	if err := db.PingContext(ctx); err != nil {
-		return nil, fmt.Errorf("ping: %w", err)
+		return nil, fmt.Errorf("ping: %w", repoerr(err))
 	}
 
 	databases.data[dsn] = db
@@ -295,8 +295,13 @@ func repoerr(err error) error {
 		return repository.ErrNotFound
 	}
 
-	if msg := strings.ToLower(err.Error()); strings.Contains(msg, "unique constraint failed") {
+	msg := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(msg, "unique constraint failed"):
 		return repository.ErrConflict
+
+	case strings.Contains(msg, "login error"):
+		return fmt.Errorf("%w: %w", repository.ErrLogin, err)
 	}
 
 	return err

@@ -8,6 +8,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/rate"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 var (
@@ -19,6 +20,9 @@ var (
 
 func ErrorStatus(err error) int {
 	switch {
+	case errors.Is(err, repository.ErrLogin):
+		return http.StatusBadGateway
+
 	case errors.Is(err, http.ErrHandlerTimeout):
 		return http.StatusGatewayTimeout
 
