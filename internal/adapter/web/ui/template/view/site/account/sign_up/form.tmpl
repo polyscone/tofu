@@ -3,7 +3,11 @@
 {{define "view_head"}}
 
 <div class="center">
-	<h1>Sign up</h1>
+	{{if .Vars.SuperUserCount}}
+		<h1>Sign up</h1>
+	{{else}}
+		<h1>Initial admin account sign up</h1>
+	{{end}}
 </div>
 
 {{end}}
@@ -12,6 +16,10 @@
 
 <div class="center">
 	{{if .Config.SignUpEnabled}}
+		{{if not .Vars.SuperUserCount}}
+			<p>The first email address to be verified through the sign up process will automatically be set as an admin account.</p>
+		{{end}}
+
 		<p>You'll be able to choose your password after verifying your email address.</p>
 
 		<form action="{{Path "account.sign_up.post"}}" method="POST">
@@ -27,7 +35,9 @@
 			<div class="bag reverse">
 				<button type="submit" class="push-inline-end">Sign up</button>
 
-				<a href="{{Path "account.sign_in"}}">Already have an account?</a>
+				{{if .Vars.SuperUserCount}}
+					<a href="{{Path "account.sign_in"}}">Already have an account?</a>
+				{{end}}
 			</div>
 		</form>
 	{{else}}

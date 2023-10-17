@@ -20,7 +20,7 @@
 	{{else if not (.URL.Query.Get "token")}}
 		<p>Create an account using the <a href="{{Path "account.sign_up"}}">sign up form</a> we'll send you a link to verify your account.</p>
 	{{else}}
-		<p>Almost done! Use the form below to choose a password and we can verify your account.</p>
+		<p>Use the form below to choose a password and we can verify your account.</p>
 
 		<form action="{{Path "account.verify.post"}}{{.URL.Query.String}}" method="POST" id="account-verify-form">
 			{{template "com_csrf_input" .}}
