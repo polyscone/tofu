@@ -1,10 +1,13 @@
 {{define "com_sms_tel_input" -}}
 
+{{$hint := or .ComData.Hint "full number and country code beginning with +"}}
+{{$placeholder := or .ComData.Placeholder "+00 00 0000 0000"}}
+
 {{template "com_form_input" .WithComData
 	"ComData" .ComData
 	"Type" "tel"
-	"Hint" "full number and country code beginning with +"
-	"Placeholder" "+00 00 0000 0000"
+	"Hint" $hint
+	"Placeholder" $placeholder
 	"Pattern" `^\+\d(\d| )+$`
 	"MinLength" 4
 	"MaxLength" 25

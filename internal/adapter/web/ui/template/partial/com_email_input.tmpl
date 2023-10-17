@@ -1,9 +1,11 @@
 {{define "com_email_input" -}}
 
+{{$placeholder := or .ComData.Placeholder "email@example.com"}}
+
 {{template "com_form_input" .WithComData
 	"ComData" .ComData
 	"Type" "email"
-	"Placeholder" "email@example.com"
+	"Placeholder" $placeholder
 	"Pattern" `^[a-zA-Z0-9+._~\-]+@[a-zA-Z0-9+._~\-]+(\.[a-zA-Z0-9+._~\-]+)+$`
 	"MaxLength" "100"
 }}

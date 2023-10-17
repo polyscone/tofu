@@ -1,10 +1,13 @@
 {{define "com_recovery_code_input" -}}
 
+{{$hint := or .ComData.Hint "13 alphanumeric characters"}}
+{{$placeholder := or .ComData.Placeholder "ABCD234567XYZ"}}
+
 {{template "com_form_input" .WithComData
 	"ComData" .ComData
 	"Type" "text"
-	"Hint" "13 alphanumeric characters"
-	"Placeholder" "ABCD234567XYZ"
+	"Hint" $hint
+	"Placeholder" $placeholder
 	"Pattern" `^[A-Z2-7]+$`
 	"MinLength" 13
 	"MaxLength" 13
