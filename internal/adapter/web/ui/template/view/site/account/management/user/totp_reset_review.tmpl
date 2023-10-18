@@ -10,8 +10,6 @@
 
 {{define "view_body"}}
 
-{{$action := .URL.Query.Get "action"}}
-
 <div class="center">
 	<p>This is a request to reset two-factor authentication for the account associated with {{.Vars.User.Email}}.</p>
 	<p>A user might make this request if they're locked out of their account; they might've lost their authentication device, for example.</p>
