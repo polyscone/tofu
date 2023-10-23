@@ -37,15 +37,9 @@ const (
 // That is, a memory value of 1024 is actually 1024 KiB, not 1024 bytes, as
 // you might expect.
 //
-// Since 1024 KiB is the same as 1 MiB it might help to set the memory parameter
-// in terms of mebibytes instead of kibibytes.
-//
-// In that case a helper variable can be set such as:
-//
-//	const mebibyte = 1 * size.Mebibyte / size.Kibibyte.
-//
-// Then the helper variable can be used when setting the memory parameter, for
-// example, 64 * mebibyte.
+// For example, if the memory should be set to 64 MiB then the memory
+// field should be set to 65536.
+// This is because 65536 KiB is the same as 64 MiB (65536 / 1024 = 64).
 //
 // The parallelism parameter sets the number of threads that will be used to
 // spread the work across.
@@ -82,6 +76,7 @@ func (p *Params) IsValid() error {
 		return fmt.Errorf("time must be %d or above", want)
 	}
 	if want := uint32(size.Kibibyte); p.Memory < want {
+		// Memory is a minimum of 1 MiB, which is 1024 KiB
 		return fmt.Errorf("memory must be %d or above", want)
 	}
 	if want := uint8(1); p.Parallelism < want {
@@ -96,6 +91,13 @@ func (p *Params) IsValid() error {
 	return nil
 }
 
+// Calibrate starts with a set of minimum hashing parameters and increases them until
+// it hits the desired target duration.
+//
+// The amount of memory should be expressed as a number of kibibytes (KiB).
+// For example, if the memory should be set to 64 MiB then the memory
+// parameter should be set to 65536.
+// This is because 65536 KiB is the same as 64 MiB (65536 / 1024 = 64).
 func Calibrate(target time.Duration, variant Variant, memory, parallelism int) (Params, time.Duration) {
 	if memory <= 0 {
 		panic("memory must be set")
@@ -119,7 +121,7 @@ func Calibrate(target time.Duration, variant Variant, memory, parallelism int) (
 	params := Params{
 		Variant:     variant,
 		Time:        t,
-		Memory:      uint32(memory / size.Kibibyte),
+		Memory:      uint32(memory),
 		Parallelism: uint8(parallelism),
 		SaltLength:  16,
 		KeyLength:   32,

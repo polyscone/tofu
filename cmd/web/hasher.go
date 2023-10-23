@@ -50,7 +50,7 @@ func initHasher() error {
 	if params.IsValid() != nil {
 		slog.Info("detecting new argon2 password hashing parameters, please wait...")
 
-		params, _ = argon2.Calibrate(1*time.Second, argon2.ID, 64*size.Mebibyte, runtime.NumCPU()*2)
+		params, _ = argon2.Calibrate(1*time.Second, argon2.ID, 64*size.Kibibyte, runtime.NumCPU()*2)
 		paramsJSON, err := json.Marshal(params)
 		if err != nil {
 			return fmt.Errorf("marshal argon2 params: %w", err)
