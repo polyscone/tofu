@@ -2,10 +2,9 @@ package middleware
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
-
-	"log/slog"
 )
 
 func SecurityHeaders(next http.HandlerFunc) http.HandlerFunc {

@@ -5,9 +5,8 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"io"
-	"net/http"
-
 	"log/slog"
+	"net/http"
 )
 
 func ETag(next http.HandlerFunc) http.HandlerFunc {
@@ -29,9 +28,16 @@ func ETag(next http.HandlerFunc) http.HandlerFunc {
 		next(rw, r)
 
 		if buf.Len() > 0 {
-			etag := hex.EncodeToString(hash.Sum(nil))
+			var etag string
+			if etags := w.Header().Values("etag"); len(etags) != 0 {
+				etag = etags[0]
 
-			w.Header().Set("etag", etag)
+				w.Header().Set("etag", etag)
+			} else {
+				etag = hex.EncodeToString(hash.Sum(nil))
+
+				w.Header().Set("etag", etag)
+			}
 
 			if !rw.header && r.Header.Get("if-none-match") == etag {
 				w.WriteHeader(http.StatusNotModified)
