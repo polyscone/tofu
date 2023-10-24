@@ -39,10 +39,14 @@ func ETag(next http.HandlerFunc) http.HandlerFunc {
 				w.Header().Set("etag", etag)
 			}
 
-			if !rw.header && r.Header.Get("if-none-match") == etag {
+			if r.Header.Get("if-none-match") == etag {
 				w.WriteHeader(http.StatusNotModified)
 
 				return
+			}
+
+			if rw.statusCode != 0 {
+				w.WriteHeader(rw.statusCode)
 			}
 
 			if _, err := buf.WriteTo(w); err != nil {
@@ -56,8 +60,8 @@ var _ http.Pusher = (*etagResponseWriter)(nil)
 
 type etagResponseWriter struct {
 	http.ResponseWriter
-	w      io.Writer
-	header bool
+	w          io.Writer
+	statusCode int
 }
 
 func (w *etagResponseWriter) Push(target string, opts *http.PushOptions) error {
@@ -73,7 +77,9 @@ func (w *etagResponseWriter) Write(b []byte) (int, error) {
 }
 
 func (w *etagResponseWriter) WriteHeader(statusCode int) {
-	w.header = true
-
-	w.ResponseWriter.WriteHeader(statusCode)
+	if w.statusCode == 0 {
+		w.statusCode = statusCode
+	} else {
+		slog.Error("timeout writer: superfluous response.WriteHeader call")
+	}
 }

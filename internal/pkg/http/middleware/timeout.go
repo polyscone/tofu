@@ -60,10 +60,10 @@ func Timeout(dt time.Duration, errorHandler ErrorHandler) Middleware {
 				}
 
 				if !tw.wroteHeader {
-					tw.code = http.StatusOK
+					tw.statusCode = http.StatusOK
 				}
 
-				w.WriteHeader(tw.code)
+				w.WriteHeader(tw.statusCode)
 				w.Write(tw.wbuf.Bytes())
 
 			case <-ctx.Done():
@@ -97,7 +97,7 @@ type timeoutWriter struct {
 	mu          sync.Mutex
 	err         error
 	wroteHeader bool
-	code        int
+	statusCode  int
 }
 
 func (w *timeoutWriter) Push(target string, opts *http.PushOptions) error {
@@ -127,9 +127,9 @@ func (w *timeoutWriter) Write(p []byte) (int, error) {
 	return w.wbuf.Write(p)
 }
 
-func (w *timeoutWriter) writeHeaderLocked(code int) {
-	if code < 100 || code > 999 {
-		panic(fmt.Sprintf("timeout writer: invalid WriteHeader code %v", code))
+func (w *timeoutWriter) writeHeaderLocked(statusCode int) {
+	if statusCode < 100 || statusCode > 999 {
+		panic(fmt.Sprintf("timeout writer: invalid WriteHeader code %v", statusCode))
 	}
 
 	switch {
@@ -143,7 +143,7 @@ func (w *timeoutWriter) writeHeaderLocked(code int) {
 
 	default:
 		w.wroteHeader = true
-		w.code = code
+		w.statusCode = statusCode
 	}
 }
 
