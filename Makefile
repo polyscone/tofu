@@ -33,6 +33,20 @@ ifdef DEBUG
 	# -l disables inlining
 	# See: go tool compile -help
 	BUILD_FLAGS += -gcflags "-N -l"
+
+	ifeq ($(OS),Windows_NT)
+		ifneq ($(PKG),./...)
+			# On Windows disassembly in tools like pprof aren't supported
+			# in position-independent executables (PIE), which is the default
+			# build mode for Go
+			#
+			# Because of thise Windows has to set its build mode to exe, but
+			# the exe build mode can only be used in builds where there is one
+			# main function, so we only include the flag when we're not building
+			# all packages
+			BUILD_FLAGS += -buildmode exe
+		endif
+	endif
 else
 	BUILD_FLAGS += -trimpath
 endif
