@@ -3,10 +3,12 @@ package main
 import (
 	"context"
 	"errors"
+	"expvar"
 	"flag"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/http/pprof"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -36,6 +38,10 @@ var opts struct {
 		behindSecureProxy bool
 		proxies           Proxies
 	}
+
+	debug struct {
+		addr Addr
+	}
 }
 
 func main() {
@@ -55,10 +61,11 @@ func main() {
 	flag.BoolVar(&opts.dev, "dev", false, "Whether to run in development mode")
 	flag.BoolVar(&opts.version, "version", false, "Display binary version information")
 	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json|dev)")
-	flag.Var(&opts.server.addr, "addr", "The address to run the build server on, for example :8080; random if empty")
+	flag.Var(&opts.server.addr, "addr", "The address to run the server on, for example :8080; random if empty")
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
 	flag.BoolVar(&opts.server.behindSecureProxy, "behind-secure-proxy", false, "Run without HTTPS but assume a reverse proxy with HTTPS")
 	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
+	flag.Var(&opts.debug.addr, "debug-addr", "The address to run the private debug server on, for example :8081; random if empty")
 	flag.Parse()
 
 	if flag.NArg() > 0 && flag.Arg(0) != "version" {
@@ -135,6 +142,7 @@ func main() {
 	slog.SetDefault(logger)
 
 	opts.server.addr.insecure = opts.server.behindSecureProxy
+	opts.debug.addr.insecure = true
 
 	// Required flag checks
 	var requiredMessages []string
@@ -226,6 +234,25 @@ func main() {
 			}
 		}
 	}()
+
+	if opts.debug.addr.value != "" {
+		go func() {
+			slog.Info("listening (debug)", "addr", opts.debug.addr.String(), "pid", os.Getpid())
+
+			mux := http.NewServeMux()
+
+			mux.HandleFunc("/debug/pprof/", pprof.Index)
+			mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+			mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+			mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+			mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+			mux.Handle("/debug/vars", expvar.Handler())
+
+			if err := http.ListenAndServe(opts.debug.addr.value, mux); err != nil {
+				slog.Error("serve over HTTP (debug)", "error", err)
+			}
+		}()
+	}
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)

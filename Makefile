@@ -11,6 +11,7 @@ BENCH_COUNT := 3
 
 # Command values
 ADDR := :8080
+DEBUG_ADDR := :8081
 
 RM := rm
 ifeq ($(OS),Windows_NT)
@@ -99,4 +100,4 @@ cover:
 
 .PHONY: run/web
 run/web:
-	./web -dev -addr $(ADDR) -behind-secure-proxy -log-style dev
+	./web -dev -addr $(ADDR) -behind-secure-proxy -debug-addr $(DEBUG_ADDR) -log-style dev
