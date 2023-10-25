@@ -18,6 +18,7 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	_ "time/tzdata"
 
 	"github.com/polyscone/tofu/internal/adapter/web"
 	"github.com/polyscone/tofu/internal/pkg/slogger"
