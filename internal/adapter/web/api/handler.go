@@ -8,7 +8,6 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
@@ -114,21 +113,4 @@ func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
 	}
 
 	return true
-}
-
-type PredicateFunc func(p guard.Passport) bool
-
-func (h *Handler) CanAccess(check PredicateFunc) func(w http.ResponseWriter, r *http.Request) bool {
-	return func(w http.ResponseWriter, r *http.Request) bool {
-		ctx := r.Context()
-		passport := h.Passport(ctx)
-
-		if !check(passport) {
-			h.ErrorJSON(w, r, "require auth", app.ErrUnauthorised)
-
-			return false
-		}
-
-		return true
-	}
 }
