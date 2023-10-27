@@ -27,10 +27,6 @@ func (m *Map) Has(key string) bool {
 // Set associates the given error with the given key.
 // The map is lazily instantiated if it is nil.
 func (m *Map) Set(key string, msg any) {
-	if *m == nil {
-		*m = make(Map)
-	}
-
 	var err error
 	switch msg := msg.(type) {
 	case error:
@@ -45,6 +41,10 @@ func (m *Map) Set(key string, msg any) {
 
 	default:
 		panic("want error or string message")
+	}
+
+	if *m == nil {
+		*m = make(Map)
 	}
 
 	(*m)[key] = err
