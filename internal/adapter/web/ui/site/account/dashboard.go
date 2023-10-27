@@ -6,7 +6,9 @@ import (
 )
 
 func Dashboard(h *ui.Handler, mux *router.ServeMux) {
-	mux.Get("/", h.HTML.Handler("site/account/dashboard"), "account.dashboard")
+	mux.Prefix("/", func(mux *router.ServeMux) {
+		mux.Before(h.RequireSignIn)
 
-	mux.Before(h.RequireSignIn, mux.Path("account.dashboard"))
+		mux.Get("/", h.HTML.Handler("site/account/dashboard"), "account.dashboard")
+	})
 }

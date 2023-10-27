@@ -239,7 +239,7 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 			data.ErrorMessage = "You have made too many consecutive requests. Please try again later."
 
 		case errors.Is(err, repository.ErrLogin):
-			data.ErrorMessage = "Could not connect to datasource."
+			data.ErrorMessage = "Could not connect to the datasource."
 
 		default:
 			data.ErrorMessage = "An error has occurred."

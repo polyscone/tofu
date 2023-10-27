@@ -20,12 +20,6 @@ type ctxKey int
 
 const ctxParams ctxKey = iota
 
-type BeforeHookFunc func(w http.ResponseWriter, r *http.Request) bool
-
-type BeforeHook struct {
-	fn BeforeHookFunc
-}
-
 // Route represents a registered route and handler.
 type Route struct {
 	path     string
@@ -106,7 +100,7 @@ func (rt *Route) Replace(paramArgPairs ...any) string {
 	return sb.String()
 }
 
-func (rt *Route) handle(r *http.Request, w http.ResponseWriter, params map[string]string, befores []*BeforeHook, methodNotAllowed http.Handler) {
+func (rt *Route) handle(r *http.Request, w http.ResponseWriter, params map[string]string, methodNotAllowed http.Handler) {
 	handler := rt.handlers[r.Method]
 	if handler == nil {
 		methods := strings.Join(rt.methods, ", ")
@@ -135,25 +129,19 @@ func (rt *Route) handle(r *http.Request, w http.ResponseWriter, params map[strin
 		r = r.WithContext(ctx)
 	}
 
-	for _, hook := range befores {
-		if ok := hook.fn(w, r); !ok {
-			return
-		}
-	}
-
 	handler.ServeHTTP(w, r)
 }
 
 type Node struct {
-	nodes   map[string]*Node
-	befores []*BeforeHook
-	route   *Route
+	nodes map[string]*Node
+	route *Route
 }
 
 // ServeMux represents an HTTP router.
 type ServeMux struct {
 	prefix           string
 	middlewares      []middleware.Middleware
+	befores          []middleware.Middleware
 	handler          http.Handler
 	static           map[string]*Node
 	dynamic          map[string]*Node
@@ -176,64 +164,61 @@ func NewServeMux() *ServeMux {
 func (mux *ServeMux) serveHTTP(w http.ResponseWriter, r *http.Request) {
 	var params map[string]string
 
-	var befores []*BeforeHook
 	node := mux.static[r.URL.Path]
-	if node != nil {
-		if len(node.befores) > 0 {
-			befores = append(befores, node.befores...)
-		}
-	} else {
+	if node == nil {
 		params = make(map[string]string)
 		dynamic := mux.dynamic
 		parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
 		last := len(parts) - 1
 
+		// GreedyMatch represents a match for greedy path patterns that end with "..."
+		// The latest one found in the chain is stored as a fallback in case we
+		// can't find a more specific node
 		type GreedyMatch struct {
-			node    *Node
-			befores []*BeforeHook
-			params  map[string]string
+			node   *Node
+			params map[string]string
 		}
 
 		var greedy *GreedyMatch
 		for i, part := range parts {
-			dynode := dynamic[part]
+			// First check to see if we have any mappings from a greedy pattern ending in "..."
+			// If we do then we want to store it for later in case we need to use it as a fallback
 			for key, n := range dynamic {
 				if strings.HasPrefix(key, ":") && strings.HasSuffix(key, "...") {
 					name := strings.TrimSuffix(key[1:], "...")
 					params[name] = strings.Join(parts[i:], "/")
 
-					befores := slices.Clone(befores)
-					if len(n.befores) > 0 {
-						befores = append(befores, n.befores...)
-					}
-
 					greedy = &GreedyMatch{
-						node:    n,
-						befores: befores,
-						params:  maps.Clone(params),
+						node:   n,
+						params: maps.Clone(params),
 					}
 
+					// Each node's mappings to further nodes in the chain should only
+					// contain at most one greedy pattern, so when we find it we can
+					// just break out early
 					break
 				}
 			}
 
+			dynode := dynamic[part]
 			if dynode == nil {
+				// If we didn't find a static mapping to another node we try looking
+				// for a dynamic mapping with a lazy pattern that doesn't end in "..."
 				for key, n := range dynamic {
 					if strings.HasPrefix(key, ":") && !strings.HasSuffix(key, "...") {
 						dynode = n
 						params[key[1:]] = part
 
+						// Each node's mappings to further nodes in the chain should only
+						// contain at most one lazy pattern, so when we find it we can
+						// just break out early
 						break
 					}
 				}
 			}
-
 			if dynode == nil {
+				// If we didn't find a mapping to another node we give up here
 				break
-			}
-
-			if len(dynode.befores) > 0 {
-				befores = append(befores, dynode.befores...)
 			}
 
 			if i == last {
@@ -243,15 +228,15 @@ func (mux *ServeMux) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// If we only found a greedy node we use that as a fallback
 		if (node == nil || node.route == nil) && greedy != nil {
 			node = greedy.node
-			befores = greedy.befores
 			params = greedy.params
 		}
 	}
 
 	if node != nil && node.route != nil {
-		node.route.handle(r, w, params, befores, mux.methodNotAllowed)
+		node.route.handle(r, w, params, mux.methodNotAllowed)
 
 		return
 	}
@@ -278,28 +263,24 @@ func (mux *ServeMux) Use(mw middleware.Middleware) {
 	mux.handler = middleware.Apply(http.HandlerFunc(mux.serveHTTP), mux.middlewares...)
 }
 
-func (mux *ServeMux) Before(before BeforeHookFunc, paths ...string) {
-	if len(paths) == 0 {
-		node := mux.node(mux.prefix)
-
-		node.befores = append(node.befores, &BeforeHook{fn: before})
-	} else {
-		for _, path := range paths {
-			node := mux.node(path)
-
-			node.befores = append(node.befores, &BeforeHook{fn: before})
-		}
-	}
+func (mux *ServeMux) Before(mw middleware.Middleware) {
+	mux.befores = append(mux.befores, mw)
 }
 
 // Prefix will automatically prefix any path patterns that are registered in
 // given the route group function with the given prefix.
 func (mux *ServeMux) Prefix(prefix string, routeGroup func(mux *ServeMux)) {
 	originalPrefix := mux.prefix
+	originalBefores := slices.Clone(mux.befores)
+
 	mux.prefix += prefix
+	if mux.prefix != "/" {
+		mux.prefix = strings.TrimSuffix(mux.prefix, "/")
+	}
 
 	routeGroup(mux)
 
+	mux.befores = originalBefores
 	mux.prefix = originalPrefix
 }
 
@@ -355,6 +336,7 @@ func (mux *ServeMux) nameRoute(route *Route, names ...string) {
 	}
 }
 
+// node creates a chain of node objects and returns the final one for the given path.
 func (mux *ServeMux) node(path string) *Node {
 	var node *Node
 	if strings.Contains(path, "/:") {
@@ -439,6 +421,10 @@ func (mux *ServeMux) route(method, path string, handler http.Handler, names ...s
 	route := node.route
 	if _, ok := route.handlers[method]; ok {
 		panic(fmt.Sprintf("duplicate routes for %v %v", method, path))
+	}
+
+	if len(mux.befores) > 0 {
+		handler = middleware.Apply(handler, mux.befores...)
 	}
 
 	route.path = path

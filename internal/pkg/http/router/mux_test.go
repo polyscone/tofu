@@ -1,6 +1,7 @@
 package router_test
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -70,7 +71,11 @@ func TestMux(t *testing.T) {
 
 	mux.Prefix("/get", func(mux *router.ServeMux) {
 		mux.Prefix("/only", func(mux *router.ServeMux) {
-			mux.Get("/", emptyHandler)
+			mux.Prefix("/", func(mux *router.ServeMux) {
+				mux.Prefix("/", func(mux *router.ServeMux) {
+					mux.Get("/", emptyHandler)
+				})
+			})
 
 			currentPrefix := mux.CurrentPrefix()
 			currentPath := mux.CurrentPath()
@@ -117,15 +122,19 @@ func TestMux(t *testing.T) {
 		})
 	})
 
-	mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
-		w.Write([]byte("abc"))
-
-		return false
-	}, "/before/hook/exact")
-
 	mux.Prefix("/before", func(mux *router.ServeMux) {
 		mux.Prefix("/hook", func(mux *router.ServeMux) {
 			mux.Prefix("/exact", func(mux *router.ServeMux) {
+				mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
+					return func(w http.ResponseWriter, r *http.Request) {
+						fmt.Println("Hello")
+
+						w.Write([]byte("abc"))
+
+						return
+					}
+				})
+
 				mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
 					w.Write([]byte("unreachable"))
 				})
@@ -137,27 +146,31 @@ func TestMux(t *testing.T) {
 				})
 
 				mux.Prefix("/:foo", func(mux *router.ServeMux) {
-					mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
-						foo, _ := router.URLParam(r, "foo")
-						if foo == "abc" {
-							w.Write([]byte("123"))
+					mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
+						return func(w http.ResponseWriter, r *http.Request) {
+							foo, _ := router.URLParam(r, "foo")
+							if foo == "abc" {
+								w.Write([]byte("123"))
 
-							return false
+								return
+							}
+
+							next(w, r)
 						}
-
-						return true
 					})
 
 					mux.Prefix("/bar", func(mux *router.ServeMux) {
-						mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
-							foo, _ := router.URLParam(r, "foo")
-							if foo == "qux" {
-								w.Write([]byte("quxxxxx"))
+						mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
+							return func(w http.ResponseWriter, r *http.Request) {
+								foo, _ := router.URLParam(r, "foo")
+								if foo == "qux" {
+									w.Write([]byte("quxxxxx"))
 
-								return false
+									return
+								}
+
+								next(w, r)
 							}
-
-							return true
 						})
 
 						mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -219,6 +232,7 @@ func TestMux(t *testing.T) {
 	})
 
 	mux.Prefix("/foo-prefix", func(mux *router.ServeMux) {
+		// Redirects ignore the prefix
 		mux.Redirect(http.MethodGet, "/redirect/src", "/redirect/dst", http.StatusTemporaryRedirect)
 		mux.Redirect(http.MethodGet, "/:var/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
 		mux.Redirect(http.MethodGet, "/:var/:varfoo/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
@@ -229,6 +243,7 @@ func TestMux(t *testing.T) {
 	})
 
 	mux.Prefix("/bar-prefix", func(mux *router.ServeMux) {
+		// Rewrites ignore the prefix
 		mux.Rewrite(http.MethodGet, "/rewrite/src", "/rewrite/dst")
 		mux.Rewrite(http.MethodGet, "/:var/rewrite/src/var", "/:var/dst")
 		mux.Rewrite(http.MethodGet, "/:var/:varfoo/rewrite/src/var", "/:var/dst")

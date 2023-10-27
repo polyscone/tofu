@@ -17,6 +17,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/dev"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/fstack"
+	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
 )
@@ -193,52 +194,58 @@ func (h *Handler) AddFlashErrorf(ctx context.Context, format string, a ...any) {
 	h.Sessions.Set(ctx, sess.FlashError, flash)
 }
 
-func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
-	ctx := r.Context()
-	isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
-
-	if !isSignedIn {
-		h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
-
-		http.Redirect(w, r, h.signInPath(), http.StatusSeeOther)
-
-		return false
-	}
-
-	return true
-}
-
-type PredicateFunc func(p guard.Passport) bool
-
-func (h *Handler) RequireSignInIf(check PredicateFunc) router.BeforeHookFunc {
-	return func(w http.ResponseWriter, r *http.Request) bool {
+func (h *Handler) RequireSignIn(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
-		passport := h.Passport(ctx)
 
-		if !isSignedIn && check(passport) {
+		if !isSignedIn {
 			h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
 			http.Redirect(w, r, h.signInPath(), http.StatusSeeOther)
 
-			return false
+			return
 		}
 
-		return true
+		next(w, r)
 	}
 }
 
-func (h *Handler) CanAccess(check PredicateFunc) router.BeforeHookFunc {
-	return func(w http.ResponseWriter, r *http.Request) bool {
-		ctx := r.Context()
-		passport := h.Passport(ctx)
+type PredicateFunc func(p guard.Passport) bool
 
-		if !check(passport) {
-			h.HTML.ErrorView(w, r, "require auth", app.ErrUnauthorised, "site/error", nil)
+func (h *Handler) RequireSignInIf(check PredicateFunc) middleware.Middleware {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+			passport := h.Passport(ctx)
 
-			return false
+			if !isSignedIn && check(passport) {
+				h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+
+				http.Redirect(w, r, h.signInPath(), http.StatusSeeOther)
+
+				return
+			}
+
+			next(w, r)
 		}
+	}
+}
 
-		return true
+func (h *Handler) CanAccess(check PredicateFunc) middleware.Middleware {
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			passport := h.Passport(ctx)
+
+			if !check(passport) {
+				h.HTML.ErrorView(w, r, "require auth", app.ErrUnauthorised, "site/error", nil)
+
+				return
+			}
+
+			next(w, r)
+		}
 	}
 }

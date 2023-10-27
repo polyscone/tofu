@@ -36,21 +36,23 @@ func TOTP(h *ui.Handler, mux *router.ServeMux) {
 
 		mux.Prefix("/", func(mux *router.ServeMux) {
 			mux.Before(h.RequireSignIn)
-			mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
-				ctx := r.Context()
-				user := h.User(ctx)
+			mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					ctx := r.Context()
+					user := h.User(ctx)
 
-				if len(user.HashedPassword) == 0 {
-					h.AddFlashf(ctx, "You need to choose a password before you can setup two-factor authentication.")
+					if len(user.HashedPassword) == 0 {
+						h.AddFlashf(ctx, "You need to choose a password before you can setup two-factor authentication.")
 
-					h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+						h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
 
-					http.Redirect(w, r, h.Path("account.choose_password"), http.StatusSeeOther)
+						http.Redirect(w, r, h.Path("account.choose_password"), http.StatusSeeOther)
 
-					return false
+						return
+					}
+
+					next(w, r)
 				}
-
-				return true
 			})
 
 			mux.Prefix("/setup", func(mux *router.ServeMux) {

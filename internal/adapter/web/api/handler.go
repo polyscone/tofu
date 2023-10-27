@@ -16,7 +16,6 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
 var publicErrors = []error{
@@ -119,7 +118,7 @@ func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
 
 type PredicateFunc func(p guard.Passport) bool
 
-func (h *Handler) CanAccess(check PredicateFunc) router.BeforeHookFunc {
+func (h *Handler) CanAccess(check PredicateFunc) func(w http.ResponseWriter, r *http.Request) bool {
 	return func(w http.ResponseWriter, r *http.Request) bool {
 		ctx := r.Context()
 		passport := h.Passport(ctx)

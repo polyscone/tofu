@@ -15,17 +15,19 @@ func ChoosePassword(h *ui.Handler, mux *router.ServeMux) {
 		mux.Name("account.choose_password.section")
 
 		mux.Before(h.RequireSignIn)
-		mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
-			ctx := r.Context()
-			user := h.User(ctx)
+		mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
+			return func(w http.ResponseWriter, r *http.Request) {
+				ctx := r.Context()
+				user := h.User(ctx)
 
-			if len(user.HashedPassword) > 0 {
-				http.Redirect(w, r, h.Path("account.change_password"), http.StatusSeeOther)
+				if len(user.HashedPassword) > 0 {
+					http.Redirect(w, r, h.Path("account.change_password"), http.StatusSeeOther)
 
-				return false
+					return
+				}
+
+				next(w, r)
 			}
-
-			return true
 		})
 
 		mux.Get("/", h.HTML.Handler("site/account/choose_password/form"), "account.choose_password")

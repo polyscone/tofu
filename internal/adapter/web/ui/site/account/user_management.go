@@ -30,17 +30,21 @@ func UserManagement(h *ui.Handler, mux *router.ServeMux) {
 		})
 
 		mux.Prefix("/:userID", func(mux *router.ServeMux) {
-			mux.Before(func(w http.ResponseWriter, r *http.Request) bool {
-				userID, ok := router.URLParamAs[int](r, "userID")
-				if !ok {
-					return true
+			mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					userID, ok := router.URLParamAs[int](r, "userID")
+					if !ok {
+						next(w, r)
+
+						return
+					}
+
+					canAccess := h.CanAccess(func(p guard.Passport) bool {
+						return p.Account.CanChangeRoles(userID) || p.Account.CanActivateUsers()
+					})
+
+					canAccess(next)
 				}
-
-				canAccess := h.CanAccess(func(p guard.Passport) bool {
-					return p.Account.CanChangeRoles(userID) || p.Account.CanActivateUsers()
-				})
-
-				return canAccess(w, r)
 			})
 
 			mux.Get("/", userEditGet(h), "account.management.user.edit")
