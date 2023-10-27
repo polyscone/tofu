@@ -43,7 +43,7 @@ func UserManagement(h *ui.Handler, mux *router.ServeMux) {
 						return p.Account.CanChangeRoles(userID) || p.Account.CanActivateUsers()
 					})
 
-					canAccess(next)
+					canAccess(next)(w, r)
 				}
 			})
 
