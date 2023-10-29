@@ -114,4 +114,8 @@ cover:
 
 .PHONY: run/web
 run/web:
+ifdef BEHIND_SECURE_PROXY
 	./web -dev -addr $(ADDR) -behind-secure-proxy -debug-addr $(DEBUG_ADDR) -log-style dev
+else
+	./web -dev -addr $(ADDR) -debug-addr $(DEBUG_ADDR) -log-style dev
+endif

@@ -111,7 +111,7 @@ Choosing an address for the `-debug-addr` flag will enable Go's built-in debug e
 
 Finally you should pass the `-dev` flag, which will do things like disabling HTML template caching.
 
-There is also a target in the `Makefile` that will set all of these flags for you, but assumes a secure HTTPS reverse proxy is setup; you can run that with `make run/web`.
+There is also a target in the `Makefile` that will set all of these flags for you; you can run that with `make run/web`. If you are running an HTTP server that's setup to reverse proxy to the application then you can run `make run/web BEHIND_SECURE_PROXY=1` instead.
 
 ### A note on proxies and rate limiting
 
