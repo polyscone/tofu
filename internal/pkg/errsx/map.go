@@ -77,5 +77,5 @@ func (m Map) MarshalJSON() ([]byte, error) {
 		errs = append(errs, fmt.Sprintf("%q:%q", key, err.Error()))
 	}
 
-	return []byte(fmt.Sprintf("{%v}", strings.Join(errs, ", "))), nil
+	return []byte(fmt.Sprintf("{%v}", strings.Join(errs, ","))), nil
 }
