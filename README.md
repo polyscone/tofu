@@ -113,7 +113,15 @@ Finally you should pass the `-dev` flag, which will do things like disabling HTM
 
 There is also a target in the `Makefile` that will set all of these flags for you; you can run that with `make run/web`. If you are running an HTTP server that's setup to reverse proxy to the application then you can run `make run/web BEHIND_SECURE_PROXY=1` instead.
 
-### A note on proxies and rate limiting
+### Password hashing parameters
+
+Password hashing parameters are detected for the hardware you're running the application on to reach a target duration of 1 second hashing time.
+
+When you first run the application it will detect the correct parameters for your hardware and cache the results in the `argon2_params.json` file in the data directory.
+
+If you need to detect new password hashing parameters, due an upgrade in hardware or a move to another machine, deleting the `argon2_params.json` file will trigger detection again the next time you start the application.
+
+### Proxies and rate limiting
 
 The main web adapter application implements a simple leaky bucket style rate limiter which is based on IP addresses. Since IP addresses are used to keep track of the number of remaining tokens this means you'll need to tell the application about any trusted proxy IP addresses that may show up in a request.
 
