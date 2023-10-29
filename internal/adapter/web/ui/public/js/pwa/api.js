@@ -94,7 +94,14 @@ const api = {
 				const res = await request("/api/v1/account/session")
 
 				if (res.ok) {
-					localStorage.setItem("pwa.session", JSON.stringify(res.body))
+					const prev = localStorage.getItem("pwa.session")
+					const next = JSON.stringify(res.body)
+
+					localStorage.setItem("pwa.session", next)
+
+					if (prev !== next) {
+						m.redraw()
+					}
 				}
 			}
 
