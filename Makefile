@@ -112,10 +112,7 @@ cover:
 	go tool cover -html=coverage.out
 	$(RM) coverage.out
 
+override WEB_FLAGS := -dev -addr $(ADDR) -debug-addr $(DEBUG_ADDR) -log-style dev $(WEB_FLAGS)
 .PHONY: run/web
 run/web:
-ifdef BEHIND_SECURE_PROXY
-	./web -dev -addr $(ADDR) -behind-secure-proxy -debug-addr $(DEBUG_ADDR) -log-style dev
-else
-	./web -dev -addr $(ADDR) -debug-addr $(DEBUG_ADDR) -log-style dev
-endif
+	./web $(WEB_FLAGS)

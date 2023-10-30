@@ -61,7 +61,7 @@ func TestSession(t *testing.T) {
 
 		defer res.Body.Close()
 
-		sessionCookie = ts.FindCookie(t, ts.URL, middleware.SessionCookieName)
+		sessionCookie = ts.FindCookie(t, ts.URL, middleware.SessionCookieNameInsecure)
 
 		if got, cmp := sessionCookie.Value, ""; got == cmp {
 			t.Errorf("want different strings; got equal (%q)", got)
@@ -76,7 +76,7 @@ func TestSession(t *testing.T) {
 
 		defer res.Body.Close()
 
-		c := ts.FindCookie(t, ts.URL, middleware.SessionCookieName)
+		c := ts.FindCookie(t, ts.URL, middleware.SessionCookieNameInsecure)
 
 		if want, got := sessionCookie.Value, c.Value; want != got {
 			t.Errorf("want %q; got %q", want, got)
@@ -128,7 +128,7 @@ func TestSession(t *testing.T) {
 
 		defer res.Body.Close()
 
-		if got := ts.FindCookie(t, ts.URL, middleware.SessionCookieName); got != nil {
+		if got := ts.FindCookie(t, ts.URL, middleware.SessionCookieNameInsecure); got != nil {
 			t.Errorf("want <nil>; got %v", got)
 		}
 
@@ -139,7 +139,7 @@ func TestSession(t *testing.T) {
 
 		defer res.Body.Close()
 
-		if got := ts.FindCookie(t, ts.URL, middleware.SessionCookieName); got != nil {
+		if got := ts.FindCookie(t, ts.URL, middleware.SessionCookieNameInsecure); got != nil {
 			t.Errorf("want <nil>; got %v", got)
 		}
 
@@ -150,7 +150,7 @@ func TestSession(t *testing.T) {
 
 		defer res.Body.Close()
 
-		sessionCookie = ts.FindCookie(t, ts.URL, middleware.SessionCookieName)
+		sessionCookie = ts.FindCookie(t, ts.URL, middleware.SessionCookieNameInsecure)
 
 		if got, cmp := sessionCookie.Value, ""; got == cmp {
 			t.Errorf("want different strings; got equal (%q)", got)

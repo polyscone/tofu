@@ -99,7 +99,7 @@ func TestCSRF(t *testing.T) {
 					}
 				}
 
-				csrfCookie := ts.FindCookie(t, ts.URL+"/", middleware.CSRFTokenCookieName)
+				csrfCookie := ts.FindCookie(t, ts.URL+"/", middleware.CSRFTokenCookieNameInsecure)
 
 				req := errsx.Must(http.NewRequest(tc.method, ts.URL+"/", nil))
 
@@ -149,7 +149,7 @@ func TestCSRF(t *testing.T) {
 					}
 				}
 
-				csrfCookie := ts.FindCookie(t, ts.URL+"/", middleware.CSRFTokenCookieName)
+				csrfCookie := ts.FindCookie(t, ts.URL+"/", middleware.CSRFTokenCookieNameInsecure)
 
 				form := strings.NewReader(url.Values{"_csrf": {csrfCookie.Value}}.Encode())
 				req := errsx.Must(http.NewRequest(tc.method, ts.URL+"/", form))
@@ -189,7 +189,7 @@ func TestCSRF(t *testing.T) {
 			}
 		}
 
-		csrfCookie := ts.FindCookie(t, ts.URL+"/", middleware.CSRFTokenCookieName)
+		csrfCookie := ts.FindCookie(t, ts.URL+"/", middleware.CSRFTokenCookieNameInsecure)
 
 		req := errsx.Must(http.NewRequest(http.MethodPost, ts.URL+"/renew", nil))
 
@@ -206,7 +206,7 @@ func TestCSRF(t *testing.T) {
 			t.Errorf("want different strings; got equal (%q)", got)
 		}
 
-		csrfRenewedCookie := ts.FindCookie(t, ts.URL+"/", middleware.CSRFTokenCookieName)
+		csrfRenewedCookie := ts.FindCookie(t, ts.URL+"/", middleware.CSRFTokenCookieNameInsecure)
 
 		if got, cmp := csrfRenewedCookie.Value, csrfCookie.Value; got == cmp {
 			t.Errorf("want different strings; got equal (%q)", got)

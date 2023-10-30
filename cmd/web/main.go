@@ -118,10 +118,6 @@ func main() {
 		return
 	}
 
-	if opts.server.insecure {
-		opts.server.behindSecureProxy = true
-	}
-
 	if opts.log.style == "" {
 		opts.log.style = slogger.StyleJSON
 	}
@@ -142,7 +138,7 @@ func main() {
 
 	slog.SetDefault(logger)
 
-	opts.server.addr.insecure = opts.server.behindSecureProxy
+	opts.server.addr.insecure = opts.server.insecure || opts.server.behindSecureProxy
 	opts.debug.addr.insecure = true
 
 	// Required flag checks

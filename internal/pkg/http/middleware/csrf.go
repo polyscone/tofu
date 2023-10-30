@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	CSRFTokenCookieName = "__Host-csrf"
-	CSRFTokenHeaderName = "x-csrf-token"
-	CSRFTokenFieldName  = "_csrf"
+	CSRFTokenCookieName         = "__Host-csrf"
+	CSRFTokenCookieNameInsecure = "csrf"
+	CSRFTokenHeaderName         = "x-csrf-token"
+	CSRFTokenFieldName          = "_csrf"
 )
 
 type CSRFConfig struct {
@@ -30,8 +31,13 @@ func CSRF(config *CSRFConfig) Middleware {
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+			name := CSRFTokenCookieName
+			if config.Insecure {
+				name = CSRFTokenCookieNameInsecure
+			}
+
 			var cookieToken []byte
-			cookie, err := r.Cookie(CSRFTokenCookieName)
+			cookie, err := r.Cookie(name)
 			if !errors.Is(err, http.ErrNoCookie) {
 				if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 					return
@@ -149,10 +155,15 @@ func (w *csrfResponseWriter) commit() {
 	w.committed = true
 
 	if csrf.IsNew(w.ctx) {
+		name := CSRFTokenCookieName
+		if w.config.Insecure {
+			name = CSRFTokenCookieNameInsecure
+		}
+
 		encoded := base64.RawURLEncoding.EncodeToString(csrf.MaskedToken(w.ctx))
 
 		http.SetCookie(w, &http.Cookie{
-			Name:     CSRFTokenCookieName,
+			Name:     name,
 			Value:    encoded,
 			Path:     "/",
 			MaxAge:   0,

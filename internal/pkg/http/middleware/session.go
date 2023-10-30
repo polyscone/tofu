@@ -12,7 +12,10 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/session"
 )
 
-const SessionCookieName = "__Host-session"
+const (
+	SessionCookieName         = "__Host-session"
+	SessionCookieNameInsecure = "session"
+)
 
 type SessionConfig struct {
 	Insecure     bool
@@ -26,7 +29,7 @@ func Session(sm *session.Manager, config *SessionConfig) Middleware {
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			cookieSessionID, err := getSessionCookieID(r)
+			cookieSessionID, err := getSessionCookieID(r, config)
 			if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 				return
 			}
@@ -104,10 +107,15 @@ func (w *sessionResponseWriter) commit() {
 		return
 	}
 
+	name := SessionCookieName
+	if w.config.Insecure {
+		name = SessionCookieNameInsecure
+	}
+
 	switch {
 	case w.sm.Status(w.ctx) == session.Destroyed:
 		http.SetCookie(w.ResponseWriter, &http.Cookie{
-			Name:     SessionCookieName,
+			Name:     name,
 			Value:    "",
 			Path:     "/",
 			MaxAge:   -1000,
@@ -119,7 +127,7 @@ func (w *sessionResponseWriter) commit() {
 
 	case w.cookieSessionID != id:
 		http.SetCookie(w.ResponseWriter, &http.Cookie{
-			Name:     SessionCookieName,
+			Name:     name,
 			Value:    id,
 			Path:     "/",
 			MaxAge:   0,
@@ -130,8 +138,13 @@ func (w *sessionResponseWriter) commit() {
 	}
 }
 
-func getSessionCookieID(r *http.Request) (string, error) {
-	cookie, err := r.Cookie(SessionCookieName)
+func getSessionCookieID(r *http.Request, config *SessionConfig) (string, error) {
+	name := SessionCookieName
+	if config.Insecure {
+		name = SessionCookieNameInsecure
+	}
+
+	cookie, err := r.Cookie(name)
 	if errors.Is(err, http.ErrNoCookie) {
 		return "", nil
 	}
