@@ -113,7 +113,7 @@ Choosing an address for the `-debug-addr` flag will enable Go's built-in debug e
 
 Finally you should pass the `-dev` flag, which will do things like disabling HTML template caching.
 
-There is also a rule in the `Makefile` that will set a few of these basic flags for you; you can run that with `make run/web`. If you need to append any additional flags you can set then with the `WEB_FLAGS` variable, for example: `make run/web WEB_FLAGS=-insecure`, or `make run/web WEB_FLAGS=-behind-secure-proxy`.
+There is also a rule in the `Makefile` that will set a few of these basic flags for you; you can run that with `make web/dev`. If you need to append any additional flags you can set then with the `WEB_DEV_FLAGS` variable, for example: `make web/dev WEB_DEV_FLAGS=-insecure`, or `make web/dev WEB_DEV_FLAGS=-behind-secure-proxy`.
 
 ### Password hashing parameters
 
