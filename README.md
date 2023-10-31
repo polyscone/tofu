@@ -97,11 +97,13 @@ By default the application will use secure settings; cookies, for example, will 
 
 If you want to run locally with insecure HTTP, rather than HTTPS, you'll need to use the `-insecure` flag when running the web binary.
 
-If you'd like to run locally with HTTPS then you'll need `cert.pem` and `key.pem` files to be available in the data directory. You can do this simply by running the following command after navigating to the data directory, changing the path and comma separated `-host` flag value to match your hostnames:
+If you'd like to run locally with HTTPS then you'll need `cert.pem` and `key.pem` files to be available in the data directory. You can do this simply by running the following command after navigating to the data directory, changing the comma separated `-host` flag value to match the hostnames you want to use:
 
 ```sh
-go run <go-install-path>/src/crypto/tls/generate_cert.go -rsa-bits=2048 -host=localhost,app.local.com
+go run $(go env GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits=2048 -host=localhost,app.local.com
 ```
+
+On Windows replace `$(go env GOROOT)` with `%GOROOT%` if it's set, otherwise run `go env GOROOT` and copy the path into the command.
 
 If you have an HTTP server like Caddy setup as a reverse proxy, then you might need to keep things like secure cookie flags, but allow an insecure HTTP connection. In that case you can use the `-behind-secure-proxy` flag instead. This will allow an insecure HTTP connection for the reverse proxy, but allow the main application to stick with the secure defaults internally, like secure cookies.
 
