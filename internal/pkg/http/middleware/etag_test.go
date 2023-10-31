@@ -13,7 +13,7 @@ import (
 func TestETag(t *testing.T) {
 	mux := router.NewServeMux()
 
-	mux.Use(middleware.ETag)
+	mux.Use(middleware.ETag(nil))
 
 	mux.Get("/hello/world", func(w http.ResponseWriter, r *http.Request) {
 		if etags := r.URL.Query()["set-etag"]; len(etags) != 0 {

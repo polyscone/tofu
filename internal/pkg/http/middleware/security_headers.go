@@ -7,36 +7,51 @@ import (
 	"strings"
 )
 
-func SecurityHeaders(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		rw := &securityHeadersResponseWriter{ResponseWriter: w}
+type SecurityHeadersConfig struct {
+	Logger func(r *http.Request) *slog.Logger
+}
 
-		rw.Header().Set("x-content-type-options", "nosniff")
-		rw.Header().Set("x-frame-options", "deny")
+func SecurityHeaders(config *SecurityHeadersConfig) Middleware {
+	if config == nil {
+		config = &SecurityHeadersConfig{}
+	}
+	if config.Logger == nil {
+		config.Logger = func(r *http.Request) *slog.Logger {
+			return slog.Default()
+		}
+	}
 
-		next(rw, r)
+	return func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			rw := &securityHeadersResponseWriter{ResponseWriter: w}
 
-		var messages []string
+			rw.Header().Set("x-content-type-options", "nosniff")
+			rw.Header().Set("x-frame-options", "deny")
 
-		if rw.body {
-			header := "content-type"
-			if got := rw.Header().Get(header); got == "" {
-				messages = append(messages, fmt.Sprintf("response header %q for %v %v should be set; got empty string", header, r.Method, r.URL.Path))
+			next(rw, r)
+
+			var messages []string
+
+			if rw.body {
+				header := "content-type"
+				if got := rw.Header().Get(header); got == "" {
+					messages = append(messages, fmt.Sprintf("response header %q for %v %v should be set; got empty string", header, r.Method, r.URL.Path))
+				}
 			}
-		}
 
-		header := "x-content-type-options"
-		if want, got := "nosniff", rw.Header().Get(header); want != got {
-			messages = append(messages, fmt.Sprintf("response header %q for %v %v should be %q; got %q", header, r.Method, r.URL.Path, want, got))
-		}
+			header := "x-content-type-options"
+			if want, got := "nosniff", rw.Header().Get(header); want != got {
+				messages = append(messages, fmt.Sprintf("response header %q for %v %v should be %q; got %q", header, r.Method, r.URL.Path, want, got))
+			}
 
-		header = "x-frame-options"
-		if want, got := "deny", rw.Header().Get(header); want != got {
-			messages = append(messages, fmt.Sprintf("response header %q for %v %v should be %q; got %q", header, r.Method, r.URL.Path, want, got))
-		}
+			header = "x-frame-options"
+			if want, got := "deny", rw.Header().Get(header); want != got {
+				messages = append(messages, fmt.Sprintf("response header %q for %v %v should be %q; got %q", header, r.Method, r.URL.Path, want, got))
+			}
 
-		if len(messages) > 0 {
-			slog.Error("security headers", "messages", strings.Join(messages, "\n"))
+			if len(messages) > 0 {
+				config.Logger(r).Error("security headers", "messages", strings.Join(messages, "\n"))
+			}
 		}
 	}
 }

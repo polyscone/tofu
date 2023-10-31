@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -42,14 +43,23 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 			h.HTML.ErrorView(w, r, msg, err, "site/error", nil)
 		}
 	}
+	logger := func(r *http.Request) *slog.Logger {
+		ctx := r.Context()
+
+		return h.Logger(ctx)
+	}
 
 	mux.Use(middleware.Recover(errorHandler("recover middleware")))
-	mux.Use(middleware.Timeout(5*time.Second, errorHandler("timeout middleware")))
+	mux.Use(h.AttachContextLogger)
+	mux.Use(middleware.Timeout(5*time.Second, &middleware.TimeoutConfig{
+		ErrorHandler: errorHandler("timeout middleware"),
+		Logger:       logger,
+	}))
 	mux.Use(middleware.RemoveTrailingSlash)
 	mux.Use(middleware.MethodOverride)
 	mux.Use(middleware.NoContent)
-	mux.Use(middleware.SecurityHeaders)
-	mux.Use(middleware.ETag)
+	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
+	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
 	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
 		Insecure:     h.Insecure,
 		ErrorHandler: errorHandler("session middleware"),
@@ -62,8 +72,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		})(next)
 
 		return func(w http.ResponseWriter, r *http.Request) {
-			// Google sign in provides its own CSRF token which is checked
-			// in the POST handler
+			// Google sign in provides its own CSRF token which is checked in the POST handler
 			if r.URL.Path == mux.Path("account.sign_in.google.post") {
 				next(w, r)
 			} else {

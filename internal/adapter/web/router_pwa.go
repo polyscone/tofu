@@ -3,6 +3,7 @@ package web
 import (
 	"errors"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"path"
 	"path/filepath"
@@ -38,14 +39,23 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 			http.Redirect(w, r, routePrefix+"/error/500", http.StatusSeeOther)
 		}
 	}
+	logger := func(r *http.Request) *slog.Logger {
+		ctx := r.Context()
+
+		return h.Logger(ctx)
+	}
 
 	mux.Use(middleware.Recover(errorHandler("recover middleware")))
-	mux.Use(middleware.Timeout(5*time.Second, errorHandler("timeout middleware")))
+	mux.Use(h.AttachContextLogger)
+	mux.Use(middleware.Timeout(5*time.Second, &middleware.TimeoutConfig{
+		ErrorHandler: errorHandler("timeout middleware"),
+		Logger:       logger,
+	}))
 	mux.Use(middleware.RemoveTrailingSlash)
 	mux.Use(middleware.MethodOverride)
 	mux.Use(middleware.NoContent)
-	mux.Use(middleware.SecurityHeaders)
-	mux.Use(middleware.ETag)
+	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
+	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
 	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
 		Insecure:     h.Insecure,
 		ErrorHandler: errorHandler("session middleware"),

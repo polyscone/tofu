@@ -52,6 +52,49 @@ func New(tenant *Tenant) *Handler {
 	}
 }
 
+func (h *Handler) AttachContextLogger(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		// Skip setting up the logger in the context if it already exists
+		if ok := ctx.Value(ctxLogger) != nil; ok {
+			next(w, r)
+
+			return
+		}
+
+		logger := h.Logger(ctx)
+
+		requestID, err := uuid.NewV4()
+		if err != nil {
+			logger.Error("handler middleware: new v4 UUID", "error", err)
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+
+			return
+		}
+
+		remoteAddr, err := realip.FromRequest(r, h.Proxies...)
+		if err != nil {
+			remoteAddr = r.RemoteAddr
+
+			logger.Error("handler middleware: realip from request", "error", err)
+		}
+
+		logger = logger.With(
+			"id", requestID.String(),
+			"method", r.Method,
+			"remoteAddr", remoteAddr,
+			"url", r.URL.String(),
+		)
+
+		ctx = context.WithValue(ctx, ctxLogger, logger)
+		r = r.WithContext(ctx)
+
+		next(w, r)
+	}
+}
+
 func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -92,31 +135,13 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 			})
 		}
 
-		requestID, err := uuid.NewV4()
-		if err != nil {
-			logger.Error("handler middleware: new v4 UUID", "error", err)
+		// Only set the user id in the logger if user isn't in the context yet
+		if ok := ctx.Value(ctxUser) != nil; !ok {
+			logger = logger.With("user", userID)
 
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-
-			return
+			ctx = context.WithValue(ctx, ctxLogger, logger)
 		}
 
-		remoteAddr, err := realip.FromRequest(r, h.Proxies...)
-		if err != nil {
-			remoteAddr = r.RemoteAddr
-
-			logger.Error("handler middleware: realip from request", "error", err)
-		}
-
-		logger = logger.With(
-			"id", requestID.String(),
-			"method", r.Method,
-			"remoteAddr", remoteAddr,
-			"url", r.URL.String(),
-			"user", userID,
-		)
-
-		ctx = context.WithValue(ctx, ctxLogger, logger)
 		ctx = context.WithValue(ctx, ctxConfig, config)
 		ctx = context.WithValue(ctx, ctxUser, user)
 		ctx = context.WithValue(ctx, ctxPassport, passport)

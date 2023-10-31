@@ -11,10 +11,23 @@ import (
 	"time"
 )
 
-func Timeout(dt time.Duration, errorHandler ErrorHandler) Middleware {
-	if errorHandler == nil {
-		errorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+type TimeoutConfig struct {
+	ErrorHandler ErrorHandler
+	Logger       func(r *http.Request) *slog.Logger
+}
+
+func Timeout(dt time.Duration, config *TimeoutConfig) Middleware {
+	if config == nil {
+		config = &TimeoutConfig{}
+	}
+	if config.ErrorHandler == nil {
+		config.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 			http.Error(w, http.StatusText(http.StatusGatewayTimeout), http.StatusGatewayTimeout)
+		}
+	}
+	if config.Logger == nil {
+		config.Logger = func(r *http.Request) *slog.Logger {
+			return slog.Default()
 		}
 	}
 
@@ -26,9 +39,10 @@ func Timeout(dt time.Duration, errorHandler ErrorHandler) Middleware {
 			r = r.WithContext(ctx)
 
 			tw := &timeoutWriter{
-				w:   w,
-				h:   make(http.Header),
-				req: r,
+				h:      make(http.Header),
+				w:      w,
+				r:      r,
+				config: config,
 			}
 
 			doneChan := make(chan struct{})
@@ -72,12 +86,12 @@ func Timeout(dt time.Duration, errorHandler ErrorHandler) Middleware {
 
 				switch err := ctx.Err(); err {
 				case context.DeadlineExceeded:
-					errorHandler(w, r, http.ErrHandlerTimeout)
+					config.ErrorHandler(w, r, http.ErrHandlerTimeout)
 
 					tw.err = http.ErrHandlerTimeout
 
 				default:
-					errorHandler(w, r, err)
+					config.ErrorHandler(w, r, err)
 
 					tw.err = err
 				}
@@ -89,12 +103,12 @@ func Timeout(dt time.Duration, errorHandler ErrorHandler) Middleware {
 var _ http.Pusher = (*timeoutWriter)(nil)
 
 type timeoutWriter struct {
-	w    http.ResponseWriter
-	h    http.Header
-	wbuf bytes.Buffer
-	req  *http.Request
-
 	mu          sync.Mutex
+	h           http.Header
+	w           http.ResponseWriter
+	r           *http.Request
+	wbuf        bytes.Buffer
+	config      *TimeoutConfig
 	err         error
 	wroteHeader bool
 	statusCode  int
@@ -137,8 +151,8 @@ func (w *timeoutWriter) writeHeaderLocked(statusCode int) {
 		return
 
 	case w.wroteHeader:
-		if w.req != nil {
-			slog.Error("timeout writer: superfluous response.WriteHeader call")
+		if w.r != nil {
+			w.config.Logger(w.r).Error("timeout writer: superfluous response.WriteHeader call")
 		}
 
 	default:

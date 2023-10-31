@@ -102,7 +102,7 @@ func CSRF(config *CSRFConfig) Middleware {
 
 			rw := &csrfResponseWriter{
 				ResponseWriter: w,
-				request:        r,
+				r:              r,
 				config:         config,
 				ctx:            ctx,
 				insecure:       config.Insecure,
@@ -120,7 +120,7 @@ var _ http.Pusher = (*csrfResponseWriter)(nil)
 
 type csrfResponseWriter struct {
 	http.ResponseWriter
-	request   *http.Request
+	r         *http.Request
 	config    *CSRFConfig
 	ctx       context.Context
 	insecure  bool

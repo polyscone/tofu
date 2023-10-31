@@ -13,7 +13,7 @@ import (
 func TestSecurityHeaders(t *testing.T) {
 	mux := router.NewServeMux()
 
-	mux.Use(middleware.SecurityHeaders)
+	mux.Use(middleware.SecurityHeaders(nil))
 
 	ts := testutil.NewServer(t, mux)
 	defer ts.Close()
