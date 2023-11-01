@@ -41,7 +41,7 @@ CREATE TABLE account__sign_in_attempt_logs (
 CREATE TABLE account__roles (
 	id          INTEGER NOT NULL PRIMARY KEY,
 	name        TEXT NOT NULL UNIQUE COLLATE NOCASE,
-	description TEXT NOT NULL,
+	description TEXT NOT NULL COLLATE NOCASE,
 	created_at  DATETIME NOT NULL,
 	updated_at  DATETIME
 );
