@@ -1,7 +1,7 @@
 CREATE TABLE system__config (
 	id                            TEXT NOT NULL PRIMARY KEY,
-	system_email                  TEXT NOT NULL,
-	security_email                TEXT NOT NULL,
+	system_email                  TEXT NOT NULL COLLATE NOCASE,
+	security_email                TEXT NOT NULL COLLATE NOCASE,
 	sign_up_enabled               INTEGER NOT NULL,
 	sign_up_auto_activate_enabled INTEGER NOT NULL,
 	totp_required                 INTEGER NOT NULL,
