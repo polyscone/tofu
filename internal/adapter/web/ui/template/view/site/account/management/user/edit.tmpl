@@ -34,99 +34,97 @@
 				<input type="hidden" name="roles" value="{{.Vars.SuperRole.ID}}">
 			{{end}}
 
-			<b>Roles</b>
+			<fieldset>
+				<legend>Roles</legend>
 
-			{{$roleIDs := $.Form.GetAllOr "roles" .Vars.UserRoleIDs}}
-			{{if (not $canChangeRoles)}}
-				{{$roleIDs = ToStrings .Vars.UserRoleIDs}}
-			{{end}}
-
-			{{range .Vars.Roles}}
-				{{$isSuperRole := eq .ID $.Vars.SuperRole.ID}}
-				{{if and $isSuperRole (not $isEditUserSuper)}}
-					{{continue}}
+				{{$roleIDs := $.Form.GetAllOr "roles" .Vars.UserRoleIDs}}
+				{{if (not $canChangeRoles)}}
+					{{$roleIDs = ToStrings .Vars.UserRoleIDs}}
 				{{end}}
 
-				{{$isChecked := HasString $roleIDs .ID}}
-				{{$isDisabled := $isSuperRole}}
+				{{range .Vars.Roles}}
+					{{$isSuperRole := eq .ID $.Vars.SuperRole.ID}}
+					{{if and $isSuperRole (not $isEditUserSuper)}}
+						{{continue}}
+					{{end}}
 
-				<label>
-					<input
-						type="checkbox"
-						name="roles"
-						value="{{.ID}}"
-						{{if $isChecked}}checked{{end}}
-						{{if $isDisabled}}disabled{{end}}
-					>
-					{{.Name}}
-				</label>
-			{{end}}
+					{{$isChecked := HasString $roleIDs .ID}}
+					{{$isDisabled := $isSuperRole}}
 
-			{{if and $canAssignSuperRole (not $isEditUserSuper)}}
-				<details>
-					<summary>I want to give this user the super role</summary>
+					<label>
+						<input
+							type="checkbox"
+							name="roles"
+							value="{{.ID}}"
+							{{if $isChecked}}checked{{end}}
+							{{if $isDisabled}}disabled{{end}}
+						>
+						{{.Name}}
+					</label>
+				{{end}}
 
-					<div class="warning-box">
-						<p>Once a user has been given the super role it <i>can't be removed</i>.</p>
-						<p>Please think carefully about whether this is actually what you need to do, or whether another role would be more appropriate.</p>
+				{{if and $canAssignSuperRole (not $isEditUserSuper)}}
+					<details>
+						<summary>I want to give this user the super role</summary>
 
-						<p>
-							<label>
-								<input type="checkbox" name="roles" value="{{.Vars.SuperRole.ID}}">
-								I understand this <b>can't be undone</b>, give this user the super role
-							</label>
-						</p>
-					</div>
-				</details>
-			{{end}}
+						<div class="warning-box">
+							<p>Once a user has been given the super role it <i>can't be removed</i>.</p>
+							<p>Please think carefully about whether this is actually what you need to do, or whether another role would be more appropriate.</p>
+
+							<p>
+								<label>
+									<input type="checkbox" name="roles" value="{{.Vars.SuperRole.ID}}">
+									I understand this <b>can't be undone</b>, give this user the super role
+								</label>
+							</p>
+						</div>
+					</details>
+				{{end}}
+			</fieldset>
 
 			{{if not $isEditUserSuper}}
 				<div class="cols-50-50">
-					<div class="form">
-						<b>Grants</b>
+					<fieldset>
+						<legend>Grants</legend>
 
 						{{$grants := $.Form.GetAllOr "grants" .Vars.User.Grants}}
 						{{range .Vars.PermissionGroups}}
-							<div class="form">
-								<b>{{.Name}}</b>
+							<b>{{.Name}}</b>
 
-								{{range .Permissions}}
-									<label>
-										<input
-											type="checkbox"
-											name="grants"
-											value="{{.Name}}"
-											{{if HasString $grants .Name}}checked{{end}}
-										>
-										{{.DisplayName}}
-									</label>
-								{{end}}
-							</div>
+							{{range .Permissions}}
+								<label>
+									<input
+										type="checkbox"
+										name="grants"
+										value="{{.Name}}"
+										{{if HasString $grants .Name}}checked{{end}}
+									>
+									{{.DisplayName}}
+								</label>
+							{{end}}
 						{{end}}
-					</div>
+					</fieldset>
 
-					<div class="form">
-						<b>Denials</b>
+					<fieldset>
+						<legend>Denials</legend>
 
 						{{$denials := $.Form.GetAllOr "denials" .Vars.User.Denials}}
 						{{range .Vars.PermissionGroups}}
-							<div class="form">
-								<b>{{.Name}}</b>
+							<b>{{.Name}}</b>
 
-								{{range .Permissions}}
-									<label>
-										<input
-											type="checkbox"
-											name="denials"
-											value="{{.Name}}"
-											{{if HasString $denials .Name}}checked{{end}}
-										>
-										{{.DisplayName}}
-									</label>
-								{{end}}
-							</div>
+							{{range .Permissions}}
+								<label>
+									<input
+										type="checkbox"
+										name="denials"
+										value="{{.Name}}"
+										{{if HasString $denials .Name}}checked{{end}}
+									>
+									{{.DisplayName}}
+								</label>
+							{{end}}
 						{{end}}
-					</div>
+					</fieldset>
 
 					<script>
 						onMount("input[name='denials']", node => {
