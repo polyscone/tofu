@@ -21,6 +21,7 @@ import (
 	_ "time/tzdata"
 
 	"github.com/polyscone/tofu/internal/adapter/web"
+	"github.com/polyscone/tofu/internal/pkg/size"
 	"github.com/polyscone/tofu/internal/pkg/slogger"
 )
 
@@ -42,6 +43,12 @@ var opts struct {
 
 	debug struct {
 		addr Addr
+	}
+
+	password struct {
+		duration    time.Duration
+		memory      int
+		parallelism int
 	}
 }
 
@@ -67,6 +74,9 @@ func main() {
 	flag.BoolVar(&opts.server.behindSecureProxy, "behind-secure-proxy", false, "Run without HTTPS but assume a reverse proxy with HTTPS")
 	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
 	flag.Var(&opts.debug.addr, "debug-addr", "The address to run the private debug server on, for example :8081; random if empty")
+	flag.DurationVar(&opts.password.duration, "password-hash-duration", 1*time.Second, "The target duration of a password hash")
+	flag.IntVar(&opts.password.memory, "password-hash-memory", 64*size.Kibibyte, "The amount of memory (KiB) to use when hashing a password")
+	flag.IntVar(&opts.password.parallelism, "password-hash-parallelism", max(1, runtime.NumCPU()/2), "The number of threads to use when hashing a password")
 	flag.Parse()
 
 	if flag.NArg() > 0 && flag.Arg(0) != "version" {
