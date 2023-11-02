@@ -3,15 +3,11 @@
 .SHELLFLAGS += -e
 MAKEFLAGS += --no-print-directory
 
-# Build values
 PKG := ./...
 OUT := .
 TAGS := json1 fts5
 BENCH_COUNT := 3
-
-# Command values
-ADDR := :8080
-DEBUG_ADDR := :8081
+DATA := ./.data
 
 RM := rm
 ifeq ($(OS),Windows_NT)
@@ -112,7 +108,15 @@ cover:
 	go tool cover -html=coverage.out
 	$(RM) coverage.out
 
-override WEB_DEV_FLAGS := -dev -addr $(ADDR) -debug-addr $(DEBUG_ADDR) -log-style dev $(WEB_DEV_FLAGS)
+GEN_CERT_HOST := localhost
+.PHONY: gen/cert
+gen/cert:
+	cd $(DATA)
+	go run $$(go env GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits 2048 -host "$(GEN_CERT_HOST)"
+
+WEB_DEV_ADDR := :8080
+WEB_DEV_DEBUG_ADDR := :8081
+override WEB_DEV_FLAGS := -dev -addr $(WEB_DEV_ADDR) -debug-addr $(WEB_DEV_DEBUG_ADDR) -log-style dev $(WEB_DEV_FLAGS)
 .PHONY: web/dev
 web/dev:
 	./web $(WEB_DEV_FLAGS)

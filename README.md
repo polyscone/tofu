@@ -100,10 +100,12 @@ If you want to run locally with insecure HTTP, rather than HTTPS, you'll need to
 If you'd like to run locally with HTTPS then you'll need `cert.pem` and `key.pem` files to be available in the data directory. You can do this simply by running the following command after navigating to the data directory, changing the comma separated `-host` flag value to match the hostnames you want to use:
 
 ```sh
-go run $(go env GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits=2048 -host=localhost,app.local.com
+go run $(go env GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits 2048 -host "localhost,app.local.com"
 ```
 
 On Windows replace `$(go env GOROOT)` with `%GOROOT%` if it's set, otherwise run `go env GOROOT` and copy the path into the command.
+
+There's also a rule in the make file that will run this for you, which you can run with `make gen/cert`. By default it will generate a cert for you in the data folder for `localhost`. You can override the data folder name with the `DATA` variable, and you can override the certificate hosts with the `GEN_CERT_HOST` variable.
 
 If you have an HTTP server like Caddy setup as a reverse proxy, then you might need to keep things like secure cookie flags, but allow an insecure HTTP connection. In that case you can use the `-behind-secure-proxy` flag instead. This will allow an insecure HTTP connection for the reverse proxy, but allow the main application to stick with the secure defaults internally, like secure cookies.
 
