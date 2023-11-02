@@ -24,8 +24,7 @@
 
 @layer components {
 	.header,
-	.main,
-	.footer {
+	.main {
 		max-width: 960px;
 		margin-inline: auto;
 	}

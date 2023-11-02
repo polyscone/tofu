@@ -39,8 +39,7 @@
 	}
 
 	.footer {
-		display: grid;
-		gap: 1rem;
+		text-align: center;
 	}
 
 	.nav ul {
@@ -162,30 +161,8 @@
 			justify-content: flex-start;
 		}
 
-		.footer {
-			grid-template-columns: repeat(2, 1fr);
-		}
-
-		.footer__col:nth-child(2n) {
-			text-align: right;
-		}
-
 		.cols-50-50 {
 			grid-template-columns: repeat(2, 1fr);
-		}
-	}
-
-	@media screen and (min-width: 600px) {
-		.footer {
-			grid-template-columns: repeat(4, 1fr);
-		}
-
-		.footer__col:nth-child(-n+2) {
-			text-align: left;
-		}
-
-		.footer__col:nth-last-child(-n+2) {
-			text-align: right;
 		}
 	}
 }
