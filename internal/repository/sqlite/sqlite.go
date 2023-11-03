@@ -540,7 +540,7 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 		return nil, err
 	}
 
-	return &Tx{Tx: tx, now: time.Now().UTC()}, nil
+	return &Tx{Tx: tx, now: time.Now()}, nil
 }
 
 // BeginImmediateTx starts an immediate transaction with "BEGIN IMMEDIATE".
@@ -661,7 +661,7 @@ func (db *DB) Begin() (*Tx, error) {
 		return nil, err
 	}
 
-	return &Tx{Tx: tx, now: time.Now().UTC()}, nil
+	return &Tx{Tx: tx, now: time.Now()}, nil
 }
 
 func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
@@ -670,7 +670,7 @@ func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 		return nil, err
 	}
 
-	return &Tx{Tx: tx, now: time.Now().UTC()}, nil
+	return &Tx{Tx: tx, now: time.Now()}, nil
 }
 
 // BeginImmediateTx starts an immediate transaction with "BEGIN IMMEDIATE".
