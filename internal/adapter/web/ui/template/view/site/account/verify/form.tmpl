@@ -17,8 +17,18 @@
 <div class="center">
 	{{if .ErrorMessage}}
 		<p>If your verification link has expired <a href="{{Path "account.sign_up"}}">sign up again</a> using the same email address and we'll send you a new one.</p>
+	{{else if .Session.IsSignedIn}}
+		<p>You're already signed in.</p>
+
+		<form action="{{Path "account.sign_out.post"}}" method="POST">
+			{{template "com_csrf_input" .}}
+
+			<div class="bag">
+				<button type="submit" class="btn--link">Click here to sign out.</button>
+			</div>
+		</form>
 	{{else if not (.URL.Query.Get "token")}}
-		<p>Create an account using the <a href="{{Path "account.sign_up"}}">sign up form</a> we'll send you a link to verify your account.</p>
+		<p>Create an account using the <a href="{{Path "account.sign_up"}}">sign up form</a> and we'll send you a link to verify your account.</p>
 	{{else}}
 		<p>Use the form below to choose a password and we can verify your account.</p>
 
