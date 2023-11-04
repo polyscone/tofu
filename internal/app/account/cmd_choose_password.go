@@ -15,7 +15,6 @@ type ChoosePasswordGuard interface {
 func (s *Service) ChoosePassword(ctx context.Context, guard ChoosePasswordGuard, userID int, newPassword, newPasswordCheck string) error {
 	var input struct {
 		userID           int
-		oldPassword      Password
 		newPassword      Password
 		newPasswordCheck Password
 	}
