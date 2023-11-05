@@ -269,6 +269,43 @@ func TestManager(t *testing.T, newRepo func() ReadWriter) {
 		}
 	})
 
+	t.Run("clear session data", func(t *testing.T) {
+		sm := NewManager(newRepo())
+		ctx := context.Background()
+
+		ctx = errsx.Must(sm.Load(ctx, ""))
+		id := errsx.Must(sm.Commit(ctx))
+
+		ctx = errsx.Must(sm.Load(ctx, id))
+
+		sm.Set(ctx, "foo", true)
+		sm.Set(ctx, "bar", true)
+
+		errsx.Must(sm.Commit(ctx))
+		ctx = errsx.Must(sm.Load(ctx, id))
+
+		if key := "foo"; !sm.Has(ctx, key) {
+			t.Errorf("want key %v to exist", key)
+		}
+		if key := "bar"; !sm.Has(ctx, key) {
+			t.Errorf("want key %v to exist", key)
+		}
+
+		sm.Clear(ctx)
+
+		errsx.Must(sm.Commit(ctx))
+		ctx = errsx.Must(sm.Load(ctx, id))
+
+		if key := "foo"; sm.Has(ctx, key) {
+			t.Errorf("want key %v to not exist", key)
+		}
+		if key := "bar"; sm.Has(ctx, key) {
+			t.Errorf("want key %v to not exist", key)
+		}
+
+		errsx.Must(sm.Commit(ctx))
+	})
+
 	t.Run("renew a session id", func(t *testing.T) {
 		sm := NewManager(newRepo())
 		ctx := context.Background()

@@ -24,6 +24,15 @@ type Activated struct {
 	Email string
 }
 
+type Suspended struct {
+	Email  string
+	Reason string
+}
+
+type Unsuspended struct {
+	Email string
+}
+
 type SignedInWithPassword struct {
 	Email string
 }

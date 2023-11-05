@@ -72,6 +72,11 @@ func TestSignInWithTOTP(t *testing.T) {
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyTOTP: true})
 		user4 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
 		user5 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@jones.com", Activate: true})
+		user6 := MustAddUser(t, ctx, repo, TestUser{Email: "jim+suspended@bloggs.com", Verify: true, Suspend: true})
+		user7 := MustAddUser(t, ctx, repo, TestUser{Email: "foo+suspended@bar.com", SetupTOTP: true, Suspend: true})
+		user8 := MustAddUser(t, ctx, repo, TestUser{Email: "joe+suspended@bloggs.com", VerifyTOTP: true, Suspend: true})
+		user9 := MustAddUser(t, ctx, repo, TestUser{Email: "bob+suspended@jones.com", ActivateTOTP: true, Suspend: true})
+		user10 := MustAddUser(t, ctx, repo, TestUser{Email: "jane+suspended@jones.com", Activate: true, Suspend: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -89,12 +94,22 @@ func TestSignInWithTOTP(t *testing.T) {
 			{"activated user id unverified correct TOTP", user2.ID, user2, nil},
 			{"activated user id without TOTP activated", user3.ID, user3, nil},
 			{"verified user id without TOTP setup", user1.ID, nil, account.ErrNotActivated},
+			{"activated suspended user id no TOTP", user10.ID, nil, nil},
+			{"activated suspended user id incorrect TOTP", user9.ID, nil, app.ErrInvalidInput},
+			{"activated suspended user id unverified correct TOTP", user7.ID, user7, nil},
+			{"activated suspended user id without TOTP activated", user8.ID, user8, nil},
+			{"verified suspended user id without TOTP setup", user6.ID, nil, account.ErrNotActivated},
+			{"activated suspended user id correct TOTP", user9.ID, user9, account.ErrSuspended},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				totp := "000000"
 				if tc.totpUser != nil {
-					totp = errsx.Must(tc.totpUser.GenerateTOTP())
+					var err error
+					totp, err = tc.totpUser.GenerateTOTP()
+					if err != nil {
+						t.Fatal(err)
+					}
 				}
 
 				err := svc.SignInWithTOTP(ctx, tc.userID, totp)

@@ -35,6 +35,7 @@ type TestUser struct {
 	SetupTOTPTel     bool
 	VerifyTOTP       bool
 	ActivateTOTP     bool
+	Suspend          bool
 }
 
 func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.ReadWriter, tu TestUser) (*account.User, []string) {
@@ -94,6 +95,9 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 	}
 	if tu.ActivateTOTP {
 		errsx.Must0(user.ActivateTOTP())
+	}
+	if tu.Suspend {
+		errsx.Must0(user.Suspend("Foo bar baz"))
 	}
 
 	errsx.Must0(repo.AddUser(ctx, user))

@@ -72,8 +72,9 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		svc, broker, repo := NewTestEnv(ctx)
 
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
-		user2, codes := MustAddUserRecoveryCodes(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		user2, user2Codes := MustAddUserRecoveryCodes(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@bloggs.com", Verify: true})
+		user4, user4Codes := MustAddUserRecoveryCodes(t, ctx, repo, TestUser{Email: "foo@bar.com", ActivateTOTP: true, Suspend: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -86,11 +87,12 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			recoveryCode string
 			want         error
 		}{
-			{"empty user id correct recovery code", 0, codes[1], repository.ErrNotFound},
+			{"empty user id correct recovery code", 0, user2Codes[1], repository.ErrNotFound},
 			{"empty user id incorrect recovery code", 0, incorrectCode, repository.ErrNotFound},
 			{"activated user id without TOTP setup", user1.ID, incorrectCode, nil},
 			{"activated user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
 			{"unactivated user id", user3.ID, incorrectCode, account.ErrNotActivated},
+			{"activated suspended user id correct recovery code", user4.ID, user4Codes[1], account.ErrSuspended},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

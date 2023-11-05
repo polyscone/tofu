@@ -27,7 +27,6 @@ func ErrorStatus(err error) int {
 		return http.StatusGatewayTimeout
 
 	case errors.Is(err, account.ErrGoogleSignUpDisabled),
-		errors.Is(err, account.ErrNotActivated),
 		errors.Is(err, app.ErrMalformedInput),
 		errors.Is(err, app.ErrInvalidInput),
 		errors.Is(err, app.ErrBadRequest),
@@ -40,8 +39,11 @@ func ErrorStatus(err error) int {
 	case errors.Is(err, ErrNotFound):
 		return http.StatusNotFound
 
-	case errors.Is(err, ErrForbidden),
-		errors.Is(err, app.ErrForbidden):
+	case errors.Is(err, account.ErrNotVerified),
+		errors.Is(err, account.ErrNotActivated),
+		errors.Is(err, account.ErrSuspended),
+		errors.Is(err, app.ErrForbidden),
+		errors.Is(err, ErrForbidden):
 
 		return http.StatusForbidden
 

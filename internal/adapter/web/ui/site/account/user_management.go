@@ -48,7 +48,9 @@ func UserManagement(h *ui.Handler, mux *router.ServeMux) {
 			})
 
 			mux.Get("/", userEditGet(h), "account.management.user.edit")
-			mux.Post("/", userEditPost(h), "account.management.user.edit.post")
+			mux.Post("/roles", userEditRolesPost(h), "account.management.user.roles.post")
+			mux.Post("/suspend", userSuspendPost(h), "account.management.user.suspend.post")
+			mux.Post("/unsuspend", userUnsuspendPost(h), "account.management.user.unsuspend.post")
 
 			mux.Prefix("/activate", func(mux *router.ServeMux) {
 				mux.Get("/", userActivateGet(h), "account.management.user.activate")
@@ -191,7 +193,7 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 	}
 }
 
-func userEditPost(h *ui.Handler) http.HandlerFunc {
+func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			RoleIDs []int    `form:"roles"`
@@ -229,6 +231,83 @@ func userEditPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		h.AddFlashf(ctx, "User %v updated successfully.", user.Email)
+
+		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
+
+		http.Redirect(w, r, h.PathQuery(r, "account.management.user.list"), http.StatusSeeOther)
+	}
+}
+
+func userSuspendPost(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			SuspendedReason string `form:"suspended-reason"`
+		}
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
+
+			return
+		}
+
+		userID, ok := router.URLParamAs[int](r, "userID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+		passport := h.Passport(ctx)
+
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
+
+			return
+		}
+
+		err = h.Svc.Account.SuspendUser(ctx, passport.Account, userID, input.SuspendedReason)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "suspend user", err, "site/account/management/user/edit", nil)
+
+			return
+		}
+
+		h.AddFlashf(ctx, "User %v was suspended.", user.Email)
+
+		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
+
+		http.Redirect(w, r, h.PathQuery(r, "account.management.user.list"), http.StatusSeeOther)
+	}
+}
+
+func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := router.URLParamAs[int](r, "userID")
+		if !ok {
+			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+		passport := h.Passport(ctx)
+
+		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
+
+			return
+		}
+
+		err = h.Svc.Account.UnsuspendUser(ctx, passport.Account, userID)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "unsuspend user", err, "site/account/management/user/edit", nil)
+
+			return
+		}
+
+		h.AddFlashf(ctx, "User %v was unsuspended.", user.Email)
 
 		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
 

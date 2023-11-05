@@ -337,7 +337,7 @@ func signInGooglePost(h *ui.Handler) http.HandlerFunc {
 		signedIn, err := auth.SignInWithGoogle(ctx, h.Handler, w, r, jwt)
 		if err != nil {
 			if errors.Is(err, account.ErrGoogleSignUpDisabled) {
-				h.AddFlashErrorf(ctx, "Your credentials are incorrect.")
+				h.AddFlashErrorf(ctx, "Either your credentials are incorrect, or you're not authorised to access this application.")
 
 				http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
 
@@ -369,7 +369,7 @@ func signInWithPassword(ctx context.Context, h *ui.Handler, w http.ResponseWrite
 
 				data.ErrorMessage = fmt.Sprintf("Too many failed sign in attempts in the last %v. Please try again%v.", throttle.InLast, wait)
 			} else {
-				data.ErrorMessage = "Your credentials are incorrect."
+				data.ErrorMessage = "Either your credentials are incorrect, or you're not authorised to access this application."
 			}
 		})
 

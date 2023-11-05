@@ -126,6 +126,9 @@ func TestSignInWithPassword(t *testing.T) {
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com"})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@bloggs.com", Activate: true})
+		user4 := MustAddUser(t, ctx, repo, TestUser{Email: "john@doe.com", Suspend: true})
+		user5 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", Verify: true, Suspend: true})
+		user6 := MustAddUser(t, ctx, repo, TestUser{Email: "baz@qux.com", Activate: true, Suspend: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -146,6 +149,9 @@ func TestSignInWithPassword(t *testing.T) {
 			{"incorrect password", user3.Email, "0123456789", nil},
 			{"unverified user bad request", user1.Email, "password", nil},
 			{"unverified user", user1.Email, "password", account.ErrNotVerified},
+			{"unverified suspended user", user4.Email, "password", account.ErrNotVerified},
+			{"unactivated suspended user", user5.Email, "password", account.ErrNotActivated},
+			{"suspended user", user6.Email, "password", account.ErrSuspended},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

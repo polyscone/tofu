@@ -232,7 +232,7 @@ async function signInWithPassword (e) {
 			if (res.networkError) {
 				state.error = "Sign in failed because either the server was offline, or you have no internet connection, please try again."
 			} else {
-				state.error = "Your credentials are incorrect."
+				state.error = "Either your credentials are incorrect, or you're not authorised to access this application."
 			}
 		}
 	}
@@ -285,7 +285,7 @@ async function signInWithGoogle (jwt) {
 			if (res.networkError) {
 				state.error = "Sign in failed because either the server was offline, or you have no internet connection, please try again."
 			} else {
-				state.error = "Your credentials are incorrect."
+				state.error = "Either your credentials are incorrect, or you're not authorised to access this application."
 			}
 		}
 	}

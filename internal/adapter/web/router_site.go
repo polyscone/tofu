@@ -66,6 +66,30 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	}))
 	mux.Use(h.AttachContext)
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			user := h.User(ctx)
+
+			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+			if isSignedIn && user.IsSuspended() {
+				logger := h.Logger(ctx)
+
+				logger.Info("user forcibly signed out due to suspension of account")
+
+				h.Sessions.Clear(ctx)
+				h.Sessions.Renew(ctx)
+
+				h.AddFlashErrorf(ctx, "You're not authorised to access this application.")
+
+				http.Redirect(w, r, mux.Path("page.home"), http.StatusSeeOther)
+
+				return
+			}
+
+			next(w, r)
+		}
+	})
+	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		csrf := middleware.CSRF(&middleware.CSRFConfig{
 			Insecure:     h.Insecure,
 			ErrorHandler: errorHandler("CSRF middleware"),

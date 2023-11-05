@@ -22,6 +22,7 @@ const (
 var (
 	ErrNotVerified     = errors.New("account is not verified")
 	ErrNotActivated    = errors.New("account is not activated")
+	ErrSuspended       = errors.New("account is suspended")
 	ErrInvalidPassword = errors.New("invalid password")
 )
 
@@ -47,6 +48,8 @@ type User struct {
 	ActivatedAt          time.Time
 	LastSignedInAt       time.Time
 	LastSignedInMethod   string
+	SuspendedAt          time.Time
+	SuspendedReason      string
 	HashedRecoveryCodes  [][]byte
 	Roles                []*Role
 	Grants               []string
@@ -111,6 +114,10 @@ func (u *User) HasVerifiedTOTP() bool {
 
 func (u *User) HasActivatedTOTP() bool {
 	return !u.TOTPActivatedAt.IsZero()
+}
+
+func (u *User) IsSuspended() bool {
+	return !u.SuspendedAt.IsZero()
 }
 
 func (u *User) InviteUser() error {
@@ -342,6 +349,35 @@ func (u *User) ActivateTOTP() error {
 	return nil
 }
 
+func (u *User) Suspend(reason SuspendedReason) error {
+	if u.IsSuper() {
+		return errors.New("cannot suspend a user with the super role")
+	}
+
+	if !u.IsSuspended() {
+		u.SuspendedAt = time.Now().UTC()
+	}
+
+	u.SuspendedReason = reason.String()
+
+	u.Events.Enqueue(Suspended{
+		Email:  u.Email,
+		Reason: u.SuspendedReason,
+	})
+
+	return nil
+}
+
+func (u *User) Unsuspend() {
+	u.SuspendedReason = ""
+
+	if u.IsSuspended() {
+		u.SuspendedAt = time.Time{}
+
+		u.Events.Enqueue(Unsuspended{Email: u.Email})
+	}
+}
+
 func (u *User) ChangeTOTPTel(newTel Tel) error {
 	if len(u.TOTPKey) == 0 {
 		return errors.New("cannot change TOTP phone without a key setup")
@@ -534,9 +570,9 @@ func (u *User) checkPassword(password Password, hasher Hasher) (rehashed bool, _
 	return false, nil
 }
 
-func (u *User) SignInWithPassword(password Password, hasher Hasher) (rehashed bool, _ error) {
-	if u.VerifiedAt.IsZero() || u.ActivatedAt.IsZero() {
-		// Always check a password even when we error finding a user to help
+func (u *User) SignInWithPassword(password Password, hasher Hasher) (bool, error) {
+	if u.VerifiedAt.IsZero() || u.ActivatedAt.IsZero() || u.IsSuspended() {
+		// Always check a password even in error cases to help
 		// avoid leaking info that would allow enumeration of valid emails
 		if err := hasher.CheckDummyPasswordHash(); err != nil {
 			return false, fmt.Errorf("check dummy password hash: %w", err)
@@ -546,7 +582,11 @@ func (u *User) SignInWithPassword(password Password, hasher Hasher) (rehashed bo
 			return false, ErrNotVerified
 		}
 
-		return false, ErrNotActivated
+		if u.ActivatedAt.IsZero() {
+			return false, ErrNotActivated
+		}
+
+		return false, ErrSuspended
 	}
 
 	rehashed, err := u.checkPassword(password, hasher)
@@ -577,6 +617,10 @@ func (u *User) SignInWithTOTP(totp TOTP) error {
 		return fmt.Errorf("check TOTP: %w", err)
 	}
 
+	if u.IsSuspended() {
+		return ErrSuspended
+	}
+
 	u.LastSignedInAt = time.Now().UTC()
 
 	u.Events.Enqueue(SignedInWithTOTP{Email: u.Email})
@@ -597,6 +641,10 @@ func (u *User) useRecoveryCode(code RecoveryCode) error {
 }
 
 func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
+	if u.IsSuspended() {
+		return ErrSuspended
+	}
+
 	if u.ActivatedAt.IsZero() {
 		return ErrNotActivated
 	}
@@ -625,6 +673,10 @@ func (u *User) SignInWithGoogle() error {
 
 	if u.ActivatedAt.IsZero() {
 		return ErrNotActivated
+	}
+
+	if u.IsSuspended() {
+		return ErrSuspended
 	}
 
 	if !u.HasActivatedTOTP() {

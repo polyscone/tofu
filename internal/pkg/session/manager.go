@@ -105,6 +105,15 @@ func (m *Manager) Commit(ctx context.Context) (string, error) {
 	return s.ID, nil
 }
 
+// Clear will empty a session's data and set its status to modified.
+func (m *Manager) Clear(ctx context.Context) {
+	s := getSession(ctx)
+
+	clear(s.Data)
+
+	s.setStatus(Modified)
+}
+
 // Renew will update the id of the session on the given context.
 // It will also track the original session id so it can be destroyed when
 // session data is committed.

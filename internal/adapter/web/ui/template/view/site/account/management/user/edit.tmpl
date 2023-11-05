@@ -13,6 +13,8 @@
 {{$isEditUserSuper := .Vars.User.IsSuper}}
 {{$canAssignSuperRole := .Passport.Account.CanAssignSuperRole $.Vars.User.ID}}
 {{$canChangeRoles := .Passport.Account.CanChangeRoles $.Vars.User.ID}}
+{{$canSuspendUser := .Passport.Account.CanSuspendUsers}}
+{{$canUnsuspendUser := .Passport.Account.CanUnsuspendUsers}}
 
 <div class="center">
 	{{if eq .Vars.User.ID .Session.UserID}}
@@ -27,7 +29,7 @@
 	{{end}}
 
 	{{if $canChangeRoles}}
-		<form action="{{Path "account.management.user.edit.post" ":userID" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
+		<form action="{{Path "account.management.user.roles.post" ":userID" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
 			{{template "com_csrf_input" .}}
 
 			{{if $isEditUserSuper}}
@@ -166,6 +168,73 @@
 				<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
 			</div>
 		</form>
+	{{end}}
+
+	{{if not $isEditUserSuper}}
+		{{if and $canSuspendUser (not .Vars.User.IsSuspended)}}
+			<form action="{{Path "account.management.user.suspend.post" ":userID" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
+				{{template "com_csrf_input" .}}
+
+				<fieldset>
+					<legend>Suspend user</legend>
+
+					<div class="warning-box">
+						<p>
+							Once a user has been suspended they won't be able to sign in again.<br>
+							If they're already signed in they'll be forcibly signed out.
+						</p>
+					</div>
+
+					{{template "com_form_input" .WithComData
+						"Label" "Reason for suspension"
+						"Type" "text"
+						"Name" "suspended-reason"
+						"Value" (.Form.GetOr "suspended-reason" .Vars.User.SuspendedReason)
+						"Placeholder" "The reason for account suspension."
+						"Pattern" `^[ -~]*$`
+						"MaxLength" 100
+					}}
+
+					<div class="bag reverse">
+						<button type="submit" class="btn--danger push-inline-end">Suspend user</button>
+
+						<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+					</div>
+				</fieldset>
+			</form>
+		{{end}}
+
+		{{if and $canUnsuspendUser .Vars.User.IsSuspended}}
+			<form action="{{Path "account.management.user.unsuspend.post" ":userID" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
+				{{template "com_csrf_input" .}}
+
+				<fieldset>
+					<legend>Unuspend user</legend>
+
+					<div class="warning-box">
+						<p>
+							This user was suspended on
+							<time datetime="{{FormatTime .Vars.User.SuspendedAt "RFC3339"}}" data-date="full">{{FormatTime .Vars.User.SuspendedAt "DateTime"}}</time>.
+						</p>
+
+						{{if .Vars.User.SuspendedReason}}
+							<p>
+								The reason they were suspended is:<br>
+								{{.Vars.User.SuspendedReason}}
+							</p>
+						{{end}}
+
+						<p>Unsuspending them will allow them to sign in again.</p>
+					</div>
+
+					<div class="bag reverse">
+						<button type="submit" class="btn--danger push-inline-end">Unsuspend user</button>
+
+						<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+					</div>
+				</fieldset>
+			</form>
+		{{end}}
 	{{end}}
 </div>
 

@@ -445,6 +445,8 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			u.activated_at,
 			u.last_signed_in_at,
 			u.last_signed_in_method,
+			u.suspended_at,
+			u.suspended_reason,
 			tr.requested_at,
 			tr.approved_at,
 			COUNT(1) OVER () AS total
@@ -483,6 +485,8 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			(*NullTime)(&user.ActivatedAt),
 			(*NullTime)(&user.LastSignedInAt),
 			&user.LastSignedInMethod,
+			(*NullTime)(&user.SuspendedAt),
+			&user.SuspendedReason,
 			(*NullTime)(&user.TOTPResetRequestedAt),
 			(*NullTime)(&user.TOTPResetApprovedAt),
 			&total,
@@ -567,6 +571,8 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 			activated_at,
 			last_signed_in_at,
 			last_signed_in_method,
+			suspended_at,
+			suspended_reason,
 			created_at
 		) VALUES (
 			:email,
@@ -585,6 +591,8 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 			:activated_at,
 			:last_signed_in_at,
 			:last_signed_in_method,
+			:suspended_at,
+			:suspended_reason,
 			:created_at
 		)
 	`,
@@ -604,6 +612,8 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 		sql.Named("activated_at", NullTime(user.ActivatedAt)),
 		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
 		sql.Named("last_signed_in_method", user.LastSignedInMethod),
+		sql.Named("suspended_at", NullTime(user.SuspendedAt)),
+		sql.Named("suspended_reason", user.SuspendedReason),
 		sql.Named("created_at", Time(tx.now.UTC())),
 	)
 	if err != nil {
@@ -762,6 +772,8 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 			activated_at = :activated_at,
 			last_signed_in_at = :last_signed_in_at,
 			last_signed_in_method = :last_signed_in_method,
+			suspended_at = :suspended_at,
+			suspended_reason = :suspended_reason,
 			updated_at = :updated_at
 		WHERE id = :id
 	`,
@@ -782,6 +794,8 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		sql.Named("activated_at", NullTime(user.ActivatedAt)),
 		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
 		sql.Named("last_signed_in_method", user.LastSignedInMethod),
+		sql.Named("suspended_at", NullTime(user.SuspendedAt)),
+		sql.Named("suspended_reason", user.SuspendedReason),
 		sql.Named("updated_at", NullTime(tx.now.UTC())),
 	)
 	if err != nil {

@@ -206,8 +206,14 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 		case errors.Is(err, http.ErrHandlerTimeout):
 			data.ErrorMessage = "The server took too long to respond."
 
+		case errors.Is(err, account.ErrNotVerified):
+			data.ErrorMessage = "This account is not verified."
+
 		case errors.Is(err, account.ErrNotActivated):
 			data.ErrorMessage = "This account is not activated."
+
+		case errors.Is(err, account.ErrSuspended):
+			data.ErrorMessage = "This account has been suspended."
 
 		case errors.Is(err, app.ErrUnauthorised):
 			data.ErrorMessage = "You do not have sufficient permissions."

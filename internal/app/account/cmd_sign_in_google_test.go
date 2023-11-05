@@ -104,6 +104,9 @@ func TestSignInWithGoogle(t *testing.T) {
 
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@bloggs.com", Verify: true})
+		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "john@doe.com", Suspend: true})
+		user4 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", Verify: true, Suspend: true})
+		user5 := MustAddUser(t, ctx, repo, TestUser{Email: "baz@qux.com", Activate: true, Suspend: true})
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -116,9 +119,12 @@ func TestSignInWithGoogle(t *testing.T) {
 		}{
 			{"empty email", "", account.GoogleSignInOnly, app.ErrMalformedInput},
 			{"email without @ sign", "joebloggs.com", account.GoogleSignInOnly, app.ErrMalformedInput},
-			{"sign in only with non-existent user", "foo@bar.com", account.GoogleSignInOnly, account.ErrGoogleSignUpDisabled},
+			{"sign in only with non-existent user", "foo+void@bar.com", account.GoogleSignInOnly, account.ErrGoogleSignUpDisabled},
 			{"unverified", user1.Email, account.GoogleSignInOnly, account.ErrNotVerified},
 			{"unactivated", user2.Email, account.GoogleSignInOnly, account.ErrNotActivated},
+			{"unverified suspended user", user3.Email, account.GoogleSignInOnly, account.ErrNotVerified},
+			{"unactivated suspended user", user4.Email, account.GoogleSignInOnly, account.ErrNotActivated},
+			{"suspended user", user5.Email, account.GoogleSignInOnly, account.ErrSuspended},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

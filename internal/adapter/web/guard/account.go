@@ -52,6 +52,14 @@ func (a Account) CanAssignSuperRole(userID int) bool {
 	return a.isSuper
 }
 
+func (a Account) CanSuspendUsers() bool {
+	return a.can(suspendUsers)
+}
+
+func (a Account) CanUnsuspendUsers() bool {
+	return a.can(unsuspendUsers)
+}
+
 func (a Account) CanViewRoles() bool {
 	return a.can(viewRoles)
 }

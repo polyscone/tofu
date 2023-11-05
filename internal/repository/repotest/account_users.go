@@ -54,6 +54,8 @@ func AccountUsers(ctx context.Context, t *testing.T, newRepo func() account.Read
 				ActivatedAt:          time.Now().Add(-8 * time.Second),
 				LastSignedInAt:       time.Now().Add(-9 * time.Second),
 				LastSignedInMethod:   "Form",
+				SuspendedAt:          time.Now().Add(-9 * time.Second),
+				SuspendedReason:      "They should not be able to access the system anymore",
 				HashedRecoveryCodes:  [][]byte{[]byte("1"), []byte("2"), []byte("3")},
 				Roles:                []*account.Role{role1, role2},
 				Grants:               []string{"a", "b"},
@@ -125,6 +127,7 @@ func AccountUsers(ctx context.Context, t *testing.T, newRepo func() account.Read
 		}{
 			{"no data", account.User{}, nil},
 			{"minimal data", account.User{Email: "Save user 1"}, nil},
+			{"with suspension", account.User{Email: "Suspended user 1", SuspendedAt: time.Now().Add(-1 * time.Second), SuspendedReason: "Foo bar"}, nil},
 			{"with recovery codes", account.User{Email: "Save user 2", HashedRecoveryCodes: [][]byte{[]byte("1"), []byte("2"), []byte("3")}}, nil},
 			{"with role", account.User{Email: "Save user roles", Roles: []*account.Role{role1}}, nil},
 			{"with grants", account.User{Email: "Save user grants", Grants: []string{"abc"}}, nil},
@@ -298,6 +301,12 @@ func accountUsersEqual(t *testing.T, want, got *account.User) {
 	}
 	if want, got := want.LastSignedInMethod, got.LastSignedInMethod; want != got {
 		t.Errorf("want last signed in method to be %v; got %v", want, got)
+	}
+	if want, got := want.SuspendedAt, got.SuspendedAt; !want.Equal(got) {
+		t.Errorf("want suspended at to be %v; got %v", want, got)
+	}
+	if want, got := want.SuspendedReason, got.SuspendedReason; want != got {
+		t.Errorf("want suspended reason to be %v; got %v", want, got)
 	}
 	if want, got := want.Roles, got.Roles; len(want) != len(got) {
 		t.Errorf("want %v roles; got %v", len(want), len(got))

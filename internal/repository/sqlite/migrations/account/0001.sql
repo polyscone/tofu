@@ -16,6 +16,8 @@ CREATE TABLE account__users (
 	activated_at          DATETIME,
 	last_signed_in_at     DATETIME,
 	last_signed_in_method TEXT NOT NULL,
+	suspended_at          DATETIME,
+	suspended_reason      TEXT NOT NULL,
 	created_at            DATETIME NOT NULL,
 	updated_at            DATETIME
 );

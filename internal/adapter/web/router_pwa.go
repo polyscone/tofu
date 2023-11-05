@@ -13,6 +13,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/pwa/event"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
@@ -61,6 +62,24 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		ErrorHandler: errorHandler("session middleware"),
 	}))
 	mux.Use(h.AttachContext)
+	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			user := h.User(ctx)
+
+			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+			if isSignedIn && user.IsSuspended() {
+				logger := h.Logger(ctx)
+
+				logger.Info("user forcibly signed out due to suspension of account")
+
+				h.Sessions.Clear(ctx)
+				h.Sessions.Renew(ctx)
+			}
+
+			next(w, r)
+		}
+	})
 	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
 		Insecure:     h.Insecure,
 		ErrorHandler: errorHandler("CSRF middleware"),

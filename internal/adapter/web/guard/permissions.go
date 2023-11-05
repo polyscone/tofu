@@ -11,6 +11,8 @@ const (
 	activateUsers    = "account:users:activate"
 	changeRoles      = "account:users:update:roles"
 	reviewTOTPResets = "account:users:review_totp_reset"
+	suspendUsers     = "account:users:suspend"
+	unsuspendUsers   = "account:users:unsuspend"
 
 	viewConfig   = "web:config:view"
 	updateConfig = "web:config:update"
@@ -34,6 +36,8 @@ var PermissionGroups = []PermissionGroup{
 			{DisplayName: "Activate users", Name: activateUsers},
 			{DisplayName: "Change user roles", Name: changeRoles},
 			{DisplayName: "Review 2FA resets", Name: reviewTOTPResets},
+			{DisplayName: "Suspend users", Name: suspendUsers},
+			{DisplayName: "Unsuspend users", Name: unsuspendUsers},
 		},
 	},
 	{
