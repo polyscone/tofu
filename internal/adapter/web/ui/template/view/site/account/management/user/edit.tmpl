@@ -171,19 +171,27 @@
 	{{end}}
 
 	{{if not $isEditUserSuper}}
-		{{if and $canSuspendUser (not .Vars.User.IsSuspended)}}
+		{{if $canSuspendUser}}
 			<form action="{{Path "account.management.user.suspend.post" ":userID" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
 				{{template "com_csrf_input" .}}
 
 				<fieldset>
-					<legend>Suspend user</legend>
+					{{if .Vars.User.IsSuspended}}
+						<legend>Suspended user</legend>
+					{{else}}
+						<legend>Suspend user</legend>
+					{{end}}
 
-					<div class="warning-box">
+					{{if .Vars.User.IsSuspended}}
 						<p>
-							Once a user has been suspended they won't be able to sign in again.<br>
-							If they're already signed in they'll be forcibly signed out.
+							This user was suspended on
+							<time datetime="{{FormatTime .Vars.User.SuspendedAt "RFC3339"}}" data-date="full">{{FormatTime .Vars.User.SuspendedAt "DateTime"}}</time>.
 						</p>
-					</div>
+					{{else}}
+						<div class="warning-box">
+							<p>Once a user has been suspended they won't be able to sign in again, and if they're already signed in they'll be forcibly signed out.</p>
+						</div>
+					{{end}}
 
 					{{template "com_form_input" .WithComData
 						"Label" "Reason for suspension"
@@ -196,39 +204,12 @@
 					}}
 
 					<div class="bag reverse">
-						<button type="submit" class="btn--danger push-inline-end">Suspend user</button>
-
-						<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
-					</div>
-				</fieldset>
-			</form>
-		{{end}}
-
-		{{if and $canUnsuspendUser .Vars.User.IsSuspended}}
-			<form action="{{Path "account.management.user.unsuspend.post" ":userID" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
-				{{template "com_csrf_input" .}}
-
-				<fieldset>
-					<legend>Unuspend user</legend>
-
-					<div class="warning-box">
-						<p>
-							This user was suspended on
-							<time datetime="{{FormatTime .Vars.User.SuspendedAt "RFC3339"}}" data-date="full">{{FormatTime .Vars.User.SuspendedAt "DateTime"}}</time>.
-						</p>
-
-						{{if .Vars.User.SuspendedReason}}
-							<p>
-								The reason they were suspended is:<br>
-								{{.Vars.User.SuspendedReason}}
-							</p>
+						{{if .Vars.User.IsSuspended}}
+							<button type="submit">Update reason</button>
+							<button type="submit" formnovalidate formaction="{{Path "account.management.user.unsuspend.post" ":userID" .Vars.User.ID}}" class="btn--danger push-inline-end">Unsuspend user</button>
+						{{else}}
+							<button type="submit" class="btn--danger push-inline-end">Suspend user</button>
 						{{end}}
-
-						<p>Unsuspending them will allow them to sign in again.</p>
-					</div>
-
-					<div class="bag reverse">
-						<button type="submit" class="btn--danger push-inline-end">Unsuspend user</button>
 
 						<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
 					</div>

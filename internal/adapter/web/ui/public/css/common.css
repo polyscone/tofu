@@ -192,6 +192,12 @@
 		border: none;
 	}
 
+	.form > p,
+	form > p,
+	fieldset > p {
+		margin-block: 0.4rem;
+	}
+
 	legend {
 		font-size: 1.3rem;
 		font-weight: bold;

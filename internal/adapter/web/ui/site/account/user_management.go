@@ -266,6 +266,8 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
+		wasSuspended := user.IsSuspended()
+
 		err = h.Svc.Account.SuspendUser(ctx, passport.Account, userID, input.SuspendedReason)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "suspend user", err, "site/account/management/user/edit", nil)
@@ -273,7 +275,11 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "User %v was suspended.", user.Email)
+		if wasSuspended {
+			h.AddFlashf(ctx, "Updated suspended reason for %v.", user.Email)
+		} else {
+			h.AddFlashf(ctx, "User %v was suspended.", user.Email)
+		}
 
 		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
 

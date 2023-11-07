@@ -34,6 +34,10 @@
 				{{end}}
 			</td>
 			<td class="text-right">
+				{{if .IsSuspended}}
+					Suspended
+				{{end}}
+
 				{{if .VerifiedAt.IsZero}}
 					Unverified
 				{{else if .ActivatedAt.IsZero}}
