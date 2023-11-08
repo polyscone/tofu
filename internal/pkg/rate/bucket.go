@@ -38,7 +38,7 @@ func NewTokenBucket(capacity, replenish float64) *TokenBucket {
 // bucket was replenished.
 //
 // The last time the bucket was replenished is recorded as the time
-// argument passed in. remove n tokens from the bucket.
+// argument passed in.
 //
 // After replenishing tokens it will then leak n tokens.
 // An error is returned if the bucket has less than n tokens before leaking.

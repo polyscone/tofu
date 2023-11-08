@@ -43,7 +43,14 @@ type Handler struct {
 }
 
 func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() string) *Handler {
-	funcs := template.FuncMap{
+	h := &Handler{
+		Handler:       base,
+		signInPath:    signInPath,
+		viewVarsFuncs: make(map[string]ViewVarsFunc),
+		mux:           mux,
+	}
+
+	h.funcs = template.FuncMap{
 		"Add":           handler.TmplAdd,
 		"Sub":           handler.TmplSub,
 		"Mul":           handler.TmplMul,
@@ -51,12 +58,10 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		"Mod":           handler.TmplMod,
 		"Ints":          handler.TmplInts,
 		"StatusText":    handler.TmplStatusText,
-		"Path":          handler.TmplPath(mux),
 		"QueryString":   handler.TmplQueryString,
 		"FormatTime":    handler.TmplFormatTime,
 		"HasPrefix":     handler.TmplHasPrefix,
 		"HasSuffix":     handler.TmplHasSuffix,
-		"HasPathPrefix": handler.TmplHasPathPrefix(mux),
 		"HasString":     handler.TmplHasString,
 		"ToStrings":     handler.TmplToStrings,
 		"Join":          handler.TmplJoin,
@@ -66,21 +71,27 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		"UnescapeJS":    handler.TmplUnescapeJS,
 		"Slice":         handler.TmplSlice,
 		"Map":           handler.TmplMap,
+		"Path":          h.tmplPath,
+		"HasPathPrefix": h.tmplHasPathPrefix,
 	}
 
-	h := Handler{
-		Handler:       base,
-		signInPath:    signInPath,
-		viewVarsFuncs: make(map[string]ViewVarsFunc),
-		mux:           mux,
-		funcs:         funcs,
-	}
+	h.Plain = NewRenderer(h, "text/plain")
+	h.HTML = NewRenderer(h, "text/html")
+	h.JSON = NewRenderer(h, "application/json")
 
-	h.Plain = NewRenderer(&h, "text/plain")
-	h.HTML = NewRenderer(&h, "text/html")
-	h.JSON = NewRenderer(&h, "application/json")
+	return h
+}
 
-	return &h
+func (h *Handler) tmplPath(name string, paramArgPairs ...any) template.URL {
+	return template.URL(h.mux.Path(name, paramArgPairs...))
+}
+
+func (h *Handler) tmplHasPathPrefix(value any, name string, paramArgPairs ...any) bool {
+	v := fmt.Sprintf("%v", value)
+	p := h.mux.Path(name, paramArgPairs...)
+	p = strings.TrimSuffix(p, "/")
+
+	return v == p || strings.HasPrefix(v, p+"/")
 }
 
 func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, vars handler.Vars) error {

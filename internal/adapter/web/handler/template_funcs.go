@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
 func TmplAdd(a, b int) int {
@@ -46,14 +44,6 @@ func TmplInts(start, end int) []int {
 
 func TmplStatusText(code int) string {
 	return strings.ReplaceAll(http.StatusText(code), "z", "s")
-}
-
-type tmplPathFunc func(name string, paramArgPairs ...any) template.URL
-
-func TmplPath(mux *router.ServeMux) tmplPathFunc {
-	return func(name string, paramArgPairs ...any) template.URL {
-		return template.URL(mux.Path(name, paramArgPairs...))
-	}
 }
 
 func TmplQueryReplace(q url.Values, pairs ...any) (url.Values, error) {
@@ -145,18 +135,6 @@ func TmplHasSuffix(value, suffix any) bool {
 	s := fmt.Sprintf("%v", suffix)
 
 	return strings.HasSuffix(v, s)
-}
-
-type tmplHasPathPrefixFunc func(value any, name string, paramArgPairs ...any) bool
-
-func TmplHasPathPrefix(mux *router.ServeMux) tmplHasPathPrefixFunc {
-	return func(value any, name string, paramArgPairs ...any) bool {
-		v := fmt.Sprintf("%v", value)
-		p := mux.Path(name, paramArgPairs...)
-		p = strings.TrimSuffix(p, "/")
-
-		return v == p || strings.HasPrefix(v, p+"/")
-	}
 }
 
 func TmplHasString(haystack []string, value any) bool {
