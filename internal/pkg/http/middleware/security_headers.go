@@ -25,6 +25,7 @@ func SecurityHeaders(config *SecurityHeadersConfig) Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 			rw := &securityHeadersResponseWriter{ResponseWriter: w}
 
+			rw.Header().Set("referrer-policy", "strict-origin-when-cross-origin")
 			rw.Header().Set("x-content-type-options", "nosniff")
 			rw.Header().Set("x-frame-options", "deny")
 
