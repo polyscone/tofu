@@ -100,7 +100,7 @@ func Timeout(dt time.Duration, config *TimeoutConfig) Middleware {
 	}
 }
 
-var _ http.Pusher = (*timeoutWriter)(nil)
+var _ Unwrapper = (*timeoutWriter)(nil)
 
 type timeoutWriter struct {
 	mu          sync.Mutex
@@ -114,12 +114,8 @@ type timeoutWriter struct {
 	statusCode  int
 }
 
-func (w *timeoutWriter) Push(target string, opts *http.PushOptions) error {
-	if pusher, ok := w.w.(http.Pusher); ok {
-		return pusher.Push(target, opts)
-	}
-
-	return http.ErrNotSupported
+func (w *timeoutWriter) Unwrap() http.ResponseWriter {
+	return w.w
 }
 
 func (w *timeoutWriter) Header() http.Header {

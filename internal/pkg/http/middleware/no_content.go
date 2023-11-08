@@ -17,7 +17,7 @@ func NoContent(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-var _ http.Pusher = (*noContentResponseWriter)(nil)
+var _ Unwrapper = (*noContentResponseWriter)(nil)
 
 type noContentResponseWriter struct {
 	http.ResponseWriter
@@ -25,12 +25,8 @@ type noContentResponseWriter struct {
 	body   bool
 }
 
-func (w *noContentResponseWriter) Push(target string, opts *http.PushOptions) error {
-	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
-		return pusher.Push(target, opts)
-	}
-
-	return http.ErrNotSupported
+func (w *noContentResponseWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
 }
 
 func (w *noContentResponseWriter) Write(b []byte) (int, error) {

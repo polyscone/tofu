@@ -2,6 +2,14 @@ package middleware
 
 import "net/http"
 
+// Unwrapper is used to check that response writer wrappers implement
+// the Unwrap method so they can be used by the http package's
+// ResponseController to access features on the underlying original
+// response writer, such as flushing, hijacking, etc.
+type Unwrapper interface {
+	Unwrap() http.ResponseWriter
+}
+
 type ErrorHandler func(w http.ResponseWriter, r *http.Request, err error)
 
 type Middleware func(next http.HandlerFunc) http.HandlerFunc

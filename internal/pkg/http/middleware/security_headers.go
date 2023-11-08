@@ -57,11 +57,15 @@ func SecurityHeaders(config *SecurityHeadersConfig) Middleware {
 	}
 }
 
-var _ http.Pusher = (*securityHeadersResponseWriter)(nil)
+var _ Unwrapper = (*securityHeadersResponseWriter)(nil)
 
 type securityHeadersResponseWriter struct {
 	http.ResponseWriter
 	body bool
+}
+
+func (w *securityHeadersResponseWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
 }
 
 func (w *securityHeadersResponseWriter) Push(target string, opts *http.PushOptions) error {

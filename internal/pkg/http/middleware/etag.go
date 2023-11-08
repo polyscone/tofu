@@ -73,7 +73,7 @@ func ETag(config *ETagConfig) Middleware {
 	}
 }
 
-var _ http.Pusher = (*etagResponseWriter)(nil)
+var _ Unwrapper = (*etagResponseWriter)(nil)
 
 type etagResponseWriter struct {
 	http.ResponseWriter
@@ -81,6 +81,10 @@ type etagResponseWriter struct {
 	r          *http.Request
 	config     *ETagConfig
 	statusCode int
+}
+
+func (w *etagResponseWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
 }
 
 func (w *etagResponseWriter) Push(target string, opts *http.PushOptions) error {

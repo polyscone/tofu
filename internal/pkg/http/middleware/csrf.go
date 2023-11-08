@@ -116,7 +116,7 @@ func CSRF(config *CSRFConfig) Middleware {
 	}
 }
 
-var _ http.Pusher = (*csrfResponseWriter)(nil)
+var _ Unwrapper = (*csrfResponseWriter)(nil)
 
 type csrfResponseWriter struct {
 	http.ResponseWriter
@@ -127,12 +127,8 @@ type csrfResponseWriter struct {
 	committed bool
 }
 
-func (w *csrfResponseWriter) Push(target string, opts *http.PushOptions) error {
-	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
-		return pusher.Push(target, opts)
-	}
-
-	return http.ErrNotSupported
+func (w *csrfResponseWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
 }
 
 func (w *csrfResponseWriter) Write(b []byte) (int, error) {

@@ -63,7 +63,7 @@ func Session(sm *session.Manager, config *SessionConfig) Middleware {
 	}
 }
 
-var _ http.Pusher = (*sessionResponseWriter)(nil)
+var _ Unwrapper = (*sessionResponseWriter)(nil)
 
 type sessionResponseWriter struct {
 	http.ResponseWriter
@@ -75,12 +75,8 @@ type sessionResponseWriter struct {
 	committed       bool
 }
 
-func (w *sessionResponseWriter) Push(target string, opts *http.PushOptions) error {
-	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
-		return pusher.Push(target, opts)
-	}
-
-	return http.ErrNotSupported
+func (w *sessionResponseWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
 }
 
 func (w *sessionResponseWriter) Write(b []byte) (int, error) {
