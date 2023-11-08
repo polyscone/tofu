@@ -116,6 +116,23 @@
 		</fieldset>
 
 		<fieldset>
+			<legend>Resend</legend>
+
+			{{template "com_form_input" .WithComData
+				"Label" "API key"
+				"Type" "text"
+				"Hint" "36 character API key beginning with re_"
+				"Name" "resend-api-key"
+				"Value" (.Form.GetOr "resend-api-key" .Config.ResendAPIKey)
+				"Placeholder" "re_1234abcd_12345678abcdefghABCDEFGH"
+				"Pattern" `^re_[0-9a-zA-Z_]+$`
+				"MinLength" 36
+				"MaxLength" 36
+				"Disabled" $disabled
+			}}
+		</fieldset>
+
+		<fieldset>
 			<legend>Twilio</legend>
 
 			{{template "com_form_input" .WithComData

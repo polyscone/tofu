@@ -128,7 +128,7 @@ func (c *Client) Send(ctx context.Context, from, to, body string) error {
 			return fmt.Errorf("%w: %v is an invalid number", ErrInvalidNumber, to)
 
 		default:
-			return fmt.Errorf("API responded with code %v: %v", data.Code, data.Message)
+			return fmt.Errorf("code %v: %v", data.Code, data.Message)
 		}
 	}
 

@@ -20,6 +20,7 @@ type Config struct {
 	TOTPSMSEnabled            bool
 	GoogleSignInEnabled       bool
 	GoogleSignInClientID      string
+	ResendAPIKey              string
 	TwilioSID                 string
 	TwilioToken               string
 	TwilioFromTel             string
@@ -106,6 +107,10 @@ func (c *Config) EnableGoogleSignIn() error {
 
 func (c *Config) DisableGoogleSignIn() {
 	c.GoogleSignInEnabled = false
+}
+
+func (c *Config) ChangeResendAPI(apiKey ResendAPIKey) {
+	c.ResendAPIKey = apiKey.String()
 }
 
 func (c *Config) ChangeTwilioAPI(twilioSID TwilioSID, twilioToken TwilioToken, twilioFromTel TwilioTel) {

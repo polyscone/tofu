@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
@@ -15,6 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/system"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/event"
+	"github.com/polyscone/tofu/internal/pkg/slogger"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
 	"github.com/polyscone/tofu/internal/repository/sqlite"
 )
@@ -28,13 +30,16 @@ type repo struct {
 }
 
 var cache = struct {
-	mu     sync.Mutex
-	repos  map[string]repo
-	sqlite map[string]*sqlite.DB
-	mailer smtp.Mailer
+	mu      sync.Mutex
+	repos   map[string]repo
+	sqlite  map[string]*sqlite.DB
+	mailers map[string]smtp.Mailer
+	loggers map[string]*slog.Logger
 }{
-	repos:  make(map[string]repo),
-	sqlite: make(map[string]*sqlite.DB),
+	repos:   make(map[string]repo),
+	sqlite:  make(map[string]*sqlite.DB),
+	mailers: make(map[string]smtp.Mailer),
+	loggers: make(map[string]*slog.Logger),
 }
 
 // newTenant returns a tenant where the hostname is mapped to a shared alias.
@@ -59,6 +64,19 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
+
+	logger, ok := cache.loggers[data.Alias]
+	if !ok {
+		var err error
+		logger, err = slogger.New(opts.log.style, nil)
+		if err != nil {
+			return nil, fmt.Errorf("new logger: %w", err)
+		}
+
+		logger = logger.With("app", data.Alias)
+
+		cache.loggers[data.Alias] = logger
+	}
 
 	repo, ok := cache.repos[data.Alias]
 	if !ok {
@@ -93,12 +111,15 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		cache.repos[data.Alias] = repo
 	}
 
-	if cache.mailer == nil {
+	mailer, ok := cache.mailers[data.Alias]
+	if !ok {
 		var err error
-		cache.mailer, err = smtp.NewMailClient("localhost", 25)
+		mailer, err = smtp.NewClient(logger, &smtpConfig{system: repo.system})
 		if err != nil {
-			return nil, fmt.Errorf("new SMTP client: %w", err)
+			return nil, fmt.Errorf("new dynamic SMTP client: %w", err)
 		}
+
+		cache.mailers[data.Alias] = mailer
 	}
 
 	var svc handler.Svc
@@ -122,7 +143,8 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		Insecure: opts.server.insecure,
 		Proxies:  opts.server.proxies,
 		Broker:   broker,
-		Email:    cache.mailer,
+		Email:    mailer,
+		Logger:   logger,
 		Svc:      svc,
 		Repo: handler.Repo{
 			Account: repo.account,

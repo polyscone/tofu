@@ -17,6 +17,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	signUpEnabled, signUpAutoActivateEnabled bool,
 	totpRequired, totpSMSEnabled bool,
 	googleSignInEnabled bool, googleSignInClientID string,
+	resendAPIKey string,
 	twilioSID, twilioToken, twilioFromTel string,
 ) (*Config, error) {
 	var input struct {
@@ -28,6 +29,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		totpSMSEnabled            bool
 		googleSignInEnabled       bool
 		googleSignInClientID      GoogleClientID
+		resendAPIKey              ResendAPIKey
 		twilioSID                 TwilioSID
 		twilioToken               TwilioToken
 		twilioFromTel             TwilioTel
@@ -55,6 +57,9 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 
 		if input.googleSignInClientID, err = NewGoogleClientID(googleSignInClientID); err != nil {
 			errs.Set("google sign in client id", err)
+		}
+		if input.resendAPIKey, err = NewResendAPIKey(resendAPIKey); err != nil {
+			errs.Set("resend API key", err)
 		}
 		if input.twilioSID, err = NewTwilioSID(twilioSID); err != nil {
 			errs.Set("twilio sid", err)
@@ -107,6 +112,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		config.DisableGoogleSignIn()
 	}
 
+	config.ChangeResendAPI(input.resendAPIKey)
 	config.ChangeTwilioAPI(input.twilioSID, input.twilioToken, input.twilioFromTel)
 
 	if input.totpSMSEnabled {

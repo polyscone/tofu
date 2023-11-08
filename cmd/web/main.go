@@ -220,7 +220,7 @@ func main() {
 		IdleTimeout:  1 * time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
-		Handler:      web.NewMultiTenantHandler(opts.server.behindSecureProxy, logger, opts.log.style, newTenant),
+		Handler:      web.NewMultiTenantHandler(logger, opts.server.behindSecureProxy, newTenant),
 	}
 
 	go func() {

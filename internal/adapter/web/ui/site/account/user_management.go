@@ -455,14 +455,14 @@ func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 
 		tok, err := h.Repo.Web.AddResetTOTPToken(ctx, user.Email, 48*time.Hour)
 		if err != nil {
-			logger.Error("reset password: add reset password token", "error", err)
+			logger.Error("reset TOTP: add reset TOTP token", "error", err)
 
 			return
 		}
 
 		vars := handler.Vars{"Token": tok}
 		if err := h.SendEmail(ctx, config.SystemEmail, user.Email, "totp_reset_approved", vars); err != nil {
-			logger.Error("reset password: send email", "error", err)
+			logger.Error("reset TOTP: send email", "error", err)
 		}
 
 		h.AddFlashf(ctx, "Two-factor authentication reset request approved for %v.", user.Email)

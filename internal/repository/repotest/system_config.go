@@ -43,6 +43,9 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		if want, got := "", config.GoogleSignInClientID; want != got {
 			t.Errorf("want Google sign in client id to be %q; got %q", want, got)
 		}
+		if want, got := "", config.ResendAPIKey; want != got {
+			t.Errorf("want resend API key to be %q; got %q", want, got)
+		}
 		if want, got := "", config.TwilioSID; want != got {
 			t.Errorf("want twilio sid to be %q; got %q", want, got)
 		}
@@ -63,9 +66,10 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 			TOTPSMSEnabled:            true,
 			GoogleSignInEnabled:       true,
 			GoogleSignInClientID:      "3",
-			TwilioSID:                 "4",
-			TwilioToken:               "5",
-			TwilioFromTel:             "6",
+			ResendAPIKey:              "4",
+			TwilioSID:                 "5",
+			TwilioToken:               "6",
+			TwilioFromTel:             "7",
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -103,13 +107,16 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		if want, got := "3", config.GoogleSignInClientID; want != got {
 			t.Errorf("want Google sign in client id to be %q; got %q", want, got)
 		}
-		if want, got := "4", config.TwilioSID; want != got {
+		if want, got := "4", config.ResendAPIKey; want != got {
+			t.Errorf("want resend API key to be %q; got %q", want, got)
+		}
+		if want, got := "5", config.TwilioSID; want != got {
 			t.Errorf("want twilio sid to be %q; got %q", want, got)
 		}
-		if want, got := "5", config.TwilioToken; want != got {
+		if want, got := "6", config.TwilioToken; want != got {
 			t.Errorf("want twilio token to be %q; got %q", want, got)
 		}
-		if want, got := "6", config.TwilioFromTel; want != got {
+		if want, got := "7", config.TwilioFromTel; want != got {
 			t.Errorf("want twilio from tel to be %q; got %q", want, got)
 		}
 	})

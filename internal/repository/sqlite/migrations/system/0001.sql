@@ -8,6 +8,7 @@ CREATE TABLE system__config (
 	totp_sms_enabled              INTEGER NOT NULL,
 	google_sign_in_enabled        INTEGER NOT NULL,
 	google_sign_in_client_id      TEXT NOT NULL,
+	resend_api_key                TEXT NOT NULL,
 	twilio_sid                    TEXT NOT NULL,
 	twilio_token                  TEXT NOT NULL,
 	twilio_from_tel               TEXT NOT NULL,

@@ -160,7 +160,7 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 func (h *Handler) Logger(ctx context.Context) *slog.Logger {
 	value := ctx.Value(ctxLogger)
 	if value == nil {
-		return h.Log
+		return h.Tenant.Logger
 	}
 
 	logger, ok := value.(*slog.Logger)

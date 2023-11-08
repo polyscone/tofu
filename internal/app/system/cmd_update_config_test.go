@@ -39,6 +39,7 @@ func TestUpdateConfig(t *testing.T) {
 		totpSMSEnabled := true
 		googleSignInEnabled := true
 		googleSignInClientID := "1234abcd"
+		resendAPIKey := "re_abcdEFG0123456_RE_abcdEFG0123456Z"
 		twilioSID := "AC0123456789abcdef0123456789abcdef"
 		twilioToken := "0123456789abcdef0123456789abcdef"
 		twilioFromTel := "+00 00 0000 0000"
@@ -52,6 +53,7 @@ func TestUpdateConfig(t *testing.T) {
 			totpSMSEnabled,
 			googleSignInEnabled,
 			googleSignInClientID,
+			resendAPIKey,
 			twilioSID,
 			twilioToken,
 			twilioFromTel,
@@ -89,6 +91,9 @@ func TestUpdateConfig(t *testing.T) {
 		if want, got := twilioSID, config.TwilioSID; want != got {
 			t.Errorf("want twilio sid to be %q; got %q", want, got)
 		}
+		if want, got := resendAPIKey, config.ResendAPIKey; want != got {
+			t.Errorf("want resend API key to be %q; got %q", want, got)
+		}
 		if want, got := twilioToken, config.TwilioToken; want != got {
 			t.Errorf("want twilio token to be %q; got %q", want, got)
 		}
@@ -104,6 +109,7 @@ func TestUpdateConfig(t *testing.T) {
 		totpSMSEnabled = false
 		googleSignInEnabled = false
 		googleSignInClientID = "xyz"
+		resendAPIKey = ""
 		twilioSID = ""
 		twilioToken = ""
 		twilioFromTel = ""
@@ -117,6 +123,7 @@ func TestUpdateConfig(t *testing.T) {
 			totpSMSEnabled,
 			googleSignInEnabled,
 			googleSignInClientID,
+			resendAPIKey,
 			twilioSID,
 			twilioToken,
 			twilioFromTel,
@@ -151,6 +158,9 @@ func TestUpdateConfig(t *testing.T) {
 		if want, got := googleSignInClientID, config.GoogleSignInClientID; want != got {
 			t.Errorf("want google sign in client id to be %q; got %q", want, got)
 		}
+		if want, got := resendAPIKey, config.ResendAPIKey; want != got {
+			t.Errorf("want resend API key to be %q; got %q", want, got)
+		}
 		if want, got := twilioSID, config.TwilioSID; want != got {
 			t.Errorf("want twilio sid to be %q; got %q", want, got)
 		}
@@ -174,6 +184,7 @@ func TestUpdateConfig(t *testing.T) {
 			config := system.Config{
 				SystemEmail:   "a@a.com",
 				SecurityEmail: "b@b.com",
+				ResendAPIKey:  "re_abcdEFG0123456_RE_abcdEFG0123456Z",
 				TwilioSID:     "AC0123456789abcdef0123456789abcdef",
 				TwilioToken:   "0123456789abcdef0123456789abcdef",
 				TwilioFromTel: "+00 00 0000 0000",
@@ -192,6 +203,9 @@ func TestUpdateConfig(t *testing.T) {
 
 				case "GoogleSignInEnabled":
 					config.GoogleSignInEnabled = value.(bool)
+
+				case "ResendAPIKey":
+					config.ResendAPIKey = value.(string)
 
 				case "TwilioSID":
 					config.TwilioSID = value.(string)
@@ -221,6 +235,7 @@ func TestUpdateConfig(t *testing.T) {
 			{"malformed system email", validGuard, vals{"SystemEmail": "a"}, app.ErrMalformedInput},
 			{"empty security email", validGuard, vals{"SecurityEmail": ""}, app.ErrMalformedInput},
 			{"malformed security email", validGuard, vals{"SecurityEmail": "a"}, app.ErrMalformedInput},
+			{"malformed resend API key", validGuard, vals{"ResendAPIKey": "a"}, app.ErrMalformedInput},
 			{"TOTP SMS enabled without Twilio SID", validGuard, vals{"TOTPSMSEnabled": true, "TwilioSID": ""}, app.ErrInvalidInput},
 			{"TOTP SMS enabled without Twilio token", validGuard, vals{"TOTPSMSEnabled": true, "TwilioToken": ""}, app.ErrInvalidInput},
 			{"TOTP SMS enabled without Twilio from tel", validGuard, vals{"TOTPSMSEnabled": true, "TwilioFromTel": ""}, app.ErrInvalidInput},
@@ -239,6 +254,7 @@ func TestUpdateConfig(t *testing.T) {
 					config.TOTPSMSEnabled,
 					config.GoogleSignInEnabled,
 					config.GoogleSignInClientID,
+					config.ResendAPIKey,
 					config.TwilioSID,
 					config.TwilioToken,
 					config.TwilioFromTel,

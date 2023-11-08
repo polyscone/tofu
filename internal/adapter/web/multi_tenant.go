@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
-	"github.com/polyscone/tofu/internal/pkg/slogger"
 )
 
 var ErrTenantNotFound = errors.New("not found")
@@ -17,19 +16,17 @@ var ErrTenantNotFound = errors.New("not found")
 type NewTenantFunc func(hostname string) (*handler.Tenant, error)
 
 type MultiTenantHandler struct {
-	behindSecureProxy bool
 	logger            *slog.Logger
-	logStyle          slogger.Style
+	behindSecureProxy bool
 	newTenant         NewTenantFunc
 	muxesMu           sync.RWMutex
 	muxes             map[string]http.Handler
 }
 
-func NewMultiTenantHandler(behindSecureProxy bool, logger *slog.Logger, logStyle slogger.Style, newTenant NewTenantFunc) *MultiTenantHandler {
+func NewMultiTenantHandler(logger *slog.Logger, behindSecureProxy bool, newTenant NewTenantFunc) *MultiTenantHandler {
 	return &MultiTenantHandler{
-		behindSecureProxy: behindSecureProxy,
 		logger:            logger,
-		logStyle:          logStyle,
+		behindSecureProxy: behindSecureProxy,
 		newTenant:         newTenant,
 		muxes:             make(map[string]http.Handler),
 	}
@@ -59,12 +56,9 @@ func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 	if err != nil {
 		return nil, fmt.Errorf("new tenant: %w", err)
 	}
-
-	logger, err := slogger.New(h.logStyle, nil)
-	if err != nil {
-		return nil, fmt.Errorf("new logger: %w", err)
+	if tenant.Logger == nil {
+		panic("tenant logger must be set")
 	}
-	tenant.Log = logger
 
 	if r.TLS != nil || h.behindSecureProxy {
 		tenant.Scheme = "https"

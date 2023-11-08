@@ -28,6 +28,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			TOTPSMSEnabled            bool   `form:"totp-sms-enabled" compare:"true"`
 			GoogleSignInEnabled       bool   `form:"google-sign-in-enabled" compare:"true"`
 			GoogleSignInClientID      string `form:"google-sign-in-client-id"`
+			ResendAPIKey              string `form:"resend-api-key"`
 			TwilioSID                 string `form:"twilio-sid"`
 			TwilioToken               string `form:"twilio-token"`
 			TwilioFromTel             string `form:"twilio-from-tel"`
@@ -66,6 +67,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			input.TOTPSMSEnabled,
 			input.GoogleSignInEnabled,
 			input.GoogleSignInClientID,
+			input.ResendAPIKey,
 			input.TwilioSID,
 			input.TwilioToken,
 			input.TwilioFromTel,
