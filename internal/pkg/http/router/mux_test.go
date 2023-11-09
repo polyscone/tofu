@@ -1,7 +1,6 @@
 package router_test
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -22,18 +21,18 @@ func TestMux(t *testing.T) {
 		w.Write([]byte(r.URL.Path))
 	}
 
-	mux.Get("/order/:rest...", echoHandler)
-	mux.Get("/order/:foo", func(w http.ResponseWriter, r *http.Request) {
+	mux.Get("/order/{rest...}", echoHandler)
+	mux.Get("/order/{foo}", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("lazy param: " + r.URL.Path))
 	})
 	mux.Get("/order/static", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("static: " + r.URL.Path))
 	})
-	mux.Get("/order/independent/:rest...", func(w http.ResponseWriter, r *http.Request) {
+	mux.Get("/order/independent/{rest...}", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("greedy rest: " + r.URL.Path))
 	})
 
-	mux.Get("/order/independent/long/:rest...", func(w http.ResponseWriter, r *http.Request) {
+	mux.Get("/order/independent/long/{rest...}", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("long greedy rest: " + r.URL.Path))
 	})
 
@@ -127,8 +126,6 @@ func TestMux(t *testing.T) {
 			mux.Prefix("/exact", func(mux *router.ServeMux) {
 				mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 					return func(w http.ResponseWriter, r *http.Request) {
-						fmt.Println("Hello")
-
 						w.Write([]byte("abc"))
 
 						return
@@ -145,7 +142,7 @@ func TestMux(t *testing.T) {
 					w.Write([]byte("before conflict"))
 				})
 
-				mux.Prefix("/:foo", func(mux *router.ServeMux) {
+				mux.Prefix("/{foo}", func(mux *router.ServeMux) {
 					mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 						return func(w http.ResponseWriter, r *http.Request) {
 							foo, _ := router.URLParam(r, "foo")
@@ -184,7 +181,7 @@ func TestMux(t *testing.T) {
 		})
 	})
 
-	mux.Get("/url/:ignore/:status/qux", func(w http.ResponseWriter, r *http.Request) {
+	mux.Get("/url/{ ignore }/{ status }/qux", func(w http.ResponseWriter, r *http.Request) {
 		status, _ := router.URLParam(r, "status")
 
 		switch status {
@@ -200,7 +197,7 @@ func TestMux(t *testing.T) {
 	})
 
 	mux.Prefix("/overlap-prefix", func(mux *router.ServeMux) {
-		mux.Prefix("/:foo", func(mux *router.ServeMux) {
+		mux.Prefix("/{foo}", func(mux *router.ServeMux) {
 			mux.Get("/", echoHandler)
 
 			mux.Prefix("/overlap-suffix", func(mux *router.ServeMux) {
@@ -213,14 +210,14 @@ func TestMux(t *testing.T) {
 		})
 	})
 
-	mux.Get("/lazy/:first/rest/:rest", func(w http.ResponseWriter, r *http.Request) {
+	mux.Get("/lazy/{ first}/rest/{rest }", func(w http.ResponseWriter, r *http.Request) {
 		first, _ := router.URLParam(r, "first")
 		rest, _ := router.URLParam(r, "rest")
 
 		w.Write([]byte(first + "/" + rest))
 	})
 
-	mux.Get("/greedy/:first/rest/:rest...", func(w http.ResponseWriter, r *http.Request) {
+	mux.Get("/greedy/{first}/rest/{ rest ...}", func(w http.ResponseWriter, r *http.Request) {
 		first, _ := router.URLParam(r, "first")
 		rest, _ := router.URLParam(r, "rest")
 
@@ -234,8 +231,8 @@ func TestMux(t *testing.T) {
 	mux.Prefix("/foo-prefix", func(mux *router.ServeMux) {
 		// Redirects ignore the prefix
 		mux.Redirect(http.MethodGet, "/redirect/src", "/redirect/dst", http.StatusTemporaryRedirect)
-		mux.Redirect(http.MethodGet, "/:var/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
-		mux.Redirect(http.MethodGet, "/:var/:varfoo/redirect/src/var", "/:var/dst", http.StatusTemporaryRedirect)
+		mux.Redirect(http.MethodGet, "/{var}/redirect/src/var", "/{var}/dst", http.StatusTemporaryRedirect)
+		mux.Redirect(http.MethodGet, "/{var}/{varfoo}/redirect/src/var", "/{var}/dst", http.StatusTemporaryRedirect)
 	})
 
 	mux.Get("/rewrite/dst", func(w http.ResponseWriter, r *http.Request) {
@@ -245,21 +242,21 @@ func TestMux(t *testing.T) {
 	mux.Prefix("/bar-prefix", func(mux *router.ServeMux) {
 		// Rewrites ignore the prefix
 		mux.Rewrite(http.MethodGet, "/rewrite/src", "/rewrite/dst")
-		mux.Rewrite(http.MethodGet, "/:var/rewrite/src/var", "/:var/dst")
-		mux.Rewrite(http.MethodGet, "/:var/:varfoo/rewrite/src/var", "/:var/dst")
+		mux.Rewrite(http.MethodGet, "/{var}/rewrite/src/var", "/{var}/dst")
+		mux.Rewrite(http.MethodGet, "/{var}/{varfoo}/rewrite/src/var", "/{var}/dst")
 	})
 
 	mux.Get("/aa/bb/cc/dd", echoHandler, "simple")
-	mux.Get("/aa/:bb/cc/:dd", echoHandler, "complex")
+	mux.Get("/aa/{bb}/cc/{dd}", echoHandler, "complex")
 
-	route := mux.Get("/a/:b/c/:d", func(w http.ResponseWriter, r *http.Request) {
+	route := mux.Get("/a/{b}/c/{d}", func(w http.ResponseWriter, r *http.Request) {
 		b, _ := router.URLParam(r, "b")
 		d, _ := router.URLParam(r, "d")
 
 		w.Write([]byte("/a/" + b + "/c/" + d))
 	}, "foo.bar")
 
-	mux.Post("/a/:b/c/:d", func(w http.ResponseWriter, r *http.Request) {
+	mux.Post("/a/{b}/c/{d}", func(w http.ResponseWriter, r *http.Request) {
 		b, _ := router.URLParam(r, "b")
 		d, _ := router.URLParam(r, "d")
 
@@ -350,12 +347,12 @@ func TestMux(t *testing.T) {
 		{"order independence rest no overlap", http.MethodGet, "/order/independent/qux/quxx/quxxx", "greedy rest: /order/independent/qux/quxx/quxxx", http.StatusOK},
 		{"order independence rest long overlap", http.MethodGet, "/order/independent/long/quxx/quxxx", "long greedy rest: /order/independent/long/quxx/quxxx", http.StatusOK},
 
-		{"route string param replacement", http.MethodGet, route.Replace(":b", "123", ":d", "456"), "/a/123/c/456", http.StatusOK},
-		{"mux object route string param replacement", http.MethodGet, mux.Route("foo.bar").Replace(":b", "x", ":d", "y"), "/a/x/c/y", http.StatusOK},
-		{"mux object route string param replacement post method", http.MethodPost, mux.Route("foo.bar.post").Replace(":b", "x", ":d", "y"), "/a/x/c/y", http.StatusOK},
+		{"route string param replacement", http.MethodGet, route.Replace("{b}", "123", "{d}", "456"), "/a/123/c/456", http.StatusOK},
+		{"mux object route string param replacement", http.MethodGet, mux.Route("foo.bar").Replace("{b}", "x", "{d}", "y"), "/a/x/c/y", http.StatusOK},
+		{"mux object route string param replacement post method", http.MethodPost, mux.Route("foo.bar.post").Replace("{b}", "x", "{d}", "y"), "/a/x/c/y", http.StatusOK},
 
 		{"mux object path simple", http.MethodGet, mux.Path("simple"), "/aa/bb/cc/dd", http.StatusOK},
-		{"mux object path complex", http.MethodGet, mux.Path("complex", ":bb", "xx", ":dd", "yy"), "/aa/xx/cc/yy", http.StatusOK},
+		{"mux object path complex", http.MethodGet, mux.Path("complex", "{bb}", "xx", "{dd}", "yy"), "/aa/xx/cc/yy", http.StatusOK},
 		{"mux object path named prefix", http.MethodGet, mux.Path("named"), "named", http.StatusOK},
 		{"mux object current prefix", http.MethodGet, "/get/only/current/prefix", "/get/only/", http.StatusOK},
 		{"mux object current path", http.MethodGet, "/get/only/current/path", "/get/only", http.StatusOK},
@@ -436,7 +433,7 @@ func TestMux(t *testing.T) {
 func TestMuxPanics(t *testing.T) {
 	emptyHandler := func(w http.ResponseWriter, r *http.Request) {}
 
-	t.Run("panic on duplicate route paths", func(t *testing.T) {
+	t.Run("panic on duplicate route patterns", func(t *testing.T) {
 		defer func() {
 			if recover() == nil {
 				t.Error("want panic; got <nil>")
@@ -449,7 +446,7 @@ func TestMuxPanics(t *testing.T) {
 		mux.Get("/one/two/three/four", emptyHandler)
 	})
 
-	t.Run("no panic on duplicate route paths with different methods", func(t *testing.T) {
+	t.Run("no panic on duplicate route patterns with different methods", func(t *testing.T) {
 		defer func() {
 			if recover() != nil {
 				t.Error("want <nil>; got panic")
@@ -462,7 +459,7 @@ func TestMuxPanics(t *testing.T) {
 		mux.Post("/one/two/three/four", emptyHandler)
 	})
 
-	t.Run("panic on duplicate route paths with parameters", func(t *testing.T) {
+	t.Run("panic on duplicate route patterns with parameters", func(t *testing.T) {
 		defer func() {
 			if recover() == nil {
 				t.Error("want panic; got <nil>")
@@ -471,12 +468,12 @@ func TestMuxPanics(t *testing.T) {
 
 		mux := router.NewServeMux()
 
-		mux.Get("/one/two/:foo/four", emptyHandler)
-		mux.Get("/one/two/:bar/four", emptyHandler)
-		mux.Post("/one/two/:baz/four", emptyHandler)
+		mux.Get("/one/two/{foo}/four", emptyHandler)
+		mux.Get("/one/two/{bar}/four", emptyHandler)
+		mux.Post("/one/two/{baz}/four", emptyHandler)
 	})
 
-	t.Run("panic on duplicate route paths with greedy parameters", func(t *testing.T) {
+	t.Run("panic on duplicate route patterns with greedy parameters", func(t *testing.T) {
 		defer func() {
 			if recover() == nil {
 				t.Error("want panic; got <nil>")
@@ -485,8 +482,8 @@ func TestMuxPanics(t *testing.T) {
 
 		mux := router.NewServeMux()
 
-		mux.Get("/one/two/:foo/four/:bar...", emptyHandler)
-		mux.Post("/one/two/:foo/four/:baz...", emptyHandler)
+		mux.Get("/one/two/{foo}/four/{bar...}", emptyHandler)
+		mux.Post("/one/two/{foo}/four/{baz...}", emptyHandler)
 	})
 
 	t.Run("panic on duplicate route names", func(t *testing.T) {
@@ -511,22 +508,22 @@ func TestMuxPanics(t *testing.T) {
 
 		mux := router.NewServeMux()
 
-		mux.Get("/hello/:foo.../world", emptyHandler)
+		mux.Get("/hello/{foo...}/world", emptyHandler)
 	})
 
 	t.Run("panic on invalid route path parameter replacements", func(t *testing.T) {
 		mux := router.NewServeMux()
-		route := mux.Get("/:w/x/y/:z", emptyHandler)
+		route := mux.Get("/{w}/x/y/{z}", emptyHandler)
 
 		tt := []struct {
 			name string
 			list []any
 		}{
-			{"wrong number of elements", []any{":w"}},
-			{"wrong order", []any{"1", ":w"}},
-			{"missing parameter", []any{":w", "1"}},
-			{"unknown parameter", []any{":w", "1", ":x", "2", ":z", "3"}},
-			{"empty argument", []any{":w", "1", ":z", ""}},
+			{"wrong number of elements", []any{"{w}"}},
+			{"wrong order", []any{"1", "{w}"}},
+			{"missing parameter", []any{"{w}", "1"}},
+			{"unknown parameter", []any{"{w}", "1", "{x}", "2", "{z}", "3"}},
+			{"empty argument", []any{"{w}", "1", "{z}", ""}},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -558,17 +555,17 @@ func TestMuxPanics(t *testing.T) {
 	t.Run("panic on invalid path calls", func(t *testing.T) {
 		mux := router.NewServeMux()
 
-		mux.Get("/:w/x/y/:z", emptyHandler, "complex")
+		mux.Get("/{w}/x/y/{z}", emptyHandler, "complex")
 
 		tt := []struct {
 			name string
 			list []any
 		}{
-			{"wrong number of elements", []any{":w"}},
-			{"wrong order", []any{"1", ":w"}},
-			{"missing parameter", []any{":w", "1"}},
-			{"unknown parameter", []any{":w", "1", ":x", "2", ":z", "3"}},
-			{"empty argument", []any{":w", "1", ":z", ""}},
+			{"wrong number of elements", []any{"{w}"}},
+			{"wrong order", []any{"1", "{w}"}},
+			{"missing parameter", []any{"{w}", "1"}},
+			{"unknown parameter", []any{"{w}", "1", "{x}", "2", "{z}", "3"}},
+			{"empty argument", []any{"{w}", "1", "{z}", ""}},
 			{"no arguments", nil},
 		}
 		for _, tc := range tt {

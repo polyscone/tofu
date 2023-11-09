@@ -42,18 +42,18 @@
 					Unverified
 				{{else if .ActivatedAt.IsZero}}
 					{{if $.Passport.Account.CanActivateUsers}}
-						<a href="{{Path "account.management.user.activate" ":userID" .ID}}{{$.URL.Query.String}}">Activate</a>
+						<a href="{{Path "account.management.user.activate" "{userID}" .ID}}{{$.URL.Query.String}}">Activate</a>
 					{{else}}
 						Unactivated
 					{{end}}
 				{{end}}
 
 				{{if and (not .TOTPResetRequestedAt.IsZero) $.Passport.Account.CanReviewTOTPResets}}
-					<a href="{{Path "account.management.user.totp_reset_review" ":userID" .ID}}{{$.URL.Query.String}}">Review 2FA reset request</a>
+					<a href="{{Path "account.management.user.totp_reset_review" "{userID}" .ID}}{{$.URL.Query.String}}">Review 2FA reset request</a>
 				{{end}}
 
 				{{if $.Passport.Account.CanChangeRoles .ID}}
-					<a href="{{Path "account.management.user.edit" ":userID" .ID}}{{$.URL.Query.String}}">Edit</a>
+					<a href="{{Path "account.management.user.edit" "{userID}" .ID}}{{$.URL.Query.String}}">Edit</a>
 				{{end}}
 			</td>
 		</tr>

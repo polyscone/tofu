@@ -20,8 +20,8 @@
 	</div>
 
 	<div class="bag reverse">
-		<a href="{{Path "account.management.user.totp_reset_approve" ":userID" .Vars.User.ID}}" class="btn">Approve and send reset link</a>
-		<a href="{{Path "account.management.user.totp_reset_deny" ":userID" .Vars.User.ID}}" class="btn btn--alt push-inline-end">Deny the request</a>
+		<a href="{{Path "account.management.user.totp_reset_approve" "{userID}" .Vars.User.ID}}" class="btn">Approve and send reset link</a>
+		<a href="{{Path "account.management.user.totp_reset_deny" "{userID}" .Vars.User.ID}}" class="btn btn--alt push-inline-end">Deny the request</a>
 
 		<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
 	</div>

@@ -20,6 +20,12 @@ type ctxKey int
 
 const ctxParams ctxKey = iota
 
+const (
+	paramStart     = "{"
+	paramEnd       = "}"
+	paramEndGreedy = "..." + paramEnd
+)
+
 // Route represents a registered route and handler.
 type Route struct {
 	pattern  string
@@ -36,7 +42,7 @@ func (rt *Route) String() string {
 // replacements given.
 //
 // Replacements are given as a list of string pairs, where the first in a pair
-// is the parameter name starting with a colon, and the second in a pair is the
+// is the parameter name wrapped in curly braces, and the second in a pair is the
 // string to replace it with.
 //
 // If a parameter in the route's pattern is missing it will panic.
@@ -51,8 +57,8 @@ func (rt *Route) Replace(paramArgPairs ...any) string {
 		param := fmt.Sprintf("%v", paramArgPairs[i])
 		arg := fmt.Sprintf("%v", paramArgPairs[i+1])
 
-		if !strings.HasPrefix(param, ":") {
-			panic(fmt.Sprintf("want argument %v to start with a colon", i))
+		if !strings.HasPrefix(param, paramStart) || !strings.HasSuffix(param, paramEnd) {
+			panic(fmt.Sprintf("want argument %v to be wrapped in curly braces", i))
 		}
 		if arg == "" {
 			panic(fmt.Sprintf("want argument %v to not be empty", i))
@@ -71,7 +77,7 @@ func (rt *Route) Replace(paramArgPairs ...any) string {
 	for _, part := range rt.parts {
 		sb.WriteRune('/')
 
-		if strings.HasPrefix(part, ":") {
+		if strings.HasPrefix(part, paramStart) {
 			arg, ok := args[part]
 			if !ok {
 				panic(fmt.Sprintf("want an argument for parameter %q in route pattern to be provided", part))
@@ -184,8 +190,8 @@ func (mux *ServeMux) serveHTTP(w http.ResponseWriter, r *http.Request) {
 			// First check to see if we have any mappings from a greedy pattern ending in "..."
 			// If we do then we want to store it for later in case we need to use it as a fallback
 			for key, n := range dynamic {
-				if strings.HasPrefix(key, ":") && strings.HasSuffix(key, "...") {
-					name := strings.TrimSuffix(key[1:], "...")
+				if strings.HasPrefix(key, paramStart) && strings.HasSuffix(key, paramEndGreedy) {
+					name := strings.TrimSpace(strings.TrimSuffix(key[1:], paramEndGreedy))
 					params[name] = strings.Join(parts[i:], "/")
 
 					greedy = &GreedyMatch{
@@ -205,9 +211,10 @@ func (mux *ServeMux) serveHTTP(w http.ResponseWriter, r *http.Request) {
 				// If we didn't find a static mapping to another node we try looking
 				// for a dynamic mapping with a lazy pattern that doesn't end in "..."
 				for key, n := range dynamic {
-					if strings.HasPrefix(key, ":") && !strings.HasSuffix(key, "...") {
+					if strings.HasPrefix(key, paramStart) && !strings.HasSuffix(key, paramEndGreedy) {
 						dynode = n
-						params[key[1:]] = part
+						name := strings.TrimSpace(key[1 : len(key)-len(paramEnd)])
+						params[name] = part
 
 						// Each node's mappings to further nodes in the chain should only
 						// contain at most one lazy pattern, so when we find it we can
@@ -313,7 +320,7 @@ func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
 	}
 
 	str := route.String()
-	if strings.Contains(str, "/:") {
+	if strings.Contains(str, "/"+paramStart) {
 		panic(fmt.Sprintf("route %q must use the replace method to replace parameters", name))
 	}
 
@@ -339,21 +346,21 @@ func (mux *ServeMux) nameRoute(route *Route, names ...string) {
 // node creates a chain of node objects and returns the final one for the given pattern.
 func (mux *ServeMux) node(pattern string) *Node {
 	var node *Node
-	if strings.Contains(pattern, "/:") {
+	if strings.Contains(pattern, "/"+paramStart) {
 		dynamic := mux.dynamic
 		parts := strings.Split(strings.TrimPrefix(pattern, "/"), "/")
 		last := len(parts) - 1
 
 		for i, part := range parts {
-			if strings.HasPrefix(part, ":") {
-				isGreedy := strings.HasSuffix(part, "...")
+			if strings.HasPrefix(part, paramStart) {
+				isGreedy := strings.HasSuffix(part, paramEndGreedy)
 
 				for key := range dynamic {
-					if key == part || !strings.HasPrefix(key, ":") {
+					if key == part || !strings.HasPrefix(key, paramStart) {
 						continue
 					}
 
-					keyIsGreedy := strings.HasSuffix(key, "...")
+					keyIsGreedy := strings.HasSuffix(key, paramEndGreedy)
 
 					if isGreedy && keyIsGreedy || !isGreedy && !keyIsGreedy {
 						panic(fmt.Sprintf("multiple parameters in the same position for %v", pattern))
@@ -409,7 +416,7 @@ func (mux *ServeMux) route(method, pattern string, handler http.Handler, names .
 		panic("route must not be empty")
 	}
 
-	if strings.Contains(pattern, ".../") {
+	if strings.Contains(pattern, paramEndGreedy+"/") {
 		panic("greedy ... syntax can only appear after the final named parameter")
 	}
 
@@ -434,10 +441,6 @@ func (mux *ServeMux) route(method, pattern string, handler http.Handler, names .
 	mux.nameRoute(route, names...)
 
 	return route
-}
-
-func (mux *ServeMux) HandleFunc(pattern string, handler http.HandlerFunc, names ...string) {
-
 }
 
 // OptionsHandler registers a handler that can be used to serve any OPTIONS
@@ -600,7 +603,7 @@ func (mux *ServeMux) MethodNotAllowed(handler http.HandlerFunc) {
 //
 // Any parameters used in the source pattern will have their value replaced into
 // the destination pattern where the same parameter is used.
-// For example, the patterns: "/:foo/greet"; "/:foo/world", will rewrite the
+// For example, the patterns: "/{foo}/greet"; "/{foo}/world", will rewrite the
 // source "/hello/greet" to "/hello/world".
 func (mux *ServeMux) Rewrite(method, src, dst string) {
 	originalPrefix := mux.prefix
@@ -622,7 +625,7 @@ func (mux *ServeMux) Rewrite(method, src, dst string) {
 			})
 
 			for _, key := range keys {
-				dst = strings.ReplaceAll(dst, ":"+key, params[key])
+				dst = strings.ReplaceAll(dst, paramStart+key+paramEnd, params[key])
 			}
 		}
 
@@ -639,7 +642,7 @@ func (mux *ServeMux) Rewrite(method, src, dst string) {
 //
 // Any parameters used in the source pattern will have their value replaced into
 // the destination pattern where the same parameter is used.
-// For example, the patterns: "/:foo/greet"; "/:foo/world", will redirect the
+// For example, the patterns: "/{foo}/greet"; "/{foo}/world", will redirect the
 // source "/hello/greet" to "/hello/world".
 func (mux *ServeMux) Redirect(method, src, dst string, code int) {
 	originalPrefix := mux.prefix
@@ -661,7 +664,7 @@ func (mux *ServeMux) Redirect(method, src, dst string, code int) {
 			})
 
 			for _, key := range keys {
-				dst = strings.ReplaceAll(dst, ":"+key, params[key])
+				dst = strings.ReplaceAll(dst, paramStart+key+paramEnd, params[key])
 			}
 		}
 

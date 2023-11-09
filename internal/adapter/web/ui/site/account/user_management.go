@@ -29,7 +29,7 @@ func UserManagement(h *ui.Handler, mux *router.ServeMux) {
 			mux.Post("/", userNewPost(h), "account.management.user.new.post")
 		})
 
-		mux.Prefix("/:userID", func(mux *router.ServeMux) {
+		mux.Prefix("/{userID}", func(mux *router.ServeMux) {
 			mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					userID, ok := router.URLParamAs[int](r, "userID")
@@ -145,7 +145,7 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 		h.Sessions.Set(ctx, sess.SortTopID, user.ID)
 		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
 
-		http.Redirect(w, r, h.Path("account.management.user.edit", ":userID", user.ID), http.StatusSeeOther)
+		http.Redirect(w, r, h.Path("account.management.user.edit", "{userID}", user.ID), http.StatusSeeOther)
 	}
 }
 

@@ -23,7 +23,7 @@
 
 	<p>Are you sure you want to permanently delete the role {{printf "%q" .Vars.Role.Name}}?</p>
 
-	<form action="{{Path "account.management.role.delete.post" ":roleID" .Vars.Role.ID}}{{.URL.Query.String}}" method="POST">
+	<form action="{{Path "account.management.role.delete.post" "{roleID}" .Vars.Role.ID}}{{.URL.Query.String}}" method="POST">
 		{{template "com_csrf_input" .}}
 
 		<div class="bag reverse">

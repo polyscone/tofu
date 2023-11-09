@@ -13,7 +13,7 @@
 <div class="center">
 	<p>Are you sure you want to activate {{.Vars.User.Email}}?</p>
 
-	<form action="{{Path "account.management.user.activate.post" ":userID" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
+	<form action="{{Path "account.management.user.activate.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
 		{{template "com_csrf_input" .}}
 
 		<div class="bag reverse">

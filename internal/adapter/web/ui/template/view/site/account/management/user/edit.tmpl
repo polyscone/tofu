@@ -29,7 +29,7 @@
 	{{end}}
 
 	{{if $canChangeRoles}}
-		<form action="{{Path "account.management.user.roles.post" ":userID" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
+		<form action="{{Path "account.management.user.roles.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
 			{{template "com_csrf_input" .}}
 
 			{{if $isEditUserSuper}}
@@ -172,7 +172,7 @@
 
 	{{if not $isEditUserSuper}}
 		{{if $canSuspendUser}}
-			<form action="{{Path "account.management.user.suspend.post" ":userID" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
+			<form action="{{Path "account.management.user.suspend.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
 				{{template "com_csrf_input" .}}
 
 				<fieldset>
@@ -206,7 +206,7 @@
 					<div class="bag reverse">
 						{{if .Vars.User.IsSuspended}}
 							<button type="submit">Update reason</button>
-							<button type="submit" formnovalidate formaction="{{Path "account.management.user.unsuspend.post" ":userID" .Vars.User.ID}}" class="btn--danger push-inline-end">Unsuspend user</button>
+							<button type="submit" formnovalidate formaction="{{Path "account.management.user.unsuspend.post" "{userID}" .Vars.User.ID}}" class="btn--danger push-inline-end">Unsuspend user</button>
 						{{else}}
 							<button type="submit" class="btn--danger push-inline-end">Suspend user</button>
 						{{end}}

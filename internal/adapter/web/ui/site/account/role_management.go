@@ -29,7 +29,7 @@ func RoleManagement(h *ui.Handler, mux *router.ServeMux) {
 			mux.Post("/", roleNewPost(h), "account.management.role.new.post")
 		})
 
-		mux.Prefix("/:roleID", func(mux *router.ServeMux) {
+		mux.Prefix("/{roleID}", func(mux *router.ServeMux) {
 			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanUpdateRoles() }))
 
 			mux.Get("/", roleEditGet(h), "account.management.role.edit")
