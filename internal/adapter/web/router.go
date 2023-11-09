@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io/fs"
 	"net/http"
+	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/pkg/dev"
@@ -17,6 +18,10 @@ var files embed.FS
 const publicDir = "ui/public"
 
 var publicFiles = fstack.New(dev.RelDirFS(publicDir), errsx.Must(fs.Sub(files, publicDir)))
+
+// HandlerTimeout should be used as the value in all timeout middleware, and as the
+// base value to calculate http.Server timeouts from.
+const HandlerTimeout = 5 * time.Second
 
 func NewRouter(tenant *handler.Tenant) http.Handler {
 	mux := http.NewServeMux()

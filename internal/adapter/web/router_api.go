@@ -3,7 +3,6 @@ package web
 import (
 	"log/slog"
 	"net/http"
-	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/api"
 	"github.com/polyscone/tofu/internal/adapter/web/api/account"
@@ -33,7 +32,7 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 
 	mux.Use(middleware.Recover(errorHandler("recover middleware")))
 	mux.Use(h.AttachContextLogger)
-	mux.Use(middleware.Timeout(5*time.Second, &middleware.TimeoutConfig{
+	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
 		ErrorHandler: errorHandler("timeout middleware"),
 		Logger:       logger,
 	}))

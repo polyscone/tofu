@@ -214,13 +214,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	spill := 500 * time.Millisecond
+	readHeaderTimeout := 5 * time.Second
 	srv := http.Server{
-		ErrorLog:     slog.NewLogLogger(handler, slog.LevelError),
-		Addr:         opts.server.addr.value,
-		IdleTimeout:  1 * time.Minute,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
-		Handler:      web.NewMultiTenantHandler(logger, opts.server.behindSecureProxy, newTenant),
+		ErrorLog:          slog.NewLogLogger(handler, slog.LevelError),
+		Addr:              opts.server.addr.value,
+		IdleTimeout:       1 * time.Minute,
+		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       web.HandlerTimeout + readHeaderTimeout + spill,
+		WriteTimeout:      web.HandlerTimeout + spill,
+		Handler:           web.NewMultiTenantHandler(logger, opts.server.behindSecureProxy, newTenant),
 	}
 
 	go func() {

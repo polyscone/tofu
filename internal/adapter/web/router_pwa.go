@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
@@ -48,7 +47,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 	mux.Use(middleware.Recover(errorHandler("recover middleware")))
 	mux.Use(h.AttachContextLogger)
-	mux.Use(middleware.Timeout(5*time.Second, &middleware.TimeoutConfig{
+	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
 		ErrorHandler: errorHandler("timeout middleware"),
 		Logger:       logger,
 	}))
