@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/session"
@@ -67,6 +68,7 @@ var _ Unwrapper = (*sessionResponseWriter)(nil)
 
 type sessionResponseWriter struct {
 	http.ResponseWriter
+	mu              sync.Mutex
 	request         *http.Request
 	config          *SessionConfig
 	sm              *session.Manager
@@ -80,12 +82,18 @@ func (w *sessionResponseWriter) Unwrap() http.ResponseWriter {
 }
 
 func (w *sessionResponseWriter) Write(b []byte) (int, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
 	w.commit()
 
 	return w.ResponseWriter.Write(b)
 }
 
 func (w *sessionResponseWriter) WriteHeader(statusCode int) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
 	w.commit()
 
 	w.ResponseWriter.WriteHeader(statusCode)
