@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
@@ -166,39 +165,8 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 	mux.Get("/", h.HTML.Handler("site/page/home"), "page.home")
 
-	mux.Prefix("/account", func(mux *router.ServeMux) {
-		mux.Name("account.section")
-
-		account.Verify(h, mux)
-		account.ChangePassword(h, mux)
-		account.ChoosePassword(h, mux)
-		account.Dashboard(h, mux)
-		account.ResetPassword(h, mux)
-		account.SignUp(h, mux)
-		account.SignIn(h, mux)
-		account.SignOut(h, mux)
-		account.TOTP(h, mux)
-	})
-
-	mux.Prefix("/admin", func(mux *router.ServeMux) {
-		mux.Name("admin.section")
-
-		admin.Dashboard(h, mux)
-
-		mux.Prefix("/account", func(mux *router.ServeMux) {
-			mux.Before(h.RequireSignIn)
-
-			account.RoleManagement(h, mux)
-			account.UserManagement(h, mux)
-		})
-
-		mux.Prefix("/system", func(mux *router.ServeMux) {
-			mux.Before(h.RequireSignInIf(func(p guard.Passport) bool { return !p.System.CanViewConfig() }))
-			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
-
-			admin.SystemConfig(h, mux)
-		})
-	})
+	account.Routes(h, mux)
+	admin.Routes(h, mux)
 
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)

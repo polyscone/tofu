@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Verify(h *ui.Handler, mux *router.ServeMux) {
+func verifyRoutes(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/verify", func(mux *router.ServeMux) {
 		mux.Get("/", h.HTML.Handler("site/account/verify/form"), "account.verify")
 		mux.Post("/", verifyPost(h), "account.verify.post")

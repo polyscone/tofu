@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
 )
 
-func ChoosePassword(h *ui.Handler, mux *router.ServeMux) {
+func choosePasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/choose-password", func(mux *router.ServeMux) {
 		mux.Name("account.choose_password.section")
 

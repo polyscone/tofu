@@ -7,7 +7,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Health(h *api.Handler, mux *router.ServeMux) {
+func healthRoutes(h *api.Handler, mux *router.ServeMux) {
 	mux.Prefix("/health", func(mux *router.ServeMux) {
 		mux.Head("/", healthGet(h))
 		mux.Get("/", healthGet(h))

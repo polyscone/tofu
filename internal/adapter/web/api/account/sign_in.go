@@ -14,7 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func SignIn(h *api.Handler, mux *router.ServeMux) {
+func signInRoutes(h *api.Handler, mux *router.ServeMux) {
 	mux.Prefix("/sign-in", func(mux *router.ServeMux) {
 		mux.Post("/", signInPost(h))
 		mux.Post("/totp", signInTOTPPost(h))

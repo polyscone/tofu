@@ -25,7 +25,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/sms"
 )
 
-func TOTP(h *ui.Handler, mux *router.ServeMux) {
+func totpRoutes(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/totp", func(mux *router.ServeMux) {
 		mux.Name("account.totp.section")
 

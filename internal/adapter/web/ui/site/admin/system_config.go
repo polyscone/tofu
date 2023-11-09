@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func SystemConfig(h *ui.Handler, mux *router.ServeMux) {
+func systemConfigRoutes(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/config", func(mux *router.ServeMux) {
 		mux.Get("/", h.HTML.Handler("site/admin/system_config"), "system.config")
 		mux.Post("/", systemConfigPost(h), "system.config.post")

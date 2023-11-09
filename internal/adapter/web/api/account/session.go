@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Session(h *api.Handler, mux *router.ServeMux) {
+func sessionRoutes(h *api.Handler, mux *router.ServeMux) {
 	mux.Get("/session", sessionGet(h))
 }
 

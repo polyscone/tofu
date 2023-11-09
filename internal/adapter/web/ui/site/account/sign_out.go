@@ -7,7 +7,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func SignOut(h *ui.Handler, mux *router.ServeMux) {
+func signOutRoutes(h *ui.Handler, mux *router.ServeMux) {
 	mux.Post("/sign-out", signOutPost(h), "account.sign_out.post")
 }
 

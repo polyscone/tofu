@@ -5,7 +5,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Dashboard(h *ui.Handler, mux *router.ServeMux) {
+func dashboardRoutes(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/", func(mux *router.ServeMux) {
 		mux.Before(h.RequireSignIn)
 

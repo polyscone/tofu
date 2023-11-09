@@ -81,19 +81,9 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 		return 0
 	}))
 
-	mux.Prefix("/account", func(mux *router.ServeMux) {
-		account.Session(h, mux)
-		account.SignIn(h, mux)
-		account.SignOut(h, mux)
-	})
-
-	mux.Prefix("/security", func(mux *router.ServeMux) {
-		security.CSRF(h, mux)
-	})
-
-	mux.Prefix("/meta", func(mux *router.ServeMux) {
-		meta.Health(h, mux)
-	})
+	account.Routes(h, mux)
+	security.Routes(h, mux)
+	meta.Routes(h, mux)
 
 	return mux
 }
