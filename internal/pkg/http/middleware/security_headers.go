@@ -68,14 +68,6 @@ func (w *securityHeadersResponseWriter) Unwrap() http.ResponseWriter {
 	return w.ResponseWriter
 }
 
-func (w *securityHeadersResponseWriter) Push(target string, opts *http.PushOptions) error {
-	if pusher, ok := w.ResponseWriter.(http.Pusher); ok {
-		return pusher.Push(target, opts)
-	}
-
-	return http.ErrNotSupported
-}
-
 func (w *securityHeadersResponseWriter) Write(b []byte) (int, error) {
 	w.body = true
 
