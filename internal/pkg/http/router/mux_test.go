@@ -78,7 +78,7 @@ func TestMux(t *testing.T) {
 			})
 
 			currentPrefix := mux.CurrentPrefix()
-			currentPath := mux.CurrentPath()
+			currentPattern := mux.CurrentPattern()
 
 			mux.Prefix("/current", func(mux *router.ServeMux) {
 				mux.Get("/prefix", func(w http.ResponseWriter, r *http.Request) {
@@ -86,7 +86,7 @@ func TestMux(t *testing.T) {
 				})
 
 				mux.Get("/path", func(w http.ResponseWriter, r *http.Request) {
-					w.Write([]byte(currentPath))
+					w.Write([]byte(currentPattern))
 				})
 			})
 		})

@@ -22,14 +22,14 @@ const ctxParams ctxKey = iota
 
 // Route represents a registered route and handler.
 type Route struct {
-	path     string
+	pattern  string
 	parts    []string
 	handlers map[string]http.Handler
 	methods  []string
 }
 
 func (rt *Route) String() string {
-	return rt.path
+	return rt.pattern
 }
 
 // Replace will create a path based on the route's pattern using the
@@ -43,7 +43,7 @@ func (rt *Route) String() string {
 // Empty replacements will also panic.
 func (rt *Route) Replace(paramArgPairs ...any) string {
 	if len(paramArgPairs)%2 == 1 {
-		panic("route path substitution expects an equal number of arguments")
+		panic("route pattern substitution expects an equal number of arguments")
 	}
 
 	args := make(map[string]string, len(paramArgPairs)/2)
@@ -64,7 +64,7 @@ func (rt *Route) Replace(paramArgPairs ...any) string {
 	var sb strings.Builder
 
 	if rt.parts == nil {
-		rt.parts = strings.Split(strings.TrimPrefix(rt.path, "/"), "/")
+		rt.parts = strings.Split(strings.TrimPrefix(rt.pattern, "/"), "/")
 	}
 
 	seen := make(map[string]struct{})
@@ -74,7 +74,7 @@ func (rt *Route) Replace(paramArgPairs ...any) string {
 		if strings.HasPrefix(part, ":") {
 			arg, ok := args[part]
 			if !ok {
-				panic(fmt.Sprintf("want an argument for parameter %q in route path to be provided", part))
+				panic(fmt.Sprintf("want an argument for parameter %q in route pattern to be provided", part))
 			}
 
 			seen[part] = struct{}{}
@@ -171,7 +171,7 @@ func (mux *ServeMux) serveHTTP(w http.ResponseWriter, r *http.Request) {
 		parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
 		last := len(parts) - 1
 
-		// GreedyMatch represents a match for greedy path patterns that end with "..."
+		// GreedyMatch represents a match for greedy patterns that end with "..."
 		// The latest one found in the chain is stored as a fallback in case we
 		// can't find a more specific node
 		type GreedyMatch struct {
@@ -267,7 +267,7 @@ func (mux *ServeMux) Before(mw middleware.Middleware) {
 	mux.befores = append(mux.befores, mw)
 }
 
-// Prefix will automatically prefix any path patterns that are registered in
+// Prefix will automatically prefix any patterns that are registered in
 // given the route group function with the given prefix.
 func (mux *ServeMux) Prefix(prefix string, routeGroup func(mux *ServeMux)) {
 	originalPrefix := mux.prefix
@@ -288,12 +288,12 @@ func (mux *ServeMux) CurrentPrefix() string {
 	return mux.prefix + "/"
 }
 
-func (mux *ServeMux) CurrentPath() string {
+func (mux *ServeMux) CurrentPattern() string {
 	return mux.prefix
 }
 
 func (mux *ServeMux) Name(name string) {
-	route := &Route{path: mux.prefix}
+	route := &Route{pattern: mux.prefix}
 
 	mux.nameRoute(route, name)
 }
@@ -336,12 +336,12 @@ func (mux *ServeMux) nameRoute(route *Route, names ...string) {
 	}
 }
 
-// node creates a chain of node objects and returns the final one for the given path.
-func (mux *ServeMux) node(path string) *Node {
+// node creates a chain of node objects and returns the final one for the given pattern.
+func (mux *ServeMux) node(pattern string) *Node {
 	var node *Node
-	if strings.Contains(path, "/:") {
+	if strings.Contains(pattern, "/:") {
 		dynamic := mux.dynamic
-		parts := strings.Split(strings.TrimPrefix(path, "/"), "/")
+		parts := strings.Split(strings.TrimPrefix(pattern, "/"), "/")
 		last := len(parts) - 1
 
 		for i, part := range parts {
@@ -356,7 +356,7 @@ func (mux *ServeMux) node(path string) *Node {
 					keyIsGreedy := strings.HasSuffix(key, "...")
 
 					if isGreedy && keyIsGreedy || !isGreedy && !keyIsGreedy {
-						panic(fmt.Sprintf("multiple parameters in the same position for %v", path))
+						panic(fmt.Sprintf("multiple parameters in the same position for %v", pattern))
 					}
 				}
 			}
@@ -378,11 +378,11 @@ func (mux *ServeMux) node(path string) *Node {
 			}
 		}
 	} else {
-		node = mux.static[path]
+		node = mux.static[pattern]
 		if node == nil {
 			node = &Node{}
 
-			mux.static[path] = node
+			mux.static[pattern] = node
 		}
 	}
 
@@ -391,43 +391,43 @@ func (mux *ServeMux) node(path string) *Node {
 
 var reMultiSlash = regexp.MustCompile(`//+`)
 
-func (mux *ServeMux) route(method, path string, handler http.Handler, names ...string) *Route {
+func (mux *ServeMux) route(method, pattern string, handler http.Handler, names ...string) *Route {
 	method = strings.ToUpper(method)
 
-	if path == "" {
-		panic("route path must not be empty")
+	if pattern == "" {
+		panic("route pattern must not be empty")
 	}
 
-	if mux.prefix != "" && path == "/" {
-		path = ""
+	if mux.prefix != "" && pattern == "/" {
+		pattern = ""
 	}
 
-	path = mux.prefix + path
-	path = reMultiSlash.ReplaceAllString(path, "/")
+	pattern = mux.prefix + pattern
+	pattern = reMultiSlash.ReplaceAllString(pattern, "/")
 
-	if path == "" {
+	if pattern == "" {
 		panic("route must not be empty")
 	}
 
-	if strings.Contains(path, ".../") {
+	if strings.Contains(pattern, ".../") {
 		panic("greedy ... syntax can only appear after the final named parameter")
 	}
 
-	node := mux.node(path)
+	node := mux.node(pattern)
 	if node.route == nil {
 		node.route = &Route{handlers: make(map[string]http.Handler)}
 	}
 
 	route := node.route
 	if _, ok := route.handlers[method]; ok {
-		panic(fmt.Sprintf("duplicate routes for %v %v", method, path))
+		panic(fmt.Sprintf("duplicate routes for %v %v", method, pattern))
 	}
 
 	if len(mux.befores) > 0 {
 		handler = middleware.Apply(handler, mux.befores...)
 	}
 
-	route.path = path
+	route.pattern = pattern
 	route.handlers[method] = handler
 	route.methods = append(route.methods, method)
 
@@ -436,134 +436,138 @@ func (mux *ServeMux) route(method, path string, handler http.Handler, names ...s
 	return route
 }
 
+func (mux *ServeMux) HandleFunc(pattern string, handler http.HandlerFunc, names ...string) {
+
+}
+
 // OptionsHandler registers a handler that can be used to serve any OPTIONS
-// request matching the given path pattern.
-func (mux *ServeMux) OptionsHandler(path string, handler http.Handler, names ...string) *Route {
-	return mux.route(http.MethodOptions, path, handler, names...)
+// request matching the given pattern.
+func (mux *ServeMux) OptionsHandler(pattern string, handler http.Handler, names ...string) *Route {
+	return mux.route(http.MethodOptions, pattern, handler, names...)
 }
 
 // Options registers a handler that can be used to serve any OPTIONS
-// request matching the given path pattern.
-func (mux *ServeMux) Options(path string, handler http.HandlerFunc, names ...string) *Route {
-	return mux.OptionsHandler(path, http.HandlerFunc(handler), names...)
+// request matching the given pattern.
+func (mux *ServeMux) Options(pattern string, handler http.HandlerFunc, names ...string) *Route {
+	return mux.OptionsHandler(pattern, http.HandlerFunc(handler), names...)
 }
 
 // ConnectHandler registers a handler that can be used to serve any CONNECT
-// request matching the given path pattern.
-func (mux *ServeMux) ConnectHandler(path string, handler http.Handler, names ...string) *Route {
-	return mux.route(http.MethodConnect, path, handler, names...)
+// request matching the given pattern.
+func (mux *ServeMux) ConnectHandler(pattern string, handler http.Handler, names ...string) *Route {
+	return mux.route(http.MethodConnect, pattern, handler, names...)
 }
 
 // Connect registers a handler that can be used to serve any CONNECT
-// request matching the given path pattern.
-func (mux *ServeMux) Connect(path string, handler http.HandlerFunc, names ...string) *Route {
-	return mux.ConnectHandler(path, http.HandlerFunc(handler), names...)
+// request matching the given pattern.
+func (mux *ServeMux) Connect(pattern string, handler http.HandlerFunc, names ...string) *Route {
+	return mux.ConnectHandler(pattern, http.HandlerFunc(handler), names...)
 }
 
 // TraceHandler registers a handler that can be used to serve any TRACE
-// request matching the given path pattern.
-func (mux *ServeMux) TraceHandler(path string, handler http.Handler, names ...string) *Route {
-	return mux.route(http.MethodTrace, path, handler, names...)
+// request matching the given pattern.
+func (mux *ServeMux) TraceHandler(pattern string, handler http.Handler, names ...string) *Route {
+	return mux.route(http.MethodTrace, pattern, handler, names...)
 }
 
 // Trace registers a handler that can be used to serve any TRACE
-// request matching the given path pattern.
-func (mux *ServeMux) Trace(path string, handler http.HandlerFunc, names ...string) *Route {
-	return mux.TraceHandler(path, http.HandlerFunc(handler), names...)
+// request matching the given pattern.
+func (mux *ServeMux) Trace(pattern string, handler http.HandlerFunc, names ...string) *Route {
+	return mux.TraceHandler(pattern, http.HandlerFunc(handler), names...)
 }
 
 // HeadHandler registers a handler that can be used to serve any HEAD
-// request matching the given path pattern.
-func (mux *ServeMux) HeadHandler(path string, handler http.Handler, names ...string) *Route {
-	return mux.route(http.MethodHead, path, handler, names...)
+// request matching the given pattern.
+func (mux *ServeMux) HeadHandler(pattern string, handler http.Handler, names ...string) *Route {
+	return mux.route(http.MethodHead, pattern, handler, names...)
 }
 
 // Head registers a handler that can be used to serve any HEAD
-// request matching the given path pattern.
-func (mux *ServeMux) Head(path string, handler http.HandlerFunc, names ...string) *Route {
-	return mux.HeadHandler(path, http.HandlerFunc(handler), names...)
+// request matching the given pattern.
+func (mux *ServeMux) Head(pattern string, handler http.HandlerFunc, names ...string) *Route {
+	return mux.HeadHandler(pattern, http.HandlerFunc(handler), names...)
 }
 
 // GetHandler registers a handler that can be used to serve any GET
-// request matching the given path pattern.
-func (mux *ServeMux) GetHandler(path string, handler http.Handler, names ...string) *Route {
-	return mux.route(http.MethodGet, path, handler, names...)
+// request matching the given pattern.
+func (mux *ServeMux) GetHandler(pattern string, handler http.Handler, names ...string) *Route {
+	return mux.route(http.MethodGet, pattern, handler, names...)
 }
 
 // Get registers a handler that can be used to serve any GET
-// request matching the given path pattern.
-func (mux *ServeMux) Get(path string, handler http.HandlerFunc, names ...string) *Route {
-	return mux.GetHandler(path, http.HandlerFunc(handler), names...)
+// request matching the given pattern.
+func (mux *ServeMux) Get(pattern string, handler http.HandlerFunc, names ...string) *Route {
+	return mux.GetHandler(pattern, http.HandlerFunc(handler), names...)
 }
 
 // PostHandler registers a handler that can be used to serve any POST
-// request matching the given path pattern.
-func (mux *ServeMux) PostHandler(path string, handler http.Handler, names ...string) *Route {
-	return mux.route(http.MethodPost, path, handler, names...)
+// request matching the given pattern.
+func (mux *ServeMux) PostHandler(pattern string, handler http.Handler, names ...string) *Route {
+	return mux.route(http.MethodPost, pattern, handler, names...)
 }
 
 // Post registers a handler that can be used to serve any POST
-// request matching the given path pattern.
-func (mux *ServeMux) Post(path string, handler http.HandlerFunc, names ...string) *Route {
-	return mux.PostHandler(path, http.HandlerFunc(handler), names...)
+// request matching the given pattern.
+func (mux *ServeMux) Post(pattern string, handler http.HandlerFunc, names ...string) *Route {
+	return mux.PostHandler(pattern, http.HandlerFunc(handler), names...)
 }
 
 // PutHandler registers a handler that can be used to serve any PUT
-// request matching the given path pattern.
-func (mux *ServeMux) PutHandler(path string, handler http.Handler, names ...string) *Route {
-	return mux.route(http.MethodPut, path, handler, names...)
+// request matching the given pattern.
+func (mux *ServeMux) PutHandler(pattern string, handler http.Handler, names ...string) *Route {
+	return mux.route(http.MethodPut, pattern, handler, names...)
 }
 
 // Put registers a handler that can be used to serve any PUT
-// request matching the given path pattern.
-func (mux *ServeMux) Put(path string, handler http.HandlerFunc, names ...string) *Route {
-	return mux.PutHandler(path, http.HandlerFunc(handler), names...)
+// request matching the given pattern.
+func (mux *ServeMux) Put(pattern string, handler http.HandlerFunc, names ...string) *Route {
+	return mux.PutHandler(pattern, http.HandlerFunc(handler), names...)
 }
 
 // PatchHandler registers a handler that can be used to serve any PATCH
-// request matching the given path pattern.
-func (mux *ServeMux) PatchHandler(path string, handler http.Handler, names ...string) *Route {
-	return mux.route(http.MethodPatch, path, handler, names...)
+// request matching the given pattern.
+func (mux *ServeMux) PatchHandler(pattern string, handler http.Handler, names ...string) *Route {
+	return mux.route(http.MethodPatch, pattern, handler, names...)
 }
 
 // Patch registers a handler that can be used to serve any PATCH
-// request matching the given path pattern.
-func (mux *ServeMux) Patch(path string, handler http.HandlerFunc, names ...string) *Route {
-	return mux.PatchHandler(path, http.HandlerFunc(handler), names...)
+// request matching the given pattern.
+func (mux *ServeMux) Patch(pattern string, handler http.HandlerFunc, names ...string) *Route {
+	return mux.PatchHandler(pattern, http.HandlerFunc(handler), names...)
 }
 
 // DeleteHandler registers a handler that can be used to serve any DELETE
-// request matching the given path pattern.
-func (mux *ServeMux) DeleteHandler(path string, handler http.Handler, names ...string) *Route {
-	return mux.route(http.MethodDelete, path, handler, names...)
+// request matching the given pattern.
+func (mux *ServeMux) DeleteHandler(pattern string, handler http.Handler, names ...string) *Route {
+	return mux.route(http.MethodDelete, pattern, handler, names...)
 }
 
 // Delete registers a handler that can be used to serve any DELETE
-// request matching the given path pattern.
-func (mux *ServeMux) Delete(path string, handler http.HandlerFunc, names ...string) *Route {
-	return mux.DeleteHandler(path, http.HandlerFunc(handler), names...)
+// request matching the given pattern.
+func (mux *ServeMux) Delete(pattern string, handler http.HandlerFunc, names ...string) *Route {
+	return mux.DeleteHandler(pattern, http.HandlerFunc(handler), names...)
 }
 
 // AnyHandler registers a handler that can be used to serve any request matching
-// the given path pattern.
-func (mux *ServeMux) AnyHandler(path string, handler http.Handler, names ...string) *Route {
-	route := mux.OptionsHandler(path, handler, names...)
-	mux.ConnectHandler(path, handler)
-	mux.TraceHandler(path, handler)
-	mux.HeadHandler(path, handler)
-	mux.GetHandler(path, handler)
-	mux.PostHandler(path, handler)
-	mux.PutHandler(path, handler)
-	mux.PatchHandler(path, handler)
-	mux.DeleteHandler(path, handler)
+// the given pattern.
+func (mux *ServeMux) AnyHandler(pattern string, handler http.Handler, names ...string) *Route {
+	route := mux.OptionsHandler(pattern, handler, names...)
+	mux.ConnectHandler(pattern, handler)
+	mux.TraceHandler(pattern, handler)
+	mux.HeadHandler(pattern, handler)
+	mux.GetHandler(pattern, handler)
+	mux.PostHandler(pattern, handler)
+	mux.PutHandler(pattern, handler)
+	mux.PatchHandler(pattern, handler)
+	mux.DeleteHandler(pattern, handler)
 
 	return route
 }
 
 // Any registers a handler that can be used to serve any request matching
-// the given path pattern.
-func (mux *ServeMux) Any(path string, handler http.HandlerFunc, names ...string) *Route {
-	return mux.AnyHandler(path, http.HandlerFunc(handler), names...)
+// the given pattern.
+func (mux *ServeMux) Any(pattern string, handler http.HandlerFunc, names ...string) *Route {
+	return mux.AnyHandler(pattern, http.HandlerFunc(handler), names...)
 }
 
 // NotFoundHandler registers a handler to be used when an HTTP not found error
@@ -590,12 +594,12 @@ func (mux *ServeMux) MethodNotAllowed(handler http.HandlerFunc) {
 	mux.MethodNotAllowedHandler(http.HandlerFunc(handler))
 }
 
-// Rewrite will register a new route that rewrites the source path pattern to
-// the destination path pattern, and then attempts to find a handler that
+// Rewrite will register a new route that rewrites the source pattern to
+// the destination pattern, and then attempts to find a handler that
 // matches the new pattern instead.
 //
-// Any parameters used in the source path will have their value replaced into
-// the destination path where the same parameter is used.
+// Any parameters used in the source pattern will have their value replaced into
+// the destination pattern where the same parameter is used.
 // For example, the patterns: "/:foo/greet"; "/:foo/world", will rewrite the
 // source "/hello/greet" to "/hello/world".
 func (mux *ServeMux) Rewrite(method, src, dst string) {
@@ -630,11 +634,11 @@ func (mux *ServeMux) Rewrite(method, src, dst string) {
 	mux.prefix = originalPrefix
 }
 
-// Redirect will create a new handler for the given source path that will
-// redirect the request to the given destination path using the code.
+// Redirect will create a new handler for the given source pattern that will
+// redirect the request to the given destination pattern using the code.
 //
-// Any parameters used in the source path will have their value replaced into
-// the destination path where the same parameter is used.
+// Any parameters used in the source pattern will have their value replaced into
+// the destination pattern where the same parameter is used.
 // For example, the patterns: "/:foo/greet"; "/:foo/world", will redirect the
 // source "/hello/greet" to "/hello/world".
 func (mux *ServeMux) Redirect(method, src, dst string, code int) {
