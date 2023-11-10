@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"expvar"
 	"log/slog"
 	"time"
 
@@ -64,6 +65,7 @@ type Tenant struct {
 	Broker   event.Broker
 	Email    smtp.Mailer
 	Logger   *slog.Logger
+	Metrics  *expvar.Map
 
 	Svc  Svc
 	Repo Repo

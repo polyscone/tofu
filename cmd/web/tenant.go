@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"expvar"
 	"fmt"
 	"log/slog"
 	"os"
@@ -35,11 +36,13 @@ var cache = struct {
 	sqlite  map[string]*sqlite.DB
 	mailers map[string]smtp.Mailer
 	loggers map[string]*slog.Logger
+	metrics map[string]*expvar.Map
 }{
 	repos:   make(map[string]repo),
 	sqlite:  make(map[string]*sqlite.DB),
 	mailers: make(map[string]smtp.Mailer),
 	loggers: make(map[string]*slog.Logger),
+	metrics: make(map[string]*expvar.Map),
 }
 
 // newTenant returns a tenant where the hostname is mapped to a shared alias.
@@ -64,6 +67,15 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
+
+	var initMetrics bool
+	metrics, ok := cache.metrics[data.Alias]
+	if !ok {
+		initMetrics = true
+		metrics = expvar.NewMap("tenant." + data.Alias)
+
+		cache.metrics[data.Alias] = metrics
+	}
 
 	logger, ok := cache.loggers[data.Alias]
 	if !ok {
@@ -91,6 +103,12 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 			}
 
 			cache.sqlite[data.Alias] = sqliteDB
+		}
+
+		if initMetrics {
+			metrics.Set("sqlite", expvar.Func(func() any {
+				return sqliteDB.Stats()
+			}))
 		}
 
 		repo.account, err = sqlite.NewAccountRepo(ctx, sqliteDB, app.SignInThrottleTTL)
@@ -145,6 +163,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		Broker:   broker,
 		Email:    mailer,
 		Logger:   logger,
+		Metrics:  metrics,
 		Svc:      svc,
 		Repo: handler.Repo{
 			Account: repo.account,

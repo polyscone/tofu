@@ -86,10 +86,12 @@ func main() {
 		os.Exit(2)
 	}
 
-	if opts.version || flag.Arg(0) == "version" {
+	// Version data
+	{
 		modified := false
 		revision := "-"
 		tags := "-"
+		_go := strings.TrimPrefix(runtime.Version(), "go")
 		race := "disabled"
 
 		info, _ := debug.ReadBuildInfo()
@@ -115,18 +117,58 @@ func main() {
 			revision += " (uncommitted changes)"
 		}
 
-		var version string
+		if opts.version || flag.Arg(0) == "version" {
+			var version string
 
-		version += fmt.Sprintln("Revision:     ", revision)
-		version += fmt.Sprintln("Tags:         ", tags)
-		version += fmt.Sprintln("Go version:   ", strings.TrimPrefix(runtime.Version(), "go"))
-		version += fmt.Sprintln("OS/Arch:      ", runtime.GOOS+"/"+runtime.GOARCH)
-		version += fmt.Sprintln("Race detector:", race)
+			version += fmt.Sprintln("Revision:     ", revision)
+			version += fmt.Sprintln("Tags:         ", tags)
+			version += fmt.Sprintln("Go version:   ", _go)
+			version += fmt.Sprintln("OS/Arch:      ", runtime.GOOS+"/"+runtime.GOARCH)
+			version += fmt.Sprintln("Race detector:", race)
 
-		fmt.Print(version)
+			fmt.Print(version)
 
-		return
+			return
+		}
+
+		newString := func(value string) expvar.Var {
+			var s expvar.String
+
+			s.Set(value)
+
+			return &s
+		}
+
+		version := expvar.NewMap("version")
+
+		version.Set("revision", newString(revision))
+		version.Set("tags", newString(tags))
+		version.Set("go", newString(_go))
+		version.Set("os", newString(runtime.GOOS))
+		version.Set("arch", newString(runtime.GOARCH))
+		version.Set("race", newString(race))
 	}
+
+	now := time.Now()
+	expvar.Publish("uptime", expvar.Func(func() any {
+		return time.Since(now)
+	}))
+
+	expvar.Publish("now", expvar.Func(func() any {
+		return time.Now()
+	}))
+
+	expvar.Publish("cgoCalls", expvar.Func(func() any {
+		return runtime.NumCgoCall()
+	}))
+
+	expvar.Publish("cpus", expvar.Func(func() any {
+		return runtime.NumCPU()
+	}))
+
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
 
 	if opts.log.style == "" {
 		opts.log.style = slogger.StyleJSON
