@@ -102,6 +102,27 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 				config.ErrorHandler(w, r, http.ErrHandlerTimeout)
 
 				rw.mu.Unlock()
+
+			case <-ctx.Done():
+				rw.mu.Lock()
+
+				// If we already flushed data to the client we ignore the context
+				// and let whatever handler is below us decide what to do
+				if rw.flushed {
+					rw.mu.Unlock()
+
+					goto TimeoutSelect
+				}
+
+				switch err := ctx.Err(); err {
+				case context.DeadlineExceeded:
+					config.ErrorHandler(w, r, http.ErrHandlerTimeout)
+
+				default:
+					config.ErrorHandler(w, r, err)
+				}
+
+				rw.mu.Unlock()
 			}
 		}
 	}
