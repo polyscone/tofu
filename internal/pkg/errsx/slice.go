@@ -34,6 +34,14 @@ func (s *Slice) Append(msg any) {
 	*s = append(*s, err)
 }
 
+func (s Slice) Err() error {
+	if s != nil {
+		return s
+	}
+
+	return nil
+}
+
 func (s Slice) Error() string {
 	if s == nil {
 		return "<nil>"

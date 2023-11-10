@@ -50,6 +50,14 @@ func (m *Map) Set(key string, msg any) {
 	(*m)[key] = err
 }
 
+func (m Map) Err() error {
+	if m != nil {
+		return m
+	}
+
+	return nil
+}
+
 func (m Map) Error() string {
 	if m == nil {
 		return "<nil>"
