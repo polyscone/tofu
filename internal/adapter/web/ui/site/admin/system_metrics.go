@@ -62,7 +62,35 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 		goroutines := varAs[int](expvar.Get("goroutines"))
 
 		memstats := varAs[runtime.MemStats](expvar.Get("memstats"))
-		sqlite := varAs[sql.DBStats](h.Metrics.Get("sqlite"))
+
+		type DatabaseMetrics struct {
+			Label               string
+			MaxOpenConns        int
+			InUseConns          int
+			IdleConns           int
+			ConnWaitCount       int64
+			TotalConnWaitTime   string
+			AverageConnWaitTime string
+		}
+
+		var databases []DatabaseMetrics
+		h.Metrics.Do(func(kv expvar.KeyValue) {
+			if !strings.HasPrefix(kv.Key, "database.") {
+				return
+			}
+
+			_, label, _ := strings.Cut(kv.Key, "database.")
+			stats := varAs[sql.DBStats](kv.Value)
+			databases = append(databases, DatabaseMetrics{
+				Label:               label,
+				MaxOpenConns:        stats.MaxOpenConnections,
+				InUseConns:          stats.InUse,
+				IdleConns:           stats.Idle,
+				ConnWaitCount:       stats.WaitCount,
+				TotalConnWaitTime:   human.DurationPrecise(stats.WaitDuration),
+				AverageConnWaitTime: human.DurationPrecise(stats.WaitDuration / time.Duration(max(1, stats.WaitCount))),
+			})
+		})
 
 		type RequestMetrics struct {
 			Label                      string
@@ -151,15 +179,8 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			"GCTargetHeapAlloc": memstats.NextGC,
 			"LastGC":            time.Unix(0, int64(memstats.LastGC)),
 			"TotalGCPause":      human.DurationPrecise(time.Duration(memstats.PauseTotalNs)),
-			"SQLite": map[string]any{
-				"MaxOpenConns":        sqlite.MaxOpenConnections,
-				"InUseConns":          sqlite.InUse,
-				"IdleConns":           sqlite.Idle,
-				"ConnWaitCount":       sqlite.WaitCount,
-				"TotalConnWaitTime":   human.DurationPrecise(sqlite.WaitDuration),
-				"AverageConnWaitTime": human.DurationPrecise(sqlite.WaitDuration / time.Duration(max(1, sqlite.WaitCount))),
-			},
-			"Requests": requests,
+			"Databases":         databases,
+			"Requests":          requests,
 		})
 	}
 }

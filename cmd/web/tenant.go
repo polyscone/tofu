@@ -106,7 +106,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		}
 
 		if initMetrics {
-			metrics.Set("sqlite", expvar.Func(func() any {
+			metrics.Set("database.SQLite", expvar.Func(func() any {
 				return sqliteDB.Stats()
 			}))
 		}
