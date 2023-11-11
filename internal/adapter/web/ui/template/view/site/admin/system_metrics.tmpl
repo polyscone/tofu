@@ -1,0 +1,209 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<h1>System metrics</h1>
+
+{{end}}
+
+{{define "view_body"}}
+
+<p class="text-bold"><time datetime="{{FormatTime .Vars.Now "RFC3339"}}" data-date="full">{{FormatTime .Vars.Now "DateTime"}}</time></p>
+
+<h2>Build</h2>
+
+<table class="metrics">
+	<tr>
+		<td class="text-bold">Revision</td>
+		<td>{{.Vars.Revision}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Tags</td>
+		<td>{{.Vars.Tags}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Go version</td>
+		<td>{{.Vars.Go}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">OS/Arch</td>
+		<td>{{.Vars.OS}}/{{.Vars.Arch}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Race detector</td>
+		<td>{{.Vars.Race}}</td>
+	</tr>
+</table>
+
+<h2>Process and memory</h2>
+
+<table class="metrics">
+	<tr>
+		<td class="text-bold">Uptime</td>
+		<td>{{.Vars.Uptime}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Cgo calls</td>
+		<td data-locale-number>{{.Vars.CgoCalls}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Logical CPUs</td>
+		<td data-locale-number>{{.Vars.CPUs}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Goroutines</td>
+		<td data-locale-number>{{.Vars.Goroutines}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Total memory from OS</td>
+		<td data-locale-number>{{.Vars.TotalMemOS}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Total heap allocated</td>
+		<td data-locale-number>{{.Vars.TotalHeapAlloc}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Current heap allocated</td>
+		<td data-locale-number>{{.Vars.HeapAlloc}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Current heap objects</td>
+		<td data-locale-number>{{.Vars.HeapObjects}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Completed GC cycles</td>
+		<td data-locale-number>{{.Vars.GCCycles}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Next GC cycle target heap</td>
+		<td data-locale-number>{{.Vars.GCTargetHeapAlloc}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Last GC cycle</td>
+		<td><time datetime="{{FormatTime .Vars.LastGC "RFC3339"}}" data-date="full">{{FormatTime .Vars.LastGC "DateTime"}}</time></td>
+	</tr>
+	<tr>
+		<td class="text-bold">Total GC pause</td>
+		<td>{{.Vars.TotalGCPause}}</td>
+	</tr>
+</table>
+
+<h2>SQLite</h2>
+
+<table class="metrics">
+	<tr>
+		<td class="text-bold">Max open conns.</td>
+		<td>
+			{{if .Vars.SQLite.MaxOpenConns}}
+				<span data-locale-number>{{.Vars.SQLite.MaxOpenConns}}</span>
+			{{else}}
+				∞
+			{{end}}
+		</td>
+	</tr>
+	<tr>
+		<td class="text-bold">In use conns.</td>
+		<td data-locale-number>{{.Vars.SQLite.InUseConns}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Idle conns.</td>
+		<td data-locale-number>{{.Vars.SQLite.IdleConns}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Times waiting for a conn.</td>
+		<td data-locale-number>{{.Vars.SQLite.ConnWaitCount}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Total time waiting for a conn.</td>
+		<td>{{.Vars.SQLite.TotalConnWaitTime}}</td>
+	</tr>
+	<tr>
+		<td class="text-bold">Average time waiting for a conn.</td>
+		<td>{{.Vars.SQLite.AverageConnWaitTime}}</td>
+	</tr>
+</table>
+
+<div class="cols-thirds">
+	{{range $metrics := .Vars.Requests}}
+		<div>
+			<h2>{{$metrics.Label}} reqs.</h2>
+
+			<h3>Totals</h3>
+
+			<table class="metrics">
+				<tr>
+					<td class="text-bold">Requests received</td>
+					<td data-locale-number>{{$metrics.TotalRequestsReceived}}</td>
+				</tr>
+				<tr>
+					<td class="text-bold">Requests in-flight</td>
+					<td data-locale-number>{{$metrics.TotalRequestsInFlight}}</td>
+				</tr>
+				<tr>
+					<td class="text-bold">Responses sent</td>
+					<td data-locale-number>{{$metrics.TotalResponsesSent}}</td>
+				</tr>
+				<tr>
+					<td class="text-bold">Bytes read</td>
+					<td data-locale-number>{{$metrics.TotalBytesRead}}</td>
+				</tr>
+				<tr>
+					<td class="text-bold">Bytes written</td>
+					<td data-locale-number>{{$metrics.TotalBytesWritten}}</td>
+				</tr>
+				<tr>
+					<td class="text-bold">Time until first write</td>
+					<td>{{$metrics.TotalTimeUntilFirstWrite}}</td>
+				</tr>
+				<tr>
+					<td class="text-bold">Time in handlers</td>
+					<td>{{$metrics.TotalTimeInHandlers}}</td>
+				</tr>
+				<tr>
+					<td class="text-bold">Time writing</td>
+					<td>{{$metrics.TotalTimeWriting}}</td>
+				</tr>
+			</table>
+
+			<h3>Averages</h3>
+
+			<table class="metrics">
+				<tr>
+					<td class="text-bold">Bytes read</td>
+					<td data-locale-number>{{$metrics.AverageBytesRead}}</td>
+				</tr>
+				<tr>
+					<td class="text-bold">Bytes written</td>
+					<td data-locale-number>{{$metrics.AverageBytesWritten}}</td>
+				</tr>
+				<tr>
+					<td class="text-bold">Time until first write</td>
+					<td>{{$metrics.AverageTimeUntilFirstWrite}}</td>
+				</tr>
+				<tr>
+					<td class="text-bold">Time in handlers</td>
+					<td>{{$metrics.AverageTimeInHandlers}}</td>
+				</tr>
+				<tr>
+					<td class="text-bold">Time writing</td>
+					<td>{{$metrics.AverageTimeWriting}}</td>
+				</tr>
+			</table>
+
+			<h3>Status codes</h3>
+
+			<table class="metrics">
+				{{if $metrics.TotalResponseStatusCodes}}
+					{{range $statusCode, $count := $metrics.TotalResponseStatusCodes}}
+						<tr>
+							<td class="text-bold">{{$statusCode}} {{StatusText $statusCode}}</td>
+							<td data-locale-number>{{$count}}</td>
+						</tr>
+					{{end}}
+				{{end}}
+			</table>
+		</div>
+	{{end}}
+</div>
+
+{{end}}

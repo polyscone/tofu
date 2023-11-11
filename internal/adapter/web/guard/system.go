@@ -11,3 +11,7 @@ func (s System) CanViewConfig() bool {
 func (s System) CanUpdateConfig() bool {
 	return s.requireConfigSetup || s.can(updateConfig)
 }
+
+func (s System) CanViewMetrics() bool {
+	return s.isSuper
+}

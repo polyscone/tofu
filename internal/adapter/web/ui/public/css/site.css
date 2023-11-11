@@ -62,7 +62,12 @@
 		padding-inline: 1rem;
 	}
 
-	.cols-50-50 {
+	.cols-halves {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.cols-thirds {
 		display: grid;
 		gap: 1rem;
 	}
@@ -104,6 +109,10 @@
 
 	.management .management__highlight:hover td {
 		background: var(--clr-highlight-400);
+	}
+
+	.metrics td {
+		padding: 0.1rem 0.3rem;
 	}
 
 	.pagination {
@@ -161,8 +170,12 @@
 			justify-content: flex-start;
 		}
 
-		.cols-50-50 {
+		.cols-halves {
 			grid-template-columns: repeat(2, 1fr);
+		}
+
+		.cols-thirds {
+			grid-template-columns: repeat(3, 1fr);
 		}
 	}
 }

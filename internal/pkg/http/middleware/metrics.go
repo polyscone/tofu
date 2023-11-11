@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"expvar"
+	"io"
 	"net/http"
 	"strconv"
 	"sync"
@@ -21,11 +22,19 @@ func Metrics(metrics *expvar.Map, keys ...string) Middleware {
 
 		statusCodeMaps = append(statusCodeMaps, statusCodesMap.(*expvar.Map))
 
-		metrics.Set(key+".totalRequestsReceived", &expvar.Int{})
-		metrics.Set(key+".totalResponsesSent", &expvar.Int{})
-		metrics.Set(key+".totalBytesWritten", &expvar.Int{})
-		metrics.Set(key+".totalTimeUntilFirstWrite", &expvar.Int{})
-		metrics.Set(key+".totalTimeInHandlers", &expvar.Int{})
+		suffixes := []string{
+			"totalRequestsReceived",
+			"totalResponsesSent",
+			"totalBytesRead",
+			"totalBytesWritten",
+			"totalTimeUntilFirstWrite",
+			"totalTimeInHandlers",
+		}
+		for _, suffix := range suffixes {
+			if metrics.Get(key+"."+suffix) == nil {
+				metrics.Set(key+"."+suffix, &expvar.Int{})
+			}
+		}
 	}
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
@@ -36,6 +45,14 @@ func Metrics(metrics *expvar.Map, keys ...string) Middleware {
 				rc:             http.NewResponseController(w),
 				keys:           keys,
 				metrics:        metrics,
+			}
+
+			if r.Body != nil {
+				r.Body = &metricsRequestReader{
+					ReadCloser: r.Body,
+					keys:       keys,
+					metrics:    metrics,
+				}
 			}
 
 			for _, key := range keys {
@@ -62,6 +79,22 @@ func Metrics(metrics *expvar.Map, keys ...string) Middleware {
 			}
 		}
 	}
+}
+
+type metricsRequestReader struct {
+	io.ReadCloser
+	keys    []string
+	metrics *expvar.Map
+}
+
+func (r *metricsRequestReader) Read(p []byte) (int, error) {
+	n, err := r.ReadCloser.Read(p)
+
+	for _, key := range r.keys {
+		r.metrics.Add(key+".totalBytesRead", int64(n))
+	}
+
+	return n, err
 }
 
 var _ Unwrapper = (*metricsResponseWriter)(nil)

@@ -25,6 +25,7 @@ func Routes(h *ui.Handler, mux *router.ServeMux) {
 			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
 
 			systemConfigRoutes(h, mux)
+			systemMetricsRoutes(h, mux)
 		})
 	})
 }
