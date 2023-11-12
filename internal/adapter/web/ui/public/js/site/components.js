@@ -27,13 +27,7 @@ onMount(".invalid", node => {
 })
 
 onMount("[data-locale-number]", node => {
-	const str = node.innerText.trim()
-
-	if (!str.trim()) {
-		return
-	}
-
-	node.innerText = Number(str).toLocaleString()
+	node.innerText = node.innerText.replaceAll(/\d+(\.\d+)?/g, match => Number(match).toLocaleString())
 })
 
 onMount("time", node => {
