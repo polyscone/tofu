@@ -11,31 +11,26 @@ import (
 	"time"
 )
 
-func Metrics(metrics *expvar.Map, keys ...string) Middleware {
-	var statusCodeMaps []*expvar.Map
-	for _, key := range keys {
-		statusCodesKey := key + ".totalResponseStatusCodes"
-		statusCodesMap := metrics.Get(statusCodesKey)
-		if statusCodesMap == nil {
-			statusCodesMap = &expvar.Map{}
+func Metrics(metrics *expvar.Map, group string) Middleware {
+	statusCodesKey := group + ".totalResponseStatusCodes"
+	statusCodesMap, ok := metrics.Get(statusCodesKey).(*expvar.Map)
+	if !ok {
+		statusCodesMap = &expvar.Map{}
 
-			metrics.Set(statusCodesKey, statusCodesMap)
-		}
+		metrics.Set(statusCodesKey, statusCodesMap)
+	}
 
-		statusCodeMaps = append(statusCodeMaps, statusCodesMap.(*expvar.Map))
-
-		suffixes := []string{
-			"totalRequestsReceived",
-			"totalResponsesSent",
-			"totalBytesRead",
-			"totalBytesWritten",
-			"totalTimeUntilFirstWrite",
-			"totalTimeInHandlers",
-		}
-		for _, suffix := range suffixes {
-			if metrics.Get(key+"."+suffix) == nil {
-				metrics.Set(key+"."+suffix, &expvar.Int{})
-			}
+	suffixes := []string{
+		"totalRequestsReceived",
+		"totalResponsesSent",
+		"totalBytesRead",
+		"totalBytesWritten",
+		"totalTimeUntilFirstWrite",
+		"totalTimeInHandlers",
+	}
+	for _, suffix := range suffixes {
+		if metrics.Get(group+"."+suffix) == nil {
+			metrics.Set(group+"."+suffix, &expvar.Int{})
 		}
 	}
 
@@ -45,21 +40,19 @@ func Metrics(metrics *expvar.Map, keys ...string) Middleware {
 			rw := &metricsResponseWriter{
 				ResponseWriter: w,
 				rc:             http.NewResponseController(w),
-				keys:           keys,
+				group:          group,
 				metrics:        metrics,
 			}
 
 			if r.Body != nil {
 				r.Body = &metricsRequestReader{
 					ReadCloser: r.Body,
-					keys:       keys,
+					group:      group,
 					metrics:    metrics,
 				}
 			}
 
-			for _, key := range keys {
-				metrics.Add(key+".totalRequestsReceived", 1)
-			}
+			metrics.Add(group+".totalRequestsReceived", 1)
 
 			next(rw, r)
 
@@ -85,29 +78,25 @@ func Metrics(metrics *expvar.Map, keys ...string) Middleware {
 				rw.firstWriteAt = end
 			}
 
-			for i, key := range keys {
-				statusCodeMaps[i].Add(strconv.Itoa(rw.statusCode), 1)
+			statusCodesMap.Add(strconv.Itoa(rw.statusCode), 1)
 
-				metrics.Add(key+".totalResponsesSent", 1)
-				metrics.Add(key+".totalTimeUntilFirstWrite", rw.firstWriteAt.Sub(start).Nanoseconds())
-				metrics.Add(key+".totalTimeInHandlers", end.Sub(start).Nanoseconds())
-			}
+			metrics.Add(group+".totalResponsesSent", 1)
+			metrics.Add(group+".totalTimeUntilFirstWrite", rw.firstWriteAt.Sub(start).Nanoseconds())
+			metrics.Add(group+".totalTimeInHandlers", end.Sub(start).Nanoseconds())
 		}
 	}
 }
 
 type metricsRequestReader struct {
 	io.ReadCloser
-	keys    []string
+	group   string
 	metrics *expvar.Map
 }
 
 func (r *metricsRequestReader) Read(p []byte) (int, error) {
 	n, err := r.ReadCloser.Read(p)
 
-	for _, key := range r.keys {
-		r.metrics.Add(key+".totalBytesRead", int64(n))
-	}
+	r.metrics.Add(r.group+".totalBytesRead", int64(n))
 
 	return n, err
 }
@@ -118,7 +107,7 @@ type metricsResponseWriter struct {
 	http.ResponseWriter
 	mu           sync.Mutex
 	rc           *http.ResponseController
-	keys         []string
+	group        string
 	metrics      *expvar.Map
 	statusCode   int
 	firstWriteAt time.Time
@@ -144,9 +133,7 @@ func (w *metricsResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 func (w *metricsResponseWriter) Write(b []byte) (int, error) {
 	w.recordFirstWrite()
 
-	for _, key := range w.keys {
-		w.metrics.Add(key+".totalBytesWritten", int64(len(b)))
-	}
+	w.metrics.Add(w.group+".totalBytesWritten", int64(len(b)))
 
 	return w.ResponseWriter.Write(b)
 }

@@ -46,7 +46,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	}
 
 	mux.Use(middleware.Recover(errorHandler("recover middleware")))
-	mux.Use(middleware.Metrics(h.Metrics, "all", "pwa"))
+	mux.Use(middleware.Metrics(h.Metrics, "pwa"))
 	mux.Use(h.AttachContextLogger)
 	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
 		ErrorHandler: errorHandler("timeout middleware"),
