@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
+	"github.com/polyscone/tofu/internal/pkg/cache"
 )
 
 var ErrTenantNotFound = errors.New("not found")
@@ -20,7 +21,7 @@ type MultiTenantHandler struct {
 	behindSecureProxy bool
 	newTenant         NewTenantFunc
 	muxesMu           sync.RWMutex
-	muxes             map[string]http.Handler
+	muxes             *cache.Cache[string, http.Handler]
 }
 
 func NewMultiTenantHandler(logger *slog.Logger, behindSecureProxy bool, newTenant NewTenantFunc) *MultiTenantHandler {
@@ -28,53 +29,34 @@ func NewMultiTenantHandler(logger *slog.Logger, behindSecureProxy bool, newTenan
 		logger:            logger,
 		behindSecureProxy: behindSecureProxy,
 		newTenant:         newTenant,
-		muxes:             make(map[string]http.Handler),
+		muxes:             cache.New[string, http.Handler](),
 	}
 }
 
 func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 	hostname, port, _ := strings.Cut(r.Host, ":")
 
-	h.muxesMu.RLock()
+	return h.muxes.LoadOrMaybeStore(hostname, func() (http.Handler, error) {
+		tenant, err := h.newTenant(hostname)
+		if err != nil {
+			return nil, fmt.Errorf("new tenant: %w", err)
+		}
+		if tenant.Logger == nil {
+			panic("tenant logger must be set")
+		}
 
-	if mux, ok := h.muxes[hostname]; ok {
-		h.muxesMu.RUnlock()
+		if r.TLS != nil || h.behindSecureProxy {
+			tenant.Scheme = "https"
+		} else {
+			tenant.Scheme = "http"
+		}
 
-		return mux, nil
-	}
+		tenant.Host = r.Host
+		tenant.Hostname = hostname
+		tenant.Port = port
 
-	h.muxesMu.RUnlock()
-
-	h.muxesMu.Lock()
-	defer h.muxesMu.Unlock()
-
-	if mux, ok := h.muxes[hostname]; ok {
-		return mux, nil
-	}
-
-	tenant, err := h.newTenant(hostname)
-	if err != nil {
-		return nil, fmt.Errorf("new tenant: %w", err)
-	}
-	if tenant.Logger == nil {
-		panic("tenant logger must be set")
-	}
-
-	if r.TLS != nil || h.behindSecureProxy {
-		tenant.Scheme = "https"
-	} else {
-		tenant.Scheme = "http"
-	}
-
-	tenant.Host = r.Host
-	tenant.Hostname = hostname
-	tenant.Port = port
-
-	mux := NewRouter(tenant)
-
-	h.muxes[hostname] = mux
-
-	return mux, nil
+		return NewRouter(tenant), nil
+	})
 }
 
 func (h *MultiTenantHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {

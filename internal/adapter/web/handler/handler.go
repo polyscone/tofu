@@ -9,13 +9,13 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/app/system"
+	"github.com/polyscone/tofu/internal/pkg/cache"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/realip"
@@ -39,15 +39,14 @@ const (
 type Handler struct {
 	*Tenant
 
-	templatesMu sync.RWMutex
-	templates   map[string]*template.Template
-	Sessions    *session.Manager
+	templates *cache.Cache[string, *template.Template]
+	Sessions  *session.Manager
 }
 
 func New(tenant *Tenant) *Handler {
 	return &Handler{
 		Tenant:    tenant,
-		templates: make(map[string]*template.Template),
+		templates: cache.New[string, *template.Template](),
 		Sessions:  session.NewManager(tenant.Repo.Web),
 	}
 }
@@ -242,20 +241,7 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 	return csrf.MaskedToken(ctx), nil
 }
 
-func (h *Handler) Template(files fs.FS, funcs template.FuncMap, name string, patterns ...string) *template.Template {
-	h.templatesMu.RLock()
-
-	if tmpl := h.templates[name]; tmpl != nil && !h.Tenant.Dev {
-		h.templatesMu.RUnlock()
-
-		return tmpl
-	}
-
-	h.templatesMu.RUnlock()
-
-	h.templatesMu.Lock()
-	defer h.templatesMu.Unlock()
-
+func (h *Handler) template(files fs.FS, funcs template.FuncMap, name string, patterns []string) *template.Template {
 	tmpl := template.New(name).Option("missingkey=default").Funcs(funcs)
 
 	for _, pattern := range patterns {
@@ -270,9 +256,17 @@ func (h *Handler) Template(files fs.FS, funcs template.FuncMap, name string, pat
 		}
 	}
 
-	h.templates[name] = tmpl
-
 	return tmpl
+}
+
+func (h *Handler) Template(files fs.FS, funcs template.FuncMap, name string, patterns ...string) *template.Template {
+	if h.Tenant.Dev {
+		return h.template(files, funcs, name, patterns)
+	}
+
+	return h.templates.LoadOrStore(name, func() *template.Template {
+		return h.template(files, funcs, name, patterns)
+	})
 }
 
 func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
