@@ -70,20 +70,26 @@ endif
 build:
 	go build $(BUILD_FLAGS) -o $(OUT) $(PKG)
 
-.PHONY: vet
-vet:
-	go vet $(BUILD_TAGS) $(PKG)
-
 .PHONY: test
 test:
 	go test $(BUILD_TAGS) -race -vet off $(PKG)
 
+.PHONY: audit
+audit:
+	@echo go mod tidy -v
+	@go mod tidy -v
+	@echo go mod verify
+	@go mod verify
+	@echo go fmt ./...
+	@go fmt ./...
+	@echo go vet $(BUILD_TAGS) ./...
+	@go vet $(BUILD_TAGS) ./...
+	@echo go test $(BUILD_TAGS) -race -vet off ./...
+	@go test $(BUILD_TAGS) -race -vet off ./...
+
 .PHONY: vulncheck
 vulncheck:
-	govulncheck $(BUILD_TAGS) $(PKG)
-
-.PHONY: audit
-audit: vet test vulncheck
+	govulncheck $(BUILD_TAGS) ./...
 
 .PHONY: bench
 bench:
@@ -93,14 +99,6 @@ ifeq ($(PKG),./...)
 else
 	go test $(BUILD_TAGS) -vet off -run no-tests -bench . -count $(BENCH_COUNT) $(PKG)
 endif
-
-.PHONY: fmt
-fmt:
-	go fmt ./...
-
-.PHONY: tidy
-tidy: fmt
-	go mod tidy -v
 
 .PHONY: cover
 cover:
