@@ -45,13 +45,13 @@ var cache = struct {
 	metrics: make(map[string]*expvar.Map),
 }
 
-// newTenant returns a tenant where the hostname is mapped to a shared alias.
+// newTenant returns a tenant where the hostname is mapped to a shared name.
 //
 // Tenants share repositories along with their underlying database connection
-// pools based on the alias, and all tenants share an SMTP mailer regardless
-// of alias.
+// pools based on the name, and all tenants share an SMTP mailer regardless
+// of name.
 //
-// Every tenant gets its own event broker regardless of alias so that different
+// Every tenant gets its own event broker regardless of name so that different
 // adapters, even for those handling the same hostname, can respond to
 // application events differently if required.
 func newTenant(hostname string) (*handler.Tenant, error) {
@@ -61,23 +61,23 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	if !ok {
 		return nil, fmt.Errorf("find tenant %v: %w", hostname, web.ErrTenantNotFound)
 	}
-	if data.Alias == "" {
-		return nil, fmt.Errorf("alias name for the tenant %v is empty", hostname)
+	if data.Name == "" {
+		return nil, fmt.Errorf("name for the tenant %v is empty", hostname)
 	}
 
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 
 	var initMetrics bool
-	metrics, ok := cache.metrics[data.Alias]
+	metrics, ok := cache.metrics[data.Name]
 	if !ok {
 		initMetrics = true
-		metrics = expvar.NewMap("tenant." + data.Alias)
+		metrics = expvar.NewMap("tenant." + data.Name)
 
-		cache.metrics[data.Alias] = metrics
+		cache.metrics[data.Name] = metrics
 	}
 
-	logger, ok := cache.loggers[data.Alias]
+	logger, ok := cache.loggers[data.Name]
 	if !ok {
 		var err error
 		logger, err = slogger.New(opts.log.style, nil)
@@ -85,24 +85,24 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 			return nil, fmt.Errorf("new logger: %w", err)
 		}
 
-		logger = logger.With("app", data.Alias)
+		logger = logger.With("app", data.Name)
 
-		cache.loggers[data.Alias] = logger
+		cache.loggers[data.Name] = logger
 	}
 
-	repo, ok := cache.repos[data.Alias]
+	repo, ok := cache.repos[data.Name]
 	if !ok {
 		var err error
 
-		sqliteDB := cache.sqlite[data.Alias]
+		sqliteDB := cache.sqlite[data.Name]
 		if sqliteDB == nil {
-			p := filepath.Join(opts.data, data.Alias, "main.sqlite")
+			p := filepath.Join(opts.data, data.Name, "main.sqlite")
 			sqliteDB, err = sqlite.Open(ctx, sqlite.KindFile, p)
 			if err != nil {
 				return nil, fmt.Errorf("open SQLite database: %w", err)
 			}
 
-			cache.sqlite[data.Alias] = sqliteDB
+			cache.sqlite[data.Name] = sqliteDB
 		}
 
 		if initMetrics {
@@ -126,10 +126,10 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 			return nil, fmt.Errorf("new web repo: %w", err)
 		}
 
-		cache.repos[data.Alias] = repo
+		cache.repos[data.Name] = repo
 	}
 
-	mailer, ok := cache.mailers[data.Alias]
+	mailer, ok := cache.mailers[data.Name]
 	if !ok {
 		var err error
 		mailer, err = smtp.NewClient(logger, &smtpConfig{system: repo.system})
@@ -137,7 +137,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 			return nil, fmt.Errorf("new dynamic SMTP client: %w", err)
 		}
 
-		cache.mailers[data.Alias] = mailer
+		cache.mailers[data.Name] = mailer
 	}
 
 	var svc handler.Svc
@@ -156,6 +156,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	}
 
 	tenant := handler.Tenant{
+		Key:      data.Name,
 		Kind:     data.Kind,
 		Dev:      opts.dev,
 		Insecure: opts.server.insecure,
@@ -176,7 +177,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 }
 
 type Tenant struct {
-	Alias      string            `json:"-"`
+	Name       string            `json:"-"`
 	Kind       string            `json:"-"`
 	Hostnames  map[string]string `json:"hostnames"`
 	IsDisabled bool              `json:"isDisabled"`
@@ -235,14 +236,14 @@ func initTenants(tenantsPath string) error {
 	}
 
 	var errs errsx.Map
-	for alias, tenant := range data {
+	for name, tenant := range data {
 		if len(tenant.Hostnames) == 0 {
-			errs.Set(alias+".hostnames", "must be populated with at least one hostname")
+			errs.Set(name+".hostnames", "must be populated with at least one hostname")
 		}
 
-		if alias == "" && len(tenant.Hostnames) > 0 {
+		if name == "" && len(tenant.Hostnames) > 0 {
 			for hostname := range tenant.Hostnames {
-				errs.Set("hostname "+hostname, "alias cannot be empty")
+				errs.Set("hostname "+hostname, "name cannot be empty")
 			}
 
 			continue
@@ -250,10 +251,10 @@ func initTenants(tenantsPath string) error {
 
 		for hostname, kind := range tenant.Hostnames {
 			if dupe, ok := tenants[hostname]; ok {
-				errs.Set(hostname, fmt.Sprintf("cannot associate with %q; already associated with %q", alias, dupe.Alias))
+				errs.Set(hostname, fmt.Sprintf("cannot associate with %q; already associated with %q", name, dupe.Name))
 			}
 
-			tenant.Alias = alias
+			tenant.Name = name
 			tenant.Kind = kind
 
 			if !tenant.IsDisabled {

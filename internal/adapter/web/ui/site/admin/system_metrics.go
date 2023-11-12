@@ -60,7 +60,6 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 		cgoCalls := varAs[int64](expvar.Get("cgoCalls"))
 		cpus := varAs[int](expvar.Get("cpus"))
 		goroutines := varAs[int](expvar.Get("goroutines"))
-
 		memstats := varAs[runtime.MemStats](expvar.Get("memstats"))
 
 		type DatabaseMetrics struct {
@@ -72,25 +71,6 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			TotalConnWaitTime   string
 			AverageConnWaitTime string
 		}
-
-		var databases []DatabaseMetrics
-		h.Metrics.Do(func(kv expvar.KeyValue) {
-			if !strings.HasPrefix(kv.Key, "database.") {
-				return
-			}
-
-			_, label, _ := strings.Cut(kv.Key, "database.")
-			stats := varAs[sql.DBStats](kv.Value)
-			databases = append(databases, DatabaseMetrics{
-				Label:               label,
-				MaxOpenConns:        stats.MaxOpenConnections,
-				InUseConns:          stats.InUse,
-				IdleConns:           stats.Idle,
-				ConnWaitCount:       stats.WaitCount,
-				TotalConnWaitTime:   human.DurationPrecise(stats.WaitDuration),
-				AverageConnWaitTime: human.DurationPrecise(stats.WaitDuration / time.Duration(max(1, stats.WaitCount))),
-			})
-		})
 
 		type RequestMetrics struct {
 			Label                      string
@@ -111,56 +91,79 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			TotalResponseStatusCodes   map[int]int64
 		}
 
+		var databases []DatabaseMetrics
 		var requests []RequestMetrics
-		for _, label := range []string{"Site", "PWA", "API"} {
-			key := strings.ToLower(label)
+		h.Metrics.Do(func(kv expvar.KeyValue) {
+			switch {
+			case strings.HasPrefix(kv.Key, "database."):
+				_, label, _ := strings.Cut(kv.Key, "database.")
+				stats := varAs[sql.DBStats](kv.Value)
 
-			totalRequestsReceived := varAs[int64](h.Metrics.Get(key + ".totalRequestsReceived"))
-			totalResponsesSent := varAs[int64](h.Metrics.Get(key + ".totalResponsesSent"))
-			totalConnectionsHijacked := varAs[int64](h.Metrics.Get(key + ".totalConnectionsHijacked"))
-			totalBytesRead := int(varAs[int64](h.Metrics.Get(key + ".totalBytesRead")))
-			totalBytesWritten := int(varAs[int64](h.Metrics.Get(key + ".totalBytesWritten")))
-			totalTimeUntilFirstWrite := varAs[int64](h.Metrics.Get(key + ".totalTimeUntilFirstWrite"))
-			totalTimeInHandlers := varAs[int64](h.Metrics.Get(key + ".totalTimeInHandlers"))
-			totalTimeWriting := totalTimeInHandlers - totalTimeUntilFirstWrite
-			totalResponseStatusCodesVar := varAs[*expvar.Map](h.Metrics.Get(key + ".totalResponseStatusCodes"))
+				databases = append(databases, DatabaseMetrics{
+					Label:               label,
+					MaxOpenConns:        stats.MaxOpenConnections,
+					InUseConns:          stats.InUse,
+					IdleConns:           stats.Idle,
+					ConnWaitCount:       stats.WaitCount,
+					TotalConnWaitTime:   human.DurationPrecise(stats.WaitDuration),
+					AverageConnWaitTime: human.DurationPrecise(stats.WaitDuration / time.Duration(max(1, stats.WaitCount))),
+				})
 
-			averageBytesRead := totalBytesRead / max(1, int(totalRequestsReceived))
-			averageBytesWritten := totalBytesWritten / max(1, int(totalResponsesSent))
-			averageTimeUntilFirstWrite := totalTimeUntilFirstWrite / max(1, totalResponsesSent)
-			averageTimeInHandlers := totalTimeInHandlers / max(1, totalResponsesSent)
-			averageTimeWriting := totalTimeWriting / max(1, totalResponsesSent)
+			case strings.HasPrefix(kv.Key, "requests."):
+				group := varAs[*expvar.Map](kv.Value)
+				if group == nil {
+					return
+				}
 
-			var totalResponseStatusCodes map[int]int64
-			if totalResponseStatusCodesVar != nil {
-				totalResponseStatusCodes = make(map[int]int64)
+				_, label, _ := strings.Cut(kv.Key, "requests.")
 
-				totalResponseStatusCodesVar.Do(func(kv expvar.KeyValue) {
-					key, _ := strconv.Atoi(kv.Key)
+				totalRequestsReceived := varAs[int64](group.Get("totalRequestsReceived"))
+				totalResponsesSent := varAs[int64](group.Get("totalResponsesSent"))
+				totalConnectionsHijacked := varAs[int64](group.Get("totalConnectionsHijacked"))
+				totalBytesRead := int(varAs[int64](group.Get("totalBytesRead")))
+				totalBytesWritten := int(varAs[int64](group.Get("totalBytesWritten")))
+				totalTimeUntilFirstWrite := varAs[int64](group.Get("totalTimeUntilFirstWrite"))
+				totalTimeInHandlers := varAs[int64](group.Get("totalTimeInHandlers"))
+				totalTimeWriting := totalTimeInHandlers - totalTimeUntilFirstWrite
+				totalResponseStatusCodesVar := varAs[*expvar.Map](group.Get("totalResponseStatusCodes"))
 
-					totalResponseStatusCodes[key] = varAs[int64](kv.Value)
+				averageBytesRead := totalBytesRead / max(1, int(totalRequestsReceived))
+				averageBytesWritten := totalBytesWritten / max(1, int(totalResponsesSent))
+				averageTimeUntilFirstWrite := totalTimeUntilFirstWrite / max(1, totalResponsesSent)
+				averageTimeInHandlers := totalTimeInHandlers / max(1, totalResponsesSent)
+				averageTimeWriting := totalTimeWriting / max(1, totalResponsesSent)
+
+				var totalResponseStatusCodes map[int]int64
+				if totalResponseStatusCodesVar != nil {
+					totalResponseStatusCodes = make(map[int]int64)
+
+					totalResponseStatusCodesVar.Do(func(kv expvar.KeyValue) {
+						key, _ := strconv.Atoi(kv.Key)
+
+						totalResponseStatusCodes[key] = varAs[int64](kv.Value)
+					})
+				}
+
+				requests = append(requests, RequestMetrics{
+					Label:                      label,
+					TotalRequestsReceived:      totalRequestsReceived,
+					TotalRequestsInFlight:      totalRequestsReceived - totalResponsesSent,
+					TotalResponsesSent:         totalResponsesSent,
+					TotalConnectionsHijacked:   totalConnectionsHijacked,
+					TotalBytesRead:             human.SizeSI(uint64(totalBytesRead)),
+					TotalBytesWritten:          human.SizeSI(uint64(totalBytesWritten)),
+					TotalTimeUntilFirstWrite:   human.DurationPrecise(time.Duration(totalTimeUntilFirstWrite)),
+					TotalTimeInHandlers:        human.DurationPrecise(time.Duration(totalTimeInHandlers)),
+					TotalTimeWriting:           human.DurationPrecise(time.Duration(totalTimeWriting)),
+					AverageBytesRead:           human.SizeSI(uint64(averageBytesRead)),
+					AverageBytesWritten:        human.SizeSI(uint64(averageBytesWritten)),
+					AverageTimeUntilFirstWrite: human.DurationPrecise(time.Duration(averageTimeUntilFirstWrite)),
+					AverageTimeInHandlers:      human.DurationPrecise(time.Duration(averageTimeInHandlers)),
+					AverageTimeWriting:         human.DurationPrecise(time.Duration(averageTimeWriting)),
+					TotalResponseStatusCodes:   totalResponseStatusCodes,
 				})
 			}
-
-			requests = append(requests, RequestMetrics{
-				Label:                      label,
-				TotalRequestsReceived:      totalRequestsReceived,
-				TotalRequestsInFlight:      totalRequestsReceived - totalResponsesSent,
-				TotalResponsesSent:         totalResponsesSent,
-				TotalConnectionsHijacked:   totalConnectionsHijacked,
-				TotalBytesRead:             human.SizeSI(uint64(totalBytesRead)),
-				TotalBytesWritten:          human.SizeSI(uint64(totalBytesWritten)),
-				TotalTimeUntilFirstWrite:   human.DurationPrecise(time.Duration(totalTimeUntilFirstWrite)),
-				TotalTimeInHandlers:        human.DurationPrecise(time.Duration(totalTimeInHandlers)),
-				TotalTimeWriting:           human.DurationPrecise(time.Duration(totalTimeWriting)),
-				AverageBytesRead:           human.SizeSI(uint64(averageBytesRead)),
-				AverageBytesWritten:        human.SizeSI(uint64(averageBytesWritten)),
-				AverageTimeUntilFirstWrite: human.DurationPrecise(time.Duration(averageTimeUntilFirstWrite)),
-				AverageTimeInHandlers:      human.DurationPrecise(time.Duration(averageTimeInHandlers)),
-				AverageTimeWriting:         human.DurationPrecise(time.Duration(averageTimeWriting)),
-				TotalResponseStatusCodes:   totalResponseStatusCodes,
-			})
-		}
+		})
 
 		h.HTML.View(w, r, http.StatusOK, "site/admin/system_metrics", handler.Vars{
 			"Revision":          revision,

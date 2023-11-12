@@ -54,6 +54,7 @@ type Repo struct {
 }
 
 type Tenant struct {
+	Key      string
 	Kind     string
 	Scheme   string
 	Host     string
