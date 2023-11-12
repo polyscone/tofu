@@ -23,6 +23,7 @@ func Metrics(metrics *expvar.Map, group string) Middleware {
 	suffixes := []string{
 		"totalRequestsReceived",
 		"totalResponsesSent",
+		"totalConnectionsHijacked",
 		"totalBytesRead",
 		"totalBytesWritten",
 		"totalTimeUntilFirstWrite",
@@ -125,9 +126,14 @@ func (w *metricsResponseWriter) FlushError() error {
 }
 
 func (w *metricsResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
-	w.recordHijack()
+	conn, bufrw, err := w.rc.Hijack()
+	if err != nil {
+		w.recordHijack()
 
-	return w.rc.Hijack()
+		w.metrics.Add(w.group+".totalConnectionsHijacked", 1)
+	}
+
+	return conn, bufrw, err
 }
 
 func (w *metricsResponseWriter) Write(b []byte) (int, error) {

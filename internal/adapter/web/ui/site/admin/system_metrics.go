@@ -97,6 +97,7 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			TotalRequestsReceived      int64
 			TotalRequestsInFlight      int64
 			TotalResponsesSent         int64
+			TotalConnectionsHijacked   int64
 			TotalBytesRead             string
 			TotalBytesWritten          string
 			TotalTimeUntilFirstWrite   string
@@ -116,6 +117,7 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 
 			totalRequestsReceived := varAs[int64](h.Metrics.Get(key + ".totalRequestsReceived"))
 			totalResponsesSent := varAs[int64](h.Metrics.Get(key + ".totalResponsesSent"))
+			totalConnectionsHijacked := varAs[int64](h.Metrics.Get(key + ".totalConnectionsHijacked"))
 			totalBytesRead := int(varAs[int64](h.Metrics.Get(key + ".totalBytesRead")))
 			totalBytesWritten := int(varAs[int64](h.Metrics.Get(key + ".totalBytesWritten")))
 			totalTimeUntilFirstWrite := varAs[int64](h.Metrics.Get(key + ".totalTimeUntilFirstWrite"))
@@ -145,6 +147,7 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 				TotalRequestsReceived:      totalRequestsReceived,
 				TotalRequestsInFlight:      totalRequestsReceived - totalResponsesSent,
 				TotalResponsesSent:         totalResponsesSent,
+				TotalConnectionsHijacked:   totalConnectionsHijacked,
 				TotalBytesRead:             human.SizeSI(uint64(totalBytesRead)),
 				TotalBytesWritten:          human.SizeSI(uint64(totalBytesWritten)),
 				TotalTimeUntilFirstWrite:   human.DurationPrecise(time.Duration(totalTimeUntilFirstWrite)),
