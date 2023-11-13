@@ -3,6 +3,7 @@ package admin
 import (
 	"database/sql"
 	"expvar"
+	"math"
 	"net/http"
 	"runtime"
 	"strconv"
@@ -119,10 +120,11 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 				totalQueriesExecuted := varAs[int64](database.Get("totalQueriesExecuted"))
 				totalQueryTime := varAs[int64](database.Get("totalQueryTime"))
 
+				averageConnWaitTime := stats.WaitDuration / time.Duration(max(1, stats.WaitCount))
 				transactionCommitRate := float64(totalTransactionsCommitted) / float64(totalTransactionsBegun) * 100
 				transactionRollbackRate := 100 - transactionCommitRate
 				averageQueryTime := totalQueryTime / max(1, totalQueriesExecuted)
-				averageTransactionQueries := totalQueriesExecuted / max(1, totalTransactionsBegun)
+				averageTransactionQueries := int64(math.Round(float64(totalQueriesExecuted) / max(1, float64(totalTransactionsBegun))))
 
 				databases = append(databases, DatabaseMetrics{
 					Label:                       label,
@@ -131,7 +133,7 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 					IdleConns:                   stats.Idle,
 					ConnWaitCount:               stats.WaitCount,
 					TotalConnWaitTime:           stats.WaitDuration,
-					AverageConnWaitTime:         stats.WaitDuration / time.Duration(max(1, stats.WaitCount)),
+					AverageConnWaitTime:         averageConnWaitTime,
 					TotalTransactionsBegun:      totalTransactionsBegun,
 					TotalTransactionsCommitted:  totalTransactionsCommitted,
 					TotalTransactionsRolledBack: totalTransactionsRolledBack,
@@ -158,11 +160,12 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 				totalBytesWritten := int(varAs[int64](group.Get("totalBytesWritten")))
 				totalTimeUntilFirstWrite := varAs[int64](group.Get("totalTimeUntilFirstWrite"))
 				totalTimeInHandlers := varAs[int64](group.Get("totalTimeInHandlers"))
-				totalTimeWriting := totalTimeInHandlers - totalTimeUntilFirstWrite
 				totalResponseStatusCodesVar := varAs[*expvar.Map](group.Get("totalResponseStatusCodes"))
 
-				averageBytesRead := totalBytesRead / max(1, int(totalRequestsReceived))
-				averageBytesWritten := totalBytesWritten / max(1, int(totalResponsesSent))
+				totalRequestsInFlight := totalRequestsReceived - totalResponsesSent
+				totalTimeWriting := totalTimeInHandlers - totalTimeUntilFirstWrite
+				averageBytesRead := uint64(math.Round(float64(totalBytesRead) / max(1, float64(totalRequestsReceived))))
+				averageBytesWritten := uint64(math.Round(float64(totalBytesWritten) / max(1, float64(totalResponsesSent))))
 				averageTimeUntilFirstWrite := totalTimeUntilFirstWrite / max(1, totalResponsesSent)
 				averageTimeInHandlers := totalTimeInHandlers / max(1, totalResponsesSent)
 				averageTimeWriting := totalTimeWriting / max(1, totalResponsesSent)
@@ -181,7 +184,7 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 				requests = append(requests, RequestMetrics{
 					Label:                      label,
 					TotalRequestsReceived:      totalRequestsReceived,
-					TotalRequestsInFlight:      totalRequestsReceived - totalResponsesSent,
+					TotalRequestsInFlight:      totalRequestsInFlight,
 					TotalResponsesSent:         totalResponsesSent,
 					TotalConnectionsHijacked:   totalConnectionsHijacked,
 					TotalBytesRead:             uint64(totalBytesRead),
