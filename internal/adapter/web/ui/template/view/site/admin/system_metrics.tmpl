@@ -40,7 +40,7 @@
 <table class="metrics">
 	<tr>
 		<td>Uptime</td>
-		<td>{{.Vars.Uptime}}</td>
+		<td>{{FormatDuration .Vars.Uptime}}</td>
 	</tr>
 	<tr>
 		<td>Cgo calls</td>
@@ -56,15 +56,15 @@
 	</tr>
 	<tr>
 		<td>Reserved OS memory</td>
-		<td data-locale-number>{{.Vars.ReservedMemOS}}</td>
+		<td data-locale-number>{{FormatSizeSI .Vars.ReservedMemOS}}</td>
 	</tr>
 	<tr>
 		<td>Cumulative heap allocated</td>
-		<td data-locale-number>{{.Vars.TotalHeapAlloc}}</td>
+		<td data-locale-number>{{FormatSizeSI .Vars.TotalHeapAlloc}}</td>
 	</tr>
 	<tr>
 		<td>Heap allocated</td>
-		<td data-locale-number>{{.Vars.HeapAlloc}}</td>
+		<td data-locale-number>{{FormatSizeSI .Vars.HeapAlloc}}</td>
 	</tr>
 	<tr>
 		<td>Heap objects</td>
@@ -76,7 +76,7 @@
 	</tr>
 	<tr>
 		<td>Next GC cycle target heap</td>
-		<td data-locale-number>{{.Vars.GCTargetHeapAlloc}}</td>
+		<td data-locale-number>{{FormatSizeSI .Vars.GCTargetHeapAlloc}}</td>
 	</tr>
 	<tr>
 		<td>Last GC cycle</td>
@@ -84,7 +84,7 @@
 	</tr>
 	<tr>
 		<td>Cumulative GC pauses</td>
-		<td>{{.Vars.TotalGCPause}}</td>
+		<td>{{FormatDurationStat .Vars.TotalGCPause}}</td>
 	</tr>
 </table>
 
@@ -118,11 +118,11 @@
 				</tr>
 				<tr>
 					<td>Cumulative time waiting for a conn.</td>
-					<td>{{$database.TotalConnWaitTime}}</td>
+					<td>{{FormatDurationStat $database.TotalConnWaitTime}}</td>
 				</tr>
 				<tr>
 					<td>Average time waiting for a conn.</td>
-					<td>{{$database.AverageConnWaitTime}}</td>
+					<td>{{FormatDurationStat $database.AverageConnWaitTime}}</td>
 				</tr>
 			</table>
 		</div>
@@ -155,23 +155,23 @@
 				</tr>
 				<tr>
 					<td>Data read</td>
-					<td data-locale-number>{{$metrics.TotalBytesRead}}</td>
+					<td data-locale-number>{{FormatSizeSI $metrics.TotalBytesRead}}</td>
 				</tr>
 				<tr>
 					<td>Data written</td>
-					<td data-locale-number>{{$metrics.TotalBytesWritten}}</td>
+					<td data-locale-number>{{FormatSizeSI $metrics.TotalBytesWritten}}</td>
 				</tr>
 				<tr>
 					<td>Time until first write</td>
-					<td>{{$metrics.TotalTimeUntilFirstWrite}}</td>
+					<td>{{FormatDurationStat $metrics.TotalTimeUntilFirstWrite}}</td>
 				</tr>
 				<tr>
 					<td>Time in handlers</td>
-					<td>{{$metrics.TotalTimeInHandlers}}</td>
+					<td>{{FormatDurationStat $metrics.TotalTimeInHandlers}}</td>
 				</tr>
 				<tr>
 					<td>Time writing</td>
-					<td>{{$metrics.TotalTimeWriting}}</td>
+					<td>{{FormatDurationStat $metrics.TotalTimeWriting}}</td>
 				</tr>
 			</table>
 
@@ -180,23 +180,23 @@
 			<table class="metrics">
 				<tr>
 					<td>Data read</td>
-					<td data-locale-number>{{$metrics.AverageBytesRead}}</td>
+					<td data-locale-number>{{FormatSizeSI $metrics.AverageBytesRead}}</td>
 				</tr>
 				<tr>
 					<td>Data written</td>
-					<td data-locale-number>{{$metrics.AverageBytesWritten}}</td>
+					<td data-locale-number>{{FormatSizeSI $metrics.AverageBytesWritten}}</td>
 				</tr>
 				<tr>
 					<td>Time until first write</td>
-					<td>{{$metrics.AverageTimeUntilFirstWrite}}</td>
+					<td>{{FormatDurationStat $metrics.AverageTimeUntilFirstWrite}}</td>
 				</tr>
 				<tr>
 					<td>Time in handlers</td>
-					<td>{{$metrics.AverageTimeInHandlers}}</td>
+					<td>{{FormatDurationStat $metrics.AverageTimeInHandlers}}</td>
 				</tr>
 				<tr>
 					<td>Time writing</td>
-					<td>{{$metrics.AverageTimeWriting}}</td>
+					<td>{{FormatDurationStat $metrics.AverageTimeWriting}}</td>
 				</tr>
 			</table>
 

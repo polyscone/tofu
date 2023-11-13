@@ -8,7 +8,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
 const (
@@ -19,10 +18,10 @@ const (
 var ErrSignInThrottled = errors.New("sign in throttled")
 
 type SignInThrottleError struct {
-	InLast   string
+	InLast   time.Duration
 	Delay    time.Duration
 	UnlockAt time.Time
-	UnlockIn string
+	UnlockIn time.Duration
 }
 
 func (t SignInThrottleError) Error() string {
@@ -128,10 +127,10 @@ func (s *Service) CheckSignInThrottle(attempts int, lastAttemptAt time.Time) err
 		unlockAt := lastAttemptAt.Add(delay)
 		if time.Now().Before(unlockAt) {
 			throttle := &SignInThrottleError{
-				InLast:   human.Duration(app.SignInThrottleTTL),
+				InLast:   app.SignInThrottleTTL,
 				Delay:    delay,
 				UnlockAt: unlockAt,
-				UnlockIn: human.Duration(time.Until(unlockAt)),
+				UnlockIn: time.Until(unlockAt),
 			}
 
 			return fmt.Errorf("%w: %w", ErrSignInThrottled, throttle)

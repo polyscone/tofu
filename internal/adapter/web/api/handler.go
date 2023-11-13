@@ -15,6 +15,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
 var publicErrors = []error{
@@ -75,8 +76,8 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 
 		var throttled *account.SignInThrottleError
 		if errors.As(err, &throttled) {
-			detail["inLast"] = throttled.InLast
-			detail["unlockIn"] = throttled.UnlockIn
+			detail["inLast"] = human.Duration(throttled.InLast)
+			detail["unlockIn"] = human.Duration(throttled.UnlockIn)
 		}
 
 		switch {

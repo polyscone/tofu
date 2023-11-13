@@ -16,6 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
 const lowRecoveryCodes = 2
@@ -362,12 +363,12 @@ func signInWithPassword(ctx context.Context, h *ui.Handler, w http.ResponseWrite
 		h.HTML.ErrorViewFunc(w, r, "sign in with password", err, "site/account/sign_in/password", func(data *ui.ViewData) {
 			var throttle *account.SignInThrottleError
 			if errors.As(err, &throttle) {
-				wait := throttle.UnlockIn
+				wait := human.Duration(throttle.UnlockIn)
 				if wait != "" {
 					wait = " in " + wait
 				}
 
-				data.ErrorMessage = fmt.Sprintf("Too many failed sign in attempts in the last %v. Please try again%v.", throttle.InLast, wait)
+				data.ErrorMessage = fmt.Sprintf("Too many failed sign in attempts in the last %v. Please try again%v.", human.Duration(throttle.InLast), wait)
 			} else {
 				data.ErrorMessage = "Either your credentials are incorrect, or you're not authorised to access this application."
 			}

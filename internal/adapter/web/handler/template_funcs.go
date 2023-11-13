@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
 func TmplAdd(a, b int) int {
@@ -121,6 +123,22 @@ func TmplFormatTime(t time.Time, format string) string {
 	}
 
 	return t.Format(format)
+}
+
+func TmplFormatDuration(d time.Duration) string {
+	return human.Duration(d)
+}
+
+func TmplFormatDurationStat(d time.Duration) string {
+	return human.DurationStat(d)
+}
+
+func TmplFormatSizeSI(bytes uint64) string {
+	return human.SizeSI(bytes)
+}
+
+func TmplFormatSizeIEC(bytes uint64) string {
+	return human.SizeIEC(bytes)
 }
 
 func TmplHasPrefix(value, prefix any) bool {

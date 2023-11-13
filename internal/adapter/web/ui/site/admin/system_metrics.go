@@ -13,7 +13,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
 func systemMetricsRoutes(h *ui.Handler, mux *router.ServeMux) {
@@ -68,8 +67,8 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			InUseConns          int
 			IdleConns           int
 			ConnWaitCount       int64
-			TotalConnWaitTime   string
-			AverageConnWaitTime string
+			TotalConnWaitTime   time.Duration
+			AverageConnWaitTime time.Duration
 		}
 
 		type RequestMetrics struct {
@@ -78,16 +77,16 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			TotalRequestsInFlight      int64
 			TotalResponsesSent         int64
 			TotalConnectionsHijacked   int64
-			TotalBytesRead             string
-			TotalBytesWritten          string
-			TotalTimeUntilFirstWrite   string
-			TotalTimeInHandlers        string
-			TotalTimeWriting           string
-			AverageBytesRead           string
-			AverageBytesWritten        string
-			AverageTimeUntilFirstWrite string
-			AverageTimeInHandlers      string
-			AverageTimeWriting         string
+			TotalBytesRead             uint64
+			TotalBytesWritten          uint64
+			TotalTimeUntilFirstWrite   time.Duration
+			TotalTimeInHandlers        time.Duration
+			TotalTimeWriting           time.Duration
+			AverageBytesRead           uint64
+			AverageBytesWritten        uint64
+			AverageTimeUntilFirstWrite time.Duration
+			AverageTimeInHandlers      time.Duration
+			AverageTimeWriting         time.Duration
 			TotalResponseStatusCodes   map[int]int64
 		}
 
@@ -105,8 +104,8 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 					InUseConns:          stats.InUse,
 					IdleConns:           stats.Idle,
 					ConnWaitCount:       stats.WaitCount,
-					TotalConnWaitTime:   human.DurationPrecise(stats.WaitDuration),
-					AverageConnWaitTime: human.DurationPrecise(stats.WaitDuration / time.Duration(max(1, stats.WaitCount))),
+					TotalConnWaitTime:   stats.WaitDuration,
+					AverageConnWaitTime: stats.WaitDuration / time.Duration(max(1, stats.WaitCount)),
 				})
 
 			case strings.HasPrefix(kv.Key, "requests."):
@@ -150,16 +149,16 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 					TotalRequestsInFlight:      totalRequestsReceived - totalResponsesSent,
 					TotalResponsesSent:         totalResponsesSent,
 					TotalConnectionsHijacked:   totalConnectionsHijacked,
-					TotalBytesRead:             human.SizeSI(uint64(totalBytesRead)),
-					TotalBytesWritten:          human.SizeSI(uint64(totalBytesWritten)),
-					TotalTimeUntilFirstWrite:   human.DurationPrecise(time.Duration(totalTimeUntilFirstWrite)),
-					TotalTimeInHandlers:        human.DurationPrecise(time.Duration(totalTimeInHandlers)),
-					TotalTimeWriting:           human.DurationPrecise(time.Duration(totalTimeWriting)),
-					AverageBytesRead:           human.SizeSI(uint64(averageBytesRead)),
-					AverageBytesWritten:        human.SizeSI(uint64(averageBytesWritten)),
-					AverageTimeUntilFirstWrite: human.DurationPrecise(time.Duration(averageTimeUntilFirstWrite)),
-					AverageTimeInHandlers:      human.DurationPrecise(time.Duration(averageTimeInHandlers)),
-					AverageTimeWriting:         human.DurationPrecise(time.Duration(averageTimeWriting)),
+					TotalBytesRead:             uint64(totalBytesRead),
+					TotalBytesWritten:          uint64(totalBytesWritten),
+					TotalTimeUntilFirstWrite:   time.Duration(totalTimeUntilFirstWrite),
+					TotalTimeInHandlers:        time.Duration(totalTimeInHandlers),
+					TotalTimeWriting:           time.Duration(totalTimeWriting),
+					AverageBytesRead:           uint64(averageBytesRead),
+					AverageBytesWritten:        uint64(averageBytesWritten),
+					AverageTimeUntilFirstWrite: time.Duration(averageTimeUntilFirstWrite),
+					AverageTimeInHandlers:      time.Duration(averageTimeInHandlers),
+					AverageTimeWriting:         time.Duration(averageTimeWriting),
 					TotalResponseStatusCodes:   totalResponseStatusCodes,
 				})
 			}
@@ -172,19 +171,19 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			"OS":                os,
 			"Arch":              arch,
 			"Race":              race,
-			"Uptime":            human.Duration(uptime),
+			"Uptime":            uptime,
 			"Now":               now,
 			"CgoCalls":          cgoCalls,
 			"CPUs":              cpus,
 			"Goroutines":        goroutines,
-			"ReservedMemOS":     human.SizeSI(memstats.Sys),
-			"TotalHeapAlloc":    human.SizeSI(memstats.TotalAlloc),
-			"HeapAlloc":         human.SizeSI(memstats.HeapAlloc),
+			"ReservedMemOS":     memstats.Sys,
+			"TotalHeapAlloc":    memstats.TotalAlloc,
+			"HeapAlloc":         memstats.HeapAlloc,
 			"HeapObjects":       memstats.HeapObjects,
 			"GCCycles":          memstats.NumGC,
-			"GCTargetHeapAlloc": human.SizeSI(memstats.NextGC),
+			"GCTargetHeapAlloc": memstats.NextGC,
 			"LastGC":            time.Unix(0, int64(memstats.LastGC)),
-			"TotalGCPause":      human.DurationPrecise(time.Duration(memstats.PauseTotalNs)),
+			"TotalGCPause":      time.Duration(memstats.PauseTotalNs),
 			"Databases":         databases,
 			"Requests":          requests,
 		})
