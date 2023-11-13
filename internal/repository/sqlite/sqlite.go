@@ -290,6 +290,19 @@ func migrateFS(ctx context.Context, db *sql.DB, name string, fsys fs.FS) error {
 	return nil
 }
 
+func recordQuery(metrics *expvar.Map) func() {
+	if metrics == nil {
+		return func() {}
+	}
+
+	now := time.Now()
+
+	return func() {
+		metrics.Add("totalQueriesExecuted", 1)
+		metrics.Add("totalQueryTime", time.Since(now).Nanoseconds())
+	}
+}
+
 func repoerr(err error) error {
 	if err == nil {
 		return nil
@@ -779,19 +792,6 @@ func (db *DB) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
 	return &Stmt{Stmt: stmt, metrics: db.metrics}, nil
 }
 
-func recordQuery(metrics *expvar.Map) func() {
-	if metrics == nil {
-		return func() {}
-	}
-
-	now := time.Now()
-
-	return func() {
-		metrics.Add("totalQueriesExecuted", 1)
-		metrics.Add("totalQueryTime", time.Since(now).Nanoseconds())
-	}
-}
-
 func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
 	defer recordQuery(db.metrics)()
 
@@ -1011,12 +1011,10 @@ func (tx *Tx) Rollback() error {
 		// When using Go's SQL package queries that can modify the
 		// database should be called using the Exec* methods
 		//
-		// Because of this, and because wrapping SELECTs in a
-		// transaction can be advantageous in SQLite, and because a
-		// transaction of only SELECTs doesn't need to be committed, we
-		// assume that if an Exec* method wasn't called then it counts
-		// as a read-only transaction where a call to rollback was used
-		// instead of commit for brevity in code
+		// Because of this, and because a transaction of only SELECTs
+		// doesn't need to be committed, we assume that if an Exec*
+		// method wasn't called then it counts as a read-only transaction
+		// where a call to rollback was used instead of commit for brevity in code
 		//
 		// In those cases we choose to increment the committed metrics
 		// rather than the rolled back one since it's not likely actually

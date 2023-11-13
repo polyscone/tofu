@@ -161,7 +161,7 @@
 					</tr>
 				{{end}}
 
-				{{if $database.AverageTransactionQueries}}
+				{{if and $database.TotalTransactionsBegun $database.AverageTransactionQueries}}
 					<tr>
 						<td>Avg. queries/tx.</td>
 						<td>{{$database.AverageTransactionQueries}}</td>
