@@ -62,13 +62,22 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 		memstats := varAs[runtime.MemStats](expvar.Get("memstats"))
 
 		type DatabaseMetrics struct {
-			Label               string
-			MaxOpenConns        int
-			InUseConns          int
-			IdleConns           int
-			ConnWaitCount       int64
-			TotalConnWaitTime   time.Duration
-			AverageConnWaitTime time.Duration
+			Label                       string
+			MaxOpenConns                int
+			InUseConns                  int
+			IdleConns                   int
+			ConnWaitCount               int64
+			TotalConnWaitTime           time.Duration
+			AverageConnWaitTime         time.Duration
+			TotalTransactionsBegun      int64
+			TotalTransactionsCommitted  int64
+			TotalTransactionsRolledBack int64
+			TransactionCommitRate       float64
+			TransactionRollbackRate     float64
+			TotalQueriesExecuted        int64
+			TotalQueryTime              time.Duration
+			AverageQueryTime            time.Duration
+			AverageTransactionQueries   int64
 		}
 
 		type RequestMetrics struct {
@@ -95,17 +104,43 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 		h.Metrics.Do(func(kv expvar.KeyValue) {
 			switch {
 			case strings.HasPrefix(kv.Key, "database."):
+				database := varAs[*expvar.Map](kv.Value)
+				if database == nil {
+					return
+				}
+
 				_, label, _ := strings.Cut(kv.Key, "database.")
-				stats := varAs[sql.DBStats](kv.Value)
+
+				stats := varAs[sql.DBStats](database.Get("stats"))
+
+				totalTransactionsBegun := varAs[int64](database.Get("totalTransactionsBegun"))
+				totalTransactionsCommitted := varAs[int64](database.Get("totalTransactionsCommitted"))
+				totalTransactionsRolledBack := varAs[int64](database.Get("totalTransactionsRolledBack"))
+				totalQueriesExecuted := varAs[int64](database.Get("totalQueriesExecuted"))
+				totalQueryTime := varAs[int64](database.Get("totalQueryTime"))
+
+				transactionCommitRate := float64(totalTransactionsCommitted) / float64(totalTransactionsBegun) * 100
+				transactionRollbackRate := 100 - transactionCommitRate
+				averageQueryTime := totalQueryTime / max(1, totalQueriesExecuted)
+				averageTransactionQueries := totalQueriesExecuted / max(1, totalTransactionsBegun)
 
 				databases = append(databases, DatabaseMetrics{
-					Label:               label,
-					MaxOpenConns:        stats.MaxOpenConnections,
-					InUseConns:          stats.InUse,
-					IdleConns:           stats.Idle,
-					ConnWaitCount:       stats.WaitCount,
-					TotalConnWaitTime:   stats.WaitDuration,
-					AverageConnWaitTime: stats.WaitDuration / time.Duration(max(1, stats.WaitCount)),
+					Label:                       label,
+					MaxOpenConns:                stats.MaxOpenConnections,
+					InUseConns:                  stats.InUse,
+					IdleConns:                   stats.Idle,
+					ConnWaitCount:               stats.WaitCount,
+					TotalConnWaitTime:           stats.WaitDuration,
+					AverageConnWaitTime:         stats.WaitDuration / time.Duration(max(1, stats.WaitCount)),
+					TotalTransactionsBegun:      totalTransactionsBegun,
+					TotalTransactionsCommitted:  totalTransactionsCommitted,
+					TotalTransactionsRolledBack: totalTransactionsRolledBack,
+					TransactionCommitRate:       transactionCommitRate,
+					TransactionRollbackRate:     transactionRollbackRate,
+					TotalQueriesExecuted:        totalQueriesExecuted,
+					TotalQueryTime:              time.Duration(totalQueryTime),
+					AverageQueryTime:            time.Duration(averageQueryTime),
+					AverageTransactionQueries:   averageTransactionQueries,
 				})
 
 			case strings.HasPrefix(kv.Key, "requests."):

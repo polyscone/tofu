@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"embed"
 	"errors"
+	"expvar"
 	"fmt"
 	"io/fs"
 	"os"
@@ -56,7 +57,7 @@ var databases = struct {
 	data map[string]*DB
 }{data: make(map[string]*DB)}
 
-func Open(ctx context.Context, kind Kind, filename string) (*DB, error) {
+func Open(ctx context.Context, kind Kind, filename string, metrics *expvar.Map) (*DB, error) {
 	var dsn string
 	switch kind {
 	case KindFile:
@@ -131,7 +132,10 @@ func Open(ctx context.Context, kind Kind, filename string) (*DB, error) {
 		return nil, repoerr(err)
 	}
 
-	db := &DB{DB: sqlDB}
+	db := &DB{
+		DB:      sqlDB,
+		metrics: metrics,
+	}
 
 	if err := db.PingContext(ctx); err != nil {
 		return nil, fmt.Errorf("ping: %w", repoerr(err))
@@ -145,7 +149,7 @@ func Open(ctx context.Context, kind Kind, filename string) (*DB, error) {
 func OpenInMemoryTestDatabase(ctx context.Context) *DB {
 	randomName := errsx.Must(uuid.NewV4()).String() + ".sqlite"
 
-	return errsx.Must(Open(ctx, KindMemory, randomName))
+	return errsx.Must(Open(ctx, KindMemory, randomName, nil))
 }
 
 func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) error {
@@ -532,6 +536,7 @@ func validateArg(arg any) error {
 
 type Conn struct {
 	*sql.Conn
+	metrics *expvar.Map
 }
 
 func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
@@ -540,7 +545,11 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 		return nil, err
 	}
 
-	return &Tx{Tx: tx, now: time.Now()}, nil
+	if c.metrics != nil {
+		c.metrics.Add("totalTransactionsBegun", 1)
+	}
+
+	return &Tx{Tx: tx, now: time.Now(), metrics: c.metrics}, nil
 }
 
 // BeginImmediateTx starts an immediate transaction with "BEGIN IMMEDIATE".
@@ -562,6 +571,10 @@ func (c *Conn) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, 
 	// "IMMEDIATE" one
 	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN IMMEDIATE"); err != nil {
 		return nil, err
+	}
+
+	if c.metrics != nil {
+		c.metrics.Add("totalTransactionsBegun", 1)
 	}
 
 	return tx, nil
@@ -588,6 +601,10 @@ func (c *Conn) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, 
 		return nil, err
 	}
 
+	if c.metrics != nil {
+		c.metrics.Add("totalTransactionsBegun", 1)
+	}
+
 	return tx, nil
 }
 
@@ -597,10 +614,12 @@ func (c *Conn) PrepareContext(ctx context.Context, query string) (*Stmt, error) 
 		return nil, err
 	}
 
-	return &Stmt{Stmt: stmt}, nil
+	return &Stmt{Stmt: stmt, metrics: c.metrics}, nil
 }
 
 func (c *Conn) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	defer recordQuery(c.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -616,6 +635,8 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args ...any) (sql.
 }
 
 func (c *Conn) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
+	defer recordQuery(c.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -631,6 +652,8 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args ...any) (*Ro
 }
 
 func (c *Conn) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
+	defer recordQuery(c.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return &Row{err: err}
@@ -644,6 +667,7 @@ func (c *Conn) QueryRowContext(ctx context.Context, query string, args ...any) *
 
 type DB struct {
 	*sql.DB
+	metrics *expvar.Map
 }
 
 func (db *DB) Conn(ctx context.Context) (*Conn, error) {
@@ -652,7 +676,7 @@ func (db *DB) Conn(ctx context.Context) (*Conn, error) {
 		return nil, err
 	}
 
-	return &Conn{Conn: conn}, nil
+	return &Conn{Conn: conn, metrics: db.metrics}, nil
 }
 
 func (db *DB) Begin() (*Tx, error) {
@@ -661,7 +685,11 @@ func (db *DB) Begin() (*Tx, error) {
 		return nil, err
 	}
 
-	return &Tx{Tx: tx, now: time.Now()}, nil
+	if db.metrics != nil {
+		db.metrics.Add("totalTransactionsBegun", 1)
+	}
+
+	return &Tx{Tx: tx, now: time.Now(), metrics: db.metrics}, nil
 }
 
 func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
@@ -670,7 +698,11 @@ func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 		return nil, err
 	}
 
-	return &Tx{Tx: tx, now: time.Now()}, nil
+	if db.metrics != nil {
+		db.metrics.Add("totalTransactionsBegun", 1)
+	}
+
+	return &Tx{Tx: tx, now: time.Now(), metrics: db.metrics}, nil
 }
 
 // BeginImmediateTx starts an immediate transaction with "BEGIN IMMEDIATE".
@@ -692,6 +724,10 @@ func (db *DB) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, e
 	// "IMMEDIATE" one
 	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN IMMEDIATE"); err != nil {
 		return nil, err
+	}
+
+	if db.metrics != nil {
+		db.metrics.Add("totalTransactionsBegun", 1)
 	}
 
 	return tx, nil
@@ -718,6 +754,10 @@ func (db *DB) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, e
 		return nil, err
 	}
 
+	if db.metrics != nil {
+		db.metrics.Add("totalTransactionsBegun", 1)
+	}
+
 	return tx, nil
 }
 
@@ -727,7 +767,7 @@ func (db *DB) Prepare(query string) (*Stmt, error) {
 		return nil, err
 	}
 
-	return &Stmt{Stmt: stmt}, nil
+	return &Stmt{Stmt: stmt, metrics: db.metrics}, nil
 }
 
 func (db *DB) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
@@ -736,10 +776,25 @@ func (db *DB) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
 		return nil, err
 	}
 
-	return &Stmt{Stmt: stmt}, nil
+	return &Stmt{Stmt: stmt, metrics: db.metrics}, nil
+}
+
+func recordQuery(metrics *expvar.Map) func() {
+	if metrics == nil {
+		return func() {}
+	}
+
+	now := time.Now()
+
+	return func() {
+		metrics.Add("totalQueriesExecuted", 1)
+		metrics.Add("totalQueryTime", time.Since(now).Nanoseconds())
+	}
 }
 
 func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
+	defer recordQuery(db.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -755,6 +810,8 @@ func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
 }
 
 func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	defer recordQuery(db.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -770,6 +827,8 @@ func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 }
 
 func (db *DB) Query(query string, args ...any) (*Rows, error) {
+	defer recordQuery(db.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -785,6 +844,8 @@ func (db *DB) Query(query string, args ...any) (*Rows, error) {
 }
 
 func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
+	defer recordQuery(db.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -800,6 +861,8 @@ func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Row
 }
 
 func (db *DB) QueryRow(query string, args ...any) *Row {
+	defer recordQuery(db.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return &Row{err: err}
@@ -812,6 +875,8 @@ func (db *DB) QueryRow(query string, args ...any) *Row {
 }
 
 func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
+	defer recordQuery(db.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return &Row{err: err}
@@ -825,9 +890,12 @@ func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *R
 
 type Stmt struct {
 	*sql.Stmt
+	metrics *expvar.Map
 }
 
 func (stmt *Stmt) Exec(args ...any) (sql.Result, error) {
+	defer recordQuery(stmt.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -843,6 +911,8 @@ func (stmt *Stmt) Exec(args ...any) (sql.Result, error) {
 }
 
 func (stmt *Stmt) ExecContext(ctx context.Context, args ...any) (sql.Result, error) {
+	defer recordQuery(stmt.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -858,6 +928,8 @@ func (stmt *Stmt) ExecContext(ctx context.Context, args ...any) (sql.Result, err
 }
 
 func (stmt *Stmt) Query(args ...any) (*Rows, error) {
+	defer recordQuery(stmt.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -873,6 +945,8 @@ func (stmt *Stmt) Query(args ...any) (*Rows, error) {
 }
 
 func (stmt *Stmt) QueryContext(ctx context.Context, args ...any) (*Rows, error) {
+	defer recordQuery(stmt.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -888,6 +962,8 @@ func (stmt *Stmt) QueryContext(ctx context.Context, args ...any) (*Rows, error) 
 }
 
 func (stmt *Stmt) QueryRow(args ...any) *Row {
+	defer recordQuery(stmt.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return &Row{err: err}
@@ -900,6 +976,8 @@ func (stmt *Stmt) QueryRow(args ...any) *Row {
 }
 
 func (stmt *Stmt) QueryRowContext(ctx context.Context, args ...any) *Row {
+	defer recordQuery(stmt.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return &Row{err: err}
@@ -913,15 +991,44 @@ func (stmt *Stmt) QueryRowContext(ctx context.Context, args ...any) *Row {
 
 type Tx struct {
 	*sql.Tx
-	now time.Time
+	now        time.Time
+	metrics    *expvar.Map
+	execCalled bool
 }
 
 func (tx *Tx) Commit() error {
-	return tx.Tx.Commit()
+	err := tx.Tx.Commit()
+	if err == nil && tx.metrics != nil {
+		tx.metrics.Add("totalTransactionsCommitted", 1)
+	}
+
+	return err
 }
 
 func (tx *Tx) Rollback() error {
-	return tx.Tx.Rollback()
+	err := tx.Tx.Rollback()
+	if err == nil && tx.metrics != nil {
+		// When using Go's SQL package queries that can modify the
+		// database should be called using the Exec* methods
+		//
+		// Because of this, and because wrapping SELECTs in a
+		// transaction can be advantageous in SQLite, and because a
+		// transaction of only SELECTs doesn't need to be committed, we
+		// assume that if an Exec* method wasn't called then it counts
+		// as a read-only transaction where a call to rollback was used
+		// instead of commit for brevity in code
+		//
+		// In those cases we choose to increment the committed metrics
+		// rather than the rolled back one since it's not likely actually
+		// rolling anything back
+		if tx.execCalled {
+			tx.metrics.Add("totalTransactionsRolledBack", 1)
+		} else {
+			tx.metrics.Add("totalTransactionsCommitted", 1)
+		}
+	}
+
+	return err
 }
 
 func (tx *Tx) Prepare(query string) (*Stmt, error) {
@@ -930,7 +1037,7 @@ func (tx *Tx) Prepare(query string) (*Stmt, error) {
 		return nil, err
 	}
 
-	return &Stmt{Stmt: stmt}, nil
+	return &Stmt{Stmt: stmt, metrics: tx.metrics}, nil
 }
 
 func (tx *Tx) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
@@ -939,18 +1046,22 @@ func (tx *Tx) PrepareContext(ctx context.Context, query string) (*Stmt, error) {
 		return nil, err
 	}
 
-	return &Stmt{Stmt: stmt}, nil
+	return &Stmt{Stmt: stmt, metrics: tx.metrics}, nil
 }
 
 func (tx *Tx) Stmt(stmt *Stmt) *Stmt {
-	return &Stmt{Stmt: tx.Tx.Stmt(stmt.Stmt)}
+	return &Stmt{Stmt: tx.Tx.Stmt(stmt.Stmt), metrics: tx.metrics}
 }
 
 func (tx *Tx) StmtContext(ctx context.Context, stmt *Stmt) *Stmt {
-	return &Stmt{Stmt: tx.Tx.StmtContext(ctx, stmt.Stmt)}
+	return &Stmt{Stmt: tx.Tx.StmtContext(ctx, stmt.Stmt), metrics: tx.metrics}
 }
 
 func (tx *Tx) Exec(query string, args ...any) (sql.Result, error) {
+	defer recordQuery(tx.metrics)()
+
+	tx.execCalled = true
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -966,6 +1077,10 @@ func (tx *Tx) Exec(query string, args ...any) (sql.Result, error) {
 }
 
 func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	defer recordQuery(tx.metrics)()
+
+	tx.execCalled = true
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -981,6 +1096,8 @@ func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 }
 
 func (tx *Tx) Query(query string, args ...any) (*Rows, error) {
+	defer recordQuery(tx.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -996,6 +1113,8 @@ func (tx *Tx) Query(query string, args ...any) (*Rows, error) {
 }
 
 func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
+	defer recordQuery(tx.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return nil, err
@@ -1011,6 +1130,8 @@ func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Row
 }
 
 func (tx *Tx) QueryRow(query string, args ...any) *Row {
+	defer recordQuery(tx.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return &Row{err: err}
@@ -1023,6 +1144,8 @@ func (tx *Tx) QueryRow(query string, args ...any) *Row {
 }
 
 func (tx *Tx) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
+	defer recordQuery(tx.metrics)()
+
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
 			return &Row{err: err}

@@ -59,7 +59,7 @@
 		<td data-locale-number>{{FormatSizeSI .Vars.ReservedMemOS}}</td>
 	</tr>
 	<tr>
-		<td>Cumulative heap allocated</td>
+		<td>Tot. heap allocated</td>
 		<td data-locale-number>{{FormatSizeSI .Vars.TotalHeapAlloc}}</td>
 	</tr>
 	<tr>
@@ -83,7 +83,7 @@
 		<td><time datetime="{{FormatTime .Vars.LastGC "RFC3339"}}" data-date="full">{{FormatTime .Vars.LastGC "DateTime"}}</time></td>
 	</tr>
 	<tr>
-		<td>Cumulative GC pauses</td>
+		<td>Tot. GC pauses</td>
 		<td>{{FormatDurationStat .Vars.TotalGCPause}}</td>
 	</tr>
 </table>
@@ -113,17 +113,60 @@
 					<td data-locale-number>{{$database.IdleConns}}</td>
 				</tr>
 				<tr>
-					<td>Times waiting for a conn.</td>
+					<td>Conn. wait count</td>
 					<td data-locale-number>{{$database.ConnWaitCount}}</td>
 				</tr>
 				<tr>
-					<td>Cumulative time waiting for a conn.</td>
+					<td>Tot. conn. wait time</td>
 					<td>{{FormatDurationStat $database.TotalConnWaitTime}}</td>
 				</tr>
 				<tr>
-					<td>Average time waiting for a conn.</td>
+					<td>Avg. conn. wait time</td>
 					<td>{{FormatDurationStat $database.AverageConnWaitTime}}</td>
 				</tr>
+
+				{{if $database.TotalTransactionsBegun}}
+					<tr>
+						<td>Txs. begun</td>
+						<td data-locale-number>{{$database.TotalTransactionsBegun}}</td>
+					</tr>
+					<tr>
+						<td>Txs. committed</td>
+						<td data-locale-number>{{$database.TotalTransactionsCommitted}} <small>({{$database.TransactionCommitRate}}&percnt;)</small></td>
+					</tr>
+					<tr>
+						<td>Txs. rolled back</td>
+						<td data-locale-number>{{$database.TotalTransactionsRolledBack}} <small>({{$database.TransactionRollbackRate}}&percnt;)</small></td>
+					</tr>
+				{{end}}
+
+				{{if $database.TotalQueriesExecuted}}
+					<tr>
+						<td>Queries executed</td>
+						<td data-locale-number>{{$database.TotalQueriesExecuted}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.TotalQueryTime}}
+					<tr>
+						<td>Tot. query time</td>
+						<td>{{FormatDurationStat $database.TotalQueryTime}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.AverageQueryTime}}
+					<tr>
+						<td>Avg. query time</td>
+						<td>{{FormatDurationStat $database.AverageQueryTime}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.AverageTransactionQueries}}
+					<tr>
+						<td>Avg. queries/tx.</td>
+						<td>{{$database.AverageTransactionQueries}}</td>
+					</tr>
+				{{end}}
 			</table>
 		</div>
 	{{end}}
@@ -134,7 +177,7 @@
 		<div>
 			<h2>{{$metrics.Label}} reqs.</h2>
 
-			<h3>Cumulative</h3>
+			<h3>Totals</h3>
 
 			<table class="metrics">
 				<tr>

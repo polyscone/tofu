@@ -68,10 +68,8 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 
-	var initMetrics bool
 	metrics, ok := cache.metrics[data.Name]
 	if !ok {
-		initMetrics = true
 		metrics = expvar.NewMap("tenant." + data.Name)
 
 		cache.metrics[data.Name] = metrics
@@ -96,19 +94,24 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 		sqliteDB := cache.sqlite[data.Name]
 		if sqliteDB == nil {
+			dbMetrics, ok := metrics.Get("database.SQLite").(*expvar.Map)
+			if !ok {
+				dbMetrics = &expvar.Map{}
+
+				dbMetrics.Set("stats", expvar.Func(func() any {
+					return sqliteDB.Stats()
+				}))
+
+				metrics.Set("database.SQLite", dbMetrics)
+			}
+
 			p := filepath.Join(opts.data, data.Name, "main.sqlite")
-			sqliteDB, err = sqlite.Open(ctx, sqlite.KindFile, p)
+			sqliteDB, err = sqlite.Open(ctx, sqlite.KindFile, p, dbMetrics)
 			if err != nil {
 				return nil, fmt.Errorf("open SQLite database: %w", err)
 			}
 
 			cache.sqlite[data.Name] = sqliteDB
-		}
-
-		if initMetrics {
-			metrics.Set("database.SQLite", expvar.Func(func() any {
-				return sqliteDB.Stats()
-			}))
 		}
 
 		repo.account, err = sqlite.NewAccountRepo(ctx, sqliteDB, app.SignInThrottleTTL)
