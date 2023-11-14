@@ -197,6 +197,13 @@ func totpSetupAppGet(h *ui.Handler) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		user := h.User(ctx)
+
+		if !user.HasSetupTOTP() {
+			http.Redirect(w, r, h.Path("account.totp.setup"), http.StatusSeeOther)
+
+			return
+		}
 
 		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/enabled", nil)
@@ -251,9 +258,16 @@ func totpSetupSMSGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		config := h.Config(ctx)
+		user := h.User(ctx)
 
 		if !config.TOTPSMSEnabled {
 			h.HTML.ErrorView(w, r, "TOTP setup SMS", app.ErrNotFound, "site/error", nil)
+
+			return
+		}
+
+		if !user.HasSetupTOTP() {
+			http.Redirect(w, r, h.Path("account.totp.setup"), http.StatusSeeOther)
 
 			return
 		}
@@ -320,9 +334,16 @@ func totpSetupSMSVerifyGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		config := h.Config(ctx)
+		user := h.User(ctx)
 
 		if !config.TOTPSMSEnabled {
 			h.HTML.ErrorView(w, r, "TOTP verify SMS", app.ErrNotFound, "site/error", nil)
+
+			return
+		}
+
+		if !user.HasSetupTOTP() {
+			http.Redirect(w, r, h.Path("account.totp.setup"), http.StatusSeeOther)
 
 			return
 		}

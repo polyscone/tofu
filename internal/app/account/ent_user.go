@@ -108,6 +108,13 @@ GrantLoop:
 	return permissions
 }
 
+func (u *User) HasSetupTOTP() bool {
+	return len(u.TOTPKey) > 0 &&
+		u.TOTPAlgorithm != "" &&
+		u.TOTPDigits > 0 &&
+		u.TOTPPeriod > 0
+}
+
 func (u *User) HasVerifiedTOTP() bool {
 	return !u.TOTPVerifiedAt.IsZero()
 }
