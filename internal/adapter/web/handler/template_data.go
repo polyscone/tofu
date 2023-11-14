@@ -38,7 +38,12 @@ func (f Form) GetAllOr(key string, fallback any) ([]string, error) {
 		return TmplToStrings(fallback)
 	}
 
-	return f.Values[key], nil
+	values := f.Values[key]
+	if values == nil {
+		return TmplToStrings(fallback)
+	}
+
+	return values, nil
 }
 
 type Query struct {

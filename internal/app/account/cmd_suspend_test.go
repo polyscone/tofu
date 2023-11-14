@@ -69,7 +69,7 @@ func TestSuspendUser(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.Suspended{
+		events.Expect(account.SuspendedReasonChanged{
 			Email:  user.Email,
 			Reason: "Qux",
 		})
@@ -82,6 +82,65 @@ func TestSuspendUser(t *testing.T) {
 		if !user.SuspendedAt.Equal(suspendedAt) {
 			t.Error("want a second suspension to not change the earlier suspension time")
 		}
+
+		if want := "Qux"; user.SuspendedReason != want {
+			t.Errorf("want suspended reason to be %q; got %q", want, user.SuspendedReason)
+		}
+	})
+
+	t.Run("success updating reason for super user", func(t *testing.T) {
+		ctx := context.Background()
+		svc, broker, repo := NewTestEnv(ctx)
+
+		user := MustAddUser(t, ctx, repo, TestUser{Email: "john@doe.com"})
+		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))
+
+		events := testutil.NewEventLog(broker)
+		defer events.Check(t)
+
+		if user.IsSuspended() {
+			t.Error("want user to not be suspended")
+		}
+
+		if err := svc.SuspendUser(ctx, validGuard, user.ID, "Foo bar baz"); err != nil {
+			t.Fatal(err)
+		}
+
+		events.Expect(account.Suspended{
+			Email:  user.Email,
+			Reason: "Foo bar baz",
+		})
+
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
+
+		if !user.IsSuspended() {
+			t.Error("want user to be suspended")
+		}
+
+		if want := "Foo bar baz"; user.SuspendedReason != want {
+			t.Errorf("want suspended reason to be %q; got %q", want, user.SuspendedReason)
+		}
+
+		roleIDs := []int{superRole.ID}
+		err := svc.ChangeRoles(ctx, validGuard, user.ID, roleIDs, nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		events.Expect(account.RolesChanged{Email: user.Email})
+
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
+
+		if err := svc.SuspendUser(ctx, validGuard, user.ID, "Qux"); err != nil {
+			t.Fatal(err)
+		}
+
+		events.Expect(account.SuspendedReasonChanged{
+			Email:  user.Email,
+			Reason: "Qux",
+		})
+
+		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
 		if want := "Qux"; user.SuspendedReason != want {
 			t.Errorf("want suspended reason to be %q; got %q", want, user.SuspendedReason)
@@ -119,7 +178,7 @@ func TestSuspendUser(t *testing.T) {
 			want   error
 		}{
 			{"invalid guard", invalidGuard, 0, app.ErrForbidden},
-			{"cannot suspend user", validGuard, user.ID, nil},
+			{"cannot suspend super user", validGuard, user.ID, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -159,10 +218,17 @@ func TestSuspendUser(t *testing.T) {
 				err := svc.SuspendUser(ctx, validGuard, user.ID, tc.suspendedReason)
 				switch {
 				case err == nil:
-					events.Expect(account.Suspended{
-						Email:  user.Email,
-						Reason: tc.suspendedReason,
-					})
+					if user.IsSuspended() {
+						events.Expect(account.SuspendedReasonChanged{
+							Email:  user.Email,
+							Reason: tc.suspendedReason,
+						})
+					} else {
+						events.Expect(account.Suspended{
+							Email:  user.Email,
+							Reason: tc.suspendedReason,
+						})
+					}
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)
@@ -170,6 +236,8 @@ func TestSuspendUser(t *testing.T) {
 				case !tc.isValidInput && !errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want error: %v; got %v", app.ErrMalformedInput, err)
 				}
+
+				user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 			})
 		}
 	})

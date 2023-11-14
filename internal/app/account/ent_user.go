@@ -357,14 +357,24 @@ func (u *User) ActivateTOTP() error {
 }
 
 func (u *User) Suspend(reason SuspendedReason) error {
+	if u.IsSuspended() {
+		if u.SuspendedReason != reason.String() {
+			u.SuspendedReason = reason.String()
+
+			u.Events.Enqueue(SuspendedReasonChanged{
+				Email:  u.Email,
+				Reason: u.SuspendedReason,
+			})
+		}
+
+		return nil
+	}
+
 	if u.IsSuper() {
 		return errors.New("cannot suspend a user with the super role")
 	}
 
-	if !u.IsSuspended() {
-		u.SuspendedAt = time.Now().UTC()
-	}
-
+	u.SuspendedAt = time.Now().UTC()
 	u.SuspendedReason = reason.String()
 
 	u.Events.Enqueue(Suspended{

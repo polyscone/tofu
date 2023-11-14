@@ -29,6 +29,11 @@ type Suspended struct {
 	Reason string
 }
 
+type SuspendedReasonChanged struct {
+	Email  string
+	Reason string
+}
+
 type Unsuspended struct {
 	Email string
 }

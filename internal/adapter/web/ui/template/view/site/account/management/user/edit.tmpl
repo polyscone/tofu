@@ -13,8 +13,8 @@
 {{$isEditUserSuper := .Vars.User.IsSuper}}
 {{$canAssignSuperRole := .Passport.Account.CanAssignSuperRole $.Vars.User.ID}}
 {{$canChangeRoles := .Passport.Account.CanChangeRoles $.Vars.User.ID}}
-{{$canSuspendUser := .Passport.Account.CanSuspendUsers}}
-{{$canUnsuspendUser := .Passport.Account.CanUnsuspendUsers}}
+{{$canSuspendUser := and .Passport.Account.CanSuspendUsers (not .Vars.User.IsSuspended) (not $isEditUserSuper)}}
+{{$canUnsuspendUser := and .Passport.Account.CanUnsuspendUsers .Vars.User.IsSuspended}}
 
 <div class="center">
 	{{if eq .Vars.User.ID .Session.UserID}}
@@ -170,52 +170,50 @@
 		</form>
 	{{end}}
 
-	{{if not $isEditUserSuper}}
-		{{if $canSuspendUser}}
-			<form action="{{Path "account.management.user.suspend.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
-				{{template "com_csrf_input" .}}
+	{{if or $canSuspendUser $canUnsuspendUser}}
+		<form action="{{Path "account.management.user.suspend.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
+			{{template "com_csrf_input" .}}
 
-				<fieldset>
-					{{if .Vars.User.IsSuspended}}
-						<legend>Suspended user</legend>
-					{{else}}
-						<legend>Suspend user</legend>
-					{{end}}
+			<fieldset>
+				{{if .Vars.User.IsSuspended}}
+					<legend>Suspended user</legend>
+				{{else}}
+					<legend>Suspend user</legend>
+				{{end}}
 
-					{{if .Vars.User.IsSuspended}}
-						<p>
-							This user was suspended on
-							<time datetime="{{FormatTime .Vars.User.SuspendedAt "RFC3339"}}" data-date="full">{{FormatTime .Vars.User.SuspendedAt "DateTime"}}</time>.
-						</p>
-					{{else}}
-						<div class="warning-box">
-							<p>Once a user has been suspended they won't be able to sign in again, and if they're already signed in they'll be forcibly signed out.</p>
-						</div>
-					{{end}}
-
-					{{template "com_form_input" .WithComData
-						"Label" "Reason for suspension"
-						"Type" "text"
-						"Name" "suspended-reason"
-						"Value" (.Form.GetOr "suspended-reason" .Vars.User.SuspendedReason)
-						"Placeholder" "The reason for account suspension."
-						"Pattern" `^[ -~]*$`
-						"MaxLength" 100
-					}}
-
-					<div class="bag reverse">
-						{{if .Vars.User.IsSuspended}}
-							<button type="submit">Update reason</button>
-							<button type="submit" formnovalidate formaction="{{Path "account.management.user.unsuspend.post" "{userID}" .Vars.User.ID}}" class="btn--danger push-inline-end">Unsuspend user</button>
-						{{else}}
-							<button type="submit" class="btn--danger push-inline-end">Suspend user</button>
-						{{end}}
-
-						<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+				{{if .Vars.User.IsSuspended}}
+					<p>
+						This user was suspended on
+						<time datetime="{{FormatTime .Vars.User.SuspendedAt "RFC3339"}}" data-date="full">{{FormatTime .Vars.User.SuspendedAt "DateTime"}}</time>.
+					</p>
+				{{else}}
+					<div class="warning-box">
+						<p>Once a user has been suspended they won't be able to sign in again, and if they're already signed in they'll be forcibly signed out.</p>
 					</div>
-				</fieldset>
-			</form>
-		{{end}}
+				{{end}}
+
+				{{template "com_form_input" .WithComData
+					"Label" "Reason for suspension"
+					"Type" "text"
+					"Name" "suspended-reason"
+					"Value" (.Form.GetOr "suspended-reason" .Vars.User.SuspendedReason)
+					"Placeholder" "The reason for account suspension."
+					"Pattern" `^[ -~]*$`
+					"MaxLength" 100
+				}}
+
+				<div class="bag reverse">
+					{{if .Vars.User.IsSuspended}}
+						<button type="submit">Update reason</button>
+						<button type="submit" formnovalidate formaction="{{Path "account.management.user.unsuspend.post" "{userID}" .Vars.User.ID}}" class="btn--danger push-inline-end">Unsuspend user</button>
+					{{else}}
+						<button type="submit" class="btn--danger push-inline-end">Suspend user</button>
+					{{end}}
+
+					<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+				</div>
+			</fieldset>
+		</form>
 	{{end}}
 </div>
 
