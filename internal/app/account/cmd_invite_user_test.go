@@ -70,7 +70,7 @@ func TestInviteUser(t *testing.T) {
 			email string
 			want  error
 		}{
-			{"unauthorised", invalidGuard, "", app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, "", app.ErrForbidden},
 			{"verified user", validGuard, user1.Email, nil},
 			{"activated user", validGuard, user2.Email, nil},
 		}

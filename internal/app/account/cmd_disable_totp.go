@@ -20,7 +20,7 @@ func (s *Service) DisableTOTP(ctx context.Context, guard DisableTOTPGuard, userI
 	}
 	{
 		if !guard.CanDisableTOTP(userID) {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		var err error

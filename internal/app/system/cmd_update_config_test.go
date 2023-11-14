@@ -230,7 +230,7 @@ func TestUpdateConfig(t *testing.T) {
 			overrides vals
 			want      error
 		}{
-			{"unauthorised", invalidGuard, nil, app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, nil, app.ErrForbidden},
 			{"empty system email", validGuard, vals{"SystemEmail": ""}, app.ErrMalformedInput},
 			{"malformed system email", validGuard, vals{"SystemEmail": "a"}, app.ErrMalformedInput},
 			{"empty security email", validGuard, vals{"SecurityEmail": ""}, app.ErrMalformedInput},

@@ -22,7 +22,7 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, d
 	}
 	{
 		if !guard.CanCreateRoles() {
-			return nil, app.ErrUnauthorised
+			return nil, app.ErrForbidden
 		}
 
 		var err error

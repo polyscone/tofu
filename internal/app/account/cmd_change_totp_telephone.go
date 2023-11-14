@@ -19,7 +19,7 @@ func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, u
 	}
 	{
 		if !guard.CanChangeTOTPTel(userID) {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		var err error

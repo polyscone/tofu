@@ -18,7 +18,7 @@ func (s *Service) ActivateUser(ctx context.Context, guard ActivateUsersGuard, us
 	}
 	{
 		if !guard.CanActivateUsers() {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		input.userID = userID

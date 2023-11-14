@@ -22,12 +22,12 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 	}
 	{
 		if !guard.CanChangeRoles(userID) {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		for _, roleID := range roleIDs {
 			if roleID == SuperRole.ID && !guard.CanAssignSuperRole(userID) {
-				return app.ErrUnauthorised
+				return app.ErrForbidden
 			}
 		}
 

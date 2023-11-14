@@ -21,7 +21,7 @@ func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard,
 	}
 	{
 		if !guard.CanChangePassword(userID) {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		var err error

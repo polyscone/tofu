@@ -17,7 +17,7 @@ func (s *Service) ActivateTOTP(ctx context.Context, guard ActivateTOTPGuard, use
 	}
 	{
 		if !guard.CanActivateTOTP(userID) {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		input.userID = userID

@@ -101,7 +101,7 @@ func TestActivateUser(t *testing.T) {
 			userID int
 			want   error
 		}{
-			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, 0, app.ErrForbidden},
 			{"user unverified", validGuard, user1.ID, account.ErrNotVerified},
 			{"user already activated", validGuard, user2.ID, nil},
 		}

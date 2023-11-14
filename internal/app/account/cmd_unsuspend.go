@@ -17,7 +17,7 @@ func (s *Service) UnsuspendUser(ctx context.Context, guard UnsuspendUsersGuard, 
 	}
 	{
 		if !guard.CanUnsuspendUsers() {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		input.userID = userID

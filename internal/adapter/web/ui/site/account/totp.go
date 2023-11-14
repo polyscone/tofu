@@ -250,6 +250,13 @@ func totpSetupSMSGet(h *ui.Handler) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		config := h.Config(ctx)
+
+		if !config.TOTPSMSEnabled {
+			h.HTML.ErrorView(w, r, "TOTP setup SMS", app.ErrNotFound, "site/error", nil)
+
+			return
+		}
 
 		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/enabled", nil)
@@ -312,6 +319,13 @@ func totpSetupSMSPost(h *ui.Handler) http.HandlerFunc {
 func totpSetupSMSVerifyGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		config := h.Config(ctx)
+
+		if !config.TOTPSMSEnabled {
+			h.HTML.ErrorView(w, r, "TOTP verify SMS", app.ErrNotFound, "site/error", nil)
+
+			return
+		}
 
 		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/enabled", nil)

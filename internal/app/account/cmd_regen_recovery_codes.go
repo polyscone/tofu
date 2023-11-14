@@ -19,7 +19,7 @@ func (s *Service) RegenerateRecoveryCodes(ctx context.Context, guard RegenerateR
 	}
 	{
 		if !guard.CanRegenerateRecoveryCodes(userID) {
-			return nil, app.ErrUnauthorised
+			return nil, app.ErrForbidden
 		}
 
 		var err error

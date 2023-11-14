@@ -44,7 +44,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 		config := h.Config(ctx)
 
 		if !passport.System.CanUpdateConfig() {
-			h.HTML.ErrorView(w, r, "can update config", app.ErrUnauthorised, "site/error", nil)
+			h.HTML.ErrorView(w, r, "can update config", app.ErrForbidden, "site/error", nil)
 
 			return
 		}

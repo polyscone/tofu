@@ -22,7 +22,7 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID 
 	}
 	{
 		if !guard.CanUpdateRoles() {
-			return nil, app.ErrUnauthorised
+			return nil, app.ErrForbidden
 		}
 
 		var err error

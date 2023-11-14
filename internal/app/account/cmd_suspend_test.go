@@ -118,7 +118,7 @@ func TestSuspendUser(t *testing.T) {
 			userID int
 			want   error
 		}{
-			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, 0, app.ErrForbidden},
 			{"cannot suspend user", validGuard, user.ID, nil},
 		}
 		for _, tc := range tt {

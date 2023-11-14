@@ -113,7 +113,7 @@ func TestResetTOTP(t *testing.T) {
 			password string
 			want     error
 		}{
-			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, 0, "", app.ErrForbidden},
 			{"unactivated TOTP", validGuard, user1.ID, "password", nil},
 			{"no reset requested approved", validGuard, user2.ID, "password", nil},
 			{"incorrect password", validGuard, user3.ID, "123123123", nil},

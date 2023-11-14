@@ -121,7 +121,7 @@ func TestVerifyTOTP(t *testing.T) {
 			totpUser *account.User
 			want     error
 		}{
-			{"unauthorised", invalidGuard, 0, nil, app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, 0, nil, app.ErrForbidden},
 			{"empty user id correct TOTP", validGuard, 0, user2, repository.ErrNotFound},
 			{"empty user id incorrect TOTP", validGuard, 0, nil, repository.ErrNotFound},
 			{"no TOTP user id correct TOTP", validGuard, user1.ID, user2, nil},

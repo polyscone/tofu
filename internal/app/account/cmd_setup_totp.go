@@ -17,7 +17,7 @@ func (s *Service) SetupTOTP(ctx context.Context, guard SetupTOTPGuard, userID in
 	}
 	{
 		if !guard.CanSetupTOTP(userID) {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		input.userID = userID

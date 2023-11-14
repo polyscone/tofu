@@ -20,7 +20,7 @@ func (s *Service) InviteUser(ctx context.Context, guard InviteUserGuard, email s
 	}
 	{
 		if !guard.CanInviteUsers() {
-			return nil, app.ErrUnauthorised
+			return nil, app.ErrForbidden
 		}
 
 		var err error

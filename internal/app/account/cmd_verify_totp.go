@@ -20,7 +20,7 @@ func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID 
 	}
 	{
 		if !guard.CanVerifyTOTP(userID) {
-			return nil, app.ErrUnauthorised
+			return nil, app.ErrForbidden
 		}
 
 		var err error

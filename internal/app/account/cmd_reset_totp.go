@@ -20,7 +20,7 @@ func (s *Service) ResetTOTP(ctx context.Context, guard ResetTOTPGuard, userID in
 	}
 	{
 		if !guard.CanResetTOTP(userID) {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		var err error

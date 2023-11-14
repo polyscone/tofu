@@ -66,7 +66,7 @@ func TestChangePassword(t *testing.T) {
 			newPassword string
 			want        error
 		}{
-			{"unauthorised", invalidGuard, 0, "", "", app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, 0, "", "", app.ErrForbidden},
 			{"empty new password", validGuard, user.ID, "password", "", app.ErrMalformedInput},
 			{"empty old password", validGuard, user.ID, "", "password", app.ErrMalformedInput},
 			{"incorrect old password", validGuard, user.ID, "password___", "password", app.ErrInvalidInput},

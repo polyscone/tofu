@@ -65,7 +65,7 @@ func TestResetPassword(t *testing.T) {
 			newPassword string
 			want        error
 		}{
-			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, 0, "", app.ErrForbidden},
 			{"unactivated", validGuard, user1.ID, "password123", nil},
 		}
 		for _, tc := range tt {

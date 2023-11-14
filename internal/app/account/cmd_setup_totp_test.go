@@ -131,7 +131,7 @@ func TestSetupTOTP(t *testing.T) {
 			userID int
 			want   error
 		}{
-			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, 0, app.ErrForbidden},
 			{"TOTP already setup and activated", validGuard, user1.ID, nil},
 			{"unactivated user", validGuard, user2.ID, nil},
 		}

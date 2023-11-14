@@ -13,7 +13,7 @@ type DeleteRoleGuard interface {
 
 func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID int) (*Role, error) {
 	if !guard.CanDeleteRoles() {
-		return nil, app.ErrUnauthorised
+		return nil, app.ErrForbidden
 	}
 
 	role, err := s.repo.FindRoleByID(ctx, roleID)

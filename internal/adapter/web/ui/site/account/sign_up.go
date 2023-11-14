@@ -24,6 +24,13 @@ func signUpRoutes(h *ui.Handler, mux *router.ServeMux) {
 func signUpGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		config := h.Config(ctx)
+
+		if !config.SignUpEnabled {
+			h.HTML.ErrorView(w, r, "sign up", app.ErrNotFound, "site/error", nil)
+
+			return
+		}
 
 		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/sign_out/signed_in", nil)

@@ -36,7 +36,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	}
 	{
 		if !guard.CanUpdateConfig() {
-			return nil, app.ErrUnauthorised
+			return nil, app.ErrForbidden
 		}
 
 		var err error

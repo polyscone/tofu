@@ -19,7 +19,7 @@ func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, user
 	}
 	{
 		if !guard.CanSuspendUsers() {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		var err error

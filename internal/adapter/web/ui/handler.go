@@ -255,7 +255,7 @@ func (h *Handler) CanAccess(check PredicateFunc) middleware.Middleware {
 			passport := h.Passport(ctx)
 
 			if !check(passport) {
-				h.HTML.ErrorView(w, r, "require auth", app.ErrUnauthorised, "site/error", nil)
+				h.HTML.ErrorView(w, r, "require auth", app.ErrForbidden, "site/error", nil)
 
 				return
 			}

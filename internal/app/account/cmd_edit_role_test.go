@@ -42,7 +42,7 @@ func TestUpdateRole(t *testing.T) {
 			want   error
 		}{
 			{"authorised", validGuard, account.Role{Name: "Foo"}, account.Role{Name: "Bar"}, nil},
-			{"unauthorised", invalidGuard, account.Role{Name: "Foo"}, account.Role{Name: "Bar"}, app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, account.Role{Name: "Foo"}, account.Role{Name: "Bar"}, app.ErrForbidden},
 			{"conflicting name", validGuard, account.Role{Name: "Qux"}, account.Role{Name: "Bar"}, app.ErrConflictingInput},
 			{"empty name", validGuard, account.Role{Name: "Quxx"}, account.Role{Name: ""}, app.ErrMalformedInput},
 			{"empty permission update", validGuard, account.Role{

@@ -192,7 +192,9 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 
 	rn.ViewFunc(w, r, status, view, func(data *ViewData) {
 		switch {
-		case errors.Is(err, httputil.ErrNotFound):
+		case errors.Is(err, httputil.ErrNotFound),
+			errors.Is(err, app.ErrNotFound):
+
 			data.ErrorMessage = "The page you were looking for could not be found."
 
 		case errors.Is(err, httputil.ErrMethodNotAllowed):
@@ -201,7 +203,7 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 		case errors.Is(err, httputil.ErrForbidden),
 			errors.Is(err, app.ErrForbidden):
 
-			data.ErrorMessage = "You do not have permission to access this resource."
+			data.ErrorMessage = "You do not have sufficient permissions to access this resource."
 
 		case errors.Is(err, http.ErrHandlerTimeout):
 			data.ErrorMessage = "The server took too long to respond."
@@ -216,7 +218,7 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 			data.ErrorMessage = "This account has been suspended."
 
 		case errors.Is(err, app.ErrUnauthorised):
-			data.ErrorMessage = "You do not have sufficient permissions."
+			data.ErrorMessage = "You do not have permission to access this resource."
 
 		case errors.Is(err, app.ErrMalformedInput),
 			errors.Is(err, app.ErrInvalidInput),

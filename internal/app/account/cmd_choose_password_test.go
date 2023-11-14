@@ -67,7 +67,7 @@ func TestChoosePassword(t *testing.T) {
 			newPassword string
 			want        error
 		}{
-			{"unauthorised", invalidGuard, 0, "", app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, 0, "", app.ErrForbidden},
 			{"empty new password", validGuard, user1.ID, "", app.ErrMalformedInput},
 			{"already has a password", validGuard, user2.ID, "password123", nil},
 			{"not activated", validGuard, user3.ID, "password123", nil},

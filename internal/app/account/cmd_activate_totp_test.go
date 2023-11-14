@@ -59,7 +59,7 @@ func TestActivateTOTP(t *testing.T) {
 			userID int
 			want   error
 		}{
-			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, 0, app.ErrForbidden},
 			{"unverified TOTP", validGuard, user1.ID, nil},
 			{"already activated TOTP", validGuard, user2.ID, nil},
 		}

@@ -94,7 +94,7 @@ func TestUnsuspendUser(t *testing.T) {
 			userID int
 			want   error
 		}{
-			{"unauthorised", invalidGuard, 0, app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, 0, app.ErrForbidden},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

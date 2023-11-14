@@ -20,7 +20,7 @@ func (s *Service) ChoosePassword(ctx context.Context, guard ChoosePasswordGuard,
 	}
 	{
 		if !guard.CanChoosePassword(userID) {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		var err error

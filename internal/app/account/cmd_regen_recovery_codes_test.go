@@ -88,7 +88,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 			totpUser *account.User
 			want     error
 		}{
-			{"unauthorised", invalidGuard, 0, user2, app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, 0, user2, app.ErrForbidden},
 			{"TOTP not setup or verified", validGuard, user1.ID, nil, nil},
 		}
 		for _, tc := range tt {

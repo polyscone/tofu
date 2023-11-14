@@ -21,7 +21,7 @@ func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, u
 	}
 	{
 		if !guard.CanResetPassword(userID) {
-			return app.ErrUnauthorised
+			return app.ErrForbidden
 		}
 
 		var err error

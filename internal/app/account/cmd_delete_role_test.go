@@ -40,7 +40,7 @@ func TestDeleteRole(t *testing.T) {
 			want  error
 		}{
 			{"authorised", validGuard, nil},
-			{"unauthorised", invalidGuard, app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, app.ErrForbidden},
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

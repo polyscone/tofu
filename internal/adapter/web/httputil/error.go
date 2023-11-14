@@ -36,7 +36,9 @@ func ErrorStatus(err error) int {
 
 		return http.StatusBadRequest
 
-	case errors.Is(err, ErrNotFound):
+	case errors.Is(err, app.ErrNotFound),
+		errors.Is(err, ErrNotFound):
+
 		return http.StatusNotFound
 
 	case errors.Is(err, account.ErrNotVerified),

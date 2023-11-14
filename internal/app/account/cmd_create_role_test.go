@@ -38,7 +38,7 @@ func TestCreateRole(t *testing.T) {
 			role  account.Role
 			want  error
 		}{
-			{"unauthorised", invalidGuard, account.Role{Name: ""}, app.ErrUnauthorised},
+			{"invalid guard", invalidGuard, account.Role{Name: ""}, app.ErrForbidden},
 			{"empty name", validGuard, account.Role{Name: ""}, app.ErrMalformedInput},
 			{"whitespace name", validGuard, account.Role{Name: "     "}, app.ErrMalformedInput},
 			{"valid name", validGuard, account.Role{Name: "Role 1"}, nil},
