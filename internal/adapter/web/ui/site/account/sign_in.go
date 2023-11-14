@@ -182,8 +182,6 @@ func signInTOTPResetPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		background.Go(func() {
-			// We can't use the request context here because it will have already
-			// been cancelled after the main request handler finished
 			ctx := context.Background()
 
 			tok, err := h.Repo.Web.AddTOTPResetVerifyToken(ctx, email, 2*time.Hour)

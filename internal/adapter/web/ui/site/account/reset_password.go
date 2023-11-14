@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 func resetPasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
@@ -54,20 +56,30 @@ func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
 		config := h.Config(ctx)
 
 		background.Go(func() {
-			// We can't use the request context here because it will have already
-			// been cancelled after the main request handler finished
 			ctx := context.Background()
 
-			tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
-			if err != nil {
-				logger.Error("reset password: add reset password token", "error", err)
+			_, err := h.Repo.Account.FindUserByEmail(ctx, input.Email)
+			switch {
+			case err == nil:
+				tok, err := h.Repo.Web.AddResetPasswordToken(ctx, input.Email, 2*time.Hour)
+				if err != nil {
+					logger.Error("reset password: add reset password token", "error", err)
 
-				return
-			}
+					return
+				}
 
-			vars := handler.Vars{"Token": tok}
-			if err := h.SendEmail(ctx, config.SystemEmail, input.Email, "reset_password", vars); err != nil {
-				logger.Error("reset password: send email", "error", err)
+				vars := handler.Vars{"Token": tok}
+				if err := h.SendEmail(ctx, config.SystemEmail, input.Email, "reset_password", vars); err != nil {
+					logger.Error("reset password: send email", "error", err)
+				}
+
+			case errors.Is(err, repository.ErrNotFound):
+				if err := h.SendEmail(ctx, config.SystemEmail, input.Email, "reset_password_sign_up", nil); err != nil {
+					logger.Error("reset password: send email", "error", err)
+				}
+
+			default:
+				logger.Error("reset password: find user by email", "error", err)
 			}
 		})
 
