@@ -23,6 +23,12 @@
 }
 
 @layer components {
+	.header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
 	.header,
 	.main {
 		max-width: 960px;
