@@ -309,19 +309,28 @@ func (mux *ServeMux) Route(name string) *Route {
 	return mux.named[name]
 }
 
-func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
+func (mux *ServeMux) TryPath(name string, paramArgPairs ...any) (string, error) {
 	route := mux.Route(name)
 	if route == nil {
-		panic(fmt.Sprintf("route %q does not exist", name))
+		return "", fmt.Errorf("route %q does not exist", name)
 	}
 
 	if len(paramArgPairs) > 0 {
-		return route.Replace(paramArgPairs...)
+		return route.Replace(paramArgPairs...), nil
 	}
 
 	str := route.String()
 	if strings.Contains(str, "/"+paramStart) {
-		panic(fmt.Sprintf("route %q must use the replace method to replace parameters", name))
+		return "", fmt.Errorf("route %q must use the replace method to replace parameters", name)
+	}
+
+	return str, nil
+}
+
+func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
+	str, err := mux.TryPath(name, paramArgPairs...)
+	if err != nil {
+		panic(err)
 	}
 
 	return str
