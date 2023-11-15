@@ -67,6 +67,7 @@ type Tenant struct {
 	Email    smtp.Mailer
 	Logger   *slog.Logger
 	Metrics  *expvar.Map
+	Vars     map[string]any
 
 	Svc  Svc
 	Repo Repo

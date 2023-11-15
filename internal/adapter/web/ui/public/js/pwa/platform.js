@@ -125,7 +125,8 @@ const api = {
 
 const platform = {
 	api,
-	config: __STATE__.config,
+	config: __STATE__.config || {},
+	vars: __STATE__.vars || {},
 	get session () {
 		return api.account.session()
 	},

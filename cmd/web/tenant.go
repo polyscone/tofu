@@ -168,6 +168,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		Email:    mailer,
 		Logger:   logger,
 		Metrics:  metrics,
+		Vars:     data.Vars,
 		Svc:      svc,
 		Repo: handler.Repo{
 			Account: repo.account,
@@ -183,6 +184,7 @@ type Tenant struct {
 	Name       string            `json:"-"`
 	Kind       string            `json:"-"`
 	Hostnames  map[string]string `json:"hostnames"`
+	Vars       map[string]any    `json:"vars"`
 	IsDisabled bool              `json:"isDisabled"`
 }
 
