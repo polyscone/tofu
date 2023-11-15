@@ -74,8 +74,10 @@ func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
 				}
 
 			case errors.Is(err, repository.ErrNotFound):
-				if err := h.SendEmail(ctx, config.SystemEmail, input.Email, "reset_password_sign_up", nil); err != nil {
-					logger.Error("reset password: send email", "error", err)
+				if config.SignUpEnabled {
+					if err := h.SendEmail(ctx, config.SystemEmail, input.Email, "reset_password_sign_up", nil); err != nil {
+						logger.Error("reset password: send email", "error", err)
+					}
 				}
 
 			default:
