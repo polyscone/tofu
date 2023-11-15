@@ -1,6 +1,6 @@
 const SignOut = {
 	view () {
-		if (!app.session.isSignedIn) {
+		if (!platform.session.isSignedIn) {
 			return null
 		}
 
@@ -13,11 +13,11 @@ const SignOut = {
 async function signOut (e) {
 	e.preventDefault()
 
-	app.loading.show()
+	platform.loading.show()
 
-	await app.api.account.signOut()
+	await platform.api.account.signOut()
 
-	app.loading.hide()
+	platform.loading.hide()
 }
 
 export default SignOut

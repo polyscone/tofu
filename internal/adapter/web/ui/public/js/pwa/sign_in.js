@@ -37,7 +37,7 @@ function SignInGoogle () {
 		onremove () {
 			rendered = false
 		},
-		view: () => (config.googleSignInEnabled && window.google) ? m("div", [
+		view: () => (platform.config.googleSignInEnabled && window.google) ? m("div", [
 			m("p.sign-in-alt__title", "Or"),
 			m(".sign-in-alt.text-center", [
 				m("#sign-in__gsi_button.g_id_signin"),
@@ -118,7 +118,7 @@ const SignInDisconnected = {
 
 const SignIn = {
 	oncreate () {
-		if (config.googleSignInEnabled && config.googleSignInClientId && !window.gsiLoaded) {
+		if (platform.config.googleSignInEnabled && platform.config.googleSignInClientId && !window.gsiLoaded) {
 			window.gsiLoaded = true
 
 			const s = document.createElement("script")
@@ -128,7 +128,7 @@ const SignIn = {
 			s.defer = true
 			s.onload = function () {
 				google.accounts.id.initialize({
-					client_id: config.googleSignInClientId,
+					client_id: platform.config.googleSignInClientId,
 					context: "signin",
 					ux_mode: "popup",
 					async callback (res) {
@@ -145,7 +145,7 @@ const SignIn = {
 		}
 	},
 	view () {
-		const showSignIn = !app.session.isSignedIn || app.session.isTOTPRequired && !app.session.totpMethod
+		const showSignIn = !platform.session.isSignedIn || platform.session.isTOTPRequired && !platform.session.totpMethod
 
 		if (!showSignIn) {
 			return null
@@ -175,7 +175,7 @@ const SignIn = {
 			break
 		}
 
-		switch (app.network) {
+		switch (platform.network) {
 		case "offline":
 			Component = SignInOffline
 
@@ -197,22 +197,22 @@ const SignIn = {
 async function signInWithPassword (e) {
 	e.preventDefault()
 
-	app.loading.show()
+	platform.loading.show()
 
-	const res = await app.api.account.signInWithPassword(state.email, state.password)
+	const res = await platform.api.account.signInWithPassword(state.email, state.password)
 
 	state.error = ""
 	state.errors = res.body?.fields || {}
 
 	if (res.ok) {
-		if (app.session.isAwaitingTOTP) {
+		if (platform.session.isAwaitingTOTP) {
 			state.screen = "totp"
-		} else if (app.session.isTOTPRequired) {
+		} else if (platform.session.isTOTPRequired) {
 			state.screen = "totpRequired"
 		}
 	} else {
 		switch (res.status) {
-		case app.http.tooManyRequests:
+		case platform.http.tooManyRequests:
 			let { inLast, unlockIn } = res.body
 
 			if (unlockIn) {
@@ -223,7 +223,7 @@ async function signInWithPassword (e) {
 
 			break
 
-		case app.http.badGateway:
+		case platform.http.badGateway:
 			state.error = "Sign in failed because the server was offline, please try again."
 
 			break
@@ -237,46 +237,46 @@ async function signInWithPassword (e) {
 		}
 	}
 
-	app.loading.hide()
+	platform.loading.hide()
 }
 
 async function signInWithTOTP (e) {
 	e.preventDefault()
 
-	app.loading.show()
+	platform.loading.show()
 
-	const res = await app.api.account.signInWithTOTP(state.totp)
+	const res = await platform.api.account.signInWithTOTP(state.totp)
 
 	state.error = ""
 	state.errors = res.body?.fields || {}
 
-	app.loading.hide()
+	platform.loading.hide()
 }
 
 async function signInWithRecoveryCode (e) {
 	e.preventDefault()
 
-	app.loading.show()
+	platform.loading.show()
 
-	const res = await app.api.account.signInWithRecoveryCode(state.recoveryCode)
+	const res = await platform.api.account.signInWithRecoveryCode(state.recoveryCode)
 
 	state.error = ""
 	state.errors = res.body?.fields || {}
 
-	app.loading.hide()
+	platform.loading.hide()
 }
 
 async function signInWithGoogle (jwt) {
-	app.loading.show()
+	platform.loading.show()
 
-	const res = await app.api.account.signInWithGoogle(jwt)
+	const res = await platform.api.account.signInWithGoogle(jwt)
 
 	state.error = ""
 	state.errors = res.body?.fields || {}
 
 	if (!res.ok) {
 		switch (res.status) {
-		case app.http.badGateway:
+		case platform.http.badGateway:
 			state.error = "Sign in failed because the server was offline, please try again."
 
 			break
@@ -290,7 +290,7 @@ async function signInWithGoogle (jwt) {
 		}
 	}
 
-	app.loading.hide()
+	platform.loading.hide()
 }
 
 function setScreen (screen) {
