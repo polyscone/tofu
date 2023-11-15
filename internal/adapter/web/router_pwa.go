@@ -115,8 +115,10 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		config := h.Config(ctx)
 
 		return handler.Vars{
-			"Config": map[string]any{
+			"url": r.URL.String(),
+			"config": map[string]any{
 				"prefix":               routePrefix,
+				"signUpEnabled":        config.SignUpEnabled,
 				"googleSignInEnabled":  config.GoogleSignInEnabled,
 				"googleSignInClientId": config.GoogleSignInClientID,
 			},
