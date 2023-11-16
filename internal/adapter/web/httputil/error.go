@@ -29,6 +29,7 @@ func ErrorStatus(err error) int {
 	case errors.Is(err, account.ErrGoogleSignUpDisabled),
 		errors.Is(err, app.ErrMalformedInput),
 		errors.Is(err, app.ErrInvalidInput),
+		errors.Is(err, app.ErrConflictingInput),
 		errors.Is(err, app.ErrBadRequest),
 		errors.Is(err, csrf.ErrEmptyToken),
 		errors.Is(err, csrf.ErrInvalidToken),
