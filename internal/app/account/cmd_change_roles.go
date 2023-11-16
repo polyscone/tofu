@@ -69,10 +69,10 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 	}
 
 	var roles []*Role
-	if roleIDs != nil {
-		roles = make([]*Role, len(roleIDs))
+	if input.roleIDs != nil {
+		roles = make([]*Role, len(input.roleIDs))
 
-		for i, roleID := range roleIDs {
+		for i, roleID := range input.roleIDs {
 			role, err := s.repo.FindRoleByID(ctx, roleID)
 			if err != nil {
 				return fmt.Errorf("find role by id: %w", err)
