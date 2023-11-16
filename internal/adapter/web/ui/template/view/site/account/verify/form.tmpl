@@ -32,7 +32,7 @@
 	{{else}}
 		<p>Use the form below to choose a password and we can verify your account.</p>
 
-		<form action="{{Path "account.verify.post"}}{{.URL.Query.String}}" method="POST" id="account-verify-form">
+		<form action="{{Path "account.verify.post"}}{{.URL.Query.String}}" method="POST">
 			{{template "com_csrf_input" .}}
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
