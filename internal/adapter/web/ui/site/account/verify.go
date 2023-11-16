@@ -40,7 +40,7 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		email, err := h.Repo.Web.FindVerificationTokenEmail(ctx, input.Token)
+		email, err := h.Repo.Web.FindEmailVerificationTokenEmail(ctx, input.Token)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find verification token email", err, "site/account/verify/form", nil)
 
@@ -59,7 +59,7 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Repo.Web.ConsumeVerificationToken(ctx, input.Token)
+		err = h.Repo.Web.ConsumeEmailVerificationToken(ctx, input.Token)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "consume verification token", err, "site/error", nil)
 

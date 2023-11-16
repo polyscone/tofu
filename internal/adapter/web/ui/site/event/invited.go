@@ -16,7 +16,7 @@ func InvitedHandler(h *ui.Handler) any {
 			ctx := context.Background()
 			logger := h.Logger(ctx)
 
-			tok, err := h.Repo.Web.AddVerificationToken(ctx, evt.Email, 48*time.Hour)
+			tok, err := h.Repo.Web.AddEmailVerificationToken(ctx, evt.Email, 48*time.Hour)
 			if err != nil {
 				logger.Error("invited: add verification token", "error", err)
 
