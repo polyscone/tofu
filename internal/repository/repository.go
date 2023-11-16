@@ -20,6 +20,10 @@ func (c ConflictError) Error() string {
 	return c.Map.String()
 }
 
+func (c ConflictError) Unwrap() error {
+	return c.Map
+}
+
 type Page[T any] struct {
 	Number int
 	Rows   []T
