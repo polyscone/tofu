@@ -7,7 +7,7 @@ CREATE TABLE web__sessions (
 
 CREATE TABLE web__tokens (
 	hash       TEXT NOT NULL PRIMARY KEY,
-	email      TEXT NOT NULL COLLATE NOCASE,
+	value      TEXT NOT NULL,
 	kind       TEXT NOT NULL,
 	expires_at DATETIME NOT NULL,
 	created_at DATETIME NOT NULL,

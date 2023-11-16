@@ -452,9 +452,9 @@ func (r *WebRepo) findToken(ctx context.Context, tx *Tx, token, kind string) (st
 	sum := sha256.Sum256([]byte(token))
 	hash := sum[:]
 
-	var email string
+	var value string
 	err := tx.QueryRowContext(ctx, `
-		SELECT email
+		SELECT value
 		FROM web__tokens
 		WHERE
 			hash = :hash AND
@@ -464,39 +464,39 @@ func (r *WebRepo) findToken(ctx context.Context, tx *Tx, token, kind string) (st
 		sql.Named("hash", hash),
 		sql.Named("kind", kind),
 		sql.Named("expires_at", Time(tx.now.UTC())),
-	).Scan(&email)
+	).Scan(&value)
 
-	return email, err
+	return value, err
 }
 
 func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) (string, error) {
 	sum := sha256.Sum256([]byte(token))
 	hash := sum[:]
 
-	var email string
+	var value string
 	err := tx.QueryRowContext(ctx, `
 		DELETE FROM web__tokens
 		WHERE
 			hash = :hash AND
 			kind = :kind AND
 			expires_at > :expires_at
-		RETURNING email
+		RETURNING value
 	`,
 		sql.Named("hash", hash),
 		sql.Named("kind", kind),
 		sql.Named("expires_at", Time(tx.now.UTC())),
-	).Scan(&email)
+	).Scan(&value)
 	if err != nil {
 		return "", err
 	}
-	if email == "" {
+	if value == "" {
 		return "", repository.ErrNotFound
 	}
 
-	return email, nil
+	return value, nil
 }
 
-func (r *WebRepo) createToken(ctx context.Context, tx *Tx, email string, ttl time.Duration, kind string) (string, error) {
+func (r *WebRepo) createToken(ctx context.Context, tx *Tx, value string, ttl time.Duration, kind string) (string, error) {
 	b := make([]byte, 16)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
 		return "", fmt.Errorf("read random bytes: %w", err)
@@ -514,20 +514,20 @@ func (r *WebRepo) createToken(ctx context.Context, tx *Tx, email string, ttl tim
 	_, err := tx.ExecContext(ctx, `
 		INSERT INTO web__tokens (
 			hash,
-			email,
+			value,
 			kind,
 			expires_at,
 			created_at
 		) VALUES (
 			:hash,
-			:email,
+			:value,
 			:kind,
 			:expires_at,
 			:created_at
 		)
 	`,
 		sql.Named("hash", hash),
-		sql.Named("email", email),
+		sql.Named("value", value),
 		sql.Named("kind", kind),
 		sql.Named("expires_at", expiresAt),
 		sql.Named("created_at", Time(tx.now.UTC())),
@@ -536,14 +536,14 @@ func (r *WebRepo) createToken(ctx context.Context, tx *Tx, email string, ttl tim
 	return string(token), err
 }
 
-func (r *WebRepo) deleteTokensByKind(ctx context.Context, tx *Tx, email string, kind Kind) error {
+func (r *WebRepo) deleteTokensByKind(ctx context.Context, tx *Tx, value string, kind Kind) error {
 	_, err := tx.ExecContext(ctx, `
 		DELETE FROM web__tokens
 		WHERE
-			email = :email AND
+			value = :value AND
 			kind = :kind
 	`,
-		sql.Named("email", email),
+		sql.Named("value", value),
 		sql.Named("kind", kind),
 	)
 
