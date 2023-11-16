@@ -94,7 +94,8 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 
 		sqliteDB := cache.sqlite[data.Name]
 		if sqliteDB == nil {
-			dbMetrics, ok := metrics.Get("database.SQLite").(*expvar.Map)
+			metricsKey := "database.SQLite"
+			dbMetrics, ok := metrics.Get(metricsKey).(*expvar.Map)
 			if !ok {
 				dbMetrics = &expvar.Map{}
 
@@ -102,7 +103,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 					return sqliteDB.Stats()
 				}))
 
-				metrics.Set("database.SQLite", dbMetrics)
+				metrics.Set(metricsKey, dbMetrics)
 			}
 
 			p := filepath.Join(opts.data, data.Name, "main.sqlite")
