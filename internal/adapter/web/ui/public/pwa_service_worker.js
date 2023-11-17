@@ -16,7 +16,7 @@ self.addEventListener("install", event => {
 			"/css/common.css",
 			"/css/pwa.css",
 			"/js/mithril/v2.2.2.min.js",
-			"/js/pwa/app.js",
+			"/js/pwa/main.js",
 		])
 	}
 
