@@ -13,10 +13,10 @@ self.addEventListener("install", event => {
 		return cache.addAll([
 			"/",
 			"/pwa_service_worker.js",
-			"/css/common.css",
-			"/css/pwa.css",
-			"/js/mithril/v2.2.2.min.js",
-			"/js/pwa/main.js",
+			"/all/css/common.css",
+			"/pwa/css/pwa.css",
+			"/pwa/js/mithril/v2.2.2.min.js",
+			"/pwa/js/app/main.js",
 		])
 	}
 
