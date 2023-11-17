@@ -165,20 +165,6 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 	mux.Get("/", h.HTML.Handler("site/page/home"), "page.home")
 
-	// Redirect is a helper route that's intended to be used from other
-	// routers, like the PWA, to redirect to a site named path
-	mux.Get("/redirect", func(w http.ResponseWriter, r *http.Request) {
-		target := r.URL.Query().Get("target")
-		p, err := mux.TryPath(target)
-		if err == nil {
-			http.Redirect(w, r, p, http.StatusSeeOther)
-
-			return
-		}
-
-		h.HTML.ErrorView(w, r, "handler", httputil.ErrNotFound, "site/error", nil)
-	})
-
 	account.Routes(h, mux)
 	admin.Routes(h, mux)
 
