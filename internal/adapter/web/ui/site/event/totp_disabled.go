@@ -21,7 +21,7 @@ func TOTPDisabledHandler(h *ui.Handler) any {
 				return
 			}
 
-			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "totp_disabled", nil); err != nil {
+			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "site/totp_disabled", nil); err != nil {
 				logger.Error("disabled TOTP: send email", "error", err)
 			}
 		})

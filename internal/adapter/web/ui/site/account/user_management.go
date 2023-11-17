@@ -461,7 +461,7 @@ func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		vars := handler.Vars{"Token": tok}
-		if err := h.SendEmail(ctx, config.SystemEmail, user.Email, "totp_reset_approved", vars); err != nil {
+		if err := h.SendEmail(ctx, config.SystemEmail, user.Email, "site/totp_reset_approved", vars); err != nil {
 			logger.Error("reset TOTP: send email", "error", err)
 		}
 

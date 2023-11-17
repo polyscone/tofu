@@ -31,7 +31,7 @@ func SignedUpHandler(h *ui.Handler) any {
 			}
 
 			vars := handler.Vars{"Token": tok}
-			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "verify_account", vars); err != nil {
+			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "site/verify_account", vars); err != nil {
 				logger.Error("signed up: send email", "error", err)
 			}
 		})

@@ -21,7 +21,7 @@ func ActivatedHandler(h *ui.Handler) any {
 				return
 			}
 
-			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "account_activated", nil); err != nil {
+			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "site/account_activated", nil); err != nil {
 				logger.Error("activated: send email", "error", err)
 			}
 		})

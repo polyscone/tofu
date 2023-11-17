@@ -31,7 +31,7 @@ func InvitedHandler(h *ui.Handler) any {
 			}
 
 			vars := handler.Vars{"Token": tok}
-			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "invite_verify_account", vars); err != nil {
+			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "site/invite_verify_account", vars); err != nil {
 				logger.Error("invited: send email", "error", err)
 			}
 		})

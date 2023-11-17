@@ -69,13 +69,13 @@ func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
 				}
 
 				vars := handler.Vars{"Token": tok}
-				if err := h.SendEmail(ctx, config.SystemEmail, input.Email, "reset_password", vars); err != nil {
+				if err := h.SendEmail(ctx, config.SystemEmail, input.Email, "site/reset_password", vars); err != nil {
 					logger.Error("reset password: send email", "error", err)
 				}
 
 			case errors.Is(err, repository.ErrNotFound):
 				if config.SignUpEnabled {
-					if err := h.SendEmail(ctx, config.SystemEmail, input.Email, "reset_password_sign_up", nil); err != nil {
+					if err := h.SendEmail(ctx, config.SystemEmail, input.Email, "site/reset_password_sign_up", nil); err != nil {
 						logger.Error("reset password: send email", "error", err)
 					}
 				}

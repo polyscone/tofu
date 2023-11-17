@@ -31,7 +31,7 @@ func AlreadySignedUpHandler(h *ui.Handler) any {
 			}
 
 			vars := handler.Vars{"Token": tok}
-			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "sign_up_reset_password", vars); err != nil {
+			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "site/sign_up_reset_password", vars); err != nil {
 				logger.Error("already signed up: send email", "error", err)
 			}
 		})

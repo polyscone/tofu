@@ -192,7 +192,7 @@ func signInTOTPResetPost(h *ui.Handler) http.HandlerFunc {
 			}
 
 			vars := handler.Vars{"Token": tok}
-			if err := h.SendEmail(ctx, config.SystemEmail, email, "totp_reset_verify_email", vars); err != nil {
+			if err := h.SendEmail(ctx, config.SystemEmail, email, "site/totp_reset_verify_email", vars); err != nil {
 				logger.Error("TOTP reset: send email", "error", err)
 			}
 		})
