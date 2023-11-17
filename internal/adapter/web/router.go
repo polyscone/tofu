@@ -24,16 +24,7 @@ var publicFiles = fstack.New(dev.RelDirFS(publicDir), errsx.Must(fs.Sub(files, p
 // base value to calculate http.Server timeouts from.
 const HandlerTimeout = 5 * time.Second
 
-type handlerCache struct {
-	api  http.Handler
-	pwa  http.Handler
-	site http.Handler
-}
-
-var (
-	muxes    = cache.New[string, *http.ServeMux]()
-	handlers = make(map[string]*handlerCache)
-)
+var muxes = cache.New[string, *http.ServeMux]()
 
 func NewRouter(tenant *handler.Tenant) http.Handler {
 	key := tenant.Key + "." + tenant.Kind
@@ -42,26 +33,19 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 		mux := http.NewServeMux()
 		h := handler.New(tenant)
 
-		hc, ok := handlers[tenant.Key]
-		if !ok {
-			hc = &handlerCache{
-				api:  NewAPIRouter(h),
-				pwa:  NewPWARouter(h),
-				site: NewSiteRouter(h),
-			}
-
-			handlers[tenant.Key] = hc
-		}
+		api := NewAPIRouter(h)
+		pwa := NewPWARouter(h)
+		site := NewSiteRouter(h)
 
 		switch tenant.Kind {
 		case "site":
-			mux.Handle("/", hc.site)
+			mux.Handle("/", site)
 
 		case "pwa":
-			mux.Handle("/", hc.pwa)
+			mux.Handle("/", pwa)
 		}
 
-		mux.Handle("/api/v1/", http.StripPrefix("/api/v1", hc.api))
+		mux.Handle("/api/v1/", http.StripPrefix("/api/v1", api))
 
 		return mux
 	})
