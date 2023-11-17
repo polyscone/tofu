@@ -45,24 +45,24 @@ var cache = struct {
 	metrics: make(map[string]*expvar.Map),
 }
 
-// newTenant returns a tenant where the hostname is mapped to a shared name.
+// newTenant returns a tenant where the host is mapped to a shared name.
 //
 // Tenants share repositories along with their underlying database connection
 // pools based on the name, and all tenants share an SMTP mailer regardless
 // of name.
 //
 // Every tenant gets its own event broker regardless of name so that different
-// adapters, even for those handling the same hostname, can respond to
+// adapters, even for those handling the same host, can respond to
 // application events differently if required.
-func newTenant(hostname string) (*handler.Tenant, error) {
+func newTenant(host string) (*handler.Tenant, error) {
 	ctx := context.Background()
 
-	data, ok := tenants[hostname]
+	data, ok := tenants[host]
 	if !ok {
-		return nil, fmt.Errorf("find tenant %v: %w", hostname, web.ErrTenantNotFound)
+		return nil, fmt.Errorf("find tenant %v: %w", host, web.ErrTenantNotFound)
 	}
 	if data.Name == "" {
-		return nil, fmt.Errorf("name for the tenant %v is empty", hostname)
+		return nil, fmt.Errorf("name for the tenant %v is empty", host)
 	}
 
 	cache.mu.Lock()
@@ -162,6 +162,7 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 	tenant := handler.Tenant{
 		Key:      data.Name,
 		Kind:     data.Kind,
+		Hosts:    data.Hosts,
 		Dev:      opts.dev,
 		Insecure: opts.server.insecure,
 		Proxies:  opts.server.proxies,
@@ -169,7 +170,6 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 		Email:    mailer,
 		Logger:   logger,
 		Metrics:  metrics,
-		Vars:     data.Vars,
 		Svc:      svc,
 		Repo: handler.Repo{
 			Account: repo.account,
@@ -182,11 +182,11 @@ func newTenant(hostname string) (*handler.Tenant, error) {
 }
 
 type Tenant struct {
-	Name       string            `json:"-"`
-	Kind       string            `json:"-"`
-	Hostnames  map[string]string `json:"hostnames"`
-	Vars       map[string]any    `json:"vars"`
-	IsDisabled bool              `json:"isDisabled"`
+	Name       string              `json:"-"`
+	Kind       string              `json:"-"`
+	Hosts      map[string]string   `json:"hosts"`
+	Aliases    map[string][]string `json:"aliases"`
+	IsDisabled bool                `json:"isDisabled"`
 }
 
 func initTenants(tenantsPath string) error {
@@ -207,9 +207,12 @@ func initTenants(tenantsPath string) error {
 		if info.Size() == 0 {
 			example := map[string]Tenant{
 				"example": {
-					Hostnames: map[string]string{
+					Hosts: map[string]string{
 						"www.example.com": "site",
 						"app.example.com": "pwa",
+					},
+					Aliases: map[string][]string{
+						"site": {"localhost", "localhost:8080"},
 					},
 					IsDisabled: true,
 				},
@@ -243,28 +246,43 @@ func initTenants(tenantsPath string) error {
 
 	var errs errsx.Map
 	for name, tenant := range data {
-		if len(tenant.Hostnames) == 0 {
-			errs.Set(name+".hostnames", "must be populated with at least one hostname")
+		if len(tenant.Hosts) == 0 {
+			errs.Set(name+".hosts", "must be populated with at least one host")
 		}
 
-		if name == "" && len(tenant.Hostnames) > 0 {
-			for hostname := range tenant.Hostnames {
-				errs.Set("hostname "+hostname, "name cannot be empty")
+		if name == "" && len(tenant.Hosts) > 0 {
+			for host := range tenant.Hosts {
+				errs.Set("host "+host, "name cannot be empty")
 			}
 
 			continue
 		}
 
-		for hostname, kind := range tenant.Hostnames {
-			if dupe, ok := tenants[hostname]; ok {
-				errs.Set(hostname, fmt.Sprintf("cannot associate with %q; already associated with %q", name, dupe.Name))
+		for kind, host := range tenant.Hosts {
+			if dupe, ok := tenants[host]; ok {
+				errs.Set(host, fmt.Sprintf("cannot associate with %q; already associated with %q", name, dupe.Name))
 			}
 
 			tenant.Name = name
 			tenant.Kind = kind
 
 			if !tenant.IsDisabled {
-				tenants[hostname] = tenant
+				tenants[host] = tenant
+			}
+		}
+
+		for kind, hosts := range tenant.Aliases {
+			for _, host := range hosts {
+				if dupe, ok := tenants[host]; ok {
+					errs.Set(host, fmt.Sprintf("cannot associate with %q; already associated with %q", name, dupe.Name))
+				}
+
+				tenant.Name = name
+				tenant.Kind = kind
+
+				if !tenant.IsDisabled {
+					tenants[host] = tenant
+				}
 			}
 		}
 	}

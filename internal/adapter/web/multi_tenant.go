@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
-	"strings"
 	"sync"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
@@ -34,10 +33,8 @@ func NewMultiTenantHandler(logger *slog.Logger, behindSecureProxy bool, newTenan
 }
 
 func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
-	hostname, port, _ := strings.Cut(r.Host, ":")
-
-	return h.muxes.LoadOrMaybeStore(hostname, func() (http.Handler, error) {
-		tenant, err := h.newTenant(hostname)
+	return h.muxes.LoadOrMaybeStore(r.Host, func() (http.Handler, error) {
+		tenant, err := h.newTenant(r.Host)
 		if err != nil {
 			return nil, fmt.Errorf("new tenant: %w", err)
 		}
@@ -52,8 +49,6 @@ func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 		}
 
 		tenant.Host = r.Host
-		tenant.Hostname = hostname
-		tenant.Port = port
 
 		return NewRouter(tenant), nil
 	})

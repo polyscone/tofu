@@ -122,9 +122,6 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 				"googleSignInEnabled":  config.GoogleSignInEnabled,
 				"googleSignInClientId": config.GoogleSignInClientID,
 			},
-			"vars": map[string]any{
-				"siteHostname": h.Tenant.Vars["siteHostname"],
-			},
 		}
 	}
 

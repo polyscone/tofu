@@ -105,10 +105,8 @@ func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, v
 		Vars handler.Vars
 	}{
 		URL: handler.URL{
-			Scheme:   h.Scheme,
-			Host:     h.Host,
-			Hostname: h.Hostname,
-			Port:     h.Port,
+			Scheme: h.Scheme,
+			Host:   h.Host,
 		},
 		App: handler.AppData{
 			Name:        app.Name,

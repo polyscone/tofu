@@ -58,8 +58,7 @@ type Tenant struct {
 	Kind     string
 	Scheme   string
 	Host     string
-	Hostname string
-	Port     string
+	Hosts    map[string]string
 	Dev      bool
 	Insecure bool
 	Proxies  []string
@@ -67,7 +66,6 @@ type Tenant struct {
 	Email    smtp.Mailer
 	Logger   *slog.Logger
 	Metrics  *expvar.Map
-	Vars     map[string]any
 
 	Svc  Svc
 	Repo Repo

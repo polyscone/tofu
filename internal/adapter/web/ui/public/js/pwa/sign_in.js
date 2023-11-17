@@ -47,40 +47,27 @@ function SignInGoogle () {
 }
 
 const SignInPassword = {
-	view () {
-		const links = []
-
-		if (platform.vars.siteHostname) {
-			if (platform.config.signUpEnabled) {
-				links.push(m("a", { href: `//${platform.vars.siteHostname}/redirect?target=account.sign_up` }, "Sign up"))
-			}
-
-			links.push(m("a", { href: `//${platform.vars.siteHostname}/redirect?target=account.reset_password` }, "Forgotten your password?"))
-		}
-
-		return m("form", { onsubmit: signInWithPassword }, [
-			state.error ? m(ErrorBanner, state.error) : null,
-			m(EmailInput, {
-				label: "Email",
-				name: "email",
-				required: true,
-				autocomplete: "username",
-				error: state.errors.email,
-				oninput (e) { state.email = e.target.value },
-			}),
-			m(PasswordInput, {
-				label: "Password",
-				name: "password",
-				required: true,
-				autocomplete: "current-password",
-				error: state.errors.password,
-				oninput (e) { state.password = e.target.value },
-			}),
-			m("button[type=submit]", "Sign in"),
-			links,
-			m(SignInGoogle),
-		])
-	},
+	view: () => m("form", { onsubmit: signInWithPassword }, [
+		state.error ? m(ErrorBanner, state.error) : null,
+		m(EmailInput, {
+			label: "Email",
+			name: "email",
+			required: true,
+			autocomplete: "username",
+			error: state.errors.email,
+			oninput (e) { state.email = e.target.value },
+		}),
+		m(PasswordInput, {
+			label: "Password",
+			name: "password",
+			required: true,
+			autocomplete: "current-password",
+			error: state.errors.password,
+			oninput (e) { state.password = e.target.value },
+		}),
+		m("button[type=submit]", "Sign in"),
+		m(SignInGoogle),
+	]),
 }
 
 const SignInTOTP = {
