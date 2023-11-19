@@ -41,7 +41,7 @@ func TestSignInWithPassword(t *testing.T) {
 		if user.LastSignedInAt.IsZero() {
 			t.Error("want last signed in at to be populated; got zero")
 		}
-		if want, got := account.SignInMethodWebform, user.LastSignedInMethod; want != got {
+		if want, got := account.SignInMethodForm, user.LastSignedInMethod; want != got {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 	})

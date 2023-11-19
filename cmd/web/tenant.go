@@ -149,7 +149,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 
 	broker := event.NewMemoryBroker()
 
-	svc.Account, err = account.NewService(broker, repo.account, hasher)
+	svc.Account, err = account.NewService(broker, repo.account, hasher, data.Kind)
 	if err != nil {
 		return nil, fmt.Errorf("new account service: %w", err)
 	}

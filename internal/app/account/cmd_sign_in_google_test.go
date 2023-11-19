@@ -50,7 +50,10 @@ func TestSignInWithGoogle(t *testing.T) {
 			t.Error("want signed in to be true; got false")
 		}
 
-		events.Expect(account.SignedUpWithGoogle{Email: "bar@example.com"})
+		events.Expect(account.SignedUpWithGoogle{
+			Email:  "bar@example.com",
+			System: "site",
+		})
 		events.Expect(account.Activated{Email: "bar@example.com"})
 		events.Expect(account.SignedInWithGoogle{Email: "bar@example.com"})
 
@@ -67,6 +70,12 @@ func TestSignInWithGoogle(t *testing.T) {
 		}
 		if user2.SignedUpAt.IsZero() {
 			t.Error("want signed up at to be populated")
+		}
+		if want, got := "site", user2.SignedUpSystem; want != got {
+			t.Errorf("want signed up system to be %q; got %q", want, got)
+		}
+		if want, got := account.SignUpMethodGoogle, user2.SignedUpMethod; want != got {
+			t.Errorf("want signed up method to be %q; got %q", want, got)
 		}
 		if user2.LastSignedInAt.IsZero() {
 			t.Error("want last signed in at to be populated; got zero")

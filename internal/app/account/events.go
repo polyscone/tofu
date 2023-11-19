@@ -5,15 +5,18 @@ type Invited struct {
 }
 
 type SignedUp struct {
-	Email string
+	Email  string
+	System string
 }
 
 type AlreadySignedUp struct {
-	Email string
+	Email  string
+	System string
 }
 
 type SignedUpWithGoogle struct {
-	Email string
+	Email  string
+	System string
 }
 
 type Verified struct {

@@ -30,14 +30,18 @@ func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	switch {
 	case err == nil:
-		if err := user.SignUp(); err != nil {
+		if err := user.SignUp(s.system); err != nil {
 			return nil, fmt.Errorf("sign up existing: %w", err)
+		}
+
+		if err := s.repo.SaveUser(ctx, user); err != nil {
+			return nil, fmt.Errorf("save user: %w", err)
 		}
 
 	case errors.Is(err, repository.ErrNotFound):
 		user = NewUser(input.email)
 
-		if err := user.SignUp(); err != nil {
+		if err := user.SignUp(s.system); err != nil {
 			return nil, fmt.Errorf("sign up: %w", err)
 		}
 

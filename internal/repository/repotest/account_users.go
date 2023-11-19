@@ -50,10 +50,12 @@ func AccountUsers(ctx context.Context, t *testing.T, newRepo func() account.Read
 				TOTPResetApprovedAt:  time.Now().Add(-4 * time.Second),
 				InvitedAt:            time.Now().Add(-5 * time.Second),
 				SignedUpAt:           time.Now().Add(-6 * time.Second),
+				SignedUpSystem:       "site",
+				SignedUpMethod:       "form",
 				VerifiedAt:           time.Now().Add(-7 * time.Second),
 				ActivatedAt:          time.Now().Add(-8 * time.Second),
 				LastSignedInAt:       time.Now().Add(-9 * time.Second),
-				LastSignedInMethod:   "Form",
+				LastSignedInMethod:   "form",
 				SuspendedAt:          time.Now().Add(-9 * time.Second),
 				SuspendedReason:      "They should not be able to access the system anymore",
 				HashedRecoveryCodes:  [][]byte{[]byte("1"), []byte("2"), []byte("3")},
@@ -289,6 +291,12 @@ func accountUsersEqual(t *testing.T, want, got *account.User) {
 	}
 	if want, got := want.SignedUpAt, got.SignedUpAt; !want.Equal(got) {
 		t.Errorf("want signed up at to be %v; got %v", want, got)
+	}
+	if want, got := want.SignedUpSystem, got.SignedUpSystem; want != got {
+		t.Errorf("want signed up app to be %v; got %v", want, got)
+	}
+	if want, got := want.SignedUpMethod, got.SignedUpMethod; want != got {
+		t.Errorf("want signed up method to be %v; got %v", want, got)
 	}
 	if want, got := want.VerifiedAt, got.VerifiedAt; !want.Equal(got) {
 		t.Errorf("want verified at to be %v; got %v", want, got)

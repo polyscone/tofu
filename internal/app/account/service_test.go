@@ -15,18 +15,23 @@ import (
 
 var hasher = testutil.NewPasswordHasher()
 
-func NewTestEnv(ctx context.Context) (*account.Service, event.Broker, account.ReadWriter) {
+func NewTestEnvWithSystem(ctx context.Context, system string) (*account.Service, event.Broker, account.ReadWriter) {
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
 	repo := errsx.Must(sqlite.NewAccountRepo(ctx, db, 1*time.Minute))
-	svc := errsx.Must(account.NewService(broker, repo, hasher))
+	svc := errsx.Must(account.NewService(broker, repo, hasher, system))
 
 	return svc, broker, repo
+}
+
+func NewTestEnv(ctx context.Context) (*account.Service, event.Broker, account.ReadWriter) {
+	return NewTestEnvWithSystem(ctx, "site")
 }
 
 type TestUser struct {
 	Email            string
 	Password         string
+	SignUpSystem     string
 	Invited          bool
 	Verify           bool
 	VerifyNoPassword bool
@@ -55,18 +60,22 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 		tu.ActivateTOTP = false
 	}
 
+	if tu.SignUpSystem == "" {
+		tu.SignUpSystem = "site"
+	}
+
 	var codes []string
 	user := account.NewUser(errsx.Must(account.NewEmail(tu.Email)))
 
 	switch {
 	case tu.Invited:
-		errsx.Must0(user.InviteUser())
+		errsx.Must0(user.Invite())
 
 	case tu.VerifyNoPassword:
-		errsx.Must0(user.SignUpWithGoogle())
+		errsx.Must0(user.SignUpWithGoogle(tu.SignUpSystem))
 
 	default:
-		errsx.Must0(user.SignUp())
+		errsx.Must0(user.SignUp(tu.SignUpSystem))
 	}
 
 	if tu.Verify {

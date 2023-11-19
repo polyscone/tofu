@@ -12,6 +12,8 @@ CREATE TABLE account__users (
 	totp_activated_at     DATETIME,
 	invited_at            DATETIME,
 	signed_up_at          DATETIME,
+	signed_up_system      TEXT NOT NULL,
+	signed_up_method      TEXT NOT NULL,
 	verified_at           DATETIME,
 	activated_at          DATETIME,
 	last_signed_in_at     DATETIME,

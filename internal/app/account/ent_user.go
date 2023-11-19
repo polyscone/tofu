@@ -14,9 +14,13 @@ import (
 )
 
 const (
-	SignInMethodNone    = ""
-	SignInMethodWebform = "Webform"
-	SignInMethodGoogle  = "Google"
+	SignInMethodNone   = ""
+	SignInMethodForm   = "form"
+	SignInMethodGoogle = "google"
+
+	SignUpMethodNone   = ""
+	SignUpMethodForm   = "form"
+	SignUpMethodGoogle = "google"
 )
 
 var (
@@ -44,6 +48,8 @@ type User struct {
 	TOTPResetApprovedAt  time.Time
 	InvitedAt            time.Time
 	SignedUpAt           time.Time
+	SignedUpSystem       string
+	SignedUpMethod       string
 	VerifiedAt           time.Time
 	ActivatedAt          time.Time
 	LastSignedInAt       time.Time
@@ -141,9 +147,12 @@ func (u *User) InviteUser() error {
 	return nil
 }
 
-func (u *User) SignUp() error {
+func (u *User) SignUp(system string) error {
 	if !u.ActivatedAt.IsZero() {
-		u.Events.Enqueue(AlreadySignedUp{Email: u.Email})
+		u.Events.Enqueue(AlreadySignedUp{
+			Email:  u.Email,
+			System: system,
+		})
 
 		return nil
 	}
@@ -152,12 +161,22 @@ func (u *User) SignUp() error {
 		u.SignedUpAt = time.Now().UTC()
 	}
 
-	u.Events.Enqueue(SignedUp{Email: u.Email})
+	u.SignedUpSystem = system
+	u.SignedUpMethod = SignUpMethodForm
+
+	u.Events.Enqueue(SignedUp{
+		Email:  u.Email,
+		System: system,
+	})
 
 	return nil
 }
 
-func (u *User) SignUpWithGoogle() error {
+func (u *User) SignUpWithGoogle(system string) error {
+	if !u.ActivatedAt.IsZero() {
+		return nil
+	}
+
 	now := time.Now().UTC()
 
 	if u.SignedUpAt.IsZero() {
@@ -168,7 +187,13 @@ func (u *User) SignUpWithGoogle() error {
 		u.VerifiedAt = now
 	}
 
-	u.Events.Enqueue(SignedUpWithGoogle{Email: u.Email})
+	u.SignedUpSystem = system
+	u.SignedUpMethod = SignUpMethodGoogle
+
+	u.Events.Enqueue(SignedUpWithGoogle{
+		Email:  u.Email,
+		System: system,
+	})
 
 	return nil
 }
@@ -613,7 +638,7 @@ func (u *User) SignInWithPassword(password Password, hasher Hasher) (bool, error
 
 	if !u.HasActivatedTOTP() {
 		u.LastSignedInAt = time.Now().UTC()
-		u.LastSignedInMethod = SignInMethodWebform
+		u.LastSignedInMethod = SignInMethodForm
 	}
 
 	u.Events.Enqueue(SignedInWithPassword{Email: u.Email})

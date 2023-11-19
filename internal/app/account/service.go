@@ -49,9 +49,10 @@ type Service struct {
 	broker event.Broker
 	repo   ReadWriter
 	hasher Hasher
+	system string
 }
 
-func NewService(broker event.Broker, repo ReadWriter, hasher Hasher) (*Service, error) {
+func NewService(broker event.Broker, repo ReadWriter, hasher Hasher, system string) (*Service, error) {
 	var permissions []Permission
 	for _, group := range guard.PermissionGroups {
 		for _, p := range group.Permissions {
@@ -89,6 +90,7 @@ func NewService(broker event.Broker, repo ReadWriter, hasher Hasher) (*Service, 
 		broker: broker,
 		repo:   repo,
 		hasher: hasher,
+		system: system,
 	}
 
 	return &svc, nil
