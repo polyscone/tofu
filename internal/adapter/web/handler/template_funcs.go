@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
@@ -45,6 +46,10 @@ func TmplInts(start, end int) []int {
 }
 
 func TmplStatusText(code int) string {
+	if code == httputil.StatusClientClosedRequest {
+		return "Client Closed Request"
+	}
+
 	return strings.ReplaceAll(http.StatusText(code), "z", "s")
 }
 

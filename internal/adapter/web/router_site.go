@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -38,6 +39,15 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	h.Broker.Listen(event.TOTPDisabledHandler(h))
 	h.Broker.Listen(event.TOTPSMSRequestedHandler(h))
 
+	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
+		if errors.Is(err, context.Canceled) {
+			w.WriteHeader(httputil.StatusClientClosedRequest)
+
+			return
+		}
+
+		h.HTML.ErrorView(w, r, "timeout middleware", err, "site/error", nil)
+	}
 	errorHandler := func(msg string) middleware.ErrorHandler {
 		return func(w http.ResponseWriter, r *http.Request, err error) {
 			h.HTML.ErrorView(w, r, msg, err, "site/error", nil)
@@ -53,7 +63,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.Metrics(h.Metrics, "requests.Site"))
 	mux.Use(h.AttachContextLogger)
 	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
-		ErrorHandler: errorHandler("timeout middleware"),
+		ErrorHandler: timeoutErrorHandler,
 		Logger:       logger,
 	}))
 	mux.Use(middleware.RemoveTrailingSlash)

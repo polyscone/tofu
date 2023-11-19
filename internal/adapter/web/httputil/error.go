@@ -11,6 +11,8 @@ import (
 	"github.com/polyscone/tofu/internal/repository"
 )
 
+const StatusClientClosedRequest = 499
+
 var (
 	ErrNotFound            = errors.New("not found")
 	ErrForbidden           = errors.New("forbidden")

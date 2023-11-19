@@ -1,6 +1,8 @@
 package web
 
 import (
+	"context"
+	"errors"
 	"log/slog"
 	"net/http"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/api/meta"
 	"github.com/polyscone/tofu/internal/adapter/web/api/security"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
+	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
@@ -19,6 +22,15 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	mux := router.NewServeMux()
 	h := api.NewHandler(base)
 
+	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
+		if errors.Is(err, context.Canceled) {
+			w.WriteHeader(httputil.StatusClientClosedRequest)
+
+			return
+		}
+
+		h.ErrorJSON(w, r, "timeout middleware", err)
+	}
 	errorHandler := func(msg string) middleware.ErrorHandler {
 		return func(w http.ResponseWriter, r *http.Request, err error) {
 			h.ErrorJSON(w, r, msg, err)
@@ -34,7 +46,7 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.Metrics(h.Metrics, "requests.API"))
 	mux.Use(h.AttachContextLogger)
 	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
-		ErrorHandler: errorHandler("timeout middleware"),
+		ErrorHandler: timeoutErrorHandler,
 		Logger:       logger,
 	}))
 	mux.Use(middleware.RemoveTrailingSlash)

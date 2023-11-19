@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"errors"
 	"io/fs"
 	"log/slog"
@@ -33,6 +34,20 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	h.Broker.Listen(event.TOTPSMSRequestedHandler(h))
 
 	routePrefix := "#!"
+	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
+		if errors.Is(err, context.Canceled) {
+			w.WriteHeader(httputil.StatusClientClosedRequest)
+
+			return
+		}
+
+		ctx := r.Context()
+		logger := h.Logger(ctx)
+
+		logger.Error("timeout middleware", "error", err)
+
+		http.Redirect(w, r, routePrefix+"/error/500", http.StatusSeeOther)
+	}
 	errorHandler := func(msg string) middleware.ErrorHandler {
 		return func(w http.ResponseWriter, r *http.Request, err error) {
 			ctx := r.Context()
@@ -53,7 +68,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.Metrics(h.Metrics, "requests.PWA"))
 	mux.Use(h.AttachContextLogger)
 	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
-		ErrorHandler: errorHandler("timeout middleware"),
+		ErrorHandler: timeoutErrorHandler,
 		Logger:       logger,
 	}))
 	mux.Use(middleware.RemoveTrailingSlash)
