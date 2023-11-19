@@ -84,6 +84,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 		}
 
 		logger = logger.With("app", data.Name)
+		logger = logger.With("kind", data.Kind)
 
 		cache.loggers[data.Name] = logger
 	}
