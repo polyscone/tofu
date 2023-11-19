@@ -28,7 +28,7 @@ function ResetPasswordVerify () {
 
 	return {
 		view: () => [
-			m("p", "We've sent a verification code to your email address which you can copy into the input below.")
+			m("p", "We've sent a verification code to your email address which you can copy into the input below."),
 			m("form", { onsubmit: resetPassword }, [
 				state.error ? m(ErrorBanner, state.error) : null,
 				m(TokenInput, {
