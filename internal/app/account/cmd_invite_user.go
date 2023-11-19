@@ -38,14 +38,14 @@ func (s *Service) InviteUser(ctx context.Context, guard InviteUserGuard, email s
 	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	switch {
 	case err == nil:
-		if err := user.InviteUser(); err != nil {
+		if err := user.Invite(); err != nil {
 			return nil, fmt.Errorf("invite existing: %w", err)
 		}
 
 	case errors.Is(err, repository.ErrNotFound):
 		user = NewUser(input.email)
 
-		if err := user.InviteUser(); err != nil {
+		if err := user.Invite(); err != nil {
 			return nil, fmt.Errorf("invite: %w", err)
 		}
 

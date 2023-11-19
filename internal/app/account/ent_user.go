@@ -137,7 +137,7 @@ func (u *User) IsSuspended() bool {
 	return !u.SuspendedAt.IsZero()
 }
 
-func (u *User) InviteUser() error {
+func (u *User) Invite() error {
 	if !u.VerifiedAt.IsZero() {
 		return errors.New("cannot invite an already verified user")
 	}
