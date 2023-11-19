@@ -33,19 +33,14 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 		mux := http.NewServeMux()
 		h := handler.New(tenant)
 
-		api := NewAPIRouter(h)
-		pwa := NewPWARouter(h)
-		site := NewSiteRouter(h)
-
 		switch tenant.Kind {
 		case "site":
-			mux.Handle("/", site)
+			mux.Handle("/", NewSiteRouter(h))
 
 		case "pwa":
-			mux.Handle("/", pwa)
+			mux.Handle("/", NewPWARouter(h))
+			mux.Handle("/api/v1/", http.StripPrefix("/api/v1", NewAPIRouter(h)))
 		}
-
-		mux.Handle("/api/v1/", http.StripPrefix("/api/v1", api))
 
 		return mux
 	})
