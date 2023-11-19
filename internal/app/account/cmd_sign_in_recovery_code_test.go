@@ -20,6 +20,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		svc, broker, repo := NewTestEnv(ctx)
 
 		user, codes := MustAddUserRecoveryCodes(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
+		hashedCodes := user.HashedRecoveryCodes
 
 		if !user.LastSignedInAt.IsZero() {
 			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
@@ -30,15 +31,39 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
+		user, err = repo.FindUserByID(ctx, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if user.LastSignInAttemptAt.IsZero() {
+			t.Error("want last sign in attempt at to be populated; got zero")
+		}
+		if want, got := "site", user.LastSignInAttemptSystem; want != got {
+			t.Errorf("want last sign in attempt system to be %q; got %q", want, got)
+		}
+		if want, got := account.SignInMethodForm, user.LastSignInAttemptMethod; want != got {
+			t.Errorf("want last sign in attempt method to be %q; got %q", want, got)
+		}
 		if !user.LastSignedInAt.IsZero() {
 			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
+		}
+		if want, got := "", user.LastSignedInSystem; want != got {
+			t.Errorf("want last signed in system to be %q; got %q", want, got)
+		}
+		if want, got := account.SignInMethodNone, user.LastSignedInMethod; want != got {
+			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
+		// We're using the saved slice of code hashes here because reading the
+		// user again from the repository doesn't guarantee that the codes will
+		// be in any fixed order, so it could get out of sync with the unhashed codes
+		// slice and make the test incorrectly fail
+		usedRecoveryCodeHash := hashedCodes[0]
 		nRecoveryCodes := len(user.HashedRecoveryCodes)
-		usedRecoveryCodeHash := user.HashedRecoveryCodes[0]
 
 		err = svc.SignInWithRecoveryCode(ctx, user.ID, codes[0])
 		if err != nil {
@@ -52,8 +77,14 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if user.LastSignedInAt.IsZero() {
-			t.Error("want last signed in at to be populated; got zero")
+		if !user.LastSignedInAt.Equal(user.LastSignInAttemptAt) {
+			t.Error("want last signed in at to be the same as last sign in attempt at")
+		}
+		if want, got := "site", user.LastSignedInSystem; want != got {
+			t.Errorf("want last signed in system to be %q; got %q", want, got)
+		}
+		if want, got := account.SignInMethodForm, user.LastSignedInMethod; want != got {
+			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
 		if want, got := nRecoveryCodes-1, len(user.HashedRecoveryCodes); want != got {

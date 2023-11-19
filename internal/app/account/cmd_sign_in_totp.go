@@ -33,7 +33,7 @@ func (s *Service) SignInWithTOTP(ctx context.Context, userID int, totp string) e
 		return fmt.Errorf("find user by id: %w", err)
 	}
 
-	if err := user.SignInWithTOTP(input.totp); err != nil {
+	if err := user.SignInWithTOTP(s.system, input.totp); err != nil {
 		return err
 	}
 

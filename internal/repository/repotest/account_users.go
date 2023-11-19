@@ -36,32 +36,36 @@ func AccountUsers(ctx context.Context, t *testing.T, newRepo func() account.Read
 			{"no data", account.User{}, nil},
 			{"minimal data", account.User{Email: "Email 1"}, nil},
 			{"maximal data", account.User{
-				Email:                "Email 2",
-				HashedPassword:       []byte("HashedPassword"),
-				TOTPMethod:           "TOTPMethod",
-				TOTPTel:              "TOTPTel",
-				TOTPKey:              []byte("TOTPKey"),
-				TOTPAlgorithm:        "TOTPAlgorithm",
-				TOTPDigits:           123,
-				TOTPPeriod:           456,
-				TOTPVerifiedAt:       time.Now().Add(-1 * time.Second),
-				TOTPActivatedAt:      time.Now().Add(-2 * time.Second),
-				TOTPResetRequestedAt: time.Now().Add(-3 * time.Second),
-				TOTPResetApprovedAt:  time.Now().Add(-4 * time.Second),
-				InvitedAt:            time.Now().Add(-5 * time.Second),
-				SignedUpAt:           time.Now().Add(-6 * time.Second),
-				SignedUpSystem:       "site",
-				SignedUpMethod:       "form",
-				VerifiedAt:           time.Now().Add(-7 * time.Second),
-				ActivatedAt:          time.Now().Add(-8 * time.Second),
-				LastSignedInAt:       time.Now().Add(-9 * time.Second),
-				LastSignedInMethod:   "form",
-				SuspendedAt:          time.Now().Add(-9 * time.Second),
-				SuspendedReason:      "They should not be able to access the system anymore",
-				HashedRecoveryCodes:  [][]byte{[]byte("1"), []byte("2"), []byte("3")},
-				Roles:                []*account.Role{role1, role2},
-				Grants:               []string{"a", "b"},
-				Denials:              []string{"b", "c", "d"},
+				Email:                   "Email 2",
+				HashedPassword:          []byte("HashedPassword"),
+				TOTPMethod:              "TOTPMethod",
+				TOTPTel:                 "TOTPTel",
+				TOTPKey:                 []byte("TOTPKey"),
+				TOTPAlgorithm:           "TOTPAlgorithm",
+				TOTPDigits:              123,
+				TOTPPeriod:              456,
+				TOTPVerifiedAt:          time.Now().Add(-1 * time.Second),
+				TOTPActivatedAt:         time.Now().Add(-2 * time.Second),
+				TOTPResetRequestedAt:    time.Now().Add(-3 * time.Second),
+				TOTPResetApprovedAt:     time.Now().Add(-4 * time.Second),
+				InvitedAt:               time.Now().Add(-5 * time.Second),
+				SignedUpAt:              time.Now().Add(-6 * time.Second),
+				SignedUpSystem:          "site",
+				SignedUpMethod:          "form",
+				VerifiedAt:              time.Now().Add(-7 * time.Second),
+				ActivatedAt:             time.Now().Add(-8 * time.Second),
+				LastSignInAttemptAt:     time.Now().Add(-9 * time.Second),
+				LastSignInAttemptSystem: "site",
+				LastSignInAttemptMethod: "google",
+				LastSignedInAt:          time.Now().Add(-10 * time.Second),
+				LastSignedInSystem:      "pwa",
+				LastSignedInMethod:      "form",
+				SuspendedAt:             time.Now().Add(-11 * time.Second),
+				SuspendedReason:         "They should not be able to access the system anymore",
+				HashedRecoveryCodes:     [][]byte{[]byte("1"), []byte("2"), []byte("3")},
+				Roles:                   []*account.Role{role1, role2},
+				Grants:                  []string{"a", "b"},
+				Denials:                 []string{"b", "c", "d"},
 			}, nil},
 			{"conflicting email", account.User{Email: "Email 1"}, repository.ErrConflict},
 			{"conflicting email with different casing", account.User{Email: "EMAIL 1"}, repository.ErrConflict},
@@ -304,8 +308,20 @@ func accountUsersEqual(t *testing.T, want, got *account.User) {
 	if want, got := want.ActivatedAt, got.ActivatedAt; !want.Equal(got) {
 		t.Errorf("want activated at to be %v; got %v", want, got)
 	}
+	if want, got := want.LastSignInAttemptAt, got.LastSignInAttemptAt; !want.Equal(got) {
+		t.Errorf("want last sign in attempt at to be %v; got %v", want, got)
+	}
+	if want, got := want.LastSignInAttemptSystem, got.LastSignInAttemptSystem; want != got {
+		t.Errorf("want last sign in attempt system to be %v; got %v", want, got)
+	}
+	if want, got := want.LastSignInAttemptMethod, got.LastSignInAttemptMethod; want != got {
+		t.Errorf("want last sign in attempt method to be %v; got %v", want, got)
+	}
 	if want, got := want.LastSignedInAt, got.LastSignedInAt; !want.Equal(got) {
 		t.Errorf("want last signed in at to be %v; got %v", want, got)
+	}
+	if want, got := want.LastSignedInSystem, got.LastSignedInSystem; want != got {
+		t.Errorf("want last signed in system to be %v; got %v", want, got)
 	}
 	if want, got := want.LastSignedInMethod, got.LastSignedInMethod; want != got {
 		t.Errorf("want last signed in method to be %v; got %v", want, got)

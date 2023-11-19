@@ -33,7 +33,7 @@ func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, recove
 		return fmt.Errorf("find user by id: %w", err)
 	}
 
-	if err := user.SignInWithRecoveryCode(input.recoveryCode); err != nil {
+	if err := user.SignInWithRecoveryCode(s.system, input.recoveryCode); err != nil {
 		return err
 	}
 

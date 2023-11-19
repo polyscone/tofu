@@ -33,33 +33,37 @@ var (
 type User struct {
 	aggregate.Root
 
-	ID                   int
-	Email                string
-	HashedPassword       []byte
-	TOTPMethod           string
-	TOTPTel              string
-	TOTPKey              []byte
-	TOTPAlgorithm        string
-	TOTPDigits           int
-	TOTPPeriod           time.Duration
-	TOTPVerifiedAt       time.Time
-	TOTPActivatedAt      time.Time
-	TOTPResetRequestedAt time.Time
-	TOTPResetApprovedAt  time.Time
-	InvitedAt            time.Time
-	SignedUpAt           time.Time
-	SignedUpSystem       string
-	SignedUpMethod       string
-	VerifiedAt           time.Time
-	ActivatedAt          time.Time
-	LastSignedInAt       time.Time
-	LastSignedInMethod   string
-	SuspendedAt          time.Time
-	SuspendedReason      string
-	HashedRecoveryCodes  [][]byte
-	Roles                []*Role
-	Grants               []string
-	Denials              []string
+	ID                      int
+	Email                   string
+	HashedPassword          []byte
+	TOTPMethod              string
+	TOTPTel                 string
+	TOTPKey                 []byte
+	TOTPAlgorithm           string
+	TOTPDigits              int
+	TOTPPeriod              time.Duration
+	TOTPVerifiedAt          time.Time
+	TOTPActivatedAt         time.Time
+	TOTPResetRequestedAt    time.Time
+	TOTPResetApprovedAt     time.Time
+	InvitedAt               time.Time
+	SignedUpAt              time.Time
+	SignedUpSystem          string
+	SignedUpMethod          string
+	VerifiedAt              time.Time
+	ActivatedAt             time.Time
+	LastSignInAttemptAt     time.Time
+	LastSignInAttemptSystem string
+	LastSignInAttemptMethod string
+	LastSignedInAt          time.Time
+	LastSignedInSystem      string
+	LastSignedInMethod      string
+	SuspendedAt             time.Time
+	SuspendedReason         string
+	HashedRecoveryCodes     [][]byte
+	Roles                   []*Role
+	Grants                  []string
+	Denials                 []string
 }
 
 type UserFilter struct {
@@ -612,7 +616,7 @@ func (u *User) checkPassword(password Password, hasher Hasher) (rehashed bool, _
 	return false, nil
 }
 
-func (u *User) SignInWithPassword(password Password, hasher Hasher) (bool, error) {
+func (u *User) SignInWithPassword(system string, password Password, hasher Hasher) (bool, error) {
 	if u.VerifiedAt.IsZero() || u.ActivatedAt.IsZero() || u.IsSuspended() {
 		// Always check a password even in error cases to help
 		// avoid leaking info that would allow enumeration of valid emails
@@ -636,9 +640,14 @@ func (u *User) SignInWithPassword(password Password, hasher Hasher) (bool, error
 		return false, fmt.Errorf("check password: %w", err)
 	}
 
+	u.LastSignInAttemptAt = time.Now().UTC()
+	u.LastSignInAttemptSystem = system
+	u.LastSignInAttemptMethod = SignInMethodForm
+
 	if !u.HasActivatedTOTP() {
-		u.LastSignedInAt = time.Now().UTC()
-		u.LastSignedInMethod = SignInMethodForm
+		u.LastSignedInAt = u.LastSignInAttemptAt
+		u.LastSignedInSystem = u.LastSignInAttemptSystem
+		u.LastSignedInMethod = u.LastSignInAttemptMethod
 	}
 
 	u.Events.Enqueue(SignedInWithPassword{Email: u.Email})
@@ -646,7 +655,7 @@ func (u *User) SignInWithPassword(password Password, hasher Hasher) (bool, error
 	return rehashed, nil
 }
 
-func (u *User) SignInWithTOTP(totp TOTP) error {
+func (u *User) SignInWithTOTP(system string, totp TOTP) error {
 	if u.ActivatedAt.IsZero() {
 		return ErrNotActivated
 	}
@@ -663,7 +672,10 @@ func (u *User) SignInWithTOTP(totp TOTP) error {
 		return ErrSuspended
 	}
 
-	u.LastSignedInAt = time.Now().UTC()
+	u.LastSignInAttemptAt = time.Now().UTC()
+	u.LastSignedInAt = u.LastSignInAttemptAt
+	u.LastSignedInSystem = system
+	u.LastSignedInMethod = u.LastSignInAttemptMethod
 
 	u.Events.Enqueue(SignedInWithTOTP{Email: u.Email})
 
@@ -671,18 +683,27 @@ func (u *User) SignInWithTOTP(totp TOTP) error {
 }
 
 func (u *User) useRecoveryCode(code RecoveryCode) error {
-	for i, rc := range u.HashedRecoveryCodes {
-		if code.EqualHash(rc) {
-			u.HashedRecoveryCodes = append(u.HashedRecoveryCodes[:i], u.HashedRecoveryCodes[i+1:]...)
+	n := len(u.HashedRecoveryCodes)
+	u.HashedRecoveryCodes = slices.DeleteFunc(u.HashedRecoveryCodes, func(rc []byte) bool {
+		return code.EqualHash(rc)
+	})
 
-			return nil
-		}
+	deleted := n - len(u.HashedRecoveryCodes)
+	switch {
+	case deleted == 0:
+		return fmt.Errorf("unknown recovery code: %v", code)
+
+	case deleted > 1:
+		return fmt.Errorf("multiple recovery codes with the value %v removed", code)
+
+	case deleted < 0:
+		return fmt.Errorf("recovery code with the value %v was added instead of removed", code)
 	}
 
-	return fmt.Errorf("unknown recovery code: %v", code)
+	return nil
 }
 
-func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
+func (u *User) SignInWithRecoveryCode(system string, code RecoveryCode) error {
 	if u.IsSuspended() {
 		return ErrSuspended
 	}
@@ -701,14 +722,17 @@ func (u *User) SignInWithRecoveryCode(code RecoveryCode) error {
 		})
 	}
 
-	u.LastSignedInAt = time.Now().UTC()
+	u.LastSignInAttemptAt = time.Now().UTC()
+	u.LastSignedInAt = u.LastSignInAttemptAt
+	u.LastSignedInSystem = system
+	u.LastSignedInMethod = u.LastSignInAttemptMethod
 
 	u.Events.Enqueue(SignedInWithRecoveryCode{Email: u.Email})
 
 	return nil
 }
 
-func (u *User) SignInWithGoogle() error {
+func (u *User) SignInWithGoogle(system string) error {
 	if u.VerifiedAt.IsZero() {
 		return ErrNotVerified
 	}
@@ -721,9 +745,14 @@ func (u *User) SignInWithGoogle() error {
 		return ErrSuspended
 	}
 
+	u.LastSignInAttemptAt = time.Now().UTC()
+	u.LastSignInAttemptSystem = system
+	u.LastSignInAttemptMethod = SignInMethodGoogle
+
 	if !u.HasActivatedTOTP() {
-		u.LastSignedInAt = time.Now().UTC()
-		u.LastSignedInMethod = SignInMethodGoogle
+		u.LastSignedInAt = u.LastSignInAttemptAt
+		u.LastSignedInSystem = u.LastSignInAttemptSystem
+		u.LastSignedInMethod = u.LastSignInAttemptMethod
 	}
 
 	u.Events.Enqueue(SignedInWithGoogle{Email: u.Email})

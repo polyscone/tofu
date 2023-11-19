@@ -35,8 +35,23 @@ func TestSignInWithTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		if user.LastSignInAttemptAt.IsZero() {
+			t.Error("want last sign in attempt at to be populated; got zero")
+		}
+		if want, got := "site", user.LastSignInAttemptSystem; want != got {
+			t.Errorf("want last sign in attempt system to be %q; got %q", want, got)
+		}
+		if want, got := account.SignInMethodForm, user.LastSignInAttemptMethod; want != got {
+			t.Errorf("want last sign in attempt method to be %q; got %q", want, got)
+		}
 		if !user.LastSignedInAt.IsZero() {
 			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
+		}
+		if want, got := "", user.LastSignedInSystem; want != got {
+			t.Errorf("want last signed in system to be %q; got %q", want, got)
+		}
+		if want, got := account.SignInMethodNone, user.LastSignedInMethod; want != got {
+			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
 		events := testutil.NewEventLog(broker)
@@ -58,8 +73,14 @@ func TestSignInWithTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if user.LastSignedInAt.IsZero() {
-			t.Error("want last signed in at to be populated; got zero")
+		if !user.LastSignedInAt.Equal(user.LastSignInAttemptAt) {
+			t.Error("want last signed in at to be the same as last sign in attempt at")
+		}
+		if want, got := "site", user.LastSignedInSystem; want != got {
+			t.Errorf("want last signed in system to be %q; got %q", want, got)
+		}
+		if want, got := account.SignInMethodForm, user.LastSignedInMethod; want != got {
+			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 	})
 

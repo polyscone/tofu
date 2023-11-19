@@ -82,7 +82,7 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 		return fmt.Errorf("find user by email: %w", err)
 	}
 
-	if _, err := user.SignInWithPassword(input.password, s.hasher); err != nil {
+	if _, err := user.SignInWithPassword(s.system, input.password, s.hasher); err != nil {
 		switch {
 		case errors.Is(err, ErrNotVerified),
 			errors.Is(err, ErrNotActivated),

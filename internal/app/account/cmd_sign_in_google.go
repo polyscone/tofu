@@ -41,7 +41,7 @@ func (s *Service) SignInWithGoogle(ctx context.Context, email string, behaviour 
 	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	switch {
 	case err == nil:
-		if err := user.SignInWithGoogle(); err != nil {
+		if err := user.SignInWithGoogle(s.system); err != nil {
 			return false, err
 		}
 
@@ -66,7 +66,7 @@ func (s *Service) SignInWithGoogle(ctx context.Context, email string, behaviour 
 				return false, err
 			}
 
-			if err := user.SignInWithGoogle(); err != nil {
+			if err := user.SignInWithGoogle(s.system); err != nil {
 				return false, err
 			}
 

@@ -44,7 +44,7 @@ func TestChoosePassword(t *testing.T) {
 
 		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
-		if _, err := user.SignInWithPassword(newPassword, hasher); err != nil {
+		if _, err := user.SignInWithPassword("site", newPassword, hasher); err != nil {
 			t.Errorf("want to be able to aign in with new password; got %v", err)
 		}
 	})

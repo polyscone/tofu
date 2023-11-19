@@ -35,8 +35,20 @@ func TestSignInWithGoogle(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		if user1.LastSignInAttemptAt.IsZero() {
+			t.Error("want last sign in attempt at to be populated; got zero")
+		}
+		if want, got := "site", user1.LastSignInAttemptSystem; want != got {
+			t.Errorf("want last sign in attempt system to be %q; got %q", want, got)
+		}
+		if want, got := account.SignInMethodGoogle, user1.LastSignInAttemptMethod; want != got {
+			t.Errorf("want last sign in attempt method to be %q; got %q", want, got)
+		}
 		if !user1.LastSignedInAt.IsZero() {
 			t.Error("want last signed in at to be zero with TOTP")
+		}
+		if want, got := "", user1.LastSignedInSystem; want != got {
+			t.Errorf("want last signed in system to be %q; got %q", want, got)
 		}
 		if want, got := account.SignInMethodNone, user1.LastSignedInMethod; want != got {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
@@ -77,8 +89,11 @@ func TestSignInWithGoogle(t *testing.T) {
 		if want, got := account.SignUpMethodGoogle, user2.SignedUpMethod; want != got {
 			t.Errorf("want signed up method to be %q; got %q", want, got)
 		}
-		if user2.LastSignedInAt.IsZero() {
-			t.Error("want last signed in at to be populated; got zero")
+		if !user2.LastSignedInAt.Equal(user2.LastSignInAttemptAt) {
+			t.Error("want last signed in at to be the same as last sign in attempt at")
+		}
+		if want, got := "site", user2.LastSignedInSystem; want != got {
+			t.Errorf("want last signed in system to be %q; got %q", want, got)
 		}
 		if want, got := account.SignInMethodGoogle, user2.LastSignedInMethod; want != got {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
@@ -99,8 +114,11 @@ func TestSignInWithGoogle(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if user2.LastSignedInAt.IsZero() {
-			t.Error("want last signed in at to be populated; got zero")
+		if !user2.LastSignedInAt.Equal(user2.LastSignInAttemptAt) {
+			t.Error("want last signed in at to be the same as last sign in attempt at")
+		}
+		if want, got := "site", user2.LastSignedInSystem; want != got {
+			t.Errorf("want last signed in system to be %q; got %q", want, got)
 		}
 		if want, got := account.SignInMethodGoogle, user2.LastSignedInMethod; want != got {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
