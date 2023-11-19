@@ -67,7 +67,7 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 
 	detail := map[string]any{"error": strings.ToLower(http.StatusText(status))}
 	if isPublic && 400 <= status && status <= 499 {
-		detail["error"] = err.Error()
+		detail["error"] = httputil.ErrorMessage(err)
 
 		var errs errsx.Map
 		if errors.As(err, &errs) {

@@ -497,7 +497,7 @@ func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) 
 }
 
 func (r *WebRepo) createToken(ctx context.Context, tx *Tx, value string, ttl time.Duration, kind string) (string, error) {
-	b := make([]byte, 16)
+	b := make([]byte, 8)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
 		return "", fmt.Errorf("read random bytes: %w", err)
 	}

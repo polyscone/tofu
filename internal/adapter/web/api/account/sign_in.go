@@ -7,6 +7,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/api"
 	"github.com/polyscone/tofu/internal/adapter/web/auth"
+	"github.com/polyscone/tofu/internal/adapter/web/event"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
@@ -18,6 +19,7 @@ func signInRoutes(h *api.Handler, mux *router.ServeMux) {
 	mux.Prefix("/sign-in", func(mux *router.ServeMux) {
 		mux.Post("/", signInPost(h))
 		mux.Post("/totp", signInTOTPPost(h))
+		mux.Post("/totp/send-sms", signInTOTPSendSMSPost(h))
 		mux.Post("/recovery-code", signInRecoveryCodePost(h))
 		mux.Post("/google", signInGooglePost(h))
 	})
@@ -75,6 +77,20 @@ func signInTOTPPost(h *api.Handler) http.HandlerFunc {
 		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
+	}
+}
+
+func signInTOTPSendSMSPost(h *api.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		user := h.User(ctx)
+
+		h.Broker.Dispatch(event.TOTPSMSRequested{
+			Email: user.Email,
+			Tel:   user.TOTPTel,
+		})
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 

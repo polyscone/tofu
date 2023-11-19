@@ -1,4 +1,4 @@
-import { show, hide } from "./loading.js"
+import { show as showLoading, hide as hideLoading } from "./components/loading.js"
 
 let pollSessionHandle = null
 let pollNetworkStatusHandle = null
@@ -34,6 +34,38 @@ const api = {
 
 			pollSessionHandle = setTimeout(api.account.pollSession, 1 * 60 * 1000)
 		},
+		async signUp (email) {
+			const res = await request("/api/v1/account/sign-up", {
+				method: "POST",
+				body: { email },
+			})
+
+			return res
+		},
+		async verify (token, password, passwordCheck) {
+			const res = await request("/api/v1/account/verify", {
+				method: "POST",
+				body: { token, password, passwordCheck },
+			})
+
+			return res
+		},
+		async requestPasswordReset (email) {
+			const res = await request("/api/v1/account/reset-password", {
+				method: "POST",
+				body: { email },
+			})
+
+			return res
+		},
+		async resetPassword (token, newPassword, newPasswordCheck) {
+			const res = await request("/api/v1/account/reset-password/new-password", {
+				method: "POST",
+				body: { token, newPassword, newPasswordCheck },
+			})
+
+			return res
+		},
 		async signInWithPassword (email, password) {
 			const res = await request("/api/v1/account/sign-in", {
 				method: "POST",
@@ -41,6 +73,13 @@ const api = {
 			})
 
 			await api.account.pollSession()
+
+			return res
+		},
+		async requestTOTPSMS () {
+			const res = await request("/api/v1/account/sign-in/totp/send-sms", {
+				method: "POST",
+			})
 
 			return res
 		},
@@ -80,6 +119,17 @@ const api = {
 			await api.account.pollSession()
 
 			return res
+		},
+		tryRedirect (fallback) {
+			if (platform.state.redirect) {
+				const redirect = platform.state.redirect
+
+				platform.state.redirect = ""
+
+				m.route.set(redirect)
+			} else if (fallback) {
+				m.route.set(fallback)
+			}
 		},
 	},
 	security: {
@@ -126,13 +176,30 @@ const api = {
 const platform = {
 	api,
 	config: __STATE__.config || {},
-	vars: __STATE__.vars || {},
+	routes: {},
+	state: {
+		loadingCount: 0,
+		redirect: "",
+	},
 	get session () {
 		return api.account.session()
 	},
-	loading: {
-		show,
-		hide,
+	async loading (f) {
+		platform.state.loadingCount++
+
+		showLoading()
+
+		try {
+			await f()
+		} catch (err) {
+			console.error(err)
+		} finally {
+			platform.state.loadingCount--
+
+			if (platform.state.loadingCount <= 0) {
+				hideLoading()
+			}
+		}
 	},
 	http: {
 		noContent: 204,
@@ -142,7 +209,7 @@ const platform = {
 	network: "connected", // "offline" | "disconnected" | "connected"
 }
 
-export default platform
+window.platform = platform
 
 async function request (url, opts) {
 	opts ||= {}
@@ -216,5 +283,15 @@ async function request (url, opts) {
 		}
 	}
 
+	if (ret.body) {
+		if (ret.status === platform.http.badGateway) {
+			ret.body = "Request failed because the server was offline, please try again."
+		} else if (ret.networkError) {
+			state.error = "Request failed because either the server was offline, or you have no internet connection, please try again."
+		}
+	}
+
 	return ret
 }
+
+export default platform

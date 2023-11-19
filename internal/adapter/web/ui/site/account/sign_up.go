@@ -1,8 +1,10 @@
 package account
 
 import (
+	"errors"
 	"net/http"
 
+	"github.com/polyscone/tofu/internal/adapter/web/auth"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
@@ -63,17 +65,13 @@ func signUpPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		config := h.Config(ctx)
 
-		if !config.SignUpEnabled {
-			h.HTML.ErrorView(w, r, "sign up", app.ErrForbidden, "site/error", nil)
-
-			return
-		}
-
-		_, err := h.Svc.Account.SignUp(ctx, input.Email)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "sign up", err, "site/account/sign_up/form", nil)
+		if err := auth.SignUp(ctx, h.Handler, w, r, input.Email); err != nil {
+			if errors.Is(err, app.ErrForbidden) {
+				h.HTML.ErrorView(w, r, "sign up", err, "site/error", nil)
+			} else {
+				h.HTML.ErrorView(w, r, "sign up", err, "site/account/sign_up/form", nil)
+			}
 
 			return
 		}

@@ -15,10 +15,7 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/app/system"
-	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/rate"
-	"github.com/polyscone/tofu/internal/repository"
 )
 
 type ViewData struct {
@@ -189,66 +186,17 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 	status := httputil.ErrorStatus(err)
 
 	rn.ViewFunc(w, r, status, view, func(data *ViewData) {
+		data.ErrorMessage = httputil.ErrorMessage(err)
+
 		switch {
-		case errors.Is(err, httputil.ErrNotFound),
-			errors.Is(err, app.ErrNotFound):
-
-			data.ErrorMessage = "The page you were looking for could not be found."
-
-		case errors.Is(err, httputil.ErrMethodNotAllowed):
-			data.ErrorMessage = "Method not allowed."
-
-		case errors.Is(err, httputil.ErrForbidden),
-			errors.Is(err, app.ErrForbidden):
-
-			data.ErrorMessage = "You do not have sufficient permissions to access this resource."
-
-		case errors.Is(err, http.ErrHandlerTimeout):
-			data.ErrorMessage = "The server took too long to respond."
-
-		case errors.Is(err, account.ErrNotVerified):
-			data.ErrorMessage = "This account is not verified."
-
-		case errors.Is(err, account.ErrNotActivated):
-			data.ErrorMessage = "This account is not activated."
-
-		case errors.Is(err, account.ErrSuspended):
-			data.ErrorMessage = "This account has been suspended."
-
-		case errors.Is(err, app.ErrUnauthorised):
-			data.ErrorMessage = "You do not have permission to access this resource."
-
 		case errors.Is(err, app.ErrMalformedInput),
 			errors.Is(err, app.ErrInvalidInput),
 			errors.Is(err, app.ErrConflictingInput):
-
-			if errors.Is(err, app.ErrMalformedInput) {
-				data.ErrorMessage = "Malformed input."
-			} else {
-				data.ErrorMessage = "Invalid input."
-			}
 
 			var errs errsx.Map
 			if errors.As(err, &errs) {
 				data.Errors = errs
 			}
-
-		case errors.Is(err, csrf.ErrEmptyToken):
-			data.ErrorMessage = "Empty CSRF token."
-
-		case errors.Is(err, csrf.ErrInvalidToken):
-			data.ErrorMessage = "Invalid CSRF token."
-
-		case errors.Is(err, rate.ErrInsufficientTokens),
-			errors.Is(err, account.ErrSignInThrottled):
-
-			data.ErrorMessage = "You have made too many consecutive requests. Please try again later."
-
-		case errors.Is(err, repository.ErrLogin):
-			data.ErrorMessage = "Could not connect to the datasource."
-
-		default:
-			data.ErrorMessage = "An error has occurred."
 		}
 
 		if dataFunc != nil {

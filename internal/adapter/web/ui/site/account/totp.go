@@ -13,13 +13,13 @@ import (
 
 	"github.com/boombuler/barcode"
 	"github.com/boombuler/barcode/qr"
+	"github.com/polyscone/tofu/internal/adapter/web/event"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/sms"
@@ -397,12 +397,10 @@ func totpSendSMSPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		user := h.User(ctx)
-		logger := h.Logger(ctx)
 
-		background.Go(func() {
-			if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
-				logger.Error("TOTP send SMS: send SMS", "error", err)
-			}
+		h.Broker.Dispatch(event.TOTPSMSRequested{
+			Email: user.Email,
+			Tel:   user.TOTPTel,
 		})
 
 		h.AddFlashf(ctx, "A passcode has been sent to your registered phone number.")

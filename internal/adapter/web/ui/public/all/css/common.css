@@ -354,10 +354,6 @@
 	.g_id_signin {
 		display: inline-block;
 	}
-
-	.g_id_signin > div > div:first-child{
-		display: none;
-	}
 }
 
 @layer utility {

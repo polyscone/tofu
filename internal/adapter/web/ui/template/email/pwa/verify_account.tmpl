@@ -1,0 +1,18 @@
+{{define "subject"}}Verify your account{{end}}
+
+{{define "plain" -}}
+
+Verify your account
+
+To verify your account paste the following verification code into the prompt in the app:
+{{.Vars.Token}}
+
+{{- end}}
+
+{{define "html" -}}
+
+<h1>Verify your account</h1>
+<p>To verify your account paste the following verification code into the prompt in the app:</p>
+<p>{{.Vars.Token}}</p>
+
+{{- end}}

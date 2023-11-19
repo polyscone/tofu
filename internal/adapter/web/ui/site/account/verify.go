@@ -3,19 +3,43 @@ package account
 import (
 	"net/http"
 
+	"github.com/polyscone/tofu/internal/adapter/web/auth"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
+	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
 func verifyRoutes(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/verify", func(mux *router.ServeMux) {
-		mux.Get("/", h.HTML.Handler("site/account/verify/form"), "account.verify")
+		mux.Get("/", verifyGet(h), "account.verify")
 		mux.Post("/", verifyPost(h), "account.verify.post")
 
 		mux.Get("/success", h.HTML.Handler("site/account/verify/success"), "account.verify.success")
 	})
+}
+
+func verifyGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		config := h.Config(ctx)
+
+		if !config.SignUpEnabled {
+			h.HTML.ErrorView(w, r, "verify sign up", app.ErrNotFound, "site/error", nil)
+
+			return
+		}
+
+		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
+			h.HTML.View(w, r, http.StatusOK, "site/account/sign_out/signed_in", nil)
+
+			return
+		}
+
+		h.HTML.View(w, r, http.StatusOK, "site/account/verify/form", nil)
+	}
 }
 
 func verifyPost(h *ui.Handler) http.HandlerFunc {
@@ -32,7 +56,6 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		ctx := r.Context()
-		config := h.Config(ctx)
 
 		if input.Token == "" {
 			http.Redirect(w, r, h.Path("account.verify"), http.StatusSeeOther)
@@ -40,28 +63,9 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		email, err := h.Repo.Web.FindEmailVerificationTokenEmail(ctx, input.Token)
+		email, behaviour, err := auth.Verify(ctx, h.Handler, w, r, input.Token, input.Password, input.PasswordCheck)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find verification token email", err, "site/account/verify/form", nil)
-
-			return
-		}
-
-		behaviour := account.VerifyUserActivate
-		if !config.SignUpAutoActivateEnabled {
-			behaviour = account.VerifyUserOnly
-		}
-
-		err = h.Svc.Account.VerifyUser(ctx, email, input.Password, input.PasswordCheck, behaviour)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "verify user", err, "site/account/verify/form", nil)
-
-			return
-		}
-
-		err = h.Repo.Web.ConsumeEmailVerificationToken(ctx, input.Token)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "consume verification token", err, "site/error", nil)
+			h.HTML.ErrorView(w, r, "verify sign up", err, "site/account/verify/form", nil)
 
 			return
 		}

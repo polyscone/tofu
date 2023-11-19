@@ -15,8 +15,6 @@ if (platform.config.prefix) {
 	}
 }
 
-window.platform = platform
-
 window.addEventListener("load", async () => {
 	await platform.api.meta.pollNetworkStatus()
 	await platform.api.account.pollSession()

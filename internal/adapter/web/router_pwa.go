@@ -26,7 +26,11 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		return "/sign-in"
 	})
 
+	h.Broker.Listen(event.AlreadySignedUpHandler(h))
+	h.Broker.Listen(event.PasswordResetRequestedHandler(h))
 	h.Broker.Listen(event.SignedInWithPasswordHandler(h))
+	h.Broker.Listen(event.SignedUpHandler(h))
+	h.Broker.Listen(event.TOTPSMSRequestedHandler(h))
 
 	routePrefix := "#!"
 	errorHandler := func(msg string) middleware.ErrorHandler {

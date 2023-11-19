@@ -21,7 +21,19 @@ func ActivatedHandler(h *ui.Handler) any {
 				return
 			}
 
-			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "site/account_activated", nil); err != nil {
+			user, err := h.Repo.Account.FindUserByEmail(ctx, evt.Email)
+			if err != nil {
+				logger.Error("activated: find user by email", "error", err)
+
+				return
+			}
+
+			emailTemplate := "site/account_activated"
+			if user.SignedUpSystem == "pwa" {
+				emailTemplate = "pwa/account_activated"
+			}
+
+			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, emailTemplate, nil); err != nil {
 				logger.Error("activated: send email", "error", err)
 			}
 		})

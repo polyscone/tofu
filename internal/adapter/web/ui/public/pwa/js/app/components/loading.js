@@ -21,10 +21,12 @@ export function hide () {
 	m.redraw()
 }
 
-export const Loading = {
-	view: () => m(".loading", { class: state.visible ? "loading--show" : null }, [
-		m(".loading__spinner"),
-	]),
+export function Loading () {
+	return {
+		view: () => m(".loading", { class: state.visible ? "loading--show" : null }, [
+			m(".loading__spinner"),
+		]),
+	}
 }
 
 export default Loading
