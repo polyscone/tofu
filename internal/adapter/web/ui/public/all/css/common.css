@@ -20,6 +20,8 @@
 
 	--clr-white-400: hsl(170, 0%, 100%);
 
+	--clr-link-400: linktext;
+
 	--clr-accent-100: hsl(170, 45%, 97%);
 	--clr-accent-400: hsl(170, 45%, 30%);
 
@@ -99,6 +101,10 @@
 
 	h1 {
 		font-size: 1.7rem;
+	}
+
+	a {
+		color: var(--clr-link-400);
 	}
 
 	hr {
@@ -325,7 +331,7 @@
 		display: inline;
 		padding: 0;
 		background: transparent;
-		color: linktext;
+		color: var(--clr-link-400);
 		cursor: pointer;
 		text-decoration: underline;
 	}
