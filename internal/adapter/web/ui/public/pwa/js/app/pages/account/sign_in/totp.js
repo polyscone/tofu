@@ -1,21 +1,55 @@
 import { ErrorBanner } from "../../../components/error.js"
 import { TOTPInput } from "../../../components/forms.js"
 
+function wait () {
+	return new Promise(resolve => {
+		setTimeout(resolve, 3000)
+	})
+}
+
 function SignInTOTP () {
 	const state = {
 		error: "",
 		errors: {},
 		totp: "",
+		resendText: "Resend passcode SMS",
+		resendingSMS: false,
 	}
 
 	function resendTOTPSMS (e) {
 		e.preventDefault()
+
+		// Don't allow more messages to be sent until the current request is finished
+		if (state.resendingSMS) {
+			return
+		}
+
+		state.resendingSMS = true
+
+		const originalText = state.resendText
+
+		state.resendText = "Please wait..."
 
 		platform.loading(async () => {
 			const res = await platform.api.account.requestTOTPSMS(state.totp)
 
 			state.error = res.body?.error || ""
 			state.errors = res.body?.fields || {}
+
+			if (res.ok) {
+				state.resendText = "Passcode SMS sent"
+
+				// Give the user some time to see the message in the button change
+				// and prevent them from sending multiple messages at once
+				setTimeout(() => {
+					state.resendText = originalText
+					state.resendingSMS = false
+
+					m.redraw()
+				}, 3000)
+			} else {
+				state.resendText = originalText
+			}
 		})
 	}
 
@@ -41,7 +75,7 @@ function SignInTOTP () {
 
 			if (platform.session.totpMethod === "sms") {
 				instructions = "Please verify your identity by entering the 6 digit passcode that has been generated and sent to your registered phone number."
-				smsButton = m("button.btn--alt", { onclick: resendTOTPSMS }, "Resend passcode SMS")
+				smsButton = m("button.btn--alt", { onclick: resendTOTPSMS }, state.resendText)
 			}
 
 			return [
