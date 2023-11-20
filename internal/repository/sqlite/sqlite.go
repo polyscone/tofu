@@ -300,7 +300,15 @@ func migrateFS(ctx context.Context, db *sql.DB, name string, fsys fs.FS) error {
 	return nil
 }
 
-func recordQuery(metrics *expvar.Map) func() {
+type recordKind byte
+
+const (
+	recordKindUnknown recordKind = iota
+	recordKindRead
+	recordKindWrite
+)
+
+func recordQuery(metrics *expvar.Map, kind recordKind) func() {
 	if metrics == nil {
 		return func() {}
 	}
@@ -308,8 +316,20 @@ func recordQuery(metrics *expvar.Map) func() {
 	now := time.Now()
 
 	return func() {
-		metrics.Add("totalQueriesExecuted", 1)
-		metrics.Add("totalQueryTime", time.Since(now).Nanoseconds())
+		since := time.Since(now).Nanoseconds()
+
+		switch kind {
+		case recordKindRead:
+			metrics.Add("totalReads", 1)
+			metrics.Add("totalReadTime", since)
+
+		case recordKindWrite:
+			metrics.Add("totalWrites", 1)
+			metrics.Add("totalWriteTime", since)
+		}
+
+		metrics.Add("totalQueries", 1)
+		metrics.Add("totalQueryTime", since)
 	}
 }
 
@@ -641,7 +661,7 @@ func (c *Conn) PrepareContext(ctx context.Context, query string) (*Stmt, error) 
 }
 
 func (c *Conn) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	defer recordQuery(c.metrics)()
+	defer recordQuery(c.metrics, recordKindWrite)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -658,7 +678,7 @@ func (c *Conn) ExecContext(ctx context.Context, query string, args ...any) (sql.
 }
 
 func (c *Conn) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
-	defer recordQuery(c.metrics)()
+	defer recordQuery(c.metrics, recordKindRead)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -675,7 +695,7 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args ...any) (*Ro
 }
 
 func (c *Conn) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
-	defer recordQuery(c.metrics)()
+	defer recordQuery(c.metrics, recordKindRead)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -793,7 +813,7 @@ func (db *DB) Exec(query string, args ...any) (sql.Result, error) {
 }
 
 func (db *DB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	defer recordQuery(db.metrics)()
+	defer recordQuery(db.metrics, recordKindWrite)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -814,7 +834,7 @@ func (db *DB) Query(query string, args ...any) (*Rows, error) {
 }
 
 func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
-	defer recordQuery(db.metrics)()
+	defer recordQuery(db.metrics, recordKindRead)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -835,7 +855,7 @@ func (db *DB) QueryRow(query string, args ...any) *Row {
 }
 
 func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
-	defer recordQuery(db.metrics)()
+	defer recordQuery(db.metrics, recordKindRead)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -858,7 +878,7 @@ func (stmt *Stmt) Exec(args ...any) (sql.Result, error) {
 }
 
 func (stmt *Stmt) ExecContext(ctx context.Context, args ...any) (sql.Result, error) {
-	defer recordQuery(stmt.metrics)()
+	defer recordQuery(stmt.metrics, recordKindWrite)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -879,7 +899,7 @@ func (stmt *Stmt) Query(args ...any) (*Rows, error) {
 }
 
 func (stmt *Stmt) QueryContext(ctx context.Context, args ...any) (*Rows, error) {
-	defer recordQuery(stmt.metrics)()
+	defer recordQuery(stmt.metrics, recordKindRead)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -900,7 +920,7 @@ func (stmt *Stmt) QueryRow(args ...any) *Row {
 }
 
 func (stmt *Stmt) QueryRowContext(ctx context.Context, args ...any) *Row {
-	defer recordQuery(stmt.metrics)()
+	defer recordQuery(stmt.metrics, recordKindRead)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -979,7 +999,7 @@ func (tx *Tx) Exec(query string, args ...any) (sql.Result, error) {
 }
 
 func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
-	defer recordQuery(tx.metrics)()
+	recordKind := recordKindRead
 
 	// A query that rolls back and begins an exclusive/immediate transaction is used
 	// as a workaround for starting exclusive/immediate transactions with Go's SQL
@@ -989,8 +1009,11 @@ func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 	// In these cases we don't want to record the exec call because it will be used to
 	// determine whether a transaction possibly modified the database
 	if query != "ROLLBACK; BEGIN EXCLUSIVE" && query != "ROLLBACK; BEGIN IMMEDIATE" {
+		recordKind = recordKindWrite
 		tx.execCalled = true
 	}
+
+	defer recordQuery(tx.metrics, recordKind)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -1011,7 +1034,7 @@ func (tx *Tx) Query(query string, args ...any) (*Rows, error) {
 }
 
 func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Rows, error) {
-	defer recordQuery(tx.metrics)()
+	defer recordQuery(tx.metrics, recordKindRead)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {
@@ -1032,7 +1055,7 @@ func (tx *Tx) QueryRow(query string, args ...any) *Row {
 }
 
 func (tx *Tx) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
-	defer recordQuery(tx.metrics)()
+	defer recordQuery(tx.metrics, recordKindRead)()
 
 	for _, arg := range args {
 		if err := validateArg(arg); err != nil {

@@ -75,10 +75,17 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			TotalTransactionsRolledBack int64
 			TransactionCommitRate       float64
 			TransactionRollbackRate     float64
-			TotalQueriesExecuted        int64
+			TotalReads                  int64
+			TotalReadTime               time.Duration
+			AverageReadTime             time.Duration
+			TotalWrites                 int64
+			TotalWriteTime              time.Duration
+			AverageWriteTime            time.Duration
+			AverageReadsPerWrite        float64
+			TotalQueries                int64
 			TotalQueryTime              time.Duration
 			AverageQueryTime            time.Duration
-			AverageTransactionQueries   int64
+			AverageTransactionQueries   float64
 		}
 
 		type RequestMetrics struct {
@@ -117,14 +124,21 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 				totalTransactionsBegun := varAs[int64](database.Get("totalTransactionsBegun"))
 				totalTransactionsCommitted := varAs[int64](database.Get("totalTransactionsCommitted"))
 				totalTransactionsRolledBack := varAs[int64](database.Get("totalTransactionsRolledBack"))
-				totalQueriesExecuted := varAs[int64](database.Get("totalQueriesExecuted"))
+				totalReads := varAs[int64](database.Get("totalReads"))
+				totalReadTime := varAs[int64](database.Get("totalReadTime"))
+				totalWrites := varAs[int64](database.Get("totalWrites"))
+				totalWriteTime := varAs[int64](database.Get("totalWriteTime"))
+				totalQueries := varAs[int64](database.Get("totalQueries"))
 				totalQueryTime := varAs[int64](database.Get("totalQueryTime"))
 
 				averageConnWaitTime := stats.WaitDuration / time.Duration(max(1, stats.WaitCount))
 				transactionCommitRate := float64(totalTransactionsCommitted) / float64(totalTransactionsBegun) * 100
 				transactionRollbackRate := 100 - transactionCommitRate
-				averageQueryTime := totalQueryTime / max(1, totalQueriesExecuted)
-				averageTransactionQueries := int64(math.Round(float64(totalQueriesExecuted) / max(1, float64(totalTransactionsBegun))))
+				averageReadTime := totalReadTime / max(1, totalReads)
+				averageWriteTime := totalWriteTime / max(1, totalWrites)
+				averageReadsPerWrite := float64(totalReads) / max(1, float64(totalWrites))
+				averageQueryTime := totalQueryTime / max(1, totalQueries)
+				averageTransactionQueries := float64(totalQueries) / max(1, float64(totalTransactionsBegun))
 
 				databases = append(databases, DatabaseMetrics{
 					Label:                       label,
@@ -139,7 +153,14 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 					TotalTransactionsRolledBack: totalTransactionsRolledBack,
 					TransactionCommitRate:       transactionCommitRate,
 					TransactionRollbackRate:     transactionRollbackRate,
-					TotalQueriesExecuted:        totalQueriesExecuted,
+					TotalReads:                  totalReads,
+					TotalReadTime:               time.Duration(totalReadTime),
+					AverageReadTime:             time.Duration(averageReadTime),
+					TotalWrites:                 totalWrites,
+					TotalWriteTime:              time.Duration(totalWriteTime),
+					AverageWriteTime:            time.Duration(averageWriteTime),
+					AverageReadsPerWrite:        averageReadsPerWrite,
+					TotalQueries:                totalQueries,
 					TotalQueryTime:              time.Duration(totalQueryTime),
 					AverageQueryTime:            time.Duration(averageQueryTime),
 					AverageTransactionQueries:   averageTransactionQueries,

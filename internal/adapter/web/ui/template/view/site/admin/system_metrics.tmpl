@@ -140,10 +140,59 @@
 					</tr>
 				{{end}}
 
-				{{if $database.TotalQueriesExecuted}}
+				{{if $database.TotalReads}}
 					<tr>
-						<td>Queries executed</td>
-						<td data-locale-number>{{$database.TotalQueriesExecuted}}</td>
+						<td>Tot. reads</td>
+						<td data-locale-number>{{$database.TotalReads}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.TotalReadTime}}
+					<tr>
+						<td>Tot. read time</td>
+						<td>{{FormatDurationStat $database.TotalReadTime}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.AverageReadTime}}
+					<tr>
+						<td>Avg. read time</td>
+						<td>{{FormatDurationStat $database.AverageReadTime}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.TotalWrites}}
+					<tr>
+						<td>Tot. writes</td>
+						<td data-locale-number>{{$database.TotalWrites}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.TotalWriteTime}}
+					<tr>
+						<td>Tot. write time</td>
+						<td>{{FormatDurationStat $database.TotalWriteTime}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.AverageWriteTime}}
+					<tr>
+						<td>Avg. write time</td>
+						<td>{{FormatDurationStat $database.AverageWriteTime}}</td>
+					</tr>
+				{{end}}
+
+				{{if and $database.TotalReads $database.TotalWrites $database.AverageReadsPerWrite}}
+					<tr>
+						<td>Avg. reads/write</td>
+						<td data-locale-number>{{printf "%.2f" $database.AverageReadsPerWrite}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.TotalQueries}}
+					<tr>
+						<td>Tot. queries</td>
+						<td data-locale-number>{{$database.TotalQueries}}</td>
 					</tr>
 				{{end}}
 
@@ -164,7 +213,7 @@
 				{{if and $database.TotalTransactionsBegun $database.AverageTransactionQueries}}
 					<tr>
 						<td>Avg. queries/tx.</td>
-						<td>{{$database.AverageTransactionQueries}}</td>
+						<td data-locale-number>{{printf "%.2f" $database.AverageTransactionQueries}}</td>
 					</tr>
 				{{end}}
 			</table>
