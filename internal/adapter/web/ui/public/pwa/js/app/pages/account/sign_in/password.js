@@ -129,8 +129,6 @@ function SignIn () {
 				}
 
 				state.error = `Too many failed sign in attempts in the last ${inLast}. Please try again${unlockIn}.`
-			} else {
-				state.error = "Either your credentials are incorrect, or you're not authorised to access this application."
 			}
 		})
 	}

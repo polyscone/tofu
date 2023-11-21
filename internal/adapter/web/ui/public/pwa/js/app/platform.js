@@ -203,8 +203,10 @@ const platform = {
 	},
 	http: {
 		noContent: 204,
+		badRequest: 400,
 		tooManyRequests: 429,
 		badGateway: 502,
+		gatewayTimeout: 504,
 	},
 	network: "connected", // "offline" | "disconnected" | "connected"
 }

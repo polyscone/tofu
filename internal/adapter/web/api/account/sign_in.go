@@ -13,6 +13,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 func signInRoutes(h *api.Handler, mux *router.ServeMux) {
@@ -40,7 +41,17 @@ func signInPost(h *api.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		if err := auth.SignInWithPassword(ctx, h.Handler, w, r, input.Email, input.Password); err != nil {
-			if !errors.Is(err, account.ErrSignInThrottled) {
+			switch {
+			case errors.Is(err, repository.ErrNotFound),
+				errors.Is(err, account.ErrInvalidPassword):
+
+				h.JSON(w, r, http.StatusBadRequest, map[string]any{
+					"error": "Either your credentials are incorrect, or you're not authorised to access this application.",
+				})
+
+				return
+
+			case !errors.Is(err, account.ErrSignInThrottled):
 				err = fmt.Errorf("%w: %w", app.ErrBadRequest, err)
 			}
 
