@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"expvar"
 	"fmt"
@@ -101,6 +102,10 @@ func newTenant(host string) (*handler.Tenant, error) {
 				dbMetrics = &expvar.Map{}
 
 				dbMetrics.Set("stats", expvar.Func(func() any {
+					if sqliteDB.DB == nil {
+						return sql.DBStats{}
+					}
+
 					return sqliteDB.Stats()
 				}))
 
