@@ -171,7 +171,6 @@ function SignIn () {
 	}
 }
 
-platform.routes.accountSignIn = {
-	pattern: "/account/sign-in",
-	component: SignIn,
-}
+platform.routes.register("/account/sign-in", SignIn, {
+	name: "account.sign_in",
+})

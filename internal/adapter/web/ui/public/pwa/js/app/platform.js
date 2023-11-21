@@ -176,7 +176,36 @@ const api = {
 const platform = {
 	api,
 	config: __STATE__.config || {},
-	routes: {},
+	routes: {
+		__protected: [],
+		__registered: {},
+		protect (regexp) {
+			platform.routes.__protected.push(regexp)
+		},
+		register (pattern, component, opts) {
+			if (!opts) {
+				opts = component
+				component = null
+			}
+
+			platform.routes.__registered[pattern] = {
+				component,
+				name: opts.name || "",
+				onmatch: opts.onmatch,
+			}
+		},
+		path (name) {
+			for (const pattern in platform.routes.__registered) {
+				const route = platform.routes.__registered[pattern]
+
+				if (route.name === name) {
+					return pattern
+				}
+			}
+
+			return `{${name}}`
+		},
+	},
 	state: {
 		loadingCount: 0,
 		redirect: "",

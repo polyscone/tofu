@@ -63,7 +63,7 @@ function SignInTOTP () {
 			state.errors = res.body?.fields || {}
 
 			if (res.ok) {
-				platform.api.account.tryRedirect(platform.routes.home.pattern)
+				platform.api.account.tryRedirect(platform.routes.path("home"))
 			}
 		})
 	}
@@ -79,6 +79,7 @@ function SignInTOTP () {
 			}
 
 			return [
+				m("h1", "Sign in"),
 				m("p", instructions),
 				m("form", { onsubmit: signIn }, [
 					state.error ? m(ErrorBanner, state.error) : null,
@@ -92,20 +93,19 @@ function SignInTOTP () {
 					}),
 					m("button[type=submit]", "Sign in"),
 					smsButton,
-					m(m.route.Link, { href: platform.routes.accountSignInRecoveryCode.pattern }, "Use a recovery code"),
-					m(m.route.Link, { href: platform.routes.accountSignIn.pattern }, "Switch account"),
+					m(m.route.Link, { href: platform.routes.path("account.sign_in.recovery_code") }, "Use a recovery code"),
+					m(m.route.Link, { href: platform.routes.path("account.sign_in") }, "Switch account"),
 				]),
 			]
 		},
 	}
 }
 
-platform.routes.accountSignInTOTP = {
-	pattern: "/account/sign-in/totp",
-	component: SignInTOTP,
+platform.routes.register("/account/sign-in/totp", SignInTOTP, {
+	name: "account.sign_in.totp",
 	onmatch () {
 		if (platform.session.isSignedIn || !platform.session.isAwaitingTOTP) {
-			return m.route.set(platform.routes.accountSignIn.pattern)
+			return m.route.set(platform.routes.path("account.sign_in"))
 		}
 	},
-}
+})

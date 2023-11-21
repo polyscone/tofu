@@ -4,7 +4,4 @@ function NotFound () {
 	}
 }
 
-platform.routes.errorNotFound = {
-	pattern: "/:rest...",
-	component: NotFound,
-}
+platform.routes.register("/:rest...", NotFound)

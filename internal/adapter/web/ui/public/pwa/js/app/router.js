@@ -19,6 +19,8 @@ import "./pages/account/reset_password/request.js"
 // Errors
 import "./pages/error/not_found.js"
 
+platform.routes.protect(/^\/$/)
+
 import Layout from "./master/layout.js"
 
 function handle (component, opts) {
@@ -26,7 +28,9 @@ function handle (component, opts) {
 
 	return {
 		onmatch (args, requestedPath) {
-			if (opts.requireSignIn) {
+			const isProtected = platform.routes.__protected.find(r => r.test(requestedPath))
+
+			if (isProtected) {
 				if (!platform.session.isSignedIn) {
 					const redirect = requestedPath || "/"
 
@@ -34,11 +38,11 @@ function handle (component, opts) {
 						platform.state.redirect = redirect
 					}
 
-					return m.route.set(platform.routes.accountSignIn.pattern)
+					return m.route.set(platform.routes.path("account.sign_in"))
 				}
 
 				if (platform.session.isTOTPRequired) {
-					return m.route.set(platform.routes.accountSignInTOTPRequired.pattern)
+					return m.route.set(platform.routes.path("account.sign_in.totp_required"))
 				}
 			}
 
@@ -68,14 +72,13 @@ export default function () {
 
 	const routes = {}
 
-	for (const key in platform.routes) {
-		const route = platform.routes[key]
+	for (const pattern in platform.routes.__registered) {
+		const route = platform.routes.__registered[pattern]
 
-		routes[route.pattern] = handle(route.component, {
+		routes[pattern] = handle(route.component, {
 			onmatch: route.onmatch,
-			requireSignIn: route.requireSignIn || false,
 		})
 	}
 
-	m.route(document.body, platform.routes.home.pattern, routes)
+	m.route(document.body, platform.routes.path("home"), routes)
 }

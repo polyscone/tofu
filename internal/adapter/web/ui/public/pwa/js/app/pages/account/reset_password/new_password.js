@@ -21,13 +21,14 @@ function ResetPasswordVerify () {
 			if (res.ok) {
 				await platform.api.account.signInWithPassword(res.body?.email, state.password)
 
-				platform.api.account.tryRedirect(platform.routes.home.pattern)
+				platform.api.account.tryRedirect(platform.routes.path("home"))
 			}
 		})
 	}
 
 	return {
 		view: () => [
+			m("h1", "Reset password"),
 			m("p", "We've sent a verification code to your email address which you can copy into the input below."),
 			m("form", { onsubmit: resetPassword }, [
 				state.error ? m(ErrorBanner, state.error) : null,
@@ -52,7 +53,6 @@ function ResetPasswordVerify () {
 	}
 }
 
-platform.routes.accountResetPasswordVerify = {
-	pattern: "/account/reset-password/new-password",
-	component: ResetPasswordVerify,
-}
+platform.routes.register("/account/reset-password/new-password", ResetPasswordVerify, {
+	name: "account.reset_password.verify",
+})

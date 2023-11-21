@@ -4,16 +4,15 @@ function SignInTOTPRequired () {
 	}
 }
 
-platform.routes.accountSignInTOTPRequired = {
-	pattern: "/account/sign-in/totp/required",
-	component: SignInTOTPRequired,
+platform.routes.register("/account/sign-in/totp/required", SignInTOTPRequired, {
+	name: "account.sign_in.totp_required",
 	onmatch () {
 		if (!platform.session.isSignedIn) {
-			return m.route.set(platform.routes.accountSignIn.pattern)
+			return m.route.set(platform.routes.path("account.sign_in"))
 		}
 
 		if (!platform.session.isTOTPRequired) {
-			return m.route.set(platform.routes.home.pattern)
+			return m.route.set(platform.routes.path("home"))
 		}
 	},
-}
+})

@@ -24,29 +24,31 @@ function SignInRecoveryCode () {
 	}
 
 	return {
-		view: () => m("form", { onsubmit: signIn }, [
-			state.error ? m(ErrorBanner, state.error) : null,
-			m(RecoveryCodeInput, {
-				label: "Recovery code",
-				name: "code",
-				required: true,
-				autocomplete: "off",
-				error: state.errors.recoveryCode,
-				oninput (e) { state.recoveryCode = e.target.value },
-			}),
-			m("button[type=submit]", "Sign in"),
-			m(m.route.Link, { href: platform.routes.accountSignInTOTP.pattern }, "Use a passcode"),
-			m(m.route.Link, { href: platform.routes.accountSignIn.pattern }, "Switch account"),
-		]),
+		view: () => [
+			m("h1", "Sign in"),
+			m("form", { onsubmit: signIn }, [
+				state.error ? m(ErrorBanner, state.error) : null,
+				m(RecoveryCodeInput, {
+					label: "Recovery code",
+					name: "code",
+					required: true,
+					autocomplete: "off",
+					error: state.errors.recoveryCode,
+					oninput (e) { state.recoveryCode = e.target.value },
+				}),
+				m("button[type=submit]", "Sign in"),
+				m(m.route.Link, { href: platform.routes.path("account.sign_in.totp") }, "Use a passcode"),
+				m(m.route.Link, { href: platform.routes.path("account.sign_in") }, "Switch account"),
+			]),
+		],
 	}
 }
 
-platform.routes.accountSignInRecoveryCode = {
-	pattern: "/account/sign-in/recovery-code",
-	component: SignInRecoveryCode,
+platform.routes.register("/account/sign-in/recovery-code", SignInRecoveryCode, {
+	name: "account.sign_in.recovery_code",
 	onmatch () {
 		if (platform.session.isSignedIn || !platform.session.isAwaitingTOTP) {
-			return m.route.set(platform.routes.accountSignIn.pattern)
+			return m.route.set(platform.routes.path("account.sign_in"))
 		}
 	},
-}
+})

@@ -24,7 +24,7 @@ function SignUp () {
 			state.errors = res.body?.fields || {}
 
 			if (res.ok) {
-				m.route.set(platform.routes.accountSignUpVerify.pattern)
+				m.route.set(platform.routes.path("account.sign_up.verify"))
 			}
 		})
 	}
@@ -34,14 +34,14 @@ function SignUp () {
 			if (platform.session.isSignedIn) {
 				return [
 					m("p", "You're already signed in."),
-					m("form", { onsubmit: signOut }, m(".bag", [
+					m("form", { onsubmit: signOut }, [
 						m("button[type=submit].btn--link", "Click here to sign out."),
-					])),
+					]),
 				]
 			}
 
 			return [
-				m("p", "You'll be able to choose your password after verifying your email address."),
+				m("h1", "Sign up"),
 				m("form", { onsubmit: signUp }, [
 					state.error ? m(ErrorBanner, state.error) : null,
 					m(EmailInput, {
@@ -53,14 +53,13 @@ function SignUp () {
 						oninput (e) { state.email = e.target.value },
 					}),
 					m("button[type=submit]", "Sign up"),
-					m(m.route.Link, { href: platform.routes.accountSignIn.pattern }, "Already have an account?"),
+					m(m.route.Link, { href: platform.routes.path("account.sign_in") }, "Already have an account?"),
 				]),
 			]
 		},
 	}
 }
 
-platform.routes.accountSignUp = {
-	pattern: "/account/sign-up",
-	component: SignUp,
-}
+platform.routes.register("/account/sign-up", SignUp, {
+	name: "account.sign_up",
+})

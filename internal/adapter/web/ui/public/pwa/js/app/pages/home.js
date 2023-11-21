@@ -16,8 +16,6 @@ function Home () {
 	}
 }
 
-platform.routes.home = {
-	pattern: "/",
-	component: Home,
-	requireSignIn: true,
-}
+platform.routes.register("/", Home, {
+	name: "home",
+})

@@ -29,9 +29,9 @@ function SignUpVerify () {
 				if (res.body?.isActivated) {
 					await platform.api.account.signInWithPassword(res.body?.email, state.password)
 
-					platform.api.account.tryRedirect(platform.routes.home.pattern)
+					platform.api.account.tryRedirect(platform.routes.path("home"))
 				} else {
-					m.route.set(platform.routes.accountSignUpSuccess.pattern)
+					m.route.set(platform.routes.path("account.sign_up.success"))
 				}
 			} else {
 				// If we couldn't verify the sign up then it's possible that the user
@@ -41,7 +41,7 @@ function SignUpVerify () {
 				if (res.ok) {
 					await platform.api.account.signInWithPassword(res.body?.email, state.password)
 
-					platform.api.account.tryRedirect(platform.routes.home.pattern)
+					platform.api.account.tryRedirect(platform.routes.path("home"))
 				} else {
 					// Finally display any original errors
 					// Since this is a sign up verification page, and reset password is only
@@ -58,36 +58,38 @@ function SignUpVerify () {
 			if (platform.session.isSignedIn) {
 				return [
 					m("p", "You're already signed in."),
-					m("form", { onsubmit: signOut }, m(".bag", [
+					m("form", { onsubmit: signOut }, [
 						m("button[type=submit].btn--link", "Click here to sign out."),
-					])),
+					]),
 				]
 			}
 
-			return m("form", { onsubmit: verify }, [
-				state.error ? m(ErrorBanner, state.error) : null,
-				m(TokenInput, {
-					label: "Verification code",
-					name: "token",
-					required: true,
-					error: state.errors.token,
-					oninput (e) { state.token = e.target.value },
-				}),
-				m(PasswordInput, {
-					label: "Choose a password",
-					name: "password",
-					required: true,
-					autocomplete: "new-password",
-					error: state.errors.password,
-					oninput (e) { state.password = e.target.value },
-				}),
-				m("button[type=submit]", "Use this password and verify account"),
-			])
+			return [
+				m("h1", "Verify"),
+				m("form", { onsubmit: verify }, [
+					state.error ? m(ErrorBanner, state.error) : null,
+					m(TokenInput, {
+						label: "Verification code",
+						name: "token",
+						required: true,
+						error: state.errors.token,
+						oninput (e) { state.token = e.target.value },
+					}),
+					m(PasswordInput, {
+						label: "Choose a password",
+						name: "password",
+						required: true,
+						autocomplete: "new-password",
+						error: state.errors.password,
+						oninput (e) { state.password = e.target.value },
+					}),
+					m("button[type=submit]", "Verify account"),
+				]),
+			]
 		},
 	}
 }
 
-platform.routes.accountSignUpVerify = {
-	pattern: "/account/sign-up/verify",
-	component: SignUpVerify,
-}
+platform.routes.register("/account/sign-up/verify", SignUpVerify, {
+	name: "account.sign_up.verify",
+})
