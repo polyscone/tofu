@@ -284,10 +284,21 @@ async function request (url, opts) {
 	}
 
 	if (ret.body) {
-		if (ret.status === platform.http.badGateway) {
+		switch (ret.status) {
+		case platform.http.badGateway:
 			ret.body.error = "Request failed because the server was offline, please try again."
-		} else if (ret.networkError) {
-			ret.body.error = "Request failed because either the server was offline, or you have no internet connection, please try again."
+
+			break
+
+		case platform.http.gatewayTimeout:
+			ret.body.error = "The server could not process your request in time, please try again."
+
+			break
+
+		default:
+			if (ret.networkError) {
+				ret.body.error = "Request failed because either the server was offline, or you have no internet connection, please try again."
+			}
 		}
 	}
 
