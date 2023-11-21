@@ -64,27 +64,25 @@ function SignUpVerify () {
 				]
 			}
 
-			return [
-				m("form", { onsubmit: verify }, [
-					state.error ? m(ErrorBanner, state.error) : null,
-					m(TokenInput, {
-						label: "Verification code",
-						name: "token",
-						required: true,
-						error: state.errors.token,
-						oninput (e) { state.token = e.target.value },
-					}),
-					m(PasswordInput, {
-						label: "Choose a password",
-						name: "password",
-						required: true,
-						autocomplete: "new-password",
-						error: state.errors.password,
-						oninput (e) { state.password = e.target.value },
-					}),
-					m("button[type=submit]", "Use this password and verify account"),
-				]),
-			]
+			return m("form", { onsubmit: verify }, [
+				state.error ? m(ErrorBanner, state.error) : null,
+				m(TokenInput, {
+					label: "Verification code",
+					name: "token",
+					required: true,
+					error: state.errors.token,
+					oninput (e) { state.token = e.target.value },
+				}),
+				m(PasswordInput, {
+					label: "Choose a password",
+					name: "password",
+					required: true,
+					autocomplete: "new-password",
+					error: state.errors.password,
+					oninput (e) { state.password = e.target.value },
+				}),
+				m("button[type=submit]", "Use this password and verify account"),
+			])
 		},
 	}
 }

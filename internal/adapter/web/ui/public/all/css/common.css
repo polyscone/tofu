@@ -162,6 +162,10 @@
 		border: none;
 	}
 
+	:is(button, input, textarea):focus {
+		outline: 2px solid linktext;
+	}
+
 	:is(input, textarea).invalid:placeholder-shown,
 	:is(input, textarea).invalid:not(:placeholder-shown),
 	:is(input, textarea):invalid:not(:placeholder-shown),
