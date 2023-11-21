@@ -77,5 +77,5 @@ export default function () {
 		})
 	}
 
-	m.route(document.body, "/", routes)
+	m.route(document.body, platform.routes.home.pattern, routes)
 }
