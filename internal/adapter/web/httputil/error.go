@@ -82,7 +82,7 @@ func ErrorMessage(err error) string {
 	case errors.Is(err, ErrNotFound),
 		errors.Is(err, app.ErrNotFound):
 
-		return "The page you were looking for could not be found."
+		return "The resource you were looking for could not be found."
 
 	case errors.Is(err, ErrMethodNotAllowed):
 		return "Method not allowed."
