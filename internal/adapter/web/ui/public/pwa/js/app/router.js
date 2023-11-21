@@ -28,7 +28,11 @@ function handle (component, opts) {
 		onmatch (args, requestedPath) {
 			if (opts.requireSignIn) {
 				if (!platform.session.isSignedIn) {
-					platform.state.redirect = requestedPath || "/"
+					const redirect = requestedPath || "/"
+
+					if (m.route.get() !== redirect) {
+						platform.state.redirect = redirect
+					}
 
 					return m.route.set(platform.routes.accountSignIn.pattern)
 				}
