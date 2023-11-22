@@ -27,7 +27,11 @@ onMount(".invalid", node => {
 })
 
 onMount("[data-locale-number]", node => {
-	node.innerHTML = node.innerHTML.replaceAll(/\d+(\.\d+)?/g, match => Number(match).toLocaleString())
+	node.innerHTML = node.innerHTML.replaceAll(/\d+(\.\d+)?/g, match => Number(match).toLocaleString([], {
+		style: node.dataset.style || "decmial",
+		currency: node.dataset.currency,
+		currencyDisplay: node.dataset.currencyDisplay || "narrowSymbol",
+	}))
 })
 
 onMount("time", node => {
