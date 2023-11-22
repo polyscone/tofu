@@ -27,7 +27,7 @@ const api = {
 					localStorage.setItem("pwa.session", next)
 
 					if (prev !== next) {
-						m.redraw()
+						m.route.set(m.route.get())
 					}
 				}
 			}
@@ -164,7 +164,7 @@ const api = {
 			}
 
 			if (platform.network !== prev) {
-				m.redraw()
+				m.route.set(m.route.get())
 			}
 
 			pollNetworkStatusHandle = setTimeout(api.meta.pollNetworkStatus, 1 * 10 * 1000)
