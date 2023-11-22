@@ -194,12 +194,31 @@ const platform = {
 				onmatch: opts.onmatch,
 			}
 		},
-		path (name) {
+		path (name, ...pairs) {
+			if (pairs.length % 2 !== 0) {
+				throw new Error("path replacement pairs must be even")
+			}
+
 			for (const pattern in platform.routes.__registered) {
 				const route = platform.routes.__registered[pattern]
 
 				if (route.name === name) {
-					return pattern
+					const parts = pattern.split("/")
+
+					for (let i = 0; i < parts.length; i++) {
+						const part = parts[i]
+
+						for (let j = 0; j < pairs.length / 2; j++) {
+							const key = pairs[j]
+							const value = pairs[j + 1]
+
+							if (part === key) {
+								parts[i] = value
+							}
+						}
+					}
+
+					return parts.join("/")
 				}
 			}
 
