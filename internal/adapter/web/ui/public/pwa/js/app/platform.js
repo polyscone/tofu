@@ -208,7 +208,7 @@ const platform = {
 					for (let i = 0; i < parts.length; i++) {
 						const part = parts[i]
 
-						for (let j = 0; j < pairs.length / 2; j++) {
+						for (let j = 0; j < pairs.length; j += 2) {
 							const key = pairs[j]
 							const value = pairs[j + 1]
 
