@@ -309,6 +309,7 @@
 	}
 
 	button, .btn {
+		display: inline-block;
 		padding-block: 0.4rem;
 		padding-inline: 1rem;
 		background: var(--clr-accent-400);
