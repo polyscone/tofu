@@ -132,11 +132,15 @@
 					</tr>
 					<tr>
 						<td>Txs. committed</td>
-						<td data-locale-number>{{$database.TotalTransactionsCommitted}} <small>({{$database.TransactionCommitRate}}&percnt;)</small></td>
+						<td data-locale-number>{{$database.TotalTransactionsCommitted}} <small data-locale-number>({{printf "%.2f" $database.TransactionCommitRate}}&percnt;)</small></td>
 					</tr>
 					<tr>
 						<td>Txs. rolled back</td>
-						<td data-locale-number>{{$database.TotalTransactionsRolledBack}} <small>({{$database.TransactionRollbackRate}}&percnt;)</small></td>
+						<td data-locale-number>{{$database.TotalTransactionsRolledBack}} <small data-locale-number>({{printf "%.2f" $database.TransactionRollbackRate}}&percnt;)</small></td>
+					</tr>
+					<tr>
+						<td>Txs. cancelled</td>
+						<td data-locale-number>{{$database.TotalTransactionsCancelled}} <small data-locale-number>({{printf "%.2f" $database.TransactionCancelRate}}&percnt;)</small></td>
 					</tr>
 				{{end}}
 

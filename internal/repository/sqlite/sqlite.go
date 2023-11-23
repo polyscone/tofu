@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/mattn/go-sqlite3"
@@ -592,7 +593,11 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 		c.metrics.Add("totalTransactionsBegun", 1)
 	}
 
-	return &Tx{Tx: tx, now: time.Now(), metrics: c.metrics}, nil
+	_tx := &Tx{Tx: tx, ctx: ctx, now: time.Now(), metrics: c.metrics}
+
+	go _tx.awaitDone()
+
+	return _tx, nil
 }
 
 // BeginImmediateTx starts an immediate transaction with "BEGIN IMMEDIATE".
@@ -736,7 +741,11 @@ func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 		db.metrics.Add("totalTransactionsBegun", 1)
 	}
 
-	return &Tx{Tx: tx, now: time.Now(), metrics: db.metrics}, nil
+	_tx := &Tx{Tx: tx, ctx: ctx, now: time.Now(), metrics: db.metrics}
+
+	go _tx.awaitDone()
+
+	return _tx, nil
 }
 
 // BeginImmediateTx starts an immediate transaction with "BEGIN IMMEDIATE".
@@ -935,14 +944,30 @@ func (stmt *Stmt) QueryRowContext(ctx context.Context, args ...any) *Row {
 
 type Tx struct {
 	*sql.Tx
+	ctx        context.Context
 	now        time.Time
 	metrics    *expvar.Map
-	execCalled bool
+	recorded   atomic.Bool
+	maybeWrite bool
+}
+
+func (tx *Tx) awaitDone() {
+	if tx.metrics == nil {
+		return
+	}
+
+	<-tx.ctx.Done()
+
+	tx.Rollback()
+
+	if tx.recorded.CompareAndSwap(false, true) {
+		tx.metrics.Add("totalTransactionsCancelled", 1)
+	}
 }
 
 func (tx *Tx) Commit() error {
 	err := tx.Tx.Commit()
-	if err == nil && tx.metrics != nil {
+	if err == nil && tx.metrics != nil && tx.recorded.CompareAndSwap(false, true) {
 		tx.metrics.Add("totalTransactionsCommitted", 1)
 	}
 
@@ -951,7 +976,7 @@ func (tx *Tx) Commit() error {
 
 func (tx *Tx) Rollback() error {
 	err := tx.Tx.Rollback()
-	if err == nil && tx.metrics != nil {
+	if err == nil && tx.metrics != nil && tx.recorded.CompareAndSwap(false, true) {
 		// When using Go's SQL package queries that can modify the
 		// database should be called using the Exec* methods
 		//
@@ -963,7 +988,7 @@ func (tx *Tx) Rollback() error {
 		// In those cases we choose to increment the committed metrics
 		// rather than the rolled back one since it's not likely actually
 		// rolling anything back
-		if tx.execCalled {
+		if tx.maybeWrite {
 			tx.metrics.Add("totalTransactionsRolledBack", 1)
 		} else {
 			tx.metrics.Add("totalTransactionsCommitted", 1)
@@ -1010,7 +1035,7 @@ func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 	// determine whether a transaction possibly modified the database
 	if query != "ROLLBACK; BEGIN EXCLUSIVE" && query != "ROLLBACK; BEGIN IMMEDIATE" {
 		recordKind = recordKindWrite
-		tx.execCalled = true
+		tx.maybeWrite = true
 	}
 
 	defer recordQuery(tx.metrics, recordKind)()

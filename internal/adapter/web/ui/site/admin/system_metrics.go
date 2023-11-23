@@ -73,8 +73,10 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			TotalTransactionsBegun      int64
 			TotalTransactionsCommitted  int64
 			TotalTransactionsRolledBack int64
+			TotalTransactionsCancelled  int64
 			TransactionCommitRate       float64
 			TransactionRollbackRate     float64
+			TransactionCancelRate       float64
 			TotalReads                  int64
 			TotalReadTime               time.Duration
 			AverageReadTime             time.Duration
@@ -124,6 +126,7 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 				totalTransactionsBegun := varAs[int64](database.Get("totalTransactionsBegun"))
 				totalTransactionsCommitted := varAs[int64](database.Get("totalTransactionsCommitted"))
 				totalTransactionsRolledBack := varAs[int64](database.Get("totalTransactionsRolledBack"))
+				totalTransactionsCancelled := varAs[int64](database.Get("totalTransactionsCancelled"))
 				totalReads := varAs[int64](database.Get("totalReads"))
 				totalReadTime := varAs[int64](database.Get("totalReadTime"))
 				totalWrites := varAs[int64](database.Get("totalWrites"))
@@ -133,7 +136,8 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 
 				averageConnWaitTime := stats.WaitDuration / time.Duration(max(1, stats.WaitCount))
 				transactionCommitRate := float64(totalTransactionsCommitted) / float64(totalTransactionsBegun) * 100
-				transactionRollbackRate := 100 - transactionCommitRate
+				transactionRollbackRate := float64(totalTransactionsRolledBack) / float64(totalTransactionsBegun) * 100
+				transactionCancelRate := float64(totalTransactionsCancelled) / float64(totalTransactionsBegun) * 100
 				averageReadTime := totalReadTime / max(1, totalReads)
 				averageWriteTime := totalWriteTime / max(1, totalWrites)
 				averageReadsPerWrite := float64(totalReads) / max(1, float64(totalWrites))
@@ -151,8 +155,10 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 					TotalTransactionsBegun:      totalTransactionsBegun,
 					TotalTransactionsCommitted:  totalTransactionsCommitted,
 					TotalTransactionsRolledBack: totalTransactionsRolledBack,
+					TotalTransactionsCancelled:  totalTransactionsCancelled,
 					TransactionCommitRate:       transactionCommitRate,
 					TransactionRollbackRate:     transactionRollbackRate,
+					TransactionCancelRate:       transactionCancelRate,
 					TotalReads:                  totalReads,
 					TotalReadTime:               time.Duration(totalReadTime),
 					AverageReadTime:             time.Duration(averageReadTime),
