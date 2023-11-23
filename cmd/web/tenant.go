@@ -46,6 +46,21 @@ var cache = struct {
 	metrics: make(map[string]*expvar.Map),
 }
 
+func closeCache() {
+	cache.mu.Lock()
+	defer cache.mu.Unlock()
+
+	for alias, db := range cache.sqlite {
+		if db == nil {
+			continue
+		}
+
+		if err := db.Close(); err != nil {
+			slog.Error("close SQLite database connection", "alias", alias, "error", err)
+		}
+	}
+}
+
 // newTenant returns a tenant where the host is mapped to a shared name.
 //
 // Tenants share repositories along with their underlying database connection

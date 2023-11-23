@@ -53,6 +53,22 @@ var opts struct {
 }
 
 func main() {
+	defer func() {
+		// If we recover from a panic we want to log it using whatever
+		// handler was setup as the default in the slog package, rather than
+		// just having the stack trace dumped without any structure
+		if err := recover(); err != nil {
+			const size = 64 << 10
+
+			buf := make([]byte, size)
+			buf = buf[:runtime.Stack(buf, false)]
+
+			message := fmt.Errorf("%v\n%s", err, buf)
+
+			slog.Error("panic", "error", message)
+		}
+	}()
+
 	requiredFlags := []string{"addr"}
 
 	flag.Usage = func() {
@@ -321,16 +337,5 @@ func main() {
 		slog.Error("shut down", "error", err)
 	}
 
-	cache.mu.Lock()
-	defer cache.mu.Unlock()
-
-	for alias, db := range cache.sqlite {
-		if db == nil {
-			continue
-		}
-
-		if err := db.Close(); err != nil {
-			slog.Error("close SQLite database connection", "alias", alias, "error", err)
-		}
-	}
+	closeCache()
 }
