@@ -31,20 +31,20 @@ The `web` binary built from the `cmd/web` directory is an HTTP web adapter for t
 
 ### Web application tenants
 
-The web adapter implements a multi-tenant application server, where tenants are controlled through a configuration file. A tenant represents a single application that may be used by any number of hostnames.
+The web adapter implements a multi-tenant application server, where tenants are controlled through a configuration file. A tenant represents a single application that may be used by any number of hosts.
 
 Tenant configuration is stored in the data directory's `tenants.json` file in the following format:
 
 ```json
 {
 	"app1": {
-		"hostnames": {
+		"hosts": {
 			"foo.com": "site",
 			"app.foo.com": "pwa"
 		}
 	},
 	"app2": {
-		"hostnames": {
+		"hosts": {
 			"bar.com": "site",
 			"app.bar.com": "pwa"
 		}
@@ -54,7 +54,7 @@ Tenant configuration is stored in the data directory's `tenants.json` file in th
 
 The top-level keys (e.g. `"app1"`) describe a unique tenant name. This can be anything you like and is used to group things like hostname configuration for a tenant. It's also used as the folder name that will be created in the data directory for that tenant.
 
-The `"hostnames"` key within a tenant object is used to describe all of the hostnames that should resolve to the parent tenant. Hostnames are described as key/value pairs where the key is the hostname and the value is the type of application the hostname serves.
+The `"hosts"` key within a tenant object is used to describe all of the hosts that should resolve to the parent tenant. Hosts are described as key/value pairs where the key is the hostname and the value is the type of application the hostname serves.
 
 The application type (e.g. `"site"`, `"pwa"`) is used during tenant setup at runtime to configure routers etc. The `"site"` tenant will setup routes specific to a more traditional MPA, whereas `"pwa"` will setup routes that make sense for an SPA style PWA.
 
@@ -68,9 +68,9 @@ case "pwa":
 }
 ```
 
-Any number of hostnames can be associated with a tenant.
+Any number of hosts can be associated with a tenant.
 
-It's important to remember that each hostname associated with a tenant will use the same repositories and other shared data structures internally. What this means is that JSON API calls from PWA hostnames will work with the same data as the main web application that site hostnames have access to. This has the nice side effect that when you write APIs that resolve to the same tenant as other hostnames, you don't need to deal with CORS settings, since you can just call the API endpoints on the application's own hostname and know that it's working with the same data internally.
+It's important to remember that each hostname associated with a tenant will use the same repositories and other shared data structures internally. What this means is that JSON API calls from PWA hosts will work with the same data as the main web application that site hosts have access to. This has the nice side effect that when you write APIs that resolve to the same tenant as other hosts, you don't need to deal with CORS settings, since you can just call the API endpoints on the application's own hostname and know that it's working with the same data internally.
 
 Currently, the `tenants.json` file is only read once at application startup, so any changes require a restart of the whole application.
 
@@ -83,7 +83,7 @@ A simple starting point for a single tenant using `localhost` for the main MPA s
 ```json
 {
 	"app1": {
-		"hostnames": {
+		"hosts": {
 			"localhost": "site",
 			"app.local.com": "pwa"
 		}
@@ -97,7 +97,7 @@ By default the application will use secure settings; cookies, for example, will 
 
 If you want to run locally with insecure HTTP, rather than HTTPS, you'll need to use the `-insecure` flag when running the web binary.
 
-If you'd like to run locally with HTTPS then you'll need `cert.pem` and `key.pem` files to be available in the data directory. You can do this simply by running the following command after navigating to the data directory, changing the comma separated `-host` flag value to match the hostnames you want to use:
+If you'd like to run locally with HTTPS then you'll need `cert.pem` and `key.pem` files to be available in the data directory. You can do this simply by running the following command after navigating to the data directory, changing the comma separated `-host` flag value to match the hosts you want to use:
 
 ```sh
 go run $(go env GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits 2048 -host "localhost,app.local.com"
