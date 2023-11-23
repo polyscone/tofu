@@ -27,7 +27,7 @@ function handle (component, opts) {
 	opts ||= {}
 
 	return {
-		onmatch (args, requestedPath) {
+		onmatch (args, requestedPath, route) {
 			const isProtected = platform.routes.__protected.find(r => r.test(requestedPath))
 
 			if (isProtected) {
@@ -47,7 +47,7 @@ function handle (component, opts) {
 			}
 
 			if (typeof opts.onmatch === "function") {
-				const res = opts.onmatch(args, requestedPath)
+				const res = opts.onmatch(args, requestedPath, route)
 
 				if (res) {
 					return res
