@@ -183,10 +183,7 @@ const platform = {
 			platform.routes.__protected.push(regexp)
 		},
 		register (pattern, component, opts) {
-			if (!opts) {
-				opts = component
-				component = null
-			}
+			opts ||= {}
 
 			platform.routes.__registered[pattern] = {
 				component,
