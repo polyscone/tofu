@@ -27,8 +27,6 @@
 
 	--clr-hint-400: hsl(0, 0%, 30%);
 
-	--clr-disabled-400: hsl(240, 6%, 79%);
-
 	--clr-focus-400: hsl(59, 100%, 95%);
 
 	--clr-invalid-100: hsl(0, 100%, 95%);
@@ -318,8 +316,19 @@
 		cursor: default;
 	}
 
+	:is(button, .btn):not([disabled]):hover,
+	:is(button, .btn):not([disabled]):focus {
+		filter: brightness(1.2);
+	}
+
 	:is(button, .btn)[disabled] {
-		background: var(--clr-disabled-400);
+		cursor: not-allowed;
+		filter: saturate(0.5);
+		opacity: 0.6;
+	}
+
+	:is(button, .btn)[disabled]:active {
+		pointer-events: none;
 	}
 
 	.btn--alt {
