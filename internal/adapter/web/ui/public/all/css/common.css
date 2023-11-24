@@ -139,7 +139,7 @@
 		padding: 0.5rem 1rem;
 	}
 
-	button, input:not([type="checkbox"]) {
+	button, input:not([type="checkbox"]), select {
 		min-height: 1.5rem;
 	}
 
@@ -147,11 +147,13 @@
 		resize: vertical;
 	}
 
-	input, textarea {
+	input, textarea, select {
 		border: 1px solid var(--clr-black-200);
+		transition: background 300ms;
+		max-width: 100%;
 	}
 
-	button, input, textarea {
+	button, input, textarea, select {
 		padding-block: 0.4rem;
 		padding-inline: 0.6rem;
 	}
@@ -160,20 +162,20 @@
 		border: none;
 	}
 
-	:is(button, input, textarea):focus {
+	:is(button, input, textarea, select):focus {
 		outline: 2px solid linktext;
 	}
 
-	:is(input, textarea).invalid:placeholder-shown,
-	:is(input, textarea).invalid:not(:placeholder-shown),
-	:is(input, textarea):invalid:not(:placeholder-shown),
-	[data-invalid] :is(input, textarea):invalid {
+	:is(input, textarea, select).invalid:placeholder-shown,
+	:is(input, textarea, select).invalid:not(:placeholder-shown),
+	:is(input:not([type="time"]), textarea):invalid:not(:placeholder-shown),
+	[data-invalid] :is(input, textarea, select):invalid {
 		background: var(--clr-invalid-100);
 		border-color: var(--clr-invalid-400);
 	}
 
-	:is(input, textarea).invalid:focus,
-	:is(input, textarea):invalid:focus {
+	:is(input, textarea, select).invalid:focus,
+	:is(input, textarea, select):invalid:focus {
 		background: var(--clr-focus-400);
 	}
 
