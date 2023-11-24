@@ -27,7 +27,7 @@ function SignInWithGoogle () {
 
 			if (res.ok) {
 				if (platform.session.isAwaitingTOTP) {
-					m.route.set(platform.routes.accountSignInTOTP.pattern)
+					m.route.set(platform.routes.path("account.sign_in.totp"))
 				} else if (!res.body?.isSignedIn) {
 					// Signing in with Google can trigger a sign up
 					//
@@ -35,9 +35,9 @@ function SignInWithGoogle () {
 					// already signed in then it's likely to mean that their account
 					// was created but requires manual activation by an admin through
 					// user management, so we show them the sign up success page
-					m.route.set(platform.routes.accountSignUpSuccess.pattern)
+					m.route.set(platform.routes.path("account.sign_up.success"))
 				} else {
-					platform.api.account.tryRedirect(platform.routes.home.pattern)
+					platform.api.account.tryRedirect(platform.routes.path("home"))
 				}
 			}
 		})
@@ -117,9 +117,9 @@ function SignIn () {
 
 			if (res.ok) {
 				if (platform.session.isAwaitingTOTP) {
-					m.route.set(platform.routes.accountSignInTOTP.pattern)
+					m.route.set(platform.routes.path("account.sign_in.totp"))
 				} else {
-					platform.api.account.tryRedirect(platform.routes.home.pattern)
+					platform.api.account.tryRedirect(platform.routes.path("home"))
 				}
 			} else if (res.status === platform.http.tooManyRequests) {
 				let { inLast, unlockIn } = res.body
@@ -163,8 +163,8 @@ function SignIn () {
 					oninput (e) { state.password = e.target.value },
 				}),
 				m("button[type=submit]", "Sign in"),
-				platform.config.signUpEnabled ? m(m.route.Link, { href: platform.routes.accountSignUp.pattern }, "Sign up") : null,
-				m(m.route.Link, { href: platform.routes.accountResetPassword.pattern }, "Forgotten your password?"),
+				platform.config.signUpEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_up") }, "Sign up") : null,
+				m(m.route.Link, { href: platform.routes.path("account.reset_password") }, "Forgotten your password?"),
 				m(SignInWithGoogle),
 			])
 		},
