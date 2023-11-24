@@ -23,9 +23,17 @@ export function hide () {
 
 export function Loading () {
 	return {
-		view: () => m(".loading", { class: state.visible ? "loading--show" : null }, [
-			m(".loading__spinner"),
-		]),
+		view () {
+			let classes = ""
+
+			if (state.visible) {
+				classes = "loading--show"
+			}
+
+			return m(".loading", { class: classes }, [
+				m(".loading__spinner"),
+			])
+		},
 	}
 }
 
