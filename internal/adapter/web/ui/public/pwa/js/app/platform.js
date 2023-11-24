@@ -1,4 +1,5 @@
 import { show as showLoading, hide as hideLoading } from "./components/loading.js"
+import { open as openModal, close as closeModal } from "./components/modal.js"
 
 let pollSessionHandle = null
 let pollNetworkStatusHandle = null
@@ -245,6 +246,10 @@ const platform = {
 				hideLoading()
 			}
 		}
+	},
+	modal: {
+		open: openModal,
+		close: closeModal,
 	},
 	http: {
 		noContent: 204,

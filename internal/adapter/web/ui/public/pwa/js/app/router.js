@@ -59,6 +59,8 @@ function handle (component, opts) {
 				return new Promise(() => {})
 			}
 
+			platform.modal.close()
+
 			return component
 		},
 		render (vnode) {

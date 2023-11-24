@@ -1,4 +1,5 @@
 import Loading from "../components/loading.js"
+import Modal from "../components/modal.js"
 
 function SignOut () {
 	function signOut (e) {
@@ -33,6 +34,7 @@ function Layout () {
 				m(SignOut),
 			]),
 			m("main.main", vnode.children),
+			m(Modal),
 			m(Loading),
 		],
 	}
