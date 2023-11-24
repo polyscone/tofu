@@ -3,6 +3,7 @@
 .SHELLFLAGS += -e
 MAKEFLAGS += --no-print-directory
 
+GOROOT := $(subst \,/,$(shell go env GOROOT))
 PKG := ./...
 OUT := .
 TAGS := json1 fts5
@@ -110,11 +111,11 @@ GEN_CERT_HOST := localhost
 .PHONY: gen/cert
 gen/cert:
 	cd $(DATA)
-	go run $$(go env GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits 2048 -host "$(GEN_CERT_HOST)"
+	go run $(GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits 2048 -host "$(GEN_CERT_HOST)"
 
 WEB_DEV_ADDR := :8080
 WEB_DEV_DEBUG_ADDR := :8081
 override WEB_DEV_FLAGS := -dev -addr $(WEB_DEV_ADDR) -debug-addr $(WEB_DEV_DEBUG_ADDR) -log-style dev $(WEB_DEV_FLAGS)
 .PHONY: web/dev
 web/dev:
-	./web $(WEB_DEV_FLAGS)
+	$(CURDIR)/web $(WEB_DEV_FLAGS)
