@@ -28,7 +28,7 @@ function handle (component, opts) {
 
 	return {
 		onmatch (args, requestedPath, route) {
-			const isProtected = platform.routes.__protected.find(r => r.test(requestedPath))
+			const isProtected = platform.routes.__protected.find(r => r.test(requestedPath || "/"))
 
 			if (isProtected) {
 				if (!platform.session.isSignedIn) {
