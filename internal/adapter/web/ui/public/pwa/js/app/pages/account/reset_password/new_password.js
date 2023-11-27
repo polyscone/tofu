@@ -53,6 +53,7 @@ function ResetPasswordVerify () {
 	}
 }
 
-platform.routes.register("/account/reset-password/new-password", ResetPasswordVerify, {
+platform.routes.register("/account/reset-password/new-password", {
 	name: "account.reset_password.verify",
+	render: ResetPasswordVerify,
 })

@@ -16,6 +16,7 @@ function Home () {
 	}
 }
 
-platform.routes.register("/", Home, {
+platform.routes.register("/", {
 	name: "home",
+	render: Home,
 })

@@ -44,11 +44,12 @@ function SignInRecoveryCode () {
 	}
 }
 
-platform.routes.register("/account/sign-in/recovery-code", SignInRecoveryCode, {
+platform.routes.register("/account/sign-in/recovery-code", {
 	name: "account.sign_in.recovery_code",
 	onmatch () {
 		if (platform.session.isSignedIn || !platform.session.isAwaitingTOTP) {
 			return m.route.set(platform.routes.path("account.sign_in"))
 		}
 	},
+	render: SignInRecoveryCode,
 })

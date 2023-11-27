@@ -183,13 +183,13 @@ const platform = {
 		protect (regexp) {
 			platform.routes.__protected.push(regexp)
 		},
-		register (pattern, component, opts) {
+		register (pattern, opts) {
 			opts ||= {}
 
 			platform.routes.__registered[pattern] = {
-				component,
 				name: opts.name || "",
 				onmatch: opts.onmatch,
+				render: opts.render,
 			}
 		},
 		path (name, ...pairs) {
@@ -236,7 +236,7 @@ const platform = {
 		showLoading()
 
 		try {
-			await f()
+			return await f()
 		} catch (err) {
 			console.error(err)
 		} finally {

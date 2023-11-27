@@ -4,4 +4,6 @@ function NotFound () {
 	}
 }
 
-platform.routes.register("/:rest...", NotFound)
+platform.routes.register("/:rest...", {
+	render: NotFound,
+})

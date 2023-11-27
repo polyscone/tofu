@@ -101,11 +101,12 @@ function SignInTOTP () {
 	}
 }
 
-platform.routes.register("/account/sign-in/totp", SignInTOTP, {
+platform.routes.register("/account/sign-in/totp", {
 	name: "account.sign_in.totp",
 	onmatch () {
 		if (platform.session.isSignedIn || !platform.session.isAwaitingTOTP) {
 			return m.route.set(platform.routes.path("account.sign_in"))
 		}
 	},
+	render: SignInTOTP,
 })

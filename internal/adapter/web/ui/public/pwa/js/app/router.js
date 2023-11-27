@@ -23,7 +23,7 @@ platform.routes.protect(/^\/$/)
 
 import Layout from "./master/layout.js"
 
-function handle (component, opts) {
+function handle (opts) {
 	opts ||= {}
 
 	return {
@@ -61,7 +61,7 @@ function handle (component, opts) {
 
 			platform.modal.close()
 
-			return component
+			return opts.render
 		},
 		render (vnode) {
 			return m(Layout, vnode)
@@ -77,8 +77,9 @@ export default function () {
 	for (const pattern in platform.routes.__registered) {
 		const route = platform.routes.__registered[pattern]
 
-		routes[pattern] = handle(route.component, {
+		routes[pattern] = handle({
 			onmatch: route.onmatch,
+			render: route.render,
 		})
 	}
 

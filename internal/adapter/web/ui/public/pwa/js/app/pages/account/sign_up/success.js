@@ -8,6 +8,7 @@ function SignUpSuccess () {
 	}
 }
 
-platform.routes.register("/account/sign-up/success", SignUpSuccess, {
+platform.routes.register("/account/sign-up/success", {
 	name: "account.sign_up.success",
+	render: SignUpSuccess,
 })

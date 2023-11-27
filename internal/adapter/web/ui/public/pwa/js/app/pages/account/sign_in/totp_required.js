@@ -4,7 +4,7 @@ function SignInTOTPRequired () {
 	}
 }
 
-platform.routes.register("/account/sign-in/totp/required", SignInTOTPRequired, {
+platform.routes.register("/account/sign-in/totp/required", {
 	name: "account.sign_in.totp_required",
 	onmatch () {
 		if (!platform.session.isSignedIn) {
@@ -15,4 +15,5 @@ platform.routes.register("/account/sign-in/totp/required", SignInTOTPRequired, {
 			return m.route.set(platform.routes.path("home"))
 		}
 	},
+	render: SignInTOTPRequired,
 })

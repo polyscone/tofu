@@ -144,33 +144,37 @@ function SignIn () {
 				]
 			}
 
-			return m("form", { onsubmit: signIn }, [
-				state.error ? m(ErrorBanner, state.error) : null,
-				m(EmailInput, {
-					label: "Email",
-					name: "email",
-					required: true,
-					autocomplete: "username",
-					error: state.errors.email,
-					oninput (e) { state.email = e.target.value },
-				}),
-				m(PasswordInput, {
-					label: "Password",
-					name: "password",
-					required: true,
-					autocomplete: "current-password",
-					error: state.errors.password,
-					oninput (e) { state.password = e.target.value },
-				}),
-				m("button[type=submit]", "Sign in"),
-				platform.config.signUpEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_up") }, "Sign up") : null,
-				m(m.route.Link, { href: platform.routes.path("account.reset_password") }, "Forgotten your password?"),
-				m(SignInWithGoogle),
-			])
+			return [
+				m("h1", "Sign in"),
+				m("form", { onsubmit: signIn }, [
+					state.error ? m(ErrorBanner, state.error) : null,
+					m(EmailInput, {
+						label: "Email",
+						name: "email",
+						required: true,
+						autocomplete: "username",
+						error: state.errors.email,
+						oninput (e) { state.email = e.target.value },
+					}),
+					m(PasswordInput, {
+						label: "Password",
+						name: "password",
+						required: true,
+						autocomplete: "current-password",
+						error: state.errors.password,
+						oninput (e) { state.password = e.target.value },
+					}),
+					m("button[type=submit]", "Sign in"),
+					platform.config.signUpEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_up") }, "Sign up") : null,
+					m(m.route.Link, { href: platform.routes.path("account.reset_password") }, "Forgotten your password?"),
+					m(SignInWithGoogle),
+				]),
+			]
 		},
 	}
 }
 
-platform.routes.register("/account/sign-in", SignIn, {
+platform.routes.register("/account/sign-in", {
 	name: "account.sign_in",
+	render: SignIn,
 })

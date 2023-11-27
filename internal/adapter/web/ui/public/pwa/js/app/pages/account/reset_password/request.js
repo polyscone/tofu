@@ -44,6 +44,7 @@ function ResetPassword () {
 	}
 }
 
-platform.routes.register("/account/reset-password", ResetPassword, {
+platform.routes.register("/account/reset-password", {
 	name: "account.reset_password",
+	render: ResetPassword,
 })

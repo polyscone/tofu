@@ -60,6 +60,7 @@ function SignUp () {
 	}
 }
 
-platform.routes.register("/account/sign-up", SignUp, {
+platform.routes.register("/account/sign-up", {
 	name: "account.sign_up",
+	render: SignUp,
 })

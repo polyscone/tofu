@@ -90,6 +90,7 @@ function SignUpVerify () {
 	}
 }
 
-platform.routes.register("/account/sign-up/verify", SignUpVerify, {
+platform.routes.register("/account/sign-up/verify", {
 	name: "account.sign_up.verify",
+	render: SignUpVerify,
 })
