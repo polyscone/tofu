@@ -192,11 +192,7 @@ const platform = {
 				render: opts.render,
 			}
 		},
-		path (name, ...pairs) {
-			if (pairs.length % 2 !== 0) {
-				throw new Error("path replacement pairs must be even")
-			}
-
+		path (name, args) {
 			for (const pattern in platform.routes.__registered) {
 				const route = platform.routes.__registered[pattern]
 
@@ -206,13 +202,14 @@ const platform = {
 					for (let i = 0; i < parts.length; i++) {
 						const part = parts[i]
 
-						for (let j = 0; j < pairs.length; j += 2) {
-							const key = pairs[j]
-							const value = pairs[j + 1]
+						if (!part.startsWith(":")) {
+							continue
+						}
 
-							if (part === key) {
-								parts[i] = value
-							}
+						const key = part.substring(1)
+
+						if (key in args) {
+							parts[i] = args[key]
 						}
 					}
 
