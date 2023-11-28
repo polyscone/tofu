@@ -10,7 +10,7 @@ export function show () {
 		state.visible = true
 
 		m.redraw()
-	}, 200)
+	}, 300)
 }
 
 export function hide () {
