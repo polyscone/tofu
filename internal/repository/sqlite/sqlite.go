@@ -1107,8 +1107,8 @@ func (r *Row) Err() error {
 }
 
 func (r *Row) Scan(dst ...any) error {
-	if r.err != nil {
-		return r.err
+	if err := r.Err(); err != nil {
+		return err
 	}
 
 	return repoerr(r.Row.Scan(dst...))
