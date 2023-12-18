@@ -94,24 +94,17 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 	}
 }
 
-func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
-	ctx := r.Context()
-	isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+func (h *Handler) RequireSignIn(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
 
-	if !isSignedIn {
-		h.ErrorJSON(w, r, "require sign in", app.ErrUnauthorised)
+		if !isSignedIn {
+			h.ErrorJSON(w, r, "require sign in", app.ErrUnauthorised)
 
-		return false
+			return
+		}
+
+		next(w, r)
 	}
-
-	config := h.Config(ctx)
-	user := h.User(ctx)
-
-	if config.TOTPRequired && !user.HasActivatedTOTP() {
-		h.ErrorJSON(w, r, "require TOTP", app.ErrUnauthorised)
-
-		return false
-	}
-
-	return true
 }
