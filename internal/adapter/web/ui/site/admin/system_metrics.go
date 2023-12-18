@@ -88,6 +88,10 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			TotalQueryTime              time.Duration
 			AverageQueryTime            time.Duration
 			AverageTransactionQueries   float64
+			TotalRowsOpened             int64
+			TotalRowsClosed             int64
+			TotalRowsTime               time.Duration
+			AverageRowsTime             time.Duration
 		}
 
 		type RequestMetrics struct {
@@ -133,6 +137,9 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 				totalWriteTime := varAs[int64](database.Get("totalWriteTime"))
 				totalQueries := varAs[int64](database.Get("totalQueries"))
 				totalQueryTime := varAs[int64](database.Get("totalQueryTime"))
+				totalRowsOpened := varAs[int64](database.Get("totalRowsOpened"))
+				totalRowsClosed := varAs[int64](database.Get("totalRowsClosed"))
+				totalRowsTime := varAs[int64](database.Get("totalRowsTime"))
 
 				averageConnWaitTime := stats.WaitDuration / time.Duration(max(1, stats.WaitCount))
 				transactionCommitRate := float64(totalTransactionsCommitted) / float64(totalTransactionsBegun) * 100
@@ -143,6 +150,7 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 				averageReadsPerWrite := float64(totalReads) / max(1, float64(totalWrites))
 				averageQueryTime := totalQueryTime / max(1, totalQueries)
 				averageTransactionQueries := float64(totalQueries) / max(1, float64(totalTransactionsBegun))
+				averageRowsTime := totalRowsTime / max(1, totalRowsClosed)
 
 				databases = append(databases, DatabaseMetrics{
 					Label:                       label,
@@ -170,6 +178,10 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 					TotalQueryTime:              time.Duration(totalQueryTime),
 					AverageQueryTime:            time.Duration(averageQueryTime),
 					AverageTransactionQueries:   averageTransactionQueries,
+					TotalRowsOpened:             totalRowsOpened,
+					TotalRowsClosed:             totalRowsClosed,
+					TotalRowsTime:               time.Duration(totalRowsTime),
+					AverageRowsTime:             time.Duration(averageRowsTime),
 				})
 
 			case strings.HasPrefix(kv.Key, "requests."):

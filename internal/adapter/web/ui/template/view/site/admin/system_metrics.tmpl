@@ -220,6 +220,34 @@
 						<td data-locale-number>{{printf "%.2f" $database.AverageTransactionQueries}}</td>
 					</tr>
 				{{end}}
+
+				{{if $database.TotalRowsOpened}}
+					<tr>
+						<td>Tot. rows opened</td>
+						<td data-locale-number>{{$database.TotalRowsOpened}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.TotalRowsClosed}}
+					<tr>
+						<td>Tot. rows closed</td>
+						<td data-locale-number>{{$database.TotalRowsClosed}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.TotalRowsTime}}
+					<tr>
+						<td>Tot. rows time</td>
+						<td>{{FormatDurationStat $database.TotalRowsTime}}</td>
+					</tr>
+				{{end}}
+
+				{{if $database.AverageRowsTime}}
+					<tr>
+						<td>Avg. rows time</td>
+						<td>{{FormatDurationStat $database.AverageRowsTime}}</td>
+					</tr>
+				{{end}}
 			</table>
 		</div>
 	{{end}}

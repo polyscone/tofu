@@ -691,12 +691,16 @@ func (c *Conn) QueryContext(ctx context.Context, query string, args ...any) (*Ro
 		}
 	}
 
-	rows, err := c.Conn.QueryContext(ctx, query, args...)
+	_rows, err := c.Conn.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, repoerr(err)
 	}
 
-	return &Rows{Rows: rows}, nil
+	rows := &Rows{Rows: _rows, metrics: c.metrics}
+
+	rows.record()
+
+	return rows, nil
 }
 
 func (c *Conn) QueryRowContext(ctx context.Context, query string, args ...any) *Row {
@@ -708,9 +712,12 @@ func (c *Conn) QueryRowContext(ctx context.Context, query string, args ...any) *
 		}
 	}
 
-	row := c.Conn.QueryRowContext(ctx, query, args...)
+	_row := c.Conn.QueryRowContext(ctx, query, args...)
+	row := &Row{Row: _row, metrics: c.metrics}
 
-	return &Row{Row: row}
+	row.record()
+
+	return row
 }
 
 type DB struct {
@@ -851,12 +858,16 @@ func (db *DB) QueryContext(ctx context.Context, query string, args ...any) (*Row
 		}
 	}
 
-	rows, err := db.DB.QueryContext(ctx, query, args...)
+	_rows, err := db.DB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, repoerr(err)
 	}
 
-	return &Rows{Rows: rows}, nil
+	rows := &Rows{Rows: _rows, metrics: db.metrics}
+
+	rows.record()
+
+	return rows, nil
 }
 
 func (db *DB) QueryRow(query string, args ...any) *Row {
@@ -872,9 +883,12 @@ func (db *DB) QueryRowContext(ctx context.Context, query string, args ...any) *R
 		}
 	}
 
-	row := db.DB.QueryRowContext(ctx, query, args...)
+	_row := db.DB.QueryRowContext(ctx, query, args...)
+	row := &Row{Row: _row, metrics: db.metrics}
 
-	return &Row{Row: row}
+	row.record()
+
+	return row
 }
 
 type Stmt struct {
@@ -916,12 +930,16 @@ func (stmt *Stmt) QueryContext(ctx context.Context, args ...any) (*Rows, error) 
 		}
 	}
 
-	rows, err := stmt.Stmt.QueryContext(ctx, args...)
+	_rows, err := stmt.Stmt.QueryContext(ctx, args...)
 	if err != nil {
 		return nil, repoerr(err)
 	}
 
-	return &Rows{Rows: rows}, nil
+	rows := &Rows{Rows: _rows, metrics: stmt.metrics}
+
+	rows.record()
+
+	return rows, nil
 }
 
 func (stmt *Stmt) QueryRow(args ...any) *Row {
@@ -937,9 +955,12 @@ func (stmt *Stmt) QueryRowContext(ctx context.Context, args ...any) *Row {
 		}
 	}
 
-	row := stmt.Stmt.QueryRowContext(ctx, args...)
+	_row := stmt.Stmt.QueryRowContext(ctx, args...)
+	row := &Row{Row: _row, metrics: stmt.metrics}
 
-	return &Row{Row: row}
+	row.record()
+
+	return row
 }
 
 type Tx struct {
@@ -1067,12 +1088,16 @@ func (tx *Tx) QueryContext(ctx context.Context, query string, args ...any) (*Row
 		}
 	}
 
-	rows, err := tx.Tx.QueryContext(ctx, query, args...)
+	_rows, err := tx.Tx.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, repoerr(err)
 	}
 
-	return &Rows{Rows: rows}, nil
+	rows := &Rows{Rows: _rows, metrics: tx.metrics}
+
+	rows.record()
+
+	return rows, nil
 }
 
 func (tx *Tx) QueryRow(query string, args ...any) *Row {
@@ -1088,14 +1113,29 @@ func (tx *Tx) QueryRowContext(ctx context.Context, query string, args ...any) *R
 		}
 	}
 
-	row := tx.Tx.QueryRowContext(ctx, query, args...)
+	_row := tx.Tx.QueryRowContext(ctx, query, args...)
+	row := &Row{Row: _row, metrics: tx.metrics}
 
-	return &Row{Row: row}
+	row.record()
+
+	return row
 }
 
 type Row struct {
-	err error
 	*sql.Row
+	err      error
+	openedAt time.Time
+	metrics  *expvar.Map
+}
+
+func (r *Row) record() {
+	if r.metrics == nil || r.Err() != nil {
+		return
+	}
+
+	r.openedAt = time.Now()
+
+	r.metrics.Add("totalRowsOpened", 1)
 }
 
 func (r *Row) Err() error {
@@ -1111,15 +1151,50 @@ func (r *Row) Scan(dst ...any) error {
 		return err
 	}
 
-	return repoerr(r.Row.Scan(dst...))
+	if r.metrics != nil {
+		// We defer the recording of rows closed and rows time here because we want to make
+		// sure it runs after the scan call whether there was an error or not
+		// This is because the scan call is where the rows are actually closed
+		defer func() {
+			r.metrics.Add("totalRowsClosed", 1)
+			r.metrics.Add("totalRowsTime", time.Since(r.openedAt).Nanoseconds())
+		}()
+	}
+
+	if err := repoerr(r.Row.Scan(dst...)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 type Rows struct {
 	*sql.Rows
+	openedAt time.Time
+	metrics  *expvar.Map
+}
+
+func (rs *Rows) record() {
+	if rs.metrics == nil {
+		return
+	}
+
+	rs.openedAt = time.Now()
+
+	rs.metrics.Add("totalRowsOpened", 1)
 }
 
 func (rs *Rows) Close() error {
-	return repoerr(rs.Rows.Close())
+	if err := repoerr(rs.Rows.Close()); err != nil {
+		return err
+	}
+
+	if rs.metrics != nil {
+		rs.metrics.Add("totalRowsClosed", 1)
+		rs.metrics.Add("totalRowsTime", time.Since(rs.openedAt).Nanoseconds())
+	}
+
+	return nil
 }
 
 func (rs *Rows) Err() error {
