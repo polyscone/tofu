@@ -17,8 +17,13 @@ type TimeoutConfig struct {
 }
 
 // Timeout returns a new timeout middleware configured using the given TTL.
+//
 // If a response is flushed at all then the timeout is ignored and left up to
 // the handler that called Flush().
+//
+// If the request's write deadline is set through an http.ResponseController then
+// the timeout will be extended to at least that time if the original timeout
+// expires before then.
 func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 	if config == nil {
 		config = &TimeoutConfig{}
@@ -97,6 +102,19 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 					goto TimeoutSelect
 				}
 
+				// If the write timeout was set to some other value then we
+				// reset the timeout to a duration that would end just after the
+				// new write timeout
+				if rw.deadline.After(time.Now()) {
+					const spill = 500 * time.Millisecond
+
+					timeout.Reset(time.Until(rw.deadline) + spill)
+
+					rw.mu.Unlock()
+
+					goto TimeoutSelect
+				}
+
 				cancel()
 
 				config.ErrorHandler(w, r, http.ErrHandlerTimeout)
@@ -139,11 +157,24 @@ type timeoutWriter struct {
 	buf        bytes.Buffer
 	config     *TimeoutConfig
 	flushed    bool
+	deadline   time.Time
 	statusCode int
 }
 
 func (w *timeoutWriter) Unwrap() http.ResponseWriter {
 	return w.ResponseWriter
+}
+
+func (w *timeoutWriter) SetWriteDeadline(deadline time.Time) error {
+	w.mu.Lock()
+
+	if deadline.After(w.deadline) {
+		w.deadline = deadline
+	}
+
+	w.mu.Unlock()
+
+	return w.rc.SetWriteDeadline(deadline)
 }
 
 func (w *timeoutWriter) FlushError() error {
