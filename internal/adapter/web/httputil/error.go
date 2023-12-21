@@ -67,8 +67,12 @@ func ErrorStatus(err error) int {
 		return http.StatusTooManyRequests
 
 	default:
-		var maxBytesError *http.MaxBytesError
+		var inputError repository.InputError
+		if errors.As(err, &inputError) {
+			return http.StatusBadRequest
+		}
 
+		var maxBytesError *http.MaxBytesError
 		if errors.As(err, &maxBytesError) {
 			return http.StatusRequestEntityTooLarge
 		}
@@ -132,6 +136,11 @@ func ErrorMessage(err error) string {
 		return "Could not connect to the datasource."
 
 	default:
+		var inputError repository.InputError
+		if errors.As(err, &inputError) {
+			return inputError.Error()
+		}
+
 		return "An error has occurred."
 	}
 }

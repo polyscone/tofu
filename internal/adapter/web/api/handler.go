@@ -16,6 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/human"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 var publicErrors = []error{
@@ -58,9 +59,16 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 	h.Logger(ctx).Error(msg, "error", err)
 
 	status := httputil.ErrorStatus(err)
+
 	isPublic := slices.ContainsFunc(publicErrors, func(el error) bool {
 		return errors.Is(err, el)
 	})
+	if !isPublic {
+		var inputError repository.InputError
+		if errors.As(err, &inputError) {
+			isPublic = true
+		}
+	}
 
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(status)

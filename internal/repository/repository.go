@@ -12,6 +12,12 @@ var (
 	ErrLogin    = errors.New("login")
 )
 
+type InputError string
+
+func (i InputError) Error() string {
+	return string(i)
+}
+
 type ConflictError struct {
 	errsx.Map
 }
