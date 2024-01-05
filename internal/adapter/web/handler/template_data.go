@@ -73,12 +73,10 @@ func (v Vars) Merge(rhs Vars) Vars {
 }
 
 type URL struct {
-	Scheme   string
-	Host     string
-	Hostname string
-	Port     string
-	Path     template.URL
-	Query    Query
+	Scheme string
+	Host   string
+	Path   template.URL
+	Query  Query
 }
 
 type AppData struct {
