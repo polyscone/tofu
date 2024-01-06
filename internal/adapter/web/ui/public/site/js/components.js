@@ -1,3 +1,15 @@
+const langs = []
+
+let lang = document.documentElement.getAttribute("lang")
+
+if (lang === "en") {
+	lang += "-GB"
+}
+
+if (lang) {
+	langs.push(lang)
+}
+
 onMount("textarea", node => {
 	node.addEventListener("input", () => {
 		node.style.height = "auto"
@@ -27,7 +39,7 @@ onMount(".invalid", node => {
 })
 
 onMount("[data-locale-number]", node => {
-	node.innerHTML = node.innerHTML.replaceAll(/\d+(\.\d+)?/g, match => Number(match).toLocaleString([], {
+	node.innerHTML = node.innerHTML.replaceAll(/\d+(\.\d+)?/g, match => Number(match).toLocaleString(langs, {
 		style: node.dataset.style,
 		currency: node.dataset.currency,
 		currencyDisplay: node.dataset.currencyDisplay || "narrowSymbol",
@@ -53,16 +65,16 @@ onMount("time", node => {
 	const date = new Date(str)
 
 	if (hasDate && hasTime) {
-		node.innerText = date.toLocaleString([], {
+		node.innerText = date.toLocaleString(langs, {
 			dateStyle: node.dataset.date || "short",
 			timeStyle: node.dataset.time || "medium",
 		})
 	} else if (hasDate) {
-		node.innerText = date.toLocaleDateString([], {
+		node.innerText = date.toLocaleDateString(langs, {
 			dateStyle: node.dataset.date || "short",
 		})
 	} else if (hasTime) {
-		node.innerText = date.toLocaleTimeString([], {
+		node.innerText = date.toLocaleTimeString(langs, {
 			timeStyle: node.dataset.time || "medium",
 		})
 	}
