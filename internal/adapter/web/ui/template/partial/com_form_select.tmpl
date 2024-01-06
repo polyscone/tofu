@@ -48,15 +48,29 @@
 					{{range $option := $option.Options}}
 						{{$optval := or $option.Value $option.Label $option}}
 						{{$optlabel := or $option.Label $option.Value $option}}
+						{{$optdisabled := $option.Disabled}}
 
-						<option value="{{$optval}}"{{if eq $optval $value}} selected{{end}}>{{$optlabel}}</option>
+						<option
+							value="{{$optval}}"
+							{{if eq $optval $value}}selected{{end}}
+							{{if $optdisabled}}disabled{{end}}
+						>
+							{{$optlabel}}
+						</option>
 					{{end}}
 				</optgroup>
 			{{else}}
 				{{$optval := or $option.Value $option.Label $option}}
 				{{$optlabel := or $option.Label $option.Value $option}}
+				{{$optdisabled := $option.Disabled}}
 
-				<option value="{{$optval}}"{{if eq $optval $value}} selected{{end}}>{{$optlabel}}</option>
+				<option
+					value="{{$optval}}"
+					{{if eq $optval $value}}selected{{end}}
+					{{if $optdisabled}}disabled{{end}}
+				>
+					{{$optlabel}}
+				</option>
 			{{end}}
 		{{end}}
 	</select>
