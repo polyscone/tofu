@@ -1,6 +1,18 @@
 import { show as showLoading, hide as hideLoading } from "./components/loading.js"
 import { open as openModal, close as closeModal } from "./components/modal.js"
 
+const langs = []
+
+let lang = document.documentElement.getAttribute("lang")
+
+if (lang === "en") {
+	lang += "-GB"
+}
+
+if (lang) {
+	langs.push(lang)
+}
+
 let pollSessionHandle = null
 let pollNetworkStatusHandle = null
 
@@ -256,6 +268,12 @@ const platform = {
 		gatewayTimeout: 504,
 	},
 	network: "connected", // "offline" | "disconnected" | "connected"
+	localeString (value, opts) {
+		return value.toLocaleString(langs, opts)
+	},
+	localeDateString (date, opts) {
+		return date.toLocaleDateString(langs, opts)
+	},
 }
 
 window.platform = platform
