@@ -10,7 +10,7 @@ export function Input () {
 
 			const id = vnode.attrs.id || `form__${vnode.attrs.name}`
 
-			return [
+			const input = [
 				vnode.attrs.label ? m("label", {
 					for: id,
 					class: vnode.attrs.required ? "required" : null,
@@ -20,15 +20,72 @@ export function Input () {
 					value: vnode.attrs.value,
 					id: id,
 					required: vnode.attrs.required,
+					disabled: vnode.attrs.disabled,
 					placeholder: vnode.attrs.placeholder,
 					autocomplete: vnode.attrs.autocomplete,
 					pattern: vnode.attrs.pattern,
+					step: vnode.attrs.step,
+					min: vnode.attrs.min,
+					max: vnode.attrs.max,
 					minlength: vnode.attrs.minlength,
 					maxlength: vnode.attrs.maxlength,
 					class: vnode.attrs.error ? "invalid" : null,
 				}),
 				m("p.error", vnode.attrs.error),
 			]
+
+			if (vnode.attrs.container) {
+				return m(vnode.attrs.container, input)
+			}
+
+			return input
+		},
+	}
+}
+
+export function Select () {
+	return {
+		view (vnode) {
+			if (!vnode.attrs.options) {
+				throw new Error("Select requires an options array")
+			}
+			if (!vnode.attrs.name) {
+				throw new Error("Select requires a name")
+			}
+
+			const value = String(vnode.attrs.value || "")
+			const options = []
+
+			if (vnode.attrs.placeholder) {
+				options.push(m("option", { value: "", hidden: true, disabled: true, selected: !value }, vnode.attrs.placeholder))
+			}
+
+			for (const option of vnode.attrs.options) {
+				const optionValue = String(option.value || option.label || "")
+
+				options.push(m("option", { value: optionValue, selected: value && optionValue === value }, option.label))
+			}
+
+			const id = vnode.attrs.id || `form__${vnode.attrs.name}`
+			const select = [
+				vnode.attrs.label ? m("label", {
+					for: id,
+					class: vnode.attrs.required ? "required" : null,
+				}, vnode.attrs.label) : null,
+				m("select", {
+					onchange: vnode.attrs.onchange,
+					id: id,
+					required: vnode.attrs.required,
+					class: vnode.attrs.error ? "invalid" : null,
+				}, options),
+				m("p.error", vnode.attrs.error),
+			]
+
+			if (vnode.attrs.container) {
+				return m(vnode.attrs.container, select)
+			}
+
+			return select
 		},
 	}
 }
