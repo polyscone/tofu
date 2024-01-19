@@ -7,7 +7,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
-	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
@@ -24,13 +23,6 @@ func verifyRoutes(h *ui.Handler, mux *router.ServeMux) {
 func verifyGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		config := h.Config(ctx)
-
-		if !config.SignUpEnabled {
-			h.HTML.ErrorView(w, r, "verify sign up", app.ErrNotFound, "site/error", nil)
-
-			return
-		}
 
 		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/sign_out/signed_in", nil)
