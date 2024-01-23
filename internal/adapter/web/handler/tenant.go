@@ -22,7 +22,9 @@ type AccountReader interface {
 	FindUsersPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.User, int, error)
 }
 
-type ReadWriter interface {
+type SystemReader system.Reader
+
+type WebReadWriter interface {
 	session.ReadWriter
 
 	AddEmailVerificationToken(ctx context.Context, email string, ttl time.Duration) (string, error)
@@ -49,8 +51,8 @@ type Svc struct {
 
 type Repo struct {
 	Account AccountReader
-	System  system.Reader
-	Web     ReadWriter
+	System  SystemReader
+	Web     WebReadWriter
 }
 
 type Tenant struct {
