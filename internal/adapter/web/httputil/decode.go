@@ -1,13 +1,32 @@
 package httputil
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strconv"
+	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/size"
 )
+
+var decodeTimeFormats = []string{
+	"2006-01-02 15:04:05.999999999Z07:00",
+	"2006-01-02T15:04:05.999999999Z07:00",
+	"2006-01-02 15:04:05.999999999",
+	"2006-01-02T15:04:05.999999999",
+	"2006-01-02 15:04:05Z07:00",
+	"2006-01-02T15:04:05Z07:00",
+	"2006-01-02 15:04:05",
+	"2006-01-02T15:04:05",
+	"2006-01-02 15:04Z07:00",
+	"2006-01-02T15:04Z07:00",
+	"2006-01-02 15:04",
+	"2006-01-02T15:04",
+	"2006-01-02Z07:00",
+	"2006-01-02",
+}
 
 type DecodeValueFunc func(r *http.Request, fieldName, tagValue string) ([]string, error)
 
@@ -206,6 +225,21 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 
 			case reflect.TypeOf([]string(nil)):
 				field.Set(reflect.ValueOf(strs))
+
+			case reflect.TypeOf(time.Time{}):
+				var success bool
+				for _, format := range decodeTimeFormats {
+					if t, err := time.ParseInLocation(format, str, time.UTC); err == nil {
+						success = true
+
+						field.Set(reflect.ValueOf(t))
+
+						break
+					}
+				}
+				if !success {
+					return errors.New("could not parse string value as time.Time")
+				}
 
 			default:
 				panic(fmt.Sprintf("unsupported struct field type %v", typ))
