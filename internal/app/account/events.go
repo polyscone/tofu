@@ -19,6 +19,11 @@ type SignedUpWithGoogle struct {
 	System string
 }
 
+type SignedUpWithFacebook struct {
+	Email  string
+	System string
+}
+
 type Verified struct {
 	Email string
 }
@@ -54,6 +59,10 @@ type SignedInWithRecoveryCode struct {
 }
 
 type SignedInWithGoogle struct {
+	Email string
+}
+
+type SignedInWithFacebook struct {
 	Email string
 }
 

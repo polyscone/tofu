@@ -115,7 +115,7 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 		return false, errors.New("Google sign in is disabled")
 	}
 	if config.GoogleSignInClientID == "" {
-		return false, errors.New("Google sign in client id has not be set")
+		return false, errors.New("Google sign in client id is empty")
 	}
 
 	// TODO: Check cache-control
@@ -232,6 +232,100 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 		}
 
 		if err := SignInSetSession(ctx, h, w, r, claims.Email); err != nil {
+			return signedIn, fmt.Errorf("sign in set session: %w", err)
+		}
+	}
+
+	return signedIn, nil
+}
+
+func SignInWithFacebook(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, userID, accessToken, email string) (bool, error) {
+	config := h.Config(ctx)
+
+	if !config.FacebookSignInEnabled {
+		return false, errors.New("Facebook sign in is disabled")
+	}
+	if config.FacebookSignInAppID == "" {
+		return false, errors.New("Facebook sign in app id is empty")
+	}
+	if config.FacebookSignInAppSecret == "" {
+		return false, errors.New("Facebook sign in app secret is empty")
+	}
+	if strings.TrimSpace(email) == "" {
+		return false, errors.New("Facebook sign in email is empty")
+	}
+
+	endpoint := fmt.Sprintf(
+		"https://graph.facebook.com/debug_token?input_token=%v&access_token=%v|%v",
+		accessToken,
+		config.FacebookSignInAppID,
+		config.FacebookSignInAppSecret,
+	)
+	res, err := client.Get(endpoint)
+	if err != nil {
+		return false, fmt.Errorf("fetch Facebook access token debug data: %w", err)
+	}
+	defer res.Body.Close()
+
+	var token struct {
+		Data struct {
+			AppID   string `json:"app_id"`
+			UserID  string `json:"user_id"`
+			IsValid bool   `json:"is_valid"`
+		}
+	}
+	if err := httputil.RelaxedDecodeJSON(&token, res.Body); err != nil {
+		return false, fmt.Errorf("decode Facebook access token debug data: %w", err)
+	}
+
+	if !token.Data.IsValid {
+		return false, errors.New("invalid access token")
+	}
+	if token.Data.AppID != config.FacebookSignInAppID {
+		return false, errors.New("app id from access token inspection does not match the one configured")
+	}
+	if token.Data.UserID != userID {
+		return false, errors.New("user id from access token inspection does not match the one given")
+	}
+
+	endpoint = fmt.Sprintf("https://graph.facebook.com/v18.0/me?access_token=%v&fields=email", accessToken)
+	res, err = client.Get(endpoint)
+	if err != nil {
+		return false, fmt.Errorf("fetch Facebook user data: %w", err)
+	}
+	defer res.Body.Close()
+
+	var me struct {
+		Email string
+	}
+	if err := httputil.RelaxedDecodeJSON(&me, res.Body); err != nil {
+		return false, fmt.Errorf("decode Facebook user data: %w", err)
+	}
+
+	if me.Email != email {
+		return false, errors.New("user email from Facebook does not match the one given")
+	}
+
+	behaviour := account.FacebookSignInOnly
+	if config.SignUpEnabled {
+		if config.SignUpAutoActivateEnabled {
+			behaviour = account.FacebookAllowSignUpActivate
+		} else {
+			behaviour = account.FacebookAllowSignUp
+		}
+	}
+
+	signedIn, err := h.Svc.Account.SignInWithFacebook(ctx, me.Email, behaviour)
+	if err != nil {
+		return false, fmt.Errorf("sign in wih Facebook: %w", err)
+	}
+
+	if signedIn {
+		if _, err := h.RenewSession(ctx); err != nil {
+			return signedIn, fmt.Errorf("renew session: %w", err)
+		}
+
+		if err := SignInSetSession(ctx, h, w, r, me.Email); err != nil {
 			return signedIn, fmt.Errorf("sign in set session: %w", err)
 		}
 	}

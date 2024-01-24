@@ -6,9 +6,7 @@ function SignInWithGoogle () {
 
 	function renderButton (vnode) {
 		if (window.google && !rendered) {
-			const parent = vnode.dom.querySelector("#sign-in__gsi_button")
-
-			google.accounts.id.renderButton(parent, {
+			google.accounts.id.renderButton(vnode.dom, {
 				type: "standard",
 				shape: "rectangle",
 				theme: "outline",
@@ -82,12 +80,114 @@ function SignInWithGoogle () {
 				return null
 			}
 
-			return m("div", [
-				m("p.sign-in-alt__title", "Or"),
-				m(".sign-in-alt.text-center", [
-					m("#sign-in__gsi_button.g_id_signin"),
-				]),
-			])
+			return m("#sign-in__gsi_button.g_id_signin")
+		},
+	}
+}
+
+function SignInWithFacebook () {
+	let rendered = false
+
+	function renderButton (vnode) {
+		if (window.FB && !rendered) {
+			const parent = vnode.dom.parentNode
+
+			FB.XFBML.parse(parent)
+
+			rendered = true
+		}
+	}
+
+	function signIn () {
+		platform.loading(new Promise(resolve => {
+			FB.getLoginStatus(response => {
+				if (response.status !== "connected") {
+					console.error("the user either did not sign in to Facebook or did not authorise the app", response)
+
+					resolve()
+
+					return
+				}
+
+				if (!response.authResponse) {
+					console.error("no auth response", response)
+
+					resolve()
+
+					return
+				}
+
+				const userId = response.authResponse.userID
+				const accessToken = response.authResponse.accessToken
+
+				FB.api("/me?fields=email", async response => {
+					const email = response.email
+					const res = await platform.api.account.signInWithFacebook(userId, accessToken, email)
+
+					if (res.ok) {
+						if (platform.session.isAwaitingTOTP) {
+							m.route.set(platform.routes.path("account.sign_in.totp"))
+						} else if (!res.body?.isSignedIn) {
+							// Signing in with Facebook can trigger a sign up
+							//
+							// If that's the case, and the response was ok, then if they aren't
+							// already signed in then it's likely to mean that their account
+							// was created but requires manual activation by an admin through
+							// user management, so we show them the sign up success page
+							m.route.set(platform.routes.path("account.sign_up.success"))
+						} else {
+							platform.api.account.tryRedirect(platform.routes.path("home"))
+						}
+					}
+
+					resolve()
+				})
+			})
+		}))
+	}
+
+	window.onFacebookSignIn = signIn
+
+	return {
+		oncreate (vnode) {
+			if (platform.config.facebookSignInEnabled && platform.config.facebookSignInAppId && !window.FB) {
+				const s = document.createElement("script")
+
+				s.src = `https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v18.0&appId=${platform.config.facebookSignInAppId}`
+				s.crossorigin = "anonymous"
+				s.nonce = "PewzUoD4"
+				s.async = true
+				s.defer = true
+				s.onload = function () {
+					m.redraw()
+				}
+
+				document.body.appendChild(s)
+			}
+
+			renderButton(vnode)
+		},
+		onupdate: renderButton,
+		onremove () {
+			rendered = false
+		},
+		view () {
+			if (!platform.config.facebookSignInEnabled || !window.FB) {
+				return null
+			}
+
+			return [
+				m("#fb-root"),
+				m(".fb-login-button", {
+					"data-size": "large",
+					"data-button-type": "continue_with",
+					"data-layout": "default",
+					"data-auto-logout-link": "false",
+					"data-use-continue-as": "false",
+					"data-scope": "email",
+					"data-onlogin": "onFacebookSignIn",
+				})
+			]
 		},
 	}
 }
@@ -167,7 +267,13 @@ function SignIn () {
 					m("button[type=submit]", "Sign in"),
 					platform.config.signUpEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_up") }, "Sign up") : null,
 					m(m.route.Link, { href: platform.routes.path("account.reset_password") }, "Forgotten your password?"),
-					m(SignInWithGoogle),
+					m("div", [
+						m("p.sign-in-alt__title", "Or"),
+						m(".sign-in-alt.text-center", [
+							m(SignInWithGoogle),
+							m(SignInWithFacebook),
+						]),
+					]),
 				]),
 			]
 		},

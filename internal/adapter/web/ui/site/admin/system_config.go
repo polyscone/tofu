@@ -28,6 +28,9 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			TOTPSMSEnabled            bool   `form:"totp-sms-enabled" compare:"true"`
 			GoogleSignInEnabled       bool   `form:"google-sign-in-enabled" compare:"true"`
 			GoogleSignInClientID      string `form:"google-sign-in-client-id"`
+			FacebookSignInEnabled     bool   `form:"facebook-sign-in-enabled" compare:"true"`
+			FacebookSignInAppID       string `form:"facebook-sign-in-app-id"`
+			FacebookSignInAppSecret   string `form:"facebook-sign-in-app-secret"`
 			ResendAPIKey              string `form:"resend-api-key"`
 			TwilioSID                 string `form:"twilio-sid"`
 			TwilioToken               string `form:"twilio-token"`
@@ -67,6 +70,9 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			input.TOTPSMSEnabled,
 			input.GoogleSignInEnabled,
 			input.GoogleSignInClientID,
+			input.FacebookSignInEnabled,
+			input.FacebookSignInAppID,
+			input.FacebookSignInAppSecret,
 			input.ResendAPIKey,
 			input.TwilioSID,
 			input.TwilioToken,

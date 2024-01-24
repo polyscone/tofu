@@ -376,6 +376,10 @@
 	.g_id_signin {
 		display: inline-block;
 	}
+
+	.g_id_signin + * {
+		margin-block-start: 1rem !important;
+	}
 }
 
 @layer utility {

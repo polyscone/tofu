@@ -113,6 +113,40 @@
 				"MaxLength" 100
 				"Disabled" $disabled
 			}}
+
+			{{template "com_form_select" .WithComData
+				"Label" "Enable Facebook sign in"
+				"Hint" "allows Facebook sign up when sign up is enabled"
+				"Name" "facebook-sign-in-enabled"
+				"Value" (.Form.GetOr "facebook-sign-in-enabled" .Config.FacebookSignInEnabled)
+				"Options" (Slice
+					(Map "Label" "No" "Value" "false")
+					(Map "Label" "Yes (requires Facebook app id/secret)" "Value" "true")
+				)
+				"Disabled" $disabled
+			}}
+
+			{{template "com_form_input" .WithComData
+				"Label" "Facebook sign in app id"
+				"Type" "text"
+				"Name" "facebook-sign-in-app-id"
+				"Value" (.Form.GetOr "facebook-sign-in-app-id" .Config.FacebookSignInAppID)
+				"Placeholder" "ABCDEFG123456789"
+				"Pattern" `^.+$`
+				"MaxLength" 100
+				"Disabled" $disabled
+			}}
+
+			{{template "com_form_input" .WithComData
+				"Label" "Facebook sign in app secret"
+				"Type" "text"
+				"Name" "facebook-sign-in-app-secret"
+				"Value" (.Form.GetOr "facebook-sign-in-app-secret" .Config.FacebookSignInAppSecret)
+				"Placeholder" "ABCDEFG123456789"
+				"Pattern" `^.+$`
+				"MaxLength" 100
+				"Disabled" $disabled
+			}}
 		</fieldset>
 
 		<fieldset>

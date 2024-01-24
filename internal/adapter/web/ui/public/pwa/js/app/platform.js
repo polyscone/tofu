@@ -126,6 +126,16 @@ const api = {
 
 			return res
 		},
+		async signInWithFacebook (userId, accessToken, email) {
+			const res = await request("/api/v1/account/sign-in/facebook", {
+				method: "POST",
+				body: { userId, accessToken, email },
+			})
+
+			await api.account.pollSession()
+
+			return res
+		},
 		async signOut (email, password) {
 			const res = await request("/api/v1/account/sign-out", { method: "POST" })
 
@@ -239,13 +249,17 @@ const platform = {
 	get session () {
 		return api.account.session()
 	},
-	async loading (f) {
+	async loading (p) {
 		platform.state.loadingCount++
 
 		showLoading()
 
 		try {
-			return await f()
+			if (typeof p === "function") {
+				p = p()
+			}
+
+			return await p
 		} catch (err) {
 			console.error(err)
 		} finally {

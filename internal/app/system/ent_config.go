@@ -20,6 +20,9 @@ type Config struct {
 	TOTPSMSEnabled            bool
 	GoogleSignInEnabled       bool
 	GoogleSignInClientID      string
+	FacebookSignInEnabled     bool
+	FacebookSignInAppID       string
+	FacebookSignInAppSecret   string
 	ResendAPIKey              string
 	TwilioSID                 string
 	TwilioToken               string
@@ -107,6 +110,36 @@ func (c *Config) EnableGoogleSignIn() error {
 
 func (c *Config) DisableGoogleSignIn() {
 	c.GoogleSignInEnabled = false
+}
+
+func (c *Config) ChangeFacebookSignInAppID(appID FacebookAppID) {
+	c.FacebookSignInAppID = appID.String()
+}
+
+func (c *Config) ChangeFacebookSignInAppSecret(appSecret FacebookAppSecret) {
+	c.FacebookSignInAppSecret = appSecret.String()
+}
+
+func (c *Config) EnableFacebookSignIn() error {
+	var errs errsx.Map
+
+	if c.FacebookSignInAppID == "" {
+		errs.Set("facebook sign in app id", "required when Facebook sign in is enabled")
+	}
+	if c.FacebookSignInAppSecret == "" {
+		errs.Set("facebook sign in app secret", "required when Facebook sign in is enabled")
+	}
+	if errs != nil {
+		return fmt.Errorf("%w: %w", app.ErrInvalidInput, errs)
+	}
+
+	c.FacebookSignInEnabled = true
+
+	return nil
+}
+
+func (c *Config) DisableFacebookSignIn() {
+	c.FacebookSignInEnabled = false
 }
 
 func (c *Config) ChangeResendAPI(apiKey ResendAPIKey) {

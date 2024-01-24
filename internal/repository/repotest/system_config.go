@@ -43,6 +43,15 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		if want, got := "", config.GoogleSignInClientID; want != got {
 			t.Errorf("want Google sign in client id to be %q; got %q", want, got)
 		}
+		if want, got := false, config.FacebookSignInEnabled; want != got {
+			t.Errorf("want Facebook sign in enabled to be %v; got %v", want, got)
+		}
+		if want, got := "", config.FacebookSignInAppID; want != got {
+			t.Errorf("want Facebook sign in app id to be %q; got %q", want, got)
+		}
+		if want, got := "", config.FacebookSignInAppSecret; want != got {
+			t.Errorf("want Facebook sign in app secret to be %q; got %q", want, got)
+		}
 		if want, got := "", config.ResendAPIKey; want != got {
 			t.Errorf("want resend API key to be %q; got %q", want, got)
 		}
@@ -66,10 +75,13 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 			TOTPSMSEnabled:            true,
 			GoogleSignInEnabled:       true,
 			GoogleSignInClientID:      "3",
-			ResendAPIKey:              "4",
-			TwilioSID:                 "5",
-			TwilioToken:               "6",
-			TwilioFromTel:             "7",
+			FacebookSignInEnabled:     true,
+			FacebookSignInAppID:       "4",
+			FacebookSignInAppSecret:   "5",
+			ResendAPIKey:              "6",
+			TwilioSID:                 "7",
+			TwilioToken:               "8",
+			TwilioFromTel:             "9",
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -107,16 +119,25 @@ func SystemConfig(ctx context.Context, t *testing.T, newRepo func() system.ReadW
 		if want, got := "3", config.GoogleSignInClientID; want != got {
 			t.Errorf("want Google sign in client id to be %q; got %q", want, got)
 		}
-		if want, got := "4", config.ResendAPIKey; want != got {
+		if want, got := true, config.FacebookSignInEnabled; want != got {
+			t.Errorf("want Facebook sign in enabled to be %v; got %v", want, got)
+		}
+		if want, got := "4", config.FacebookSignInAppID; want != got {
+			t.Errorf("want Facebook sign in app id to be %q; got %q", want, got)
+		}
+		if want, got := "5", config.FacebookSignInAppSecret; want != got {
+			t.Errorf("want Facebook sign in app secret to be %q; got %q", want, got)
+		}
+		if want, got := "6", config.ResendAPIKey; want != got {
 			t.Errorf("want resend API key to be %q; got %q", want, got)
 		}
-		if want, got := "5", config.TwilioSID; want != got {
+		if want, got := "7", config.TwilioSID; want != got {
 			t.Errorf("want twilio sid to be %q; got %q", want, got)
 		}
-		if want, got := "6", config.TwilioToken; want != got {
+		if want, got := "8", config.TwilioToken; want != got {
 			t.Errorf("want twilio token to be %q; got %q", want, got)
 		}
-		if want, got := "7", config.TwilioFromTel; want != got {
+		if want, got := "9", config.TwilioFromTel; want != got {
 			t.Errorf("want twilio from tel to be %q; got %q", want, got)
 		}
 	})

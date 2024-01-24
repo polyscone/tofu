@@ -39,6 +39,9 @@ func TestUpdateConfig(t *testing.T) {
 		totpSMSEnabled := true
 		googleSignInEnabled := true
 		googleSignInClientID := "1234abcd"
+		facebookSignInEnabled := true
+		facebookSignInAppID := "abcd1234"
+		facebookSignInAppSecret := "fbsecret"
 		resendAPIKey := "re_abcdEFG0123456_RE_abcdEFG0123456Z"
 		twilioSID := "AC0123456789abcdef0123456789abcdef"
 		twilioToken := "0123456789abcdef0123456789abcdef"
@@ -53,6 +56,9 @@ func TestUpdateConfig(t *testing.T) {
 			totpSMSEnabled,
 			googleSignInEnabled,
 			googleSignInClientID,
+			facebookSignInEnabled,
+			facebookSignInAppID,
+			facebookSignInAppSecret,
 			resendAPIKey,
 			twilioSID,
 			twilioToken,
@@ -88,6 +94,15 @@ func TestUpdateConfig(t *testing.T) {
 		if want, got := googleSignInClientID, config.GoogleSignInClientID; want != got {
 			t.Errorf("want google sign in client id to be %q; got %q", want, got)
 		}
+		if want, got := facebookSignInEnabled, config.FacebookSignInEnabled; want != got {
+			t.Errorf("want facebook sign in enabled to be %v; got %v", want, got)
+		}
+		if want, got := facebookSignInAppID, config.FacebookSignInAppID; want != got {
+			t.Errorf("want facebook sign in app id to be %q; got %q", want, got)
+		}
+		if want, got := facebookSignInAppSecret, config.FacebookSignInAppSecret; want != got {
+			t.Errorf("want facebook sign in app secret to be %q; got %q", want, got)
+		}
 		if want, got := twilioSID, config.TwilioSID; want != got {
 			t.Errorf("want twilio sid to be %q; got %q", want, got)
 		}
@@ -109,6 +124,9 @@ func TestUpdateConfig(t *testing.T) {
 		totpSMSEnabled = false
 		googleSignInEnabled = false
 		googleSignInClientID = "xyz"
+		facebookSignInEnabled = false
+		facebookSignInAppID = "xxx"
+		facebookSignInAppSecret = "zzz"
 		resendAPIKey = ""
 		twilioSID = ""
 		twilioToken = ""
@@ -123,6 +141,9 @@ func TestUpdateConfig(t *testing.T) {
 			totpSMSEnabled,
 			googleSignInEnabled,
 			googleSignInClientID,
+			facebookSignInEnabled,
+			facebookSignInAppID,
+			facebookSignInAppSecret,
 			resendAPIKey,
 			twilioSID,
 			twilioToken,
@@ -157,6 +178,15 @@ func TestUpdateConfig(t *testing.T) {
 		}
 		if want, got := googleSignInClientID, config.GoogleSignInClientID; want != got {
 			t.Errorf("want google sign in client id to be %q; got %q", want, got)
+		}
+		if want, got := facebookSignInEnabled, config.FacebookSignInEnabled; want != got {
+			t.Errorf("want facebook sign in enabled to be %v; got %v", want, got)
+		}
+		if want, got := facebookSignInAppID, config.FacebookSignInAppID; want != got {
+			t.Errorf("want facebook sign in app id to be %q; got %q", want, got)
+		}
+		if want, got := facebookSignInAppSecret, config.FacebookSignInAppSecret; want != got {
+			t.Errorf("want facebook sign in app secret to be %q; got %q", want, got)
 		}
 		if want, got := resendAPIKey, config.ResendAPIKey; want != got {
 			t.Errorf("want resend API key to be %q; got %q", want, got)
@@ -204,6 +234,15 @@ func TestUpdateConfig(t *testing.T) {
 				case "GoogleSignInEnabled":
 					config.GoogleSignInEnabled = value.(bool)
 
+				case "FacebookSignInEnabled":
+					config.FacebookSignInEnabled = value.(bool)
+
+				case "FacebookSignInAppID":
+					config.FacebookSignInAppID = value.(string)
+
+				case "FacebookSignInAppSecret":
+					config.FacebookSignInAppSecret = value.(string)
+
 				case "ResendAPIKey":
 					config.ResendAPIKey = value.(string)
 
@@ -240,6 +279,8 @@ func TestUpdateConfig(t *testing.T) {
 			{"TOTP SMS enabled without Twilio token", validGuard, vals{"TOTPSMSEnabled": true, "TwilioToken": ""}, app.ErrInvalidInput},
 			{"TOTP SMS enabled without Twilio from tel", validGuard, vals{"TOTPSMSEnabled": true, "TwilioFromTel": ""}, app.ErrInvalidInput},
 			{"google sign in enabled without client id", validGuard, vals{"GoogleSignInEnabled": true}, app.ErrInvalidInput},
+			{"facebook sign in enabled without app id", validGuard, vals{"FacebookSignInEnabled": true, "FacebookSignInAppSecret": "123"}, app.ErrInvalidInput},
+			{"facebook sign in enabled without app secret", validGuard, vals{"FacebookSignInEnabled": true, "FacebookSignInAppID": "123"}, app.ErrInvalidInput},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
@@ -254,6 +295,9 @@ func TestUpdateConfig(t *testing.T) {
 					config.TOTPSMSEnabled,
 					config.GoogleSignInEnabled,
 					config.GoogleSignInClientID,
+					config.FacebookSignInEnabled,
+					config.FacebookSignInAppID,
+					config.FacebookSignInAppSecret,
 					config.ResendAPIKey,
 					config.TwilioSID,
 					config.TwilioToken,

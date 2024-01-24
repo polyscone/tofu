@@ -14,10 +14,12 @@ var (
 	ErrExpectedJSON = errors.New("expected content-type application/json")
 )
 
-func DecodeJSON(dst any, r io.Reader) error {
+func decodeJSON(dst any, r io.Reader, disallowUnknownFields bool) error {
 	d := json.NewDecoder(r)
 
-	d.DisallowUnknownFields()
+	if disallowUnknownFields {
+		d.DisallowUnknownFields()
+	}
 
 	if err := d.Decode(dst); err != nil {
 		var syntaxErr *json.SyntaxError
@@ -61,10 +63,34 @@ func DecodeJSON(dst any, r io.Reader) error {
 	return nil
 }
 
+func DecodeJSON(dst any, r io.Reader) error {
+	const disallowUnknownFields = true
+
+	return decodeJSON(dst, r, disallowUnknownFields)
+}
+
+func RelaxedDecodeJSON(dst any, r io.Reader) error {
+	const disallowUnknownFields = false
+
+	return decodeJSON(dst, r, disallowUnknownFields)
+}
+
 func DecodeRequestJSON(dst any, r *http.Request) error {
 	if !strings.HasPrefix(r.Header.Get("content-type"), "application/json") {
 		return ErrExpectedJSON
 	}
 
-	return DecodeJSON(dst, r.Body)
+	const disallowUnknownFields = true
+
+	return decodeJSON(dst, r.Body, disallowUnknownFields)
+}
+
+func RelaxedDecodeRequestJSON(dst any, r *http.Request) error {
+	if !strings.HasPrefix(r.Header.Get("content-type"), "application/json") {
+		return ErrExpectedJSON
+	}
+
+	const disallowUnknownFields = false
+
+	return decodeJSON(dst, r.Body, disallowUnknownFields)
 }

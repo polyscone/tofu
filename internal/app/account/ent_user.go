@@ -14,13 +14,15 @@ import (
 )
 
 const (
-	SignInMethodNone   = ""
-	SignInMethodForm   = "form"
-	SignInMethodGoogle = "google"
+	SignInMethodNone     = ""
+	SignInMethodForm     = "form"
+	SignInMethodGoogle   = "google"
+	SignInMethodFacebook = "facebook"
 
-	SignUpMethodNone   = ""
-	SignUpMethodForm   = "form"
-	SignUpMethodGoogle = "google"
+	SignUpMethodNone     = ""
+	SignUpMethodForm     = "form"
+	SignUpMethodGoogle   = "google"
+	SignUpMethodFacebook = "facebook"
 )
 
 var (
@@ -195,6 +197,32 @@ func (u *User) SignUpWithGoogle(system string) error {
 	u.SignedUpMethod = SignUpMethodGoogle
 
 	u.Events.Enqueue(SignedUpWithGoogle{
+		Email:  u.Email,
+		System: system,
+	})
+
+	return nil
+}
+
+func (u *User) SignUpWithFacebook(system string) error {
+	if !u.ActivatedAt.IsZero() {
+		return nil
+	}
+
+	now := time.Now().UTC()
+
+	if u.SignedUpAt.IsZero() {
+		u.SignedUpAt = now
+	}
+
+	if u.VerifiedAt.IsZero() {
+		u.VerifiedAt = now
+	}
+
+	u.SignedUpSystem = system
+	u.SignedUpMethod = SignUpMethodFacebook
+
+	u.Events.Enqueue(SignedUpWithFacebook{
 		Email:  u.Email,
 		System: system,
 	})
@@ -756,6 +784,34 @@ func (u *User) SignInWithGoogle(system string) error {
 	}
 
 	u.Events.Enqueue(SignedInWithGoogle{Email: u.Email})
+
+	return nil
+}
+
+func (u *User) SignInWithFacebook(system string) error {
+	if u.VerifiedAt.IsZero() {
+		return ErrNotVerified
+	}
+
+	if u.ActivatedAt.IsZero() {
+		return ErrNotActivated
+	}
+
+	if u.IsSuspended() {
+		return ErrSuspended
+	}
+
+	u.LastSignInAttemptAt = time.Now().UTC()
+	u.LastSignInAttemptSystem = system
+	u.LastSignInAttemptMethod = SignInMethodFacebook
+
+	if !u.HasActivatedTOTP() {
+		u.LastSignedInAt = u.LastSignInAttemptAt
+		u.LastSignedInSystem = u.LastSignInAttemptSystem
+		u.LastSignedInMethod = u.LastSignInAttemptMethod
+	}
+
+	u.Events.Enqueue(SignedInWithFacebook{Email: u.Email})
 
 	return nil
 }

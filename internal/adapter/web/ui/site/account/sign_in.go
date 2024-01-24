@@ -51,6 +51,7 @@ func signInRoutes(h *ui.Handler, mux *router.ServeMux) {
 		})
 
 		mux.Post("/google", signInGooglePost(h), "account.sign_in.google.post")
+		mux.Post("/facebook", signInFacebookPost(h), "account.sign_in.facebook.post")
 	})
 }
 
@@ -344,6 +345,44 @@ func signInGooglePost(h *ui.Handler) http.HandlerFunc {
 			}
 
 			h.HTML.ErrorView(w, r, "sign in with Google", err, "site/error", nil)
+
+			return
+		}
+
+		if signedIn {
+			signInSuccessRedirect(h, w, r)
+		} else {
+			http.Redirect(w, r, h.Path("account.verify.success"), http.StatusSeeOther)
+		}
+	}
+}
+
+func signInFacebookPost(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			UserID      string `form:"user-id"`
+			AccessToken string `form:"access-token"`
+			Email       string `form:"email"`
+		}
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		signedIn, err := auth.SignInWithFacebook(ctx, h.Handler, w, r, input.UserID, input.AccessToken, input.Email)
+		if err != nil {
+			if errors.Is(err, account.ErrFacebookSignUpDisabled) {
+				h.AddFlashErrorf(ctx, "Either your credentials are incorrect, or you're not authorised to access this application.")
+
+				http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
+
+				return
+			}
+
+			h.HTML.ErrorView(w, r, "sign in with Facebook", err, "site/error", nil)
 
 			return
 		}

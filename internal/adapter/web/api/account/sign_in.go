@@ -23,6 +23,7 @@ func signInRoutes(h *api.Handler, mux *router.ServeMux) {
 		mux.Post("/totp/send-sms", signInTOTPSendSMSPost(h))
 		mux.Post("/recovery-code", signInRecoveryCodePost(h))
 		mux.Post("/google", signInGooglePost(h))
+		mux.Post("/facebook", signInFacebookPost(h))
 	})
 }
 
@@ -145,6 +146,33 @@ func signInGooglePost(h *api.Handler) http.HandlerFunc {
 
 		if _, err := auth.SignInWithGoogle(ctx, h.Handler, w, r, input.JWT); err != nil {
 			h.ErrorJSON(w, r, "sign in with Google", err)
+
+			return
+		}
+
+		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+
+		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
+	}
+}
+
+func signInFacebookPost(h *api.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			UserID      string
+			AccessToken string
+			Email       string
+		}
+		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+			h.ErrorJSON(w, r, "decode JSON", err)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		if _, err := auth.SignInWithFacebook(ctx, h.Handler, w, r, input.UserID, input.AccessToken, input.Email); err != nil {
+			h.ErrorJSON(w, r, "sign in with Facebook", err)
 
 			return
 		}

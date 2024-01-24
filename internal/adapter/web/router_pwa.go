@@ -136,10 +136,12 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		return handler.Vars{
 			"url": r.URL.String(),
 			"config": map[string]any{
-				"prefix":               routePrefix,
-				"signUpEnabled":        config.SignUpEnabled,
-				"googleSignInEnabled":  config.GoogleSignInEnabled,
-				"googleSignInClientId": config.GoogleSignInClientID,
+				"prefix":                routePrefix,
+				"signUpEnabled":         config.SignUpEnabled,
+				"googleSignInEnabled":   config.GoogleSignInEnabled,
+				"googleSignInClientId":  config.GoogleSignInClientID,
+				"facebookSignInEnabled": config.FacebookSignInEnabled,
+				"facebookSignInAppId":   config.FacebookSignInAppID,
 			},
 		}
 	}

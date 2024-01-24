@@ -17,6 +17,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	signUpEnabled, signUpAutoActivateEnabled bool,
 	totpRequired, totpSMSEnabled bool,
 	googleSignInEnabled bool, googleSignInClientID string,
+	facebookSignInEnabled bool, facebookSignInAppID, facebookSignInAppSecret string,
 	resendAPIKey string,
 	twilioSID, twilioToken, twilioFromTel string,
 ) (*Config, error) {
@@ -29,6 +30,9 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		totpSMSEnabled            bool
 		googleSignInEnabled       bool
 		googleSignInClientID      GoogleClientID
+		facebookSignInEnabled     bool
+		facebookSignInAppID       FacebookAppID
+		facebookSignInAppSecret   FacebookAppSecret
 		resendAPIKey              ResendAPIKey
 		twilioSID                 TwilioSID
 		twilioToken               TwilioToken
@@ -53,11 +57,22 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		input.signUpAutoActivateEnabled = signUpAutoActivateEnabled
 		input.totpRequired = totpRequired
 		input.totpSMSEnabled = totpSMSEnabled
+
 		input.googleSignInEnabled = googleSignInEnabled
 
 		if input.googleSignInClientID, err = NewGoogleClientID(googleSignInClientID); err != nil {
 			errs.Set("google sign in client id", err)
 		}
+
+		input.facebookSignInEnabled = facebookSignInEnabled
+
+		if input.facebookSignInAppID, err = NewFacebookAppID(facebookSignInAppID); err != nil {
+			errs.Set("facebook sign in app id", err)
+		}
+		if input.facebookSignInAppSecret, err = NewFacebookAppSecret(facebookSignInAppSecret); err != nil {
+			errs.Set("facebook sign in app secret", err)
+		}
+
 		if input.resendAPIKey, err = NewResendAPIKey(resendAPIKey); err != nil {
 			errs.Set("resend API key", err)
 		}
@@ -80,6 +95,8 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	if err != nil {
 		return nil, fmt.Errorf("find config: %w", err)
 	}
+
+	var errs errsx.Slice
 
 	config.ChangeSystemEmail(input.systemEmail)
 	config.ChangeSecurityEmail(input.securityEmail)
@@ -104,12 +121,19 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 
 	config.ChangeGoogleSignInClientID(input.googleSignInClientID)
 
-	var errs errsx.Slice
-
 	if input.googleSignInEnabled {
 		errs.Append(config.EnableGoogleSignIn())
 	} else {
 		config.DisableGoogleSignIn()
+	}
+
+	config.ChangeFacebookSignInAppID(input.facebookSignInAppID)
+	config.ChangeFacebookSignInAppSecret(input.facebookSignInAppSecret)
+
+	if input.facebookSignInEnabled {
+		errs.Append(config.EnableFacebookSignIn())
+	} else {
+		config.DisableFacebookSignIn()
 	}
 
 	config.ChangeResendAPI(input.resendAPIKey)
