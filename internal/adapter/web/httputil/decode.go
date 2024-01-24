@@ -227,18 +227,20 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 				field.Set(reflect.ValueOf(strs))
 
 			case reflect.TypeOf(time.Time{}):
-				var success bool
-				for _, format := range decodeTimeFormats {
-					if t, err := time.ParseInLocation(format, str, time.UTC); err == nil {
-						success = true
+				if str != "" {
+					var success bool
+					for _, format := range decodeTimeFormats {
+						if t, err := time.ParseInLocation(format, str, time.UTC); err == nil {
+							success = true
 
-						field.Set(reflect.ValueOf(t))
+							field.Set(reflect.ValueOf(t))
 
-						break
+							break
+						}
 					}
-				}
-				if !success {
-					return errors.New("could not parse string value as time.Time")
+					if !success {
+						return errors.New("could not parse string value as time.Time")
+					}
 				}
 
 			default:
