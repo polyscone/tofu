@@ -82,6 +82,7 @@ onMount("time", node => {
 
 function _componentsInit () {
 	window._components ||= {
+		initialised: false,
 		actions: {
 			mount: [],
 			destroy: [],
@@ -118,6 +119,12 @@ function _componentsInit () {
 			}
 		}),
 	}
+
+	if (window._components.initialised) {
+		return
+	}
+
+	window._components.initialised = true
 
 	window._components.observer.observe(document.body, {
 		childList: true,
