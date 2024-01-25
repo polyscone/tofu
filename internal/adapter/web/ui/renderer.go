@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"path"
+	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
@@ -19,13 +20,13 @@ import (
 )
 
 type ViewData struct {
-	Master       string
 	View         string
 	ContentType  string
 	Status       int
 	CSRF         handler.CSRF
 	ErrorMessage string
 	Errors       errsx.Map
+	Now          time.Time
 	Form         handler.Form
 	URL          handler.URL
 	App          handler.AppData
@@ -85,10 +86,12 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	passport := rn.h.Passport(ctx)
 
 	data := ViewData{
-		View:   view,
-		Status: status,
-		CSRF:   handler.CSRF{Ctx: ctx},
-		Form:   handler.Form{Values: r.PostForm},
+		View:        view,
+		ContentType: rn.contentType,
+		Status:      status,
+		CSRF:        handler.CSRF{Ctx: ctx},
+		Now:         time.Now(),
+		Form:        handler.Form{Values: r.PostForm},
 		URL: handler.URL{
 			Scheme: rn.h.Tenant.Scheme,
 			Host:   rn.h.Tenant.Host,
