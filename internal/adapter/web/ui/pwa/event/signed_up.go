@@ -12,6 +12,16 @@ import (
 
 func SignedUpHandler(h *ui.Handler) any {
 	return func(evt account.SignedUp) {
+		// We only want to send an email for verification if it's a normal
+		// account sign up
+		//
+		// Sign ups through third-party services like Google/Facebook are
+		// implicitly verified due to the fact they signed in with that service
+		// so we don't need to verify any email addresses
+		if evt.Kind != account.SignUpKindAccount {
+			return
+		}
+
 		background.Go(func() {
 			ctx := context.Background()
 			logger := h.Logger(ctx)

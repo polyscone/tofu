@@ -204,10 +204,11 @@ func (u *User) SignUp(system string) error {
 	u.SignedUpMethod = SignUpMethodForm
 
 	u.Events.Enqueue(SignedUp{
-		Email:  u.Email,
-		System: system,
-		Method: SignUpMethodForm,
-		Kind:   SignUpKindAccount,
+		Email:      u.Email,
+		System:     system,
+		Method:     SignUpMethodForm,
+		Kind:       SignUpKindAccount,
+		IsVerified: !u.VerifiedAt.IsZero(),
 	})
 
 	return nil
@@ -232,10 +233,11 @@ func (u *User) SignUpWithGoogle(system string) error {
 	u.SignedUpMethod = SignUpMethodGoogle
 
 	u.Events.Enqueue(SignedUp{
-		Email:  u.Email,
-		System: system,
-		Method: SignUpMethodGoogle,
-		Kind:   SignUpKindSocial,
+		Email:      u.Email,
+		System:     system,
+		Method:     SignUpMethodGoogle,
+		Kind:       SignUpKindSocial,
+		IsVerified: !u.VerifiedAt.IsZero(),
 	})
 
 	return nil
@@ -260,10 +262,11 @@ func (u *User) SignUpWithFacebook(system string) error {
 	u.SignedUpMethod = SignUpMethodFacebook
 
 	u.Events.Enqueue(SignedUp{
-		Email:  u.Email,
-		System: system,
-		Method: SignUpMethodFacebook,
-		Kind:   SignUpKindSocial,
+		Email:      u.Email,
+		System:     system,
+		Method:     SignUpMethodFacebook,
+		Kind:       SignUpKindSocial,
+		IsVerified: !u.VerifiedAt.IsZero(),
 	})
 
 	return nil

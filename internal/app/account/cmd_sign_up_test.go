@@ -24,10 +24,11 @@ func TestSignUp(t *testing.T) {
 		}
 
 		events.Expect(account.SignedUp{
-			Email:  "foo@example.com",
-			System: "site",
-			Method: account.SignUpMethodForm,
-			Kind:   account.SignUpKindAccount,
+			Email:      "foo@example.com",
+			System:     "site",
+			Method:     account.SignUpMethodForm,
+			Kind:       account.SignUpKindAccount,
+			IsVerified: false,
 		})
 
 		user, err := repo.FindUserByEmail(ctx, "foo@example.com")
@@ -50,10 +51,11 @@ func TestSignUp(t *testing.T) {
 		}
 
 		events.Expect(account.SignedUp{
-			Email:  "foo@example.com",
-			System: "site",
-			Method: account.SignUpMethodForm,
-			Kind:   account.SignUpKindAccount,
+			Email:      "foo@example.com",
+			System:     "site",
+			Method:     account.SignUpMethodForm,
+			Kind:       account.SignUpKindAccount,
+			IsVerified: false,
 		})
 	})
 
@@ -72,10 +74,11 @@ func TestSignUp(t *testing.T) {
 		// Even though the user is already verified through the site we want the
 		// event to record the current system they're using, which is "pwa" here
 		events.Expect(account.SignedUp{
-			Email:  user.Email,
-			System: "pwa",
-			Method: account.SignUpMethodForm,
-			Kind:   account.SignUpKindAccount,
+			Email:      user.Email,
+			System:     "pwa",
+			Method:     account.SignUpMethodForm,
+			Kind:       account.SignUpKindAccount,
+			IsVerified: true,
 		})
 
 		user, err := repo.FindUserByEmail(ctx, user.Email)
@@ -148,10 +151,11 @@ func TestSignUp(t *testing.T) {
 				switch {
 				case err == nil:
 					events.Expect(account.SignedUp{
-						Email:  tc.email,
-						System: user.SignedUpSystem,
-						Method: account.SignUpMethodForm,
-						Kind:   account.SignUpKindAccount,
+						Email:      tc.email,
+						System:     user.SignedUpSystem,
+						Method:     account.SignUpMethodForm,
+						Kind:       account.SignUpKindAccount,
+						IsVerified: false,
 					})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):

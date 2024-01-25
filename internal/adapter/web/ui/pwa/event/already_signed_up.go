@@ -30,7 +30,10 @@ func AlreadySignedUpHandler(h *ui.Handler) any {
 				return
 			}
 
-			vars := handler.Vars{"Token": tok}
+			vars := handler.Vars{
+				"Token":       tok,
+				"HasPassword": evt.HasPassword,
+			}
 			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "pwa/sign_up_reset_password", vars); err != nil {
 				logger.Error("already signed up: send email", "error", err)
 			}

@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 
+	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/background"
@@ -21,19 +22,13 @@ func ActivatedHandler(h *ui.Handler) any {
 				return
 			}
 
-			user, err := h.Repo.Account.FindUserByEmail(ctx, evt.Email)
-			if err != nil {
-				logger.Error("activated: find user by email", "error", err)
-
-				return
-			}
-
 			emailTemplate := "site/account_activated"
-			if user.SignedUpSystem == "pwa" {
+			if evt.System == "pwa" {
 				emailTemplate = "pwa/account_activated"
 			}
 
-			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, emailTemplate, nil); err != nil {
+			vars := handler.Vars{"HasPassword": evt.HasPassword}
+			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, emailTemplate, vars); err != nil {
 				logger.Error("activated: send email", "error", err)
 			}
 		})

@@ -8,10 +8,11 @@ type Invited struct {
 }
 
 type SignedUp struct {
-	Email  string
-	System string
-	Method string
-	Kind   string
+	Email      string
+	System     string
+	Method     string
+	Kind       string
+	IsVerified bool
 }
 
 type AlreadySignedUp struct {
