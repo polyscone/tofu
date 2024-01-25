@@ -13,79 +13,83 @@
 <h2>Build</h2>
 
 <table class="metrics">
-	<tr>
-		<td>Revision</td>
-		<td>{{.Vars.Revision}}</td>
-	</tr>
-	<tr>
-		<td>Tags</td>
-		<td>{{.Vars.Tags}}</td>
-	</tr>
-	<tr>
-		<td>Go version</td>
-		<td>{{.Vars.Go}}</td>
-	</tr>
-	<tr>
-		<td>OS/Arch</td>
-		<td>{{.Vars.OS}}/{{.Vars.Arch}}</td>
-	</tr>
-	<tr>
-		<td>Race detector</td>
-		<td>{{.Vars.Race}}</td>
-	</tr>
+	<tbody>
+		<tr>
+			<td>Revision</td>
+			<td>{{.Vars.Revision}}</td>
+		</tr>
+		<tr>
+			<td>Tags</td>
+			<td>{{.Vars.Tags}}</td>
+		</tr>
+		<tr>
+			<td>Go version</td>
+			<td>{{.Vars.Go}}</td>
+		</tr>
+		<tr>
+			<td>OS/Arch</td>
+			<td>{{.Vars.OS}}/{{.Vars.Arch}}</td>
+		</tr>
+		<tr>
+			<td>Race detector</td>
+			<td>{{.Vars.Race}}</td>
+		</tr>
+	</tbody>
 </table>
 
 <h2>Process and memory</h2>
 
 <table class="metrics">
-	<tr>
-		<td>Uptime</td>
-		<td>{{FormatDuration .Vars.Uptime}}</td>
-	</tr>
-	<tr>
-		<td>Cgo calls</td>
-		<td data-locale-number>{{.Vars.CgoCalls}}</td>
-	</tr>
-	<tr>
-		<td>Logical CPUs</td>
-		<td data-locale-number>{{.Vars.CPUs}}</td>
-	</tr>
-	<tr>
-		<td>Goroutines</td>
-		<td data-locale-number>{{.Vars.Goroutines}}</td>
-	</tr>
-	<tr>
-		<td>Reserved OS memory</td>
-		<td data-locale-number>{{FormatSizeSI .Vars.ReservedMemOS}}</td>
-	</tr>
-	<tr>
-		<td>Tot. heap allocated</td>
-		<td data-locale-number>{{FormatSizeSI .Vars.TotalHeapAlloc}}</td>
-	</tr>
-	<tr>
-		<td>Heap allocated</td>
-		<td data-locale-number>{{FormatSizeSI .Vars.HeapAlloc}}</td>
-	</tr>
-	<tr>
-		<td>Heap objects</td>
-		<td data-locale-number>{{.Vars.HeapObjects}}</td>
-	</tr>
-	<tr>
-		<td>Completed GC cycles</td>
-		<td data-locale-number>{{.Vars.GCCycles}}</td>
-	</tr>
-	<tr>
-		<td>Next GC cycle target heap</td>
-		<td data-locale-number>{{FormatSizeSI .Vars.GCTargetHeapAlloc}}</td>
-	</tr>
-	<tr>
-		<td>Last GC cycle</td>
-		<td><time datetime="{{FormatTime .Vars.LastGC "RFC3339"}}" data-date="full">{{FormatTime .Vars.LastGC "DateTime"}}</time></td>
-	</tr>
-	<tr>
-		<td>Tot. GC pauses</td>
-		<td>{{FormatDurationStat .Vars.TotalGCPause}}</td>
-	</tr>
+	<tbody>
+		<tr>
+			<td>Uptime</td>
+			<td>{{FormatDuration .Vars.Uptime}}</td>
+		</tr>
+		<tr>
+			<td>Cgo calls</td>
+			<td data-locale-number>{{.Vars.CgoCalls}}</td>
+		</tr>
+		<tr>
+			<td>Logical CPUs</td>
+			<td data-locale-number>{{.Vars.CPUs}}</td>
+		</tr>
+		<tr>
+			<td>Goroutines</td>
+			<td data-locale-number>{{.Vars.Goroutines}}</td>
+		</tr>
+		<tr>
+			<td>Reserved OS memory</td>
+			<td data-locale-number>{{FormatSizeSI .Vars.ReservedMemOS}}</td>
+		</tr>
+		<tr>
+			<td>Tot. heap allocated</td>
+			<td data-locale-number>{{FormatSizeSI .Vars.TotalHeapAlloc}}</td>
+		</tr>
+		<tr>
+			<td>Heap allocated</td>
+			<td data-locale-number>{{FormatSizeSI .Vars.HeapAlloc}}</td>
+		</tr>
+		<tr>
+			<td>Heap objects</td>
+			<td data-locale-number>{{.Vars.HeapObjects}}</td>
+		</tr>
+		<tr>
+			<td>Completed GC cycles</td>
+			<td data-locale-number>{{.Vars.GCCycles}}</td>
+		</tr>
+		<tr>
+			<td>Next GC cycle target heap</td>
+			<td data-locale-number>{{FormatSizeSI .Vars.GCTargetHeapAlloc}}</td>
+		</tr>
+		<tr>
+			<td>Last GC cycle</td>
+			<td><time datetime="{{FormatTime .Vars.LastGC "RFC3339"}}" data-date="full">{{FormatTime .Vars.LastGC "DateTime"}}</time></td>
+		</tr>
+		<tr>
+			<td>Tot. GC pauses</td>
+			<td>{{FormatDurationStat .Vars.TotalGCPause}}</td>
+		</tr>
+	</tbody>
 </table>
 
 <div class="cols-thirds">
@@ -94,160 +98,162 @@
 			<h2>{{$database.Label}}</h2>
 
 			<table class="metrics">
-				<tr>
-					<td>Max open conns.</td>
-					<td>
-						{{if $database.MaxOpenConns}}
-							<span data-locale-number>{{$database.MaxOpenConns}}</span>
-						{{else}}
-							∞
-						{{end}}
-					</td>
-				</tr>
-				<tr>
-					<td>In use conns.</td>
-					<td data-locale-number>{{$database.InUseConns}}</td>
-				</tr>
-				<tr>
-					<td>Idle conns.</td>
-					<td data-locale-number>{{$database.IdleConns}}</td>
-				</tr>
-				<tr>
-					<td>Conn. wait count</td>
-					<td data-locale-number>{{$database.ConnWaitCount}}</td>
-				</tr>
-				<tr>
-					<td>Tot. conn. wait time</td>
-					<td>{{FormatDurationStat $database.TotalConnWaitTime}}</td>
-				</tr>
-				<tr>
-					<td>Avg. conn. wait time</td>
-					<td>{{FormatDurationStat $database.AverageConnWaitTime}}</td>
-				</tr>
+				<tbody>
+					<tr>
+						<td>Max open conns.</td>
+						<td>
+							{{if $database.MaxOpenConns}}
+								<span data-locale-number>{{$database.MaxOpenConns}}</span>
+							{{else}}
+								∞
+							{{end}}
+						</td>
+					</tr>
+					<tr>
+						<td>In use conns.</td>
+						<td data-locale-number>{{$database.InUseConns}}</td>
+					</tr>
+					<tr>
+						<td>Idle conns.</td>
+						<td data-locale-number>{{$database.IdleConns}}</td>
+					</tr>
+					<tr>
+						<td>Conn. wait count</td>
+						<td data-locale-number>{{$database.ConnWaitCount}}</td>
+					</tr>
+					<tr>
+						<td>Tot. conn. wait time</td>
+						<td>{{FormatDurationStat $database.TotalConnWaitTime}}</td>
+					</tr>
+					<tr>
+						<td>Avg. conn. wait time</td>
+						<td>{{FormatDurationStat $database.AverageConnWaitTime}}</td>
+					</tr>
 
-				{{if $database.TotalTransactionsBegun}}
-					<tr>
-						<td>Txs. begun</td>
-						<td data-locale-number>{{$database.TotalTransactionsBegun}}</td>
-					</tr>
-					<tr>
-						<td>Txs. committed</td>
-						<td data-locale-number>{{$database.TotalTransactionsCommitted}} <small data-locale-number>({{printf "%.2f" $database.TransactionCommitRate}}&percnt;)</small></td>
-					</tr>
-					<tr>
-						<td>Txs. rolled back</td>
-						<td data-locale-number>{{$database.TotalTransactionsRolledBack}} <small data-locale-number>({{printf "%.2f" $database.TransactionRollbackRate}}&percnt;)</small></td>
-					</tr>
-					<tr>
-						<td>Txs. cancelled</td>
-						<td data-locale-number>{{$database.TotalTransactionsCancelled}} <small data-locale-number>({{printf "%.2f" $database.TransactionCancelRate}}&percnt;)</small></td>
-					</tr>
-				{{end}}
+					{{if $database.TotalTransactionsBegun}}
+						<tr>
+							<td>Txs. begun</td>
+							<td data-locale-number>{{$database.TotalTransactionsBegun}}</td>
+						</tr>
+						<tr>
+							<td>Txs. committed</td>
+							<td data-locale-number>{{$database.TotalTransactionsCommitted}} <small data-locale-number>({{printf "%.2f" $database.TransactionCommitRate}}&percnt;)</small></td>
+						</tr>
+						<tr>
+							<td>Txs. rolled back</td>
+							<td data-locale-number>{{$database.TotalTransactionsRolledBack}} <small data-locale-number>({{printf "%.2f" $database.TransactionRollbackRate}}&percnt;)</small></td>
+						</tr>
+						<tr>
+							<td>Txs. cancelled</td>
+							<td data-locale-number>{{$database.TotalTransactionsCancelled}} <small data-locale-number>({{printf "%.2f" $database.TransactionCancelRate}}&percnt;)</small></td>
+						</tr>
+					{{end}}
 
-				{{if $database.TotalReads}}
-					<tr>
-						<td>Tot. reads</td>
-						<td data-locale-number>{{$database.TotalReads}}</td>
-					</tr>
-				{{end}}
+					{{if $database.TotalReads}}
+						<tr>
+							<td>Tot. reads</td>
+							<td data-locale-number>{{$database.TotalReads}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.TotalReadTime}}
-					<tr>
-						<td>Tot. read time</td>
-						<td>{{FormatDurationStat $database.TotalReadTime}}</td>
-					</tr>
-				{{end}}
+					{{if $database.TotalReadTime}}
+						<tr>
+							<td>Tot. read time</td>
+							<td>{{FormatDurationStat $database.TotalReadTime}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.AverageReadTime}}
-					<tr>
-						<td>Avg. read time</td>
-						<td>{{FormatDurationStat $database.AverageReadTime}}</td>
-					</tr>
-				{{end}}
+					{{if $database.AverageReadTime}}
+						<tr>
+							<td>Avg. read time</td>
+							<td>{{FormatDurationStat $database.AverageReadTime}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.TotalWrites}}
-					<tr>
-						<td>Tot. writes</td>
-						<td data-locale-number>{{$database.TotalWrites}}</td>
-					</tr>
-				{{end}}
+					{{if $database.TotalWrites}}
+						<tr>
+							<td>Tot. writes</td>
+							<td data-locale-number>{{$database.TotalWrites}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.TotalWriteTime}}
-					<tr>
-						<td>Tot. write time</td>
-						<td>{{FormatDurationStat $database.TotalWriteTime}}</td>
-					</tr>
-				{{end}}
+					{{if $database.TotalWriteTime}}
+						<tr>
+							<td>Tot. write time</td>
+							<td>{{FormatDurationStat $database.TotalWriteTime}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.AverageWriteTime}}
-					<tr>
-						<td>Avg. write time</td>
-						<td>{{FormatDurationStat $database.AverageWriteTime}}</td>
-					</tr>
-				{{end}}
+					{{if $database.AverageWriteTime}}
+						<tr>
+							<td>Avg. write time</td>
+							<td>{{FormatDurationStat $database.AverageWriteTime}}</td>
+						</tr>
+					{{end}}
 
-				{{if and $database.TotalReads $database.TotalWrites $database.AverageReadsPerWrite}}
-					<tr>
-						<td>Avg. reads/write</td>
-						<td data-locale-number>{{printf "%.2f" $database.AverageReadsPerWrite}}</td>
-					</tr>
-				{{end}}
+					{{if and $database.TotalReads $database.TotalWrites $database.AverageReadsPerWrite}}
+						<tr>
+							<td>Avg. reads/write</td>
+							<td data-locale-number>{{printf "%.2f" $database.AverageReadsPerWrite}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.TotalQueries}}
-					<tr>
-						<td>Tot. queries</td>
-						<td data-locale-number>{{$database.TotalQueries}}</td>
-					</tr>
-				{{end}}
+					{{if $database.TotalQueries}}
+						<tr>
+							<td>Tot. queries</td>
+							<td data-locale-number>{{$database.TotalQueries}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.TotalQueryTime}}
-					<tr>
-						<td>Tot. query time</td>
-						<td>{{FormatDurationStat $database.TotalQueryTime}}</td>
-					</tr>
-				{{end}}
+					{{if $database.TotalQueryTime}}
+						<tr>
+							<td>Tot. query time</td>
+							<td>{{FormatDurationStat $database.TotalQueryTime}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.AverageQueryTime}}
-					<tr>
-						<td>Avg. query time</td>
-						<td>{{FormatDurationStat $database.AverageQueryTime}}</td>
-					</tr>
-				{{end}}
+					{{if $database.AverageQueryTime}}
+						<tr>
+							<td>Avg. query time</td>
+							<td>{{FormatDurationStat $database.AverageQueryTime}}</td>
+						</tr>
+					{{end}}
 
-				{{if and $database.TotalTransactionsBegun $database.AverageTransactionQueries}}
-					<tr>
-						<td>Avg. queries/tx.</td>
-						<td data-locale-number>{{printf "%.2f" $database.AverageTransactionQueries}}</td>
-					</tr>
-				{{end}}
+					{{if and $database.TotalTransactionsBegun $database.AverageTransactionQueries}}
+						<tr>
+							<td>Avg. queries/tx.</td>
+							<td data-locale-number>{{printf "%.2f" $database.AverageTransactionQueries}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.TotalRowsOpened}}
-					<tr>
-						<td>Tot. rows opened</td>
-						<td data-locale-number>{{$database.TotalRowsOpened}}</td>
-					</tr>
-				{{end}}
+					{{if $database.TotalRowsOpened}}
+						<tr>
+							<td>Tot. rows opened</td>
+							<td data-locale-number>{{$database.TotalRowsOpened}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.TotalRowsClosed}}
-					<tr>
-						<td>Tot. rows closed</td>
-						<td data-locale-number>{{$database.TotalRowsClosed}}</td>
-					</tr>
-				{{end}}
+					{{if $database.TotalRowsClosed}}
+						<tr>
+							<td>Tot. rows closed</td>
+							<td data-locale-number>{{$database.TotalRowsClosed}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.TotalRowsTime}}
-					<tr>
-						<td>Tot. rows time</td>
-						<td>{{FormatDurationStat $database.TotalRowsTime}}</td>
-					</tr>
-				{{end}}
+					{{if $database.TotalRowsTime}}
+						<tr>
+							<td>Tot. rows time</td>
+							<td>{{FormatDurationStat $database.TotalRowsTime}}</td>
+						</tr>
+					{{end}}
 
-				{{if $database.AverageRowsTime}}
-					<tr>
-						<td>Avg. rows time</td>
-						<td>{{FormatDurationStat $database.AverageRowsTime}}</td>
-					</tr>
-				{{end}}
+					{{if $database.AverageRowsTime}}
+						<tr>
+							<td>Avg. rows time</td>
+							<td>{{FormatDurationStat $database.AverageRowsTime}}</td>
+						</tr>
+					{{end}}
+				</tbody>
 			</table>
 		</div>
 	{{end}}
@@ -261,82 +267,88 @@
 			<h3>Totals</h3>
 
 			<table class="metrics">
-				<tr>
-					<td>Requests received</td>
-					<td data-locale-number>{{$metrics.TotalRequestsReceived}}</td>
-				</tr>
-				<tr>
-					<td>Requests in-flight</td>
-					<td data-locale-number>{{$metrics.TotalRequestsInFlight}}</td>
-				</tr>
-				<tr>
-					<td>Responses sent</td>
-					<td data-locale-number>{{$metrics.TotalResponsesSent}}</td>
-				</tr>
-				<tr>
-					<td>Conns. hijacked</td>
-					<td data-locale-number>{{$metrics.TotalConnectionsHijacked}}</td>
-				</tr>
-				<tr>
-					<td>Data read</td>
-					<td data-locale-number>{{FormatSizeSI $metrics.TotalBytesRead}}</td>
-				</tr>
-				<tr>
-					<td>Data written</td>
-					<td data-locale-number>{{FormatSizeSI $metrics.TotalBytesWritten}}</td>
-				</tr>
-				<tr>
-					<td>Time until first write</td>
-					<td>{{FormatDurationStat $metrics.TotalTimeUntilFirstWrite}}</td>
-				</tr>
-				<tr>
-					<td>Time in handlers</td>
-					<td>{{FormatDurationStat $metrics.TotalTimeInHandlers}}</td>
-				</tr>
-				<tr>
-					<td>Time writing</td>
-					<td>{{FormatDurationStat $metrics.TotalTimeWriting}}</td>
-				</tr>
+				<tbody>
+					<tr>
+						<td>Requests received</td>
+						<td data-locale-number>{{$metrics.TotalRequestsReceived}}</td>
+					</tr>
+					<tr>
+						<td>Requests in-flight</td>
+						<td data-locale-number>{{$metrics.TotalRequestsInFlight}}</td>
+					</tr>
+					<tr>
+						<td>Responses sent</td>
+						<td data-locale-number>{{$metrics.TotalResponsesSent}}</td>
+					</tr>
+					<tr>
+						<td>Conns. hijacked</td>
+						<td data-locale-number>{{$metrics.TotalConnectionsHijacked}}</td>
+					</tr>
+					<tr>
+						<td>Data read</td>
+						<td data-locale-number>{{FormatSizeSI $metrics.TotalBytesRead}}</td>
+					</tr>
+					<tr>
+						<td>Data written</td>
+						<td data-locale-number>{{FormatSizeSI $metrics.TotalBytesWritten}}</td>
+					</tr>
+					<tr>
+						<td>Time until first write</td>
+						<td>{{FormatDurationStat $metrics.TotalTimeUntilFirstWrite}}</td>
+					</tr>
+					<tr>
+						<td>Time in handlers</td>
+						<td>{{FormatDurationStat $metrics.TotalTimeInHandlers}}</td>
+					</tr>
+					<tr>
+						<td>Time writing</td>
+						<td>{{FormatDurationStat $metrics.TotalTimeWriting}}</td>
+					</tr>
+				</tbody>
 			</table>
 
 			<h3>Averages per req.</h3>
 
 			<table class="metrics">
-				<tr>
-					<td>Data read</td>
-					<td data-locale-number>{{FormatSizeSI $metrics.AverageBytesRead}}</td>
-				</tr>
-				<tr>
-					<td>Data written</td>
-					<td data-locale-number>{{FormatSizeSI $metrics.AverageBytesWritten}}</td>
-				</tr>
-				<tr>
-					<td>Time until first write</td>
-					<td>{{FormatDurationStat $metrics.AverageTimeUntilFirstWrite}}</td>
-				</tr>
-				<tr>
-					<td>Time in handlers</td>
-					<td>{{FormatDurationStat $metrics.AverageTimeInHandlers}}</td>
-				</tr>
-				<tr>
-					<td>Time writing</td>
-					<td>{{FormatDurationStat $metrics.AverageTimeWriting}}</td>
-				</tr>
+				<tbody>
+					<tr>
+						<td>Data read</td>
+						<td data-locale-number>{{FormatSizeSI $metrics.AverageBytesRead}}</td>
+					</tr>
+					<tr>
+						<td>Data written</td>
+						<td data-locale-number>{{FormatSizeSI $metrics.AverageBytesWritten}}</td>
+					</tr>
+					<tr>
+						<td>Time until first write</td>
+						<td>{{FormatDurationStat $metrics.AverageTimeUntilFirstWrite}}</td>
+					</tr>
+					<tr>
+						<td>Time in handlers</td>
+						<td>{{FormatDurationStat $metrics.AverageTimeInHandlers}}</td>
+					</tr>
+					<tr>
+						<td>Time writing</td>
+						<td>{{FormatDurationStat $metrics.AverageTimeWriting}}</td>
+					</tr>
+				</tbody>
 			</table>
 
 			<h3>Status codes</h3>
 
 			<table class="metrics">
-				{{range $statusCode, $count := $metrics.TotalResponseStatusCodes}}
-					<tr>
-						<td>{{$statusCode}} {{StatusText $statusCode}}</td>
-						<td data-locale-number>{{$count}}</td>
-					</tr>
-				{{else}}
-					<tr>
-						<td>No responses sent</td>
-					</tr>
-				{{end}}
+				<tbody>
+					{{range $statusCode, $count := $metrics.TotalResponseStatusCodes}}
+						<tr>
+							<td>{{$statusCode}} {{StatusText $statusCode}}</td>
+							<td data-locale-number>{{$count}}</td>
+						</tr>
+					{{else}}
+						<tr>
+							<td>No responses sent</td>
+						</tr>
+					{{end}}
+				</tbody>
 			</table>
 		</div>
 	{{end}}

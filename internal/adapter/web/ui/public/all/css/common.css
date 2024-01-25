@@ -123,7 +123,7 @@
 		border-spacing: 0;
 	}
 
-	th {
+	thead, th {
 		position: sticky;
 		top: 0;
 		background: var(--clr-white-400);

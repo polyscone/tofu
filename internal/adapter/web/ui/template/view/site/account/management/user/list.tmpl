@@ -14,58 +14,62 @@
 {{define "view_body"}}
 
 <table class="management">
-	<tr>
-		<th>Email</th>
-		<th>Last sign in</th>
-		<th class="text-right no-wrap">
-			{{if .Passport.Account.CanInviteUsers}}
-				<a href="{{Path "account.management.user.new"}}{{$.URL.Query.String}}">Invite user</a>
-			{{end}}
-		</th>
-	</tr>
-
-	{{range .Vars.Users.Page.Rows}}
-		<tr{{if eq .ID $.Session.HighlightID}} class="management__highlight"{{end}}>
-			<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
-			<td>
-				{{if not .LastSignedInAt.IsZero}}
-					<time
-						title="{{FormatTime .LastSignedInAt "RFC1123"}}"
-						datetime="{{FormatTime .LastSignedInAt "RFC3339"}}"
-						data-skip
-					>{{FormatDuration (TimeSince .LastSignedInAt)}} ago</time>
-					({{.LastSignedInMethod}})
+	<thead>
+		<tr>
+			<th>Email</th>
+			<th>Last sign in</th>
+			<th class="text-right no-wrap">
+				{{if .Passport.Account.CanInviteUsers}}
+					<a href="{{Path "account.management.user.new"}}{{$.URL.Query.String}}">Invite user</a>
 				{{end}}
-			</td>
-			<td class="text-right">
-				{{if .IsSuspended}}
-					Suspended
-				{{end}}
+			</th>
+		</tr>
+	</thead>
 
-				{{if .VerifiedAt.IsZero}}
-					Unverified
-				{{else if .ActivatedAt.IsZero}}
-					{{if $.Passport.Account.CanActivateUsers}}
-						<a href="{{Path "account.management.user.activate" "{userID}" .ID}}{{$.URL.Query.String}}">Activate</a>
-					{{else}}
-						Unactivated
+	<tbody>
+		{{range .Vars.Users.Page.Rows}}
+			<tr{{if eq .ID $.Session.HighlightID}} class="management__highlight"{{end}}>
+				<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
+				<td>
+					{{if not .LastSignedInAt.IsZero}}
+						<time
+							title="{{FormatTime .LastSignedInAt "RFC1123"}}"
+							datetime="{{FormatTime .LastSignedInAt "RFC3339"}}"
+							data-skip
+						>{{FormatDuration (TimeSince .LastSignedInAt)}} ago</time>
+						({{.LastSignedInMethod}})
 					{{end}}
-				{{end}}
+				</td>
+				<td class="text-right">
+					{{if .IsSuspended}}
+						Suspended
+					{{end}}
 
-				{{if and (not .TOTPResetRequestedAt.IsZero) $.Passport.Account.CanReviewTOTPResets}}
-					<a href="{{Path "account.management.user.totp_reset_review" "{userID}" .ID}}{{$.URL.Query.String}}">Review 2FA reset request</a>
-				{{end}}
+					{{if .VerifiedAt.IsZero}}
+						Unverified
+					{{else if .ActivatedAt.IsZero}}
+						{{if $.Passport.Account.CanActivateUsers}}
+							<a href="{{Path "account.management.user.activate" "{userID}" .ID}}{{$.URL.Query.String}}">Activate</a>
+						{{else}}
+							Unactivated
+						{{end}}
+					{{end}}
 
-				{{if $.Passport.Account.CanChangeRoles .ID}}
-					<a href="{{Path "account.management.user.edit" "{userID}" .ID}}{{$.URL.Query.String}}">Edit</a>
-				{{end}}
-			</td>
-		</tr>
-	{{else}}
-		<tr class="management__empty">
-			<td colspan="3">No users found</td>
-		</tr>
-	{{end}}
+					{{if and (not .TOTPResetRequestedAt.IsZero) $.Passport.Account.CanReviewTOTPResets}}
+						<a href="{{Path "account.management.user.totp_reset_review" "{userID}" .ID}}{{$.URL.Query.String}}">Review 2FA reset request</a>
+					{{end}}
+
+					{{if $.Passport.Account.CanChangeRoles .ID}}
+						<a href="{{Path "account.management.user.edit" "{userID}" .ID}}{{$.URL.Query.String}}">Edit</a>
+					{{end}}
+				</td>
+			</tr>
+		{{else}}
+			<tr class="management__empty">
+				<td colspan="3">No users found</td>
+			</tr>
+		{{end}}
+	</tbody>
 </table>
 
 {{template "com_pagination" .WithComData "Book" .Vars.Users}}
