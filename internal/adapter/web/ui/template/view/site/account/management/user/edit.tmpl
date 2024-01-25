@@ -28,6 +28,13 @@
 		<p class="text-italic text-bold">This account has not yet been verified.</p>
 	{{end}}
 
+	{{if not .Vars.User.LastSignedInAt.IsZero}}
+		<p>
+			Last signed in
+			<time datetime="{{FormatTime .Vars.User.LastSignedInAt "RFC3339"}}" data-date="full">{{FormatTime .Vars.User.LastSignedInAt "DateTime"}}</time>
+		</p>
+	{{end}}
+
 	{{if $canChangeRoles}}
 		<form action="{{Path "account.management.user.roles.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
 			{{template "com_csrf_input" .}}

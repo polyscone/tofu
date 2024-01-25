@@ -47,6 +47,10 @@ onMount("[data-locale-number]", node => {
 })
 
 onMount("time", node => {
+	if (typeof node.dataset.skip !== "undefined") {
+		return
+	}
+
 	let str = (node.getAttribute("datetime") || node.innerText).trim()
 
 	if (!str.trim()) {

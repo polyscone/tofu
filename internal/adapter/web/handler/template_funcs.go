@@ -118,10 +118,26 @@ func TmplQueryString(q url.Values, pairs ...any) (template.URL, error) {
 	return TmplQueryURL(q), nil
 }
 
+func TmplTimeSince(t time.Time) time.Duration {
+	return time.Since(t)
+}
+
 func TmplFormatTime(t time.Time, format string) string {
 	switch format {
+	case "Kitchen":
+		return t.Format(time.Kitchen)
+
 	case "DateTime":
 		return t.Format(time.DateTime)
+
+	case "DateOnly":
+		return t.Format(time.DateOnly)
+
+	case "TimeOnly":
+		return t.Format(time.TimeOnly)
+
+	case "RFC1123":
+		return t.Format(time.RFC1123)
 
 	case "RFC3339":
 		return t.Format(time.RFC3339)

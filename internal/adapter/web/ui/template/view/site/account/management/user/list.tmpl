@@ -29,7 +29,11 @@
 			<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
 			<td>
 				{{if not .LastSignedInAt.IsZero}}
-					<time datetime="{{FormatTime .LastSignedInAt "RFC3339"}}" data-date="full">{{FormatTime .LastSignedInAt "DateTime"}}</time>
+					<time
+						title="{{FormatTime .LastSignedInAt "RFC1123"}}"
+						datetime="{{FormatTime .LastSignedInAt "RFC3339"}}"
+						data-skip
+					>{{FormatDuration (TimeSince .LastSignedInAt)}} ago</time>
 					({{.LastSignedInMethod}})
 				{{end}}
 			</td>

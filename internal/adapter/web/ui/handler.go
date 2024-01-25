@@ -59,6 +59,7 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		"Ints":               handler.TmplInts,
 		"StatusText":         handler.TmplStatusText,
 		"QueryString":        handler.TmplQueryString,
+		"TimeSince":          handler.TmplTimeSince,
 		"FormatTime":         handler.TmplFormatTime,
 		"FormatDuration":     handler.TmplFormatDuration,
 		"FormatDurationStat": handler.TmplFormatDurationStat,

@@ -10,11 +10,44 @@ import (
 func Duration(d time.Duration) string {
 	var parts []string
 
-	hours := int(d.Hours())
+	// We assume a 365 day year
+	// Even though it may not necessarily be correct due to leap years etc.
+	// it's a close enough approximation for a user-friendly display string
+	years := int(d.Hours() / 24 / 365)
+	if years == 1 {
+		parts = append(parts, fmt.Sprintf("%v year", years))
+	} else if years > 1 {
+		parts = append(parts, fmt.Sprintf("%v years", years))
+	}
+
+	// We assume a 24 hour day
+	// Even though it may not necessarily be correct due to daylight savings etc.
+	// it's a close enough approximation for a user-friendly display string
+	days := int(math.Mod(d.Hours()/24, 365))
+	if days == 1 {
+		parts = append(parts, fmt.Sprintf("%v day", days))
+	} else if days > 1 {
+		parts = append(parts, fmt.Sprintf("%v days", days))
+	}
+
+	// If we have a duration in years then we don't need a higher resolution
+	// description than years and days
+	if years > 0 {
+		return AndList(parts)
+	}
+
+	// Assuming a good enough approximation of a 24 hour day
+	hours := int(math.Mod(d.Hours(), 24))
 	if hours == 1 {
 		parts = append(parts, fmt.Sprintf("%v hour", hours))
 	} else if hours > 1 {
 		parts = append(parts, fmt.Sprintf("%v hours", hours))
+	}
+
+	// If we have a duration in days then we don't need a higher resolution
+	// description than days and hours
+	if days > 0 {
+		return AndList(parts)
 	}
 
 	minutes := int(math.Mod(d.Minutes(), 60))
