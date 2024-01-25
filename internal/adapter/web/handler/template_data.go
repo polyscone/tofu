@@ -50,6 +50,31 @@ type Query struct {
 	url.Values
 }
 
+func (q Query) GetOr(key string, fallback any) string {
+	if q.Values == nil {
+		return fmt.Sprintf("%v", fallback)
+	}
+
+	return q.Get(key)
+}
+
+func (q Query) GetAll(key string) []string {
+	return q.Values[key]
+}
+
+func (q Query) GetAllOr(key string, fallback any) ([]string, error) {
+	if q.Values == nil {
+		return TmplToStrings(fallback)
+	}
+
+	values := q.Values[key]
+	if values == nil {
+		return TmplToStrings(fallback)
+	}
+
+	return values, nil
+}
+
 func (q Query) String(pairs ...any) (template.URL, error) {
 	return TmplQueryString(q.Values, pairs...)
 }
