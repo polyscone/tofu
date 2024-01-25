@@ -1,7 +1,10 @@
 package account
 
 type Invited struct {
-	Email string
+	Email  string
+	System string
+	Method string
+	Kind   string
 }
 
 type SignedUp struct {
@@ -31,7 +34,11 @@ type Verified struct {
 }
 
 type Activated struct {
-	Email string
+	Email       string
+	System      string
+	Method      string
+	Kind        string
+	HasPassword bool
 }
 
 type Suspended struct {

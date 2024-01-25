@@ -73,7 +73,13 @@ func TestSignInWithFacebook(t *testing.T) {
 			Method: account.SignUpMethodFacebook,
 			Kind:   account.SignUpKindSocial,
 		})
-		events.Expect(account.Activated{Email: "bar@example.com"})
+		events.Expect(account.Activated{
+			Email:       "bar@example.com",
+			System:      "site",
+			Method:      account.SignUpMethodFacebook,
+			Kind:        account.SignUpKindSocial,
+			HasPassword: false,
+		})
 		events.Expect(account.SignedIn{
 			Email:  "bar@example.com",
 			System: "site",

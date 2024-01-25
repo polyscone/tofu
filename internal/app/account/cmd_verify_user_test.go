@@ -55,7 +55,13 @@ func TestVerifyUser(t *testing.T) {
 		}
 
 		events.Expect(account.Verified{Email: user.Email})
-		events.Expect(account.Activated{Email: user.Email})
+		events.Expect(account.Activated{
+			Email:       user.Email,
+			System:      "site",
+			Method:      account.SignUpMethodForm,
+			Kind:        account.SignUpKindAccount,
+			HasPassword: true,
+		})
 		events.Expect(account.RolesChanged{Email: user.Email})
 
 		user = errsx.Must(repo.FindUserByEmail(ctx, user.Email))
@@ -87,7 +93,13 @@ func TestVerifyUser(t *testing.T) {
 		}
 
 		events.Expect(account.Verified{Email: user.Email})
-		events.Expect(account.Activated{Email: user.Email})
+		events.Expect(account.Activated{
+			Email:       user.Email,
+			System:      "site",
+			Method:      account.SignUpMethodInvite,
+			Kind:        account.SignUpKindAccount,
+			HasPassword: true,
+		})
 
 		user = errsx.Must(repo.FindUserByEmail(ctx, user.Email))
 

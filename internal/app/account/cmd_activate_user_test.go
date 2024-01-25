@@ -48,7 +48,13 @@ func TestActivateUser(t *testing.T) {
 		}
 
 		events.Expect(account.Verified{Email: user1.Email})
-		events.Expect(account.Activated{Email: user1.Email})
+		events.Expect(account.Activated{
+			Email:       user1.Email,
+			System:      "site",
+			Method:      account.SignUpMethodForm,
+			Kind:        account.SignUpKindAccount,
+			HasPassword: true,
+		})
 		events.Expect(account.RolesChanged{Email: user1.Email})
 
 		user1 = errsx.Must(repo.FindUserByEmail(ctx, user1.Email))
@@ -82,7 +88,13 @@ func TestActivateUser(t *testing.T) {
 		}
 
 		events.Expect(account.Verified{Email: user2.Email})
-		events.Expect(account.Activated{Email: user2.Email})
+		events.Expect(account.Activated{
+			Email:       user2.Email,
+			System:      "site",
+			Method:      account.SignUpMethodForm,
+			Kind:        account.SignUpKindAccount,
+			HasPassword: true,
+		})
 
 		superUserCount = errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
 		if want, got := 1, superUserCount; want != got {

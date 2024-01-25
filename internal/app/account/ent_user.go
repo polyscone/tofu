@@ -24,6 +24,7 @@ const (
 	SignInMethodGoogle   = "google"
 	SignInMethodFacebook = "facebook"
 
+	SignUpKindNone    = ""
 	SignUpKindAccount = "account"
 	SignUpKindSocial  = "social"
 
@@ -31,6 +32,7 @@ const (
 	SignUpMethodForm     = "form"
 	SignUpMethodGoogle   = "google"
 	SignUpMethodFacebook = "facebook"
+	SignUpMethodInvite   = "invite"
 )
 
 var (
@@ -147,7 +149,7 @@ func (u *User) IsSuspended() bool {
 	return !u.SuspendedAt.IsZero()
 }
 
-func (u *User) Invite() error {
+func (u *User) Invite(system string) error {
 	if !u.VerifiedAt.IsZero() {
 		return errors.New("cannot invite an already verified user")
 	}
@@ -156,23 +158,38 @@ func (u *User) Invite() error {
 		u.InvitedAt = time.Now().UTC()
 	}
 
-	u.Events.Enqueue(Invited{Email: u.Email})
+	u.SignedUpSystem = system
+	u.SignedUpMethod = SignUpMethodInvite
+
+	u.Events.Enqueue(Invited{
+		Email:  u.Email,
+		System: system,
+		Method: SignUpMethodInvite,
+		Kind:   SignUpKindAccount,
+	})
 
 	return nil
 }
 
+func (u *User) SignedUpKind() string {
+	switch u.SignedUpMethod {
+	case SignUpMethodForm, SignUpMethodInvite:
+		return SignUpKindAccount
+
+	case SignUpMethodGoogle, SignUpMethodFacebook:
+		return SignUpKindSocial
+	}
+
+	return SignUpKindNone
+}
+
 func (u *User) SignUp(system string) error {
 	if !u.ActivatedAt.IsZero() {
-		kind := SignUpKindAccount
-		if u.SignedUpMethod != SignUpMethodForm {
-			kind = SignUpKindSocial
-		}
-
 		u.Events.Enqueue(AlreadySignedUp{
 			Email:       u.Email,
 			System:      system,
 			Method:      u.SignedUpMethod,
-			Kind:        kind,
+			Kind:        u.SignedUpKind(),
 			HasPassword: len(u.HashedPassword) > 0,
 		})
 
@@ -279,7 +296,13 @@ func (u *User) Activate() error {
 
 	u.ActivatedAt = time.Now().UTC()
 
-	u.Events.Enqueue(Activated{Email: u.Email})
+	u.Events.Enqueue(Activated{
+		Email:       u.Email,
+		System:      u.SignedUpSystem,
+		Method:      u.SignedUpMethod,
+		Kind:        u.SignedUpKind(),
+		HasPassword: len(u.HashedPassword) > 0,
+	})
 
 	return nil
 }

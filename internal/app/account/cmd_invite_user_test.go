@@ -24,7 +24,7 @@ func TestInviteUser(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -33,7 +33,12 @@ func TestInviteUser(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.Invited{Email: "foo@example.com"})
+		events.Expect(account.Invited{
+			Email:  "foo@example.com",
+			System: "site",
+			Method: account.SignUpMethodInvite,
+			Kind:   account.SignUpKindAccount,
+		})
 
 		user, err := repo.FindUserByEmail(ctx, "foo@example.com")
 		if err != nil {
@@ -46,12 +51,20 @@ func TestInviteUser(t *testing.T) {
 		if !user.SignedUpAt.IsZero() {
 			t.Error("want signed up at to be zero")
 		}
+		if want, got := "site", user.SignedUpSystem; want != got {
+			t.Errorf("want signed up system to be %q; got %q", want, got)
+		}
 
 		if _, err := svc.InviteUser(ctx, validGuard, "foo@example.com"); err != nil {
 			t.Fatal(err)
 		}
 
-		events.Expect(account.Invited{Email: "foo@example.com"})
+		events.Expect(account.Invited{
+			Email:  "foo@example.com",
+			System: "site",
+			Method: account.SignUpMethodInvite,
+			Kind:   account.SignUpKindAccount,
+		})
 	})
 
 	t.Run("error cases", func(t *testing.T) {
@@ -90,7 +103,7 @@ func TestInviteUser(t *testing.T) {
 
 	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, _ := NewTestEnv(ctx)
+		svc, broker, _ := NewTestEnvWithSystem(ctx, "site")
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -115,7 +128,12 @@ func TestInviteUser(t *testing.T) {
 				_, err := svc.InviteUser(ctx, validGuard, tc.email)
 				switch {
 				case err == nil:
-					events.Expect(account.Invited{Email: tc.email})
+					events.Expect(account.Invited{
+						Email:  tc.email,
+						System: "site",
+						Method: account.SignUpMethodInvite,
+						Kind:   account.SignUpKindAccount,
+					})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)

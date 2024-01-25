@@ -69,7 +69,7 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 
 	switch {
 	case tu.Invited:
-		errsx.Must0(user.Invite())
+		errsx.Must0(user.Invite(tu.SignUpSystem))
 
 	case tu.VerifyNoPassword:
 		errsx.Must0(user.SignUpWithGoogle(tu.SignUpSystem))

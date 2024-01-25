@@ -73,7 +73,13 @@ func TestSignInWithGoogle(t *testing.T) {
 			Method: account.SignUpMethodGoogle,
 			Kind:   account.SignUpKindSocial,
 		})
-		events.Expect(account.Activated{Email: "bar@example.com"})
+		events.Expect(account.Activated{
+			Email:       "bar@example.com",
+			System:      "site",
+			Method:      account.SignUpMethodGoogle,
+			Kind:        account.SignUpKindSocial,
+			HasPassword: false,
+		})
 		events.Expect(account.SignedIn{
 			Email:  "bar@example.com",
 			System: "site",
