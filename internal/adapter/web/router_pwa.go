@@ -29,7 +29,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 	h.Broker.Listen(event.AlreadySignedUpHandler(h))
 	h.Broker.Listen(event.PasswordResetRequestedHandler(h))
-	h.Broker.Listen(event.SignedInWithPasswordHandler(h))
+	h.Broker.Listen(event.SignedInHandler(h))
 	h.Broker.Listen(event.SignedUpHandler(h))
 	h.Broker.Listen(event.TOTPSMSRequestedHandler(h))
 

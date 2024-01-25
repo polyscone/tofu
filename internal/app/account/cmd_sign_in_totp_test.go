@@ -17,7 +17,7 @@ import (
 func TestSignInWithTOTP(t *testing.T) {
 	t.Run("success for valid user id and correct totp", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "bob@jones.com", ActivateTOTP: true})
 
@@ -66,7 +66,12 @@ func TestSignInWithTOTP(t *testing.T) {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
-		events.Expect(account.SignedInWithTOTP{Email: user.Email})
+		events.Expect(account.SignedIn{
+			Email:  user.Email,
+			System: "site",
+			Method: account.SignInMethodForm,
+			Kind:   account.SignInKindTOTP,
+		})
 
 		user, err = repo.FindUserByID(ctx, user.ID)
 		if err != nil {
@@ -147,7 +152,7 @@ func TestSignInWithTOTP(t *testing.T) {
 
 	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -171,7 +176,12 @@ func TestSignInWithTOTP(t *testing.T) {
 				err := svc.SignInWithTOTP(ctx, user.ID, tc.totp)
 				switch {
 				case err == nil:
-					events.Expect(account.SignedInWithTOTP{Email: user.Email})
+					events.Expect(account.SignedIn{
+						Email:  user.Email,
+						System: "site",
+						Method: account.SignInMethodForm,
+						Kind:   account.SignInKindTOTP,
+					})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)

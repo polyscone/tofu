@@ -17,7 +17,7 @@ import (
 func TestSignInWithRecoveryCode(t *testing.T) {
 	t.Run("success for valid user id and correct recovery code", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		user, codes := MustAddUserRecoveryCodes(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 		hashedCodes := user.HashedRecoveryCodes
@@ -70,7 +70,12 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			t.Errorf("want <nil>; got %q", err)
 		}
 
-		events.Expect(account.SignedInWithRecoveryCode{Email: user.Email})
+		events.Expect(account.SignedIn{
+			Email:  user.Email,
+			System: "site",
+			Method: account.SignInMethodForm,
+			Kind:   account.SignInKindRecoveryCode,
+		})
 
 		user, err = repo.FindUserByID(ctx, user.ID)
 		if err != nil {
@@ -141,7 +146,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 
 	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -168,7 +173,12 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 				err := svc.SignInWithRecoveryCode(ctx, user.ID, tc.code)
 				switch {
 				case err == nil:
-					events.Expect(account.SignedInWithRecoveryCode{Email: user.Email})
+					events.Expect(account.SignedIn{
+						Email:  user.Email,
+						System: "site",
+						Method: account.SignInMethodForm,
+						Kind:   account.SignInKindRecoveryCode,
+					})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)

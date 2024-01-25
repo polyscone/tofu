@@ -26,6 +26,8 @@ func TestSignUp(t *testing.T) {
 		events.Expect(account.SignedUp{
 			Email:  "foo@example.com",
 			System: "site",
+			Method: account.SignUpMethodForm,
+			Kind:   account.SignUpKindAccount,
 		})
 
 		user, err := repo.FindUserByEmail(ctx, "foo@example.com")
@@ -50,6 +52,8 @@ func TestSignUp(t *testing.T) {
 		events.Expect(account.SignedUp{
 			Email:  "foo@example.com",
 			System: "site",
+			Method: account.SignUpMethodForm,
+			Kind:   account.SignUpKindAccount,
 		})
 	})
 
@@ -70,6 +74,8 @@ func TestSignUp(t *testing.T) {
 		events.Expect(account.SignedUp{
 			Email:  user.Email,
 			System: "pwa",
+			Method: account.SignUpMethodForm,
+			Kind:   account.SignUpKindAccount,
 		})
 
 		user, err := repo.FindUserByEmail(ctx, user.Email)
@@ -97,8 +103,11 @@ func TestSignUp(t *testing.T) {
 		// Even though the user is already activated through the site we want the
 		// event to record the current system they're using, which is "pwa" here
 		events.Expect(account.AlreadySignedUp{
-			Email:  user.Email,
-			System: "pwa",
+			Email:       user.Email,
+			System:      "pwa",
+			Method:      account.SignUpMethodForm,
+			Kind:        account.SignUpKindAccount,
+			HasPassword: true,
 		})
 
 		user, err := repo.FindUserByEmail(ctx, user.Email)
@@ -141,6 +150,8 @@ func TestSignUp(t *testing.T) {
 					events.Expect(account.SignedUp{
 						Email:  tc.email,
 						System: user.SignedUpSystem,
+						Method: account.SignUpMethodForm,
+						Kind:   account.SignUpKindAccount,
 					})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):

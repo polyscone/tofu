@@ -14,10 +14,18 @@ import (
 )
 
 const (
+	SignInKindPassword     = "password"
+	SignInKindSocial       = "social"
+	SignInKindTOTP         = "totp"
+	SignInKindRecoveryCode = "recovery code"
+
 	SignInMethodNone     = ""
 	SignInMethodForm     = "form"
 	SignInMethodGoogle   = "google"
 	SignInMethodFacebook = "facebook"
+
+	SignUpKindAccount = "account"
+	SignUpKindSocial  = "social"
 
 	SignUpMethodNone     = ""
 	SignUpMethodForm     = "form"
@@ -155,9 +163,17 @@ func (u *User) Invite() error {
 
 func (u *User) SignUp(system string) error {
 	if !u.ActivatedAt.IsZero() {
+		kind := SignUpKindAccount
+		if u.SignedUpMethod != SignUpMethodForm {
+			kind = SignUpKindSocial
+		}
+
 		u.Events.Enqueue(AlreadySignedUp{
-			Email:  u.Email,
-			System: system,
+			Email:       u.Email,
+			System:      system,
+			Method:      u.SignedUpMethod,
+			Kind:        kind,
+			HasPassword: len(u.HashedPassword) > 0,
 		})
 
 		return nil
@@ -173,6 +189,8 @@ func (u *User) SignUp(system string) error {
 	u.Events.Enqueue(SignedUp{
 		Email:  u.Email,
 		System: system,
+		Method: SignUpMethodForm,
+		Kind:   SignUpKindAccount,
 	})
 
 	return nil
@@ -196,9 +214,11 @@ func (u *User) SignUpWithGoogle(system string) error {
 	u.SignedUpSystem = system
 	u.SignedUpMethod = SignUpMethodGoogle
 
-	u.Events.Enqueue(SignedUpWithGoogle{
+	u.Events.Enqueue(SignedUp{
 		Email:  u.Email,
 		System: system,
+		Method: SignUpMethodGoogle,
+		Kind:   SignUpKindSocial,
 	})
 
 	return nil
@@ -222,9 +242,11 @@ func (u *User) SignUpWithFacebook(system string) error {
 	u.SignedUpSystem = system
 	u.SignedUpMethod = SignUpMethodFacebook
 
-	u.Events.Enqueue(SignedUpWithFacebook{
+	u.Events.Enqueue(SignedUp{
 		Email:  u.Email,
 		System: system,
+		Method: SignUpMethodFacebook,
+		Kind:   SignUpKindSocial,
 	})
 
 	return nil
@@ -678,7 +700,12 @@ func (u *User) SignInWithPassword(system string, password Password, hasher Hashe
 		u.LastSignedInMethod = u.LastSignInAttemptMethod
 	}
 
-	u.Events.Enqueue(SignedInWithPassword{Email: u.Email})
+	u.Events.Enqueue(SignedIn{
+		Email:  u.Email,
+		System: system,
+		Method: SignInMethodForm,
+		Kind:   SignInKindPassword,
+	})
 
 	return rehashed, nil
 }
@@ -705,7 +732,12 @@ func (u *User) SignInWithTOTP(system string, totp TOTP) error {
 	u.LastSignedInSystem = system
 	u.LastSignedInMethod = u.LastSignInAttemptMethod
 
-	u.Events.Enqueue(SignedInWithTOTP{Email: u.Email})
+	u.Events.Enqueue(SignedIn{
+		Email:  u.Email,
+		System: system,
+		Method: u.LastSignedInMethod,
+		Kind:   SignInKindTOTP,
+	})
 
 	return nil
 }
@@ -755,7 +787,12 @@ func (u *User) SignInWithRecoveryCode(system string, code RecoveryCode) error {
 	u.LastSignedInSystem = system
 	u.LastSignedInMethod = u.LastSignInAttemptMethod
 
-	u.Events.Enqueue(SignedInWithRecoveryCode{Email: u.Email})
+	u.Events.Enqueue(SignedIn{
+		Email:  u.Email,
+		System: system,
+		Method: u.LastSignedInMethod,
+		Kind:   SignInKindRecoveryCode,
+	})
 
 	return nil
 }
@@ -783,7 +820,12 @@ func (u *User) SignInWithGoogle(system string) error {
 		u.LastSignedInMethod = u.LastSignInAttemptMethod
 	}
 
-	u.Events.Enqueue(SignedInWithGoogle{Email: u.Email})
+	u.Events.Enqueue(SignedIn{
+		Email:  u.Email,
+		System: system,
+		Method: SignInMethodGoogle,
+		Kind:   SignInKindSocial,
+	})
 
 	return nil
 }
@@ -811,7 +853,12 @@ func (u *User) SignInWithFacebook(system string) error {
 		u.LastSignedInMethod = u.LastSignInAttemptMethod
 	}
 
-	u.Events.Enqueue(SignedInWithFacebook{Email: u.Email})
+	u.Events.Enqueue(SignedIn{
+		Email:  u.Email,
+		System: system,
+		Method: SignInMethodFacebook,
+		Kind:   SignInKindSocial,
+	})
 
 	return nil
 }

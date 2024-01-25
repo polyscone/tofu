@@ -25,7 +25,7 @@ func TestActivateUser(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com"})
@@ -61,7 +61,12 @@ func TestActivateUser(t *testing.T) {
 			t.Errorf("want to be able to sign in with chosen password; got error: %v", err)
 		}
 
-		events.Expect(account.SignedInWithPassword{Email: user1.Email})
+		events.Expect(account.SignedIn{
+			Email:  user1.Email,
+			System: "site",
+			Method: account.SignInMethodForm,
+			Kind:   account.SignInKindPassword,
+		})
 
 		superUserCount = errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
 		if want, got := 1, superUserCount; want != got {

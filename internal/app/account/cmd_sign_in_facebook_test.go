@@ -13,7 +13,7 @@ import (
 func TestSignInWithFacebook(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", ActivateTOTP: true})
 
@@ -28,7 +28,12 @@ func TestSignInWithFacebook(t *testing.T) {
 			t.Error("want signed in to be true; got false")
 		}
 
-		events.Expect(account.SignedInWithFacebook{Email: user1.Email})
+		events.Expect(account.SignedIn{
+			Email:  user1.Email,
+			System: "site",
+			Method: account.SignInMethodFacebook,
+			Kind:   account.SignInKindSocial,
+		})
 
 		user1, err = repo.FindUserByID(ctx, user1.ID)
 		if err != nil {
@@ -62,12 +67,19 @@ func TestSignInWithFacebook(t *testing.T) {
 			t.Error("want signed in to be true; got false")
 		}
 
-		events.Expect(account.SignedUpWithFacebook{
+		events.Expect(account.SignedUp{
 			Email:  "bar@example.com",
 			System: "site",
+			Method: account.SignUpMethodFacebook,
+			Kind:   account.SignUpKindSocial,
 		})
 		events.Expect(account.Activated{Email: "bar@example.com"})
-		events.Expect(account.SignedInWithFacebook{Email: "bar@example.com"})
+		events.Expect(account.SignedIn{
+			Email:  "bar@example.com",
+			System: "site",
+			Method: account.SignInMethodFacebook,
+			Kind:   account.SignInKindSocial,
+		})
 
 		user2, err := repo.FindUserByEmail(ctx, "bar@example.com")
 		if err != nil {
@@ -107,7 +119,12 @@ func TestSignInWithFacebook(t *testing.T) {
 			t.Error("want signed in to be true; got false")
 		}
 
-		events.Expect(account.SignedInWithFacebook{Email: user2.Email})
+		events.Expect(account.SignedIn{
+			Email:  user2.Email,
+			System: "site",
+			Method: account.SignInMethodFacebook,
+			Kind:   account.SignInKindSocial,
+		})
 
 		user2, err = repo.FindUserByID(ctx, user2.ID)
 		if err != nil {
@@ -172,7 +189,7 @@ func TestSignInWithFacebook(t *testing.T) {
 
 	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Verify: true})
 
@@ -199,7 +216,12 @@ func TestSignInWithFacebook(t *testing.T) {
 				signedIn, err := svc.SignInWithFacebook(ctx, tc.email, account.FacebookAllowSignUpActivate)
 				switch {
 				case err == nil:
-					events.Expect(account.SignedInWithFacebook{Email: tc.email})
+					events.Expect(account.SignedIn{
+						Email:  tc.email,
+						System: "site",
+						Method: account.SignInMethodFacebook,
+						Kind:   account.SignInKindSocial,
+					})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)

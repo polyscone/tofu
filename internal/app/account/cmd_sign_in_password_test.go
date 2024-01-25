@@ -15,7 +15,7 @@ import (
 func TestSignInWithPassword(t *testing.T) {
 	t.Run("success for matching email and password", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
 
@@ -31,7 +31,12 @@ func TestSignInWithPassword(t *testing.T) {
 			t.Errorf("want <nil>; got %v", err)
 		}
 
-		events.Expect(account.SignedInWithPassword{Email: user.Email})
+		events.Expect(account.SignedIn{
+			Email:  user.Email,
+			System: "site",
+			Method: account.SignInMethodForm,
+			Kind:   account.SignInKindPassword,
+		})
 
 		user, err = repo.FindUserByID(ctx, user.ID)
 		if err != nil {
@@ -181,7 +186,7 @@ func TestSignInWithPassword(t *testing.T) {
 
 	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Activate: true})
 
@@ -215,7 +220,12 @@ func TestSignInWithPassword(t *testing.T) {
 				err := svc.SignInWithPassword(ctx, tc.email, tc.password)
 				switch {
 				case err == nil:
-					events.Expect(account.SignedInWithPassword{Email: tc.email})
+					events.Expect(account.SignedIn{
+						Email:  tc.email,
+						System: "site",
+						Method: account.SignInMethodForm,
+						Kind:   account.SignInKindPassword,
+					})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)

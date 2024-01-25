@@ -7,21 +7,23 @@ type Invited struct {
 type SignedUp struct {
 	Email  string
 	System string
+	Method string
+	Kind   string
 }
 
 type AlreadySignedUp struct {
-	Email  string
-	System string
+	Email       string
+	System      string
+	Method      string
+	Kind        string
+	HasPassword bool
 }
 
-type SignedUpWithGoogle struct {
+type SignedIn struct {
 	Email  string
 	System string
-}
-
-type SignedUpWithFacebook struct {
-	Email  string
-	System string
+	Method string
+	Kind   string
 }
 
 type Verified struct {
@@ -43,26 +45,6 @@ type SuspendedReasonChanged struct {
 }
 
 type Unsuspended struct {
-	Email string
-}
-
-type SignedInWithPassword struct {
-	Email string
-}
-
-type SignedInWithTOTP struct {
-	Email string
-}
-
-type SignedInWithRecoveryCode struct {
-	Email string
-}
-
-type SignedInWithGoogle struct {
-	Email string
-}
-
-type SignedInWithFacebook struct {
 	Email string
 }
 
