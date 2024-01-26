@@ -35,9 +35,13 @@ func IsNew(ctx context.Context) bool {
 
 // MaskedToken returns the CSRF token on the given context but masks it using
 // a one time pad every time it's called.
+//
 // This means that the token returned will look different every time the
 // function is called, but will produce the same value when XOR'ed with the key,
 // which is prepended to the data as the first half of the byte slice.
+//
+// This is purely to help mitigate against things like the BREACH attack and a new
+// CSRF token should still be generated on events like auth changes.
 func MaskedToken(ctx context.Context) []byte {
 	data := getCSRF(ctx)
 	masked, err := mask(data.token)
