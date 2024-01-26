@@ -1,7 +1,6 @@
 package httputil
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -26,6 +25,8 @@ var decodeTimeFormats = []string{
 	"2006-01-02T15:04",
 	"2006-01-02Z07:00",
 	"2006-01-02",
+	"2006-01",
+	"2006",
 }
 
 type DecodeValueFunc func(r *http.Request, fieldName, tagValue string) ([]string, error)
@@ -239,7 +240,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 						}
 					}
 					if !success {
-						return errors.New("could not parse string value as time.Time")
+						return fmt.Errorf("could not parse string value %q as time.Time", str)
 					}
 				}
 
