@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/size"
@@ -229,19 +230,41 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 
 			case reflect.TypeOf(time.Time{}):
 				if str != "" {
-					var success bool
+					const unixPrefix = "unix."
+					if strings.HasPrefix(str, unixPrefix) {
+						str = strings.TrimPrefix(str, unixPrefix)
+						_sec, _nsec, ok := strings.Cut(str, ".")
+
+						sec, err := strconv.ParseInt(_sec, 10, 64)
+						if err != nil {
+							return fmt.Errorf("parse time.Time: string value %q is an invalid unix timestamp", str)
+						}
+
+						var nsec int64
+						if ok {
+							var err error
+							nsec, err = strconv.ParseInt(_nsec, 10, 64)
+							if err != nil {
+								return fmt.Errorf("parse time.Time: string value %q is an invalid unix timestamp", str)
+							}
+						}
+
+						t := time.Unix(sec, nsec)
+
+						field.Set(reflect.ValueOf(t))
+
+						return nil
+					}
+
 					for _, format := range decodeTimeFormats {
 						if t, err := time.ParseInLocation(format, str, time.UTC); err == nil {
-							success = true
-
 							field.Set(reflect.ValueOf(t))
 
-							break
+							return nil
 						}
 					}
-					if !success {
-						return fmt.Errorf("could not parse string value %q as time.Time", str)
-					}
+
+					return fmt.Errorf("parse time.Time: string value %q is an invalid time format", str)
 				}
 
 			default:
