@@ -17,9 +17,9 @@ type AccountReader interface {
 	account.Reader
 
 	FindRoles(ctx context.Context, sortTopID int) ([]*account.Role, int, error)
-	FindRolesPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.Role, int, error)
+	FindRolesPageBySearch(ctx context.Context, sortTopID int, sorts []string, search string, page, size int) ([]*account.Role, int, error)
 
-	FindUsersPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.User, int, error)
+	FindUsersPageBySearch(ctx context.Context, sortTopID int, sorts []string, search string, page, size int) ([]*account.User, int, error)
 }
 
 type SystemReader system.Reader

@@ -111,6 +111,18 @@
 		background: var(--clr-highlight-400);
 	}
 
+	.data-table-sort {
+		display: inline-block;
+		padding-inline-start: 0.3rem;
+		font-size: 0.8rem;
+		text-decoration: none;
+		color: var(--clr-black-100);
+	}
+
+	.data-table-sort--active {
+		color: var(--clr-accent-400);
+	}
+
 	.metrics td {
 		padding: 0.1rem 0.3rem;
 	}

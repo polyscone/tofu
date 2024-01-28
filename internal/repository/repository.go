@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
@@ -28,6 +29,37 @@ func (c ConflictError) Error() string {
 
 func (c ConflictError) Unwrap() error {
 	return c.Map
+}
+
+func NewSorts(sorts []string, keysToCols map[string]string) []string {
+	if len(sorts) == 0 || len(keysToCols) == 0 {
+		return nil
+	}
+
+	var results []string
+	for _, pair := range sorts {
+		key, dir, _ := strings.Cut(pair, ".")
+
+		key = strings.TrimSpace(key)
+
+		dir = strings.TrimSpace(dir)
+		dir = strings.ToLower(dir)
+
+		col := keysToCols[key]
+		if col == "" {
+			continue
+		}
+
+		switch dir {
+		case "asc":
+			results = append(results, col+" ASC")
+
+		case "desc":
+			results = append(results, col+" DESC")
+		}
+	}
+
+	return results
 }
 
 type Page[T any] struct {

@@ -158,7 +158,7 @@ func (r *AccountRepo) AddUser(ctx context.Context, user *account.User) error {
 	return nil
 }
 
-func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.User, int, error) {
+func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, sortTopID int, sorts []string, search string, page, size int) ([]*account.User, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, fmt.Errorf("begin tx: %w", err)
@@ -170,6 +170,7 @@ func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, sortTopID int, 
 	return r.findUsers(ctx, tx, account.UserFilter{
 		Search:    &search,
 		SortTopID: sortTopID,
+		Sorts:     sorts,
 		Limit:     limit,
 		Offset:    offset,
 	})
@@ -315,7 +316,7 @@ func (r *AccountRepo) FindRoles(ctx context.Context, sortTopID int) ([]*account.
 	return r.findRoles(ctx, tx, account.RoleFilter{SortTopID: sortTopID})
 }
 
-func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, sortTopID int, search string, page, size int) ([]*account.Role, int, error) {
+func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, sortTopID int, sorts []string, search string, page, size int) ([]*account.Role, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, fmt.Errorf("begin tx: %w", err)
@@ -327,6 +328,7 @@ func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, sortTopID int, 
 	return r.findRoles(ctx, tx, account.RoleFilter{
 		Search:    &search,
 		SortTopID: sortTopID,
+		Sorts:     sorts,
 		Limit:     limit,
 		Offset:    offset,
 	})
@@ -398,6 +400,11 @@ func (r *AccountRepo) FindRecoveryCodesByUserID(ctx context.Context, userID int)
 	return hashedCodes, err
 }
 
+var findUserSortKeyCols = map[string]string{
+	"email":        "u.email",
+	"last-sign-in": "u.last_signed_in_at",
+}
+
 func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.UserFilter) ([]*account.User, int, error) {
 	var joins []string
 	var where []string
@@ -424,7 +431,11 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 		sorts, args = append(sorts, "CASE u.id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
 	}
 
-	sorts = append(sorts, "tr.requested_at DESC, u.email ASC")
+	if s := repository.NewSorts(filter.Sorts, findUserSortKeyCols); len(s) > 0 {
+		sorts = append(sorts, s...)
+	} else {
+		sorts = append(sorts, "tr.requested_at DESC, u.email ASC")
+	}
 
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
@@ -1174,6 +1185,10 @@ func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string)
 	return id, err
 }
 
+var findRolesSortKeyCols = map[string]string{
+	"name": "r.name",
+}
+
 func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.RoleFilter) ([]*account.Role, int, error) {
 	var joins []string
 	var where []string
@@ -1197,7 +1212,12 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 	if filter.SortTopID != 0 {
 		sorts, args = append(sorts, "CASE r.id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
 	}
-	sorts = append(sorts, "name ASC")
+
+	if s := repository.NewSorts(filter.Sorts, findRolesSortKeyCols); len(s) > 0 {
+		sorts = append(sorts, s...)
+	} else {
+		sorts = append(sorts, "r.name ASC")
+	}
 
 	rows, err := tx.QueryContext(ctx, `
 		SELECT

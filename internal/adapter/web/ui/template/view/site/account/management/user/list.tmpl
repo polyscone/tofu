@@ -16,8 +16,8 @@
 <table class="management">
 	<thead>
 		<tr>
-			<th>Email</th>
-			<th>Last sign in</th>
+			<th>Email {{template "com_sort" .WithComData "Key" "email" "Direction" "desc"}}</th>
+			<th>Last sign in {{template "com_sort" .WithComData "Key" "last-sign-in"}}</th>
 			<th class="text-right no-wrap">
 				{{if .Passport.Account.CanInviteUsers}}
 					<a href="{{Path "account.management.user.new"}}{{$.URL.Query.String}}">Invite user</a>

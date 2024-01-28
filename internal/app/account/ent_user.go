@@ -85,6 +85,7 @@ type UserFilter struct {
 	RoleID *int
 
 	SortTopID int
+	Sorts     []string
 
 	Limit  int
 	Offset int

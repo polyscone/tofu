@@ -16,7 +16,7 @@
 <table class="management">
 	<thead>
 		<tr>
-			<th>Name</th>
+			<th>Name {{template "com_sort" .WithComData "Key" "name" "Direction" "desc"}}</th>
 			<th>Description</th>
 			<th class="text-right no-wrap">
 				{{if .Passport.Account.CanCreateRoles}}

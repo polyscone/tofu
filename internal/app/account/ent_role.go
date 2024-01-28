@@ -18,6 +18,7 @@ type RoleFilter struct {
 	Search *string
 
 	SortTopID int
+	Sorts     []string
 
 	Limit  int
 	Offset int

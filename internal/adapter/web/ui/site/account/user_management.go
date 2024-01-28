@@ -80,10 +80,14 @@ func userListGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		sortTopID := h.Sessions.GetInt(ctx, sess.UserID)
+		sortTopID := h.Sessions.PopInt(ctx, sess.SortTopID)
+		if sortTopID == 0 {
+			sortTopID = h.Sessions.GetInt(ctx, sess.UserID)
+		}
+		sorts := r.URL.Query()["sort"]
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
-		users, total, err := h.Repo.Account.FindUsersPageBySearch(ctx, sortTopID, search, page, size)
+		users, total, err := h.Repo.Account.FindUsersPageBySearch(ctx, sortTopID, sorts, search, page, size)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find users page by search", err, "site/error", nil)
 
