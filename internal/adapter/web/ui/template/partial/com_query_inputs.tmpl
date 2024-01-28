@@ -1,0 +1,15 @@
+{{define "com_query_inputs"}}
+
+{{$skip := .ComData.Skip}}
+
+{{range $key, $values := .URL.Query.Values}}
+	{{if SliceContains $skip $key}}
+		{{continue}}
+	{{end}}
+
+	{{range $value := $values}}
+		<input type="hidden" name="{{$key}}" value="{{$value}}">
+	{{end}}
+{{end}}
+
+{{end}}

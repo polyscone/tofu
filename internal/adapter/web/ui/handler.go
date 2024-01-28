@@ -75,6 +75,7 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		"UnescapeHTML":       handler.TmplUnescapeHTML,
 		"UnescapeJS":         handler.TmplUnescapeJS,
 		"Slice":              handler.TmplSlice,
+		"SliceContains":      handler.TmplSliceContains,
 		"Map":                handler.TmplMap,
 		"Path":               h.tmplPath,
 		"HasPathPrefix":      h.tmplHasPathPrefix,

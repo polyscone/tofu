@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -238,6 +239,10 @@ func TmplUnescapeJS(s string) template.JS {
 
 func TmplSlice(elements ...any) []any {
 	return elements
+}
+
+func TmplSliceContains(haystack []any, needle any) bool {
+	return slices.Contains(haystack, needle)
 }
 
 func TmplMap(pairs ...any) (map[string]any, error) {

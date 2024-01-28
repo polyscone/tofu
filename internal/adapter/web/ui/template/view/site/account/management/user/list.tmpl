@@ -5,6 +5,8 @@
 <h1>User management</h1>
 
 <form class="bag">
+	{{template "com_query_inputs" .WithComData "Skip" (Slice "search" "page")}}
+
 	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="Search" class="grow">
 	<button>Search</button>
 </form>
