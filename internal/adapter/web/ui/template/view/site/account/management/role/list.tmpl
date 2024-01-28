@@ -15,7 +15,7 @@
 
 {{define "view_body"}}
 
-<table class="management">
+<table class="data-table">
 	<thead>
 		<tr>
 			<th>Name {{template "com_sort" .WithComData "Key" "name" "Direction" "desc"}}</th>
@@ -30,7 +30,7 @@
 
 	<tbody>
 		{{range .Vars.Roles.Page.Rows}}
-			<tr{{if eq .ID $.Session.HighlightID}} class="management__highlight"{{end}}>
+			<tr{{if eq .ID $.Session.HighlightID}} class="data-table__highlight"{{end}}>
 				<td>{{.Name}}</td>
 				<td>{{.Description}}</td>
 				<td class="text-right no-wrap">
@@ -46,7 +46,7 @@
 				</td>
 			</tr>
 		{{else}}
-			<tr class="management__empty">
+			<tr class="data-table__empty">
 				<td colspan="3">No roles found</td>
 			</tr>
 		{{end}}

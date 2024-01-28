@@ -15,7 +15,7 @@
 
 {{define "view_body"}}
 
-<table class="management">
+<table class="data-table">
 	<thead>
 		<tr>
 			<th>Email {{template "com_sort" .WithComData "Key" "email" "Direction" "desc"}}</th>
@@ -30,7 +30,7 @@
 
 	<tbody>
 		{{range .Vars.Users.Page.Rows}}
-			<tr{{if eq .ID $.Session.HighlightID}} class="management__highlight"{{end}}>
+			<tr{{if eq .ID $.Session.HighlightID}} class="data-table__highlight"{{end}}>
 				<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
 				<td>
 					{{if not .LastSignedInAt.IsZero}}
@@ -67,7 +67,7 @@
 				</td>
 			</tr>
 		{{else}}
-			<tr class="management__empty">
+			<tr class="data-table__empty">
 				<td colspan="3">No users found</td>
 			</tr>
 		{{end}}

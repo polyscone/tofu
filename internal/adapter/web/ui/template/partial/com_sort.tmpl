@@ -32,9 +32,9 @@
 		{{end}}
 	{{end}}
 
-	{{$class := "data-table-sort"}}
+	{{$class := "data-table__sort"}}
 	{{if $isActive}}
-		{{$class = printf "%v data-table-sort--active" $class}}
+		{{$class = printf "%v data-table__sort--active" $class}}
 	{{end}}
 
 	<a href="{{or (.URL.Query.String "sort" $value) .URL.Path}}" aria-label="Sort by {{$key}}" class="{{$class}}">{{$arrow}}</a>
