@@ -26,7 +26,15 @@
 
 				{{range $i := Ints (Sub $book.Page.Number 2) (Add $book.Page.Number 3)}}
 					{{if and (gt $i 0) (le $i $book.TotalPages)}}
-						<li><a href="{{$.URL.Query.String "page" $i}}" aria-label="Page {{$i}}" data-locale-number>{{$i}}</a></li>
+						{{$isActive := eq (printf "%v" $i) ($.URL.Query.Get "page")}}
+						<li>
+							<a
+								href="{{$.URL.Query.String "page" $i}}"
+								aria-label="Page {{$i}}"
+								data-locale-number
+								{{if $isActive}}class="pagination__active"{{end}}
+							>{{$i}}</a>
+						</li>
 					{{end}}
 				{{end}}
 
