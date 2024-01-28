@@ -18,7 +18,7 @@ func Pagination(r *http.Request) (int, int) {
 
 	size, err := strconv.Atoi(r.URL.Query().Get("size"))
 	if err != nil {
-		size = 10
+		size = 20
 	}
 	if size < 1 {
 		size = 1
