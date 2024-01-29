@@ -22,7 +22,7 @@ type Form struct {
 }
 
 func (f Form) GetOr(key string, fallback any) string {
-	if f.Values == nil {
+	if _, ok := f.Values[key]; !ok {
 		return fmt.Sprintf("%v", fallback)
 	}
 
@@ -34,7 +34,7 @@ func (f Form) GetAll(key string) []string {
 }
 
 func (f Form) GetAllOr(key string, fallback any) ([]string, error) {
-	if f.Values == nil {
+	if _, ok := f.Values[key]; !ok {
 		return TmplToStrings(fallback)
 	}
 
@@ -51,7 +51,7 @@ type Query struct {
 }
 
 func (q Query) GetOr(key string, fallback any) string {
-	if q.Values == nil {
+	if _, ok := q.Values[key]; !ok {
 		return fmt.Sprintf("%v", fallback)
 	}
 
@@ -63,7 +63,7 @@ func (q Query) GetAll(key string) []string {
 }
 
 func (q Query) GetAllOr(key string, fallback any) ([]string, error) {
-	if q.Values == nil {
+	if _, ok := q.Values[key]; !ok {
 		return TmplToStrings(fallback)
 	}
 
