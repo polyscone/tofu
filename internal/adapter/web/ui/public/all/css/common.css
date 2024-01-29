@@ -20,7 +20,9 @@
 
 	--clr-white-400: hsl(170, 0%, 100%);
 
-	--clr-link-400: linktext;
+	--clr-link-400: LinkText;
+	--clr-visited-400: VisitedText;
+	--clr-active-400: ActiveText;
 
 	--clr-accent-100: hsl(170, 45%, 97%);
 	--clr-accent-400: hsl(170, 45%, 30%);
@@ -105,6 +107,14 @@
 		color: var(--clr-link-400);
 	}
 
+	a:visited {
+		color: var(--clr-visited-400);
+	}
+
+	a:active {
+		color: var(--clr-active-400);
+	}
+
 	hr {
 		inline-size: 100%;
 		border: none;
@@ -163,7 +173,7 @@
 	}
 
 	:is(button, input, textarea, select):focus {
-		outline: 2px solid linktext;
+		outline: 2px solid var(--clr-link-400);
 	}
 
 	:is(input, textarea, select).invalid:placeholder-shown,
