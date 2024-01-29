@@ -75,8 +75,12 @@ func (q Query) GetAllOr(key string, fallback any) ([]string, error) {
 	return values, nil
 }
 
-func (q Query) String(pairs ...any) (template.URL, error) {
-	return TmplQueryString(q.Values, pairs...)
+func (q Query) String() template.URL {
+	return TmplQueryString(q.Values)
+}
+
+func (q Query) Replace(pairs ...any) (template.URL, error) {
+	return TmplQueryReplace(q.Values, pairs...)
 }
 
 type Vars map[string]any

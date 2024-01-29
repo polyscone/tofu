@@ -54,34 +54,7 @@ func TmplStatusText(code int) string {
 	return strings.ReplaceAll(http.StatusText(code), "z", "s")
 }
 
-func TmplQueryReplace(q url.Values, pairs ...any) (url.Values, error) {
-	if len(pairs)%2 == 1 {
-		return nil, errors.New("QueryReplace: want pairs of key value replacements")
-	}
-
-	u, err := url.Parse("?" + q.Encode())
-	if err != nil {
-		return nil, fmt.Errorf("QueryReplace: parse URL: %w", err)
-	}
-
-	q = u.Query()
-	for i := 0; i < len(pairs); i += 2 {
-		key := fmt.Sprintf("%v", pairs[i])
-		value := pairs[i+1]
-
-		if value == nil {
-			q.Del(key)
-
-			continue
-		}
-
-		q.Set(key, fmt.Sprintf("%v", value))
-	}
-
-	return q, nil
-}
-
-func TmplQueryURL(q url.Values) template.URL {
+func TmplQueryString(q url.Values) template.URL {
 	value := q.Encode()
 
 	if value == "" {
@@ -95,12 +68,36 @@ func TmplQueryURL(q url.Values) template.URL {
 	return template.URL(value)
 }
 
-func TmplQueryString(q url.Values, pairs ...any) (template.URL, error) {
-	q, err := TmplQueryReplace(q, pairs...)
-	if err != nil {
-		return "", fmt.Errorf("QueryString: %w", err)
+func TmplQueryReplace(q url.Values, pairs ...any) (template.URL, error) {
+	if len(pairs) == 0 {
+		return TmplQueryString(q), nil
+	}
+	if len(pairs)%2 == 1 {
+		return "", errors.New("QueryReplace: want pairs of key value replacements")
 	}
 
+	// We re-parse the encoded query values here so we can make a copy and not
+	// alter the values that were passed in
+	u, err := url.Parse("?" + q.Encode())
+	if err != nil {
+		return "", fmt.Errorf("QueryReplace: parse URL: %w", err)
+	}
+	q = u.Query()
+
+	for i := 0; i < len(pairs); i += 2 {
+		key := fmt.Sprintf("%v", pairs[i])
+		value := pairs[i+1]
+
+		if value == nil {
+			q.Del(key)
+
+			continue
+		}
+
+		q.Set(key, fmt.Sprintf("%v", value))
+	}
+
+	// Filter out all keys that have nothing but empty values
 	for key, values := range q {
 		var keep bool
 		for _, value := range values {
@@ -116,7 +113,7 @@ func TmplQueryString(q url.Values, pairs ...any) (template.URL, error) {
 		}
 	}
 
-	return TmplQueryURL(q), nil
+	return TmplQueryString(q), nil
 }
 
 func TmplTimeSince(t time.Time) time.Duration {

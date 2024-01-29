@@ -20,8 +20,8 @@
 		<ul class="pagination__links">
 			{{if and (len $book.Page.Rows) (gt $book.TotalPages 1)}}
 				{{if gt $book.Page.Number 1}}
-					<li><a href="{{.URL.Query.String "page" "1"}}" aria-label="First page">&laquo; First</a></li>
-					<li><a href="{{.URL.Query.String "page" (Sub $book.Page.Number 1)}}" aria-label="Previous page">&lt; Prev</a></li>
+					<li><a href="{{.URL.Query.Replace "page" "1"}}" aria-label="First page">&laquo; First</a></li>
+					<li><a href="{{.URL.Query.Replace "page" (Sub $book.Page.Number 1)}}" aria-label="Previous page">&lt; Prev</a></li>
 				{{end}}
 
 				{{range $i := Ints (Sub $book.Page.Number 2) (Add $book.Page.Number 3)}}
@@ -29,7 +29,7 @@
 						{{$isActive := eq (printf "%v" $i) ($.URL.Query.Get "page")}}
 						<li>
 							<a
-								href="{{$.URL.Query.String "page" $i}}"
+								href="{{$.URL.Query.Replace "page" $i}}"
 								aria-label="Page {{$i}}"
 								data-locale-number
 								{{if $isActive}}class="pagination__active"{{end}}
@@ -39,12 +39,12 @@
 				{{end}}
 
 				{{if lt $book.Page.Number $book.TotalPages}}
-					<li><a href="{{.URL.Query.String "page" (Add $book.Page.Number 1)}}" aria-label="Next page">Next &gt;</a></li>
-					<li><a href="{{.URL.Query.String "page" $book.TotalPages}}" aria-label="Last page">Last &raquo;</a></li>
+					<li><a href="{{.URL.Query.Replace "page" (Add $book.Page.Number 1)}}" aria-label="Next page">Next &gt;</a></li>
+					<li><a href="{{.URL.Query.Replace "page" $book.TotalPages}}" aria-label="Last page">Last &raquo;</a></li>
 				{{end}}
 			{{else if not (eq $book.Page.Number 1)}}
-				<li><a href="{{.URL.Query.String "page" (Sub $book.Page.Number 1)}}" aria-label="Previous page">&lt; Prev</a></li>
-				<li><a href="{{.URL.Query.String "page" "1"}}">Go to the first page</a></li>
+				<li><a href="{{.URL.Query.Replace "page" (Sub $book.Page.Number 1)}}" aria-label="Previous page">&lt; Prev</a></li>
+				<li><a href="{{.URL.Query.Replace "page" "1"}}">Go to the first page</a></li>
 			{{end}}
 		</ul>
 	</nav>
