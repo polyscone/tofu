@@ -22,7 +22,7 @@
 			<th>Last sign in {{template "com_sort" .WithComData "Key" "last-sign-in"}}</th>
 			<th class="text-right no-wrap">
 				{{if .Passport.Account.CanInviteUsers}}
-					<a href="{{Path "account.management.user.new"}}{{$.URL.Query.String}}">Invite user</a>
+					<a href="{{Path "account.management.user.new"}}{{.URL.Query.String}}">Invite user</a>
 				{{end}}
 			</th>
 		</tr>

@@ -22,7 +22,7 @@
 			<th>Description</th>
 			<th class="text-right no-wrap">
 				{{if .Passport.Account.CanCreateRoles}}
-					<a href="{{Path "account.management.role.new"}}{{$.URL.Query.String}}">Create role</a>
+					<a href="{{Path "account.management.role.new"}}{{.URL.Query.String}}">Create role</a>
 				{{end}}
 			</th>
 		</tr>

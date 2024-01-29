@@ -31,7 +31,7 @@
 			{{template "com_role_permission_groups" .WithComData
 				"Name" "permissions"
 				"Groups" .Vars.PermissionGroups
-				"Selected" ($.Form.GetAllOr "permissions" .Vars.Role.Permissions)
+				"Selected" (.Form.GetAllOr "permissions" .Vars.Role.Permissions)
 			}}
 		</div>
 

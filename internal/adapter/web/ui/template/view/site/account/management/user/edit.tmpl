@@ -11,8 +11,8 @@
 {{define "view_body"}}
 
 {{$isEditUserSuper := .Vars.User.IsSuper}}
-{{$canAssignSuperRole := .Passport.Account.CanAssignSuperRole $.Vars.User.ID}}
-{{$canChangeRoles := .Passport.Account.CanChangeRoles $.Vars.User.ID}}
+{{$canAssignSuperRole := .Passport.Account.CanAssignSuperRole .Vars.User.ID}}
+{{$canChangeRoles := .Passport.Account.CanChangeRoles .Vars.User.ID}}
 {{$canSuspendUser := and .Passport.Account.CanSuspendUsers (not .Vars.User.IsSuspended) (not $isEditUserSuper)}}
 {{$canUnsuspendUser := and .Passport.Account.CanUnsuspendUsers .Vars.User.IsSuspended}}
 
@@ -46,7 +46,7 @@
 			<fieldset>
 				<legend>Roles</legend>
 
-				{{$roleIDs := $.Form.GetAllOr "roles" .Vars.UserRoleIDs}}
+				{{$roleIDs := .Form.GetAllOr "roles" .Vars.UserRoleIDs}}
 				{{if (not $canChangeRoles)}}
 					{{$roleIDs = ToStrings .Vars.UserRoleIDs}}
 				{{end}}
@@ -96,7 +96,7 @@
 					<fieldset>
 						<legend>Grants</legend>
 
-						{{$grants := $.Form.GetAllOr "grants" .Vars.User.Grants}}
+						{{$grants := .Form.GetAllOr "grants" .Vars.User.Grants}}
 						{{range .Vars.PermissionGroups}}
 							<b>{{.Name}}</b>
 
@@ -117,7 +117,7 @@
 					<fieldset>
 						<legend>Denials</legend>
 
-						{{$denials := $.Form.GetAllOr "denials" .Vars.User.Denials}}
+						{{$denials := .Form.GetAllOr "denials" .Vars.User.Denials}}
 						{{range .Vars.PermissionGroups}}
 							<b>{{.Name}}</b>
 
