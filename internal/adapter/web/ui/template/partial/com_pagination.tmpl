@@ -15,6 +15,21 @@
 					Showing entries <span data-locale-number>{{$startEntry}}</span>-<span data-locale-number>{{$endEntry}}</span> of <span data-locale-number>{{$book.TotalRows}}</span>
 				{{end}}
 			{{end}}
+
+			<form class="bag inline-flex">
+				{{template "com_query_inputs" .WithComData "Skip" (Slice "size")}}
+
+				<select name="size">
+					{{range $i := Ints 1 11}}
+						{{$n := Mul $i 10}}
+						<option value="{{$n}}"{{if eq $n $book.PageSize}} selected{{end}}>{{$n}} / page</option>
+					{{end}}
+				</select>
+
+				<noscript>
+					<button type="submit" class="btn--alt">Update</button>
+				</noscript>
+			</form>
 		</div>
 
 		<ul class="pagination__links">
@@ -26,7 +41,7 @@
 
 				{{range $i := Ints (Sub $book.Page.Number 2) (Add $book.Page.Number 3)}}
 					{{if and (gt $i 0) (le $i $book.TotalPages)}}
-						{{$isActive := eq (printf "%v" $i) ($.URL.Query.Get "page")}}
+						{{$isActive := eq $i $book.Page.Number}}
 						<li>
 							<a
 								href="{{$.URL.Query.Replace "page" $i}}"
@@ -48,6 +63,16 @@
 			{{end}}
 		</ul>
 	</nav>
+
+	{{if .State.Store "ComPagination_JSInitialised" true}}
+		<script>
+			onMount(".pagination__info select", node => {
+				const form = node.closest("form")
+
+				node.addEventListener("change", () => form.submit())
+			})
+		</script>
+	{{end}}
 {{else}}
 	<p>Pagination component: required fields: Book.</p>
 {{end}}

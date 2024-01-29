@@ -1,4 +1,4 @@
-@layer reset, universal, utility, components;
+@layer reset, universal, components, utility;
 
 :root {
 	--fs-min: 0.875rem;
@@ -158,6 +158,7 @@
 	}
 
 	input, textarea, select {
+		background: var(--clr-white-400);
 		border: 1px solid var(--clr-black-200);
 		transition: background 300ms;
 		max-width: 100%;
@@ -190,7 +191,7 @@
 	}
 
 	:is(input, textarea):placeholder-shown {
-		background: white;
+		background: var(--clr-white-400);
 	}
 
 	label.required::after {
@@ -393,6 +394,14 @@
 }
 
 @layer utility {
+	.inline-block {
+		display: inline-block;
+	}
+
+	.inline-flex {
+		display: inline-flex;
+	}
+
 	.text-italic {
 		font-style: italic;
 	}

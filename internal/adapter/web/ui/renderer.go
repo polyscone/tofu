@@ -19,6 +19,36 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
+type State struct {
+	data map[string]any
+}
+
+func (s *State) Get(key string) any {
+	return s.data[key]
+}
+
+func (s *State) Set(key string, value any) {
+	if s.data == nil {
+		s.data = make(map[string]any)
+	}
+
+	s.data[key] = value
+}
+
+func (s *State) Store(key string, value any) bool {
+	if s.data == nil {
+		s.data = make(map[string]any)
+	}
+
+	if _, ok := s.data[key]; ok {
+		return false
+	}
+
+	s.data[key] = value
+
+	return true
+}
+
 type ViewData struct {
 	View         string
 	ContentType  string
@@ -35,6 +65,7 @@ type ViewData struct {
 	User         *account.User
 	Passport     guard.Passport
 	ComData      map[string]any
+	State        *State
 	Vars         handler.Vars
 }
 
@@ -124,6 +155,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 		Config:   config,
 		User:     user,
 		Passport: passport,
+		State:    &State{},
 	}
 
 	if vars, ok := rn.h.viewVarsFuncs[view]; ok {
