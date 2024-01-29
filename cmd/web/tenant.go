@@ -229,8 +229,8 @@ func initTenants(tenantsPath string) error {
 			example := map[string]Tenant{
 				"example": {
 					Hosts: map[string]string{
-						"www.example.com": "site",
-						"app.example.com": "pwa",
+						"site": "www.example.com",
+						"pwa":  "app.example.com",
 					},
 					Aliases: map[string][]string{
 						"site": {"localhost", "localhost:8080"},
