@@ -6,22 +6,27 @@ import (
 )
 
 func Pagination(r *http.Request) (int, int) {
+	const (
+		minPage     = 1
+		minSize     = 1
+		maxSize     = 100
+		defaultSize = 20
+	)
+
 	page, err := strconv.Atoi(r.URL.Query().Get("page"))
 	if err != nil {
-		page = 1
+		page = minPage
 	}
-	if page < 1 {
-		page = 1
+	if page < minPage {
+		page = minPage
 	}
-
-	const maxSize = 100
 
 	size, err := strconv.Atoi(r.URL.Query().Get("size"))
 	if err != nil {
-		size = 20
+		size = defaultSize
 	}
-	if size < 1 {
-		size = 1
+	if size < minSize {
+		size = minSize
 	}
 	if size > maxSize {
 		size = maxSize
