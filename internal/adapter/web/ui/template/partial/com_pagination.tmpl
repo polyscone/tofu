@@ -47,7 +47,7 @@
 								href="{{$.URL.Query.Replace "page" $i}}"
 								aria-label="Page {{$i}}"
 								data-locale-number
-								{{if $isActive}}class="pagination__active"{{end}}
+								class="pagination-link{{if $isActive}} pagination-link--active{{end}}"
 							>{{$i}}</a>
 						</li>
 					{{end}}

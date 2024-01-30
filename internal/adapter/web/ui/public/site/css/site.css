@@ -142,11 +142,11 @@
 		list-style: none;
 	}
 
-	.pagination__active::before {
+	.pagination-link--active::before {
 		content: "[";
 	}
 
-	.pagination__active::after {
+	.pagination-link--active::after {
 		content: "]";
 	}
 
