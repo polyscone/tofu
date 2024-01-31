@@ -5,7 +5,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/pkg/background"
 )
 
 func SignedInHandler(h *ui.Handler) any {
@@ -21,11 +20,9 @@ func SignedInHandler(h *ui.Handler) any {
 		}
 
 		if user.HasActivatedTOTP() && user.TOTPMethod == account.TOTPMethodSMS.String() {
-			background.Go(func() {
-				if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
-					logger.Error("signed in: send TOTP SMS", "error", err)
-				}
-			})
+			if err := h.SendTOTPSMS(user.Email, user.TOTPTel); err != nil {
+				logger.Error("signed in: send TOTP SMS", "error", err)
+			}
 		}
 	}
 }

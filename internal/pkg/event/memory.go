@@ -3,6 +3,8 @@ package event
 import (
 	"fmt"
 	"reflect"
+
+	"github.com/polyscone/tofu/internal/pkg/background"
 )
 
 const (
@@ -11,22 +13,24 @@ const (
 )
 
 // MemoryBroker implements an in-memory event broker.
+// The ImmediateOnly flag can be set to true for simpler use in tests.
 type MemoryBroker struct {
-	listeners map[string][]reflect.Value
+	ImmediateOnly bool
+	eventual      map[string][]reflect.Value
+	immediate     map[string][]reflect.Value
 }
 
 // NewMemoryBroker returns a new in-memory event broker.
 func NewMemoryBroker() *MemoryBroker {
-	return &MemoryBroker{listeners: make(map[string][]reflect.Value)}
-}
-
-// Clear removes all registered listeners.
-func (mb *MemoryBroker) Clear() {
-	mb.listeners = make(map[string][]reflect.Value)
+	return &MemoryBroker{
+		eventual:  make(map[string][]reflect.Value),
+		immediate: make(map[string][]reflect.Value),
+	}
 }
 
 // Listen registers a new handler for an event type.
-// Multiple handlers for the same event type may be registered.
+// Multiple handlers for the same event type can be registered.
+// Any handlers registered through this method must expect to be eventually consistent.
 func (mb *MemoryBroker) Listen(handler Handler) {
 	listenerFuncType := reflect.TypeOf(handler)
 
@@ -39,11 +43,12 @@ func (mb *MemoryBroker) Listen(handler Handler) {
 	}
 
 	key := eventKey(listenerFuncType.In(0))
-	mb.listeners[key] = append(mb.listeners[key], reflect.ValueOf(handler))
+	mb.eventual[key] = append(mb.eventual[key], reflect.ValueOf(handler))
 }
 
 // ListenAny registers a listener for any events.
-// Multiple handlers for the same event type may be registered.
+// Multiple handlers for the same event type can be registered.
+// Any handlers registered through this method must expect to be eventually consistent.
 func (mb *MemoryBroker) ListenAny(handler AnyHandler) {
 	listenerFuncType := reflect.TypeOf(handler)
 
@@ -51,12 +56,13 @@ func (mb *MemoryBroker) ListenAny(handler AnyHandler) {
 		panic(fmt.Sprintf("handler must have %v parameters; got %v", want, got))
 	}
 
-	mb.listeners[anyKey] = append(mb.listeners[anyKey], reflect.ValueOf(handler))
+	mb.eventual[anyKey] = append(mb.eventual[anyKey], reflect.ValueOf(handler))
 }
 
 // ListenFallback registers a fallback listener for any events that are not
 // handled by a more specific handler.
-// Multiple handlers for the same event type may be registered.
+// Multiple handlers for the same event type can be registered.
+// Any handlers registered through this method must expect to be eventually consistent.
 func (mb *MemoryBroker) ListenFallback(handler FallbackHandler) {
 	listenerFuncType := reflect.TypeOf(handler)
 
@@ -64,7 +70,58 @@ func (mb *MemoryBroker) ListenFallback(handler FallbackHandler) {
 		panic(fmt.Sprintf("handler must have %v parameters; got %v", want, got))
 	}
 
-	mb.listeners[fallbackKey] = append(mb.listeners[fallbackKey], reflect.ValueOf(handler))
+	mb.eventual[fallbackKey] = append(mb.eventual[fallbackKey], reflect.ValueOf(handler))
+}
+
+// ListenImmediate registers a new handler for an event type.
+// Multiple handlers for the same event type can be registered.
+// Any handlers registered through this method are guaranteed to be immediately consistent.
+func (mb *MemoryBroker) ListenImmediate(handler Handler) {
+	listenerFuncType := reflect.TypeOf(handler)
+
+	if want, got := 1, listenerFuncType.NumIn(); want != got {
+		panic(fmt.Sprintf("handler must have %v parameters; got %v", want, got))
+	}
+
+	if want, got := 0, listenerFuncType.NumOut(); want != got {
+		panic(fmt.Sprintf("handler must have %v returns; got %v", want, got))
+	}
+
+	key := eventKey(listenerFuncType.In(0))
+	mb.immediate[key] = append(mb.immediate[key], reflect.ValueOf(handler))
+}
+
+// ListenImmediateAny registers a listener for any events.
+// Multiple handlers for the same event type can be registered.
+// Any handlers registered through this method are guaranteed to be immediately consistent.
+func (mb *MemoryBroker) ListenImmediateAny(handler AnyHandler) {
+	listenerFuncType := reflect.TypeOf(handler)
+
+	if want, got := 1, listenerFuncType.NumIn(); want != got {
+		panic(fmt.Sprintf("handler must have %v parameters; got %v", want, got))
+	}
+
+	mb.immediate[anyKey] = append(mb.immediate[anyKey], reflect.ValueOf(handler))
+}
+
+// ListenImmediateFallback registers a fallback listener for any events that are not
+// handled by a more specific handler.
+// Multiple handlers for the same event type can be registered.
+// Any handlers registered through this method are guaranteed to be immediately consistent.
+func (mb *MemoryBroker) ListenImmediateFallback(handler FallbackHandler) {
+	listenerFuncType := reflect.TypeOf(handler)
+
+	if want, got := 1, listenerFuncType.NumIn(); want != got {
+		panic(fmt.Sprintf("handler must have %v parameters; got %v", want, got))
+	}
+
+	mb.immediate[fallbackKey] = append(mb.immediate[fallbackKey], reflect.ValueOf(handler))
+}
+
+// Clear removes all registered listeners.
+func (mb *MemoryBroker) Clear() {
+	mb.eventual = make(map[string][]reflect.Value)
+	mb.immediate = make(map[string][]reflect.Value)
 }
 
 // Dispatch attempts to dispatch the given event to any handlers registered for
@@ -73,19 +130,52 @@ func (mb *MemoryBroker) ListenFallback(handler FallbackHandler) {
 // dispatch the event to any fallback handlers.
 // If no fallback handlers are registered then the event is ignored.
 func (mb *MemoryBroker) Dispatch(evt Event) {
-	key := eventKey(reflect.TypeOf(evt))
 	args := []reflect.Value{reflect.ValueOf(evt)}
 
-	if len(mb.listeners[key]) == 0 {
-		key = fallbackKey
+	// Immediately consistent event handlers
+	{
+		key := eventKey(reflect.TypeOf(evt))
+
+		if len(mb.immediate[key]) == 0 {
+			key = fallbackKey
+		}
+
+		for _, handler := range mb.immediate[key] {
+			handler.Call(args)
+		}
+
+		for _, handler := range mb.immediate[anyKey] {
+			handler.Call(args)
+		}
 	}
 
-	for _, handler := range mb.listeners[key] {
-		handler.Call(args)
-	}
+	// Eventually consistent event handlers
+	// If the ImmediateOnly flag is set then these behave the same as
+	// immediately consistent handlers
+	{
+		key := eventKey(reflect.TypeOf(evt))
 
-	for _, handler := range mb.listeners[anyKey] {
-		handler.Call(args)
+		if len(mb.eventual[key]) == 0 {
+			key = fallbackKey
+		}
+
+		if mb.ImmediateOnly {
+			for _, handler := range mb.eventual[key] {
+				handler.Call(args)
+			}
+
+			for _, handler := range mb.eventual[anyKey] {
+				handler.Call(args)
+			}
+		} else {
+			for _, handler := range mb.eventual[key] {
+				background.Go(func() { handler.Call(args) })
+			}
+
+			for _, handler := range mb.eventual[anyKey] {
+				background.Go(func() { handler.Call(args) })
+			}
+		}
 	}
 }
 

@@ -40,6 +40,8 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	h.Broker.Listen(event.TOTPDisabledHandler(h))
 	h.Broker.Listen(event.TOTPSMSRequestedHandler(h))
 
+	h.Broker.ListenImmediate(event.ImmediateActivatedHandler(h))
+
 	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		if errors.Is(err, context.Canceled) {
 			w.WriteHeader(httputil.StatusClientClosedRequest)

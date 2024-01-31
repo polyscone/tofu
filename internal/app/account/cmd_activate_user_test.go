@@ -29,15 +29,9 @@ func TestActivateUser(t *testing.T) {
 
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com"})
-		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
-
-		superUserCount := errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
-		if want, got := 0, superUserCount; want != got {
-			t.Fatalf("want super user count to be %v; got %v", want, got)
-		}
 
 		if err := svc.VerifyUser(ctx, user1.Email, "password", "password", account.VerifyUserOnly); err != nil {
 			t.Fatal(err)
@@ -54,7 +48,6 @@ func TestActivateUser(t *testing.T) {
 			Method:      account.SignUpMethodWebForm,
 			HasPassword: true,
 		})
-		events.Expect(account.RolesChanged{Email: user1.Email})
 
 		user1 = errsx.Must(repo.FindUserByEmail(ctx, user1.Email))
 
@@ -72,11 +65,6 @@ func TestActivateUser(t *testing.T) {
 			Method: account.SignInMethodPassword,
 		})
 
-		superUserCount = errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
-		if want, got := 1, superUserCount; want != got {
-			t.Fatalf("want super user count to be %v; got %v", want, got)
-		}
-
 		if err := svc.VerifyUser(ctx, user2.Email, "password", "password", account.VerifyUserOnly); err != nil {
 			t.Fatal(err)
 		}
@@ -92,11 +80,6 @@ func TestActivateUser(t *testing.T) {
 			Method:      account.SignUpMethodWebForm,
 			HasPassword: true,
 		})
-
-		superUserCount = errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
-		if want, got := 1, superUserCount; want != got {
-			t.Fatalf("want super user count to be %v; got %v", want, got)
-		}
 	})
 
 	t.Run("error cases", func(t *testing.T) {

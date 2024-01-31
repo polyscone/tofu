@@ -57,19 +57,8 @@ func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck
 	}
 
 	if isInvited := !user.InvitedAt.IsZero(); isInvited || behaviour == VerifyUserActivate {
-		superUserCount, err := s.repo.CountUsersByRoleID(ctx, SuperRole.ID)
-		if err != nil {
-			return fmt.Errorf("count users by role id: %w", err)
-		}
-
 		if err := user.Activate(); err != nil {
 			return err
-		}
-
-		if !isInvited && superUserCount == 0 {
-			if err := user.ChangeRoles([]*Role{SuperRole}, nil, nil); err != nil {
-				return fmt.Errorf("add super role to initial user: %w", err)
-			}
 		}
 	}
 
