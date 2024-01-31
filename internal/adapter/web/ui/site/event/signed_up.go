@@ -12,13 +12,11 @@ import (
 
 func SignedUpHandler(h *ui.Handler) any {
 	return func(evt account.SignedUp) {
-		// We only want to send an email for verification if it's a normal
-		// account sign up
-		//
-		// Sign ups through third-party services like Google/Facebook are
+		// Sign ups through magic links and third-party services like Google/Facebook are
 		// implicitly verified due to the fact they signed in with that service
 		// so we don't need to verify any email addresses
-		if evt.Kind != account.SignUpKindAccount {
+		switch evt.Method {
+		case account.SignUpMethodMagicLink, account.SignUpMethodGoogle, account.SignUpMethodFacebook:
 			return
 		}
 

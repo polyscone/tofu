@@ -10,8 +10,14 @@
 
 {{define "view_body"}}
 
+{{$isMagicLinkSignIn := and .Config.MagicLinkSignInEnabled (ne (.URL.Query.Get "kind") "password")}}
+{{$signInFormAction := printf "%v%v" (Path "account.sign_in.password.post") .URL.Query.String}}
+{{if $isMagicLinkSignIn}}
+	{{$signInFormAction = Path "account.sign_in.magic_link.request.post"}}
+{{end}}
+
 <div class="center">
-	<form action="{{Path "account.sign_in.post"}}" method="POST">
+	<form action="{{$signInFormAction}}" method="POST">
 		{{template "com_csrf_input" .}}
 
 		{{template "com_email_input" .WithComData
@@ -22,19 +28,31 @@
 			"Autofocus" true
 		}}
 
-		{{template "com_password_input" .WithComData
-			"Label" "Password"
-			"Name" "password"
-			"Required" true
-			"Autocomplete" "current-password"
-		}}
+		{{if not $isMagicLinkSignIn}}
+			{{template "com_password_input" .WithComData
+				"Label" "Password"
+				"Name" "password"
+				"Required" true
+				"Autocomplete" "current-password"
+			}}
+		{{end}}
 
 		<div class="bag reverse">
-			<button type="submit" class="push-inline-end">Sign in</button>
+			<button type="submit">Sign in</button>
+
+			<div class="push-inline-end">
+				{{if $isMagicLinkSignIn}}
+					<a href="{{Path "account.sign_in"}}{{.URL.Query.Replace "kind" "password"}}" class="btn btn--alt">Use a password</a>
+				{{else if .Config.MagicLinkSignInEnabled}}
+					<a href="{{Path "account.sign_in"}}{{.URL.Query.Replace "kind" ""}}" class="btn btn--alt">Sign in with email</a>
+				{{end}}
+			</div>
 
 			<div>
-				{{if .Config.SignUpEnabled}}<a href="{{Path "account.sign_up"}}">Sign up</a><br>{{end}}
-				<a href="{{Path "account.reset_password"}}">Forgotten your password?</a>
+				{{if not $isMagicLinkSignIn}}
+					{{if .Config.SignUpEnabled}}<a href="{{Path "account.sign_up"}}">Sign up</a><br>{{end}}
+					<a href="{{Path "account.reset_password"}}">Forgotten your password?</a>
+				{{end}}
 			</div>
 		</div>
 	</form>

@@ -89,6 +89,24 @@ const api = {
 
 			return res
 		},
+		async requestSignInMagicLink (email) {
+			const res = await request("/api/v1/account/sign-in/magic-link/request", {
+				method: "POST",
+				body: { email },
+			})
+
+			return res
+		},
+		async signInWithMagicLink (token) {
+			const res = await request("/api/v1/account/sign-in/magic-link", {
+				method: "POST",
+				body: { token },
+			})
+
+			await api.account.pollSession()
+
+			return res
+		},
 		async requestTOTPSMS () {
 			const res = await request("/api/v1/account/sign-in/totp/send-sms", {
 				method: "POST",
@@ -207,6 +225,16 @@ const platform = {
 		},
 		register (pattern, opts) {
 			opts ||= {}
+
+			if (opts.name) {
+				for (const pattern in platform.routes.__registered) {
+					const route = platform.routes.__registered[pattern]
+
+					if (route.name === opts.name) {
+						throw new Error(`Duplicate route registered for the name "${opts.name}"`)
+					}
+				}
+			}
 
 			platform.routes.__registered[pattern] = {
 				name: opts.name || "",

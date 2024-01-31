@@ -32,7 +32,6 @@ func TestSignInWithFacebook(t *testing.T) {
 			Email:  user1.Email,
 			System: "site",
 			Method: account.SignInMethodFacebook,
-			Kind:   account.SignInKindSocial,
 		})
 
 		user1, err = repo.FindUserByID(ctx, user1.ID)
@@ -71,21 +70,18 @@ func TestSignInWithFacebook(t *testing.T) {
 			Email:      "bar@example.com",
 			System:     "site",
 			Method:     account.SignUpMethodFacebook,
-			Kind:       account.SignUpKindSocial,
 			IsVerified: true,
 		})
 		events.Expect(account.Activated{
 			Email:       "bar@example.com",
 			System:      "site",
 			Method:      account.SignUpMethodFacebook,
-			Kind:        account.SignUpKindSocial,
 			HasPassword: false,
 		})
 		events.Expect(account.SignedIn{
 			Email:  "bar@example.com",
 			System: "site",
 			Method: account.SignInMethodFacebook,
-			Kind:   account.SignInKindSocial,
 		})
 
 		user2, err := repo.FindUserByEmail(ctx, "bar@example.com")
@@ -130,7 +126,6 @@ func TestSignInWithFacebook(t *testing.T) {
 			Email:  user2.Email,
 			System: "site",
 			Method: account.SignInMethodFacebook,
-			Kind:   account.SignInKindSocial,
 		})
 
 		user2, err = repo.FindUserByID(ctx, user2.ID)
@@ -227,7 +222,6 @@ func TestSignInWithFacebook(t *testing.T) {
 						Email:  tc.email,
 						System: "site",
 						Method: account.SignInMethodFacebook,
-						Kind:   account.SignInKindSocial,
 					})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):

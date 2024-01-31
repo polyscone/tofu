@@ -1,0 +1,18 @@
+{{define "subject"}}Sign in to {{.URL.Host}}{{end}}
+
+{{define "plain" -}}
+
+Sign in
+
+To sign in paste the following code into the prompt in the app:
+{{.Vars.Token}}
+
+{{- end}}
+
+{{define "html" -}}
+
+<h1>Sign in</h1>
+<p>To sign in paste the following code into the prompt in the app:</p>
+<p>{{.Vars.Token}}</p>
+
+{{- end}}

@@ -21,6 +21,7 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/password/pwned"
+	"github.com/polyscone/tofu/internal/repository"
 )
 
 var client = http.Client{Timeout: 10 * time.Second}
@@ -70,6 +71,54 @@ func SignInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 	}
 
 	return nil
+}
+
+func SignInWithMagicLink(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, token string) (bool, error) {
+	if token == "" {
+		return false, fmt.Errorf("%w: empty token", app.ErrInvalidInput)
+	}
+
+	config := h.Config(ctx)
+
+	email, err := h.Repo.Web.FindSignInMagicLinkTokenEmail(ctx, token)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			err = fmt.Errorf("%w: %w", app.ErrInvalidInput, err)
+		}
+
+		return false, fmt.Errorf("find sign in magic link token email: %w", err)
+	}
+
+	behaviour := account.MagicLinkSignInOnly
+	if config.SignUpEnabled {
+		if config.SignUpAutoActivateEnabled {
+			behaviour = account.MagicLinkAllowSignUpActivate
+		} else {
+			behaviour = account.MagicLinkAllowSignUp
+		}
+	}
+
+	signedIn, err := h.Svc.Account.SignInWithMagicLink(ctx, email, behaviour)
+	if err != nil {
+		return false, fmt.Errorf("sign in wih magic link: %w", err)
+	}
+
+	err = h.Repo.Web.ConsumeSignInMagicLinkToken(ctx, token)
+	if err != nil {
+		return signedIn, fmt.Errorf("consume sign in magic link token: %w", err)
+	}
+
+	if signedIn {
+		if _, err := h.RenewSession(ctx); err != nil {
+			return signedIn, fmt.Errorf("renew session: %w", err)
+		}
+
+		if err := SignInSetSession(ctx, h, w, r, email); err != nil {
+			return signedIn, fmt.Errorf("sign in set session: %w", err)
+		}
+	}
+
+	return signedIn, nil
 }
 
 func SignInWithTOTP(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, totp string) error {

@@ -326,6 +326,7 @@
 		background: var(--clr-accent-400);
 		color: var(--clr-white-400);
 		text-decoration: none;
+		text-align: center;
 		cursor: default;
 	}
 

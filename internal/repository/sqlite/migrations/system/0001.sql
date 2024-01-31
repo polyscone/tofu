@@ -6,6 +6,7 @@ CREATE TABLE system__config (
 	sign_up_auto_activate_enabled INTEGER NOT NULL,
 	totp_required                 INTEGER NOT NULL,
 	totp_sms_enabled              INTEGER NOT NULL,
+	magic_link_sign_in_enabled    INTEGER NOT NULL,
 	google_sign_in_enabled        INTEGER NOT NULL,
 	google_sign_in_client_id      TEXT NOT NULL,
 	facebook_sign_in_enabled      INTEGER NOT NULL,

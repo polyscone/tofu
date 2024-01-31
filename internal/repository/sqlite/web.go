@@ -23,6 +23,7 @@ import (
 const (
 	webTokenKindEmailVerification = "email_verification"
 	webTokenKindResetPassword     = "reset_password"
+	webTokenKindSignInMagicLink   = "sign_in_magic_link"
 	webTokenKindTOTPResetVerify   = "totp_reset_verify"
 	webTokenKindTOTPReset         = "totp_reset"
 )
@@ -230,6 +231,62 @@ func (r *WebRepo) ConsumeResetPasswordToken(ctx context.Context, token string) e
 	}
 
 	if err := r.deleteTokensByKind(ctx, tx, email, webTokenKindResetPassword); err != nil {
+		return fmt.Errorf("delete tokens for email: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
+}
+
+func (r *WebRepo) FindSignInMagicLinkTokenEmail(ctx context.Context, token string) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	return r.findToken(ctx, tx, token, webTokenKindSignInMagicLink)
+}
+
+func (r *WebRepo) AddSignInMagicLinkToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return "", fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := r.deleteTokensByKind(ctx, tx, email, webTokenKindSignInMagicLink); err != nil {
+		return "", fmt.Errorf("delete tokens for email: %w", err)
+	}
+
+	token, err := r.createToken(ctx, tx, email, ttl, webTokenKindSignInMagicLink)
+	if err != nil {
+		return "", fmt.Errorf("create token: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return "", fmt.Errorf("tx commit: %w", err)
+	}
+
+	return token, nil
+}
+
+func (r *WebRepo) ConsumeSignInMagicLinkToken(ctx context.Context, token string) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	email, err := r.consumeToken(ctx, tx, token, webTokenKindSignInMagicLink)
+	if err != nil {
+		return err
+	}
+
+	if err := r.deleteTokensByKind(ctx, tx, email, webTokenKindSignInMagicLink); err != nil {
 		return fmt.Errorf("delete tokens for email: %w", err)
 	}
 

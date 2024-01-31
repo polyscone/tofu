@@ -16,6 +16,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	systemEmail, securityEmail string,
 	signUpEnabled, signUpAutoActivateEnabled bool,
 	totpRequired, totpSMSEnabled bool,
+	magicLinkSignInEnabled bool,
 	googleSignInEnabled bool, googleSignInClientID string,
 	facebookSignInEnabled bool, facebookSignInAppID, facebookSignInAppSecret string,
 	resendAPIKey string,
@@ -28,6 +29,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		signUpAutoActivateEnabled bool
 		totpRequired              bool
 		totpSMSEnabled            bool
+		magicLinkSignInEnabled    bool
 		googleSignInEnabled       bool
 		googleSignInClientID      GoogleClientID
 		facebookSignInEnabled     bool
@@ -57,6 +59,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		input.signUpAutoActivateEnabled = signUpAutoActivateEnabled
 		input.totpRequired = totpRequired
 		input.totpSMSEnabled = totpSMSEnabled
+		input.magicLinkSignInEnabled = magicLinkSignInEnabled
 
 		input.googleSignInEnabled = googleSignInEnabled
 
@@ -117,6 +120,12 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		config.EnableTOTPRequired()
 	} else {
 		config.DisableTOTPRequired()
+	}
+
+	if input.magicLinkSignInEnabled {
+		config.EnableMagicLinkSignIn()
+	} else {
+		config.DisableMagicLinkSignIn()
 	}
 
 	config.ChangeGoogleSignInClientID(input.googleSignInClientID)

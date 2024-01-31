@@ -47,13 +47,13 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		ctx := r.Context()
-
 		if input.Token == "" {
 			http.Redirect(w, r, h.Path("account.verify"), http.StatusSeeOther)
 
 			return
 		}
+
+		ctx := r.Context()
 
 		email, behaviour, err := auth.Verify(ctx, h.Handler, w, r, input.Token, input.Password, input.PasswordCheck)
 		if err != nil {

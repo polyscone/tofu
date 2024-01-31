@@ -14,25 +14,20 @@ import (
 )
 
 const (
-	SignInKindPassword     = "password"
-	SignInKindSocial       = "social"
-	SignInKindTOTP         = "totp"
-	SignInKindRecoveryCode = "recovery code"
+	SignInMethodNone      = ""
+	SignInMethodPassword  = "password"
+	SignInMethodMagicLink = "magic link"
+	SignInMethodGoogle    = "google"
+	SignInMethodFacebook  = "facebook"
+)
 
-	SignInMethodNone     = ""
-	SignInMethodForm     = "form"
-	SignInMethodGoogle   = "google"
-	SignInMethodFacebook = "facebook"
-
-	SignUpKindNone    = ""
-	SignUpKindAccount = "account"
-	SignUpKindSocial  = "social"
-
-	SignUpMethodNone     = ""
-	SignUpMethodForm     = "form"
-	SignUpMethodGoogle   = "google"
-	SignUpMethodFacebook = "facebook"
-	SignUpMethodInvite   = "invite"
+const (
+	SignUpMethodNone      = ""
+	SignUpMethodWebForm   = "web form"
+	SignUpMethodMagicLink = "magic link"
+	SignUpMethodGoogle    = "google"
+	SignUpMethodFacebook  = "facebook"
+	SignUpMethodInvite    = "invite"
 )
 
 var (
@@ -166,22 +161,9 @@ func (u *User) Invite(system string) error {
 		Email:  u.Email,
 		System: system,
 		Method: SignUpMethodInvite,
-		Kind:   SignUpKindAccount,
 	})
 
 	return nil
-}
-
-func (u *User) SignedUpKind() string {
-	switch u.SignedUpMethod {
-	case SignUpMethodForm, SignUpMethodInvite:
-		return SignUpKindAccount
-
-	case SignUpMethodGoogle, SignUpMethodFacebook:
-		return SignUpKindSocial
-	}
-
-	return SignUpKindNone
 }
 
 func (u *User) SignUp(system string) error {
@@ -190,7 +172,6 @@ func (u *User) SignUp(system string) error {
 			Email:       u.Email,
 			System:      system,
 			Method:      u.SignedUpMethod,
-			Kind:        u.SignedUpKind(),
 			HasPassword: len(u.HashedPassword) > 0,
 		})
 
@@ -202,13 +183,40 @@ func (u *User) SignUp(system string) error {
 	}
 
 	u.SignedUpSystem = system
-	u.SignedUpMethod = SignUpMethodForm
+	u.SignedUpMethod = SignUpMethodWebForm
 
 	u.Events.Enqueue(SignedUp{
 		Email:      u.Email,
 		System:     system,
-		Method:     SignUpMethodForm,
-		Kind:       SignUpKindAccount,
+		Method:     SignUpMethodWebForm,
+		IsVerified: !u.VerifiedAt.IsZero(),
+	})
+
+	return nil
+}
+
+func (u *User) SignUpWithMagicLink(system string) error {
+	if !u.ActivatedAt.IsZero() {
+		return nil
+	}
+
+	now := time.Now().UTC()
+
+	if u.SignedUpAt.IsZero() {
+		u.SignedUpAt = now
+	}
+
+	if u.VerifiedAt.IsZero() {
+		u.VerifiedAt = now
+	}
+
+	u.SignedUpSystem = system
+	u.SignedUpMethod = SignUpMethodMagicLink
+
+	u.Events.Enqueue(SignedUp{
+		Email:      u.Email,
+		System:     system,
+		Method:     SignUpMethodMagicLink,
 		IsVerified: !u.VerifiedAt.IsZero(),
 	})
 
@@ -237,7 +245,6 @@ func (u *User) SignUpWithGoogle(system string) error {
 		Email:      u.Email,
 		System:     system,
 		Method:     SignUpMethodGoogle,
-		Kind:       SignUpKindSocial,
 		IsVerified: !u.VerifiedAt.IsZero(),
 	})
 
@@ -266,7 +273,6 @@ func (u *User) SignUpWithFacebook(system string) error {
 		Email:      u.Email,
 		System:     system,
 		Method:     SignUpMethodFacebook,
-		Kind:       SignUpKindSocial,
 		IsVerified: !u.VerifiedAt.IsZero(),
 	})
 
@@ -304,7 +310,6 @@ func (u *User) Activate() error {
 		Email:       u.Email,
 		System:      u.SignedUpSystem,
 		Method:      u.SignedUpMethod,
-		Kind:        u.SignedUpKind(),
 		HasPassword: len(u.HashedPassword) > 0,
 	})
 
@@ -719,7 +724,7 @@ func (u *User) SignInWithPassword(system string, password Password, hasher Hashe
 
 	u.LastSignInAttemptAt = time.Now().UTC()
 	u.LastSignInAttemptSystem = system
-	u.LastSignInAttemptMethod = SignInMethodForm
+	u.LastSignInAttemptMethod = SignInMethodPassword
 
 	if !u.HasActivatedTOTP() {
 		u.LastSignedInAt = u.LastSignInAttemptAt
@@ -730,11 +735,42 @@ func (u *User) SignInWithPassword(system string, password Password, hasher Hashe
 	u.Events.Enqueue(SignedIn{
 		Email:  u.Email,
 		System: system,
-		Method: SignInMethodForm,
-		Kind:   SignInKindPassword,
+		Method: SignInMethodPassword,
 	})
 
 	return rehashed, nil
+}
+
+func (u *User) SignInWithMagicLink(system string) error {
+	if u.VerifiedAt.IsZero() {
+		return ErrNotVerified
+	}
+
+	if u.ActivatedAt.IsZero() {
+		return ErrNotActivated
+	}
+
+	if u.IsSuspended() {
+		return ErrSuspended
+	}
+
+	u.LastSignInAttemptAt = time.Now().UTC()
+	u.LastSignInAttemptSystem = system
+	u.LastSignInAttemptMethod = SignInMethodMagicLink
+
+	if !u.HasActivatedTOTP() {
+		u.LastSignedInAt = u.LastSignInAttemptAt
+		u.LastSignedInSystem = u.LastSignInAttemptSystem
+		u.LastSignedInMethod = u.LastSignInAttemptMethod
+	}
+
+	u.Events.Enqueue(SignedIn{
+		Email:  u.Email,
+		System: system,
+		Method: SignInMethodMagicLink,
+	})
+
+	return nil
 }
 
 func (u *User) SignInWithTOTP(system string, totp TOTP) error {
@@ -763,7 +799,6 @@ func (u *User) SignInWithTOTP(system string, totp TOTP) error {
 		Email:  u.Email,
 		System: system,
 		Method: u.LastSignedInMethod,
-		Kind:   SignInKindTOTP,
 	})
 
 	return nil
@@ -818,7 +853,6 @@ func (u *User) SignInWithRecoveryCode(system string, code RecoveryCode) error {
 		Email:  u.Email,
 		System: system,
 		Method: u.LastSignedInMethod,
-		Kind:   SignInKindRecoveryCode,
 	})
 
 	return nil
@@ -851,7 +885,6 @@ func (u *User) SignInWithGoogle(system string) error {
 		Email:  u.Email,
 		System: system,
 		Method: SignInMethodGoogle,
-		Kind:   SignInKindSocial,
 	})
 
 	return nil
@@ -884,7 +917,6 @@ func (u *User) SignInWithFacebook(system string) error {
 		Email:  u.Email,
 		System: system,
 		Method: SignInMethodFacebook,
-		Kind:   SignInKindSocial,
 	})
 
 	return nil

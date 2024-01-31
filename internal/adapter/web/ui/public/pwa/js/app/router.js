@@ -7,7 +7,7 @@ import "./pages/account/sign_up/success.js"
 import "./pages/account/sign_up/verify.js"
 
 // Account sign in
-import "./pages/account/sign_in/password.js"
+import "./pages/account/sign_in/web_form.js"
 import "./pages/account/sign_in/recovery_code.js"
 import "./pages/account/sign_in/totp.js"
 import "./pages/account/sign_in/totp_required.js"

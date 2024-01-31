@@ -34,8 +34,7 @@ func TestSignInWithPassword(t *testing.T) {
 		events.Expect(account.SignedIn{
 			Email:  user.Email,
 			System: "site",
-			Method: account.SignInMethodForm,
-			Kind:   account.SignInKindPassword,
+			Method: account.SignInMethodPassword,
 		})
 
 		user, err = repo.FindUserByID(ctx, user.ID)
@@ -49,7 +48,7 @@ func TestSignInWithPassword(t *testing.T) {
 		if want, got := "site", user.LastSignInAttemptSystem; want != got {
 			t.Errorf("want last sign in attempt system to be %q; got %q", want, got)
 		}
-		if want, got := account.SignInMethodForm, user.LastSignInAttemptMethod; want != got {
+		if want, got := account.SignInMethodPassword, user.LastSignInAttemptMethod; want != got {
 			t.Errorf("want last sign in attempt method to be %q; got %q", want, got)
 		}
 		if !user.LastSignedInAt.Equal(user.LastSignInAttemptAt) {
@@ -58,7 +57,7 @@ func TestSignInWithPassword(t *testing.T) {
 		if want, got := "site", user.LastSignedInSystem; want != got {
 			t.Errorf("want last signed in system to be %q; got %q", want, got)
 		}
-		if want, got := account.SignInMethodForm, user.LastSignedInMethod; want != got {
+		if want, got := account.SignInMethodPassword, user.LastSignedInMethod; want != got {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 	})
@@ -223,8 +222,7 @@ func TestSignInWithPassword(t *testing.T) {
 					events.Expect(account.SignedIn{
 						Email:  tc.email,
 						System: "site",
-						Method: account.SignInMethodForm,
-						Kind:   account.SignInKindPassword,
+						Method: account.SignInMethodPassword,
 					})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):

@@ -1,5 +1,5 @@
 import { ErrorBanner } from "../../../components/error.js"
-import { EmailInput, PasswordInput } from "../../../components/forms.js"
+import { EmailInput, PasswordInput, TokenInput } from "../../../components/forms.js"
 
 function SignInWithGoogle () {
 	let rendered = false
@@ -192,6 +192,124 @@ function SignInWithFacebook () {
 	}
 }
 
+function SignInMagicLink () {
+	const state = {
+		error: "",
+		errors: {},
+		token: "",
+	}
+
+	function signIn (e) {
+		e.preventDefault()
+
+		platform.loading(async () => {
+			const res = await platform.api.account.signInWithMagicLink(state.token)
+
+			state.error = res.body?.error || ""
+			state.errors = res.body?.fields || {}
+
+			if (res.ok) {
+				if (platform.session.isAwaitingTOTP) {
+					m.route.set(platform.routes.path("account.sign_in.totp"))
+				} else if (!res.body?.isSignedIn) {
+					// Signing in with a magic link can trigger a sign up
+					//
+					// If that's the case, and the response was ok, then if they aren't
+					// already signed in then it's likely to mean that their account
+					// was created but requires manual activation by an admin through
+					// user management, so we show them the sign up success page
+					m.route.set(platform.routes.path("account.sign_up.success"))
+				} else {
+					platform.api.account.tryRedirect(platform.routes.path("home"))
+				}
+			}
+		})
+	}
+
+	return {
+		oncreate () {
+			if (platform.session.isSignedIn || !platform.config.magicLinkSignInEnabled) {
+				m.route.set(platform.routes.path("account.sign_in"))
+			}
+		},
+		view () {
+			return [
+				m("h1", "Sign in"),
+				m("p", "Please enter the sign in code we've sent to your email address below."),
+				m("form", { onsubmit: signIn }, [
+					state.error ? m(ErrorBanner, state.error) : null,
+					state.error ? m("p", "If your sign in code has expired you can try requesting a new one.") : null,
+					m(TokenInput, {
+						label: "Sign in code",
+						name: "token",
+						required: true,
+						error: state.errors.token,
+						oninput (e) { state.token = e.target.value },
+					}),
+					m("button[type=submit]", "Sign in"),
+					state.error ? m(m.route.Link, { href: platform.routes.path("account.sign_in.magic_link.request"), class: "btn btn--alt" }, "Request a new code") : null,
+				]),
+			]
+		},
+	}
+}
+
+function SignInMagicLinkRequest () {
+	const state = {
+		error: "",
+		errors: {},
+		email: "",
+	}
+
+	function signIn (e) {
+		e.preventDefault()
+
+		platform.loading(async () => {
+			const res = await platform.api.account.requestSignInMagicLink(state.email)
+
+			state.error = res.body?.error || ""
+			state.errors = res.body?.fields || {}
+
+			if (res.ok) {
+				m.route.set(platform.routes.path("account.sign_in.magic_link"))
+			}
+		})
+	}
+
+	return {
+		oncreate () {
+			if (platform.session.isSignedIn || !platform.config.magicLinkSignInEnabled) {
+				m.route.set(platform.routes.path("account.sign_in"))
+			}
+		},
+		view () {
+			return [
+				m("h1", "Sign in"),
+				m("form", { onsubmit: signIn }, [
+					state.error ? m(ErrorBanner, state.error) : null,
+					m(EmailInput, {
+						label: "Email",
+						name: "email",
+						required: true,
+						autocomplete: "username",
+						error: state.errors.email,
+						oninput (e) { state.email = e.target.value },
+					}),
+					m("button[type=submit]", "Get sign in code"),
+					m(m.route.Link, { href: platform.routes.path("account.sign_in"), class: "btn btn--alt" }, "Use a password"),
+					m("div", [
+						m("p.sign-in-alt__title", "Or"),
+						m(".sign-in-alt.text-center", [
+							m(SignInWithGoogle),
+							m(SignInWithFacebook),
+						]),
+					]),
+				]),
+			]
+		},
+	}
+}
+
 function SignIn () {
 	const state = {
 		error: "",
@@ -265,6 +383,7 @@ function SignIn () {
 						oninput (e) { state.password = e.target.value },
 					}),
 					m("button[type=submit]", "Sign in"),
+					platform.config.magicLinkSignInEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_in.magic_link.request"), class: "btn btn--alt" }, "Sign in with email") : null,
 					platform.config.signUpEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_up") }, "Sign up") : null,
 					m(m.route.Link, { href: platform.routes.path("account.reset_password") }, "Forgotten your password?"),
 					m("div", [
@@ -280,7 +399,26 @@ function SignIn () {
 	}
 }
 
+let isFirstLoad = true
+
 platform.routes.register("/account/sign-in", {
 	name: "account.sign_in",
+	onmatch () {
+		if (platform.config.magicLinkSignInEnabled && isFirstLoad) {
+			isFirstLoad = false
+
+			return m.route.set(platform.routes.path("account.sign_in.magic_link.request"))
+		}
+	},
 	render: SignIn,
+})
+
+platform.routes.register("/account/sign-in/magic-link", {
+	name: "account.sign_in.magic_link",
+	render: SignInMagicLink,
+})
+
+platform.routes.register("/account/sign-in/magic-link/request", {
+	name: "account.sign_in.magic_link.request",
+	render: SignInMagicLinkRequest,
 })

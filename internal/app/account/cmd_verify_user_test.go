@@ -58,8 +58,7 @@ func TestVerifyUser(t *testing.T) {
 		events.Expect(account.Activated{
 			Email:       user.Email,
 			System:      "site",
-			Method:      account.SignUpMethodForm,
-			Kind:        account.SignUpKindAccount,
+			Method:      account.SignUpMethodWebForm,
 			HasPassword: true,
 		})
 		events.Expect(account.RolesChanged{Email: user.Email})
@@ -97,7 +96,6 @@ func TestVerifyUser(t *testing.T) {
 			Email:       user.Email,
 			System:      "site",
 			Method:      account.SignUpMethodInvite,
-			Kind:        account.SignUpKindAccount,
 			HasPassword: true,
 		})
 

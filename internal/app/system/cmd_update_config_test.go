@@ -37,6 +37,7 @@ func TestUpdateConfig(t *testing.T) {
 		signUpAutoActivateEnabled := false
 		totpRequired := true
 		totpSMSEnabled := true
+		magicLinkSignInEnabled := true
 		googleSignInEnabled := true
 		googleSignInClientID := "1234abcd"
 		facebookSignInEnabled := true
@@ -54,6 +55,7 @@ func TestUpdateConfig(t *testing.T) {
 			signUpAutoActivateEnabled,
 			totpRequired,
 			totpSMSEnabled,
+			magicLinkSignInEnabled,
 			googleSignInEnabled,
 			googleSignInClientID,
 			facebookSignInEnabled,
@@ -87,6 +89,9 @@ func TestUpdateConfig(t *testing.T) {
 		}
 		if want, got := totpSMSEnabled, config.TOTPSMSEnabled; want != got {
 			t.Errorf("want TOTP SMS enabled to be %v; got %v", want, got)
+		}
+		if want, got := magicLinkSignInEnabled, config.MagicLinkSignInEnabled; want != got {
+			t.Errorf("want magic link sign in enabled to be %v; got %v", want, got)
 		}
 		if want, got := googleSignInEnabled, config.GoogleSignInEnabled; want != got {
 			t.Errorf("want google sign in enabled to be %v; got %v", want, got)
@@ -122,6 +127,7 @@ func TestUpdateConfig(t *testing.T) {
 		signUpAutoActivateEnabled = true
 		totpRequired = false
 		totpSMSEnabled = false
+		magicLinkSignInEnabled = false
 		googleSignInEnabled = false
 		googleSignInClientID = "xyz"
 		facebookSignInEnabled = false
@@ -139,6 +145,7 @@ func TestUpdateConfig(t *testing.T) {
 			signUpAutoActivateEnabled,
 			totpRequired,
 			totpSMSEnabled,
+			magicLinkSignInEnabled,
 			googleSignInEnabled,
 			googleSignInClientID,
 			facebookSignInEnabled,
@@ -172,6 +179,9 @@ func TestUpdateConfig(t *testing.T) {
 		}
 		if want, got := totpSMSEnabled, config.TOTPSMSEnabled; want != got {
 			t.Errorf("want TOTP SMS enabled to be %v; got %v", want, got)
+		}
+		if want, got := magicLinkSignInEnabled, config.MagicLinkSignInEnabled; want != got {
+			t.Errorf("want magic link sign in enabled to be %v; got %v", want, got)
 		}
 		if want, got := googleSignInEnabled, config.GoogleSignInEnabled; want != got {
 			t.Errorf("want google sign in enabled to be %v; got %v", want, got)
@@ -293,6 +303,7 @@ func TestUpdateConfig(t *testing.T) {
 					config.SignUpAutoActivateEnabled,
 					config.TOTPRequired,
 					config.TOTPSMSEnabled,
+					config.MagicLinkSignInEnabled,
 					config.GoogleSignInEnabled,
 					config.GoogleSignInClientID,
 					config.FacebookSignInEnabled,

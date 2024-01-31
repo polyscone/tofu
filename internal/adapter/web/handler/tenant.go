@@ -35,6 +35,10 @@ type WebReadWriter interface {
 	FindResetPasswordTokenEmail(ctx context.Context, token string) (string, error)
 	ConsumeResetPasswordToken(ctx context.Context, token string) error
 
+	AddSignInMagicLinkToken(ctx context.Context, email string, ttl time.Duration) (string, error)
+	FindSignInMagicLinkTokenEmail(ctx context.Context, token string) (string, error)
+	ConsumeSignInMagicLinkToken(ctx context.Context, token string) error
+
 	AddTOTPResetVerifyToken(ctx context.Context, email string, ttl time.Duration) (string, error)
 	FindTOTPResetVerifyTokenEmail(ctx context.Context, token string) (string, error)
 	ConsumeTOTPResetVerifyToken(ctx context.Context, token string) error

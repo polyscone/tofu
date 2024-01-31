@@ -18,6 +18,7 @@ type Config struct {
 	SignUpAutoActivateEnabled bool
 	TOTPRequired              bool
 	TOTPSMSEnabled            bool
+	MagicLinkSignInEnabled    bool
 	GoogleSignInEnabled       bool
 	GoogleSignInClientID      string
 	FacebookSignInEnabled     bool
@@ -94,6 +95,14 @@ func (c *Config) DisableTOTPSMS() {
 
 func (c *Config) ChangeGoogleSignInClientID(clientID GoogleClientID) {
 	c.GoogleSignInClientID = clientID.String()
+}
+
+func (c *Config) EnableMagicLinkSignIn() {
+	c.MagicLinkSignInEnabled = true
+}
+
+func (c *Config) DisableMagicLinkSignIn() {
+	c.MagicLinkSignInEnabled = false
 }
 
 func (c *Config) EnableGoogleSignIn() error {

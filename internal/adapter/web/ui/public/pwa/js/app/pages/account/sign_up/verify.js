@@ -21,7 +21,6 @@ function SignUpVerify () {
 		platform.loading(async () => {
 			const res = await platform.api.account.verify(state.token, state.password, state.password)
 
-			// Save any errors for display later
 			const error = res.body?.error || ""
 			const errors = res.body?.fields || {}
 
@@ -43,7 +42,7 @@ function SignUpVerify () {
 
 					platform.api.account.tryRedirect(platform.routes.path("home"))
 				} else {
-					// Finally display any original errors
+					// Display any original errors
 					// Since this is a sign up verification page, and reset password is only
 					// secondary functionality, we don't want to show password reset errors
 					state.error = error

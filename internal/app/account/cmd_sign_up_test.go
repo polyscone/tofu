@@ -26,8 +26,7 @@ func TestSignUp(t *testing.T) {
 		events.Expect(account.SignedUp{
 			Email:      "foo@example.com",
 			System:     "site",
-			Method:     account.SignUpMethodForm,
-			Kind:       account.SignUpKindAccount,
+			Method:     account.SignUpMethodWebForm,
 			IsVerified: false,
 		})
 
@@ -42,7 +41,7 @@ func TestSignUp(t *testing.T) {
 		if want, got := "site", user.SignedUpSystem; want != got {
 			t.Errorf("want signed up system to be %q; got %q", want, got)
 		}
-		if want, got := account.SignUpMethodForm, user.SignedUpMethod; want != got {
+		if want, got := account.SignUpMethodWebForm, user.SignedUpMethod; want != got {
 			t.Errorf("want signed up method to be %q; got %q", want, got)
 		}
 
@@ -53,8 +52,7 @@ func TestSignUp(t *testing.T) {
 		events.Expect(account.SignedUp{
 			Email:      "foo@example.com",
 			System:     "site",
-			Method:     account.SignUpMethodForm,
-			Kind:       account.SignUpKindAccount,
+			Method:     account.SignUpMethodWebForm,
 			IsVerified: false,
 		})
 	})
@@ -76,8 +74,7 @@ func TestSignUp(t *testing.T) {
 		events.Expect(account.SignedUp{
 			Email:      user.Email,
 			System:     "pwa",
-			Method:     account.SignUpMethodForm,
-			Kind:       account.SignUpKindAccount,
+			Method:     account.SignUpMethodWebForm,
 			IsVerified: true,
 		})
 
@@ -108,8 +105,7 @@ func TestSignUp(t *testing.T) {
 		events.Expect(account.AlreadySignedUp{
 			Email:       user.Email,
 			System:      "pwa",
-			Method:      account.SignUpMethodForm,
-			Kind:        account.SignUpKindAccount,
+			Method:      account.SignUpMethodWebForm,
 			HasPassword: true,
 		})
 
@@ -153,8 +149,7 @@ func TestSignUp(t *testing.T) {
 					events.Expect(account.SignedUp{
 						Email:      tc.email,
 						System:     user.SignedUpSystem,
-						Method:     account.SignUpMethodForm,
-						Kind:       account.SignUpKindAccount,
+						Method:     account.SignUpMethodWebForm,
 						IsVerified: false,
 					})
 

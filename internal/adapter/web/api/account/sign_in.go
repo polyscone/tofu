@@ -11,6 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/repository"
@@ -19,6 +20,8 @@ import (
 func signInRoutes(h *api.Handler, mux *router.ServeMux) {
 	mux.Prefix("/sign-in", func(mux *router.ServeMux) {
 		mux.Post("/", signInPost(h))
+		mux.Post("/magic-link", signInMagicLinkPost(h))
+		mux.Post("/magic-link/request", signInMagicLinkRequestPost(h))
 		mux.Post("/totp", signInTOTPPost(h))
 		mux.Post("/totp/send-sms", signInTOTPSendSMSPost(h))
 		mux.Post("/recovery-code", signInRecoveryCodePost(h))
@@ -57,6 +60,64 @@ func signInPost(h *api.Handler) http.HandlerFunc {
 			}
 
 			h.ErrorJSON(w, r, "sign in with password", err)
+
+			return
+		}
+
+		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+
+		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
+	}
+}
+
+func signInMagicLinkRequestPost(h *api.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Email string
+		}
+		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+			h.ErrorJSON(w, r, "decode JSON", err)
+
+			return
+		}
+
+		if _, err := account.NewEmail(input.Email); err != nil {
+			err = fmt.Errorf("%w: %w", app.ErrMalformedInput, errsx.Map{
+				"email": err,
+			})
+
+			h.ErrorJSON(w, r, "new email", err)
+
+			return
+		}
+
+		h.Broker.Dispatch(event.SignInMagicLinkRequested{
+			Email: input.Email,
+		})
+
+		ctx := r.Context()
+
+		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func signInMagicLinkPost(h *api.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Token string
+		}
+		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+			h.ErrorJSON(w, r, "decode JSON", err)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		if _, err := auth.SignInWithMagicLink(ctx, h.Handler, w, r, input.Token); err != nil {
+			h.ErrorJSON(w, r, "sign in with magic link", err)
 
 			return
 		}

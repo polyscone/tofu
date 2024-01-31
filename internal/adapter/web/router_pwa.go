@@ -29,6 +29,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 	h.Broker.Listen(event.AlreadySignedUpHandler(h))
 	h.Broker.Listen(event.PasswordResetRequestedHandler(h))
+	h.Broker.Listen(event.SignInMagicLinkRequestedHandler(h))
 	h.Broker.Listen(event.SignedInHandler(h))
 	h.Broker.Listen(event.SignedUpHandler(h))
 	h.Broker.Listen(event.TOTPSMSRequestedHandler(h))
@@ -136,12 +137,13 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		return handler.Vars{
 			"url": r.URL.String(),
 			"config": map[string]any{
-				"prefix":                routePrefix,
-				"signUpEnabled":         config.SignUpEnabled,
-				"googleSignInEnabled":   config.GoogleSignInEnabled,
-				"googleSignInClientId":  config.GoogleSignInClientID,
-				"facebookSignInEnabled": config.FacebookSignInEnabled,
-				"facebookSignInAppId":   config.FacebookSignInAppID,
+				"prefix":                 routePrefix,
+				"signUpEnabled":          config.SignUpEnabled,
+				"magicLinkSignInEnabled": config.MagicLinkSignInEnabled,
+				"googleSignInEnabled":    config.GoogleSignInEnabled,
+				"googleSignInClientId":   config.GoogleSignInClientID,
+				"facebookSignInEnabled":  config.FacebookSignInEnabled,
+				"facebookSignInAppId":    config.FacebookSignInAppID,
 			},
 		}
 	}

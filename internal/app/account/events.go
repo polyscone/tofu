@@ -4,14 +4,12 @@ type Invited struct {
 	Email  string
 	System string
 	Method string
-	Kind   string
 }
 
 type SignedUp struct {
 	Email      string
 	System     string
 	Method     string
-	Kind       string
 	IsVerified bool
 }
 
@@ -19,7 +17,6 @@ type AlreadySignedUp struct {
 	Email       string
 	System      string
 	Method      string
-	Kind        string
 	HasPassword bool
 }
 
@@ -27,7 +24,6 @@ type SignedIn struct {
 	Email  string
 	System string
 	Method string
-	Kind   string
 }
 
 type Verified struct {
@@ -38,7 +34,6 @@ type Activated struct {
 	Email       string
 	System      string
 	Method      string
-	Kind        string
 	HasPassword bool
 }
 

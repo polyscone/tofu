@@ -51,8 +51,7 @@ func TestActivateUser(t *testing.T) {
 		events.Expect(account.Activated{
 			Email:       user1.Email,
 			System:      "site",
-			Method:      account.SignUpMethodForm,
-			Kind:        account.SignUpKindAccount,
+			Method:      account.SignUpMethodWebForm,
 			HasPassword: true,
 		})
 		events.Expect(account.RolesChanged{Email: user1.Email})
@@ -70,8 +69,7 @@ func TestActivateUser(t *testing.T) {
 		events.Expect(account.SignedIn{
 			Email:  user1.Email,
 			System: "site",
-			Method: account.SignInMethodForm,
-			Kind:   account.SignInKindPassword,
+			Method: account.SignInMethodPassword,
 		})
 
 		superUserCount = errsx.Must(repo.CountUsersByRoleID(ctx, superRole.ID))
@@ -91,8 +89,7 @@ func TestActivateUser(t *testing.T) {
 		events.Expect(account.Activated{
 			Email:       user2.Email,
 			System:      "site",
-			Method:      account.SignUpMethodForm,
-			Kind:        account.SignUpKindAccount,
+			Method:      account.SignUpMethodWebForm,
 			HasPassword: true,
 		})
 

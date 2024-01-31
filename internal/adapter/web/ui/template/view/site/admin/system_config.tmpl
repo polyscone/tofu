@@ -92,6 +92,18 @@
 			}}
 
 			{{template "com_form_select" .WithComData
+				"Label" "Enable magic link sign in"
+				"Hint" "allows magic link sign up when sign up is enabled"
+				"Name" "magic-link-sign-in-enabled"
+				"Value" (.Form.GetOr "magic-link-sign-in-enabled" .Config.MagicLinkSignInEnabled)
+				"Options" (Slice
+					(Map "Label" "No" "Value" "false")
+					(Map "Label" "Yes" "Value" "true")
+				)
+				"Disabled" $disabled
+			}}
+
+			{{template "com_form_select" .WithComData
 				"Label" "Enable Google sign in"
 				"Hint" "allows Google sign up when sign up is enabled"
 				"Name" "google-sign-in-enabled"

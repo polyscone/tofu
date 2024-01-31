@@ -8,13 +8,16 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/auth"
+	"github.com/polyscone/tofu/internal/adapter/web/event"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/human"
 )
@@ -24,7 +27,15 @@ const lowRecoveryCodes = 2
 func signInRoutes(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/sign-in", func(mux *router.ServeMux) {
 		mux.Get("/", signInGet(h), "account.sign_in")
-		mux.Post("/", signInPost(h), "account.sign_in.post")
+
+		mux.Post("/password", signInPasswordPost(h), "account.sign_in.password.post")
+
+		mux.Prefix("/magic-link", func(mux *router.ServeMux) {
+			mux.Get("/", signInMagicLinkGet(h), "account.sign_in.magic_link")
+			mux.Post("/", signInMagicLinkPost(h), "account.sign_in.magic_link.post")
+			mux.Post("/request", signInMagicLinkRequestPost(h), "account.sign_in.magic_link.request.post")
+			mux.Get("/email-sent", h.HTML.Handler("site/account/sign_in/magic_link_sent"), "account.sign_in.magic_link.request.email_sent")
+		})
 
 		mux.Prefix("/totp", func(mux *router.ServeMux) {
 			mux.Get("/", signInTOTPGet(h), "account.sign_in.totp")
@@ -65,11 +76,11 @@ func signInGet(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.HTML.View(w, r, http.StatusOK, "site/account/sign_in/password", nil)
+		h.HTML.View(w, r, http.StatusOK, "site/account/sign_in/web_form", nil)
 	}
 }
 
-func signInPost(h *ui.Handler) http.HandlerFunc {
+func signInPasswordPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
 			Email    string `form:"email"`
@@ -84,6 +95,83 @@ func signInPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		signInWithPassword(ctx, h, w, r, input.Email, input.Password)
+	}
+}
+
+func signInMagicLinkRequestPost(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Email string `form:"email"`
+		}
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
+
+			return
+		}
+
+		if _, err := account.NewEmail(input.Email); err != nil {
+			err = fmt.Errorf("%w: %w", app.ErrMalformedInput, errsx.Map{
+				"email": err,
+			})
+
+			h.HTML.ErrorView(w, r, "new email", err, "site/account/sign_in/web_form", nil)
+
+			return
+		}
+
+		h.Broker.Dispatch(event.SignInMagicLinkRequested{
+			Email: input.Email,
+		})
+
+		http.Redirect(w, r, h.Path("account.sign_in.magic_link.request.email_sent"), http.StatusSeeOther)
+	}
+}
+
+func signInMagicLinkGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
+			h.HTML.View(w, r, http.StatusOK, "site/account/sign_out/signed_in", nil)
+
+			return
+		}
+
+		h.HTML.View(w, r, http.StatusOK, "site/account/sign_in/magic_link", nil)
+	}
+}
+
+func signInMagicLinkPost(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Token string `form:"token"`
+		}
+		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
+
+			return
+		}
+
+		if input.Token == "" {
+			http.Redirect(w, r, h.Path("account.sign_in.magic_link"), http.StatusSeeOther)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		signedIn, err := auth.SignInWithMagicLink(ctx, h.Handler, w, r, input.Token)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "sign in with magic link", err, "site/account/sign_in/magic_link", nil)
+
+			return
+		}
+
+		if signedIn {
+			signInSuccessRedirect(h, w, r)
+		} else {
+			http.Redirect(w, r, h.Path("account.verify.success"), http.StatusSeeOther)
+		}
 	}
 }
 
@@ -397,7 +485,7 @@ func signInFacebookPost(h *ui.Handler) http.HandlerFunc {
 
 func signInWithPassword(ctx context.Context, h *ui.Handler, w http.ResponseWriter, r *http.Request, email, password string) {
 	if err := auth.SignInWithPassword(ctx, h.Handler, w, r, email, password); err != nil {
-		h.HTML.ErrorViewFunc(w, r, "sign in with password", err, "site/account/sign_in/password", func(data *ui.ViewData) {
+		h.HTML.ErrorViewFunc(w, r, "sign in with password", err, "site/account/sign_in/web_form", func(data *ui.ViewData) {
 			var throttle *account.SignInThrottleError
 			if errors.As(err, &throttle) {
 				wait := human.Duration(throttle.UnlockIn)

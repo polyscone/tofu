@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
-func TestSignInWithGoogle(t *testing.T) {
+func TestSignInWithMagicLink(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
@@ -20,7 +20,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		signedIn, err := svc.SignInWithGoogle(ctx, user1.Email, account.GoogleSignInOnly)
+		signedIn, err := svc.SignInWithMagicLink(ctx, user1.Email, account.MagicLinkSignInOnly)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -31,7 +31,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		events.Expect(account.SignedIn{
 			Email:  user1.Email,
 			System: "site",
-			Method: account.SignInMethodGoogle,
+			Method: account.SignInMethodMagicLink,
 		})
 
 		user1, err = repo.FindUserByID(ctx, user1.ID)
@@ -45,7 +45,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		if want, got := "site", user1.LastSignInAttemptSystem; want != got {
 			t.Errorf("want last sign in attempt system to be %q; got %q", want, got)
 		}
-		if want, got := account.SignInMethodGoogle, user1.LastSignInAttemptMethod; want != got {
+		if want, got := account.SignInMethodMagicLink, user1.LastSignInAttemptMethod; want != got {
 			t.Errorf("want last sign in attempt method to be %q; got %q", want, got)
 		}
 		if !user1.LastSignedInAt.IsZero() {
@@ -58,7 +58,7 @@ func TestSignInWithGoogle(t *testing.T) {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
-		signedIn, err = svc.SignInWithGoogle(ctx, "bar@example.com", account.GoogleAllowSignUpActivate)
+		signedIn, err = svc.SignInWithMagicLink(ctx, "bar@example.com", account.MagicLinkAllowSignUpActivate)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -69,19 +69,19 @@ func TestSignInWithGoogle(t *testing.T) {
 		events.Expect(account.SignedUp{
 			Email:      "bar@example.com",
 			System:     "site",
-			Method:     account.SignUpMethodGoogle,
+			Method:     account.SignUpMethodMagicLink,
 			IsVerified: true,
 		})
 		events.Expect(account.Activated{
 			Email:       "bar@example.com",
 			System:      "site",
-			Method:      account.SignUpMethodGoogle,
+			Method:      account.SignUpMethodMagicLink,
 			HasPassword: false,
 		})
 		events.Expect(account.SignedIn{
 			Email:  "bar@example.com",
 			System: "site",
-			Method: account.SignInMethodGoogle,
+			Method: account.SignInMethodMagicLink,
 		})
 
 		user2, err := repo.FindUserByEmail(ctx, "bar@example.com")
@@ -101,7 +101,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		if want, got := "site", user2.SignedUpSystem; want != got {
 			t.Errorf("want signed up system to be %q; got %q", want, got)
 		}
-		if want, got := account.SignUpMethodGoogle, user2.SignedUpMethod; want != got {
+		if want, got := account.SignUpMethodMagicLink, user2.SignedUpMethod; want != got {
 			t.Errorf("want signed up method to be %q; got %q", want, got)
 		}
 		if !user2.LastSignedInAt.Equal(user2.LastSignInAttemptAt) {
@@ -110,11 +110,11 @@ func TestSignInWithGoogle(t *testing.T) {
 		if want, got := "site", user2.LastSignedInSystem; want != got {
 			t.Errorf("want last signed in system to be %q; got %q", want, got)
 		}
-		if want, got := account.SignInMethodGoogle, user2.LastSignedInMethod; want != got {
+		if want, got := account.SignInMethodMagicLink, user2.LastSignedInMethod; want != got {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
-		signedIn, err = svc.SignInWithGoogle(ctx, "bar@example.com", account.GoogleSignInOnly)
+		signedIn, err = svc.SignInWithMagicLink(ctx, "bar@example.com", account.MagicLinkSignInOnly)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -125,7 +125,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		events.Expect(account.SignedIn{
 			Email:  user2.Email,
 			System: "site",
-			Method: account.SignInMethodGoogle,
+			Method: account.SignInMethodMagicLink,
 		})
 
 		user2, err = repo.FindUserByID(ctx, user2.ID)
@@ -139,7 +139,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		if want, got := "site", user2.LastSignedInSystem; want != got {
 			t.Errorf("want last signed in system to be %q; got %q", want, got)
 		}
-		if want, got := account.SignInMethodGoogle, user2.LastSignedInMethod; want != got {
+		if want, got := account.SignInMethodMagicLink, user2.LastSignedInMethod; want != got {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 	})
@@ -160,21 +160,21 @@ func TestSignInWithGoogle(t *testing.T) {
 		tt := []struct {
 			name      string
 			email     string
-			behaviour account.GoogleSignInBehaviour
+			behaviour account.MagicLinkSignInBehaviour
 			want      error
 		}{
-			{"empty email", "", account.GoogleSignInOnly, app.ErrMalformedInput},
-			{"email without @ sign", "joebloggs.com", account.GoogleSignInOnly, app.ErrMalformedInput},
-			{"sign in only with non-existent user", "foo+void@bar.com", account.GoogleSignInOnly, account.ErrGoogleSignUpDisabled},
-			{"unverified", user1.Email, account.GoogleSignInOnly, account.ErrNotVerified},
-			{"unactivated", user2.Email, account.GoogleSignInOnly, account.ErrNotActivated},
-			{"unverified suspended user", user3.Email, account.GoogleSignInOnly, account.ErrNotVerified},
-			{"unactivated suspended user", user4.Email, account.GoogleSignInOnly, account.ErrNotActivated},
-			{"suspended user", user5.Email, account.GoogleSignInOnly, account.ErrSuspended},
+			{"empty email", "", account.MagicLinkSignInOnly, app.ErrMalformedInput},
+			{"email without @ sign", "joebloggs.com", account.MagicLinkSignInOnly, app.ErrMalformedInput},
+			{"sign in only with non-existent user", "foo+void@bar.com", account.MagicLinkSignInOnly, account.ErrMagicLinkSignUpDisabled},
+			{"unverified", user1.Email, account.MagicLinkSignInOnly, account.ErrNotVerified},
+			{"unactivated", user2.Email, account.MagicLinkSignInOnly, account.ErrNotActivated},
+			{"unverified suspended user", user3.Email, account.MagicLinkSignInOnly, account.ErrNotVerified},
+			{"unactivated suspended user", user4.Email, account.MagicLinkSignInOnly, account.ErrNotActivated},
+			{"suspended user", user5.Email, account.MagicLinkSignInOnly, account.ErrSuspended},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				signedIn, err := svc.SignInWithGoogle(ctx, tc.email, tc.behaviour)
+				signedIn, err := svc.SignInWithMagicLink(ctx, tc.email, tc.behaviour)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
@@ -215,13 +215,13 @@ func TestSignInWithGoogle(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				signedIn, err := svc.SignInWithGoogle(ctx, tc.email, account.GoogleAllowSignUpActivate)
+				signedIn, err := svc.SignInWithMagicLink(ctx, tc.email, account.MagicLinkAllowSignUpActivate)
 				switch {
 				case err == nil:
 					events.Expect(account.SignedIn{
 						Email:  tc.email,
 						System: "site",
-						Method: account.SignInMethodGoogle,
+						Method: account.SignInMethodMagicLink,
 					})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):

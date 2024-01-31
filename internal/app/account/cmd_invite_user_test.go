@@ -37,7 +37,6 @@ func TestInviteUser(t *testing.T) {
 			Email:  "foo@example.com",
 			System: "site",
 			Method: account.SignUpMethodInvite,
-			Kind:   account.SignUpKindAccount,
 		})
 
 		user, err := repo.FindUserByEmail(ctx, "foo@example.com")
@@ -63,7 +62,6 @@ func TestInviteUser(t *testing.T) {
 			Email:  "foo@example.com",
 			System: "site",
 			Method: account.SignUpMethodInvite,
-			Kind:   account.SignUpKindAccount,
 		})
 	})
 
@@ -132,7 +130,6 @@ func TestInviteUser(t *testing.T) {
 						Email:  tc.email,
 						System: "site",
 						Method: account.SignUpMethodInvite,
-						Kind:   account.SignUpKindAccount,
 					})
 
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):

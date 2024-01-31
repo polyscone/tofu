@@ -26,6 +26,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			SignUpAutoActivateEnabled bool   `form:"sign-up-auto-activate-enabled" compare:"true"`
 			TOTPRequired              bool   `form:"totp-required" compare:"true"`
 			TOTPSMSEnabled            bool   `form:"totp-sms-enabled" compare:"true"`
+			MagicLinkSignInEnabled    bool   `form:"magic-link-sign-in-enabled" compare:"true"`
 			GoogleSignInEnabled       bool   `form:"google-sign-in-enabled" compare:"true"`
 			GoogleSignInClientID      string `form:"google-sign-in-client-id"`
 			FacebookSignInEnabled     bool   `form:"facebook-sign-in-enabled" compare:"true"`
@@ -68,6 +69,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			input.SignUpAutoActivateEnabled,
 			input.TOTPRequired,
 			input.TOTPSMSEnabled,
+			input.MagicLinkSignInEnabled,
 			input.GoogleSignInEnabled,
 			input.GoogleSignInClientID,
 			input.FacebookSignInEnabled,
