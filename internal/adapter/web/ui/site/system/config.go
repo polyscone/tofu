@@ -1,8 +1,9 @@
-package admin
+package system
 
 import (
 	"net/http"
 
+	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
@@ -10,9 +11,11 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func systemConfigRoutes(h *ui.Handler, mux *router.ServeMux) {
+func Config(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/config", func(mux *router.ServeMux) {
-		mux.Get("/", h.HTML.Handler("site/admin/system_config"), "system.config")
+		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
+
+		mux.Get("/", h.HTML.Handler("site/system/config"), "system.config")
 		mux.Post("/", systemConfigPost(h), "system.config.post")
 	})
 }
@@ -81,7 +84,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			input.TwilioFromTel,
 		)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "update config", err, "site/admin/system_config", nil)
+			h.HTML.ErrorView(w, r, "update config", err, "site/system/config", nil)
 
 			return
 		}

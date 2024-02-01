@@ -1,4 +1,4 @@
-package admin
+package system
 
 import (
 	"database/sql"
@@ -16,7 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func systemMetricsRoutes(h *ui.Handler, mux *router.ServeMux) {
+func Metrics(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/metrics", func(mux *router.ServeMux) {
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewMetrics() }))
 
@@ -241,7 +241,7 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			}
 		})
 
-		h.HTML.View(w, r, http.StatusOK, "site/admin/system_metrics", handler.Vars{
+		h.HTML.View(w, r, http.StatusOK, "site/system/metrics", handler.Vars{
 			"Revision":          revision,
 			"Tags":              tags,
 			"Go":                _go,
