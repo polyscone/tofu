@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/api"
 	"github.com/polyscone/tofu/internal/adapter/web/auth"
@@ -93,6 +94,7 @@ func signInMagicLinkRequestPost(h *api.Handler) http.HandlerFunc {
 
 		h.Broker.Dispatch(event.SignInMagicLinkRequested{
 			Email: input.Email,
+			TTL:   10 * time.Minute,
 		})
 
 		ctx := r.Context()

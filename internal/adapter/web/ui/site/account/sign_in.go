@@ -119,11 +119,15 @@ func signInMagicLinkRequestPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
+		ttl := 10 * time.Minute
 		h.Broker.Dispatch(event.SignInMagicLinkRequested{
 			Email: input.Email,
+			TTL:   ttl,
 		})
 
-		http.Redirect(w, r, h.Path("account.sign_in.magic_link.request.email_sent"), http.StatusSeeOther)
+		qs := "?ttl=" + human.Duration(ttl)
+
+		http.Redirect(w, r, h.Path("account.sign_in.magic_link.request.email_sent")+qs, http.StatusSeeOther)
 	}
 }
 

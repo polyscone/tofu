@@ -6,7 +6,9 @@ function SignInWithGoogle () {
 
 	function renderButton (vnode) {
 		if (window.google && !rendered) {
-			google.accounts.id.renderButton(vnode.dom, {
+			const node = vnode.dom.parentNode.querySelector("#sign-in__gsi_button")
+
+			google.accounts.id.renderButton(node, {
 				type: "standard",
 				shape: "rectangle",
 				theme: "outline",
@@ -80,7 +82,10 @@ function SignInWithGoogle () {
 				return null
 			}
 
-			return m("#sign-in__gsi_button.g_id_signin")
+			return [
+				m(".google-signin__dummy"),
+				m("#sign-in__gsi_button.g_id_signin"),
+			]
 		},
 	}
 }
@@ -295,14 +300,12 @@ function SignInMagicLinkRequest () {
 						error: state.errors.email,
 						oninput (e) { state.email = e.target.value },
 					}),
-					m("button[type=submit]", "Get sign in code"),
-					m(m.route.Link, { href: platform.routes.path("account.sign_in"), class: "btn btn--alt" }, "Use a password"),
-					m("div", [
+					m("button[type=submit]", "Send sign in code"),
+					m("div.sign-in-alt", [
 						m("p.sign-in-alt__title", "Or"),
-						m(".sign-in-alt.text-center", [
-							m(SignInWithGoogle),
-							m(SignInWithFacebook),
-						]),
+						m(m.route.Link, { href: platform.routes.path("account.sign_in"), class: "btn btn--alt btn--large" }, "Sign in with a password"),
+						m(SignInWithGoogle),
+						m(SignInWithFacebook),
 					]),
 				]),
 			]
@@ -383,15 +386,13 @@ function SignIn () {
 						oninput (e) { state.password = e.target.value },
 					}),
 					m("button[type=submit]", "Sign in"),
-					platform.config.magicLinkSignInEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_in.magic_link.request"), class: "btn btn--alt" }, "Sign in with email") : null,
 					platform.config.signUpEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_up") }, "Sign up") : null,
 					m(m.route.Link, { href: platform.routes.path("account.reset_password") }, "Forgotten your password?"),
-					m("div", [
+					m("div.sign-in-alt", [
 						m("p.sign-in-alt__title", "Or"),
-						m(".sign-in-alt.text-center", [
-							m(SignInWithGoogle),
-							m(SignInWithFacebook),
-						]),
+						platform.config.magicLinkSignInEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_in.magic_link.request"), class: "btn btn--alt btn--large" }, "Sign in with a magic link") : null,
+						m(SignInWithGoogle),
+						m(SignInWithFacebook),
 					]),
 				]),
 			]
@@ -420,5 +421,8 @@ platform.routes.register("/account/sign-in/magic-link", {
 
 platform.routes.register("/account/sign-in/magic-link/request", {
 	name: "account.sign_in.magic_link.request",
+	onmatch () {
+		isFirstLoad = false
+	},
 	render: SignInMagicLinkRequest,
 })

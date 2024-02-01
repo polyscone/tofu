@@ -10,9 +10,16 @@
 
 {{define "view_body"}}
 
+{{$ttl := .URL.Query.Get "ttl"}}
+
 <div class="center">
-	<p>We've sent a link to your email address which you can use to sign in.</p>
-	<p>It will expire shortly and can only be used once.</p>
+	<p>We've sent a magic link to your email address that you can use to access your account.</p>
+
+	{{if $ttl}}
+		<p>It will expire in {{$ttl}} and can only be used once.</p>
+	{{else}}
+		<p>It will expire shortly and can only be used once.</p>
+	{{end}}
 </div>
 
 {{end}}

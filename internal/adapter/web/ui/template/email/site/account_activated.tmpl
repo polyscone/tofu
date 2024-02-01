@@ -7,7 +7,7 @@ Your account has been activated
 {{if .Vars.HasPassword -}}
 	You can now sign in using the password you chose when you verified your email address.
 {{else -}}
-	You can now sign in through the platform you used to sign up.
+	You can now sign in to your account.
 {{end -}}
 
 To sign in paste the following URL into your browser:
@@ -22,7 +22,7 @@ To sign in paste the following URL into your browser:
 {{if .Vars.HasPassword -}}
 	<p>You can now sign in using the password you chose when you verified your email address.</p>
 {{else -}}
-	<p>You can now sign in through the platform you used to sign up.</p>
+	<p>You can now sign in to your account.</p>
 {{end -}}
 
 <p><a href="{{.URL.Scheme}}://{{.URL.Host}}{{Path "account.sign_in"}}">Click here</a> to sign in to your account.</p>

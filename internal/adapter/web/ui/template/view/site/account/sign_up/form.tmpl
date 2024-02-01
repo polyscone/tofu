@@ -36,7 +36,7 @@
 				<button type="submit" class="push-inline-end">Sign up</button>
 
 				{{if .Vars.SuperUserCount}}
-					<a href="{{Path "account.sign_in"}}">Already have an account?</a>
+					<a href="{{Path "account.sign_in"}}{{.URL.Query.String}}">Already have an account?</a>
 				{{end}}
 			</div>
 		</form>

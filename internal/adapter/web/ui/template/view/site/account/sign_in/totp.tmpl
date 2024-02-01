@@ -37,8 +37,8 @@
 				<button type="submit" formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt push-inline-end">Resend passcode SMS</button>
 			{{end}}
 
-			<div>
-				<a href="{{Path "account.sign_in.recovery_code"}}">Use a recovery code</a><br>
+			<div class="stack">
+				<a href="{{Path "account.sign_in.recovery_code"}}">Use a recovery code</a>
 				<a href="{{Path "account.sign_in.totp.reset"}}">Locked out?</a>
 			</div>
 		</div>

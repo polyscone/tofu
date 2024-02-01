@@ -7,6 +7,8 @@ Sign in
 To sign in paste the following code into the prompt in the app:
 {{.Vars.Token}}
 
+It will expire in {{.Vars.TTL}}.
+
 {{- end}}
 
 {{define "html" -}}
@@ -14,5 +16,6 @@ To sign in paste the following code into the prompt in the app:
 <h1>Sign in</h1>
 <p>To sign in paste the following code into the prompt in the app:</p>
 <p>{{.Vars.Token}}</p>
+<p>It will expire in {{.Vars.TTL}}.</p>
 
 {{- end}}
