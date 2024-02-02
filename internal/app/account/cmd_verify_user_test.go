@@ -30,6 +30,10 @@ func TestVerifyUser(t *testing.T) {
 
 		user = errsx.Must(repo.FindUserByEmail(ctx, user.Email))
 
+		if len(user.HashedPassword) == 0 {
+			t.Fatal("want user to have a hashed password")
+		}
+
 		if user.VerifiedAt.IsZero() {
 			t.Error("want non-zero verified at; got zero")
 		}

@@ -3,11 +3,7 @@
 {{define "view_head"}}
 
 <div class="center">
-	{{if .Config.SetupRequired}}
-		<h1>Initial system configuration</h1>
-	{{else}}
-		<h1>System configuration</h1>
-	{{end}}
+	<h1>System configuration</h1>
 </div>
 
 {{end}}
@@ -55,7 +51,6 @@
 					(Map "Label" "No (invite only)" "Value" "false")
 					(Map "Label" "Yes" "Value" "true")
 				)
-				"Disabled" (or $disabled .Config.SetupRequired)
 			}}
 
 			{{template "com_form_select" .WithComData
@@ -66,7 +61,6 @@
 					(Map "Label" "No (manual activation required)" "Value" "false")
 					(Map "Label" "Yes" "Value" "true")
 				)
-				"Disabled" (or $disabled .Config.SetupRequired)
 			}}
 
 			{{template "com_form_select" .WithComData
@@ -217,11 +211,7 @@
 		</fieldset>
 
 		<div class="bag reverse">
-			{{if .Config.SetupRequired}}
-				<button type="submit" class="push-inline-end">Finish setup</button>
-			{{else}}
-				<button type="submit" class="push-inline-end"{{if $disabled}} disabled{{end}}>Update configuration</button>
-			{{end}}
+			<button type="submit" class="push-inline-end"{{if $disabled}} disabled{{end}}>Update configuration</button>
 		</div>
 	</form>
 </div>

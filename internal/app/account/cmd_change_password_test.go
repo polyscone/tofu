@@ -44,8 +44,12 @@ func TestChangePassword(t *testing.T) {
 
 		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
 
+		if len(user.HashedPassword) == 0 {
+			t.Fatal("want user to have a hashed password")
+		}
+
 		if _, err := user.SignInWithPassword("site", newPassword, hasher); err != nil {
-			t.Errorf("want to be able to aign in with new password; got %q", err)
+			t.Errorf("want to be able to sign in with new password; got %q", err)
 		}
 	})
 

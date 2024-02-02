@@ -5,11 +5,11 @@ type System struct {
 }
 
 func (s System) CanViewConfig() bool {
-	return s.requireConfigSetup || s.can(viewConfig)
+	return s.can(viewConfig)
 }
 
 func (s System) CanUpdateConfig() bool {
-	return s.requireConfigSetup || s.can(updateConfig)
+	return s.can(updateConfig)
 }
 
 func (s System) CanViewMetrics() bool {

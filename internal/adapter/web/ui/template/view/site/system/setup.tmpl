@@ -1,0 +1,65 @@
+{{define "master"}}{{template "master_site" .}}{{end}}
+
+{{define "view_head"}}
+
+<div class="center">
+	<h1>Setup</h1>
+</div>
+
+{{end}}
+
+{{define "view_body"}}
+
+<div class="center">
+	<form action="{{Path "system.setup.post"}}" method="POST">
+		{{template "com_csrf_input" .}}
+
+		<fieldset>
+			<legend>Account</legend>
+
+			<p>We'll create an admin account using the email and password you enter below.</p>
+
+			{{template "com_email_input" .WithComData
+				"Label" "Email"
+				"Name" "email"
+				"Required" true
+				"Autocomplete" "username"
+			}}
+
+			{{template "com_password_input" .WithComData
+				"Label" "Password"
+				"Name" "password"
+				"Required" true
+				"Autocomplete" "current-password"
+			}}
+		</fieldset>
+
+		<fieldset>
+			<legend>Email</legend>
+
+			{{template "com_email_input" .WithComData
+				"Label" "System email"
+				"Hint" "from address in system emails"
+				"Name" "system-email"
+				"Value" (.Form.GetOr "system-email" .Config.SystemEmail)
+				"Required" true
+				"Autocomplete" "email"
+			}}
+
+			{{template "com_email_input" .WithComData
+				"Label" "Security email"
+				"Hint" "for reporting security vulnerabilities"
+				"Name" "security-email"
+				"Value" (.Form.GetOr "security-email" .Config.SecurityEmail)
+				"Required" true
+				"Autocomplete" "email"
+			}}
+		</fieldset>
+
+		<div class="bag reverse">
+			<button type="submit" class="push-inline-end">Finish setup</button>
+		</div>
+	</form>
+</div>
+
+{{end}}

@@ -1,5 +1,11 @@
 package account
 
+type InitialUserSignedUp struct {
+	Email  string
+	System string
+	Method string
+}
+
 type Invited struct {
 	Email  string
 	System string

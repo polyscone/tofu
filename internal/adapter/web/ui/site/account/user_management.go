@@ -16,7 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/repository"
 )
 
-func UserManagement(h *ui.Handler, mux *router.ServeMux) {
+func UserManagementRoutes(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/users", func(mux *router.ServeMux) {
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewUsers() }))
 

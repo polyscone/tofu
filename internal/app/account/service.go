@@ -16,6 +16,7 @@ type Reader interface {
 	FindRoleByID(ctx context.Context, id int) (*Role, error)
 	FindRoleByName(ctx context.Context, name string) (*Role, error)
 
+	CountUsers(ctx context.Context) (int, error)
 	CountUsersByRoleID(ctx context.Context, roleID int) (int, error)
 	FindUserByID(ctx context.Context, id int) (*User, error)
 	FindUserByEmail(ctx context.Context, email string) (*User, error)

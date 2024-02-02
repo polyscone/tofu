@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Config(h *ui.Handler, mux *router.ServeMux) {
+func ConfigRoutes(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/config", func(mux *router.ServeMux) {
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
 
@@ -48,20 +48,11 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 		passport := h.Passport(ctx)
-		config := h.Config(ctx)
 
 		if !passport.System.CanUpdateConfig() {
 			h.HTML.ErrorView(w, r, "can update config", app.ErrForbidden, "site/error", nil)
 
 			return
-		}
-
-		if config.SetupRequired {
-			// We force sign up and sign up auto activate enabled to be true
-			// when the config is first being setup because it's required for
-			// the first user to be created
-			input.SignUpEnabled = true
-			input.SignUpAutoActivateEnabled = true
 		}
 
 		_, err := h.Svc.System.UpdateConfig(ctx,

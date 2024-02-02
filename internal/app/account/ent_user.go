@@ -22,12 +22,13 @@ const (
 )
 
 const (
-	SignUpMethodNone      = ""
-	SignUpMethodWebForm   = "web form"
-	SignUpMethodMagicLink = "magic link"
-	SignUpMethodGoogle    = "google"
-	SignUpMethodFacebook  = "facebook"
-	SignUpMethodInvite    = "invite"
+	SignUpMethodNone        = ""
+	SignUpMethodSystemSetup = "system setup"
+	SignUpMethodWebForm     = "web form"
+	SignUpMethodMagicLink   = "magic link"
+	SignUpMethodGoogle      = "google"
+	SignUpMethodFacebook    = "facebook"
+	SignUpMethodInvite      = "invite"
 )
 
 var (
@@ -166,13 +167,48 @@ func (u *User) Invite(system string) error {
 	return nil
 }
 
+func (u *User) SignUpAsInitialUser(system string, roles []*Role, password Password, hasher Hasher) error {
+	if !u.SignedUpAt.IsZero() {
+		return errors.New("initial user cannot already be signed up")
+	}
+	if !u.VerifiedAt.IsZero() {
+		return errors.New("initial user cannot already be verified")
+	}
+	if !u.ActivatedAt.IsZero() {
+		return errors.New("initial user cannot already be activated")
+	}
+
+	if err := u.setPassword(password, hasher); err != nil {
+		return fmt.Errorf("set password: %w", err)
+	}
+
+	now := time.Now().UTC()
+
+	u.SignedUpAt = now
+	u.SignedUpSystem = system
+	u.SignedUpMethod = SignUpMethodSystemSetup
+
+	u.VerifiedAt = now
+	u.ActivatedAt = now
+
+	u.Roles = roles
+
+	u.Events.Enqueue(InitialUserSignedUp{
+		Email:  u.Email,
+		System: system,
+		Method: SignUpMethodSystemSetup,
+	})
+
+	return nil
+}
+
 func (u *User) SignUp(system string) error {
 	if !u.ActivatedAt.IsZero() {
 		u.Events.Enqueue(AlreadySignedUp{
 			Email:       u.Email,
 			System:      system,
 			Method:      u.SignedUpMethod,
-			HasPassword: len(u.HashedPassword) > 0,
+			HasPassword: len(u.HashedPassword) != 0,
 		})
 
 		return nil
@@ -310,7 +346,7 @@ func (u *User) Activate() error {
 		Email:       u.Email,
 		System:      u.SignedUpSystem,
 		Method:      u.SignedUpMethod,
-		HasPassword: len(u.HashedPassword) > 0,
+		HasPassword: len(u.HashedPassword) != 0,
 	})
 
 	return nil
@@ -352,7 +388,7 @@ func (u *User) ChoosePassword(newPassword Password, hasher Hasher) error {
 		return errors.New("cannot choose password until activated")
 	}
 
-	if len(u.HashedPassword) > 0 {
+	if len(u.HashedPassword) != 0 {
 		return fmt.Errorf("cannot replace an already chosen password")
 	}
 

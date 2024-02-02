@@ -125,9 +125,9 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 
 		var passport guard.Passport
 		if !h.Sessions.GetBool(ctx, sess.IsSignedIn) {
-			passport = guard.NewPassport(config.SetupRequired, guard.User{})
+			passport = guard.NewPassport(guard.User{})
 		} else {
-			passport = guard.NewPassport(config.SetupRequired, guard.User{
+			passport = guard.NewPassport(guard.User{
 				ID:          user.ID,
 				IsSuper:     user.IsSuper(),
 				Permissions: user.Permissions(),
@@ -201,7 +201,7 @@ func (h *Handler) User(ctx context.Context) *account.User {
 func (h *Handler) Passport(ctx context.Context) guard.Passport {
 	value := ctx.Value(ctxPassport)
 	if value == nil {
-		return guard.NewPassport(false, guard.User{})
+		return guard.NewPassport(guard.User{})
 	}
 
 	passport, ok := value.(guard.Passport)
@@ -215,12 +215,10 @@ func (h *Handler) Passport(ctx context.Context) guard.Passport {
 func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Passport, error) {
 	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
-		return guard.NewPassport(false, guard.User{}), fmt.Errorf("find user by email: %w", err)
+		return guard.NewPassport(guard.User{}), fmt.Errorf("find user by email: %w", err)
 	}
 
-	config := h.Config(ctx)
-
-	p := guard.NewPassport(config.SetupRequired, guard.User{
+	p := guard.NewPassport(guard.User{
 		ID:          user.ID,
 		IsSuper:     user.IsSuper(),
 		Permissions: user.Permissions(),

@@ -16,13 +16,13 @@ func Routes(h *ui.Handler, mux *router.ServeMux) {
 		mux.Get("/", h.HTML.Handler("site/admin/dashboard"), "admin.dashboard")
 
 		mux.Prefix("/account", func(mux *router.ServeMux) {
-			account.RoleManagement(h, mux)
-			account.UserManagement(h, mux)
+			account.RoleManagementRoutes(h, mux)
+			account.UserManagementRoutes(h, mux)
 		})
 
 		mux.Prefix("/system", func(mux *router.ServeMux) {
-			system.Config(h, mux)
-			system.Metrics(h, mux)
+			system.ConfigRoutes(h, mux)
+			system.MetricsRoutes(h, mux)
 		})
 	})
 }

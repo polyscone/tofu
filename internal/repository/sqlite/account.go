@@ -128,6 +128,18 @@ func (r *AccountRepo) FindUserByEmail(ctx context.Context, email string) (*accou
 	return user, nil
 }
 
+func (r *AccountRepo) CountUsers(ctx context.Context) (int, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	_, total, err := r.findUsers(ctx, tx, account.UserFilter{})
+
+	return total, err
+}
+
 func (r *AccountRepo) CountUsersByRoleID(ctx context.Context, roleID int) (int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {

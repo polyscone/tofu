@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+	"sync/atomic"
 
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
@@ -19,6 +20,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui/site/account"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/site/admin"
 	"github.com/polyscone/tofu/internal/adapter/web/ui/site/event"
+	"github.com/polyscone/tofu/internal/adapter/web/ui/site/system"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/pkg/size"
@@ -39,8 +41,6 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	h.Broker.Listen(event.SignedUpHandler(h))
 	h.Broker.Listen(event.TOTPDisabledHandler(h))
 	h.Broker.Listen(event.TOTPSMSRequestedHandler(h))
-
-	h.Broker.ListenImmediate(event.ImmediateActivatedHandler(h))
 
 	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		if errors.Is(err, context.Canceled) {
@@ -136,6 +136,8 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		return 0
 	}))
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
+		var setupDone atomic.Bool
+
 		return func(w http.ResponseWriter, r *http.Request) {
 			if filepath.Ext(r.URL.Path) != "" {
 				next(w, r)
@@ -147,11 +149,22 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 			config := h.Config(ctx)
 			user := h.User(ctx)
 
-			systemConfigPath := mux.Path("system.config")
-			if r.Method == http.MethodGet && config.SetupRequired && r.URL.Path != systemConfigPath {
-				http.Redirect(w, r, systemConfigPath, http.StatusSeeOther)
+			if !setupDone.Load() {
+				userCount, err := h.Repo.Account.CountUsers(ctx)
+				if err != nil {
+					h.HTML.ErrorView(w, r, "count users", err, "site/error", nil)
 
-				return
+					return
+				}
+
+				setupDone.Store(!config.SetupRequired && userCount != 0)
+
+				systemSetupPath := mux.Path("system.setup")
+				if r.Method == http.MethodGet && !setupDone.Load() && r.URL.Path != systemSetupPath {
+					http.Redirect(w, r, systemSetupPath, http.StatusSeeOther)
+
+					return
+				}
 			}
 
 			isTOTPSection := h.HasPathPrefix(r.URL.Path, "account.totp.section")
@@ -182,6 +195,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 	account.Routes(h, mux)
 	admin.Routes(h, mux)
+	system.Routes(h, mux)
 
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)

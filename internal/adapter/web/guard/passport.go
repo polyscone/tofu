@@ -9,21 +9,19 @@ type User struct {
 }
 
 type Passport struct {
-	requireConfigSetup bool
-	userID             int
-	isSuper            bool
-	permissions        []string
+	userID      int
+	isSuper     bool
+	permissions []string
 
 	Account Account
 	System  System
 }
 
-func NewPassport(requireConfigSetup bool, user User) Passport {
+func NewPassport(user User) Passport {
 	p := Passport{
-		requireConfigSetup: requireConfigSetup,
-		userID:             user.ID,
-		isSuper:            user.IsSuper,
-		permissions:        user.Permissions,
+		userID:      user.ID,
+		isSuper:     user.IsSuper,
+		permissions: user.Permissions,
 	}
 
 	p.Account = Account{Passport: &p}

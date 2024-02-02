@@ -10,7 +10,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
@@ -40,16 +39,7 @@ func signUpGet(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		superUserCount, err := h.Repo.Account.CountUsersByRoleID(ctx, account.SuperRole.ID)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "count users by role id", err, "site/error", nil)
-
-			return
-		}
-
-		h.HTML.View(w, r, http.StatusOK, "site/account/sign_up/form", handler.Vars{
-			"SuperUserCount": superUserCount,
-		})
+		h.HTML.View(w, r, http.StatusOK, "site/account/sign_up/form", nil)
 	}
 }
 
