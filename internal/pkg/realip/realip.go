@@ -35,6 +35,14 @@ func FromRequest(r *http.Request, proxies ...string) (string, error) {
 		return remoteAddr, nil
 	}
 
+	// Each string may contain multiple addresses separated by commas, for example...
+	// 	[]string{
+	// 		"1.1.1.1",
+	// 		"2.2.2.2, 3.3.3.3",
+	// 		"4.4.4.4",
+	// 	}
+	// ...so we join all of them together with commas and split them by
+	// comma again to ensure we have one address per string
 	all := strings.Join(xff, ",") + "," + remoteAddr
 	addrs := strings.Split(all, ",")
 
