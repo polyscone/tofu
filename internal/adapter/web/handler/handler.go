@@ -239,7 +239,7 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 	return csrf.MaskedToken(ctx), nil
 }
 
-func (h *Handler) template(files fs.FS, funcs template.FuncMap, name string, patterns []string) *template.Template {
+func (h *Handler) template(files fs.FS, patterns []string, funcs template.FuncMap, name string) *template.Template {
 	tmpl := template.New(name).Option("missingkey=default").Funcs(funcs)
 
 	for _, pattern := range patterns {
@@ -257,13 +257,13 @@ func (h *Handler) template(files fs.FS, funcs template.FuncMap, name string, pat
 	return tmpl
 }
 
-func (h *Handler) Template(files fs.FS, funcs template.FuncMap, name string, patterns ...string) *template.Template {
+func (h *Handler) Template(files fs.FS, patterns []string, funcs template.FuncMap, name string) *template.Template {
 	if h.Tenant.Dev {
-		return h.template(files, funcs, name, patterns)
+		return h.template(files, patterns, funcs, name)
 	}
 
 	return h.templates.LoadOrStore(name, func() *template.Template {
-		return h.template(files, funcs, name, patterns)
+		return h.template(files, patterns, funcs, name)
 	})
 }
 

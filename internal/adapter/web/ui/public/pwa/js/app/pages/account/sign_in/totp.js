@@ -63,7 +63,7 @@ function SignInTOTP () {
 			state.errors = res.body?.fields || {}
 
 			if (res.ok) {
-				platform.api.account.tryRedirect(platform.routes.path("home"))
+				platform.tryRedirect(platform.routes.path("home"))
 			}
 		})
 	}

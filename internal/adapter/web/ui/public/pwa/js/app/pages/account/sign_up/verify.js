@@ -28,7 +28,7 @@ function SignUpVerify () {
 				if (res.body?.isActivated) {
 					await platform.api.account.signInWithPassword(res.body?.email, state.password)
 
-					platform.api.account.tryRedirect(platform.routes.path("home"))
+					platform.tryRedirect(platform.routes.path("home"))
 				} else {
 					m.route.set(platform.routes.path("account.sign_up.success"))
 				}
@@ -40,7 +40,7 @@ function SignUpVerify () {
 				if (res.ok) {
 					await platform.api.account.signInWithPassword(res.body?.email, state.password)
 
-					platform.api.account.tryRedirect(platform.routes.path("home"))
+					platform.tryRedirect(platform.routes.path("home"))
 				} else {
 					// Display any original errors
 					// Since this is a sign up verification page, and reset password is only

@@ -21,7 +21,7 @@ function ResetPasswordVerify () {
 			if (res.ok) {
 				await platform.api.account.signInWithPassword(res.body?.email, state.password)
 
-				platform.api.account.tryRedirect(platform.routes.path("home"))
+				platform.tryRedirect(platform.routes.path("home"))
 			}
 		})
 	}

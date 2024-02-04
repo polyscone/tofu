@@ -18,7 +18,7 @@ function SignInRecoveryCode () {
 			state.errors = res.body?.fields || {}
 
 			if (res.ok) {
-				platform.api.account.tryRedirect()
+				platform.tryRedirect()
 			}
 		})
 	}

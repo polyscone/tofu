@@ -37,7 +37,7 @@ function SignInWithGoogle () {
 					// user management, so we show them the sign up success page
 					m.route.set(platform.routes.path("account.sign_up.success"))
 				} else {
-					platform.api.account.tryRedirect(platform.routes.path("home"))
+					platform.tryRedirect(platform.routes.path("home"))
 				}
 			}
 		})
@@ -141,7 +141,7 @@ function SignInWithFacebook () {
 							// user management, so we show them the sign up success page
 							m.route.set(platform.routes.path("account.sign_up.success"))
 						} else {
-							platform.api.account.tryRedirect(platform.routes.path("home"))
+							platform.tryRedirect(platform.routes.path("home"))
 						}
 					}
 
@@ -225,7 +225,7 @@ function SignInMagicLink () {
 					// user management, so we show them the sign up success page
 					m.route.set(platform.routes.path("account.sign_up.success"))
 				} else {
-					platform.api.account.tryRedirect(platform.routes.path("home"))
+					platform.tryRedirect(platform.routes.path("home"))
 				}
 			}
 		})
@@ -340,7 +340,7 @@ function SignIn () {
 				if (platform.session.isAwaitingTOTP) {
 					m.route.set(platform.routes.path("account.sign_in.totp"))
 				} else {
-					platform.api.account.tryRedirect(platform.routes.path("home"))
+					platform.tryRedirect(platform.routes.path("home"))
 				}
 			} else if (res.status === platform.http.tooManyRequests) {
 				let { inLast, unlockIn } = res.body

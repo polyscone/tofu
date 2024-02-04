@@ -35,22 +35,6 @@
 		margin-inline: auto;
 	}
 
-	.sign-in-splash {
-		position: fixed;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		padding-inline: 1rem;
-		background: var(--clr-white-400);
-		overflow: auto;
-	}
-
-	.sign-in-splash > * {
-		max-width: 420px;
-		margin-inline: auto;
-	}
-
 	.modal {
 		position: fixed;
 		top: 0;

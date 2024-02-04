@@ -7,7 +7,6 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
-	"path"
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
@@ -98,22 +97,25 @@ func (v ViewData) WithComData(pairs ...any) (ViewData, error) {
 
 type ViewDataFunc func(data *ViewData)
 type ViewVarsFunc func(r *http.Request) (Vars, error)
+type TemplatePathsFunc func(view string) []string
 
 type Renderer struct {
 	h             *Handler
 	templateFiles fs.FS
+	templatePaths TemplatePathsFunc
+	funcs         template.FuncMap
 	contentType   string
 	viewVarsFuncs map[string]ViewVarsFunc
-	funcs         template.FuncMap
 }
 
-func NewRenderer(h *Handler, templateFiles fs.FS, contentType string, funcs template.FuncMap) *Renderer {
+func NewRenderer(h *Handler, templateFiles fs.FS, templatePaths TemplatePathsFunc, funcs template.FuncMap, contentType string) *Renderer {
 	return &Renderer{
 		h:             h,
 		templateFiles: templateFiles,
+		templatePaths: templatePaths,
+		funcs:         funcs,
 		contentType:   contentType,
 		viewVarsFuncs: make(map[string]ViewVarsFunc),
-		funcs:         funcs,
 	}
 }
 
@@ -183,13 +185,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	// Make sure the current view name isn't overwritten by a user function
 	data.View = view
 
-	dir := path.Dir(view)
-	tmpl := rn.h.Template(rn.templateFiles, rn.funcs, view,
-		"partial/*.tmpl",
-		"view/"+dir+"/com_*.tmpl",
-		"view/"+view+".tmpl",
-		"master/*.tmpl",
-	)
+	tmpl := rn.h.Template(rn.templateFiles, rn.templatePaths(view), rn.funcs, view)
 
 	var buf bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&buf, "master", data); err != nil {

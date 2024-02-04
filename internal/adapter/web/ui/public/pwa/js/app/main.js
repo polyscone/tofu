@@ -2,6 +2,16 @@ import platform from "./platform.js"
 import router from "./router.js"
 
 window.addEventListener("load", async () => {
+	platform.addEventListener("network", () => {
+		// Refresh the current page allowing route logic to run again
+		m.route.set(m.route.get())
+	})
+
+	platform.addEventListener("session", () => {
+		// Refresh the current page allowing route logic to run again
+		m.route.set(m.route.get())
+	})
+
 	await platform.api.meta.pollNetworkStatus()
 	await platform.api.account.pollSession()
 	await platform.api.security.updateCSRFToken()

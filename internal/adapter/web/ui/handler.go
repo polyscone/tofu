@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"path"
 	"strings"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
@@ -51,9 +52,20 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		"HasPathPrefix": h.tmplHasPathPrefix,
 	})
 
-	h.Plain = handler.NewRenderer(h.Handler, templateFiles, "text/plain; charset=utf-8", h.funcs)
-	h.HTML = handler.NewRenderer(h.Handler, templateFiles, "text/html; charset=utf-8", h.funcs)
-	h.JSON = handler.NewRenderer(h.Handler, templateFiles, "application/json", h.funcs)
+	templatePaths := func(view string) []string {
+		dir := path.Dir(view)
+
+		return []string{
+			"partial/*.tmpl",
+			"view/" + dir + "/com_*.tmpl",
+			"view/" + view + ".tmpl",
+			"master/*.tmpl",
+		}
+	}
+
+	h.Plain = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, "text/plain; charset=utf-8")
+	h.HTML = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, "text/html; charset=utf-8")
+	h.JSON = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, "application/json")
 
 	return h
 }
@@ -91,7 +103,8 @@ func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, v
 
 	var buf bytes.Buffer
 	var subject, plain, html string
-	email := h.Template(templateFiles, h.funcs, view, "email/"+view+".tmpl")
+	templatePaths := []string{"email/" + view + ".tmpl"}
+	email := h.Template(templateFiles, templatePaths, h.funcs, view)
 	for _, view := range []string{"subject", "plain", "html"} {
 		tmpl := email.Lookup(view)
 		if tmpl == nil {

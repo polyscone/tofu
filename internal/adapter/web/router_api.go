@@ -93,6 +93,8 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 		return 0
 	}))
 
+	mux.Get("/sdk.js", h.JavaScript.Handler("sdk/v1.js"))
+
 	account.Routes(h, mux)
 	security.Routes(h, mux)
 	meta.Routes(h, mux)
