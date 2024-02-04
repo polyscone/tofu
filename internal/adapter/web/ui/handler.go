@@ -82,8 +82,8 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		"HasPathPrefix":      h.tmplHasPathPrefix,
 	}
 
-	h.Plain = NewRenderer(h, "text/plain")
-	h.HTML = NewRenderer(h, "text/html")
+	h.Plain = NewRenderer(h, "text/plain; charset=utf-8")
+	h.HTML = NewRenderer(h, "text/html; charset=utf-8")
 	h.JSON = NewRenderer(h, "application/json")
 
 	return h
