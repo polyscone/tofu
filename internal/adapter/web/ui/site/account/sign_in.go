@@ -489,7 +489,7 @@ func signInFacebookPost(h *ui.Handler) http.HandlerFunc {
 
 func signInWithPassword(ctx context.Context, h *ui.Handler, w http.ResponseWriter, r *http.Request, email, password string) {
 	if err := auth.SignInWithPassword(ctx, h.Handler, w, r, email, password); err != nil {
-		h.HTML.ErrorViewFunc(w, r, "sign in with password", err, "site/account/sign_in/web_form", func(data *ui.ViewData) {
+		h.HTML.ErrorViewFunc(w, r, "sign in with password", err, "site/account/sign_in/web_form", func(data *handler.ViewData) {
 			var throttle *account.SignInThrottleError
 			if errors.As(err, &throttle) {
 				wait := human.Duration(throttle.UnlockIn)

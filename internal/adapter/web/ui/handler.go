@@ -29,62 +29,31 @@ const templateDir = "template"
 
 var templateFiles = fstack.New(dev.RelDirFS(templateDir), errsx.Must(fs.Sub(files, templateDir)))
 
-type ViewVarsFunc func(r *http.Request) (handler.Vars, error)
-
 type Handler struct {
 	*handler.Handler
-	signInPath    func() string
-	mux           *router.ServeMux
-	funcs         template.FuncMap
-	viewVarsFuncs map[string]ViewVarsFunc
-	Plain         *Renderer
-	HTML          *Renderer
-	JSON          *Renderer
+	signInPath func() string
+	mux        *router.ServeMux
+	funcs      template.FuncMap
+	Plain      *handler.Renderer
+	HTML       *handler.Renderer
+	JSON       *handler.Renderer
 }
 
 func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() string) *Handler {
 	h := &Handler{
-		Handler:       base,
-		signInPath:    signInPath,
-		viewVarsFuncs: make(map[string]ViewVarsFunc),
-		mux:           mux,
+		Handler:    base,
+		signInPath: signInPath,
+		mux:        mux,
 	}
 
-	h.funcs = template.FuncMap{
-		"Add":                handler.TmplAdd,
-		"Sub":                handler.TmplSub,
-		"Mul":                handler.TmplMul,
-		"Div":                handler.TmplDiv,
-		"Mod":                handler.TmplMod,
-		"Ints":               handler.TmplInts,
-		"StatusText":         handler.TmplStatusText,
-		"QueryString":        handler.TmplQueryString,
-		"QueryReplace":       handler.TmplQueryReplace,
-		"TimeSince":          handler.TmplTimeSince,
-		"FormatTime":         handler.TmplFormatTime,
-		"FormatDuration":     handler.TmplFormatDuration,
-		"FormatDurationStat": handler.TmplFormatDurationStat,
-		"FormatSizeSI":       handler.TmplFormatSizeSI,
-		"FormatSizeIEC":      handler.TmplFormatSizeIEC,
-		"HasPrefix":          handler.TmplHasPrefix,
-		"HasSuffix":          handler.TmplHasSuffix,
-		"HasString":          handler.TmplHasString,
-		"ToStrings":          handler.TmplToStrings,
-		"Join":               handler.TmplJoin,
-		"ReplaceAll":         handler.TmplReplaceAll,
-		"MarshalJSON":        handler.TmplMarshalJSON,
-		"UnescapeHTML":       handler.TmplUnescapeHTML,
-		"UnescapeJS":         handler.TmplUnescapeJS,
-		"Slice":              handler.TmplSlice,
-		"SliceContains":      handler.TmplSliceContains,
-		"Map":                handler.TmplMap,
-		"Path":               h.tmplPath,
-		"HasPathPrefix":      h.tmplHasPathPrefix,
-	}
+	h.funcs = handler.NewTemplateFuncs(template.FuncMap{
+		"Path":          h.tmplPath,
+		"HasPathPrefix": h.tmplHasPathPrefix,
+	})
 
-	h.Plain = NewRenderer(h, "text/plain; charset=utf-8")
-	h.HTML = NewRenderer(h, "text/html; charset=utf-8")
-	h.JSON = NewRenderer(h, "application/json")
+	h.Plain = handler.NewRenderer(h.Handler, templateFiles, "text/plain; charset=utf-8", h.funcs)
+	h.HTML = handler.NewRenderer(h.Handler, templateFiles, "text/html; charset=utf-8", h.funcs)
+	h.JSON = handler.NewRenderer(h.Handler, templateFiles, "application/json", h.funcs)
 
 	return h
 }
@@ -176,14 +145,6 @@ func (h *Handler) PathQuery(r *http.Request, name string, paramArgPairs ...any) 
 	}
 
 	return h.mux.Path(name, paramArgPairs...) + q
-}
-
-func (h *Handler) SetViewVars(name string, vars ViewVarsFunc) {
-	if _, ok := h.viewVarsFuncs[name]; ok {
-		panic(fmt.Sprintf("default view vars already set for %q", name))
-	}
-
-	h.viewVarsFuncs[name] = vars
 }
 
 func (h *Handler) AddFlashf(ctx context.Context, format string, a ...any) {

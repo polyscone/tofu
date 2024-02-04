@@ -154,7 +154,7 @@ func totpSetupPost(h *ui.Handler) http.HandlerFunc {
 }
 
 func totpSetupAppGet(h *ui.Handler) http.HandlerFunc {
-	h.SetViewVars("site/account/totp/setup/app", func(r *http.Request) (handler.Vars, error) {
+	h.HTML.SetViewVars("site/account/totp/setup/app", func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 		user := h.User(ctx)
 
@@ -244,7 +244,7 @@ func totpSetupAppPost(h *ui.Handler) http.HandlerFunc {
 }
 
 func totpSetupSMSGet(h *ui.Handler) http.HandlerFunc {
-	h.SetViewVars("site/account/totp/setup/sms", func(r *http.Request) (handler.Vars, error) {
+	h.HTML.SetViewVars("site/account/totp/setup/sms", func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 		user := h.User(ctx)
 
@@ -528,7 +528,7 @@ func totpResetPost(h *ui.Handler) http.HandlerFunc {
 
 		err = h.Svc.Account.ResetTOTP(ctx, passport.Account, user.ID, input.Password)
 		if err != nil {
-			h.HTML.ErrorViewFunc(w, r, "reset TOTP", err, "site/account/totp/reset/reset", func(data *ui.ViewData) {
+			h.HTML.ErrorViewFunc(w, r, "reset TOTP", err, "site/account/totp/reset/reset", func(data *handler.ViewData) {
 				data.ErrorMessage = "Either your credentials are incorrect, or you're not authorised to access this application."
 			})
 
@@ -549,7 +549,7 @@ func totpResetPost(h *ui.Handler) http.HandlerFunc {
 }
 
 func totpRecoveryCodesGet(h *ui.Handler) http.HandlerFunc {
-	h.SetViewVars("site/account/totp/recovery_codes/regenerate", func(r *http.Request) (handler.Vars, error) {
+	h.HTML.SetViewVars("site/account/totp/recovery_codes/regenerate", func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 		user := h.User(ctx)
 

@@ -16,6 +16,44 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/human"
 )
 
+func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
+	funcs := template.FuncMap{
+		"Add":                TmplAdd,
+		"Sub":                TmplSub,
+		"Mul":                TmplMul,
+		"Div":                TmplDiv,
+		"Mod":                TmplMod,
+		"Ints":               TmplInts,
+		"StatusText":         TmplStatusText,
+		"QueryString":        TmplQueryString,
+		"QueryReplace":       TmplQueryReplace,
+		"TimeSince":          TmplTimeSince,
+		"FormatTime":         TmplFormatTime,
+		"FormatDuration":     TmplFormatDuration,
+		"FormatDurationStat": TmplFormatDurationStat,
+		"FormatSizeSI":       TmplFormatSizeSI,
+		"FormatSizeIEC":      TmplFormatSizeIEC,
+		"HasPrefix":          TmplHasPrefix,
+		"HasSuffix":          TmplHasSuffix,
+		"HasString":          TmplHasString,
+		"ToStrings":          TmplToStrings,
+		"Join":               TmplJoin,
+		"ReplaceAll":         TmplReplaceAll,
+		"MarshalJSON":        TmplMarshalJSON,
+		"UnescapeHTML":       TmplUnescapeHTML,
+		"UnescapeJS":         TmplUnescapeJS,
+		"Slice":              TmplSlice,
+		"SliceContains":      TmplSliceContains,
+		"Map":                TmplMap,
+	}
+
+	for key, value := range custom {
+		funcs[key] = value
+	}
+
+	return funcs
+}
+
 func TmplAdd(a, b int) int {
 	return a + b
 }

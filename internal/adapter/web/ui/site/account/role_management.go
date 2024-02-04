@@ -68,7 +68,7 @@ func roleListGet(h *ui.Handler) http.HandlerFunc {
 }
 
 func roleNewGet(h *ui.Handler) http.HandlerFunc {
-	h.SetViewVars("site/account/management/role/new", func(r *http.Request) (handler.Vars, error) {
+	h.HTML.SetViewVars("site/account/management/role/new", func(r *http.Request) (handler.Vars, error) {
 		vars := handler.Vars{"PermissionGroups": guard.PermissionGroups}
 
 		return vars, nil
@@ -112,7 +112,7 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 }
 
 func roleEditGet(h *ui.Handler) http.HandlerFunc {
-	h.SetViewVars("site/account/management/role/edit", func(r *http.Request) (handler.Vars, error) {
+	h.HTML.SetViewVars("site/account/management/role/edit", func(r *http.Request) (handler.Vars, error) {
 		roleID, ok := router.URLParamAs[int](r, "roleID")
 		if !ok {
 			return nil, errors.New("URL param as: invalid int")

@@ -1,16 +1,16 @@
-package ui
+package handler
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"net/http"
 	"path"
 	"time"
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
-	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/app"
@@ -53,20 +53,20 @@ type ViewData struct {
 	View         string
 	ContentType  string
 	Status       int
-	CSRF         handler.CSRF
+	CSRF         CSRF
 	ErrorMessage string
 	Errors       errsx.Map
 	Now          time.Time
-	Form         handler.Form
-	URL          handler.URL
-	App          handler.AppData
-	Session      handler.SessionData
+	Form         Form
+	URL          URL
+	App          AppData
+	Session      SessionData
 	Config       *system.Config
 	User         *account.User
 	Passport     guard.Passport
 	ComData      map[string]any
 	State        *State
-	Vars         handler.Vars
+	Vars         Vars
 }
 
 func (v ViewData) WithComData(pairs ...any) (ViewData, error) {
@@ -97,16 +97,23 @@ func (v ViewData) WithComData(pairs ...any) (ViewData, error) {
 }
 
 type ViewDataFunc func(data *ViewData)
+type ViewVarsFunc func(r *http.Request) (Vars, error)
 
 type Renderer struct {
-	h           *Handler
-	contentType string
+	h             *Handler
+	templateFiles fs.FS
+	contentType   string
+	viewVarsFuncs map[string]ViewVarsFunc
+	funcs         template.FuncMap
 }
 
-func NewRenderer(h *Handler, contentType string) *Renderer {
+func NewRenderer(h *Handler, templateFiles fs.FS, contentType string, funcs template.FuncMap) *Renderer {
 	return &Renderer{
-		h:           h,
-		contentType: contentType,
+		h:             h,
+		templateFiles: templateFiles,
+		contentType:   contentType,
+		viewVarsFuncs: make(map[string]ViewVarsFunc),
+		funcs:         funcs,
 	}
 }
 
@@ -120,22 +127,22 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 		View:        view,
 		ContentType: rn.contentType,
 		Status:      status,
-		CSRF:        handler.CSRF{Ctx: ctx},
+		CSRF:        CSRF{Ctx: ctx},
 		Now:         time.Now(),
-		Form:        handler.Form{Values: r.PostForm},
-		URL: handler.URL{
+		Form:        Form{Values: r.PostForm},
+		URL: URL{
 			Scheme: rn.h.Tenant.Scheme,
 			Host:   rn.h.Tenant.Host,
 			Path:   template.URL(r.URL.Path),
-			Query:  handler.Query{Values: r.URL.Query()},
+			Query:  Query{Values: r.URL.Query()},
 		},
-		App: handler.AppData{
+		App: AppData{
 			Name:        app.Name,
 			ShortName:   app.ShortName,
 			Description: app.Description,
 			ThemeColour: app.ThemeColour,
 		},
-		Session: handler.SessionData{
+		Session: SessionData{
 			// Global session keys
 			Flash:          rn.h.Sessions.PopStrings(ctx, sess.Flash),
 			FlashImportant: rn.h.Sessions.PopStrings(ctx, sess.FlashImportant),
@@ -158,7 +165,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 		State:    &State{},
 	}
 
-	if vars, ok := rn.h.viewVarsFuncs[view]; ok {
+	if vars, ok := rn.viewVarsFuncs[view]; ok {
 		defaults, err := vars(r)
 		if err != nil {
 			rn.ErrorView(w, r, "vars", err, "site/error", nil)
@@ -177,7 +184,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	data.View = view
 
 	dir := path.Dir(view)
-	tmpl := rn.h.Template(templateFiles, rn.h.funcs, view,
+	tmpl := rn.h.Template(rn.templateFiles, rn.funcs, view,
 		"partial/*.tmpl",
 		"view/"+dir+"/com_*.tmpl",
 		"view/"+view+".tmpl",
@@ -201,10 +208,18 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	}
 }
 
-func (rn *Renderer) View(w http.ResponseWriter, r *http.Request, status int, view string, vars handler.Vars) {
+func (rn *Renderer) View(w http.ResponseWriter, r *http.Request, status int, view string, vars Vars) {
 	rn.ViewFunc(w, r, status, view, func(data *ViewData) {
 		data.Vars = data.Vars.Merge(vars)
 	})
+}
+
+func (rn *Renderer) SetViewVars(name string, vars ViewVarsFunc) {
+	if _, ok := rn.viewVarsFuncs[name]; ok {
+		panic(fmt.Sprintf("default view vars already set for %q", name))
+	}
+
+	rn.viewVarsFuncs[name] = vars
 }
 
 func (rn *Renderer) Handler(view string) http.HandlerFunc {
@@ -240,7 +255,7 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 	})
 }
 
-func (rn *Renderer) ErrorView(w http.ResponseWriter, r *http.Request, msg string, err error, view string, vars handler.Vars) {
+func (rn *Renderer) ErrorView(w http.ResponseWriter, r *http.Request, msg string, err error, view string, vars Vars) {
 	rn.ErrorViewFunc(w, r, msg, err, view, func(data *ViewData) {
 		data.Vars = data.Vars.Merge(vars)
 	})

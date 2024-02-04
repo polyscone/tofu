@@ -101,7 +101,7 @@ func userListGet(h *ui.Handler) http.HandlerFunc {
 }
 
 func userNewGet(h *ui.Handler) http.HandlerFunc {
-	h.SetViewVars("site/account/management/user/new", func(r *http.Request) (handler.Vars, error) {
+	h.HTML.SetViewVars("site/account/management/user/new", func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 
 		roles, _, err := h.Repo.Account.FindRoles(ctx, account.SuperRole.ID)
@@ -154,7 +154,7 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 }
 
 func userEditGet(h *ui.Handler) http.HandlerFunc {
-	h.SetViewVars("site/account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
+	h.HTML.SetViewVars("site/account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
 		userID, ok := router.URLParamAs[int](r, "userID")
 		if !ok {
 			return nil, errors.New("URL param as: invalid int")
@@ -326,7 +326,7 @@ func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 }
 
 func userActivateGet(h *ui.Handler) http.HandlerFunc {
-	h.SetViewVars("site/account/management/user/activate", func(r *http.Request) (handler.Vars, error) {
+	h.HTML.SetViewVars("site/account/management/user/activate", func(r *http.Request) (handler.Vars, error) {
 		userID, ok := router.URLParamAs[int](r, "userID")
 		if !ok {
 			return nil, errors.New("URL param as: invalid int")
