@@ -312,6 +312,11 @@ const sdk = {
 
 		sdk._eventHandlers[event].push(func)
 	},
+	removeEventListener (event, func) {
+		const listeners = platform._eventHandlers[event] || []
+
+		platform._eventHandlers[event] = listeners.filter(l => l !== func)
+	},
 	prefix: "/api/v1",
 	api,
 	request,
