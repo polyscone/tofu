@@ -14,8 +14,8 @@ function ResetPassword () {
 		platform.loading(async () => {
 			const res = await platform.api.account.requestPasswordReset(state.email)
 
-			state.error = res.body?.error || ""
-			state.errors = res.body?.fields || {}
+			state.error = res.body.error || ""
+			state.errors = res.body.fields || {}
 
 			if (res.ok) {
 				m.route.set(platform.routes.path("account.reset_password.verify"))

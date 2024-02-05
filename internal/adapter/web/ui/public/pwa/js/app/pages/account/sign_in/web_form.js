@@ -28,7 +28,7 @@ function SignInWithGoogle () {
 			if (res.ok) {
 				if (platform.session.isAwaitingTOTP) {
 					m.route.set(platform.routes.path("account.sign_in.totp"))
-				} else if (!res.body?.isSignedIn) {
+				} else if (!res.body.isSignedIn) {
 					// Signing in with Google can trigger a sign up
 					//
 					// If that's the case, and the response was ok, then if they aren't
@@ -132,7 +132,7 @@ function SignInWithFacebook () {
 					if (res.ok) {
 						if (platform.session.isAwaitingTOTP) {
 							m.route.set(platform.routes.path("account.sign_in.totp"))
-						} else if (!res.body?.isSignedIn) {
+						} else if (!res.body.isSignedIn) {
 							// Signing in with Facebook can trigger a sign up
 							//
 							// If that's the case, and the response was ok, then if they aren't
@@ -210,13 +210,13 @@ function SignInMagicLink () {
 		platform.loading(async () => {
 			const res = await platform.api.account.signInWithMagicLink(state.token)
 
-			state.error = res.body?.error || ""
-			state.errors = res.body?.fields || {}
+			state.error = res.body.error || ""
+			state.errors = res.body.fields || {}
 
 			if (res.ok) {
 				if (platform.session.isAwaitingTOTP) {
 					m.route.set(platform.routes.path("account.sign_in.totp"))
-				} else if (!res.body?.isSignedIn) {
+				} else if (!res.body.isSignedIn) {
 					// Signing in with a magic link can trigger a sign up
 					//
 					// If that's the case, and the response was ok, then if they aren't
@@ -272,8 +272,8 @@ function SignInMagicLinkRequest () {
 		platform.loading(async () => {
 			const res = await platform.api.account.requestSignInMagicLink(state.email)
 
-			state.error = res.body?.error || ""
-			state.errors = res.body?.fields || {}
+			state.error = res.body.error || ""
+			state.errors = res.body.fields || {}
 
 			if (res.ok) {
 				m.route.set(platform.routes.path("account.sign_in.magic_link"))
@@ -333,8 +333,8 @@ function SignIn () {
 		platform.loading(async () => {
 			const res = await platform.api.account.signInWithPassword(state.email, state.password)
 
-			state.error = res.body?.error || ""
-			state.errors = res.body?.fields || {}
+			state.error = res.body.error || ""
+			state.errors = res.body.fields || {}
 
 			if (res.ok) {
 				if (platform.session.isAwaitingTOTP) {

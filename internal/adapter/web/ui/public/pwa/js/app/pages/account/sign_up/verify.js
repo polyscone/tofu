@@ -21,12 +21,12 @@ function SignUpVerify () {
 		platform.loading(async () => {
 			const res = await platform.api.account.verify(state.token, state.password, state.password)
 
-			const error = res.body?.error || ""
-			const errors = res.body?.fields || {}
+			const error = res.body.error || ""
+			const errors = res.body.fields || {}
 
 			if (res.ok) {
-				if (res.body?.isActivated) {
-					await platform.api.account.signInWithPassword(res.body?.email, state.password)
+				if (res.body.isActivated) {
+					await platform.api.account.signInWithPassword(res.body.email, state.password)
 
 					platform.tryRedirect(platform.routes.path("home"))
 				} else {
@@ -38,7 +38,7 @@ function SignUpVerify () {
 				const res = await platform.api.account.resetPassword(state.token, state.password, state.password)
 
 				if (res.ok) {
-					await platform.api.account.signInWithPassword(res.body?.email, state.password)
+					await platform.api.account.signInWithPassword(res.body.email, state.password)
 
 					platform.tryRedirect(platform.routes.path("home"))
 				} else {

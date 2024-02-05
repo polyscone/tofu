@@ -14,8 +14,8 @@ function SignInRecoveryCode () {
 		platform.loading(async () => {
 			const res = await platform.api.account.signInWithRecoveryCode(state.recoveryCode)
 
-			state.error = res.body?.error || ""
-			state.errors = res.body?.fields || {}
+			state.error = res.body.error || ""
+			state.errors = res.body.fields || {}
 
 			if (res.ok) {
 				platform.tryRedirect()

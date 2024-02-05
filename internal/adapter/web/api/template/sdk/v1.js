@@ -149,6 +149,13 @@ const api = {
 			return res
 		},
 	},
+	system: {
+		async config () {
+			const res = await request(`${sdk.prefix}/system/config`)
+
+			return res
+		},
+	},
 	security: {
 		csrfToken: null,
 		async updateCSRFToken () {
@@ -214,7 +221,7 @@ async function request (url, opts) {
 	const ret = {
 		status: 0,
 		ok: false,
-		body: null,
+		body: {},
 		networkError: null,
 	}
 
@@ -239,13 +246,15 @@ async function request (url, opts) {
 		console.error(`api fetch failed: ${error}: ${url}`)
 	}
 
+	ret.body ||= {}
+
 	const maybeServerDown = ret.status === sdk.http.badGateway || ret.networkError
 
 	if (maybeServerDown && !api.meta.pollingNetworkStatus) {
 		await api.meta.pollNetworkStatus()
 	}
 
-	if (!ret.ok && ret.body?.csrf && !opts.refreshCSRF) {
+	if (!ret.ok && ret.body.csrf && !opts.refreshCSRF) {
 		opts.refreshCSRF = true
 
 		return request(url, opts)
@@ -253,7 +262,7 @@ async function request (url, opts) {
 
 	delete opts.refreshCSRF
 
-	if (!ret.networkError && !ret.ok && ret.body?.fields) {
+	if (!ret.networkError && !ret.ok && ret.body.fields) {
 		for (const key in ret.body.fields) {
 			// Convert the key from space separated keys to camel case
 			const newKey = key.replace(/\s+([a-z])/g, group => group.trim().toUpperCase())
@@ -265,8 +274,6 @@ async function request (url, opts) {
 			}
 		}
 	}
-
-	ret.body ||= {}
 
 	switch (ret.status) {
 	case sdk.http.badGateway:

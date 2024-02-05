@@ -15,11 +15,11 @@ function ResetPasswordVerify () {
 		platform.loading(async () => {
 			const res = await platform.api.account.resetPassword(state.token, state.password, state.password)
 
-			state.error = res.body?.error || ""
-			state.errors = res.body?.fields || {}
+			state.error = res.body.error || ""
+			state.errors = res.body.fields || {}
 
 			if (res.ok) {
-				await platform.api.account.signInWithPassword(res.body?.email, state.password)
+				await platform.api.account.signInWithPassword(res.body.email, state.password)
 
 				platform.tryRedirect(platform.routes.path("home"))
 			}

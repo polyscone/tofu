@@ -98,8 +98,8 @@ sdk.loading = async function loading (p) {
 		}
 
 		return await p
-	} catch (err) {
-		console.error(err)
+	} catch (error) {
+		console.error(error)
 	} finally {
 		sdk.state.loadingCount--
 

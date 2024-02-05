@@ -20,8 +20,8 @@ function SignUp () {
 		platform.loading(async () => {
 			const res = await platform.api.account.signUp(state.email)
 
-			state.error = res.body?.error || ""
-			state.errors = res.body?.fields || {}
+			state.error = res.body.error || ""
+			state.errors = res.body.fields || {}
 
 			if (res.ok) {
 				m.route.set(platform.routes.path("account.sign_up.verify"))

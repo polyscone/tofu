@@ -33,8 +33,8 @@ function SignInTOTP () {
 		platform.loading(async () => {
 			const res = await platform.api.account.requestTOTPSMS(state.totp)
 
-			state.error = res.body?.error || ""
-			state.errors = res.body?.fields || {}
+			state.error = res.body.error || ""
+			state.errors = res.body.fields || {}
 
 			if (res.ok) {
 				state.resendText = "Passcode SMS sent"
@@ -59,8 +59,8 @@ function SignInTOTP () {
 		platform.loading(async () => {
 			const res = await platform.api.account.signInWithTOTP(state.totp)
 
-			state.error = res.body?.error || ""
-			state.errors = res.body?.fields || {}
+			state.error = res.body.error || ""
+			state.errors = res.body.fields || {}
 
 			if (res.ok) {
 				platform.tryRedirect(platform.routes.path("home"))

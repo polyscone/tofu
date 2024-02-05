@@ -10,6 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/api/account"
 	"github.com/polyscone/tofu/internal/adapter/web/api/meta"
 	"github.com/polyscone/tofu/internal/adapter/web/api/security"
+	"github.com/polyscone/tofu/internal/adapter/web/api/system"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
@@ -96,6 +97,7 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	mux.Get("/sdk.js", h.JavaScript.Handler("sdk/v1.js"))
 
 	account.Routes(h, mux)
+	system.Routes(h, mux)
 	security.Routes(h, mux)
 	meta.Routes(h, mux)
 
