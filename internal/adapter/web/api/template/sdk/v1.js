@@ -16,6 +16,7 @@
 
 	let _pollSessionHandle = null
 	let _pollNetworkStatusHandle = null
+	let _pollingNetworkStatus = false
 	let _isFirstRequest = true
 	const _eventHandlers = {}
 
@@ -59,6 +60,7 @@
 
 			return JSON.parse(value)
 		},
+
 		async pollSession () {
 			clearTimeout(_pollSessionHandle)
 
@@ -79,6 +81,7 @@
 
 			_pollSessionHandle = setTimeout(account.pollSession, 1 * 60 * 1000)
 		},
+
 		async signUp (email) {
 			const res = await request("/account/sign-up", {
 				method: "POST",
@@ -87,6 +90,7 @@
 
 			return res
 		},
+
 		async verify (token, password, passwordCheck) {
 			const res = await request("/account/verify", {
 				method: "POST",
@@ -95,6 +99,7 @@
 
 			return res
 		},
+
 		async requestPasswordReset (email) {
 			const res = await request("/account/reset-password", {
 				method: "POST",
@@ -103,6 +108,7 @@
 
 			return res
 		},
+
 		async resetPassword (token, newPassword, newPasswordCheck) {
 			const res = await request("/account/reset-password/new-password", {
 				method: "POST",
@@ -111,6 +117,7 @@
 
 			return res
 		},
+
 		async signInWithPassword (email, password) {
 			const res = await request("/account/sign-in", {
 				method: "POST",
@@ -121,6 +128,7 @@
 
 			return res
 		},
+
 		async requestSignInMagicLink (email) {
 			const res = await request("/account/sign-in/magic-link/request", {
 				method: "POST",
@@ -129,6 +137,7 @@
 
 			return res
 		},
+
 		async signInWithMagicLink (token) {
 			const res = await request("/account/sign-in/magic-link", {
 				method: "POST",
@@ -139,6 +148,7 @@
 
 			return res
 		},
+
 		async requestTOTPSMS () {
 			const res = await request("/account/sign-in/totp/send-sms", {
 				method: "POST",
@@ -146,6 +156,7 @@
 
 			return res
 		},
+
 		async signInWithTOTP (totp) {
 			const res = await request("/account/sign-in/totp", {
 				method: "POST",
@@ -156,6 +167,7 @@
 
 			return res
 		},
+
 		async signInWithRecoveryCode (recoveryCode) {
 			const res = await request("/account/sign-in/recovery-code", {
 				method: "POST",
@@ -166,6 +178,7 @@
 
 			return res
 		},
+
 		async signInWithGoogle (jwt) {
 			const res = await request("/account/sign-in/google", {
 				method: "POST",
@@ -176,6 +189,7 @@
 
 			return res
 		},
+
 		async signInWithFacebook (userId, accessToken, email) {
 			const res = await request("/account/sign-in/facebook", {
 				method: "POST",
@@ -186,6 +200,7 @@
 
 			return res
 		},
+
 		async signOut () {
 			const res = await request("/account/sign-out", { method: "POST" })
 
@@ -205,6 +220,7 @@
 
 	const security = {
 		csrfToken: null,
+
 		async updateCSRFToken () {
 			const res = await request("/security/csrf")
 
@@ -215,9 +231,8 @@
 	}
 
 	const meta = {
-		pollingNetworkStatus: false,
 		async pollNetworkStatus () {
-			meta.pollingNetworkStatus = true
+			_pollingNetworkStatus = true
 
 			clearTimeout(_pollNetworkStatusHandle)
 
@@ -240,7 +255,7 @@
 			}
 
 			_pollNetworkStatusHandle = setTimeout(meta.pollNetworkStatus, 1 * 10 * 1000)
-			meta.pollingNetworkStatus = false
+			_pollingNetworkStatus = false
 		},
 	}
 
@@ -295,7 +310,7 @@
 
 		const maybeServerDown = ret.status === sdk.http.badGateway || ret.networkError
 
-		if (maybeServerDown && !meta.pollingNetworkStatus) {
+		if (maybeServerDown && !_pollingNetworkStatus) {
 			await meta.pollNetworkStatus()
 		}
 
