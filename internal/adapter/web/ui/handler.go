@@ -63,9 +63,23 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		}
 	}
 
-	h.Plain = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, "text/plain; charset=utf-8")
-	h.HTML = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, "text/html; charset=utf-8")
-	h.JSON = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, "application/json")
+	h.Plain = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, func(w http.ResponseWriter, r *http.Request, template *bytes.Buffer) []byte {
+		w.Header().Set("content-type", "text/plain; charset=utf-8")
+
+		return nil
+	})
+
+	h.HTML = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, func(w http.ResponseWriter, r *http.Request, template *bytes.Buffer) []byte {
+		w.Header().Set("content-type", "text/html; charset=utf-8")
+
+		return nil
+	})
+
+	h.JSON = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, func(w http.ResponseWriter, r *http.Request, template *bytes.Buffer) []byte {
+		w.Header().Set("content-type", "application/json")
+
+		return nil
+	})
 
 	return h
 }

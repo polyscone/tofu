@@ -50,7 +50,6 @@ func (s *State) Store(key string, value any) bool {
 
 type ViewData struct {
 	View         string
-	ContentType  string
 	Status       int
 	CSRF         CSRF
 	ErrorMessage string
@@ -98,24 +97,25 @@ func (v ViewData) WithComData(pairs ...any) (ViewData, error) {
 type ViewDataFunc func(data *ViewData)
 type ViewVarsFunc func(r *http.Request) (Vars, error)
 type TemplatePathsFunc func(view string) []string
+type TemplateProcessFunc func(w http.ResponseWriter, r *http.Request, template *bytes.Buffer) []byte
 
 type Renderer struct {
 	h             *Handler
 	templateFiles fs.FS
 	templatePaths TemplatePathsFunc
 	funcs         template.FuncMap
-	contentType   string
 	viewVarsFuncs map[string]ViewVarsFunc
+	process       TemplateProcessFunc
 }
 
-func NewRenderer(h *Handler, templateFiles fs.FS, templatePaths TemplatePathsFunc, funcs template.FuncMap, contentType string) *Renderer {
+func NewRenderer(h *Handler, templateFiles fs.FS, templatePaths TemplatePathsFunc, funcs template.FuncMap, process TemplateProcessFunc) *Renderer {
 	return &Renderer{
 		h:             h,
 		templateFiles: templateFiles,
 		templatePaths: templatePaths,
 		funcs:         funcs,
-		contentType:   contentType,
 		viewVarsFuncs: make(map[string]ViewVarsFunc),
+		process:       process,
 	}
 }
 
@@ -126,12 +126,11 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	passport := rn.h.Passport(ctx)
 
 	data := ViewData{
-		View:        view,
-		ContentType: rn.contentType,
-		Status:      status,
-		CSRF:        CSRF{Ctx: ctx},
-		Now:         time.Now(),
-		Form:        Form{Values: r.PostForm},
+		View:   view,
+		Status: status,
+		CSRF:   CSRF{Ctx: ctx},
+		Now:    time.Now(),
+		Form:   Form{Values: r.PostForm},
 		URL: URL{
 			Scheme: rn.h.Tenant.Scheme,
 			Host:   rn.h.Tenant.Host,
@@ -196,7 +195,13 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 		return
 	}
 
-	w.Header().Set("content-type", rn.contentType)
+	if rn.process != nil {
+		b := rn.process(w, r, &buf)
+		if b != nil {
+			buf = *bytes.NewBuffer(b)
+		}
+	}
+
 	w.WriteHeader(status)
 
 	if _, err := buf.WriteTo(w); err != nil {

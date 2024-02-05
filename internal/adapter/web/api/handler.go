@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"embed"
 	"encoding/json"
 	"errors"
@@ -45,14 +46,22 @@ type Handler struct {
 
 func NewHandler(base *handler.Handler) *Handler {
 	templatePaths := func(view string) []string {
-		return []string{view}
+		return []string{view, "master.tmpl"}
 	}
 
 	funcs := handler.NewTemplateFuncs(nil)
 
 	return &Handler{
-		Handler:    base,
-		JavaScript: handler.NewRenderer(base, templateFiles, templatePaths, funcs, "application/javascript"),
+		Handler: base,
+		JavaScript: handler.NewRenderer(base, templateFiles, templatePaths, funcs, func(w http.ResponseWriter, r *http.Request, template *bytes.Buffer) []byte {
+			w.Header().Set("content-type", "application/javascript")
+
+			b := template.Bytes()
+			b = bytes.TrimPrefix(b, []byte("<script>"))
+			b = bytes.TrimSuffix(b, []byte("</script>"))
+
+			return b
+		}),
 	}
 }
 
