@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/app/system"
 	"github.com/polyscone/tofu/internal/pkg/cache"
@@ -21,6 +23,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/realip"
 	"github.com/polyscone/tofu/internal/pkg/session"
 	"github.com/polyscone/tofu/internal/pkg/sms"
+	"github.com/polyscone/tofu/internal/pkg/smtp"
 	"github.com/polyscone/tofu/internal/pkg/uuid"
 	"github.com/polyscone/tofu/internal/repository"
 )
@@ -265,6 +268,63 @@ func (h *Handler) Template(files fs.FS, patterns []string, funcs template.FuncMa
 	return h.templates.LoadOrStore(name, func() *template.Template {
 		return h.template(files, patterns, funcs, name)
 	})
+}
+
+func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePaths []string, funcs template.FuncMap, from, to, view string, vars Vars) error {
+	data := struct {
+		URL  URL
+		App  AppData
+		Vars Vars
+	}{
+		URL: URL{
+			Scheme: h.Scheme,
+			Host:   h.Host,
+		},
+		App: AppData{
+			Name:        app.Name,
+			ShortName:   app.ShortName,
+			Description: app.Description,
+			ThemeColour: app.ThemeColour,
+		},
+		Vars: vars,
+	}
+
+	var buf bytes.Buffer
+	var subject, plain, html string
+	email := h.Template(templateFiles, templatePaths, funcs, view)
+	for _, view := range []string{"subject", "plain", "html"} {
+		tmpl := email.Lookup(view)
+		if tmpl == nil {
+			continue
+		}
+
+		buf.Reset()
+
+		if err := tmpl.Execute(&buf, data); err != nil {
+			return fmt.Errorf("execute email template: %w", err)
+		}
+
+		switch view {
+		case "subject":
+			subject = buf.String()
+
+		case "plain":
+			plain = buf.String()
+
+		case "html":
+			html = buf.String()
+		}
+	}
+
+	msg := smtp.Msg{
+		From:    from,
+		To:      []string{to},
+		Subject: subject,
+		Plain:   plain,
+		HTML:    html,
+	}
+
+	return h.Email.Send(ctx, msg)
 }
 
 func (h *Handler) SendSMS(ctx context.Context, to, body string) error {

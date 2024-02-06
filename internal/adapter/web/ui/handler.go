@@ -20,7 +20,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/fstack"
 	"github.com/polyscone/tofu/internal/pkg/http/middleware"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/smtp"
 )
 
 //go:embed "all:template"
@@ -97,61 +96,9 @@ func (h *Handler) tmplHasPathPrefix(value any, name string, paramArgPairs ...any
 }
 
 func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, vars handler.Vars) error {
-	data := struct {
-		URL  handler.URL
-		App  handler.AppData
-		Vars handler.Vars
-	}{
-		URL: handler.URL{
-			Scheme: h.Scheme,
-			Host:   h.Host,
-		},
-		App: handler.AppData{
-			Name:        app.Name,
-			ShortName:   app.ShortName,
-			Description: app.Description,
-			ThemeColour: app.ThemeColour,
-		},
-		Vars: vars,
-	}
-
-	var buf bytes.Buffer
-	var subject, plain, html string
 	templatePaths := []string{"email/" + view + ".tmpl"}
-	email := h.Template(templateFiles, templatePaths, h.funcs, view)
-	for _, view := range []string{"subject", "plain", "html"} {
-		tmpl := email.Lookup(view)
-		if tmpl == nil {
-			continue
-		}
 
-		buf.Reset()
-
-		if err := tmpl.Execute(&buf, data); err != nil {
-			return fmt.Errorf("execute email template: %w", err)
-		}
-
-		switch view {
-		case "subject":
-			subject = buf.String()
-
-		case "plain":
-			plain = buf.String()
-
-		case "html":
-			html = buf.String()
-		}
-	}
-
-	msg := smtp.Msg{
-		From:    from,
-		To:      []string{to},
-		Subject: subject,
-		Plain:   plain,
-		HTML:    html,
-	}
-
-	return h.Email.Send(ctx, msg)
+	return h.Handler.SendEmail(ctx, templateFiles, templatePaths, h.funcs, from, to, view, vars)
 }
 
 func (h *Handler) HasPathPrefix(value string, name string, paramArgPairs ...any) bool {
