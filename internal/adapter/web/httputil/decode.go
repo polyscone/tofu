@@ -230,9 +230,15 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 
 			case reflect.TypeOf(time.Time{}):
 				if str != "" {
-					const unixPrefix = "unix."
-					if strings.HasPrefix(str, unixPrefix) {
-						str = strings.TrimPrefix(str, unixPrefix)
+					for _, format := range decodeTimeFormats {
+						if t, err := time.ParseInLocation(format, str, time.UTC); err == nil {
+							field.Set(reflect.ValueOf(t))
+
+							return nil
+						}
+					}
+
+					if strings.Contains(str, ".") {
 						_sec, _nsec, ok := strings.Cut(str, ".")
 
 						sec, err := strconv.ParseInt(_sec, 10, 64)
@@ -254,14 +260,6 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 						field.Set(reflect.ValueOf(t))
 
 						return nil
-					}
-
-					for _, format := range decodeTimeFormats {
-						if t, err := time.ParseInLocation(format, str, time.UTC); err == nil {
-							field.Set(reflect.ValueOf(t))
-
-							return nil
-						}
 					}
 
 					return fmt.Errorf("parse time.Time: string value %q is an invalid time format", str)
