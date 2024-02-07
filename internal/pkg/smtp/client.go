@@ -199,8 +199,6 @@ func (c *Client) processResendAPIQueue() {
 	throttle := time.NewTicker(time.Second / 5)
 
 	for resendMsg := range c.resend {
-		resendMsg := resendMsg
-
 		<-throttle.C
 
 		go func() {

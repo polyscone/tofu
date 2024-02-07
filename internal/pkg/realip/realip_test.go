@@ -111,8 +111,7 @@ func TestFromRequest(t *testing.T) {
 
 		req.RemoteAddr = "1.2.3.4"
 
-		limit := 50
-		for i := 0; i < limit; i++ {
+		for range 50 {
 			req.Header.Add("x-forwarded-for", "0.0.0.0")
 		}
 

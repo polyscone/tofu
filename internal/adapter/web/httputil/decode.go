@@ -43,7 +43,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 		panic(fmt.Sprintf("want pointer to a struct; got %T", dst))
 	}
 
-	for i := 0; i < s.NumField(); i++ {
+	for i := range s.NumField() {
 		typeField := s.Type().Field(i)
 
 		tagValue := typeField.Tag.Get(tagName)

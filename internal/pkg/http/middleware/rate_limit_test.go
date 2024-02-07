@@ -29,7 +29,7 @@ func TestRateLimit(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				for i := 0; i < tc.requests; i++ {
+				for i := range tc.requests {
 					wantStatus := http.StatusOK
 					if i == tc.requests-1 {
 						wantStatus = tc.wantStatus

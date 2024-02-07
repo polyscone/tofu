@@ -83,7 +83,7 @@ func TestSignInWithPassword(t *testing.T) {
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Run("fail until throttle trigger", func(t *testing.T) {
-					for i := 0; i < account.MaxFreeSignInAttempts; i++ {
+					for i := range account.MaxFreeSignInAttempts {
 						err := svc.SignInWithPassword(ctx, tc.user.Email, "foobarbaz")
 						if err == nil {
 							t.Error("want error; got <nil>")

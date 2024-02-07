@@ -113,7 +113,7 @@ func TmplSin(x float64) float64 {
 func TmplInts(start, end int) []int {
 	n := end - start
 	ints := make([]int, n)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		ints[i] = start + i
 	}
 

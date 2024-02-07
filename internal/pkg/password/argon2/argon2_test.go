@@ -96,7 +96,7 @@ func TestArgon2CSPRNG(t *testing.T) {
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			seen := make(map[string]struct{})
-			for i := 0; i < tc.samples; i++ {
+			for range tc.samples {
 				hash, err := argon2.EncodedHash(nil, []byte("correct horse battery staple"), argon2.Params{
 					Variant:     tc.variant,
 					Time:        1,

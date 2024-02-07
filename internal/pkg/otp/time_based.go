@@ -107,7 +107,7 @@ func (otp TimeBased) Check(key []byte, t time.Time, delaySteps int, userPassword
 	usedTOTPs.RUnlock()
 
 	// Check into the past
-	for i := 0; i <= int(delaySteps); i++ {
+	for i := range int(delaySteps) + 1 {
 		step := otp.timeStep * time.Duration(i)
 		password, err := otp.Generate(key, t.Add(-step))
 		if err != nil {

@@ -592,7 +592,7 @@ func (u *User) replaceRecoveryCodes() ([]string, error) {
 	codes := make([]string, nCodes)
 	hashedCodes := make([][]byte, nCodes)
 
-	for i := 0; i < nCodes; i++ {
+	for i := range nCodes {
 		code, err := NewRandomRecoveryCode()
 		if err != nil {
 			return nil, fmt.Errorf("new random recovery code: %w", err)

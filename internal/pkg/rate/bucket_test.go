@@ -207,7 +207,7 @@ func TestBucket(t *testing.T) {
 		var wg sync.WaitGroup
 
 		wg.Add(int(double))
-		for i := 0; i < int(double); i++ {
+		for range int(double) {
 			now = now.Add(1 * time.Second)
 
 			go func(now time.Time) {
