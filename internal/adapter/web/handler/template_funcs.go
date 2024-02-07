@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"math"
 	"net/http"
 	"net/url"
 	"slices"
@@ -23,6 +24,13 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 		"Mul":                TmplMul,
 		"Div":                TmplDiv,
 		"Mod":                TmplMod,
+		"Addf":               TmplAddf,
+		"Subf":               TmplSubf,
+		"Mulf":               TmplMulf,
+		"Divf":               TmplDivf,
+		"Pi":                 TmplPi,
+		"Cos":                TmplCos,
+		"Sin":                TmplSin,
 		"Ints":               TmplInts,
 		"StatusText":         TmplStatusText,
 		"QueryString":        TmplQueryString,
@@ -72,6 +80,34 @@ func TmplDiv(a, b int) int {
 
 func TmplMod(a, b int) int {
 	return a % b
+}
+
+func TmplAddf(a, b float64) float64 {
+	return a + b
+}
+
+func TmplSubf(a, b float64) float64 {
+	return a - b
+}
+
+func TmplMulf(a, b float64) float64 {
+	return a * b
+}
+
+func TmplDivf(a, b float64) float64 {
+	return a / b
+}
+
+func TmplPi() float64 {
+	return math.Pi
+}
+
+func TmplCos(x float64) float64 {
+	return math.Cos(x)
+}
+
+func TmplSin(x float64) float64 {
+	return math.Sin(x)
 }
 
 func TmplInts(start, end int) []int {
