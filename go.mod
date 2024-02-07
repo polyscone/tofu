@@ -1,6 +1,6 @@
 module github.com/polyscone/tofu
 
-go 1.21.0
+go 1.22.0
 
 require (
 	github.com/boombuler/barcode v1.0.1
