@@ -555,7 +555,10 @@ func (d NullDuration) Value() (driver.Value, error) {
 
 func validateArg(arg any) error {
 	switch arg := arg.(type) {
-	case time.Time, *time.Time, **time.Time, sql.NullTime, *sql.NullTime, **sql.NullTime:
+	case time.Time, *time.Time, **time.Time,
+		sql.NullTime, *sql.NullTime, **sql.NullTime,
+		sql.Null[time.Time], *sql.Null[time.Time], **sql.Null[time.Time]:
+
 		return fmt.Errorf(
 			"cannot use %T as an arg; convert to one of: %T, %T, %T, or %T instead",
 			arg, Time{}, &Time{}, NullTime{}, &NullTime{},
