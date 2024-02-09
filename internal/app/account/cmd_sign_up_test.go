@@ -11,9 +11,8 @@ import (
 )
 
 func TestSignUp(t *testing.T) {
-	ctx := context.Background()
-
 	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
 		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		events := testutil.NewEventLog(broker)
@@ -58,6 +57,7 @@ func TestSignUp(t *testing.T) {
 	})
 
 	t.Run("success already verified", func(t *testing.T) {
+		ctx := context.Background()
 		svc, broker, repo := NewTestEnvWithSystem(ctx, "pwa")
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", SignUpSystem: "site", Verify: true})
@@ -89,6 +89,7 @@ func TestSignUp(t *testing.T) {
 	})
 
 	t.Run("success already activated", func(t *testing.T) {
+		ctx := context.Background()
 		svc, broker, repo := NewTestEnvWithSystem(ctx, "pwa")
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", SignUpSystem: "site", Activate: true})

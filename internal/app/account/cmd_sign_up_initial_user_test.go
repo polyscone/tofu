@@ -13,9 +13,8 @@ import (
 )
 
 func TestSignUpInitialUser(t *testing.T) {
-	ctx := context.Background()
-
 	t.Run("success", func(t *testing.T) {
+		ctx := context.Background()
 		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
 		events := testutil.NewEventLog(broker)
