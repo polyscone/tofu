@@ -15,7 +15,7 @@ func NewTestEnv(ctx context.Context) (*system.Service, event.Broker, system.Read
 	repo := errsx.Must(sqlite.NewSystemRepo(ctx, db))
 	svc := errsx.Must(system.NewService(broker, repo))
 
-	broker.ImmediateOnly = true
+	broker.Synchronous = true
 
 	return svc, broker, repo
 }

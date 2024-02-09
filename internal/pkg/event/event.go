@@ -21,17 +21,10 @@ type AnyHandler func(evt Event)
 type FallbackHandler func(evt Event)
 
 // Broker defines a type that can register listeners and dispatch/flush events.
-// Listen methods must expect to be eventually consistent, though an implementation
-// may make them immediately consistent if needed.
-// Any ListenImmediate methods must guarantee immediate consistency within the system.
 type Broker interface {
 	Listen(handler Handler)
 	ListenAny(handler AnyHandler)
 	ListenFallback(handler FallbackHandler)
-
-	ListenImmediate(handler Handler)
-	ListenImmediateAny(handler AnyHandler)
-	ListenImmediateFallback(handler FallbackHandler)
 
 	Clear()
 	Dispatch(evt Event)

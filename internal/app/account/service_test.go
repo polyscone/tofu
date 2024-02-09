@@ -21,7 +21,7 @@ func NewTestEnvWithSystem(ctx context.Context, system string) (*account.Service,
 	repo := errsx.Must(sqlite.NewAccountRepo(ctx, db, 1*time.Minute))
 	svc := errsx.Must(account.NewService(broker, repo, hasher, system))
 
-	broker.ImmediateOnly = true
+	broker.Synchronous = true
 
 	return svc, broker, repo
 }
