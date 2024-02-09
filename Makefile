@@ -1,4 +1,3 @@
-.ONESHELL:
 .DEFAULT_GOAL := build
 .SHELLFLAGS += -e
 MAKEFLAGS += --no-print-directory
@@ -9,11 +8,6 @@ OUT := .
 TAGS := json1 fts5
 BENCH_COUNT := 3
 DATA := ./.data
-
-RM := rm
-ifeq ($(OS),Windows_NT)
-	RM := cmd //C del //Q //F
-endif
 
 BUILD_TAGS := $(TAGS)
 ifdef TAGS
@@ -77,16 +71,11 @@ test:
 
 .PHONY: audit
 audit:
-	@echo go mod tidy -v
-	@go mod tidy -v
-	@echo go mod verify
-	@go mod verify
-	@echo go fmt ./...
-	@go fmt ./...
-	@echo go vet $(BUILD_TAGS) ./...
-	@go vet $(BUILD_TAGS) ./...
-	@echo go test $(BUILD_TAGS) -race -vet off ./...
-	@go test $(BUILD_TAGS) -race -vet off ./...
+	go mod tidy -v
+	go mod verify
+	go fmt ./...
+	go vet $(BUILD_TAGS) ./...
+	go test $(BUILD_TAGS) -race -vet off ./...
 
 .PHONY: vulncheck
 vulncheck:
@@ -105,12 +94,11 @@ endif
 cover:
 	go test $(BUILD_TAGS) -vet off -coverprofile coverage.out $(PKG)
 	go tool cover -html=coverage.out
-	$(RM) coverage.out
 
 GEN_CERT_HOST := localhost
 .PHONY: gen/cert
 gen/cert:
-	cd $(DATA)
+	cd $(DATA) && \
 	go run $(GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits 2048 -host "$(GEN_CERT_HOST)"
 
 WEB_DEV_ADDR := :8080
