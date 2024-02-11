@@ -12,7 +12,7 @@ import (
 )
 
 func verifyRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Prefix("/verify", func(mux *router.ServeMux) {
+	mux.Group("/verify", func(mux *router.ServeMux) {
 		mux.Get("/", verifyGet(h), "account.verify")
 		mux.Post("/", verifyPost(h), "account.verify.post")
 

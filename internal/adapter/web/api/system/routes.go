@@ -6,7 +6,7 @@ import (
 )
 
 func Routes(h *api.Handler, mux *router.ServeMux) {
-	mux.Prefix("/system", func(mux *router.ServeMux) {
+	mux.Group("/system", func(mux *router.ServeMux) {
 		configRoutes(h, mux)
 	})
 }

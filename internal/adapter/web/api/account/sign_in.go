@@ -19,7 +19,7 @@ import (
 )
 
 func signInRoutes(h *api.Handler, mux *router.ServeMux) {
-	mux.Prefix("/sign-in", func(mux *router.ServeMux) {
+	mux.Group("/sign-in", func(mux *router.ServeMux) {
 		mux.Post("/", signInPost(h))
 		mux.Post("/magic-link", signInMagicLinkPost(h))
 		mux.Post("/magic-link/request", signInMagicLinkRequestPost(h))

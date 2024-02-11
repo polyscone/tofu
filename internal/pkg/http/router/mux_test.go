@@ -49,12 +49,12 @@ func TestMux(t *testing.T) {
 	mux.Patch("/", echoHandler)
 	mux.Delete("/", echoHandler)
 
-	mux.Prefix("/", func(mux *router.ServeMux) {
+	mux.Group("/", func(mux *router.ServeMux) {
 		mux.Get("/consecutive-slashes", emptyHandler)
 
-		mux.Prefix("/route", func(mux *router.ServeMux) {
+		mux.Group("/route", func(mux *router.ServeMux) {
 
-			mux.Prefix("/test", func(mux *router.ServeMux) {
+			mux.Group("/test", func(mux *router.ServeMux) {
 				mux.Options("/", emptyHandler)
 				mux.Connect("/", emptyHandler)
 				mux.Trace("/", emptyHandler)
@@ -68,10 +68,10 @@ func TestMux(t *testing.T) {
 		})
 	})
 
-	mux.Prefix("/get", func(mux *router.ServeMux) {
-		mux.Prefix("/only", func(mux *router.ServeMux) {
-			mux.Prefix("/", func(mux *router.ServeMux) {
-				mux.Prefix("/", func(mux *router.ServeMux) {
+	mux.Group("/get", func(mux *router.ServeMux) {
+		mux.Group("/only", func(mux *router.ServeMux) {
+			mux.Group("/", func(mux *router.ServeMux) {
+				mux.Group("/", func(mux *router.ServeMux) {
 					mux.Get("/", emptyHandler)
 				})
 			})
@@ -79,7 +79,7 @@ func TestMux(t *testing.T) {
 			currentPrefix := mux.CurrentPrefix()
 			currentPattern := mux.CurrentPattern()
 
-			mux.Prefix("/current", func(mux *router.ServeMux) {
+			mux.Group("/current", func(mux *router.ServeMux) {
 				mux.Get("/prefix", func(w http.ResponseWriter, r *http.Request) {
 					w.Write([]byte(currentPrefix))
 				})
@@ -91,14 +91,14 @@ func TestMux(t *testing.T) {
 		})
 	})
 
-	mux.Prefix("/handle", func(mux *router.ServeMux) {
-		mux.Prefix("/all", func(mux *router.ServeMux) {
+	mux.Group("/handle", func(mux *router.ServeMux) {
+		mux.Group("/all", func(mux *router.ServeMux) {
 			mux.Any("/", emptyHandler)
 		})
 	})
 
-	mux.Prefix("/same", func(mux *router.ServeMux) {
-		mux.Prefix("/prefix", func(mux *router.ServeMux) {
+	mux.Group("/same", func(mux *router.ServeMux) {
+		mux.Group("/prefix", func(mux *router.ServeMux) {
 			mux.Get("/foo/bar", func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(http.StatusTooManyRequests)
 			})
@@ -113,7 +113,7 @@ func TestMux(t *testing.T) {
 		})
 	})
 
-	mux.Prefix("/name", func(mux *router.ServeMux) {
+	mux.Group("/name", func(mux *router.ServeMux) {
 		mux.Name("named")
 
 		mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -121,9 +121,9 @@ func TestMux(t *testing.T) {
 		})
 	})
 
-	mux.Prefix("/before", func(mux *router.ServeMux) {
-		mux.Prefix("/hook", func(mux *router.ServeMux) {
-			mux.Prefix("/exact", func(mux *router.ServeMux) {
+	mux.Group("/before", func(mux *router.ServeMux) {
+		mux.Group("/hook", func(mux *router.ServeMux) {
+			mux.Group("/exact", func(mux *router.ServeMux) {
 				mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 					return func(w http.ResponseWriter, r *http.Request) {
 						w.Write([]byte("abc"))
@@ -137,12 +137,12 @@ func TestMux(t *testing.T) {
 				})
 			})
 
-			mux.Prefix("/prefix", func(mux *router.ServeMux) {
+			mux.Group("/prefix", func(mux *router.ServeMux) {
 				mux.Get("/conflict", func(w http.ResponseWriter, r *http.Request) {
 					w.Write([]byte("before conflict"))
 				})
 
-				mux.Prefix("/{foo}", func(mux *router.ServeMux) {
+				mux.Group("/{foo}", func(mux *router.ServeMux) {
 					mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 						return func(w http.ResponseWriter, r *http.Request) {
 							foo, _ := router.URLParam(r, "foo")
@@ -156,7 +156,7 @@ func TestMux(t *testing.T) {
 						}
 					})
 
-					mux.Prefix("/bar", func(mux *router.ServeMux) {
+					mux.Group("/bar", func(mux *router.ServeMux) {
 						mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 							return func(w http.ResponseWriter, r *http.Request) {
 								foo, _ := router.URLParam(r, "foo")
@@ -196,11 +196,11 @@ func TestMux(t *testing.T) {
 		}
 	})
 
-	mux.Prefix("/overlap-prefix", func(mux *router.ServeMux) {
-		mux.Prefix("/{foo}", func(mux *router.ServeMux) {
+	mux.Group("/overlap-prefix", func(mux *router.ServeMux) {
+		mux.Group("/{foo}", func(mux *router.ServeMux) {
 			mux.Get("/", echoHandler)
 
-			mux.Prefix("/overlap-suffix", func(mux *router.ServeMux) {
+			mux.Group("/overlap-suffix", func(mux *router.ServeMux) {
 				mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
 					param, _ := router.URLParam(r, "foo")
 
@@ -228,7 +228,7 @@ func TestMux(t *testing.T) {
 		w.Write([]byte("redirected"))
 	})
 
-	mux.Prefix("/foo-prefix", func(mux *router.ServeMux) {
+	mux.Group("/foo-prefix", func(mux *router.ServeMux) {
 		// Redirects ignore the prefix
 		mux.Redirect(http.MethodGet, "/redirect/src", "/redirect/dst", http.StatusTemporaryRedirect)
 		mux.Redirect(http.MethodGet, "/{var}/redirect/src/var", "/{var}/dst", http.StatusTemporaryRedirect)
@@ -239,7 +239,7 @@ func TestMux(t *testing.T) {
 		w.Write([]byte("rewritten"))
 	})
 
-	mux.Prefix("/bar-prefix", func(mux *router.ServeMux) {
+	mux.Group("/bar-prefix", func(mux *router.ServeMux) {
 		// Rewrites ignore the prefix
 		mux.Rewrite(http.MethodGet, "/rewrite/src", "/rewrite/dst")
 		mux.Rewrite(http.MethodGet, "/{var}/rewrite/src/var", "/{var}/dst")

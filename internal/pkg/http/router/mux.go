@@ -274,9 +274,10 @@ func (mux *ServeMux) Before(mw middleware.Middleware) {
 	mux.befores = append(mux.befores, mw)
 }
 
-// Prefix will automatically prefix any patterns that are registered in
-// given the route group function with the given prefix.
-func (mux *ServeMux) Prefix(prefix string, routeGroup func(mux *ServeMux)) {
+// Group will automatically prefix any patterns that are registered in
+// given the route group function with the given prefix and allow hooks to be
+// scoped to the current group.
+func (mux *ServeMux) Group(prefix string, routeGroup func(mux *ServeMux)) {
 	originalPrefix := mux.prefix
 	originalBefores := slices.Clone(mux.befores)
 

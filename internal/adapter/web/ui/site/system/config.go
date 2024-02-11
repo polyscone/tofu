@@ -12,7 +12,7 @@ import (
 )
 
 func ConfigRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Prefix("/config", func(mux *router.ServeMux) {
+	mux.Group("/config", func(mux *router.ServeMux) {
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
 
 		mux.Get("/", h.HTML.HandlerFunc("site/system/config"), "system.config")

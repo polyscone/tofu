@@ -26,15 +26,15 @@ import (
 )
 
 func totpRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Prefix("/totp", func(mux *router.ServeMux) {
+	mux.Group("/totp", func(mux *router.ServeMux) {
 		mux.Name("account.totp.section")
 
-		mux.Prefix("/reset", func(mux *router.ServeMux) {
+		mux.Group("/reset", func(mux *router.ServeMux) {
 			mux.Get("/", h.HTML.HandlerFunc("site/account/totp/reset/reset"), "account.totp.reset")
 			mux.Post("/", totpResetPost(h), "account.totp.reset.post")
 		})
 
-		mux.Prefix("/", func(mux *router.ServeMux) {
+		mux.Group("/", func(mux *router.ServeMux) {
 			mux.Before(h.RequireSignIn)
 			mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
@@ -55,40 +55,40 @@ func totpRoutes(h *ui.Handler, mux *router.ServeMux) {
 				}
 			})
 
-			mux.Prefix("/setup", func(mux *router.ServeMux) {
+			mux.Group("/setup", func(mux *router.ServeMux) {
 				mux.Get("/", totpSetupGet(h), "account.totp.setup")
 				mux.Post("/", totpSetupPost(h), "account.totp.setup.post")
 
-				mux.Prefix("/app", func(mux *router.ServeMux) {
+				mux.Group("/app", func(mux *router.ServeMux) {
 					mux.Get("/", totpSetupAppGet(h), "account.totp.setup.app")
 					mux.Post("/", totpSetupAppPost(h), "account.totp.setup.app.post")
 				})
 
-				mux.Prefix("/sms", func(mux *router.ServeMux) {
+				mux.Group("/sms", func(mux *router.ServeMux) {
 					mux.Get("/", totpSetupSMSGet(h), "account.totp.setup.sms")
 					mux.Post("/", totpSetupSMSPost(h), "account.totp.setup.sms.post")
 
-					mux.Prefix("/verify", func(mux *router.ServeMux) {
+					mux.Group("/verify", func(mux *router.ServeMux) {
 						mux.Get("/", totpSetupSMSVerifyGet(h), "account.totp.setup.sms.verify")
 						mux.Post("/", totpSetupSMSVerifyPost(h), "account.totp.setup.sms.verify.post")
 					})
 				})
 
-				mux.Prefix("/activate", func(mux *router.ServeMux) {
+				mux.Group("/activate", func(mux *router.ServeMux) {
 					mux.Post("/", totpSetupActivatePost(h), "account.totp.setup.activate.post")
 				})
 
 				mux.Get("/success", h.HTML.HandlerFunc("site/account/totp/setup/success"), "account.totp.setup.success")
 			})
 
-			mux.Prefix("/disable", func(mux *router.ServeMux) {
+			mux.Group("/disable", func(mux *router.ServeMux) {
 				mux.Get("/", totpDisableGet(h), "account.totp.disable")
 				mux.Post("/", totpDisablePost(h), "account.totp.disable.post")
 
 				mux.Get("/success", h.HTML.HandlerFunc("site/account/totp/disable/success"), "account.totp.disable.success")
 			})
 
-			mux.Prefix("/recovery-codes", func(mux *router.ServeMux) {
+			mux.Group("/recovery-codes", func(mux *router.ServeMux) {
 				mux.Get("/", totpRecoveryCodesGet(h), "account.totp.recovery_codes")
 				mux.Post("/", totpRecoveryCodesPost(h), "account.totp.recovery_codes.post")
 			})

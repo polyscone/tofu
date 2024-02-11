@@ -8,7 +8,7 @@ import (
 )
 
 func healthRoutes(h *api.Handler, mux *router.ServeMux) {
-	mux.Prefix("/health", func(mux *router.ServeMux) {
+	mux.Group("/health", func(mux *router.ServeMux) {
 		mux.Head("/", healthGet(h))
 		mux.Get("/", healthGet(h))
 	})

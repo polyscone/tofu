@@ -17,7 +17,7 @@ import (
 )
 
 func MetricsRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Prefix("/metrics", func(mux *router.ServeMux) {
+	mux.Group("/metrics", func(mux *router.ServeMux) {
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewMetrics() }))
 
 		mux.Get("/", systemMetricsGet(h), "system.metrics")

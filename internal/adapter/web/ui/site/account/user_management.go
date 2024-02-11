@@ -17,19 +17,19 @@ import (
 )
 
 func UserManagementRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Prefix("/users", func(mux *router.ServeMux) {
+	mux.Group("/users", func(mux *router.ServeMux) {
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewUsers() }))
 
 		mux.Get("/", userListGet(h), "account.management.user.list")
 
-		mux.Prefix("/new", func(mux *router.ServeMux) {
+		mux.Group("/new", func(mux *router.ServeMux) {
 			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanInviteUsers() }))
 
 			mux.Get("/", userNewGet(h), "account.management.user.new")
 			mux.Post("/", userNewPost(h), "account.management.user.new.post")
 		})
 
-		mux.Prefix("/{userID}", func(mux *router.ServeMux) {
+		mux.Group("/{userID}", func(mux *router.ServeMux) {
 			mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
 					userID, ok := router.URLParamAs[int](r, "userID")
@@ -52,22 +52,22 @@ func UserManagementRoutes(h *ui.Handler, mux *router.ServeMux) {
 			mux.Post("/suspend", userSuspendPost(h), "account.management.user.suspend.post")
 			mux.Post("/unsuspend", userUnsuspendPost(h), "account.management.user.unsuspend.post")
 
-			mux.Prefix("/activate", func(mux *router.ServeMux) {
+			mux.Group("/activate", func(mux *router.ServeMux) {
 				mux.Get("/", userActivateGet(h), "account.management.user.activate")
 				mux.Post("/", userActivatePost(h), "account.management.user.activate.post")
 			})
 
-			mux.Prefix("/totp-reset-review", func(mux *router.ServeMux) {
+			mux.Group("/totp-reset-review", func(mux *router.ServeMux) {
 				mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }))
 
 				mux.Get("/", userTOTPResetReviewGet(h), "account.management.user.totp_reset_review")
 
-				mux.Prefix("/approve", func(mux *router.ServeMux) {
+				mux.Group("/approve", func(mux *router.ServeMux) {
 					mux.Get("/", userTOTPResetApproveGet(h), "account.management.user.totp_reset_approve")
 					mux.Post("/", userTOTPResetApprovePost(h), "account.management.user.totp_reset_approve.post")
 				})
 
-				mux.Prefix("/deny", func(mux *router.ServeMux) {
+				mux.Group("/deny", func(mux *router.ServeMux) {
 					mux.Get("/", userTOTPResetDenyGet(h), "account.management.user.totp_reset_deny")
 					mux.Post("/", userTOTPResetDenyPost(h), "account.management.user.totp_reset_deny.post")
 				})

@@ -11,7 +11,7 @@ import (
 )
 
 func signUpRoutes(h *api.Handler, mux *router.ServeMux) {
-	mux.Prefix("/sign-up", func(mux *router.ServeMux) {
+	mux.Group("/sign-up", func(mux *router.ServeMux) {
 		mux.Post("/", signUpPost(h))
 	})
 }

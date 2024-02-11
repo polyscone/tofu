@@ -25,29 +25,29 @@ import (
 const lowRecoveryCodes = 2
 
 func signInRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Prefix("/sign-in", func(mux *router.ServeMux) {
+	mux.Group("/sign-in", func(mux *router.ServeMux) {
 		mux.Get("/", signInGet(h), "account.sign_in")
 
 		mux.Post("/password", signInPasswordPost(h), "account.sign_in.password.post")
 
-		mux.Prefix("/magic-link", func(mux *router.ServeMux) {
+		mux.Group("/magic-link", func(mux *router.ServeMux) {
 			mux.Get("/", signInMagicLinkGet(h), "account.sign_in.magic_link")
 			mux.Post("/", signInMagicLinkPost(h), "account.sign_in.magic_link.post")
 			mux.Post("/request", signInMagicLinkRequestPost(h), "account.sign_in.magic_link.request.post")
 			mux.Get("/email-sent", h.HTML.HandlerFunc("site/account/sign_in/magic_link_sent"), "account.sign_in.magic_link.request.email_sent")
 		})
 
-		mux.Prefix("/totp", func(mux *router.ServeMux) {
+		mux.Group("/totp", func(mux *router.ServeMux) {
 			mux.Get("/", signInTOTPGet(h), "account.sign_in.totp")
 			mux.Post("/", signInTOTPPost(h), "account.sign_in.totp.post")
 
-			mux.Prefix("/reset", func(mux *router.ServeMux) {
+			mux.Group("/reset", func(mux *router.ServeMux) {
 				mux.Get("/", signInTOTPResetGet(h), "account.sign_in.totp.reset")
 				mux.Post("/", signInTOTPResetPost(h), "account.sign_in.totp.reset.post")
 
 				mux.Get("/email-sent", h.HTML.HandlerFunc("site/account/totp/reset/email_sent"), "account.sign_in.totp.reset.email_sent")
 
-				mux.Prefix("/request", func(mux *router.ServeMux) {
+				mux.Group("/request", func(mux *router.ServeMux) {
 					mux.Get("/", h.HTML.HandlerFunc("site/account/totp/reset/request"), "account.sign_in.totp.reset.request")
 					mux.Post("/", signInTOTPResetRequestPost(h), "account.sign_in.totp.reset.request.post")
 
@@ -56,7 +56,7 @@ func signInRoutes(h *ui.Handler, mux *router.ServeMux) {
 			})
 		})
 
-		mux.Prefix("/recovery-code", func(mux *router.ServeMux) {
+		mux.Group("/recovery-code", func(mux *router.ServeMux) {
 			mux.Get("/", signInRecoveryCodeGet(h), "account.sign_in.recovery_code")
 			mux.Post("/", signInRecoveryCodePost(h), "account.sign_in.recovery_code.post")
 		})

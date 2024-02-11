@@ -8,19 +8,19 @@ import (
 )
 
 func Routes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Prefix("/admin", func(mux *router.ServeMux) {
+	mux.Group("/admin", func(mux *router.ServeMux) {
 		mux.Name("admin.section")
 
 		mux.Before(h.RequireSignIn)
 
 		mux.Get("/", h.HTML.HandlerFunc("site/admin/dashboard"), "admin.dashboard")
 
-		mux.Prefix("/account", func(mux *router.ServeMux) {
+		mux.Group("/account", func(mux *router.ServeMux) {
 			account.RoleManagementRoutes(h, mux)
 			account.UserManagementRoutes(h, mux)
 		})
 
-		mux.Prefix("/system", func(mux *router.ServeMux) {
+		mux.Group("/system", func(mux *router.ServeMux) {
 			system.ConfigRoutes(h, mux)
 			system.MetricsRoutes(h, mux)
 		})

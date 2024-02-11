@@ -11,7 +11,7 @@ import (
 )
 
 func changePasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Prefix("/change-password", func(mux *router.ServeMux) {
+	mux.Group("/change-password", func(mux *router.ServeMux) {
 		mux.Before(h.RequireSignIn)
 		mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {

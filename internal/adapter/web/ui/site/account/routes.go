@@ -6,7 +6,7 @@ import (
 )
 
 func Routes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Prefix("/account", func(mux *router.ServeMux) {
+	mux.Group("/account", func(mux *router.ServeMux) {
 		mux.Name("account.section")
 
 		verifyRoutes(h, mux)

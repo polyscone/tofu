@@ -11,7 +11,7 @@ import (
 )
 
 func choosePasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Prefix("/choose-password", func(mux *router.ServeMux) {
+	mux.Group("/choose-password", func(mux *router.ServeMux) {
 		mux.Name("account.choose_password.section")
 
 		mux.Before(h.RequireSignIn)

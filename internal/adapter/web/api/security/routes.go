@@ -6,7 +6,7 @@ import (
 )
 
 func Routes(h *api.Handler, mux *router.ServeMux) {
-	mux.Prefix("/security", func(mux *router.ServeMux) {
+	mux.Group("/security", func(mux *router.ServeMux) {
 		csrfRoutes(h, mux)
 	})
 }

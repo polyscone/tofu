@@ -15,7 +15,7 @@ import (
 )
 
 func resetPasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Prefix("/reset-password", func(mux *router.ServeMux) {
+	mux.Group("/reset-password", func(mux *router.ServeMux) {
 		mux.Get("/", h.HTML.HandlerFunc("site/account/reset_password/request"), "account.reset_password")
 		mux.Post("/", resetPasswordPost(h), "account.reset_password.post")
 
