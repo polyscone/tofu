@@ -30,7 +30,7 @@ func choosePasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
 			}
 		})
 
-		mux.Get("/", h.HTML.Handler("site/account/choose_password/form"), "account.choose_password")
+		mux.Get("/", h.HTML.HandlerFunc("site/account/choose_password/form"), "account.choose_password")
 		mux.Post("/", choosePasswordPost(h), "account.choose_password.post")
 	})
 }

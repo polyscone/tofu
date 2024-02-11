@@ -34,7 +34,7 @@ func signInRoutes(h *ui.Handler, mux *router.ServeMux) {
 			mux.Get("/", signInMagicLinkGet(h), "account.sign_in.magic_link")
 			mux.Post("/", signInMagicLinkPost(h), "account.sign_in.magic_link.post")
 			mux.Post("/request", signInMagicLinkRequestPost(h), "account.sign_in.magic_link.request.post")
-			mux.Get("/email-sent", h.HTML.Handler("site/account/sign_in/magic_link_sent"), "account.sign_in.magic_link.request.email_sent")
+			mux.Get("/email-sent", h.HTML.HandlerFunc("site/account/sign_in/magic_link_sent"), "account.sign_in.magic_link.request.email_sent")
 		})
 
 		mux.Prefix("/totp", func(mux *router.ServeMux) {
@@ -45,13 +45,13 @@ func signInRoutes(h *ui.Handler, mux *router.ServeMux) {
 				mux.Get("/", signInTOTPResetGet(h), "account.sign_in.totp.reset")
 				mux.Post("/", signInTOTPResetPost(h), "account.sign_in.totp.reset.post")
 
-				mux.Get("/email-sent", h.HTML.Handler("site/account/totp/reset/email_sent"), "account.sign_in.totp.reset.email_sent")
+				mux.Get("/email-sent", h.HTML.HandlerFunc("site/account/totp/reset/email_sent"), "account.sign_in.totp.reset.email_sent")
 
 				mux.Prefix("/request", func(mux *router.ServeMux) {
-					mux.Get("/", h.HTML.Handler("site/account/totp/reset/request"), "account.sign_in.totp.reset.request")
+					mux.Get("/", h.HTML.HandlerFunc("site/account/totp/reset/request"), "account.sign_in.totp.reset.request")
 					mux.Post("/", signInTOTPResetRequestPost(h), "account.sign_in.totp.reset.request.post")
 
-					mux.Get("/sent", h.HTML.Handler("site/account/totp/reset/request_sent"), "account.sign_in.totp.reset.request.sent")
+					mux.Get("/sent", h.HTML.HandlerFunc("site/account/totp/reset/request_sent"), "account.sign_in.totp.reset.request.sent")
 				})
 			})
 		})

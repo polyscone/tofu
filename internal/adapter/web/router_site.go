@@ -188,10 +188,10 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")
 
-	mux.Get("/robots.txt", h.Plain.Handler("file/robots"))
-	mux.Get("/.well-known/security.txt", h.Plain.Handler("file/security"))
+	mux.Get("/robots.txt", h.Plain.HandlerFunc("file/robots"))
+	mux.Get("/.well-known/security.txt", h.Plain.HandlerFunc("file/security"))
 
-	mux.Get("/", h.HTML.Handler("site/page/home"), "page.home")
+	mux.Get("/", h.HTML.HandlerFunc("site/page/home"), "page.home")
 
 	account.Routes(h, mux)
 	admin.Routes(h, mux)

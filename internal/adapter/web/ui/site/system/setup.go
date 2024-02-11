@@ -33,7 +33,7 @@ func setupRoutes(h *ui.Handler, mux *router.ServeMux) {
 			}
 		})
 
-		mux.Get("/", h.HTML.Handler("site/system/setup"), "system.setup")
+		mux.Get("/", h.HTML.HandlerFunc("site/system/setup"), "system.setup")
 		mux.Post("/", systemSetupPost(h), "system.setup.post")
 	})
 }

@@ -16,12 +16,12 @@ import (
 
 func resetPasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
 	mux.Prefix("/reset-password", func(mux *router.ServeMux) {
-		mux.Get("/", h.HTML.Handler("site/account/reset_password/request"), "account.reset_password")
+		mux.Get("/", h.HTML.HandlerFunc("site/account/reset_password/request"), "account.reset_password")
 		mux.Post("/", resetPasswordPost(h), "account.reset_password.post")
 
-		mux.Get("/email-sent", h.HTML.Handler("site/account/reset_password/email_sent"), "account.reset_password.email_sent")
+		mux.Get("/email-sent", h.HTML.HandlerFunc("site/account/reset_password/email_sent"), "account.reset_password.email_sent")
 
-		mux.Get("/new-password", h.HTML.Handler("site/account/reset_password/new_password"), "account.reset_password.new_password")
+		mux.Get("/new-password", h.HTML.HandlerFunc("site/account/reset_password/new_password"), "account.reset_password.new_password")
 		mux.Post("/new-password", resetPasswordNewPasswordPost(h), "account.reset_password.new_password.post")
 	})
 }

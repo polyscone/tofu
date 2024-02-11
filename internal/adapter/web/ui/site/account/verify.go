@@ -16,7 +16,7 @@ func verifyRoutes(h *ui.Handler, mux *router.ServeMux) {
 		mux.Get("/", verifyGet(h), "account.verify")
 		mux.Post("/", verifyPost(h), "account.verify.post")
 
-		mux.Get("/success", h.HTML.Handler("site/account/verify/success"), "account.verify.success")
+		mux.Get("/success", h.HTML.HandlerFunc("site/account/verify/success"), "account.verify.success")
 	})
 }
 

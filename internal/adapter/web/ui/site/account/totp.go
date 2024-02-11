@@ -30,7 +30,7 @@ func totpRoutes(h *ui.Handler, mux *router.ServeMux) {
 		mux.Name("account.totp.section")
 
 		mux.Prefix("/reset", func(mux *router.ServeMux) {
-			mux.Get("/", h.HTML.Handler("site/account/totp/reset/reset"), "account.totp.reset")
+			mux.Get("/", h.HTML.HandlerFunc("site/account/totp/reset/reset"), "account.totp.reset")
 			mux.Post("/", totpResetPost(h), "account.totp.reset.post")
 		})
 
@@ -78,14 +78,14 @@ func totpRoutes(h *ui.Handler, mux *router.ServeMux) {
 					mux.Post("/", totpSetupActivatePost(h), "account.totp.setup.activate.post")
 				})
 
-				mux.Get("/success", h.HTML.Handler("site/account/totp/setup/success"), "account.totp.setup.success")
+				mux.Get("/success", h.HTML.HandlerFunc("site/account/totp/setup/success"), "account.totp.setup.success")
 			})
 
 			mux.Prefix("/disable", func(mux *router.ServeMux) {
 				mux.Get("/", totpDisableGet(h), "account.totp.disable")
 				mux.Post("/", totpDisablePost(h), "account.totp.disable.post")
 
-				mux.Get("/success", h.HTML.Handler("site/account/totp/disable/success"), "account.totp.disable.success")
+				mux.Get("/success", h.HTML.HandlerFunc("site/account/totp/disable/success"), "account.totp.disable.success")
 			})
 
 			mux.Prefix("/recovery-codes", func(mux *router.ServeMux) {

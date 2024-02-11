@@ -13,7 +13,7 @@ func Routes(h *ui.Handler, mux *router.ServeMux) {
 
 		mux.Before(h.RequireSignIn)
 
-		mux.Get("/", h.HTML.Handler("site/admin/dashboard"), "admin.dashboard")
+		mux.Get("/", h.HTML.HandlerFunc("site/admin/dashboard"), "admin.dashboard")
 
 		mux.Prefix("/account", func(mux *router.ServeMux) {
 			account.RoleManagementRoutes(h, mux)

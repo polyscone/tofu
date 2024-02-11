@@ -28,7 +28,7 @@ func changePasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
 			}
 		})
 
-		mux.Get("/", h.HTML.Handler("site/account/change_password/form"), "account.change_password")
+		mux.Get("/", h.HTML.HandlerFunc("site/account/change_password/form"), "account.change_password")
 		mux.Post("/", changePasswordPost(h), "account.change_password.post")
 	})
 

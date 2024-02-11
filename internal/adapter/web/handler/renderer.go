@@ -223,7 +223,7 @@ func (rn *Renderer) SetViewVars(name string, vars ViewVarsFunc) {
 	rn.viewVarsFuncs[name] = vars
 }
 
-func (rn *Renderer) Handler(view string) http.HandlerFunc {
+func (rn *Renderer) HandlerFunc(view string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		rn.View(w, r, http.StatusOK, view, nil)
 	}
