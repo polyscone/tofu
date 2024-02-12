@@ -24,7 +24,7 @@ import (
 
 const lowRecoveryCodes = 2
 
-func signInRoutes(h *ui.Handler, mux *router.ServeMux) {
+func RegisterSignInHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("GET /account/sign-in", signInGet(h), "account.sign_in")
 
 	mux.HandleFunc("POST /account/sign-in/password", signInPasswordPost(h), "account.sign_in.password.post")

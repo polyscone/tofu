@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func csrfRoutes(h *api.Handler, mux *router.ServeMux) {
+func RegisterCSRFHandlers(h *api.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("GET /security/csrf", csrfGet(h))
 }
 

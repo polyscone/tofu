@@ -18,7 +18,7 @@ import (
 	"github.com/polyscone/tofu/internal/repository"
 )
 
-func signInRoutes(h *api.Handler, mux *router.ServeMux) {
+func RegisterSignInHandlers(h *api.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("POST /account/sign-in", signInPost(h))
 	mux.HandleFunc("POST /account/sign-in/magic-link", signInMagicLinkPost(h))
 	mux.HandleFunc("POST /account/sign-in/magic-link/request", signInMagicLinkRequestPost(h))

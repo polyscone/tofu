@@ -13,7 +13,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func signUpRoutes(h *ui.Handler, mux *router.ServeMux) {
+func RegisterSignUpHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("GET /account/sign-up", signUpGet(h), "account.sign_up")
 	mux.HandleFunc("POST /account/sign-up", signUpPost(h), "account.sign_up.post")
 

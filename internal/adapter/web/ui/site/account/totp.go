@@ -25,7 +25,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/sms"
 )
 
-func totpRoutes(h *ui.Handler, mux *router.ServeMux) {
+func RegisterTOTPHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.Named("account.totp.section", "/account/totp")
 
 	mux.HandleFunc("GET /account/totp/reset", h.HTML.HandlerFunc("site/account/totp/reset/reset"), "account.totp.reset")

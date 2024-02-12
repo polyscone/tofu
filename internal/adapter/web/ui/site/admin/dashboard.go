@@ -5,9 +5,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func Routes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Named("admin.section", "/admin")
-
+func RegisterDashboardHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.Group(func(mux *router.ServeMux) {
 		mux.Before(h.RequireSignIn)
 

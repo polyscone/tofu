@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func setupRoutes(h *ui.Handler, mux *router.ServeMux) {
+func RegisterSetupHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.Group(func(mux *router.ServeMux) {
 		mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {

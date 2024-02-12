@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func verifyRoutes(h *ui.Handler, mux *router.ServeMux) {
+func RegisterVerifyHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("GET /account/verify", verifyGet(h), "account.verify")
 	mux.HandleFunc("POST /account/verify", verifyPost(h), "account.verify.post")
 

@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func configRoutes(h *api.Handler, mux *router.ServeMux) {
+func RegisterConfigHandlers(h *api.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("GET /system/config", configGet(h))
 }
 

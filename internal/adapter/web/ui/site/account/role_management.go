@@ -16,7 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/repository"
 )
 
-func roleManagementRoutes(h *ui.Handler, mux *router.ServeMux) {
+func RegisterRoleManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.Group(func(mux *router.ServeMux) {
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewRoles() }))
 

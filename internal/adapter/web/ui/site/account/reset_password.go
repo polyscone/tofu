@@ -14,7 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func resetPasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
+func RegisterResetPasswordHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("GET /account/reset-password", h.HTML.HandlerFunc("site/account/reset_password/request"), "account.reset_password")
 	mux.HandleFunc("POST /account/reset-password", resetPasswordPost(h), "account.reset_password.post")
 

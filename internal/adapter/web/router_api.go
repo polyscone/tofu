@@ -97,10 +97,18 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 
 	mux.HandleFunc("GET /sdk.js", h.JavaScript.HandlerFunc("sdk/v1.js"))
 
-	account.Routes(h, mux)
-	system.Routes(h, mux)
-	security.Routes(h, mux)
-	meta.Routes(h, mux)
+	account.RegisterResetPasswordHandlers(h, mux)
+	account.RegisterSessionHandlers(h, mux)
+	account.RegisterSignInHandlers(h, mux)
+	account.RegisterSignOutHandlers(h, mux)
+	account.RegisterSignUpHandlers(h, mux)
+	account.RegisterVerifyHandlers(h, mux)
+
+	meta.RegisterHealthHandlers(h, mux)
+
+	security.RegisterCSRFHandlers(h, mux)
+
+	system.RegisterConfigHandlers(h, mux)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if allowed, ok := httputil.MethodNotAllowed(mux, r); ok {

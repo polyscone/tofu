@@ -16,7 +16,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func metricsRoutes(h *ui.Handler, mux *router.ServeMux) {
+func RegisterMetricsHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.Group(func(mux *router.ServeMux) {
 		mux.Before(h.RequireSignIn)
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewMetrics() }))

@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func configRoutes(h *ui.Handler, mux *router.ServeMux) {
+func RegisterConfigHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.Group(func(mux *router.ServeMux) {
 		mux.Before(h.RequireSignIn)
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewConfig() }))

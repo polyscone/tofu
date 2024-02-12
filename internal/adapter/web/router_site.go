@@ -193,9 +193,27 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 	mux.HandleFunc("GET /{$}", h.HTML.HandlerFunc("site/page/home"), "page.home")
 
-	account.Routes(h, mux)
-	admin.Routes(h, mux)
-	system.Routes(h, mux)
+	mux.Named("account.section", "/account")
+
+	account.RegisterChangePasswordHandlers(h, mux)
+	account.RegisterChoosePasswordHandlers(h, mux)
+	account.RegisterDashboardHandlers(h, mux)
+	account.RegisterResetPasswordHandlers(h, mux)
+	account.RegisterRoleManagementHandlers(h, mux)
+	account.RegisterSignInHandlers(h, mux)
+	account.RegisterSignOutHandlers(h, mux)
+	account.RegisterSignUpHandlers(h, mux)
+	account.RegisterTOTPHandlers(h, mux)
+	account.RegisterUserManagementHandlers(h, mux)
+	account.RegisterVerifyHandlers(h, mux)
+
+	mux.Named("admin.section", "/admin")
+
+	admin.RegisterDashboardHandlers(h, mux)
+
+	system.RegisterConfigHandlers(h, mux)
+	system.RegisterMetricsHandlers(h, mux)
+	system.RegisterSetupHandlers(h, mux)
 
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)
