@@ -2,27 +2,15 @@ package admin
 
 import (
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
-	"github.com/polyscone/tofu/internal/adapter/web/ui/site/account"
-	"github.com/polyscone/tofu/internal/adapter/web/ui/site/system"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
 func Routes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/admin", func(mux *router.ServeMux) {
-		mux.Name("admin.section")
+	mux.Named("admin.section", "/admin")
 
+	mux.Group(func(mux *router.ServeMux) {
 		mux.Before(h.RequireSignIn)
 
-		mux.Get("/", h.HTML.HandlerFunc("site/admin/dashboard"), "admin.dashboard")
-
-		mux.Group("/account", func(mux *router.ServeMux) {
-			account.RoleManagementRoutes(h, mux)
-			account.UserManagementRoutes(h, mux)
-		})
-
-		mux.Group("/system", func(mux *router.ServeMux) {
-			system.ConfigRoutes(h, mux)
-			system.MetricsRoutes(h, mux)
-		})
+		mux.HandleFunc("GET /admin", h.HTML.HandlerFunc("site/admin/dashboard"), "admin.dashboard")
 	})
 }

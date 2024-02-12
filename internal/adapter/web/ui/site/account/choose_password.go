@@ -11,9 +11,9 @@ import (
 )
 
 func choosePasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/choose-password", func(mux *router.ServeMux) {
-		mux.Name("account.choose_password.section")
+	mux.Named("account.choose_password.section", "/account/choose-password")
 
+	mux.Group(func(mux *router.ServeMux) {
 		mux.Before(h.RequireSignIn)
 		mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
@@ -30,8 +30,8 @@ func choosePasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
 			}
 		})
 
-		mux.Get("/", h.HTML.HandlerFunc("site/account/choose_password/form"), "account.choose_password")
-		mux.Post("/", choosePasswordPost(h), "account.choose_password.post")
+		mux.HandleFunc("GET /account/choose-password", h.HTML.HandlerFunc("site/account/choose_password/form"), "account.choose_password")
+		mux.HandleFunc("POST /account/choose-password", choosePasswordPost(h), "account.choose_password.post")
 	})
 }
 

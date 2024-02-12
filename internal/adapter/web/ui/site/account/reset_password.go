@@ -15,15 +15,13 @@ import (
 )
 
 func resetPasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/reset-password", func(mux *router.ServeMux) {
-		mux.Get("/", h.HTML.HandlerFunc("site/account/reset_password/request"), "account.reset_password")
-		mux.Post("/", resetPasswordPost(h), "account.reset_password.post")
+	mux.HandleFunc("GET /account/reset-password", h.HTML.HandlerFunc("site/account/reset_password/request"), "account.reset_password")
+	mux.HandleFunc("POST /account/reset-password", resetPasswordPost(h), "account.reset_password.post")
 
-		mux.Get("/email-sent", h.HTML.HandlerFunc("site/account/reset_password/email_sent"), "account.reset_password.email_sent")
+	mux.HandleFunc("GET /account/reset-password/email-sent", h.HTML.HandlerFunc("site/account/reset_password/email_sent"), "account.reset_password.email_sent")
 
-		mux.Get("/new-password", h.HTML.HandlerFunc("site/account/reset_password/new_password"), "account.reset_password.new_password")
-		mux.Post("/new-password", resetPasswordNewPasswordPost(h), "account.reset_password.new_password.post")
-	})
+	mux.HandleFunc("GET /account/reset-password/new-password", h.HTML.HandlerFunc("site/account/reset_password/new_password"), "account.reset_password.new_password")
+	mux.HandleFunc("POST /account/reset-password/new-password", resetPasswordNewPasswordPost(h), "account.reset_password.new_password.post")
 }
 
 func resetPasswordPost(h *ui.Handler) http.HandlerFunc {

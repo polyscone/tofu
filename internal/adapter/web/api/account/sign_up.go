@@ -11,9 +11,7 @@ import (
 )
 
 func signUpRoutes(h *api.Handler, mux *router.ServeMux) {
-	mux.Group("/sign-up", func(mux *router.ServeMux) {
-		mux.Post("/", signUpPost(h))
-	})
+	mux.HandleFunc("POST /account/sign-up", signUpPost(h))
 }
 
 func signUpPost(h *api.Handler) http.HandlerFunc {

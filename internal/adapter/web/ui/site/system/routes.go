@@ -6,7 +6,7 @@ import (
 )
 
 func Routes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/system", func(mux *router.ServeMux) {
-		setupRoutes(h, mux)
-	})
+	setupRoutes(h, mux)
+	configRoutes(h, mux)
+	metricsRoutes(h, mux)
 }

@@ -10,7 +10,7 @@ import (
 )
 
 func sessionRoutes(h *api.Handler, mux *router.ServeMux) {
-	mux.Get("/session", sessionGet(h))
+	mux.HandleFunc("GET /account/session", sessionGet(h))
 }
 
 func sessionGet(h *api.Handler) http.HandlerFunc {

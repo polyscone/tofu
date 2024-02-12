@@ -15,13 +15,13 @@ func TestRecover(t *testing.T) {
 
 	mux.Use(middleware.Recover(nil))
 
-	mux.Get("/ok", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("GET /ok", func(w http.ResponseWriter, r *http.Request) {})
 
-	mux.Get("/panic", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /panic", func(w http.ResponseWriter, r *http.Request) {
 		panic("test panic here")
 	})
 
-	mux.Get("/nil-pointer", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /nil-pointer", func(w http.ResponseWriter, r *http.Request) {
 		type Foo struct{ Bar string }
 
 		var foo *Foo

@@ -18,17 +18,17 @@ func TestCSRF(t *testing.T) {
 
 	mux.Use(middleware.CSRF(&middleware.CSRFConfig{Insecure: true}))
 
-	mux.Connect("/", func(w http.ResponseWriter, r *http.Request) {})
-	mux.Head("/", func(w http.ResponseWriter, r *http.Request) {})
-	mux.Options("/", func(w http.ResponseWriter, r *http.Request) {})
-	mux.Trace("/", func(w http.ResponseWriter, r *http.Request) {})
-	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {})
-	mux.Post("/", func(w http.ResponseWriter, r *http.Request) {})
-	mux.Put("/", func(w http.ResponseWriter, r *http.Request) {})
-	mux.Patch("/", func(w http.ResponseWriter, r *http.Request) {})
-	mux.Delete("/", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("CONNECT /", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("HEAD /", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("OPTIONS /", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("TRACE /", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("PUT /", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("PATCH /", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("DELETE /", func(w http.ResponseWriter, r *http.Request) {})
 
-	mux.Post("/renew", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /renew", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		csrf.RenewToken(ctx)

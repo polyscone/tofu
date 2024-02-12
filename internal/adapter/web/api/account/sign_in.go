@@ -19,16 +19,14 @@ import (
 )
 
 func signInRoutes(h *api.Handler, mux *router.ServeMux) {
-	mux.Group("/sign-in", func(mux *router.ServeMux) {
-		mux.Post("/", signInPost(h))
-		mux.Post("/magic-link", signInMagicLinkPost(h))
-		mux.Post("/magic-link/request", signInMagicLinkRequestPost(h))
-		mux.Post("/totp", signInTOTPPost(h))
-		mux.Post("/totp/send-sms", signInTOTPSendSMSPost(h))
-		mux.Post("/recovery-code", signInRecoveryCodePost(h))
-		mux.Post("/google", signInGooglePost(h))
-		mux.Post("/facebook", signInFacebookPost(h))
-	})
+	mux.HandleFunc("POST /account/sign-in", signInPost(h))
+	mux.HandleFunc("POST /account/sign-in/magic-link", signInMagicLinkPost(h))
+	mux.HandleFunc("POST /account/sign-in/magic-link/request", signInMagicLinkRequestPost(h))
+	mux.HandleFunc("POST /account/sign-in/totp", signInTOTPPost(h))
+	mux.HandleFunc("POST /account/sign-in/totp/send-sms", signInTOTPSendSMSPost(h))
+	mux.HandleFunc("POST /account/sign-in/recovery-code", signInRecoveryCodePost(h))
+	mux.HandleFunc("POST /account/sign-in/google", signInGooglePost(h))
+	mux.HandleFunc("POST /account/sign-in/facebook", signInFacebookPost(h))
 }
 
 func signInPost(h *api.Handler) http.HandlerFunc {

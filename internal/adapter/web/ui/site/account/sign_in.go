@@ -25,45 +25,33 @@ import (
 const lowRecoveryCodes = 2
 
 func signInRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/sign-in", func(mux *router.ServeMux) {
-		mux.Get("/", signInGet(h), "account.sign_in")
+	mux.HandleFunc("GET /account/sign-in", signInGet(h), "account.sign_in")
 
-		mux.Post("/password", signInPasswordPost(h), "account.sign_in.password.post")
+	mux.HandleFunc("POST /account/sign-in/password", signInPasswordPost(h), "account.sign_in.password.post")
 
-		mux.Group("/magic-link", func(mux *router.ServeMux) {
-			mux.Get("/", signInMagicLinkGet(h), "account.sign_in.magic_link")
-			mux.Post("/", signInMagicLinkPost(h), "account.sign_in.magic_link.post")
-			mux.Post("/request", signInMagicLinkRequestPost(h), "account.sign_in.magic_link.request.post")
-			mux.Get("/email-sent", h.HTML.HandlerFunc("site/account/sign_in/magic_link_sent"), "account.sign_in.magic_link.request.email_sent")
-		})
+	mux.HandleFunc("GET /account/sign-in/magic-link", signInMagicLinkGet(h), "account.sign_in.magic_link")
+	mux.HandleFunc("POST /account/sign-in/magic-link", signInMagicLinkPost(h), "account.sign_in.magic_link.post")
+	mux.HandleFunc("POST /account/sign-in/magic-link/request", signInMagicLinkRequestPost(h), "account.sign_in.magic_link.request.post")
+	mux.HandleFunc("GET /account/sign-in/magic-link/email-sent", h.HTML.HandlerFunc("site/account/sign_in/magic_link_sent"), "account.sign_in.magic_link.request.email_sent")
 
-		mux.Group("/totp", func(mux *router.ServeMux) {
-			mux.Get("/", signInTOTPGet(h), "account.sign_in.totp")
-			mux.Post("/", signInTOTPPost(h), "account.sign_in.totp.post")
+	mux.HandleFunc("GET /account/sign-in/totp", signInTOTPGet(h), "account.sign_in.totp")
+	mux.HandleFunc("POST /account/sign-in/totp", signInTOTPPost(h), "account.sign_in.totp.post")
 
-			mux.Group("/reset", func(mux *router.ServeMux) {
-				mux.Get("/", signInTOTPResetGet(h), "account.sign_in.totp.reset")
-				mux.Post("/", signInTOTPResetPost(h), "account.sign_in.totp.reset.post")
+	mux.HandleFunc("GET /account/sign-in/totp/reset", signInTOTPResetGet(h), "account.sign_in.totp.reset")
+	mux.HandleFunc("POST /account/sign-in/totp/reset", signInTOTPResetPost(h), "account.sign_in.totp.reset.post")
 
-				mux.Get("/email-sent", h.HTML.HandlerFunc("site/account/totp/reset/email_sent"), "account.sign_in.totp.reset.email_sent")
+	mux.HandleFunc("GET /account/sign-in/totp/email-sent", h.HTML.HandlerFunc("site/account/totp/reset/email_sent"), "account.sign_in.totp.reset.email_sent")
 
-				mux.Group("/request", func(mux *router.ServeMux) {
-					mux.Get("/", h.HTML.HandlerFunc("site/account/totp/reset/request"), "account.sign_in.totp.reset.request")
-					mux.Post("/", signInTOTPResetRequestPost(h), "account.sign_in.totp.reset.request.post")
+	mux.HandleFunc("GET /account/sign-in/totp/request", h.HTML.HandlerFunc("site/account/totp/reset/request"), "account.sign_in.totp.reset.request")
+	mux.HandleFunc("POST /account/sign-in/totp/request", signInTOTPResetRequestPost(h), "account.sign_in.totp.reset.request.post")
 
-					mux.Get("/sent", h.HTML.HandlerFunc("site/account/totp/reset/request_sent"), "account.sign_in.totp.reset.request.sent")
-				})
-			})
-		})
+	mux.HandleFunc("GET /account/sign-in/totp/request/sent", h.HTML.HandlerFunc("site/account/totp/reset/request_sent"), "account.sign_in.totp.reset.request.sent")
 
-		mux.Group("/recovery-code", func(mux *router.ServeMux) {
-			mux.Get("/", signInRecoveryCodeGet(h), "account.sign_in.recovery_code")
-			mux.Post("/", signInRecoveryCodePost(h), "account.sign_in.recovery_code.post")
-		})
+	mux.HandleFunc("GET /account/sign-in/recovery-code", signInRecoveryCodeGet(h), "account.sign_in.recovery_code")
+	mux.HandleFunc("POST /account/sign-in/recovery-code", signInRecoveryCodePost(h), "account.sign_in.recovery_code.post")
 
-		mux.Post("/google", signInGooglePost(h), "account.sign_in.google.post")
-		mux.Post("/facebook", signInFacebookPost(h), "account.sign_in.facebook.post")
-	})
+	mux.HandleFunc("POST /account/sign-in/google", signInGooglePost(h), "account.sign_in.google.post")
+	mux.HandleFunc("POST /account/sign-in/facebook", signInFacebookPost(h), "account.sign_in.facebook.post")
 }
 
 func signInGet(h *ui.Handler) http.HandlerFunc {

@@ -15,9 +15,9 @@ func TestNoContent(t *testing.T) {
 
 	mux.Use(middleware.NoContent)
 
-	mux.Get("/empty", func(w http.ResponseWriter, r *http.Request) {})
+	mux.HandleFunc("GET /empty", func(w http.ResponseWriter, r *http.Request) {})
 
-	mux.Get("/populated", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /populated", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Hello, World!"))
 	})
 

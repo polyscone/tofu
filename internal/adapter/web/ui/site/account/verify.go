@@ -12,12 +12,10 @@ import (
 )
 
 func verifyRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/verify", func(mux *router.ServeMux) {
-		mux.Get("/", verifyGet(h), "account.verify")
-		mux.Post("/", verifyPost(h), "account.verify.post")
+	mux.HandleFunc("GET /account/verify", verifyGet(h), "account.verify")
+	mux.HandleFunc("POST /account/verify", verifyPost(h), "account.verify.post")
 
-		mux.Get("/success", h.HTML.HandlerFunc("site/account/verify/success"), "account.verify.success")
-	})
+	mux.HandleFunc("GET /account/verify/success", h.HTML.HandlerFunc("site/account/verify/success"), "account.verify.success")
 }
 
 func verifyGet(h *ui.Handler) http.HandlerFunc {

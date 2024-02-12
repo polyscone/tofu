@@ -11,12 +11,13 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 )
 
-func ConfigRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/config", func(mux *router.ServeMux) {
+func configRoutes(h *ui.Handler, mux *router.ServeMux) {
+	mux.Group(func(mux *router.ServeMux) {
+		mux.Before(h.RequireSignIn)
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
 
-		mux.Get("/", h.HTML.HandlerFunc("site/system/config"), "system.config")
-		mux.Post("/", systemConfigPost(h), "system.config.post")
+		mux.HandleFunc("GET /admin/system/config", h.HTML.HandlerFunc("site/system/config"), "system.config")
+		mux.HandleFunc("POST /admin/system/config", systemConfigPost(h), "system.config.post")
 	})
 }
 

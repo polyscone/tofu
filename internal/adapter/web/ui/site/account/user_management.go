@@ -16,23 +16,23 @@ import (
 	"github.com/polyscone/tofu/internal/repository"
 )
 
-func UserManagementRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/users", func(mux *router.ServeMux) {
+func userManagementRoutes(h *ui.Handler, mux *router.ServeMux) {
+	mux.Group(func(mux *router.ServeMux) {
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewUsers() }))
 
-		mux.Get("/", userListGet(h), "account.management.user.list")
+		mux.HandleFunc("GET /admin/account/users", userListGet(h), "account.management.user.list")
 
-		mux.Group("/new", func(mux *router.ServeMux) {
+		mux.Group(func(mux *router.ServeMux) {
 			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanInviteUsers() }))
 
-			mux.Get("/", userNewGet(h), "account.management.user.new")
-			mux.Post("/", userNewPost(h), "account.management.user.new.post")
+			mux.HandleFunc("GET /admin/account/users/new", userNewGet(h), "account.management.user.new")
+			mux.HandleFunc("POST /admin/account/users/new", userNewPost(h), "account.management.user.new.post")
 		})
 
-		mux.Group("/{userID}", func(mux *router.ServeMux) {
+		mux.Group(func(mux *router.ServeMux) {
 			mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
-					userID, ok := router.URLParamAs[int](r, "userID")
+					userID, ok := router.PathValueAs[int](r, "userID")
 					if !ok {
 						next(w, r)
 
@@ -47,30 +47,24 @@ func UserManagementRoutes(h *ui.Handler, mux *router.ServeMux) {
 				}
 			})
 
-			mux.Get("/", userEditGet(h), "account.management.user.edit")
-			mux.Post("/roles", userEditRolesPost(h), "account.management.user.roles.post")
-			mux.Post("/suspend", userSuspendPost(h), "account.management.user.suspend.post")
-			mux.Post("/unsuspend", userUnsuspendPost(h), "account.management.user.unsuspend.post")
+			mux.HandleFunc("GET /admin/account/users/{userID}", userEditGet(h), "account.management.user.edit")
+			mux.HandleFunc("POST /admin/account/users/{userID}/roles", userEditRolesPost(h), "account.management.user.roles.post")
+			mux.HandleFunc("POST /admin/account/users/{userID}/suspend", userSuspendPost(h), "account.management.user.suspend.post")
+			mux.HandleFunc("POST /admin/account/users/{userID}/unsuspend", userUnsuspendPost(h), "account.management.user.unsuspend.post")
 
-			mux.Group("/activate", func(mux *router.ServeMux) {
-				mux.Get("/", userActivateGet(h), "account.management.user.activate")
-				mux.Post("/", userActivatePost(h), "account.management.user.activate.post")
-			})
+			mux.HandleFunc("GET /admin/account/users/{userID}/activate", userActivateGet(h), "account.management.user.activate")
+			mux.HandleFunc("POST /admin/account/users/{userID}/activate", userActivatePost(h), "account.management.user.activate.post")
 
-			mux.Group("/totp-reset-review", func(mux *router.ServeMux) {
+			mux.Group(func(mux *router.ServeMux) {
 				mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }))
 
-				mux.Get("/", userTOTPResetReviewGet(h), "account.management.user.totp_reset_review")
+				mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review", userTOTPResetReviewGet(h), "account.management.user.totp_reset_review")
 
-				mux.Group("/approve", func(mux *router.ServeMux) {
-					mux.Get("/", userTOTPResetApproveGet(h), "account.management.user.totp_reset_approve")
-					mux.Post("/", userTOTPResetApprovePost(h), "account.management.user.totp_reset_approve.post")
-				})
+				mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review/approve", userTOTPResetApproveGet(h), "account.management.user.totp_reset_approve")
+				mux.HandleFunc("POST /admin/account/users/{userID}/totp-reset-review/approve", userTOTPResetApprovePost(h), "account.management.user.totp_reset_approve.post")
 
-				mux.Group("/deny", func(mux *router.ServeMux) {
-					mux.Get("/", userTOTPResetDenyGet(h), "account.management.user.totp_reset_deny")
-					mux.Post("/", userTOTPResetDenyPost(h), "account.management.user.totp_reset_deny.post")
-				})
+				mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review/deny", userTOTPResetDenyGet(h), "account.management.user.totp_reset_deny")
+				mux.HandleFunc("POST /admin/account/users/{userID}/totp-reset-review/deny", userTOTPResetDenyPost(h), "account.management.user.totp_reset_deny.post")
 			})
 		})
 	})
@@ -155,7 +149,7 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 
 func userEditGet(h *ui.Handler) http.HandlerFunc {
 	h.HTML.SetViewVars("site/account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
-		userID, ok := router.URLParamAs[int](r, "userID")
+		userID, ok := router.PathValueAs[int](r, "userID")
 		if !ok {
 			return nil, errors.New("URL param as: invalid int")
 		}
@@ -210,7 +204,7 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		userID, ok := router.URLParamAs[int](r, "userID")
+		userID, ok := router.PathValueAs[int](r, "userID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
@@ -253,7 +247,7 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		userID, ok := router.URLParamAs[int](r, "userID")
+		userID, ok := router.PathValueAs[int](r, "userID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
@@ -293,7 +287,7 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 
 func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.URLParamAs[int](r, "userID")
+		userID, ok := router.PathValueAs[int](r, "userID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
@@ -327,7 +321,7 @@ func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 
 func userActivateGet(h *ui.Handler) http.HandlerFunc {
 	h.HTML.SetViewVars("site/account/management/user/activate", func(r *http.Request) (handler.Vars, error) {
-		userID, ok := router.URLParamAs[int](r, "userID")
+		userID, ok := router.PathValueAs[int](r, "userID")
 		if !ok {
 			return nil, errors.New("URL param as: invalid int")
 		}
@@ -351,7 +345,7 @@ func userActivateGet(h *ui.Handler) http.HandlerFunc {
 
 func userActivatePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.URLParamAs[int](r, "userID")
+		userID, ok := router.PathValueAs[int](r, "userID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
@@ -385,7 +379,7 @@ func userActivatePost(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetReviewGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.URLParamAs[int](r, "userID")
+		userID, ok := router.PathValueAs[int](r, "userID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
@@ -409,7 +403,7 @@ func userTOTPResetReviewGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetApproveGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.URLParamAs[int](r, "userID")
+		userID, ok := router.PathValueAs[int](r, "userID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
@@ -433,7 +427,7 @@ func userTOTPResetApproveGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.URLParamAs[int](r, "userID")
+		userID, ok := router.PathValueAs[int](r, "userID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
@@ -477,7 +471,7 @@ func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetDenyGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.URLParamAs[int](r, "userID")
+		userID, ok := router.PathValueAs[int](r, "userID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
@@ -501,7 +495,7 @@ func userTOTPResetDenyGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetDenyPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.URLParamAs[int](r, "userID")
+		userID, ok := router.PathValueAs[int](r, "userID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 

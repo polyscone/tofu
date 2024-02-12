@@ -184,14 +184,14 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		}
 	})
 
-	mux.Redirect(http.MethodGet, "/security.txt", "/.well-known/security.txt", http.StatusMovedPermanently)
+	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))
 
-	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")
+	mux.Handle("/favicon.ico", httputil.RewriteHandler(mux, "/favicon.png"))
 
-	mux.Get("/robots.txt", h.Plain.HandlerFunc("file/robots"))
-	mux.Get("/.well-known/security.txt", h.Plain.HandlerFunc("file/security"))
+	mux.HandleFunc("GET /robots.txt", h.Plain.HandlerFunc("file/robots"))
+	mux.HandleFunc("GET /.well-known/security.txt", h.Plain.HandlerFunc("file/security"))
 
-	mux.Get("/", h.HTML.HandlerFunc("site/page/home"), "page.home")
+	mux.HandleFunc("GET /{$}", h.HTML.HandlerFunc("site/page/home"), "page.home")
 
 	account.Routes(h, mux)
 	admin.Routes(h, mux)
@@ -199,7 +199,15 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)
-	mux.GetHandler("/{rest...}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if allowed, ok := httputil.MethodNotAllowed(mux, r); ok {
+			w.Header().Set("allow", strings.Join(allowed, ", "))
+
+			h.HTML.ErrorView(w, r, "static file", httputil.ErrMethodNotAllowed, "site/error", nil)
+
+			return
+		}
+
 		upath := r.URL.Path
 		if !strings.HasPrefix(upath, "/") {
 			upath = "/" + upath
@@ -224,14 +232,6 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		}
 
 		fileServer.ServeHTTP(w, r)
-	}))
-
-	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.ErrorView(w, r, "handler", httputil.ErrNotFound, "site/error", nil)
-	})
-
-	mux.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.ErrorView(w, r, "handler", httputil.ErrMethodNotAllowed, "site/error", nil)
 	})
 
 	return mux

@@ -11,7 +11,7 @@ import (
 )
 
 func changePasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/change-password", func(mux *router.ServeMux) {
+	mux.Group(func(mux *router.ServeMux) {
 		mux.Before(h.RequireSignIn)
 		mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
@@ -28,12 +28,12 @@ func changePasswordRoutes(h *ui.Handler, mux *router.ServeMux) {
 			}
 		})
 
-		mux.Get("/", h.HTML.HandlerFunc("site/account/change_password/form"), "account.change_password")
-		mux.Post("/", changePasswordPost(h), "account.change_password.post")
+		mux.HandleFunc("GET /account/change-password", h.HTML.HandlerFunc("site/account/change_password/form"), "account.change_password")
+		mux.HandleFunc("POST /account/change-password", changePasswordPost(h), "account.change_password.post")
 	})
 
 	// Redirect to help password managers find the change password page
-	mux.Redirect(http.MethodGet, "/.well-known/change-password", h.Path("account.change_password"), http.StatusSeeOther)
+	mux.Handle("/.well-known/change-password", http.RedirectHandler(h.Path("account.change_password"), http.StatusSeeOther))
 }
 
 func changePasswordPost(h *ui.Handler) http.HandlerFunc {

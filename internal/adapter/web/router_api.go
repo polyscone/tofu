@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
 
 	"github.com/polyscone/tofu/internal/adapter/web/api"
 	"github.com/polyscone/tofu/internal/adapter/web/api/account"
@@ -94,12 +95,24 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 		return 0
 	}))
 
-	mux.Get("/sdk.js", h.JavaScript.HandlerFunc("sdk/v1.js"))
+	mux.HandleFunc("GET /sdk.js", h.JavaScript.HandlerFunc("sdk/v1.js"))
 
 	account.Routes(h, mux)
 	system.Routes(h, mux)
 	security.Routes(h, mux)
 	meta.Routes(h, mux)
+
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if allowed, ok := httputil.MethodNotAllowed(mux, r); ok {
+			w.Header().Set("allow", strings.Join(allowed, ", "))
+
+			h.ErrorJSON(w, r, "handler", httputil.ErrMethodNotAllowed)
+
+			return
+		}
+
+		h.ErrorJSON(w, r, "handler", httputil.ErrNotFound)
+	})
 
 	return mux
 }

@@ -34,11 +34,11 @@ func TestMaxBytes(t *testing.T) {
 		}
 	}
 
-	mux.Get("/get", readJSON)
-	mux.Post("/post", readJSON)
-	mux.Put("/put", readJSON)
-	mux.Patch("/patch", readJSON)
-	mux.Delete("/delete", readJSON)
+	mux.HandleFunc("GET /get", readJSON)
+	mux.HandleFunc("POST /post", readJSON)
+	mux.HandleFunc("PUT /put", readJSON)
+	mux.HandleFunc("PATCH /patch", readJSON)
+	mux.HandleFunc("DELETE /delete", readJSON)
 
 	ts := testutil.NewServer(t, mux)
 	defer ts.Close()

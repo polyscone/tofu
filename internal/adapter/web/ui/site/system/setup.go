@@ -10,7 +10,7 @@ import (
 )
 
 func setupRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/setup", func(mux *router.ServeMux) {
+	mux.Group(func(mux *router.ServeMux) {
 		mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				ctx := r.Context()
@@ -33,8 +33,8 @@ func setupRoutes(h *ui.Handler, mux *router.ServeMux) {
 			}
 		})
 
-		mux.Get("/", h.HTML.HandlerFunc("site/system/setup"), "system.setup")
-		mux.Post("/", systemSetupPost(h), "system.setup.post")
+		mux.HandleFunc("GET /system/setup", h.HTML.HandlerFunc("site/system/setup"), "system.setup")
+		mux.HandleFunc("POST /system/setup", systemSetupPost(h), "system.setup.post")
 	})
 }
 

@@ -14,12 +14,10 @@ import (
 )
 
 func signUpRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/sign-up", func(mux *router.ServeMux) {
-		mux.Get("/", signUpGet(h), "account.sign_up")
-		mux.Post("/", signUpPost(h), "account.sign_up.post")
+	mux.HandleFunc("GET /account/sign-up", signUpGet(h), "account.sign_up")
+	mux.HandleFunc("POST /account/sign-up", signUpPost(h), "account.sign_up.post")
 
-		mux.Get("/success", signUpSuccessGet(h), "account.sign_up.success")
-	})
+	mux.HandleFunc("GET /account/sign-up/success", signUpSuccessGet(h), "account.sign_up.success")
 }
 
 func signUpGet(h *ui.Handler) http.HandlerFunc {

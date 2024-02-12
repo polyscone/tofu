@@ -16,30 +16,30 @@ import (
 	"github.com/polyscone/tofu/internal/repository"
 )
 
-func RoleManagementRoutes(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group("/roles", func(mux *router.ServeMux) {
+func roleManagementRoutes(h *ui.Handler, mux *router.ServeMux) {
+	mux.Group(func(mux *router.ServeMux) {
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewRoles() }))
 
-		mux.Get("/", roleListGet(h), "account.management.role.list")
+		mux.HandleFunc("GET /admin/account/roles", roleListGet(h), "account.management.role.list")
 
-		mux.Group("/new", func(mux *router.ServeMux) {
+		mux.Group(func(mux *router.ServeMux) {
 			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanCreateRoles() }))
 
-			mux.Get("/", roleNewGet(h), "account.management.role.new")
-			mux.Post("/", roleNewPost(h), "account.management.role.new.post")
+			mux.HandleFunc("GET /admin/account/roles/new", roleNewGet(h), "account.management.role.new")
+			mux.HandleFunc("POST /admin/account/roles/new", roleNewPost(h), "account.management.role.new.post")
 		})
 
-		mux.Group("/{roleID}", func(mux *router.ServeMux) {
+		mux.Group(func(mux *router.ServeMux) {
 			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanUpdateRoles() }))
 
-			mux.Get("/", roleEditGet(h), "account.management.role.edit")
-			mux.Post("/", roleEditPost(h), "account.management.role.edit.post")
+			mux.HandleFunc("GET /admin/account/roles/{roleID}", roleEditGet(h), "account.management.role.edit")
+			mux.HandleFunc("POST /admin/account/roles/{roleID}", roleEditPost(h), "account.management.role.edit.post")
 
-			mux.Group("/delete", func(mux *router.ServeMux) {
+			mux.Group(func(mux *router.ServeMux) {
 				mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanDeleteRoles() }))
 
-				mux.Get("/", roleDeleteGet(h), "account.management.role.delete")
-				mux.Post("/", roleDeletePost(h), "account.management.role.delete.post")
+				mux.HandleFunc("GET /admin/account/roles/{roleID}/delete", roleDeleteGet(h), "account.management.role.delete")
+				mux.HandleFunc("POST /admin/account/roles/{roleID}/delete", roleDeletePost(h), "account.management.role.delete.post")
 			})
 		})
 	})
@@ -113,7 +113,7 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 
 func roleEditGet(h *ui.Handler) http.HandlerFunc {
 	h.HTML.SetViewVars("site/account/management/role/edit", func(r *http.Request) (handler.Vars, error) {
-		roleID, ok := router.URLParamAs[int](r, "roleID")
+		roleID, ok := router.PathValueAs[int](r, "roleID")
 		if !ok {
 			return nil, errors.New("URL param as: invalid int")
 		}
@@ -155,7 +155,7 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		roleID, ok := router.URLParamAs[int](r, "roleID")
+		roleID, ok := router.PathValueAs[int](r, "roleID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
@@ -188,7 +188,7 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 
 func roleDeleteGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		roleID, ok := router.URLParamAs[int](r, "roleID")
+		roleID, ok := router.PathValueAs[int](r, "roleID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 
@@ -226,7 +226,7 @@ func roleDeleteGet(h *ui.Handler) http.HandlerFunc {
 
 func roleDeletePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		roleID, ok := router.URLParamAs[int](r, "roleID")
+		roleID, ok := router.PathValueAs[int](r, "roleID")
 		if !ok {
 			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
 

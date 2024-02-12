@@ -9,9 +9,7 @@ import (
 )
 
 func csrfRoutes(h *api.Handler, mux *router.ServeMux) {
-	mux.Group("/csrf", func(mux *router.ServeMux) {
-		mux.Get("/", csrfGet(h))
-	})
+	mux.HandleFunc("GET /security/csrf", csrfGet(h))
 }
 
 func csrfGet(h *api.Handler) http.HandlerFunc {

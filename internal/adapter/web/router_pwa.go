@@ -122,13 +122,13 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		return 0
 	}))
 
-	mux.Redirect(http.MethodGet, "/security.txt", "/.well-known/security.txt", http.StatusMovedPermanently)
+	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))
 
-	mux.Rewrite(http.MethodGet, "/favicon.ico", "/favicon.png")
+	mux.Handle("/favicon.ico", httputil.RewriteHandler(mux, "/favicon.png"))
 
-	mux.Get("/robots.txt", h.Plain.HandlerFunc("file/robots"))
-	mux.Get("/.well-known/security.txt", h.Plain.HandlerFunc("file/security"))
-	mux.Get("/pwa.webmanifest", h.JSON.HandlerFunc("file/pwa_webmanifest"))
+	mux.HandleFunc("GET /robots.txt", h.Plain.HandlerFunc("file/robots"))
+	mux.HandleFunc("GET /.well-known/security.txt", h.Plain.HandlerFunc("file/security"))
+	mux.HandleFunc("GET /pwa.webmanifest", h.JSON.HandlerFunc("file/pwa_webmanifest"))
 
 	rootVars := func(h *ui.Handler, r *http.Request) handler.Vars {
 		ctx := r.Context()
@@ -150,7 +150,15 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)
-	mux.GetHandler("/{rest...}", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if allowed, ok := httputil.MethodNotAllowed(mux, r); ok {
+			w.Header().Set("allow", strings.Join(allowed, ", "))
+
+			http.Redirect(w, r, routePrefix+"/error/405", http.StatusSeeOther)
+
+			return
+		}
+
 		upath := r.URL.Path
 		if !strings.HasPrefix(upath, "/") {
 			upath = "/" + upath
@@ -180,24 +188,6 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		}
 
 		fileServer.ServeHTTP(w, r)
-	}))
-
-	mux.NotFound(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		logger := h.Logger(ctx)
-
-		logger.Error("handler", "error", httputil.ErrNotFound)
-
-		http.Redirect(w, r, routePrefix+"/error/404", http.StatusSeeOther)
-	})
-
-	mux.MethodNotAllowed(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		logger := h.Logger(ctx)
-
-		logger.Error("handler", "error", httputil.ErrMethodNotAllowed)
-
-		http.Redirect(w, r, routePrefix+"/error/405", http.StatusSeeOther)
 	})
 
 	return mux

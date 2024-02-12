@@ -18,7 +18,7 @@ func TestSession(t *testing.T) {
 
 	mux.Use(middleware.Session(sm, &middleware.SessionConfig{Insecure: true}))
 
-	mux.Get("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
 		for _, set := range r.URL.Query()["set"] {

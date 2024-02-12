@@ -10,7 +10,7 @@ import (
 )
 
 func configRoutes(h *api.Handler, mux *router.ServeMux) {
-	mux.Get("/config", configGet(h))
+	mux.HandleFunc("GET /system/config", configGet(h))
 }
 
 func configGet(h *api.Handler) http.HandlerFunc {

@@ -15,7 +15,7 @@ func TestETag(t *testing.T) {
 
 	mux.Use(middleware.ETag(nil))
 
-	mux.Get("/hello/world", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /hello/world", func(w http.ResponseWriter, r *http.Request) {
 		if etags := r.URL.Query()["set-etag"]; len(etags) != 0 {
 			w.Header().Set("etag", etags[0])
 		}
@@ -23,7 +23,7 @@ func TestETag(t *testing.T) {
 		w.Write([]byte("Hello, World!"))
 	})
 
-	mux.Get("/foo/bar", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /foo/bar", func(w http.ResponseWriter, r *http.Request) {
 		if etags := r.URL.Query()["set-etag"]; len(etags) != 0 {
 			w.Header().Set("etag", etags[0])
 		}
@@ -31,7 +31,7 @@ func TestETag(t *testing.T) {
 		w.Write([]byte("Foo bar baz"))
 	})
 
-	mux.Get("/no/content", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /no/content", func(w http.ResponseWriter, r *http.Request) {
 		if etags := r.URL.Query()["set-etag"]; len(etags) != 0 {
 			w.Header().Set("etag", etags[0])
 		}

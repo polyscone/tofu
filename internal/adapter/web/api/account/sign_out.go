@@ -10,7 +10,7 @@ import (
 )
 
 func signOutRoutes(h *api.Handler, mux *router.ServeMux) {
-	mux.Post("/sign-out", signOutPost(h))
+	mux.HandleFunc("POST /account/sign-out", signOutPost(h))
 }
 
 func signOutPost(h *api.Handler) http.HandlerFunc {

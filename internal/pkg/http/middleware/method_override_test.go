@@ -18,10 +18,10 @@ func TestMethodOverride(t *testing.T) {
 
 	mux.Use(middleware.MethodOverride)
 
-	mux.Post("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodPost)) })
-	mux.Put("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodPut)) })
-	mux.Patch("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodPatch)) })
-	mux.Delete("/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodDelete)) })
+	mux.HandleFunc("POST /", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodPost)) })
+	mux.HandleFunc("PUT /", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodPut)) })
+	mux.HandleFunc("PATCH /", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodPatch)) })
+	mux.HandleFunc("DELETE /", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodDelete)) })
 
 	ts := testutil.NewServer(t, mux)
 	defer ts.Close()
