@@ -18,9 +18,14 @@ import (
 
 func RegisterUserManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.Group(func(mux *router.ServeMux) {
-		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewUsers() }))
+		mux.Before(h.RequireSignIn)
 
-		mux.HandleFunc("GET /admin/account/users", userListGet(h), "account.management.user.list")
+		mux.Group(func(mux *router.ServeMux) {
+			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewUsers() }))
+
+			mux.HandleFunc("GET /admin/account/users", userListGet(h), "account.management.user.list")
+
+		})
 
 		mux.Group(func(mux *router.ServeMux) {
 			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanInviteUsers() }))
@@ -40,7 +45,8 @@ func RegisterUserManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
 					}
 
 					canAccess := h.CanAccess(func(p guard.Passport) bool {
-						return p.Account.CanChangeRoles(userID) || p.Account.CanActivateUsers()
+						return p.Account.CanChangeRoles(userID) ||
+							p.Account.CanSuspendUsers()
 					})
 
 					canAccess(next)(w, r)
@@ -51,21 +57,25 @@ func RegisterUserManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
 			mux.HandleFunc("POST /admin/account/users/{userID}/roles", userEditRolesPost(h), "account.management.user.roles.post")
 			mux.HandleFunc("POST /admin/account/users/{userID}/suspend", userSuspendPost(h), "account.management.user.suspend.post")
 			mux.HandleFunc("POST /admin/account/users/{userID}/unsuspend", userUnsuspendPost(h), "account.management.user.unsuspend.post")
+		})
+
+		mux.Group(func(mux *router.ServeMux) {
+			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanActivateUsers() }))
 
 			mux.HandleFunc("GET /admin/account/users/{userID}/activate", userActivateGet(h), "account.management.user.activate")
 			mux.HandleFunc("POST /admin/account/users/{userID}/activate", userActivatePost(h), "account.management.user.activate.post")
+		})
 
-			mux.Group(func(mux *router.ServeMux) {
-				mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }))
+		mux.Group(func(mux *router.ServeMux) {
+			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }))
 
-				mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review", userTOTPResetReviewGet(h), "account.management.user.totp_reset_review")
+			mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review", userTOTPResetReviewGet(h), "account.management.user.totp_reset_review")
 
-				mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review/approve", userTOTPResetApproveGet(h), "account.management.user.totp_reset_approve")
-				mux.HandleFunc("POST /admin/account/users/{userID}/totp-reset-review/approve", userTOTPResetApprovePost(h), "account.management.user.totp_reset_approve.post")
+			mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review/approve", userTOTPResetApproveGet(h), "account.management.user.totp_reset_approve")
+			mux.HandleFunc("POST /admin/account/users/{userID}/totp-reset-review/approve", userTOTPResetApprovePost(h), "account.management.user.totp_reset_approve.post")
 
-				mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review/deny", userTOTPResetDenyGet(h), "account.management.user.totp_reset_deny")
-				mux.HandleFunc("POST /admin/account/users/{userID}/totp-reset-review/deny", userTOTPResetDenyPost(h), "account.management.user.totp_reset_deny.post")
-			})
+			mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review/deny", userTOTPResetDenyGet(h), "account.management.user.totp_reset_deny")
+			mux.HandleFunc("POST /admin/account/users/{userID}/totp-reset-review/deny", userTOTPResetDenyPost(h), "account.management.user.totp_reset_deny.post")
 		})
 	})
 }

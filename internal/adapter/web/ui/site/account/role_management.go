@@ -18,9 +18,13 @@ import (
 
 func RegisterRoleManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.Group(func(mux *router.ServeMux) {
-		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewRoles() }))
+		mux.Before(h.RequireSignIn)
 
-		mux.HandleFunc("GET /admin/account/roles", roleListGet(h), "account.management.role.list")
+		mux.Group(func(mux *router.ServeMux) {
+			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewRoles() }))
+
+			mux.HandleFunc("GET /admin/account/roles", roleListGet(h), "account.management.role.list")
+		})
 
 		mux.Group(func(mux *router.ServeMux) {
 			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanCreateRoles() }))
@@ -35,12 +39,13 @@ func RegisterRoleManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
 			mux.HandleFunc("GET /admin/account/roles/{roleID}", roleEditGet(h), "account.management.role.edit")
 			mux.HandleFunc("POST /admin/account/roles/{roleID}", roleEditPost(h), "account.management.role.edit.post")
 
-			mux.Group(func(mux *router.ServeMux) {
-				mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanDeleteRoles() }))
+		})
 
-				mux.HandleFunc("GET /admin/account/roles/{roleID}/delete", roleDeleteGet(h), "account.management.role.delete")
-				mux.HandleFunc("POST /admin/account/roles/{roleID}/delete", roleDeletePost(h), "account.management.role.delete.post")
-			})
+		mux.Group(func(mux *router.ServeMux) {
+			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanDeleteRoles() }))
+
+			mux.HandleFunc("GET /admin/account/roles/{roleID}/delete", roleDeleteGet(h), "account.management.role.delete")
+			mux.HandleFunc("POST /admin/account/roles/{roleID}/delete", roleDeletePost(h), "account.management.role.delete.post")
 		})
 	})
 }
