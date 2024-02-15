@@ -3,6 +3,8 @@ package app
 import (
 	"errors"
 	"time"
+
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
 const (
@@ -16,11 +18,24 @@ const (
 )
 
 var (
-	ErrBadRequest       = errors.New("bad request")
-	ErrNotFound         = errors.New("not found")
-	ErrUnauthorised     = errors.New("unauthorised")
-	ErrForbidden        = errors.New("forbidden")
-	ErrMalformedInput   = errors.New("malformed input")
-	ErrInvalidInput     = errors.New("invalid input")
-	ErrConflictingInput = errors.New("conflicting input")
+	ErrBadRequest     = errors.New("bad request")
+	ErrNotFound       = errors.New("not found")
+	ErrUnauthorised   = errors.New("unauthorised")
+	ErrForbidden      = errors.New("forbidden")
+	ErrMalformedInput = errors.New("malformed input")
+	ErrInvalidInput   = errors.New("invalid input")
+	ErrConflict       = errors.New("conflict")
+	ErrRepoLogin      = errors.New("login")
 )
+
+type ConflictError struct {
+	errsx.Map
+}
+
+func (c ConflictError) Error() string {
+	return c.Map.String()
+}
+
+func (c ConflictError) Unwrap() error {
+	return c.Map
+}

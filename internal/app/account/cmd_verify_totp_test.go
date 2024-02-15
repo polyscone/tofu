@@ -10,7 +10,6 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/repository"
 )
 
 type verifyTOTPGuard struct {
@@ -122,8 +121,8 @@ func TestVerifyTOTP(t *testing.T) {
 			want     error
 		}{
 			{"invalid guard", invalidGuard, 0, nil, app.ErrForbidden},
-			{"empty user id correct TOTP", validGuard, 0, user2, repository.ErrNotFound},
-			{"empty user id incorrect TOTP", validGuard, 0, nil, repository.ErrNotFound},
+			{"empty user id correct TOTP", validGuard, 0, user2, app.ErrNotFound},
+			{"empty user id incorrect TOTP", validGuard, 0, nil, app.ErrNotFound},
 			{"no TOTP user id correct TOTP", validGuard, user1.ID, user2, nil},
 			{"already activated TOTP", validGuard, user3.ID, user3, nil},
 		}

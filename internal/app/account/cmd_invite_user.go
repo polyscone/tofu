@@ -7,7 +7,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/repository"
 )
 
 type InviteUserGuard interface {
@@ -42,7 +41,7 @@ func (s *Service) InviteUser(ctx context.Context, guard InviteUserGuard, email s
 			return nil, fmt.Errorf("invite existing user: %w", err)
 		}
 
-	case errors.Is(err, repository.ErrNotFound):
+	case errors.Is(err, app.ErrNotFound):
 		user = NewUser(input.email)
 
 		if err := user.Invite(s.system); err != nil {

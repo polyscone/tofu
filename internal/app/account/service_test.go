@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/repository/sqlite"
+	"github.com/polyscone/tofu/internal/sqlite"
 )
 
 var hasher = testutil.NewPasswordHasher()

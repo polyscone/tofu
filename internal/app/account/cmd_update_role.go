@@ -7,7 +7,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/repository"
 )
 
 type UpdateRoleGuard interface {
@@ -60,9 +59,9 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID 
 
 	err := s.repo.SaveRole(ctx, role)
 	if err != nil {
-		var conflict *repository.ConflictError
+		var conflict *app.ConflictError
 		if errors.As(err, &conflict) {
-			return nil, fmt.Errorf("save role: %w: %w", app.ErrConflictingInput, conflict)
+			return nil, fmt.Errorf("save role: %w: %w", app.ErrConflict, conflict)
 		}
 
 		return nil, fmt.Errorf("save role: %w", err)

@@ -11,7 +11,6 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/repository"
 )
 
 type setRolesGuard struct {
@@ -123,8 +122,8 @@ func TestChangeRoles(t *testing.T) {
 			want    error
 		}{
 			{"invalid guard", invalidGuard, 0, nil, app.ErrForbidden},
-			{"non-existent user id", validGuard, 0, []int{role1.ID, role2.ID}, repository.ErrNotFound},
-			{"non-existent role ids", validGuard, user.ID, []int{-1, 0}, repository.ErrNotFound},
+			{"non-existent user id", validGuard, 0, []int{role1.ID, role2.ID}, app.ErrNotFound},
+			{"non-existent role ids", validGuard, user.ID, []int{-1, 0}, app.ErrNotFound},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

@@ -7,7 +7,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/repository"
 )
 
 type CreateRoleGuard interface {
@@ -53,9 +52,9 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, d
 	role := NewRole(input.name, input.description, input.permissions)
 
 	if err := s.repo.AddRole(ctx, role); err != nil {
-		var conflict *repository.ConflictError
+		var conflict *app.ConflictError
 		if errors.As(err, &conflict) {
-			return nil, fmt.Errorf("add role: %w: %w", app.ErrConflictingInput, conflict)
+			return nil, fmt.Errorf("add role: %w: %w", app.ErrConflict, conflict)
 		}
 
 		return nil, fmt.Errorf("add role: %w", err)

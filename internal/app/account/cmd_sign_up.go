@@ -7,7 +7,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/repository"
 )
 
 func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
@@ -38,7 +37,7 @@ func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 			return nil, fmt.Errorf("save user: %w", err)
 		}
 
-	case errors.Is(err, repository.ErrNotFound):
+	case errors.Is(err, app.ErrNotFound):
 		user = NewUser(input.email)
 
 		if err := user.SignUp(s.system); err != nil {

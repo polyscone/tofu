@@ -12,9 +12,6 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/polyscone/tofu/internal/adapter/web"
-	"github.com/polyscone/tofu/internal/adapter/web/guard"
-	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/app/system"
@@ -22,8 +19,10 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/slogger"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
-	"github.com/polyscone/tofu/internal/repository"
-	"github.com/polyscone/tofu/internal/repository/sqlite"
+	"github.com/polyscone/tofu/internal/sqlite"
+	"github.com/polyscone/tofu/internal/web"
+	"github.com/polyscone/tofu/internal/web/guard"
+	"github.com/polyscone/tofu/internal/web/handler"
 )
 
 var tenants = make(map[string]Tenant)
@@ -206,7 +205,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 			return nil, fmt.Errorf("save super role: %w", err)
 		}
 
-	case errors.Is(err, repository.ErrNotFound):
+	case errors.Is(err, app.ErrNotFound):
 		if err := repo.account.AddRole(ctx, superRole); err != nil {
 			return nil, fmt.Errorf("add super role: %w", err)
 		}

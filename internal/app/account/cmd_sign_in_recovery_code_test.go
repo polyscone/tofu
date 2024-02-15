@@ -11,7 +11,6 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/repository"
 )
 
 func TestSignInWithRecoveryCode(t *testing.T) {
@@ -122,8 +121,8 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			recoveryCode string
 			want         error
 		}{
-			{"empty user id correct recovery code", 0, user2Codes[1], repository.ErrNotFound},
-			{"empty user id incorrect recovery code", 0, incorrectCode, repository.ErrNotFound},
+			{"empty user id correct recovery code", 0, user2Codes[1], app.ErrNotFound},
+			{"empty user id incorrect recovery code", 0, incorrectCode, app.ErrNotFound},
 			{"activated user id without TOTP setup", user1.ID, incorrectCode, nil},
 			{"activated user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
 			{"unactivated user id", user3.ID, incorrectCode, account.ErrNotActivated},

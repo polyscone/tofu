@@ -6,7 +6,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/system"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/event"
-	"github.com/polyscone/tofu/internal/repository/sqlite"
+	"github.com/polyscone/tofu/internal/sqlite"
 )
 
 func NewTestEnv(ctx context.Context) (*system.Service, event.Broker, system.ReadWriter) {

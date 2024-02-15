@@ -7,7 +7,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/repository"
 )
 
 type GoogleSignInBehaviour byte
@@ -51,7 +50,7 @@ func (s *Service) SignInWithGoogle(ctx context.Context, email string, behaviour 
 			return false, fmt.Errorf("save user: %w", err)
 		}
 
-	case errors.Is(err, repository.ErrNotFound):
+	case errors.Is(err, app.ErrNotFound):
 		if behaviour == GoogleSignInOnly {
 			return false, ErrGoogleSignUpDisabled
 		}
@@ -74,9 +73,9 @@ func (s *Service) SignInWithGoogle(ctx context.Context, email string, behaviour 
 		}
 
 		if err := s.repo.AddUser(ctx, user); err != nil {
-			var conflict *repository.ConflictError
+			var conflict *app.ConflictError
 			if errors.As(err, &conflict) {
-				return false, fmt.Errorf("add user: %w: %w", app.ErrConflictingInput, conflict)
+				return false, fmt.Errorf("add user: %w: %w", app.ErrConflict, conflict)
 			}
 
 			return false, fmt.Errorf("add user: %w", err)

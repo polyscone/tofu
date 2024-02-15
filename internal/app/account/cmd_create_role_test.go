@@ -43,7 +43,7 @@ func TestCreateRole(t *testing.T) {
 			{"whitespace name", validGuard, account.Role{Name: "     "}, app.ErrMalformedInput},
 			{"valid name", validGuard, account.Role{Name: "Role 1"}, nil},
 			{"valid description", validGuard, account.Role{Name: "Role 2", Description: "Role description"}, nil},
-			{"conflicting name", validGuard, account.Role{Name: "ROLE 1"}, app.ErrConflictingInput},
+			{"conflicting name", validGuard, account.Role{Name: "ROLE 1"}, app.ErrConflict},
 			{"with permissions", validGuard, account.Role{Name: "Role 3", Permissions: []string{"1", "2", "3"}}, nil},
 			{"with empty permission", validGuard, account.Role{Name: "Role 3", Permissions: []string{"1", "", "3"}}, app.ErrMalformedInput},
 		}

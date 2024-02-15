@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/polyscone/tofu/internal/pkg/smtp"
-	"github.com/polyscone/tofu/internal/repository/sqlite"
+	"github.com/polyscone/tofu/internal/sqlite"
 )
 
 type smtpConfig struct {

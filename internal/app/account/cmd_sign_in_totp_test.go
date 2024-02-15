@@ -11,7 +11,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/repository"
 )
 
 func TestSignInWithTOTP(t *testing.T) {
@@ -112,8 +111,8 @@ func TestSignInWithTOTP(t *testing.T) {
 			totpUser *account.User
 			want     error
 		}{
-			{"empty user id correct TOTP", 0, user4, repository.ErrNotFound},
-			{"empty user id incorrect TOTP", 0, nil, repository.ErrNotFound},
+			{"empty user id correct TOTP", 0, user4, app.ErrNotFound},
+			{"empty user id incorrect TOTP", 0, nil, app.ErrNotFound},
 			{"activated user id no TOTP", user5.ID, nil, nil},
 			{"activated user id incorrect TOTP", user4.ID, nil, app.ErrInvalidInput},
 			{"activated user id unverified correct TOTP", user2.ID, user2, nil},
