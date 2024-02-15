@@ -14,8 +14,8 @@ const (
 	suspendUsers     = "account:users:suspend"
 	unsuspendUsers   = "account:users:unsuspend"
 
-	viewConfig   = "web:config:view"
-	updateConfig = "web:config:update"
+	viewConfig   = "system:config:view"
+	updateConfig = "system:config:update"
 )
 
 var PermissionGroups = []PermissionGroup{
