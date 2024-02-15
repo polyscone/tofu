@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
-	"math"
 	"net/http"
 	"net/url"
 	"slices"
@@ -24,13 +23,16 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 		"Mul":                TmplMul,
 		"Div":                TmplDiv,
 		"Mod":                TmplMod,
+		"Neg":                TmplNeg,
+		"Max":                TmplMax,
+		"Min":                TmplMin,
 		"Addf":               TmplAddf,
 		"Subf":               TmplSubf,
 		"Mulf":               TmplMulf,
 		"Divf":               TmplDivf,
-		"Pi":                 TmplPi,
-		"Cos":                TmplCos,
-		"Sin":                TmplSin,
+		"Negf":               TmplNegf,
+		"Maxf":               TmplMaxf,
+		"Minf":               TmplMinf,
 		"Ints":               TmplInts,
 		"StatusText":         TmplStatusText,
 		"QueryString":        TmplQueryString,
@@ -62,52 +64,227 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 	return funcs
 }
 
-func TmplAdd(a, b int) int {
-	return a + b
+func toInts(values []any) (int, []int, error) {
+	if len(values) < 2 {
+		return 0, nil, errors.New("at least two operands required")
+	}
+
+	nums := make([]int, len(values))
+	for i, v := range values {
+		switch v := v.(type) {
+		case int:
+			nums[i] = v
+
+		case float64:
+			nums[i] = int(v)
+
+		default:
+			return 0, nil, errors.New("expected int or float64")
+		}
+	}
+
+	return nums[0], nums[1:], nil
 }
 
-func TmplSub(a, b int) int {
-	return a - b
+func TmplAdd(values ...any) (int, error) {
+	acc, nums, err := toInts(values)
+	if err != nil {
+		return 0, fmt.Errorf("Add: %v", err)
+	}
+
+	for _, num := range nums {
+		acc += num
+	}
+
+	return acc, nil
 }
 
-func TmplMul(a, b int) int {
-	return a * b
+func TmplSub(values ...any) (int, error) {
+	acc, nums, err := toInts(values)
+	if err != nil {
+		return 0, fmt.Errorf("Sub: %v", err)
+	}
+
+	for _, num := range nums {
+		acc -= num
+	}
+
+	return acc, nil
 }
 
-func TmplDiv(a, b int) int {
-	return a / b
+func TmplMul(values ...any) (int, error) {
+	acc, nums, err := toInts(values)
+	if err != nil {
+		return 0, fmt.Errorf("Mul: %v", err)
+	}
+
+	for _, num := range nums {
+		acc *= num
+	}
+
+	return acc, nil
 }
 
-func TmplMod(a, b int) int {
-	return a % b
+func TmplDiv(values ...any) (int, error) {
+	acc, nums, err := toInts(values)
+	if err != nil {
+		return 0, fmt.Errorf("Div: %v", err)
+	}
+
+	for _, num := range nums {
+		acc /= num
+	}
+
+	return acc, nil
 }
 
-func TmplAddf(a, b float64) float64 {
-	return a + b
+func TmplMod(values ...any) (int, error) {
+	acc, nums, err := toInts(values)
+	if err != nil {
+		return 0, fmt.Errorf("Mod: %v", err)
+	}
+
+	for _, num := range nums {
+		acc %= num
+	}
+
+	return acc, nil
 }
 
-func TmplSubf(a, b float64) float64 {
-	return a - b
+func TmplNeg(x any) (int, error) {
+	switch x := x.(type) {
+	case int:
+		return -x, nil
+
+	case float64:
+		return -int(x), nil
+
+	default:
+		return 0, errors.New("Neg: expected int or float64")
+	}
 }
 
-func TmplMulf(a, b float64) float64 {
-	return a * b
+func TmplMax(values ...any) (int, error) {
+	first, rest, err := toInts(values)
+	if err != nil {
+		return 0, fmt.Errorf("Max: %v", err)
+	}
+
+	return slices.Max(slices.Concat([]int{first}, rest)), nil
 }
 
-func TmplDivf(a, b float64) float64 {
-	return a / b
+func TmplMin(values ...any) (int, error) {
+	first, rest, err := toInts(values)
+	if err != nil {
+		return 0, fmt.Errorf("Min: %v", err)
+	}
+
+	return slices.Min(slices.Concat([]int{first}, rest)), nil
 }
 
-func TmplPi() float64 {
-	return math.Pi
+func toFloat64s(values []any) (float64, []float64, error) {
+	if len(values) < 2 {
+		return 0, nil, errors.New("at least two operands required")
+	}
+
+	nums := make([]float64, len(values))
+	for i, v := range values {
+		switch v := v.(type) {
+		case float64:
+			nums[i] = v
+
+		case int:
+			nums[i] = float64(v)
+
+		default:
+			return 0, nil, errors.New("expected int or float64")
+		}
+	}
+
+	return nums[0], nums[1:], nil
 }
 
-func TmplCos(x float64) float64 {
-	return math.Cos(x)
+func TmplAddf(values ...any) (float64, error) {
+	acc, nums, err := toFloat64s(values)
+	if err != nil {
+		return 0, fmt.Errorf("Addf: %v", err)
+	}
+
+	for _, num := range nums {
+		acc += num
+	}
+
+	return acc, nil
 }
 
-func TmplSin(x float64) float64 {
-	return math.Sin(x)
+func TmplSubf(values ...any) (float64, error) {
+	acc, nums, err := toFloat64s(values)
+	if err != nil {
+		return 0, fmt.Errorf("Subf: %v", err)
+	}
+
+	for _, num := range nums {
+		acc -= num
+	}
+
+	return acc, nil
+}
+
+func TmplMulf(values ...any) (float64, error) {
+	acc, nums, err := toFloat64s(values)
+	if err != nil {
+		return 0, fmt.Errorf("Mulf: %v", err)
+	}
+
+	for _, num := range nums {
+		acc *= num
+	}
+
+	return acc, nil
+}
+
+func TmplDivf(values ...any) (float64, error) {
+	acc, nums, err := toFloat64s(values)
+	if err != nil {
+		return 0, fmt.Errorf("Divf: %v", err)
+	}
+
+	for _, num := range nums {
+		acc /= num
+	}
+
+	return acc, nil
+}
+
+func TmplNegf(x any) (float64, error) {
+	switch x := x.(type) {
+	case float64:
+		return -x, nil
+
+	case int:
+		return -float64(x), nil
+
+	default:
+		return 0, errors.New("Negf: expected int or float64")
+	}
+}
+
+func TmplMaxf(values ...any) (float64, error) {
+	first, rest, err := toFloat64s(values)
+	if err != nil {
+		return 0, fmt.Errorf("Maxf: %v", err)
+	}
+
+	return slices.Max(slices.Concat([]float64{first}, rest)), nil
+}
+
+func TmplMinf(values ...any) (float64, error) {
+	first, rest, err := toFloat64s(values)
+	if err != nil {
+		return 0, fmt.Errorf("Minf: %v", err)
+	}
+
+	return slices.Min(slices.Concat([]float64{first}, rest)), nil
 }
 
 func TmplInts(start, end int) []int {
