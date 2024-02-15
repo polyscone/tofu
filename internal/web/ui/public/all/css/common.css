@@ -136,7 +136,6 @@
 	thead, th {
 		position: sticky;
 		top: 0;
-		background: var(--clr-white-400);
 		text-align: left;
 		vertical-align: bottom;
 	}
