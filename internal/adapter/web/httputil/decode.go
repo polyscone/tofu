@@ -28,6 +28,12 @@ var decodeTimeFormats = []string{
 	"2006-01-02",
 	"2006-01",
 	"2006",
+	"15:04:05.999999999Z07:00",
+	"15:04:05.999999999",
+	"15:04:05Z07:00",
+	"15:04:05",
+	"15:04Z07:00",
+	"15:04",
 }
 
 type DecodeValueFunc func(r *http.Request, fieldName, tagValue string) ([]string, error)
