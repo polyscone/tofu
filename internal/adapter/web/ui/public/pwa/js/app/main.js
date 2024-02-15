@@ -41,3 +41,73 @@ if (platform.config.prefix) {
 if ("serviceWorker" in navigator) {
 	navigator.serviceWorker.register("/pwa_service_worker.js")
 }
+
+onMount("textarea", node => {
+	node.addEventListener("input", () => {
+		node.style.height = "auto"
+		node.style.height = node.scrollHeight + "px"
+	})
+})
+
+function _componentsInit () {
+	window._components ||= {
+		actions: {
+			mount: [],
+			destroy: [],
+		},
+		observer: new MutationObserver(mutations => {
+			for (const mutation of mutations) {
+				for (const node of mutation.addedNodes) {
+					if (!node.matches) {
+						continue
+					}
+
+					for (const action of window._components.actions.mount) {
+						if (!node.matches(action.selector)) {
+							continue
+						}
+
+						action.callback(node)
+					}
+				}
+
+				for (const node of mutation.removedNodes) {
+					if (!node.matches) {
+						continue
+					}
+
+					for (const action of window._components.actions.destroy) {
+						if (!node.matches(action.selector)) {
+							continue
+						}
+
+						action.callback(node)
+					}
+				}
+			}
+		}),
+	}
+
+	window._components.observer.observe(document.body, {
+		childList: true,
+		subtree: true,
+	})
+}
+
+function onMount (selector, callback) {
+	_componentsInit()
+
+	const nodes = Array.from(document.querySelectorAll(selector))
+
+	for (const node of nodes) {
+		callback(node)
+	}
+
+	window._components.actions.mount.push({ selector, callback })
+}
+
+function onDestroy (selector, callback) {
+	_componentsInit()
+
+	window._components.actions.destroy.push({ selector, callback })
+}
