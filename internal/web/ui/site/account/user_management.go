@@ -171,6 +171,8 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 			return nil, fmt.Errorf("find user by id: %w", err)
 		}
 
+		userIsSuper := guard.NewPassport(user, h.SuperRole.ID).IsSuper
+
 		var userRoleIDs []int
 		if user.Roles != nil {
 			userRoleIDs = make([]int, len(user.Roles))
@@ -187,6 +189,7 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 
 		vars := handler.Vars{
 			"User":             user,
+			"UserIsSuper":      userIsSuper,
 			"UserRoleIDs":      userRoleIDs,
 			"Roles":            roles,
 			"SuperRole":        h.SuperRole,

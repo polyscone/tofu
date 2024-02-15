@@ -10,7 +10,7 @@
 
 {{define "view_body"}}
 
-{{$isEditUserSuper := .Vars.User.IsSuper}}
+{{$isEditUserSuper := .Vars.UserIsSuper}}
 {{$canAssignSuperRole := .Passport.Account.CanAssignSuperRole .Vars.User.ID}}
 {{$canChangeRoles := .Passport.Account.CanChangeRoles .Vars.User.ID}}
 {{$canSuspendUser := and .Passport.Account.CanSuspendUsers (not .Vars.User.IsSuspended) (not $isEditUserSuper)}}
