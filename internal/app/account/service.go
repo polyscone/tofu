@@ -2,15 +2,9 @@ package account
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
-	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/pkg/event"
-	"github.com/polyscone/tofu/internal/repository"
 )
-
-var SuperRole *Role
 
 type Reader interface {
 	FindRoleByID(ctx context.Context, id int) (*Role, error)
@@ -54,39 +48,6 @@ type Service struct {
 }
 
 func NewService(broker event.Broker, repo ReadWriter, hasher Hasher, system string) (*Service, error) {
-	var permissions []Permission
-	for _, group := range guard.PermissionGroups {
-		for _, p := range group.Permissions {
-			permission, err := NewPermission(p.Name)
-			if err != nil {
-				return nil, fmt.Errorf("new permission: %w", err)
-			}
-
-			permissions = append(permissions, permission)
-		}
-	}
-
-	SuperRole = NewRole("Super", "Has full access to the system; can't be edited or deleted.", permissions)
-
-	ctx := context.Background()
-	role, err := repo.FindRoleByName(ctx, SuperRole.Name)
-	switch {
-	case err == nil:
-		SuperRole.ID = role.ID
-
-		if err := repo.SaveRole(ctx, SuperRole); err != nil {
-			return nil, fmt.Errorf("save super role: %w", err)
-		}
-
-	case errors.Is(err, repository.ErrNotFound):
-		if err := repo.AddRole(ctx, SuperRole); err != nil {
-			return nil, fmt.Errorf("add super role: %w", err)
-		}
-
-	default:
-		return nil, fmt.Errorf("find role by name: %w", err)
-	}
-
 	svc := Service{
 		broker: broker,
 		repo:   repo,

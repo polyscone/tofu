@@ -10,7 +10,6 @@ import (
 
 type ChangeRolesGuard interface {
 	CanChangeRoles(userID int) bool
-	CanAssignSuperRole(userID int) bool
 }
 
 func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userID int, roleIDs []int, grants, denials []string) error {
@@ -23,12 +22,6 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 	{
 		if !guard.CanChangeRoles(userID) {
 			return app.ErrForbidden
-		}
-
-		for _, roleID := range roleIDs {
-			if roleID == SuperRole.ID && !guard.CanAssignSuperRole(userID) {
-				return app.ErrForbidden
-			}
 		}
 
 		var err error

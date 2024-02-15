@@ -88,88 +88,12 @@ func TestSuspendUser(t *testing.T) {
 		}
 	})
 
-	t.Run("success updating reason for super user", func(t *testing.T) {
-		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
-
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "john@doe.com"})
-		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))
-
-		events := testutil.NewEventLog(broker)
-		defer events.Check(t)
-
-		if user.IsSuspended() {
-			t.Error("want user to not be suspended")
-		}
-
-		if err := svc.SuspendUser(ctx, validGuard, user.ID, "Foo bar baz"); err != nil {
-			t.Fatal(err)
-		}
-
-		events.Expect(account.Suspended{
-			Email:  user.Email,
-			Reason: "Foo bar baz",
-		})
-
-		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
-
-		if !user.IsSuspended() {
-			t.Error("want user to be suspended")
-		}
-
-		if want := "Foo bar baz"; user.SuspendedReason != want {
-			t.Errorf("want suspended reason to be %q; got %q", want, user.SuspendedReason)
-		}
-
-		roleIDs := []int{superRole.ID}
-		err := svc.ChangeRoles(ctx, validGuard, user.ID, roleIDs, nil, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		events.Expect(account.RolesChanged{Email: user.Email})
-
-		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
-
-		if err := svc.SuspendUser(ctx, validGuard, user.ID, "Qux"); err != nil {
-			t.Fatal(err)
-		}
-
-		events.Expect(account.SuspendedReasonChanged{
-			Email:  user.Email,
-			Reason: "Qux",
-		})
-
-		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
-
-		if want := "Qux"; user.SuspendedReason != want {
-			t.Errorf("want suspended reason to be %q; got %q", want, user.SuspendedReason)
-		}
-	})
-
 	t.Run("error cases", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, repo := NewTestEnv(ctx)
-
-		user := MustAddUser(t, ctx, repo, TestUser{Email: "john@doe.com"})
-		superRole := errsx.Must(repo.FindRoleByName(ctx, account.SuperRole.Name))
+		svc, broker, _ := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
-
-		roleIDs := []int{superRole.ID}
-		err := svc.ChangeRoles(ctx, validGuard, user.ID, roleIDs, nil, nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		events.Expect(account.RolesChanged{Email: user.Email})
-
-		user = errsx.Must(repo.FindUserByID(ctx, user.ID))
-
-		if !user.IsSuper() {
-			t.Fatal("want user to be super")
-		}
 
 		tt := []struct {
 			name   string
@@ -178,7 +102,6 @@ func TestSuspendUser(t *testing.T) {
 			want   error
 		}{
 			{"invalid guard", invalidGuard, 0, app.ErrForbidden},
-			{"cannot suspend super user", validGuard, user.ID, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

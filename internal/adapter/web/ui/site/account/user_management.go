@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/httputil"
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
-	"github.com/polyscone/tofu/internal/app/account"
+	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/repository"
 )
@@ -108,14 +108,14 @@ func userNewGet(h *ui.Handler) http.HandlerFunc {
 	h.HTML.SetViewVars("site/account/management/user/new", func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 
-		roles, _, err := h.Repo.Account.FindRoles(ctx, account.SuperRole.ID)
+		roles, _, err := h.Repo.Account.FindRoles(ctx, h.SuperRole.ID)
 		if err != nil {
 			return nil, fmt.Errorf("find roles: %w", err)
 		}
 
 		vars := handler.Vars{
 			"Roles":            roles,
-			"SuperRole":        account.SuperRole,
+			"SuperRole":        h.SuperRole,
 			"PermissionGroups": guard.PermissionGroups,
 		}
 
@@ -180,7 +180,7 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 			}
 		}
 
-		roles, _, err := h.Repo.Account.FindRoles(ctx, account.SuperRole.ID)
+		roles, _, err := h.Repo.Account.FindRoles(ctx, h.SuperRole.ID)
 		if err != nil {
 			return nil, fmt.Errorf("find roles: %w", err)
 		}
@@ -189,7 +189,7 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 			"User":             user,
 			"UserRoleIDs":      userRoleIDs,
 			"Roles":            roles,
-			"SuperRole":        account.SuperRole,
+			"SuperRole":        h.SuperRole,
 			"PermissionGroups": guard.PermissionGroups,
 		}
 
@@ -224,9 +224,28 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
+		var containsSuper bool
+		for _, roleID := range input.RoleIDs {
+			if roleID == h.SuperRole.ID {
+				containsSuper = true
+
+				if !passport.Account.CanAssignSuperRole(userID) {
+					h.HTML.ErrorView(w, r, "check role ids", app.ErrForbidden, "site/account/management/user/edit", nil)
+
+					return
+				}
+			}
+		}
+
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
+
+			return
+		}
+
+		if p := guard.NewPassport(user, h.SuperRole.ID); p.IsSuper && !containsSuper {
+			h.HTML.ErrorView(w, r, "cannot remove super role", app.ErrForbidden, "site/account/management/user/edit", nil)
 
 			return
 		}
@@ -270,6 +289,12 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
+
+			return
+		}
+
+		if p := guard.NewPassport(user, h.SuperRole.ID); p.IsSuper {
+			h.HTML.ErrorView(w, r, "cannot suspend a user with the super role", app.ErrForbidden, "site/account/management/user/edit", nil)
 
 			return
 		}

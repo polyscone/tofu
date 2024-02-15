@@ -73,6 +73,7 @@ type Tenant struct {
 	Logger   *slog.Logger
 	Metrics  *expvar.Map
 
-	Svc  Svc
-	Repo Repo
+	Svc       Svc
+	Repo      Repo
+	SuperRole *account.Role
 }

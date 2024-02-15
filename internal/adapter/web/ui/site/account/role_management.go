@@ -11,7 +11,6 @@ import (
 	"github.com/polyscone/tofu/internal/adapter/web/sess"
 	"github.com/polyscone/tofu/internal/adapter/web/ui"
 	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
 	"github.com/polyscone/tofu/internal/repository"
 )
@@ -67,7 +66,7 @@ func roleListGet(h *ui.Handler) http.HandlerFunc {
 
 		h.HTML.View(w, r, http.StatusOK, "site/account/management/role/list", handler.Vars{
 			"Roles": repository.NewBook(roles, page, size, total),
-			"Super": account.SuperRole,
+			"Super": h.SuperRole,
 		})
 	}
 }
@@ -123,7 +122,7 @@ func roleEditGet(h *ui.Handler) http.HandlerFunc {
 			return nil, errors.New("URL param as: invalid int")
 		}
 
-		if roleID == account.SuperRole.ID {
+		if roleID == h.SuperRole.ID {
 			return nil, fmt.Errorf("edit super role: %w", app.ErrForbidden)
 		}
 
@@ -167,7 +166,7 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if roleID == account.SuperRole.ID {
+		if roleID == h.SuperRole.ID {
 			h.HTML.ErrorView(w, r, "edit super role", app.ErrForbidden, "site/error", nil)
 
 			return
@@ -200,7 +199,7 @@ func roleDeleteGet(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if roleID == account.SuperRole.ID {
+		if roleID == h.SuperRole.ID {
 			h.HTML.ErrorView(w, r, "delete super role", app.ErrForbidden, "site/error", nil)
 
 			return
@@ -238,7 +237,7 @@ func roleDeletePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if roleID == account.SuperRole.ID {
+		if roleID == h.SuperRole.ID {
 			h.HTML.ErrorView(w, r, "delete super role", app.ErrForbidden, "site/error", nil)
 
 			return

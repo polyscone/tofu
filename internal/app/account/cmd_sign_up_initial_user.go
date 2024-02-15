@@ -9,17 +9,19 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwordCheck string) error {
+func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []int) error {
 	var input struct {
 		email         Email
 		password      Password
 		passwordCheck Password
+		roleIDs       []int
 	}
 	{
 		var err error
 		var errs errsx.Map
 
 		input.passwordCheck, _ = NewPassword(passwordCheck)
+		input.roleIDs = roleIDs
 
 		if input.email, err = NewEmail(email); err != nil {
 			errs.Set("email", err)
@@ -35,6 +37,20 @@ func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwo
 		}
 	}
 
+	var roles []*Role
+	if input.roleIDs != nil {
+		roles = make([]*Role, len(input.roleIDs))
+
+		for i, roleID := range input.roleIDs {
+			role, err := s.repo.FindRoleByID(ctx, roleID)
+			if err != nil {
+				return fmt.Errorf("find role by id: %w", err)
+			}
+
+			roles[i] = role
+		}
+	}
+
 	userCount, err := s.repo.CountUsers(ctx)
 	if err != nil {
 		return fmt.Errorf("count users: %w", err)
@@ -45,7 +61,6 @@ func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwo
 
 	user := NewUser(input.email)
 
-	roles := []*Role{SuperRole}
 	if err := user.SignUpAsInitialUser(s.system, roles, input.password, s.hasher); err != nil {
 		return fmt.Errorf("sign up: %w", err)
 	}

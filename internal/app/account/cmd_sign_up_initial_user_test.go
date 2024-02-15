@@ -1,8 +1,10 @@
 package account_test
 
 import (
+	"cmp"
 	"context"
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 
@@ -17,11 +19,15 @@ func TestSignUpInitialUser(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
+		role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
+		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
+		roleIDs := []int{role1.ID, role2.ID}
+
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
 		password := errsx.Must(account.NewPassword("password123"))
-		if err := svc.SignUpInitialUser(ctx, "foo@example.com", password.String(), password.String()); err != nil {
+		if err := svc.SignUpInitialUser(ctx, "foo@example.com", password.String(), password.String(), roleIDs); err != nil {
 			t.Fatal(err)
 		}
 
@@ -57,15 +63,27 @@ func TestSignUpInitialUser(t *testing.T) {
 		if !user.VerifiedAt.Equal(user.ActivatedAt) {
 			t.Error("want verified at and activated at to be the same")
 		}
-		if !user.IsSuper() {
-			t.Error("want user to be assigned the super role")
+
+		if want, got := []*account.Role{role1, role2}, user.Roles; len(want) != len(got) {
+			t.Errorf("want %v roles; got %v", len(want), len(got))
+		} else {
+			slices.SortFunc(want, func(a, b *account.Role) int { return cmp.Compare(a.ID, b.ID) })
+			slices.SortFunc(got, func(a, b *account.Role) int { return cmp.Compare(a.ID, b.ID) })
+
+			for i, wantRole := range want {
+				gotRole := got[i]
+
+				if wantRole.ID != gotRole.ID {
+					t.Errorf("want role %q; got %q", wantRole.Name, gotRole.Name)
+				}
+			}
 		}
 
 		if _, err := user.SignInWithPassword("site", password, hasher); err != nil {
 			t.Errorf("want to be able to sign in with new password; got %q", err)
 		}
 
-		if err := svc.SignUpInitialUser(ctx, "bar@example.com", "password", "password"); err == nil {
+		if err := svc.SignUpInitialUser(ctx, "bar@example.com", "password", "password", nil); err == nil {
 			t.Error("want error after initial user created; got <nil>")
 		}
 	})
@@ -102,7 +120,7 @@ func TestSignUpInitialUser(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.SignUpInitialUser(ctx, tc.email, tc.password, tc.passwordCheck)
+				err := svc.SignUpInitialUser(ctx, tc.email, tc.password, tc.passwordCheck, nil)
 				switch {
 				case err == nil:
 					events.Expect(account.InitialUserSignedUp{

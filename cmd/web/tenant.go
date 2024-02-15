@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"expvar"
 	"fmt"
 	"log/slog"
@@ -12,6 +13,7 @@ import (
 	"sync"
 
 	"github.com/polyscone/tofu/internal/adapter/web"
+	"github.com/polyscone/tofu/internal/adapter/web/guard"
 	"github.com/polyscone/tofu/internal/adapter/web/handler"
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
@@ -20,6 +22,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/slogger"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
+	"github.com/polyscone/tofu/internal/repository"
 	"github.com/polyscone/tofu/internal/repository/sqlite"
 )
 
@@ -180,8 +183,40 @@ func newTenant(host string) (*handler.Tenant, error) {
 		return nil, fmt.Errorf("new system service: %w", err)
 	}
 
+	var permissions []account.Permission
+	for _, group := range guard.PermissionGroups {
+		for _, p := range group.Permissions {
+			permission, err := account.NewPermission(p.Name)
+			if err != nil {
+				return nil, fmt.Errorf("new permission: %w", err)
+			}
+
+			permissions = append(permissions, permission)
+		}
+	}
+
+	superRole := account.NewRole("Super", "Has full access to the system; can't be edited or deleted.", permissions)
+
+	role, err := repo.account.FindRoleByName(ctx, superRole.Name)
+	switch {
+	case err == nil:
+		superRole.ID = role.ID
+
+		if err := repo.account.SaveRole(ctx, superRole); err != nil {
+			return nil, fmt.Errorf("save super role: %w", err)
+		}
+
+	case errors.Is(err, repository.ErrNotFound):
+		if err := repo.account.AddRole(ctx, superRole); err != nil {
+			return nil, fmt.Errorf("add super role: %w", err)
+		}
+
+	default:
+		return nil, fmt.Errorf("find role by name: %w", err)
+	}
+
 	tenant := handler.Tenant{
-		Key:      data.Name,
+		Key:      host + "." + data.Name,
 		Kind:     data.Kind,
 		Hosts:    data.Hosts,
 		Dev:      opts.dev,
@@ -197,6 +232,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 			System:  repo.system,
 			Web:     repo.web,
 		},
+		SuperRole: superRole,
 	}
 
 	return &tenant, nil

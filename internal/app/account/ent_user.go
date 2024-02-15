@@ -91,12 +91,6 @@ func NewUser(email Email) *User {
 	return &User{Email: email.String()}
 }
 
-func (u *User) IsSuper() bool {
-	return slices.ContainsFunc(u.Roles, func(role *Role) bool {
-		return role.ID == SuperRole.ID
-	})
-}
-
 func (u *User) Permissions() []string {
 	var permissions []string
 
@@ -515,10 +509,6 @@ func (u *User) Suspend(reason SuspendedReason) error {
 		}
 
 		return nil
-	}
-
-	if u.IsSuper() {
-		return errors.New("cannot suspend a user with the super role")
 	}
 
 	u.SuspendedAt = time.Now().UTC()
@@ -959,19 +949,6 @@ func (u *User) SignInWithFacebook(system string) error {
 }
 
 func (u *User) ChangeRoles(roles []*Role, grants, denials []Permission) error {
-	containsSuper := slices.ContainsFunc(roles, func(role *Role) bool {
-		return role.ID == SuperRole.ID
-	})
-
-	if u.IsSuper() && !containsSuper {
-		return errors.New("cannot remove super role")
-	}
-
-	if containsSuper {
-		grants = nil
-		denials = nil
-	}
-
 	u.Roles = roles
 
 	u.Grants = nil

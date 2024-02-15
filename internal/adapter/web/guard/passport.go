@@ -1,27 +1,29 @@
 package guard
 
-import "slices"
+import (
+	"slices"
 
-type User struct {
-	ID          int
-	IsSuper     bool
-	Permissions []string
-}
+	"github.com/polyscone/tofu/internal/app/account"
+)
 
 type Passport struct {
-	userID      int
-	isSuper     bool
-	permissions []string
+	UserID      int
+	IsSuper     bool
+	Permissions []string
 
 	Account Account
 	System  System
 }
 
-func NewPassport(user User) Passport {
-	p := Passport{
-		userID:      user.ID,
-		isSuper:     user.IsSuper,
-		permissions: user.Permissions,
+func NewPassport(user *account.User, superRoleID int) Passport {
+	var p Passport
+
+	if user != nil {
+		p.UserID = user.ID
+		p.IsSuper = slices.ContainsFunc(user.Roles, func(role *account.Role) bool {
+			return role.ID == superRoleID
+		})
+		p.Permissions = user.Permissions()
 	}
 
 	p.Account = Account{Passport: &p}
@@ -44,5 +46,5 @@ func (p Passport) CanAccessAdmin() bool {
 }
 
 func (p Passport) can(query string) bool {
-	return slices.Contains(p.permissions, query)
+	return slices.Contains(p.Permissions, query)
 }

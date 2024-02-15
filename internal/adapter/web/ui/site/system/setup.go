@@ -79,7 +79,7 @@ func systemSetupPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Svc.Account.SignUpInitialUser(ctx, input.Email, input.Password, input.PasswordCheck)
+		err = h.Svc.Account.SignUpInitialUser(ctx, input.Email, input.Password, input.PasswordCheck, []int{h.SuperRole.ID})
 		if err != nil {
 			h.HTML.ErrorView(w, r, "sign up initial user", err, "site/system/setup", nil)
 
