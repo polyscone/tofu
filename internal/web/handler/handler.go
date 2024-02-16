@@ -127,9 +127,9 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 
 		var passport guard.Passport
 		if !h.Sessions.GetBool(ctx, sess.IsSignedIn) {
-			passport = guard.NewPassport(nil, 0)
+			passport = h.PassportByUser(nil)
 		} else {
-			passport = guard.NewPassport(user, h.SuperRole.ID)
+			passport = h.PassportByUser(user)
 		}
 
 		// Only set the user id in the logger if user isn't in the context yet
@@ -196,10 +196,14 @@ func (h *Handler) User(ctx context.Context) *account.User {
 	return user
 }
 
+func (h *Handler) PassportByUser(user *account.User) guard.Passport {
+	return guard.NewPassport(user, h.SuperRole.ID)
+}
+
 func (h *Handler) Passport(ctx context.Context) guard.Passport {
 	value := ctx.Value(ctxPassport)
 	if value == nil {
-		return guard.NewPassport(nil, 0)
+		return h.PassportByUser(nil)
 	}
 
 	passport, ok := value.(guard.Passport)
@@ -213,10 +217,10 @@ func (h *Handler) Passport(ctx context.Context) guard.Passport {
 func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Passport, error) {
 	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
-		return guard.NewPassport(nil, 0), fmt.Errorf("find user by email: %w", err)
+		return h.PassportByUser(nil), fmt.Errorf("find user by email: %w", err)
 	}
 
-	p := guard.NewPassport(user, h.SuperRole.ID)
+	p := h.PassportByUser(user)
 
 	return p, nil
 }
