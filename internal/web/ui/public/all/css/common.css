@@ -138,6 +138,7 @@
 		top: 0;
 		text-align: left;
 		vertical-align: bottom;
+		z-index: 1;
 	}
 
 	td {
