@@ -1,23 +1,6 @@
 package system
 
-import (
-	"context"
-
-	"github.com/polyscone/tofu/internal/pkg/event"
-)
-
-type Reader interface {
-	FindConfig(ctx context.Context) (*Config, error)
-}
-
-type Writer interface {
-	SaveConfig(ctx context.Context, config *Config) error
-}
-
-type ReadWriter interface {
-	Reader
-	Writer
-}
+import "github.com/polyscone/tofu/internal/pkg/event"
 
 type Service struct {
 	broker event.Broker

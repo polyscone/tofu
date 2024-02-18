@@ -13,6 +13,34 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 )
 
+type Reader interface {
+	FindRoleByID(ctx context.Context, id int) (*Role, error)
+	FindRoleByName(ctx context.Context, name string) (*Role, error)
+
+	CountUsers(ctx context.Context) (int, error)
+	CountUsersByRoleID(ctx context.Context, roleID int) (int, error)
+	FindUserByID(ctx context.Context, id int) (*User, error)
+	FindUserByEmail(ctx context.Context, email string) (*User, error)
+
+	FindSignInAttemptLogByEmail(ctx context.Context, email string) (*SignInAttemptLog, error)
+}
+
+type Writer interface {
+	AddRole(ctx context.Context, role *Role) error
+	SaveRole(ctx context.Context, role *Role) error
+	RemoveRole(ctx context.Context, roleID int) error
+
+	AddUser(ctx context.Context, user *User) error
+	SaveUser(ctx context.Context, user *User) error
+
+	SaveSignInAttemptLog(ctx context.Context, log *SignInAttemptLog) error
+}
+
+type ReadWriter interface {
+	Reader
+	Writer
+}
+
 func TestRepo(ctx context.Context, t *testing.T, newRepo func() ReadWriter) {
 	t.Run("roles", func(t *testing.T) { testRepoRoles(ctx, t, newRepo) })
 	t.Run("users", func(t *testing.T) { testRepoUsers(ctx, t, newRepo) })

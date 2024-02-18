@@ -5,6 +5,19 @@ import (
 	"testing"
 )
 
+type Reader interface {
+	FindConfig(ctx context.Context) (*Config, error)
+}
+
+type Writer interface {
+	SaveConfig(ctx context.Context, config *Config) error
+}
+
+type ReadWriter interface {
+	Reader
+	Writer
+}
+
 func TestRepo(ctx context.Context, t *testing.T, newRepo func() ReadWriter) {
 	t.Run("config", func(t *testing.T) { testRepoConfig(ctx, t, newRepo) })
 }
