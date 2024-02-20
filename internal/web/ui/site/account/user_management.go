@@ -1,7 +1,6 @@
 package account
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -37,13 +36,7 @@ func RegisterUserManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
 		mux.Group(func(mux *router.ServeMux) {
 			mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
-					userID, ok := router.PathValueAs[int](r, "userID")
-					if !ok {
-						next(w, r)
-
-						return
-					}
-
+					userID := r.PathValue("userID")
 					canAccess := h.CanAccess(func(p guard.Passport) bool {
 						return p.Account.CanChangeRoles(userID) ||
 							p.Account.CanSuspendUsers()
@@ -84,9 +77,9 @@ func userListGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		sortTopID := h.Sessions.PopInt(ctx, sess.SortTopID)
-		if sortTopID == 0 {
-			sortTopID = h.Sessions.GetInt(ctx, sess.UserID)
+		sortTopID := h.Sessions.PopString(ctx, sess.SortTopID)
+		if sortTopID == "" {
+			sortTopID = h.Sessions.GetString(ctx, sess.UserID)
 		}
 		sorts := r.URL.Query()["sort"]
 		search := r.URL.Query().Get("search")
@@ -141,9 +134,16 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		user, err := h.Svc.Account.InviteUser(ctx, passport.Account, input.Email)
+		err := h.Svc.Account.InviteUser(ctx, passport.Account, input.Email)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "invite", err, "site/account/management/user/new", nil)
+
+			return
+		}
+
+		user, err := h.Repo.Account.FindUserByEmail(ctx, input.Email)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "invite", err, "site/error", nil)
 
 			return
 		}
@@ -159,13 +159,9 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 
 func userEditGet(h *ui.Handler) http.HandlerFunc {
 	h.HTML.SetViewVars("site/account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
-		userID, ok := router.PathValueAs[int](r, "userID")
-		if !ok {
-			return nil, errors.New("URL param as: invalid int")
-		}
-
 		ctx := r.Context()
 
+		userID := r.PathValue("userID")
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			return nil, fmt.Errorf("find user by id: %w", err)
@@ -173,9 +169,9 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 
 		userIsSuper := h.PassportByUser(user).IsSuper
 
-		var userRoleIDs []int
+		var userRoleIDs []string
 		if user.Roles != nil {
-			userRoleIDs = make([]int, len(user.Roles))
+			userRoleIDs = make([]string, len(user.Roles))
 
 			for i, role := range user.Roles {
 				userRoleIDs[i] = role.ID
@@ -207,7 +203,7 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
-			RoleIDs []int    `form:"roles"`
+			RoleIDs []string `form:"roles"`
 			Grants  []string `form:"grants"`
 			Denials []string `form:"denials"`
 		}
@@ -217,15 +213,9 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		userID, ok := router.PathValueAs[int](r, "userID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
 		ctx := r.Context()
 		passport := h.Passport(ctx)
+		userID := r.PathValue("userID")
 
 		var containsSuper bool
 		for _, roleID := range input.RoleIDs {
@@ -279,16 +269,10 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		userID, ok := router.PathValueAs[int](r, "userID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
+		userID := r.PathValue("userID")
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
@@ -325,16 +309,10 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 
 func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.PathValueAs[int](r, "userID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
+		userID := r.PathValue("userID")
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
@@ -359,13 +337,9 @@ func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 
 func userActivateGet(h *ui.Handler) http.HandlerFunc {
 	h.HTML.SetViewVars("site/account/management/user/activate", func(r *http.Request) (handler.Vars, error) {
-		userID, ok := router.PathValueAs[int](r, "userID")
-		if !ok {
-			return nil, errors.New("URL param as: invalid int")
-		}
-
 		ctx := r.Context()
 
+		userID := r.PathValue("userID")
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			return nil, fmt.Errorf("find user by id: %w", err)
@@ -383,16 +357,10 @@ func userActivateGet(h *ui.Handler) http.HandlerFunc {
 
 func userActivatePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.PathValueAs[int](r, "userID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
+		userID := r.PathValue("userID")
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
@@ -417,15 +385,9 @@ func userActivatePost(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetReviewGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.PathValueAs[int](r, "userID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
 		ctx := r.Context()
 
+		userID := r.PathValue("userID")
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
@@ -441,15 +403,9 @@ func userTOTPResetReviewGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetApproveGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.PathValueAs[int](r, "userID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
 		ctx := r.Context()
 
+		userID := r.PathValue("userID")
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
@@ -465,17 +421,11 @@ func userTOTPResetApproveGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.PathValueAs[int](r, "userID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
 		ctx := r.Context()
 		logger := h.Logger(ctx)
 		config := h.Config(ctx)
 
+		userID := r.PathValue("userID")
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
@@ -509,15 +459,9 @@ func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetDenyGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.PathValueAs[int](r, "userID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
 		ctx := r.Context()
 
+		userID := r.PathValue("userID")
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
@@ -533,15 +477,9 @@ func userTOTPResetDenyGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetDenyPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		userID, ok := router.PathValueAs[int](r, "userID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
 		ctx := r.Context()
 
+		userID := r.PathValue("userID")
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)

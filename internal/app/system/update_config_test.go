@@ -48,7 +48,7 @@ func TestUpdateConfig(t *testing.T) {
 		twilioToken := "0123456789abcdef0123456789abcdef"
 		twilioFromTel := "+00 00 0000 0000"
 
-		_, err := svc.UpdateConfig(ctx, validGuard,
+		err := svc.UpdateConfig(ctx, validGuard,
 			systemEmail,
 			securityEmail,
 			signUpEnabled,
@@ -138,7 +138,7 @@ func TestUpdateConfig(t *testing.T) {
 		twilioToken = ""
 		twilioFromTel = ""
 
-		_, err = svc.UpdateConfig(ctx, validGuard,
+		err = svc.UpdateConfig(ctx, validGuard,
 			systemEmail,
 			securityEmail,
 			signUpEnabled,
@@ -296,7 +296,7 @@ func TestUpdateConfig(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				config := c(tc.overrides)
 
-				_, err := svc.UpdateConfig(ctx, tc.guard,
+				err := svc.UpdateConfig(ctx, tc.guard,
 					config.SystemEmail,
 					config.SecurityEmail,
 					config.SignUpEnabled,

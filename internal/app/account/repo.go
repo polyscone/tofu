@@ -11,15 +11,15 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type Reader interface {
-	FindRoleByID(ctx context.Context, id int) (*Role, error)
-	FindRoleByName(ctx context.Context, name string) (*Role, error)
+	FindRoleByID(ctx context.Context, id string) (*Role, error)
 
 	CountUsers(ctx context.Context) (int, error)
-	CountUsersByRoleID(ctx context.Context, roleID int) (int, error)
-	FindUserByID(ctx context.Context, id int) (*User, error)
+	FindUserByID(ctx context.Context, id string) (*User, error)
 	FindUserByEmail(ctx context.Context, email string) (*User, error)
 
 	FindSignInAttemptLogByEmail(ctx context.Context, email string) (*SignInAttemptLog, error)
@@ -28,7 +28,7 @@ type Reader interface {
 type Writer interface {
 	AddRole(ctx context.Context, role *Role) error
 	SaveRole(ctx context.Context, role *Role) error
-	RemoveRole(ctx context.Context, roleID int) error
+	RemoveRole(ctx context.Context, roleID string) error
 
 	AddUser(ctx context.Context, user *User) error
 	SaveUser(ctx context.Context, user *User) error
@@ -68,6 +68,10 @@ func testRepoRoles(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
+				if tc.role.ID == "" {
+					tc.role.ID = errsx.Must(uuid.NewV7()).String()
+				}
+
 				err := repo.AddRole(ctx, &tc.role)
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
@@ -96,7 +100,7 @@ func testRepoRoles(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 	t.Run("add and remove", func(t *testing.T) {
 		repo := newRepo()
 
-		role := &Role{Name: "Role name"}
+		role := &Role{ID: "6c1dc2e3-94b6-4e15-bebe-0ad178a206ff", Name: "Role name"}
 		if err := repo.AddRole(ctx, role); err != nil {
 			t.Fatal(err)
 		}
@@ -107,27 +111,6 @@ func testRepoRoles(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 
 		if _, err := repo.FindRoleByID(ctx, role.ID); err == nil {
 			t.Errorf("want error: %v; got <nil>", app.ErrNotFound)
-		}
-	})
-
-	t.Run("generate new id on add", func(t *testing.T) {
-		repo := newRepo()
-
-		role1 := &Role{Name: "Role 1"}
-		role2 := &Role{Name: "Role 2"}
-
-		if err := repo.AddRole(ctx, role1); err != nil {
-			t.Fatal(err)
-		}
-
-		role2.ID = role1.ID
-
-		if err := repo.AddRole(ctx, role2); err != nil {
-			t.Fatal(err)
-		}
-
-		if role2.ID == 0 || role2.ID == role1.ID {
-			t.Error("want new id to be generated on add")
 		}
 	})
 
@@ -147,13 +130,13 @@ func testRepoRoles(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				role := Role{Name: "New role " + strconv.Itoa(i)}
-				if err := repo.AddRole(ctx, &role); err != nil {
-					t.Fatal(err)
+				if tc.role.ID == "" {
+					tc.role.ID = errsx.Must(uuid.NewV7()).String()
 				}
 
-				if tc.role.ID == 0 {
-					tc.role.ID = role.ID
+				role := Role{ID: tc.role.ID, Name: "New role " + strconv.Itoa(i)}
+				if err := repo.AddRole(ctx, &role); err != nil {
+					t.Fatal(err)
 				}
 
 				err := repo.SaveRole(ctx, &tc.role)
@@ -178,12 +161,12 @@ func testRepoRoles(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 	t.Run("conflicts", func(t *testing.T) {
 		repo := newRepo()
 
-		role1 := &Role{Name: "Foo"}
+		role1 := &Role{ID: "de6fc816-abff-4cc2-a9e2-267c199a771f", Name: "Foo"}
 		if err := repo.AddRole(ctx, role1); err != nil {
 			t.Fatal(err)
 		}
 
-		role2 := &Role{Name: "Bar"}
+		role2 := &Role{ID: "82ee62d4-5b10-4283-8666-8f94a0a85146", Name: "Bar"}
 		if err := repo.AddRole(ctx, role2); err != nil {
 			t.Fatal(err)
 		}
@@ -243,12 +226,12 @@ func testRepoUsers(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 	t.Run("add and find", func(t *testing.T) {
 		repo := newRepo()
 
-		role1 := &Role{Name: "Foo"}
+		role1 := &Role{ID: "6cb95e31-dae1-4076-96db-1a9cac65731a", Name: "Foo"}
 		if err := repo.AddRole(ctx, role1); err != nil {
 			t.Fatal(err)
 		}
 
-		role2 := &Role{Name: "Bar"}
+		role2 := &Role{ID: "19541da8-c804-407a-8842-f5211efd042d", Name: "Bar"}
 		if err := repo.AddRole(ctx, role2); err != nil {
 			t.Fatal(err)
 		}
@@ -297,6 +280,7 @@ func testRepoUsers(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
+				tc.user.ID = errsx.Must(uuid.NewV7()).String()
 				err := repo.AddUser(ctx, &tc.user)
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
@@ -322,31 +306,10 @@ func testRepoUsers(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		}
 	})
 
-	t.Run("generate new id on add", func(t *testing.T) {
-		repo := newRepo()
-
-		user1 := &User{Email: "User 1"}
-		user2 := &User{Email: "User 2"}
-
-		if err := repo.AddUser(ctx, user1); err != nil {
-			t.Fatal(err)
-		}
-
-		user2.ID = user1.ID
-
-		if err := repo.AddUser(ctx, user2); err != nil {
-			t.Fatal(err)
-		}
-
-		if user2.ID == 0 || user2.ID == user1.ID {
-			t.Error("want new id to be generated on add")
-		}
-	})
-
 	t.Run("save and find", func(t *testing.T) {
 		repo := newRepo()
 
-		role1 := &Role{Name: "Foo"}
+		role1 := &Role{ID: "b0fbc0cb-77ae-4911-94d4-4ac46d34fc4a", Name: "Foo"}
 		if err := repo.AddRole(ctx, role1); err != nil {
 			t.Fatal(err)
 		}
@@ -368,12 +331,14 @@ func testRepoUsers(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				user := User{Email: "New user " + strconv.Itoa(i)}
+				if tc.user.ID == "" {
+					tc.user.ID = errsx.Must(uuid.NewV7()).String()
+				}
+
+				user := User{ID: tc.user.ID, Email: "New user " + strconv.Itoa(i)}
 				if err := repo.AddUser(ctx, &user); err != nil {
 					t.Fatal(err)
 				}
-
-				tc.user.ID = user.ID
 
 				err := repo.SaveUser(ctx, &tc.user)
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
@@ -397,12 +362,12 @@ func testRepoUsers(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 	t.Run("save with roles", func(t *testing.T) {
 		repo := newRepo()
 
-		role1 := &Role{Name: "Foo"}
+		role1 := &Role{ID: "030b69de-869f-4d24-b257-3f29bf771c6e", Name: "Foo"}
 		if err := repo.AddRole(ctx, role1); err != nil {
 			t.Fatal(err)
 		}
 
-		role2 := &Role{Name: "Bar"}
+		role2 := &Role{ID: "7762d13b-39e3-446f-a344-223d77c4433b", Name: "Bar"}
 		if err := repo.AddRole(ctx, role2); err != nil {
 			t.Fatal(err)
 		}
@@ -440,12 +405,12 @@ func testRepoUsers(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 	t.Run("conflicts", func(t *testing.T) {
 		repo := newRepo()
 
-		user1 := &User{Email: "Foo"}
+		user1 := &User{ID: "4ea5f348-929f-44f8-b7e4-c57189c3b9a8", Email: "Foo"}
 		if err := repo.AddUser(ctx, user1); err != nil {
 			t.Fatal(err)
 		}
 
-		user2 := &User{Email: "Bar"}
+		user2 := &User{ID: "b364e52a-66b9-41f8-910e-339556a645aa", Email: "Bar"}
 		if err := repo.AddUser(ctx, user2); err != nil {
 			t.Fatal(err)
 		}

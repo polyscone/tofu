@@ -21,7 +21,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	facebookSignInEnabled bool, facebookSignInAppID, facebookSignInAppSecret string,
 	resendAPIKey string,
 	twilioSID, twilioToken, twilioFromTel string,
-) (*Config, error) {
+) error {
 	var input struct {
 		systemEmail               Email
 		securityEmail             Email
@@ -42,7 +42,7 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	}
 	{
 		if !guard.CanUpdateConfig() {
-			return nil, app.ErrForbidden
+			return app.ErrForbidden
 		}
 
 		var err error
@@ -90,13 +90,13 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 		}
 
 		if errs != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	config, err := s.repo.FindConfig(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("find config: %w", err)
+		return fmt.Errorf("find config: %w", err)
 	}
 
 	var errs errsx.Slice
@@ -155,14 +155,14 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 	}
 
 	if errs != nil {
-		return nil, errs
+		return errs
 	}
 
 	if err := s.repo.SaveConfig(ctx, config); err != nil {
-		return nil, fmt.Errorf("save config: %w", err)
+		return fmt.Errorf("save config: %w", err)
 	}
 
 	s.broker.Flush(&config.Events)
 
-	return config, nil
+	return nil
 }

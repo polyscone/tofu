@@ -16,10 +16,12 @@ import (
 type AccountReader interface {
 	account.Reader
 
-	FindRoles(ctx context.Context, sortTopID int) ([]*account.Role, int, error)
-	FindRolesPageBySearch(ctx context.Context, sortTopID int, sorts []string, search string, page, size int) ([]*account.Role, int, error)
+	FindRoleByName(ctx context.Context, name string) (*account.Role, error)
+	FindRoles(ctx context.Context, sortTopID string) ([]*account.Role, int, error)
+	FindRolesPageBySearch(ctx context.Context, sortTopID string, sorts []string, search string, page, size int) ([]*account.Role, int, error)
 
-	FindUsersPageBySearch(ctx context.Context, sortTopID int, sorts []string, search string, page, size int) ([]*account.User, int, error)
+	CountUsersByRoleID(ctx context.Context, roleID string) (int, error)
+	FindUsersPageBySearch(ctx context.Context, sortTopID string, sorts []string, search string, page, size int) ([]*account.User, int, error)
 }
 
 type SystemReader system.Reader

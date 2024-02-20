@@ -7,26 +7,31 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type CreateRoleGuard interface {
 	CanCreateRoles() bool
 }
 
-func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, description string, permissions []string) (*Role, error) {
+func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, roleID, name, description string, permissions []string) error {
 	var input struct {
+		roleID      uuid.UUID
 		name        RoleName
 		description RoleDesc
 		permissions []Permission
 	}
 	{
 		if !guard.CanCreateRoles() {
-			return nil, app.ErrForbidden
+			return app.ErrForbidden
 		}
 
 		var err error
 		var errs errsx.Map
 
+		if input.roleID, err = uuid.Parse(roleID); err != nil {
+			errs.Set("role id", err)
+		}
 		if input.name, err = NewRoleName(name); err != nil {
 			errs.Set("name", err)
 		}
@@ -45,20 +50,20 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, d
 		}
 
 		if errs != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
-	role := NewRole(input.name, input.description, input.permissions)
+	role := NewRole(input.roleID, input.name, input.description, input.permissions)
 
 	if err := s.repo.AddRole(ctx, role); err != nil {
 		var conflict *app.ConflictError
 		if errors.As(err, &conflict) {
-			return nil, fmt.Errorf("add role: %w: %w", app.ErrConflict, conflict)
+			return fmt.Errorf("add role: %w: %w", app.ErrConflict, conflict)
 		}
 
-		return nil, fmt.Errorf("add role: %w", err)
+		return fmt.Errorf("add role: %w", err)
 	}
 
-	return role, nil
+	return nil
 }

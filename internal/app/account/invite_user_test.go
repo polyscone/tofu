@@ -29,7 +29,7 @@ func TestInviteUser(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.InviteUser(ctx, validGuard, "foo@example.com"); err != nil {
+		if err := svc.InviteUser(ctx, validGuard, "foo@example.com"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -54,7 +54,7 @@ func TestInviteUser(t *testing.T) {
 			t.Errorf("want signed up system to be %q; got %q", want, got)
 		}
 
-		if _, err := svc.InviteUser(ctx, validGuard, "foo@example.com"); err != nil {
+		if err := svc.InviteUser(ctx, validGuard, "foo@example.com"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -87,7 +87,7 @@ func TestInviteUser(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := svc.InviteUser(ctx, tc.guard, tc.email)
+				err := svc.InviteUser(ctx, tc.guard, tc.email)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
@@ -123,7 +123,7 @@ func TestInviteUser(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := svc.InviteUser(ctx, validGuard, tc.email)
+				err := svc.InviteUser(ctx, validGuard, tc.email)
 				switch {
 				case err == nil:
 					events.Expect(account.Invited{

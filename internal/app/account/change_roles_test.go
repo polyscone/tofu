@@ -17,7 +17,7 @@ type setRolesGuard struct {
 	canChangeRoles bool
 }
 
-func (g setRolesGuard) CanChangeRoles(userID int) bool {
+func (g setRolesGuard) CanChangeRoles(userID string) bool {
 	return g.canChangeRoles
 }
 
@@ -43,7 +43,7 @@ func TestChangeRoles(t *testing.T) {
 				events := testutil.NewEventLog(broker)
 				defer events.Check(t)
 
-				roleIDs := []int{role1.ID, role2.ID}
+				roleIDs := []string{role1.ID, role2.ID}
 				grants := []string{"a", "b", "c"}
 				denials := []string{"b", "c", "d"}
 				err := svc.ChangeRoles(ctx, validGuard, user.ID, roleIDs, grants, denials)
@@ -117,13 +117,13 @@ func TestChangeRoles(t *testing.T) {
 		tt := []struct {
 			name    string
 			guard   setRolesGuard
-			userID  int
-			roleIDs []int
+			userID  string
+			roleIDs []string
 			want    error
 		}{
-			{"invalid guard", invalidGuard, 0, nil, app.ErrForbidden},
-			{"non-existent user id", validGuard, 0, []int{role1.ID, role2.ID}, app.ErrNotFound},
-			{"non-existent role ids", validGuard, user.ID, []int{-1, 0}, app.ErrNotFound},
+			{"invalid guard", invalidGuard, "c374232f-d158-4ad7-9329-f983629cc6dc", nil, app.ErrForbidden},
+			{"non-existent user id", validGuard, "17dec033-2ab4-46fb-956f-f3fe71970d36", []string{role1.ID, role2.ID}, app.ErrNotFound},
+			{"non-existent role ids", validGuard, user.ID, []string{"-1", "0"}, app.ErrNotFound},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

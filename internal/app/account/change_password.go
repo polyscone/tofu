@@ -6,15 +6,16 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type ChangePasswordGuard interface {
-	CanChangePassword(userID int) bool
+	CanChangePassword(userID string) bool
 }
 
-func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard, userID int, oldPassword, newPassword, newPasswordCheck string) error {
+func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard, userID, oldPassword, newPassword, newPasswordCheck string) error {
 	var input struct {
-		userID           int
+		userID           uuid.UUID
 		oldPassword      Password
 		newPassword      Password
 		newPasswordCheck Password
@@ -29,8 +30,9 @@ func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard,
 
 		newPasswordCheck, _ := NewPassword(newPasswordCheck)
 
-		input.userID = userID
-
+		if input.userID, err = uuid.Parse(userID); err != nil {
+			errs.Set("user id", err)
+		}
 		if input.oldPassword, err = NewPassword(oldPassword); err != nil {
 			errs.Set("old password", err)
 		}
@@ -45,7 +47,7 @@ func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard,
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.repo.FindUserByID(ctx, input.userID.String())
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}

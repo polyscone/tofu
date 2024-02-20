@@ -10,6 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/otp"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 	"github.com/polyscone/tofu/internal/sqlite"
 )
 
@@ -67,7 +68,8 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 	}
 
 	var codes []string
-	user := account.NewUser(errsx.Must(account.NewEmail(tu.Email)))
+	userID := errsx.Must(uuid.NewV7())
+	user := account.NewUser(userID, errsx.Must(account.NewEmail(tu.Email)))
 
 	switch {
 	case tu.Invited:
@@ -141,7 +143,8 @@ func MustAddRole(t *testing.T, ctx context.Context, repo account.ReadWriter, tr 
 		}
 	}
 
-	role := account.NewRole(name, "", permissions)
+	roleID := errsx.Must(uuid.NewV7())
+	role := account.NewRole(roleID, name, "", permissions)
 
 	errsx.Must0(repo.AddRole(ctx, role))
 

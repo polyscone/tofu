@@ -1,13 +1,13 @@
 package account
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/collection"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 	"github.com/polyscone/tofu/internal/web/guard"
 	"github.com/polyscone/tofu/internal/web/handler"
 	"github.com/polyscone/tofu/internal/web/httputil"
@@ -53,7 +53,7 @@ func roleListGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		sortTopID := h.Sessions.PopInt(ctx, sess.SortTopID)
+		sortTopID := h.Sessions.PopString(ctx, sess.SortTopID)
 		sorts := r.URL.Query()["sort"]
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
@@ -99,9 +99,23 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		role, err := h.Svc.Account.CreateRole(ctx, passport.Account, input.Name, input.Description, input.Permissions)
+		roleID, err := uuid.NewV7()
+		if err != nil {
+			h.HTML.ErrorView(w, r, "new v7 UUID", err, "site/error", nil)
+
+			return
+		}
+
+		err = h.Svc.Account.CreateRole(ctx, passport.Account, roleID.String(), input.Name, input.Description, input.Permissions)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "create role", err, "site/account/management/role/new", nil)
+
+			return
+		}
+
+		role, err := h.Repo.Account.FindRoleByID(ctx, roleID.String())
+		if err != nil {
+			h.HTML.ErrorView(w, r, "find role by id", err, "site/error", nil)
 
 			return
 		}
@@ -117,11 +131,7 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 
 func roleEditGet(h *ui.Handler) http.HandlerFunc {
 	h.HTML.SetViewVars("site/account/management/role/edit", func(r *http.Request) (handler.Vars, error) {
-		roleID, ok := router.PathValueAs[int](r, "roleID")
-		if !ok {
-			return nil, errors.New("URL param as: invalid int")
-		}
-
+		roleID := r.PathValue("roleID")
 		if roleID == h.SuperRole.ID {
 			return nil, fmt.Errorf("edit super role: %w", app.ErrForbidden)
 		}
@@ -159,13 +169,7 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		roleID, ok := router.PathValueAs[int](r, "roleID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
+		roleID := r.PathValue("roleID")
 		if roleID == h.SuperRole.ID {
 			h.HTML.ErrorView(w, r, "edit super role", app.ErrForbidden, "site/error", nil)
 
@@ -175,9 +179,16 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		role, err := h.Svc.Account.UpdateRole(ctx, passport.Account, roleID, input.Name, input.Description, input.Permissions)
+		err := h.Svc.Account.UpdateRole(ctx, passport.Account, roleID, input.Name, input.Description, input.Permissions)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "update role", err, "site/account/management/role/edit", nil)
+
+			return
+		}
+
+		role, err := h.Repo.Account.FindRoleByID(ctx, roleID)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "find role by id", err, "site/error", nil)
 
 			return
 		}
@@ -192,13 +203,7 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 
 func roleDeleteGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		roleID, ok := router.PathValueAs[int](r, "roleID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
+		roleID := r.PathValue("roleID")
 		if roleID == h.SuperRole.ID {
 			h.HTML.ErrorView(w, r, "delete super role", app.ErrForbidden, "site/error", nil)
 
@@ -230,13 +235,7 @@ func roleDeleteGet(h *ui.Handler) http.HandlerFunc {
 
 func roleDeletePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		roleID, ok := router.PathValueAs[int](r, "roleID")
-		if !ok {
-			h.HTML.ErrorView(w, r, "URL param as", errors.New("invalid int"), "site/error", nil)
-
-			return
-		}
-
+		roleID := r.PathValue("roleID")
 		if roleID == h.SuperRole.ID {
 			h.HTML.ErrorView(w, r, "delete super role", app.ErrForbidden, "site/error", nil)
 
@@ -246,7 +245,14 @@ func roleDeletePost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		role, err := h.Svc.Account.DeleteRole(ctx, passport.Account, roleID)
+		role, err := h.Repo.Account.FindRoleByID(ctx, roleID)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "find role by id", err, "site/error", nil)
+
+			return
+		}
+
+		err = h.Svc.Account.DeleteRole(ctx, passport.Account, roleID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "delete role", err, "site/error", nil)
 

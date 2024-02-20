@@ -5,25 +5,36 @@ import (
 	"fmt"
 
 	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type SetupTOTPGuard interface {
-	CanSetupTOTP(userID int) bool
+	CanSetupTOTP(userID string) bool
 }
 
-func (s *Service) SetupTOTP(ctx context.Context, guard SetupTOTPGuard, userID int) error {
+func (s *Service) SetupTOTP(ctx context.Context, guard SetupTOTPGuard, userID string) error {
 	var input struct {
-		userID int
+		userID uuid.UUID
 	}
 	{
 		if !guard.CanSetupTOTP(userID) {
 			return app.ErrForbidden
 		}
 
-		input.userID = userID
+		var err error
+		var errs errsx.Map
+
+		if input.userID, err = uuid.Parse(userID); err != nil {
+			errs.Set("user id", err)
+		}
+
+		if errs != nil {
+			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.repo.FindUserByID(ctx, input.userID.String())
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}

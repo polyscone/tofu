@@ -6,15 +6,16 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type SuspendUsersGuard interface {
 	CanSuspendUsers() bool
 }
 
-func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, userID int, suspendedReason string) error {
+func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, userID, suspendedReason string) error {
 	var input struct {
-		userID          int
+		userID          uuid.UUID
 		suspendedReason SuspendedReason
 	}
 	{
@@ -25,8 +26,9 @@ func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, user
 		var err error
 		var errs errsx.Map
 
-		input.userID = userID
-
+		if input.userID, err = uuid.Parse(userID); err != nil {
+			errs.Set("user id", err)
+		}
 		if input.suspendedReason, err = NewSuspendedReason(suspendedReason); err != nil {
 			errs.Set("suspended reason", err)
 		}
@@ -36,7 +38,7 @@ func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, user
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.repo.FindUserByID(ctx, input.userID.String())
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}

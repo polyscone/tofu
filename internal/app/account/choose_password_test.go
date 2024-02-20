@@ -17,7 +17,7 @@ type choosePasswordGuard struct {
 	value bool
 }
 
-func (g choosePasswordGuard) CanChoosePassword(userID int) bool {
+func (g choosePasswordGuard) CanChoosePassword(userID string) bool {
 	return g.value
 }
 
@@ -67,11 +67,11 @@ func TestChoosePassword(t *testing.T) {
 		tt := []struct {
 			name        string
 			guard       choosePasswordGuard
-			userID      int
+			userID      string
 			newPassword string
 			want        error
 		}{
-			{"invalid guard", invalidGuard, 0, "", app.ErrForbidden},
+			{"invalid guard", invalidGuard, "", "", app.ErrForbidden},
 			{"empty new password", validGuard, user1.ID, "", app.ErrMalformedInput},
 			{"already has a password", validGuard, user2.ID, "password123", nil},
 			{"not activated", validGuard, user3.ID, "password123", nil},

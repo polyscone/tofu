@@ -16,7 +16,5 @@ func SignUp(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *h
 		return fmt.Errorf("%w: sign up disabled", app.ErrForbidden)
 	}
 
-	_, err := h.Svc.Account.SignUp(ctx, email)
-
-	return err
+	return h.Svc.Account.SignUp(ctx, email)
 }

@@ -16,7 +16,7 @@ type changeTOTPTelGuard struct {
 	value bool
 }
 
-func (g changeTOTPTelGuard) CanChangeTOTPTel(userID int) bool {
+func (g changeTOTPTelGuard) CanChangeTOTPTel(userID string) bool {
 	return g.value
 }
 
@@ -70,11 +70,11 @@ func TestChangeTOTPTel(t *testing.T) {
 		tt := []struct {
 			name   string
 			guard  changeTOTPTelGuard
-			userID int
+			userID string
 			newTel string
 			want   error
 		}{
-			{"invalid guard", invalidGuard, 0, "", app.ErrForbidden},
+			{"invalid guard", invalidGuard, "", "", app.ErrForbidden},
 			{"user without TOTP setup", validGuard, user.ID, "+81 70 0000 0003", nil},
 		}
 		for _, tc := range tt {

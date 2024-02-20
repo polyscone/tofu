@@ -6,15 +6,16 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type ResetPasswordGuard interface {
-	CanResetPassword(userID int) bool
+	CanResetPassword(userID string) bool
 }
 
-func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, userID int, newPassword, newPasswordCheck string) error {
+func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, userID string, newPassword, newPasswordCheck string) error {
 	var input struct {
-		userID           int
+		userID           uuid.UUID
 		email            Email
 		newPassword      Password
 		newPasswordCheck Password
@@ -29,8 +30,9 @@ func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, u
 
 		newPasswordCheck, _ := NewPassword(newPasswordCheck)
 
-		input.userID = userID
-
+		if input.userID, err = uuid.Parse(userID); err != nil {
+			errs.Set("user id", err)
+		}
 		if input.newPassword, err = NewPassword(newPassword); err != nil {
 			errs.Set("new password", err)
 		} else if !input.newPassword.Equal(newPasswordCheck) {
@@ -42,7 +44,7 @@ func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, u
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.repo.FindUserByID(ctx, input.userID.String())
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}

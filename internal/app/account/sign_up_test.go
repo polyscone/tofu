@@ -7,6 +7,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
 )
 
@@ -18,7 +19,7 @@ func TestSignUp(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
+		if err := svc.SignUp(ctx, "foo@example.com"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -44,7 +45,7 @@ func TestSignUp(t *testing.T) {
 			t.Errorf("want signed up method to be %q; got %q", want, got)
 		}
 
-		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
+		if err := svc.SignUp(ctx, "foo@example.com"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -65,7 +66,7 @@ func TestSignUp(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.SignUp(ctx, user.Email); err != nil {
+		if err := svc.SignUp(ctx, user.Email); err != nil {
 			t.Fatal(err)
 		}
 
@@ -97,7 +98,7 @@ func TestSignUp(t *testing.T) {
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.SignUp(ctx, user.Email); err != nil {
+		if err := svc.SignUp(ctx, user.Email); err != nil {
 			t.Fatal(err)
 		}
 
@@ -122,7 +123,7 @@ func TestSignUp(t *testing.T) {
 
 	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, _ := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -144,9 +145,11 @@ func TestSignUp(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				user, err := svc.SignUp(ctx, tc.email)
+				err := svc.SignUp(ctx, tc.email)
 				switch {
 				case err == nil:
+					user := errsx.Must(repo.FindUserByEmail(ctx, tc.email))
+
 					events.Expect(account.SignedUp{
 						Email:      tc.email,
 						System:     user.SignedUpSystem,

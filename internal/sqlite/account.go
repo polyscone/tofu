@@ -14,6 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/background"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type AccountRepo struct {
@@ -46,7 +47,7 @@ func NewAccountRepo(ctx context.Context, db *DB, signInThrottleTTL time.Duration
 	return &r, nil
 }
 
-func (r *AccountRepo) FindUserByID(ctx context.Context, id int) (*account.User, error) {
+func (r *AccountRepo) FindUserByID(ctx context.Context, id string) (*account.User, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -140,7 +141,7 @@ func (r *AccountRepo) CountUsers(ctx context.Context) (int, error) {
 	return total, err
 }
 
-func (r *AccountRepo) CountUsersByRoleID(ctx context.Context, roleID int) (int, error) {
+func (r *AccountRepo) CountUsersByRoleID(ctx context.Context, roleID string) (int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, fmt.Errorf("begin tx: %w", err)
@@ -170,7 +171,7 @@ func (r *AccountRepo) AddUser(ctx context.Context, user *account.User) error {
 	return nil
 }
 
-func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, sortTopID int, sorts []string, search string, page, size int) ([]*account.User, int, error) {
+func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, sortTopID string, sorts []string, search string, page, size int) ([]*account.User, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, fmt.Errorf("begin tx: %w", err)
@@ -258,7 +259,7 @@ func (r *AccountRepo) DeleteStaleSignInAttemptLogs(ctx context.Context, ttl time
 	return nil
 }
 
-func (r *AccountRepo) FindRoleByID(ctx context.Context, roleID int) (*account.Role, error) {
+func (r *AccountRepo) FindRoleByID(ctx context.Context, roleID string) (*account.Role, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -306,7 +307,7 @@ func (r *AccountRepo) FindRoleByName(ctx context.Context, name string) (*account
 	return role, nil
 }
 
-func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID int) ([]*account.Role, error) {
+func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID string) ([]*account.Role, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -318,7 +319,7 @@ func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID int) ([]*acc
 	return roles, err
 }
 
-func (r *AccountRepo) FindRoles(ctx context.Context, sortTopID int) ([]*account.Role, int, error) {
+func (r *AccountRepo) FindRoles(ctx context.Context, sortTopID string) ([]*account.Role, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, fmt.Errorf("begin tx: %w", err)
@@ -328,7 +329,7 @@ func (r *AccountRepo) FindRoles(ctx context.Context, sortTopID int) ([]*account.
 	return r.findRoles(ctx, tx, account.RoleFilter{SortTopID: sortTopID})
 }
 
-func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, sortTopID int, sorts []string, search string, page, size int) ([]*account.Role, int, error) {
+func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, sortTopID string, sorts []string, search string, page, size int) ([]*account.Role, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, fmt.Errorf("begin tx: %w", err)
@@ -382,7 +383,7 @@ func (r *AccountRepo) SaveRole(ctx context.Context, role *account.Role) error {
 	return nil
 }
 
-func (r *AccountRepo) RemoveRole(ctx context.Context, roleID int) error {
+func (r *AccountRepo) RemoveRole(ctx context.Context, roleID string) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -400,7 +401,7 @@ func (r *AccountRepo) RemoveRole(ctx context.Context, roleID int) error {
 	return nil
 }
 
-func (r *AccountRepo) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([][]byte, error) {
+func (r *AccountRepo) FindRecoveryCodesByUserID(ctx context.Context, userID string) ([][]byte, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -439,7 +440,7 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 	joins = append(joins, "LEFT JOIN account__totp_reset_requests AS tr ON u.id = tr.user_id")
 
 	var sorts []string
-	if filter.SortTopID != 0 {
+	if filter.SortTopID != "" {
 		sorts, args = append(sorts, "CASE u.id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
 	}
 
@@ -588,8 +589,9 @@ func (r *AccountRepo) attachUserDenials(ctx context.Context, tx *Tx, user *accou
 }
 
 func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User) error {
-	res, err := tx.ExecContext(ctx, `
+	_, err := tx.ExecContext(ctx, `
 		INSERT INTO account__users (
+			id,
 			email,
 			hashed_password,
 			totp_method,
@@ -616,6 +618,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 			suspended_reason,
 			created_at
 		) VALUES (
+			:id,
 			:email,
 			:hashed_password,
 			:totp_method,
@@ -643,6 +646,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 			:created_at
 		)
 	`,
+		sql.Named("id", user.ID),
 		sql.Named("email", user.Email),
 		sql.Named("hashed_password", user.HashedPassword),
 		sql.Named("totp_method", user.TOTPMethod),
@@ -678,12 +682,6 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 
 		return err
 	}
-
-	id, err := res.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("last insert id: %w", err)
-	}
-	user.ID = int(id)
 
 	if !user.TOTPResetRequestedAt.IsZero() || !user.TOTPResetApprovedAt.IsZero() {
 		_, err := tx.ExecContext(ctx, `
@@ -1114,9 +1112,9 @@ func (r *AccountRepo) deleteStaleSignInAttemptLogs(ctx context.Context, tx *Tx, 
 }
 
 type permissionFilter struct {
-	roleID        *int
-	grantsUserID  *int
-	denialsUserID *int
+	roleID        *string
+	grantsUserID  *string
+	denialsUserID *string
 }
 
 func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter permissionFilter) ([]string, int, error) {
@@ -1173,13 +1171,19 @@ func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter permis
 	return permissions, total, nil
 }
 
-func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string) (int, error) {
-	var id int
-	err := tx.QueryRowContext(ctx, `
+func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string) (uuid.UUID, error) {
+	id, err := uuid.NewV7()
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("new v7 UUID: %w", err)
+	}
+
+	err = tx.QueryRowContext(ctx, `
 		INSERT INTO account__permissions (
+			id,
 			name,
 			created_at
 		) VALUES (
+			:id,
 			:name,
 			:created_at
 		)
@@ -1189,6 +1193,7 @@ func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string)
 				updated_at = :updated_at
 		RETURNING id
 	`,
+		sql.Named("id", id),
 		sql.Named("name", name),
 		sql.Named("created_at", Time(tx.now.UTC())),
 		sql.Named("updated_at", NullTime(tx.now.UTC())),
@@ -1221,7 +1226,7 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 	}
 
 	var sorts []string
-	if filter.SortTopID != 0 {
+	if filter.SortTopID != "" {
 		sorts, args = append(sorts, "CASE r.id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
 	}
 
@@ -1285,17 +1290,20 @@ func (r *AccountRepo) attachRolePermissions(ctx context.Context, tx *Tx, role *a
 }
 
 func (r *AccountRepo) createRole(ctx context.Context, tx *Tx, role *account.Role) error {
-	res, err := tx.ExecContext(ctx, `
+	_, err := tx.ExecContext(ctx, `
 		INSERT INTO account__roles (
+			id,
 			name,
 			description,
 			created_at
 		) VALUES (
+			:id,
 			:name,
 			:description,
 			:created_at
 		)
 	`,
+		sql.Named("id", role.ID),
 		sql.Named("name", role.Name),
 		sql.Named("description", role.Description),
 		sql.Named("created_at", Time(tx.now.UTC())),
@@ -1309,12 +1317,6 @@ func (r *AccountRepo) createRole(ctx context.Context, tx *Tx, role *account.Role
 
 		return err
 	}
-
-	id, err := res.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("last insert id: %w", err)
-	}
-	role.ID = int(id)
 
 	for _, name := range role.Permissions {
 		permissionID, err := r.upsertPermission(ctx, tx, name)
@@ -1401,7 +1403,7 @@ func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role
 	return nil
 }
 
-func (r *AccountRepo) deleteRole(ctx context.Context, tx *Tx, roleID int) error {
+func (r *AccountRepo) deleteRole(ctx context.Context, tx *Tx, roleID string) error {
 	_, err := tx.ExecContext(ctx,
 		"DELETE FROM account__roles WHERE id = :id",
 		sql.Named("id", roleID),
@@ -1410,7 +1412,7 @@ func (r *AccountRepo) deleteRole(ctx context.Context, tx *Tx, roleID int) error 
 	return err
 }
 
-func (r *AccountRepo) findHashedRecoveryCodes(ctx context.Context, tx *Tx, userID int) ([][]byte, int, error) {
+func (r *AccountRepo) findHashedRecoveryCodes(ctx context.Context, tx *Tx, userID string) ([][]byte, int, error) {
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
 			hashed_code,

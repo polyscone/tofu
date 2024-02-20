@@ -95,10 +95,10 @@ func TestActivateUser(t *testing.T) {
 		tt := []struct {
 			name   string
 			guard  activateUsersGuard
-			userID int
+			userID string
 			want   error
 		}{
-			{"invalid guard", invalidGuard, 0, app.ErrForbidden},
+			{"invalid guard", invalidGuard, "", app.ErrForbidden},
 			{"user unverified", validGuard, user1.ID, account.ErrNotVerified},
 			{"user already activated", validGuard, user2.ID, nil},
 		}

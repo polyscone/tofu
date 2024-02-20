@@ -7,15 +7,16 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type ResetTOTPGuard interface {
-	CanResetTOTP(userID int) bool
+	CanResetTOTP(userID string) bool
 }
 
-func (s *Service) ResetTOTP(ctx context.Context, guard ResetTOTPGuard, userID int, password string) error {
+func (s *Service) ResetTOTP(ctx context.Context, guard ResetTOTPGuard, userID, password string) error {
 	var input struct {
-		userID   int
+		userID   uuid.UUID
 		password Password
 	}
 	{
@@ -26,8 +27,9 @@ func (s *Service) ResetTOTP(ctx context.Context, guard ResetTOTPGuard, userID in
 		var err error
 		var errs errsx.Map
 
-		input.userID = userID
-
+		if input.userID, err = uuid.Parse(userID); err != nil {
+			errs.Set("user id", err)
+		}
 		if input.password, err = NewPassword(password); err != nil {
 			errs.Set("password", err)
 		}
@@ -37,7 +39,7 @@ func (s *Service) ResetTOTP(ctx context.Context, guard ResetTOTPGuard, userID in
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.repo.FindUserByID(ctx, input.userID.String())
 	if err != nil {
 		return fmt.Errorf("find user by email: %w", err)
 	}

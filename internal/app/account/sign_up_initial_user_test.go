@@ -21,7 +21,7 @@ func TestSignUpInitialUser(t *testing.T) {
 
 		role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
-		roleIDs := []int{role1.ID, role2.ID}
+		roleIDs := []string{role1.ID, role2.ID}
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)

@@ -7,7 +7,7 @@ import (
 )
 
 type Passport struct {
-	UserID      int
+	UserID      string
 	IsSuper     bool
 	Permissions []string
 
@@ -15,7 +15,7 @@ type Passport struct {
 	System  System
 }
 
-func NewPassport(user *account.User, superRoleID int) Passport {
+func NewPassport(user *account.User, superRoleID string) Passport {
 	var p Passport
 
 	if user != nil {

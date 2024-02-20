@@ -16,7 +16,7 @@ type regenerateRecoveryCodesGuard struct {
 	value bool
 }
 
-func (g regenerateRecoveryCodesGuard) CanRegenerateRecoveryCodes(userID int) bool {
+func (g regenerateRecoveryCodesGuard) CanRegenerateRecoveryCodes(userID string) bool {
 	return g.value
 }
 
@@ -84,11 +84,11 @@ func TestRegenRecoveryCodes(t *testing.T) {
 		tt := []struct {
 			name     string
 			guard    regenerateRecoveryCodesGuard
-			userID   int
+			userID   string
 			totpUser *account.User
 			want     error
 		}{
-			{"invalid guard", invalidGuard, 0, user2, app.ErrForbidden},
+			{"invalid guard", invalidGuard, "", user2, app.ErrForbidden},
 			{"TOTP not setup or verified", validGuard, user1.ID, nil, nil},
 		}
 		for _, tc := range tt {

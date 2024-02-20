@@ -3,17 +3,30 @@ package account
 import (
 	"context"
 	"fmt"
+
+	"github.com/polyscone/tofu/internal/app"
+	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
-func (s *Service) ApproveTOTPResetRequest(ctx context.Context, userID int) error {
+func (s *Service) ApproveTOTPResetRequest(ctx context.Context, userID string) error {
 	var input struct {
-		userID int
+		userID uuid.UUID
 	}
 	{
-		input.userID = userID
+		var err error
+		var errs errsx.Map
+
+		if input.userID, err = uuid.Parse(userID); err != nil {
+			errs.Set("user id", err)
+		}
+
+		if errs != nil {
+			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.repo.FindUserByID(ctx, input.userID.String())
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}

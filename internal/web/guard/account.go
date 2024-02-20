@@ -4,51 +4,51 @@ type Account struct {
 	*Passport
 }
 
-func (a Account) CanChangePassword(userID int) bool {
+func (a Account) CanChangePassword(userID string) bool {
 	return a.UserID == userID
 }
 
-func (a Account) CanChoosePassword(userID int) bool {
+func (a Account) CanChoosePassword(userID string) bool {
 	return a.UserID == userID
 }
 
-func (a Account) CanResetPassword(userID int) bool {
+func (a Account) CanResetPassword(userID string) bool {
 	return a.UserID == userID
 }
 
-func (a Account) CanDisableTOTP(userID int) bool {
+func (a Account) CanDisableTOTP(userID string) bool {
 	return a.UserID == userID
 }
 
-func (a Account) CanResetTOTP(userID int) bool {
+func (a Account) CanResetTOTP(userID string) bool {
 	return a.UserID == userID
 }
 
-func (a Account) CanRegenerateRecoveryCodes(userID int) bool {
+func (a Account) CanRegenerateRecoveryCodes(userID string) bool {
 	return a.UserID == userID
 }
 
-func (a Account) CanSetupTOTP(userID int) bool {
+func (a Account) CanSetupTOTP(userID string) bool {
 	return a.UserID == userID
 }
 
-func (a Account) CanVerifyTOTP(userID int) bool {
+func (a Account) CanVerifyTOTP(userID string) bool {
 	return a.UserID == userID
 }
 
-func (a Account) CanActivateTOTP(userID int) bool {
+func (a Account) CanActivateTOTP(userID string) bool {
 	return a.UserID == userID
 }
 
-func (a Account) CanChangeTOTPTel(userID int) bool {
+func (a Account) CanChangeTOTPTel(userID string) bool {
 	return a.UserID == userID
 }
 
-func (a Account) CanChangeRoles(userID int) bool {
+func (a Account) CanChangeRoles(userID string) bool {
 	return a.can(changeRoles)
 }
 
-func (a Account) CanAssignSuperRole(userID int) bool {
+func (a Account) CanAssignSuperRole(userID string) bool {
 	return a.IsSuper
 }
 

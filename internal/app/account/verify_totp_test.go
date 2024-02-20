@@ -16,7 +16,7 @@ type verifyTOTPGuard struct {
 	value bool
 }
 
-func (g verifyTOTPGuard) CanVerifyTOTP(userID int) bool {
+func (g verifyTOTPGuard) CanVerifyTOTP(userID string) bool {
 	return g.value
 }
 
@@ -116,13 +116,13 @@ func TestVerifyTOTP(t *testing.T) {
 		tt := []struct {
 			name     string
 			guard    verifyTOTPGuard
-			userID   int
+			userID   string
 			totpUser *account.User
 			want     error
 		}{
-			{"invalid guard", invalidGuard, 0, nil, app.ErrForbidden},
-			{"empty user id correct TOTP", validGuard, 0, user2, app.ErrNotFound},
-			{"empty user id incorrect TOTP", validGuard, 0, nil, app.ErrNotFound},
+			{"invalid guard", invalidGuard, "cebf2966-b0a6-4389-8f1b-b02ce6556224", nil, app.ErrForbidden},
+			{"empty user id correct TOTP", validGuard, "581fb283-d34e-422d-9327-160ee1c33809", user2, app.ErrNotFound},
+			{"empty user id incorrect TOTP", validGuard, "c9824802-a482-4840-8c2d-809c16f6b6c8", nil, app.ErrNotFound},
 			{"no TOTP user id correct TOTP", validGuard, user1.ID, user2, nil},
 			{"already activated TOTP", validGuard, user3.ID, user3, nil},
 		}

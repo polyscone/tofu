@@ -107,12 +107,12 @@ func TestSignInWithTOTP(t *testing.T) {
 
 		tt := []struct {
 			name     string
-			userID   int
+			userID   string
 			totpUser *account.User
 			want     error
 		}{
-			{"empty user id correct TOTP", 0, user4, app.ErrNotFound},
-			{"empty user id incorrect TOTP", 0, nil, app.ErrNotFound},
+			{"empty user id correct TOTP", "1318baf5-aa98-4cd7-9f5f-0e82f96b9c80", user4, app.ErrNotFound},
+			{"empty user id incorrect TOTP", "e1dd1000-e772-4e4d-a489-0beeff2548b5", nil, app.ErrNotFound},
 			{"activated user id no TOTP", user5.ID, nil, nil},
 			{"activated user id incorrect TOTP", user4.ID, nil, app.ErrInvalidInput},
 			{"activated user id unverified correct TOTP", user2.ID, user2, nil},

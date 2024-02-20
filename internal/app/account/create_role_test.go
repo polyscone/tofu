@@ -11,6 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type createRoleGuard struct {
@@ -49,7 +50,8 @@ func TestCreateRole(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				created, err := svc.CreateRole(ctx, tc.guard, tc.role.Name, tc.role.Description, tc.role.Permissions)
+				roleID := errsx.Must(uuid.NewV7())
+				err := svc.CreateRole(ctx, tc.guard, roleID.String(), tc.role.Name, tc.role.Description, tc.role.Permissions)
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
 				}
@@ -58,15 +60,15 @@ func TestCreateRole(t *testing.T) {
 					return
 				}
 
-				found := errsx.Must(repo.FindRoleByID(ctx, created.ID))
+				found := errsx.Must(repo.FindRoleByID(ctx, roleID.String()))
 
-				if want, got := created.Name, found.Name; want != got {
+				if want, got := tc.role.Name, found.Name; want != got {
 					t.Errorf("want name to be %q; got %q", want, got)
 				}
-				if want, got := created.Description, found.Description; want != got {
+				if want, got := tc.role.Description, found.Description; want != got {
 					t.Errorf("want description to be %q; got %q", want, got)
 				}
-				if want, got := created.Permissions, found.Permissions; len(want) != len(got) {
+				if want, got := tc.role.Permissions, found.Permissions; len(want) != len(got) {
 					t.Errorf("want %v permissions; got %v", len(want), len(got))
 				} else {
 					slices.Sort(want)
@@ -111,7 +113,8 @@ func TestCreateRole(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := svc.CreateRole(ctx, validGuard, tc.roleName, tc.description, tc.permissions)
+				roleID := errsx.Must(uuid.NewV7())
+				err := svc.CreateRole(ctx, validGuard, roleID.String(), tc.roleName, tc.description, tc.permissions)
 				switch {
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)

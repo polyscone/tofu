@@ -7,9 +7,10 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
-func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
+func (s *Service) SignUp(ctx context.Context, email string) error {
 	var input struct {
 		email Email
 	}
@@ -22,7 +23,7 @@ func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 		}
 
 		if errs != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
@@ -30,29 +31,34 @@ func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 	switch {
 	case err == nil:
 		if err := user.SignUp(s.system); err != nil {
-			return nil, fmt.Errorf("sign up existing: %w", err)
+			return fmt.Errorf("sign up existing: %w", err)
 		}
 
 		if err := s.repo.SaveUser(ctx, user); err != nil {
-			return nil, fmt.Errorf("save user: %w", err)
+			return fmt.Errorf("save user: %w", err)
 		}
 
 	case errors.Is(err, app.ErrNotFound):
-		user = NewUser(input.email)
+		id, err := uuid.NewV7()
+		if err != nil {
+			return fmt.Errorf("new v7 UUID: %w", err)
+		}
+
+		user = NewUser(id, input.email)
 
 		if err := user.SignUp(s.system); err != nil {
-			return nil, fmt.Errorf("sign up: %w", err)
+			return fmt.Errorf("sign up: %w", err)
 		}
 
 		if err := s.repo.AddUser(ctx, user); err != nil {
-			return nil, fmt.Errorf("add user: %w", err)
+			return fmt.Errorf("add user: %w", err)
 		}
 
 	default:
-		return nil, fmt.Errorf("find user by email: %w", err)
+		return fmt.Errorf("find user by email: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return user, nil
+	return nil
 }

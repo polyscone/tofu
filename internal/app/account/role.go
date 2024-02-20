@@ -1,31 +1,35 @@
 package account
 
-import "github.com/polyscone/tofu/internal/pkg/aggregate"
+import (
+	"github.com/polyscone/tofu/internal/pkg/aggregate"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
+)
 
 type Role struct {
 	aggregate.Root
 
-	ID          int
+	ID          string
 	Name        string
 	Description string
 	Permissions []string
 }
 
 type RoleFilter struct {
-	ID     *int
-	UserID *int
+	ID     *string
+	UserID *string
 	Name   *string
 	Search *string
 
-	SortTopID int
+	SortTopID string
 	Sorts     []string
 
 	Limit  int
 	Offset int
 }
 
-func NewRole(name RoleName, description RoleDesc, permissions []Permission) *Role {
+func NewRole(id uuid.UUID, name RoleName, description RoleDesc, permissions []Permission) *Role {
 	role := Role{
+		ID:          id.String(),
 		Name:        name.String(),
 		Description: description.String(),
 	}

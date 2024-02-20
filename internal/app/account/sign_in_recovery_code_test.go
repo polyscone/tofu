@@ -117,12 +117,12 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 
 		tt := []struct {
 			name         string
-			userID       int
+			userID       string
 			recoveryCode string
 			want         error
 		}{
-			{"empty user id correct recovery code", 0, user2Codes[1], app.ErrNotFound},
-			{"empty user id incorrect recovery code", 0, incorrectCode, app.ErrNotFound},
+			{"empty user id correct recovery code", "ae53c751-1753-431e-980f-2ad10dd99843", user2Codes[1], app.ErrNotFound},
+			{"empty user id incorrect recovery code", "89dfbb46-5dc8-4359-88a7-4ef507eb0674", incorrectCode, app.ErrNotFound},
 			{"activated user id without TOTP setup", user1.ID, incorrectCode, nil},
 			{"activated user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
 			{"unactivated user id", user3.ID, incorrectCode, account.ErrNotActivated},

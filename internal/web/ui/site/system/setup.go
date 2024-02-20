@@ -72,14 +72,14 @@ func systemSetupPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		g := updateEmailsGuard{canUpdateEmails: config.SetupRequired || userCount == 0}
-		_, err = h.Svc.System.UpdateEmails(ctx, g, input.SystemEmail, input.SecurityEmail)
+		err = h.Svc.System.UpdateEmails(ctx, g, input.SystemEmail, input.SecurityEmail)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "update emails", err, "site/system/setup", nil)
 
 			return
 		}
 
-		err = h.Svc.Account.SignUpInitialUser(ctx, input.Email, input.Password, input.PasswordCheck, []int{h.SuperRole.ID})
+		err = h.Svc.Account.SignUpInitialUser(ctx, input.Email, input.Password, input.PasswordCheck, []string{h.SuperRole.ID})
 		if err != nil {
 			h.HTML.ErrorView(w, r, "sign up initial user", err, "site/system/setup", nil)
 

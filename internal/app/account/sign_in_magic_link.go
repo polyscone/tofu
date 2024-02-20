@@ -7,6 +7,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type MagicLinkSignInBehaviour byte
@@ -55,7 +56,12 @@ func (s *Service) SignInWithMagicLink(ctx context.Context, email string, behavio
 			return false, ErrMagicLinkSignUpDisabled
 		}
 
-		user = NewUser(input.email)
+		id, err := uuid.NewV7()
+		if err != nil {
+			return false, fmt.Errorf("new v7 UUID: %w", err)
+		}
+
+		user = NewUser(id, input.email)
 		if err := user.SignUpWithMagicLink(s.system); err != nil {
 			return false, err
 		}

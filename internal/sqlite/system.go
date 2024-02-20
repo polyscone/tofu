@@ -171,7 +171,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 				twilio_from_tel = :twilio_from_tel,
 				updated_at = :updated_at
 	`,
-		sql.Named("id", 1),
+		sql.Named("id", "0feca0fa-254f-4a42-b76d-95548020110a"),
 		sql.Named("system_email", config.SystemEmail),
 		sql.Named("security_email", config.SecurityEmail),
 		sql.Named("sign_up_enabled", config.SignUpEnabled),

@@ -121,10 +121,10 @@ type SessionData struct {
 	FlashImportant []string
 	FlashError     []string
 	Redirect       string
-	HighlightID    int
+	HighlightID    string
 
 	// Account session keys
-	UserID                   int
+	UserID                   string
 	Email                    string
 	TOTPMethod               string
 	HasActivatedTOTP         bool

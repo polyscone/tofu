@@ -11,6 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/aggregate"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/otp"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 const (
@@ -41,7 +42,7 @@ var (
 type User struct {
 	aggregate.Root
 
-	ID                      int
+	ID                      string
 	Email                   string
 	HashedPassword          []byte
 	TOTPMethod              string
@@ -75,20 +76,23 @@ type User struct {
 }
 
 type UserFilter struct {
-	ID     *int
+	ID     *string
 	Email  *string
 	Search *string
-	RoleID *int
+	RoleID *string
 
-	SortTopID int
+	SortTopID string
 	Sorts     []string
 
 	Limit  int
 	Offset int
 }
 
-func NewUser(email Email) *User {
-	return &User{Email: email.String()}
+func NewUser(id uuid.UUID, email Email) *User {
+	return &User{
+		ID:    id.String(),
+		Email: email.String(),
+	}
 }
 
 func (u *User) Permissions() []string {

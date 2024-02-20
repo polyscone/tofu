@@ -111,7 +111,7 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		user := &account.User{}
-		userID := h.Sessions.GetInt(ctx, sess.UserID)
+		userID := h.Sessions.GetString(ctx, sess.UserID)
 		isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
 		isAwaitingTOTP := h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP)
 		if isSignedIn || isAwaitingTOTP {

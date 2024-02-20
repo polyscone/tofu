@@ -17,7 +17,7 @@ type changePasswordGuard struct {
 	value bool
 }
 
-func (g changePasswordGuard) CanChangePassword(userID int) bool {
+func (g changePasswordGuard) CanChangePassword(userID string) bool {
 	return g.value
 }
 
@@ -65,12 +65,12 @@ func TestChangePassword(t *testing.T) {
 		tt := []struct {
 			name        string
 			guard       changePasswordGuard
-			userID      int
+			userID      string
 			oldPassword string
 			newPassword string
 			want        error
 		}{
-			{"invalid guard", invalidGuard, 0, "", "", app.ErrForbidden},
+			{"invalid guard", invalidGuard, "", "", "", app.ErrForbidden},
 			{"empty new password", validGuard, user.ID, "password", "", app.ErrMalformedInput},
 			{"empty old password", validGuard, user.ID, "", "password", app.ErrMalformedInput},
 			{"incorrect old password", validGuard, user.ID, "password___", "password", app.ErrInvalidInput},

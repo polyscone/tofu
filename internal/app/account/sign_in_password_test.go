@@ -10,6 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
+	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 func TestSignInWithPassword(t *testing.T) {
@@ -69,7 +70,9 @@ func TestSignInWithPassword(t *testing.T) {
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@bloggs.com", Activate: true})
-		user4 := account.NewUser(errsx.Must(account.NewEmail("not@found.com")))
+
+		user4ID := errsx.Must(uuid.NewV7())
+		user4 := account.NewUser(user4ID, errsx.Must(account.NewEmail("not@found.com")))
 
 		tt := []struct {
 			name string
@@ -119,7 +122,7 @@ func TestSignInWithPassword(t *testing.T) {
 					}
 				})
 
-				if tc.user.ID != 0 {
+				if tc.user.ID != "" {
 					t.Run("actual user correct password throttled", func(t *testing.T) {
 						err := svc.SignInWithPassword(ctx, tc.user.Email, "password")
 						var throttle *account.SignInThrottleError

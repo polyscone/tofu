@@ -12,14 +12,14 @@ type UpdateEmailsGuard interface {
 	CanUpdateEmails() bool
 }
 
-func (s *Service) UpdateEmails(ctx context.Context, guard UpdateEmailsGuard, systemEmail, securityEmail string) (*Config, error) {
+func (s *Service) UpdateEmails(ctx context.Context, guard UpdateEmailsGuard, systemEmail, securityEmail string) error {
 	var input struct {
 		systemEmail   Email
 		securityEmail Email
 	}
 	{
 		if !guard.CanUpdateEmails() {
-			return nil, app.ErrForbidden
+			return app.ErrForbidden
 		}
 
 		var err error
@@ -33,23 +33,23 @@ func (s *Service) UpdateEmails(ctx context.Context, guard UpdateEmailsGuard, sys
 		}
 
 		if errs != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	config, err := s.repo.FindConfig(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("find config: %w", err)
+		return fmt.Errorf("find config: %w", err)
 	}
 
 	config.ChangeSystemEmail(input.systemEmail)
 	config.ChangeSecurityEmail(input.securityEmail)
 
 	if err := s.repo.SaveConfig(ctx, config); err != nil {
-		return nil, fmt.Errorf("save config: %w", err)
+		return fmt.Errorf("save config: %w", err)
 	}
 
 	s.broker.Flush(&config.Events)
 
-	return config, nil
+	return nil
 }
