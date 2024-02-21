@@ -17,8 +17,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
-var nilID = account.ID(uuid.Nil.String())
-
 type AccountRepo struct {
 	db *DB
 }
@@ -52,7 +50,7 @@ func NewAccountRepo(ctx context.Context, db *DB, signInThrottleTTL time.Duration
 func (r *AccountRepo) NextID(ctx context.Context) (account.ID, error) {
 	id, err := uuid.NewV7()
 	if err != nil {
-		return nilID, fmt.Errorf("new V7 UUID: %w", err)
+		return account.ID(uuid.Nil.String()), fmt.Errorf("new V7 UUID: %w", err)
 	}
 
 	return account.ID(id.String()), nil
@@ -61,10 +59,10 @@ func (r *AccountRepo) NextID(ctx context.Context) (account.ID, error) {
 func (r *AccountRepo) ParseID(str string) (account.ID, error) {
 	id, err := uuid.Parse(str)
 	if err != nil {
-		return nilID, fmt.Errorf("parse V7 UUID: %w", err)
+		return account.ID(uuid.Nil.String()), fmt.Errorf("parse V7 UUID: %w", err)
 	}
 	if !id.IsValidV7() {
-		return nilID, errors.New("invalid V7 UUID")
+		return account.ID(uuid.Nil.String()), errors.New("invalid V7 UUID")
 	}
 
 	return account.ID(id.String()), nil
