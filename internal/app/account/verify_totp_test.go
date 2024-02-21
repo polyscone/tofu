@@ -120,14 +120,18 @@ func TestVerifyTOTP(t *testing.T) {
 			totpUser *account.User
 			want     error
 		}{
-			{"invalid guard", invalidGuard, "cebf2966-b0a6-4389-8f1b-b02ce6556224", nil, app.ErrForbidden},
-			{"empty user id correct TOTP", validGuard, "581fb283-d34e-422d-9327-160ee1c33809", user2, app.ErrNotFound},
-			{"empty user id incorrect TOTP", validGuard, "c9824802-a482-4840-8c2d-809c16f6b6c8", nil, app.ErrNotFound},
+			{"invalid guard", invalidGuard, "", nil, app.ErrForbidden},
+			{"empty user id correct TOTP", validGuard, "", user2, app.ErrNotFound},
+			{"empty user id incorrect TOTP", validGuard, "", nil, app.ErrNotFound},
 			{"no TOTP user id correct TOTP", validGuard, user1.ID, user2, nil},
 			{"already activated TOTP", validGuard, user3.ID, user3, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
+				if tc.userID == "" {
+					tc.userID = errsx.Must(repo.NextID(ctx)).String()
+				}
+
 				totp := "000000"
 				if tc.totpUser != nil {
 					totp = errsx.Must(tc.totpUser.GenerateTOTP())

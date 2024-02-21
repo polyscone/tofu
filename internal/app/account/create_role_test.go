@@ -11,7 +11,6 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type createRoleGuard struct {
@@ -50,7 +49,7 @@ func TestCreateRole(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				roleID := errsx.Must(uuid.NewV7())
+				roleID := errsx.Must(repo.NextID(ctx))
 				err := svc.CreateRole(ctx, tc.guard, roleID.String(), tc.role.Name, tc.role.Description, tc.role.Permissions)
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
@@ -88,7 +87,7 @@ func TestCreateRole(t *testing.T) {
 
 	t.Run("input validation", func(t *testing.T) {
 		ctx := context.Background()
-		svc, broker, _ := NewTestEnv(ctx)
+		svc, broker, repo := NewTestEnv(ctx)
 
 		events := testutil.NewEventLog(broker)
 		defer events.Check(t)
@@ -113,7 +112,7 @@ func TestCreateRole(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				roleID := errsx.Must(uuid.NewV7())
+				roleID := errsx.Must(repo.NextID(ctx))
 				err := svc.CreateRole(ctx, validGuard, roleID.String(), tc.roleName, tc.description, tc.permissions)
 				switch {
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):

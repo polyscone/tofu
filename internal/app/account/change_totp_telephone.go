@@ -6,7 +6,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type ChangeTOTPTelGuard interface {
@@ -15,7 +14,7 @@ type ChangeTOTPTelGuard interface {
 
 func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, userID string, newTel string) error {
 	var input struct {
-		userID uuid.UUID
+		userID ID
 		newTel Tel
 	}
 	{
@@ -26,7 +25,7 @@ func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, u
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = uuid.Parse(userID); err != nil {
+		if input.userID, err = s.repo.ParseID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 		if input.newTel, err = NewTel(newTel); err != nil {

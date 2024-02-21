@@ -7,7 +7,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []string) error {
@@ -60,9 +59,9 @@ func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwo
 		return errors.New("cannot sign up initial user when other users already exist")
 	}
 
-	id, err := uuid.NewV7()
+	id, err := s.repo.NextID(ctx)
 	if err != nil {
-		return fmt.Errorf("new v7 UUID: %w", err)
+		return fmt.Errorf("next id: %w", err)
 	}
 
 	user := NewUser(id, input.email)

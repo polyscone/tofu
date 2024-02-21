@@ -111,8 +111,8 @@ func TestSignInWithTOTP(t *testing.T) {
 			totpUser *account.User
 			want     error
 		}{
-			{"empty user id correct TOTP", "1318baf5-aa98-4cd7-9f5f-0e82f96b9c80", user4, app.ErrNotFound},
-			{"empty user id incorrect TOTP", "e1dd1000-e772-4e4d-a489-0beeff2548b5", nil, app.ErrNotFound},
+			{"empty user id correct TOTP", "", user4, app.ErrNotFound},
+			{"empty user id incorrect TOTP", "", nil, app.ErrNotFound},
 			{"activated user id no TOTP", user5.ID, nil, nil},
 			{"activated user id incorrect TOTP", user4.ID, nil, app.ErrInvalidInput},
 			{"activated user id unverified correct TOTP", user2.ID, user2, nil},
@@ -127,6 +127,10 @@ func TestSignInWithTOTP(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
+				if tc.userID == "" {
+					tc.userID = errsx.Must(repo.NextID(ctx)).String()
+				}
+
 				totp := "000000"
 				if tc.totpUser != nil {
 					var err error

@@ -6,19 +6,18 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID, recoveryCode string) error {
 	var input struct {
-		userID       uuid.UUID
+		userID       ID
 		recoveryCode RecoveryCode
 	}
 	{
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = uuid.Parse(userID); err != nil {
+		if input.userID, err = s.repo.ParseID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 		if input.recoveryCode, err = NewRecoveryCode(recoveryCode); err != nil {

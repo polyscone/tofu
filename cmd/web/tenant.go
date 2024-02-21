@@ -19,7 +19,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/event"
 	"github.com/polyscone/tofu/internal/pkg/slogger"
 	"github.com/polyscone/tofu/internal/pkg/smtp"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 	"github.com/polyscone/tofu/internal/sqlite"
 	"github.com/polyscone/tofu/internal/web"
 	"github.com/polyscone/tofu/internal/web/guard"
@@ -195,9 +194,9 @@ func newTenant(host string) (*handler.Tenant, error) {
 		}
 	}
 
-	id, err := uuid.NewV7()
+	id, err := repo.account.NextID(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("new v7 UUID: %w", err)
+		return nil, fmt.Errorf("next id: %w", err)
 	}
 
 	superRole := account.NewRole(id, "Super", "Has full access to the system; can't be edited or deleted.", permissions)

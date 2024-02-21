@@ -10,7 +10,6 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type updateRoleGuard struct {
@@ -68,7 +67,7 @@ func TestUpdateRole(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				roleID := errsx.Must(uuid.NewV7())
+				roleID := errsx.Must(repo.NextID(ctx))
 				err := svc.CreateRole(ctx, tc.guard, roleID.String(), tc.before.Name, tc.before.Description, tc.before.Permissions)
 				if err != nil {
 					t.Fatal(err)

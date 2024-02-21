@@ -6,7 +6,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type SetupTOTPGuard interface {
@@ -15,7 +14,7 @@ type SetupTOTPGuard interface {
 
 func (s *Service) SetupTOTP(ctx context.Context, guard SetupTOTPGuard, userID string) error {
 	var input struct {
-		userID uuid.UUID
+		userID ID
 	}
 	{
 		if !guard.CanSetupTOTP(userID) {
@@ -25,7 +24,7 @@ func (s *Service) SetupTOTP(ctx context.Context, guard SetupTOTPGuard, userID st
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = uuid.Parse(userID); err != nil {
+		if input.userID, err = s.repo.ParseID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 

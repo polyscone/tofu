@@ -7,7 +7,6 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/collection"
 	"github.com/polyscone/tofu/internal/pkg/http/router"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 	"github.com/polyscone/tofu/internal/web/guard"
 	"github.com/polyscone/tofu/internal/web/handler"
 	"github.com/polyscone/tofu/internal/web/httputil"
@@ -99,9 +98,9 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		roleID, err := uuid.NewV7()
+		roleID, err := h.Repo.Account.NextID(ctx)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "new v7 UUID", err, "site/error", nil)
+			h.HTML.ErrorView(w, r, "next id", err, "site/error", nil)
 
 			return
 		}

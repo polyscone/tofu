@@ -7,7 +7,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type CreateRoleGuard interface {
@@ -16,7 +15,7 @@ type CreateRoleGuard interface {
 
 func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, roleID, name, description string, permissions []string) error {
 	var input struct {
-		roleID      uuid.UUID
+		roleID      ID
 		name        RoleName
 		description RoleDesc
 		permissions []Permission
@@ -29,7 +28,7 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, roleID,
 		var err error
 		var errs errsx.Map
 
-		if input.roleID, err = uuid.Parse(roleID); err != nil {
+		if input.roleID, err = s.repo.ParseID(roleID); err != nil {
 			errs.Set("role id", err)
 		}
 		if input.name, err = NewRoleName(name); err != nil {

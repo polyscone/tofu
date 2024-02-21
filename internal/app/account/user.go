@@ -11,7 +11,6 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/aggregate"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/otp"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 const (
@@ -88,7 +87,7 @@ type UserFilter struct {
 	Offset int
 }
 
-func NewUser(id uuid.UUID, email Email) *User {
+func NewUser(id ID, email Email) *User {
 	return &User{
 		ID:    id.String(),
 		Email: email.String(),

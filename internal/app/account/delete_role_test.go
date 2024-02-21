@@ -9,7 +9,6 @@ import (
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type deleteRoleGuard struct {
@@ -45,7 +44,7 @@ func TestDeleteRole(t *testing.T) {
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				roleID := errsx.Must(uuid.NewV7())
+				roleID := errsx.Must(repo.NextID(ctx))
 				name := "Role " + strconv.Itoa(i)
 				err := svc.CreateRole(ctx, tc.guard, roleID.String(), name, "", nil)
 				if err != nil {

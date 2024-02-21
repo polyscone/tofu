@@ -6,7 +6,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type VerifyTOTPGuard interface {
@@ -15,7 +14,7 @@ type VerifyTOTPGuard interface {
 
 func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID, totp, totpMethod string) ([]string, error) {
 	var input struct {
-		userID     uuid.UUID
+		userID     ID
 		totp       TOTP
 		totpMethod TOTPMethod
 	}
@@ -27,7 +26,7 @@ func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID,
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = uuid.Parse(userID); err != nil {
+		if input.userID, err = s.repo.ParseID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 		if input.totp, err = NewTOTP(totp); err != nil {

@@ -6,7 +6,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type ChoosePasswordGuard interface {
@@ -15,7 +14,7 @@ type ChoosePasswordGuard interface {
 
 func (s *Service) ChoosePassword(ctx context.Context, guard ChoosePasswordGuard, userID string, newPassword, newPasswordCheck string) error {
 	var input struct {
-		userID           uuid.UUID
+		userID           ID
 		newPassword      Password
 		newPasswordCheck Password
 	}
@@ -29,7 +28,7 @@ func (s *Service) ChoosePassword(ctx context.Context, guard ChoosePasswordGuard,
 
 		newPasswordCheck, _ := NewPassword(newPasswordCheck)
 
-		if input.userID, err = uuid.Parse(userID); err != nil {
+		if input.userID, err = s.repo.ParseID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 		if input.newPassword, err = NewPassword(newPassword); err != nil {

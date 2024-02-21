@@ -6,7 +6,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type RegenerateRecoveryCodesGuard interface {
@@ -15,7 +14,7 @@ type RegenerateRecoveryCodesGuard interface {
 
 func (s *Service) RegenerateRecoveryCodes(ctx context.Context, guard RegenerateRecoveryCodesGuard, userID, totp string) ([]string, error) {
 	var input struct {
-		userID uuid.UUID
+		userID ID
 		totp   TOTP
 	}
 	{
@@ -26,7 +25,7 @@ func (s *Service) RegenerateRecoveryCodes(ctx context.Context, guard RegenerateR
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = uuid.Parse(userID); err != nil {
+		if input.userID, err = s.repo.ParseID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 		if input.totp, err = NewTOTP(totp); err != nil {

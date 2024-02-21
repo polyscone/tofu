@@ -6,7 +6,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type DeleteRoleGuard interface {
@@ -15,7 +14,7 @@ type DeleteRoleGuard interface {
 
 func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID string) error {
 	var input struct {
-		roleID uuid.UUID
+		roleID ID
 	}
 	{
 		if !guard.CanDeleteRoles() {
@@ -25,7 +24,7 @@ func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID 
 		var err error
 		var errs errsx.Map
 
-		if input.roleID, err = uuid.Parse(roleID); err != nil {
+		if input.roleID, err = s.repo.ParseID(roleID); err != nil {
 			errs.Set("role id", err)
 		}
 

@@ -7,7 +7,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type FacebookSignInBehaviour byte
@@ -56,9 +55,9 @@ func (s *Service) SignInWithFacebook(ctx context.Context, email string, behaviou
 			return false, ErrFacebookSignUpDisabled
 		}
 
-		id, err := uuid.NewV7()
+		id, err := s.repo.NextID(ctx)
 		if err != nil {
-			return false, fmt.Errorf("new v7 UUID: %w", err)
+			return false, fmt.Errorf("next id: %w", err)
 		}
 
 		user = NewUser(id, input.email)

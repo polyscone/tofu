@@ -121,12 +121,22 @@ func TestChangeRoles(t *testing.T) {
 			roleIDs []string
 			want    error
 		}{
-			{"invalid guard", invalidGuard, "c374232f-d158-4ad7-9329-f983629cc6dc", nil, app.ErrForbidden},
-			{"non-existent user id", validGuard, "17dec033-2ab4-46fb-956f-f3fe71970d36", []string{role1.ID, role2.ID}, app.ErrNotFound},
-			{"non-existent role ids", validGuard, user.ID, []string{"-1", "0"}, app.ErrNotFound},
+			{"invalid guard", invalidGuard, "", nil, app.ErrForbidden},
+			{"non-existent user id", validGuard, "", []string{role1.ID, role2.ID}, app.ErrNotFound},
+			{"non-existent role ids", validGuard, user.ID, []string{"", ""}, app.ErrNotFound},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
+				if tc.userID == "" {
+					tc.userID = errsx.Must(repo.NextID(ctx)).String()
+				}
+
+				for i, roleID := range tc.roleIDs {
+					if roleID == "" {
+						tc.roleIDs[i] = errsx.Must(repo.NextID(ctx)).String()
+					}
+				}
+
 				err := svc.ChangeRoles(ctx, tc.guard, tc.userID, tc.roleIDs, nil, nil)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):

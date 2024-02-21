@@ -7,7 +7,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type DisableTOTPGuard interface {
@@ -16,7 +15,7 @@ type DisableTOTPGuard interface {
 
 func (s *Service) DisableTOTP(ctx context.Context, guard DisableTOTPGuard, userID, password string) error {
 	var input struct {
-		userID   uuid.UUID
+		userID   ID
 		password Password
 	}
 	{
@@ -27,7 +26,7 @@ func (s *Service) DisableTOTP(ctx context.Context, guard DisableTOTPGuard, userI
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = uuid.Parse(userID); err != nil {
+		if input.userID, err = s.repo.ParseID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 		if input.password, err = NewPassword(password); err != nil {

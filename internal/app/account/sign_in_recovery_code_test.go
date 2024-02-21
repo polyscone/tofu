@@ -121,8 +121,8 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			recoveryCode string
 			want         error
 		}{
-			{"empty user id correct recovery code", "ae53c751-1753-431e-980f-2ad10dd99843", user2Codes[1], app.ErrNotFound},
-			{"empty user id incorrect recovery code", "89dfbb46-5dc8-4359-88a7-4ef507eb0674", incorrectCode, app.ErrNotFound},
+			{"empty user id correct recovery code", "", user2Codes[1], app.ErrNotFound},
+			{"empty user id incorrect recovery code", "", incorrectCode, app.ErrNotFound},
 			{"activated user id without TOTP setup", user1.ID, incorrectCode, nil},
 			{"activated user id incorrect recovery code", user2.ID, incorrectCode, app.ErrInvalidInput},
 			{"unactivated user id", user3.ID, incorrectCode, account.ErrNotActivated},
@@ -130,6 +130,10 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
+				if tc.userID == "" {
+					tc.userID = errsx.Must(repo.NextID(ctx)).String()
+				}
+
 				err := svc.SignInWithRecoveryCode(ctx, tc.userID, tc.recoveryCode)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):

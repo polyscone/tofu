@@ -10,7 +10,6 @@ import (
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 	"github.com/polyscone/tofu/internal/pkg/testutil"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 func TestSignInWithPassword(t *testing.T) {
@@ -71,7 +70,7 @@ func TestSignInWithPassword(t *testing.T) {
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@bloggs.com", Activate: true})
 
-		user4ID := errsx.Must(uuid.NewV7())
+		user4ID := errsx.Must(repo.NextID(ctx))
 		user4 := account.NewUser(user4ID, errsx.Must(account.NewEmail("not@found.com")))
 
 		tt := []struct {

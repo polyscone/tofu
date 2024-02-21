@@ -6,7 +6,6 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
 type ChangeRolesGuard interface {
@@ -15,8 +14,8 @@ type ChangeRolesGuard interface {
 
 func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userID string, roleIDs, grants, denials []string) error {
 	var input struct {
-		userID  uuid.UUID
-		roleIDs []string
+		userID  ID
+		roleIDs []ID
 		grants  []Permission
 		denials []Permission
 	}
@@ -28,11 +27,18 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = uuid.Parse(userID); err != nil {
+		if input.userID, err = s.repo.ParseID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 
-		input.roleIDs = roleIDs
+		for _, roleID := range roleIDs {
+			id, err := s.repo.ParseID(roleID)
+			if err != nil {
+				errs.Set("role ids", err)
+			}
+
+			input.roleIDs = append(input.roleIDs, id)
+		}
 
 		if grants != nil {
 			input.grants = make([]Permission, len(grants))
@@ -70,7 +76,7 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		roles = make([]*Role, len(input.roleIDs))
 
 		for i, roleID := range input.roleIDs {
-			role, err := s.repo.FindRoleByID(ctx, roleID)
+			role, err := s.repo.FindRoleByID(ctx, roleID.String())
 			if err != nil {
 				return fmt.Errorf("find role by id: %w", err)
 			}

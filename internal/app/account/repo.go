@@ -12,10 +12,18 @@ import (
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
+type ID string
+
+func (id ID) String() string {
+	return string(id)
+}
+
 type Reader interface {
+	NextID(ctx context.Context) (ID, error)
+	ParseID(str string) (ID, error)
+
 	FindRoleByID(ctx context.Context, id string) (*Role, error)
 
 	CountUsers(ctx context.Context) (int, error)
@@ -69,7 +77,7 @@ func testRepoRoles(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				if tc.role.ID == "" {
-					tc.role.ID = errsx.Must(uuid.NewV7()).String()
+					tc.role.ID = errsx.Must(repo.NextID(ctx)).String()
 				}
 
 				err := repo.AddRole(ctx, &tc.role)
@@ -131,7 +139,7 @@ func testRepoRoles(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				if tc.role.ID == "" {
-					tc.role.ID = errsx.Must(uuid.NewV7()).String()
+					tc.role.ID = errsx.Must(repo.NextID(ctx)).String()
 				}
 
 				role := Role{ID: tc.role.ID, Name: "New role " + strconv.Itoa(i)}
@@ -280,7 +288,7 @@ func testRepoUsers(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				tc.user.ID = errsx.Must(uuid.NewV7()).String()
+				tc.user.ID = errsx.Must(repo.NextID(ctx)).String()
 				err := repo.AddUser(ctx, &tc.user)
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
@@ -332,7 +340,7 @@ func testRepoUsers(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				if tc.user.ID == "" {
-					tc.user.ID = errsx.Must(uuid.NewV7()).String()
+					tc.user.ID = errsx.Must(repo.NextID(ctx)).String()
 				}
 
 				user := User{ID: tc.user.ID, Email: "New user " + strconv.Itoa(i)}

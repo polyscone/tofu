@@ -17,6 +17,8 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/uuid"
 )
 
+var nilID = account.ID(uuid.Nil.String())
+
 type AccountRepo struct {
 	db *DB
 }
@@ -45,6 +47,27 @@ func NewAccountRepo(ctx context.Context, db *DB, signInThrottleTTL time.Duration
 	})
 
 	return &r, nil
+}
+
+func (r *AccountRepo) NextID(ctx context.Context) (account.ID, error) {
+	id, err := uuid.NewV7()
+	if err != nil {
+		return nilID, fmt.Errorf("new V7 UUID: %w", err)
+	}
+
+	return account.ID(id.String()), nil
+}
+
+func (r *AccountRepo) ParseID(str string) (account.ID, error) {
+	id, err := uuid.Parse(str)
+	if err != nil {
+		return nilID, fmt.Errorf("parse V7 UUID: %w", err)
+	}
+	if !id.IsValidV7() {
+		return nilID, errors.New("invalid V7 UUID")
+	}
+
+	return account.ID(id.String()), nil
 }
 
 func (r *AccountRepo) FindUserByID(ctx context.Context, id string) (*account.User, error) {
@@ -1171,10 +1194,10 @@ func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter permis
 	return permissions, total, nil
 }
 
-func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string) (uuid.UUID, error) {
-	id, err := uuid.NewV7()
+func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string) (account.ID, error) {
+	id, err := r.NextID(ctx)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("new v7 UUID: %w", err)
+		return id, fmt.Errorf("next id: %w", err)
 	}
 
 	err = tx.QueryRowContext(ctx, `
