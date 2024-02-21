@@ -25,7 +25,7 @@ func TestCreateRole(t *testing.T) {
 	validGuard := createRoleGuard{value: true}
 	invalidGuard := createRoleGuard{value: false}
 
-	t.Run("error cases", func(t *testing.T) {
+	t.Run("with guards", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 

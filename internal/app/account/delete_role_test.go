@@ -27,7 +27,7 @@ func TestDeleteRole(t *testing.T) {
 	validGuard := deleteRoleGuard{value: true}
 	invalidGuard := deleteRoleGuard{value: false}
 
-	t.Run("error cases", func(t *testing.T) {
+	t.Run("with guards", func(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
