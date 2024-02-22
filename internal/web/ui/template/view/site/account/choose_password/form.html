@@ -17,7 +17,7 @@
 	<form action="{{Path "account.choose_password.post"}}" method="POST">
 		{{template "com_csrf_input" .}}
 
-		{{template "com_password_input" .WithComData
+		{{template "com_password_input" .WithProps
 			"Label" "New password"
 			"Name" "new-password"
 			"Required" true

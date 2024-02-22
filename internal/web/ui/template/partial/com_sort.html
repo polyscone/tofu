@@ -1,7 +1,7 @@
 {{define "com_sort"}}
 
-{{$key := .ComData.Key}}
-{{$direction := .ComData.Direction}}
+{{$key := .Props.Key}}
+{{$direction := .Props.Direction}}
 {{if ne $direction "desc"}}
 	{{$direction = "asc"}}
 {{end}}

@@ -14,19 +14,19 @@
 	<form action="{{Path "account.management.role.new.post"}}" method="POST">
 		{{template "com_csrf_input" .}}
 
-		{{template "com_role_name_input" .WithComData
+		{{template "com_role_name_input" .WithProps
 			"Label" "Name"
 			"Name" "name"
 			"Required" true
 		}}
 
-		{{template "com_role_description_input" .WithComData
+		{{template "com_role_description_input" .WithProps
 			"Label" "Description"
 			"Name" "description"
 		}}
 
 		<div class="cols-halves">
-			{{template "com_role_permission_groups" .WithComData
+			{{template "com_role_permission_groups" .WithProps
 				"Name" "permissions"
 				"Groups" .Vars.PermissionGroups
 				"Selected" (.Form.GetAll "permissions")

@@ -27,7 +27,7 @@
 			</p>
 		</div>
 
-		{{template "com_recovery_codes" .WithComData "Codes" .Vars.RecoveryCodes}}
+		{{template "com_recovery_codes" .WithProps "Codes" .Vars.RecoveryCodes}}
 	{{else}}
 		{{if ge (len .Vars.HashedRecoveryCodes) 1}}
 			{{if eq (len .Vars.HashedRecoveryCodes) 1}}
@@ -52,7 +52,7 @@
 		<form action="{{Path "account.totp.recovery_codes.post"}}" method="POST">
 			{{template "com_csrf_input" .}}
 
-			{{template "com_passcode_input" .WithComData
+			{{template "com_passcode_input" .WithProps
 				"Label" "Passcode"
 				"Name" "totp"
 				"Required" true

@@ -30,7 +30,7 @@
 	<form action="{{$signInFormAction}}" method="POST">
 		{{template "com_csrf_input" .}}
 
-		{{template "com_email_input" .WithComData
+		{{template "com_email_input" .WithProps
 			"Label" "Email"
 			"Name" "email"
 			"Required" true
@@ -39,7 +39,7 @@
 		}}
 
 		{{if not $isMagicLinkSignIn}}
-			{{template "com_password_input" .WithComData
+			{{template "com_password_input" .WithProps
 				"Label" "Password"
 				"Name" "password"
 				"Required" true

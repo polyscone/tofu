@@ -5,7 +5,7 @@
 <h1>Role management</h1>
 
 <form class="bag">
-	{{template "com_query_inputs" .WithComData "Skip" (Slice "search" "page")}}
+	{{template "com_query_inputs" .WithProps "Skip" (Slice "search" "page")}}
 
 	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="Search" class="grow">
 	<button>Search</button>
@@ -18,7 +18,7 @@
 <table class="data-table">
 	<thead>
 		<tr>
-			<th>Name {{template "com_sort" .WithComData "Key" "name" "Direction" "desc"}}</th>
+			<th>Name {{template "com_sort" .WithProps "Key" "name" "Direction" "desc"}}</th>
 			<th>Description</th>
 			<th class="text-right no-wrap">
 				{{if .Passport.Account.CanCreateRoles}}
@@ -53,6 +53,6 @@
 	</tbody>
 </table>
 
-{{template "com_pagination" .WithComData "Book" .Vars.Roles}}
+{{template "com_pagination" .WithProps "Book" .Vars.Roles}}
 
 {{end}}

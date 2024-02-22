@@ -21,7 +21,7 @@
 	<form action="{{Path "account.totp.setup.sms.post"}}" method="POST">
 		{{template "com_csrf_input" .}}
 
-		{{template "com_sms_tel_input" .WithComData
+		{{template "com_sms_tel_input" .WithProps
 			"Label" "Phone number"
 			"Name" "tel"
 			"Value" (.Form.GetOr "tel" .Vars.TOTPTel)

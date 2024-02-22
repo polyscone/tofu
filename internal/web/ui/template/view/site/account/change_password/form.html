@@ -24,14 +24,14 @@
 	<form action="{{Path "account.change_password.post"}}" method="POST">
 		{{template "com_csrf_input" .}}
 
-		{{template "com_password_input" .WithComData
+		{{template "com_password_input" .WithProps
 			"Label" "Old password"
 			"Name" "old-password"
 			"Required" true
 			"Autocomplete" "current-password"
 		}}
 
-		{{template "com_password_input" .WithComData
+		{{template "com_password_input" .WithProps
 			"Label" "New password"
 			"Name" "new-password"
 			"Required" true

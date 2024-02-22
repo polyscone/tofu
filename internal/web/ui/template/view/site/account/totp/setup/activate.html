@@ -25,7 +25,7 @@
 		</p>
 	</div>
 
-	{{template "com_recovery_codes" .WithComData "Codes" .Vars.RecoveryCodes}}
+	{{template "com_recovery_codes" .WithProps "Codes" .Vars.RecoveryCodes}}
 
 	<form action="{{Path "account.totp.setup.activate.post"}}" method="POST">
 		{{template "com_csrf_input" .}}

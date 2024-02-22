@@ -19,7 +19,7 @@
 		<form action="{{Path "account.totp.disable.post"}}" method="POST">
 			{{template "com_csrf_input" .}}
 
-			{{template "com_password_input" .WithComData
+			{{template "com_password_input" .WithProps
 				"Label" "Password"
 				"Name" "password"
 				"Required" true

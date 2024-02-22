@@ -1,6 +1,6 @@
 {{define "com_pagination"}}
 
-{{$book := .ComData.Book}}
+{{$book := .Props.Book}}
 
 {{if $book}}
 	{{$startEntry := Add 1 (Mul $book.PageSize (Sub $book.Page.Number 1))}}
@@ -17,7 +17,7 @@
 			{{end}}
 
 			<form class="bag inline-flex">
-				{{template "com_query_inputs" .WithComData "Skip" (Slice "size")}}
+				{{template "com_query_inputs" .WithProps "Skip" (Slice "size")}}
 
 				<select name="size">
 					{{range $i := Ints 1 11}}

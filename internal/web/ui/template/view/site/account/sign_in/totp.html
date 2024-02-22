@@ -22,7 +22,7 @@
 	<form action="{{Path "account.sign_in.totp.post"}}" method="POST">
 		{{template "com_csrf_input" .}}
 
-		{{template "com_passcode_input" .WithComData
+		{{template "com_passcode_input" .WithProps
 			"Label" "Passcode"
 			"Name" "totp"
 			"Required" true

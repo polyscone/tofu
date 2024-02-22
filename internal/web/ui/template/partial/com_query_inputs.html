@@ -1,6 +1,6 @@
 {{define "com_query_inputs"}}
 
-{{$skip := .ComData.Skip}}
+{{$skip := .Props.Skip}}
 
 {{range $key, $values := .URL.Query.Values}}
 	{{if SliceContains $skip $key}}

@@ -19,7 +19,7 @@
 	<form action="{{Path "account.sign_in.recovery_code.post"}}" method="POST">
 		{{template "com_csrf_input" .}}
 
-		{{template "com_recovery_code_input" .WithComData
+		{{template "com_recovery_code_input" .WithProps
 			"Label" "Recovery code"
 			"Name" "recovery-code"
 			"Required" true

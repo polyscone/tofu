@@ -1,19 +1,19 @@
 {{define "com_form_input" -}}
 
-{{$type := .ComData.Type}}
-{{$name := .ComData.Name}}
-{{$id := or .ComData.ID (printf "form__%v" $name)}}
-{{$label := .ComData.Label}}
-{{$hint := .ComData.Hint}}
-{{$placeholder := .ComData.Placeholder}}
-{{$value := or .ComData.Value (.Form.Get $name)}}
-{{$required := .ComData.Required}}
-{{$autocomplete := .ComData.Autocomplete}}
-{{$autofocus := .ComData.Autofocus}}
-{{$disabled := .ComData.Disabled}}
-{{$pattern := .ComData.Pattern}}
-{{$minlength := .ComData.MinLength}}
-{{$maxlength := .ComData.MaxLength}}
+{{$type := .Props.Type}}
+{{$name := .Props.Name}}
+{{$id := or .Props.ID (printf "form__%v" $name)}}
+{{$label := .Props.Label}}
+{{$hint := .Props.Hint}}
+{{$placeholder := .Props.Placeholder}}
+{{$value := or .Props.Value (.Form.Get $name)}}
+{{$required := .Props.Required}}
+{{$autocomplete := .Props.Autocomplete}}
+{{$autofocus := .Props.Autofocus}}
+{{$disabled := .Props.Disabled}}
+{{$pattern := .Props.Pattern}}
+{{$minlength := .Props.MinLength}}
+{{$maxlength := .Props.MaxLength}}
 {{$error := .Errors.Get (ReplaceAll $name "-" " ")}}
 
 {{if and $type $name}}

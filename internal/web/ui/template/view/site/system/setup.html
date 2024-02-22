@@ -19,14 +19,14 @@
 
 			<p>We'll create an admin account using the email and password you enter below.</p>
 
-			{{template "com_email_input" .WithComData
+			{{template "com_email_input" .WithProps
 				"Label" "Email"
 				"Name" "email"
 				"Required" true
 				"Autocomplete" "username"
 			}}
 
-			{{template "com_password_input" .WithComData
+			{{template "com_password_input" .WithProps
 				"Label" "Password"
 				"Name" "password"
 				"Required" true
@@ -37,7 +37,7 @@
 		<fieldset>
 			<legend>Email</legend>
 
-			{{template "com_email_input" .WithComData
+			{{template "com_email_input" .WithProps
 				"Label" "System email"
 				"Hint" "from address in system emails"
 				"Name" "system-email"
@@ -46,7 +46,7 @@
 				"Autocomplete" "email"
 			}}
 
-			{{template "com_email_input" .WithComData
+			{{template "com_email_input" .WithProps
 				"Label" "Security email"
 				"Hint" "for reporting security vulnerabilities"
 				"Name" "security-email"

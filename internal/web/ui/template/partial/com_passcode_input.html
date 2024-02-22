@@ -1,10 +1,10 @@
 {{define "com_passcode_input" -}}
 
-{{$hint := or .ComData.Hint "6 digits"}}
-{{$placeholder := or .ComData.Placeholder "123456"}}
+{{$hint := or .Props.Hint "6 digits"}}
+{{$placeholder := or .Props.Placeholder "123456"}}
 
-{{template "com_form_input" .WithComData
-	"ComData" .ComData
+{{template "com_form_input" .WithProps
+	"Props" .Props
 	"Type" "text"
 	"Hint" $hint
 	"Placeholder" $placeholder

@@ -1,10 +1,10 @@
 {{define "com_recovery_code_input" -}}
 
-{{$hint := or .ComData.Hint "13 alphanumeric characters"}}
-{{$placeholder := or .ComData.Placeholder "ABCD234567XYZ"}}
+{{$hint := or .Props.Hint "13 alphanumeric characters"}}
+{{$placeholder := or .Props.Placeholder "ABCD234567XYZ"}}
 
-{{template "com_form_input" .WithComData
-	"ComData" .ComData
+{{template "com_form_input" .WithProps
+	"Props" .Props
 	"Type" "text"
 	"Hint" $hint
 	"Placeholder" $placeholder

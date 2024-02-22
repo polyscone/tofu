@@ -62,33 +62,33 @@ type ViewData struct {
 	Config       *system.Config
 	User         *account.User
 	Passport     guard.Passport
-	ComData      map[string]any
+	Props        map[string]any
 	State        *State
 	Vars         Vars
 }
 
-func (v ViewData) WithComData(pairs ...any) (ViewData, error) {
+func (v ViewData) WithProps(pairs ...any) (ViewData, error) {
 	if len(pairs)%2 == 1 {
-		return v, errors.New("WithComData: want key value pairs")
+		return v, errors.New("WithProps: want key value pairs")
 	}
 
-	v.ComData = make(map[string]any, len(pairs)/2)
+	v.Props = make(map[string]any, len(pairs)/2)
 	for i := 0; i < len(pairs); i += 2 {
 		key := fmt.Sprintf("%v", pairs[i])
 		value := pairs[i+1]
 
-		if key == "ComData" {
-			comData, ok := value.(map[string]any)
+		if key == "Props" {
+			props, ok := value.(map[string]any)
 			if ok {
-				for key, value := range comData {
-					v.ComData[key] = value
+				for key, value := range props {
+					v.Props[key] = value
 				}
 
 				continue
 			}
 		}
 
-		v.ComData[key] = value
+		v.Props[key] = value
 	}
 
 	return v, nil

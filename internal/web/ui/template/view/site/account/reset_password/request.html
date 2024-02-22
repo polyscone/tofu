@@ -14,7 +14,7 @@
 	<form action="{{Path "account.reset_password.post"}}" method="POST">
 		{{template "com_csrf_input" .}}
 
-		{{template "com_email_input" .WithComData
+		{{template "com_email_input" .WithProps
 			"Label" "Email"
 			"Name" "email"
 			"Required" true

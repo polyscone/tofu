@@ -36,7 +36,7 @@
 			{{template "com_csrf_input" .}}
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
-			{{template "com_password_input" .WithComData
+			{{template "com_password_input" .WithProps
 				"Label" "Choose a password"
 				"Name" "password"
 				"Required" true

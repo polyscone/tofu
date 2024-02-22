@@ -14,21 +14,21 @@
 	<form action="{{Path "account.management.role.edit.post" "{roleID}" .Vars.Role.ID}}{{.URL.Query.String}}" method="POST">
 		{{template "com_csrf_input" .}}
 
-		{{template "com_role_name_input" .WithComData
+		{{template "com_role_name_input" .WithProps
 			"Label" "Name"
 			"Name" "name"
 			"Required" true
 			"Value" (.Form.GetOr "name" .Vars.Role.Name)
 		}}
 
-		{{template "com_role_description_input" .WithComData
+		{{template "com_role_description_input" .WithProps
 			"Label" "Description"
 			"Name" "description"
 			"Value" (.Form.GetOr "description" .Vars.Role.Description)
 		}}
 
 		<div class="cols-halves">
-			{{template "com_role_permission_groups" .WithComData
+			{{template "com_role_permission_groups" .WithProps
 				"Name" "permissions"
 				"Groups" .Vars.PermissionGroups
 				"Selected" (.Form.GetAllOr "permissions" .Vars.Role.Permissions)

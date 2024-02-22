@@ -1,8 +1,8 @@
 {{define "com_role_permission_groups" -}}
 
-{{$name := .ComData.Name}}
-{{$groups := .ComData.Groups}}
-{{$selected := .ComData.Selected}}
+{{$name := .Props.Name}}
+{{$groups := .Props.Groups}}
+{{$selected := .Props.Selected}}
 
 {{if and $name $groups}}
 	{{range $groups}}

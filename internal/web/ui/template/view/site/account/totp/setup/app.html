@@ -45,7 +45,7 @@
 	<form action="{{Path "account.totp.setup.app.post"}}" method="POST">
 		{{template "com_csrf_input" .}}
 
-		{{template "com_passcode_input" .WithComData
+		{{template "com_passcode_input" .WithProps
 			"Label" "Passcode"
 			"Name" "totp"
 			"Required" true
