@@ -55,10 +55,10 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		dir := path.Dir(view)
 
 		return []string{
-			"partial/*.tmpl",
-			"view/" + dir + "/com_*.tmpl",
-			"view/" + view + ".tmpl",
-			"master/*.tmpl",
+			"partial/*.html",
+			"view/" + dir + "/com_*.html",
+			"view/" + view + ".html",
+			"master/*.html",
 		}
 	}
 
@@ -96,7 +96,7 @@ func (h *Handler) tmplHasPathPrefix(value any, name string, paramArgPairs ...any
 }
 
 func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, vars handler.Vars) error {
-	templatePaths := []string{"email/" + view + ".tmpl"}
+	templatePaths := []string{"email/" + view + ".html"}
 
 	return h.Handler.SendEmail(ctx, templateFiles, templatePaths, h.funcs, from, to, view, vars)
 }

@@ -45,7 +45,7 @@ type Handler struct {
 
 func NewHandler(base *handler.Handler) *Handler {
 	templatePaths := func(view string) []string {
-		return []string{view, "master.tmpl"}
+		return []string{view, "master.html"}
 	}
 
 	funcs := handler.NewTemplateFuncs(nil)
