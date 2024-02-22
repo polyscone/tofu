@@ -66,10 +66,6 @@ func (tb *TokenBucket) Take(n float64, t time.Time) (int, error) {
 
 	if n > 0 {
 		tb.tokens -= n
-
-		if tb.tokens < 0 {
-			tb.tokens = 0
-		}
 	}
 
 	return int(tb.tokens), nil
