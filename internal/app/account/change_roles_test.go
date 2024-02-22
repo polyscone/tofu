@@ -128,12 +128,12 @@ func TestChangeRoles(t *testing.T) {
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				if tc.userID == "" {
-					tc.userID = errsx.Must(repo.NextID(ctx)).String()
+					tc.userID = errsx.Must(repo.NextUserID(ctx)).String()
 				}
 
 				for i, roleID := range tc.roleIDs {
 					if roleID == "" {
-						tc.roleIDs[i] = errsx.Must(repo.NextID(ctx)).String()
+						tc.roleIDs[i] = errsx.Must(repo.NextRoleID(ctx)).String()
 					}
 				}
 

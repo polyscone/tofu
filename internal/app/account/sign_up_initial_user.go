@@ -59,7 +59,7 @@ func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwo
 		return errors.New("cannot sign up initial user when other users already exist")
 	}
 
-	id, err := s.repo.NextID(ctx)
+	id, err := s.repo.NextUserID(ctx)
 	if err != nil {
 		return fmt.Errorf("next id: %w", err)
 	}

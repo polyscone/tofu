@@ -67,7 +67,7 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 	}
 
 	var codes []string
-	userID := errsx.Must(repo.NextID(ctx))
+	userID := errsx.Must(repo.NextUserID(ctx))
 	user := account.NewUser(userID, errsx.Must(account.NewEmail(tu.Email)))
 
 	switch {
@@ -142,7 +142,7 @@ func MustAddRole(t *testing.T, ctx context.Context, repo account.ReadWriter, tr 
 		}
 	}
 
-	roleID := errsx.Must(repo.NextID(ctx))
+	roleID := errsx.Must(repo.NextRoleID(ctx))
 	role := account.NewRole(roleID, name, "", permissions)
 
 	errsx.Must0(repo.AddRole(ctx, role))

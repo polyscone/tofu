@@ -38,6 +38,12 @@ var (
 	ErrInvalidPassword = errors.New("invalid password")
 )
 
+type UserID string
+
+func (id UserID) String() string {
+	return string(id)
+}
+
 type User struct {
 	aggregate.Root
 
@@ -87,7 +93,7 @@ type UserFilter struct {
 	Offset int
 }
 
-func NewUser(id ID, email Email) *User {
+func NewUser(id UserID, email Email) *User {
 	return &User{
 		ID:    id.String(),
 		Email: email.String(),

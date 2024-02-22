@@ -15,7 +15,7 @@ type UpdateRoleGuard interface {
 
 func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID, name, description string, permissions []string) error {
 	var input struct {
-		roleID      ID
+		roleID      RoleID
 		name        RoleName
 		description RoleDesc
 		permissions []Permission
@@ -28,7 +28,7 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID,
 		var err error
 		var errs errsx.Map
 
-		if input.roleID, err = s.repo.ParseID(roleID); err != nil {
+		if input.roleID, err = s.repo.ParseRoleID(roleID); err != nil {
 			errs.Set("role id", err)
 		}
 		if input.name, err = NewRoleName(name); err != nil {

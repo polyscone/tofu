@@ -131,7 +131,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				if tc.userID == "" {
-					tc.userID = errsx.Must(repo.NextID(ctx)).String()
+					tc.userID = errsx.Must(repo.NextUserID(ctx)).String()
 				}
 
 				err := svc.SignInWithRecoveryCode(ctx, tc.userID, tc.recoveryCode)

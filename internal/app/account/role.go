@@ -2,6 +2,12 @@ package account
 
 import "github.com/polyscone/tofu/internal/pkg/aggregate"
 
+type RoleID string
+
+func (id RoleID) String() string {
+	return string(id)
+}
+
 type Role struct {
 	aggregate.Root
 
@@ -24,7 +30,7 @@ type RoleFilter struct {
 	Offset int
 }
 
-func NewRole(id ID, name RoleName, description RoleDesc, permissions []Permission) *Role {
+func NewRole(id RoleID, name RoleName, description RoleDesc, permissions []Permission) *Role {
 	role := Role{
 		ID:          id.String(),
 		Name:        name.String(),

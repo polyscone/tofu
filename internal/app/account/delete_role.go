@@ -14,7 +14,7 @@ type DeleteRoleGuard interface {
 
 func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID string) error {
 	var input struct {
-		roleID ID
+		roleID RoleID
 	}
 	{
 		if !guard.CanDeleteRoles() {
@@ -24,7 +24,7 @@ func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID 
 		var err error
 		var errs errsx.Map
 
-		if input.roleID, err = s.repo.ParseID(roleID); err != nil {
+		if input.roleID, err = s.repo.ParseRoleID(roleID); err != nil {
 			errs.Set("role id", err)
 		}
 

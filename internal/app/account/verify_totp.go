@@ -14,7 +14,7 @@ type VerifyTOTPGuard interface {
 
 func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID, totp, totpMethod string) ([]string, error) {
 	var input struct {
-		userID     ID
+		userID     UserID
 		totp       TOTP
 		totpMethod TOTPMethod
 	}
@@ -26,7 +26,7 @@ func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID,
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseID(userID); err != nil {
+		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 		if input.totp, err = NewTOTP(totp); err != nil {

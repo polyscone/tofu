@@ -14,15 +14,12 @@ import (
 	"github.com/polyscone/tofu/internal/pkg/errsx"
 )
 
-type ID string
-
-func (id ID) String() string {
-	return string(id)
-}
-
 type Reader interface {
-	NextID(ctx context.Context) (ID, error)
-	ParseID(str string) (ID, error)
+	NextRoleID(ctx context.Context) (RoleID, error)
+	ParseRoleID(str string) (RoleID, error)
+
+	NextUserID(ctx context.Context) (UserID, error)
+	ParseUserID(str string) (UserID, error)
 
 	FindRoleByID(ctx context.Context, id string) (*Role, error)
 
@@ -77,7 +74,7 @@ func testRepoRoles(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				if tc.role.ID == "" {
-					tc.role.ID = errsx.Must(repo.NextID(ctx)).String()
+					tc.role.ID = errsx.Must(repo.NextRoleID(ctx)).String()
 				}
 
 				err := repo.AddRole(ctx, &tc.role)
@@ -139,7 +136,7 @@ func testRepoRoles(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				if tc.role.ID == "" {
-					tc.role.ID = errsx.Must(repo.NextID(ctx)).String()
+					tc.role.ID = errsx.Must(repo.NextRoleID(ctx)).String()
 				}
 
 				role := Role{ID: tc.role.ID, Name: "New role " + strconv.Itoa(i)}
@@ -288,7 +285,7 @@ func testRepoUsers(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				tc.user.ID = errsx.Must(repo.NextID(ctx)).String()
+				tc.user.ID = errsx.Must(repo.NextUserID(ctx)).String()
 				err := repo.AddUser(ctx, &tc.user)
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
@@ -340,7 +337,7 @@ func testRepoUsers(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
 				if tc.user.ID == "" {
-					tc.user.ID = errsx.Must(repo.NextID(ctx)).String()
+					tc.user.ID = errsx.Must(repo.NextUserID(ctx)).String()
 				}
 
 				user := User{ID: tc.user.ID, Email: "New user " + strconv.Itoa(i)}

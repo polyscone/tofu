@@ -194,7 +194,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 		}
 	}
 
-	id, err := repo.account.NextID(ctx)
+	id, err := repo.account.NextRoleID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("next id: %w", err)
 	}

@@ -14,8 +14,8 @@ type ChangeRolesGuard interface {
 
 func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userID string, roleIDs, grants, denials []string) error {
 	var input struct {
-		userID  ID
-		roleIDs []ID
+		userID  UserID
+		roleIDs []RoleID
 		grants  []Permission
 		denials []Permission
 	}
@@ -27,12 +27,12 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseID(userID); err != nil {
+		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 
 		for _, roleID := range roleIDs {
-			id, err := s.repo.ParseID(roleID)
+			id, err := s.repo.ParseRoleID(roleID)
 			if err != nil {
 				errs.Set("role ids", err)
 			}

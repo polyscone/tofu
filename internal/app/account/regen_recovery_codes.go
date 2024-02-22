@@ -14,7 +14,7 @@ type RegenerateRecoveryCodesGuard interface {
 
 func (s *Service) RegenerateRecoveryCodes(ctx context.Context, guard RegenerateRecoveryCodesGuard, userID, totp string) ([]string, error) {
 	var input struct {
-		userID ID
+		userID UserID
 		totp   TOTP
 	}
 	{
@@ -25,7 +25,7 @@ func (s *Service) RegenerateRecoveryCodes(ctx context.Context, guard RegenerateR
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseID(userID); err != nil {
+		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 		if input.totp, err = NewTOTP(totp); err != nil {

@@ -14,7 +14,7 @@ type SuspendUsersGuard interface {
 
 func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, userID, suspendedReason string) error {
 	var input struct {
-		userID          ID
+		userID          UserID
 		suspendedReason SuspendedReason
 	}
 	{
@@ -25,7 +25,7 @@ func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, user
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseID(userID); err != nil {
+		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 		if input.suspendedReason, err = NewSuspendedReason(suspendedReason); err != nil {

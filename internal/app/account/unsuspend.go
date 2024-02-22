@@ -14,7 +14,7 @@ type UnsuspendUsersGuard interface {
 
 func (s *Service) UnsuspendUser(ctx context.Context, guard UnsuspendUsersGuard, userID string) error {
 	var input struct {
-		userID ID
+		userID UserID
 	}
 	{
 		if !guard.CanUnsuspendUsers() {
@@ -24,7 +24,7 @@ func (s *Service) UnsuspendUser(ctx context.Context, guard UnsuspendUsersGuard, 
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseID(userID); err != nil {
+		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 

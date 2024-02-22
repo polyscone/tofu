@@ -14,7 +14,7 @@ type ChangePasswordGuard interface {
 
 func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard, userID, oldPassword, newPassword, newPasswordCheck string) error {
 	var input struct {
-		userID           ID
+		userID           UserID
 		oldPassword      Password
 		newPassword      Password
 		newPasswordCheck Password
@@ -29,7 +29,7 @@ func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard,
 
 		newPasswordCheck, _ := NewPassword(newPasswordCheck)
 
-		if input.userID, err = s.repo.ParseID(userID); err != nil {
+		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 		if input.oldPassword, err = NewPassword(oldPassword); err != nil {

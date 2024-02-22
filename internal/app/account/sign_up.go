@@ -38,7 +38,7 @@ func (s *Service) SignUp(ctx context.Context, email string) error {
 		}
 
 	case errors.Is(err, app.ErrNotFound):
-		id, err := s.repo.NextID(ctx)
+		id, err := s.repo.NextUserID(ctx)
 		if err != nil {
 			return fmt.Errorf("next id: %w", err)
 		}

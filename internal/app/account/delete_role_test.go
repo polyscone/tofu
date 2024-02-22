@@ -44,7 +44,7 @@ func TestDeleteRole(t *testing.T) {
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				roleID := errsx.Must(repo.NextID(ctx))
+				roleID := errsx.Must(repo.NextRoleID(ctx))
 				name := "Role " + strconv.Itoa(i)
 				err := svc.CreateRole(ctx, tc.guard, roleID.String(), name, "", nil)
 				if err != nil {

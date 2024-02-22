@@ -70,7 +70,7 @@ func TestSignInWithPassword(t *testing.T) {
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@bloggs.com", Activate: true})
 
-		user4ID := errsx.Must(repo.NextID(ctx))
+		user4ID := errsx.Must(repo.NextUserID(ctx))
 		user4 := account.NewUser(user4ID, errsx.Must(account.NewEmail("not@found.com")))
 
 		tt := []struct {

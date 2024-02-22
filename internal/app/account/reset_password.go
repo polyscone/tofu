@@ -14,7 +14,7 @@ type ResetPasswordGuard interface {
 
 func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, userID string, newPassword, newPasswordCheck string) error {
 	var input struct {
-		userID           ID
+		userID           UserID
 		email            Email
 		newPassword      Password
 		newPasswordCheck Password
@@ -29,7 +29,7 @@ func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, u
 
 		newPasswordCheck, _ := NewPassword(newPasswordCheck)
 
-		if input.userID, err = s.repo.ParseID(userID); err != nil {
+		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 		if input.newPassword, err = NewPassword(newPassword); err != nil {

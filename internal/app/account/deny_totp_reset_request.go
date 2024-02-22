@@ -10,13 +10,13 @@ import (
 
 func (s *Service) DenyTOTPResetRequest(ctx context.Context, userID string) error {
 	var input struct {
-		userID ID
+		userID UserID
 	}
 	{
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseID(userID); err != nil {
+		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 

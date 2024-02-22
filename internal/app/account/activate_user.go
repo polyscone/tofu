@@ -15,7 +15,7 @@ type ActivateUsersGuard interface {
 
 func (s *Service) ActivateUser(ctx context.Context, guard ActivateUsersGuard, userID string) error {
 	var input struct {
-		userID ID
+		userID UserID
 	}
 	{
 		if !guard.CanActivateUsers() {
@@ -25,7 +25,7 @@ func (s *Service) ActivateUser(ctx context.Context, guard ActivateUsersGuard, us
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseID(userID); err != nil {
+		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
 			errs.Set("user id", err)
 		}
 

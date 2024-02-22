@@ -98,7 +98,7 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		roleID, err := h.Repo.Account.NextID(ctx)
+		roleID, err := h.Repo.Account.NextRoleID(ctx)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "next id", err, "site/error", nil)
 

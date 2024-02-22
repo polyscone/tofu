@@ -67,7 +67,7 @@ func TestUpdateRole(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				roleID := errsx.Must(repo.NextID(ctx))
+				roleID := errsx.Must(repo.NextRoleID(ctx))
 				err := svc.CreateRole(ctx, tc.guard, roleID.String(), tc.before.Name, tc.before.Description, tc.before.Permissions)
 				if err != nil {
 					t.Fatal(err)

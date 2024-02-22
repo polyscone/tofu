@@ -55,7 +55,7 @@ func (s *Service) SignInWithGoogle(ctx context.Context, email string, behaviour 
 			return false, ErrGoogleSignUpDisabled
 		}
 
-		id, err := s.repo.NextID(ctx)
+		id, err := s.repo.NextUserID(ctx)
 		if err != nil {
 			return false, fmt.Errorf("next id: %w", err)
 		}

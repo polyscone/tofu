@@ -47,25 +47,61 @@ func NewAccountRepo(ctx context.Context, db *DB, signInThrottleTTL time.Duration
 	return &r, nil
 }
 
-func (r *AccountRepo) NextID(ctx context.Context) (account.ID, error) {
+func (r *AccountRepo) nextID() (uuid.UUID, error) {
 	id, err := uuid.NewV7()
 	if err != nil {
-		return account.ID(uuid.Nil.String()), fmt.Errorf("new V7 UUID: %w", err)
+		return uuid.Nil, fmt.Errorf("new V7 UUID: %w", err)
 	}
 
-	return account.ID(id.String()), nil
+	return id, nil
 }
 
-func (r *AccountRepo) ParseID(str string) (account.ID, error) {
+func (r *AccountRepo) parseID(str string) (uuid.UUID, error) {
 	id, err := uuid.Parse(str)
 	if err != nil {
-		return account.ID(uuid.Nil.String()), fmt.Errorf("parse V7 UUID: %w", err)
+		return uuid.Nil, fmt.Errorf("parse V7 UUID: %w", err)
 	}
 	if !id.IsValidV7() {
-		return account.ID(uuid.Nil.String()), errors.New("invalid V7 UUID")
+		return uuid.Nil, errors.New("invalid V7 UUID")
 	}
 
-	return account.ID(id.String()), nil
+	return id, nil
+}
+
+func (r *AccountRepo) NextUserID(ctx context.Context) (account.UserID, error) {
+	id, err := r.nextID()
+	if err != nil {
+		return account.UserID(id.String()), err
+	}
+
+	return account.UserID(id.String()), nil
+}
+
+func (r *AccountRepo) ParseUserID(str string) (account.UserID, error) {
+	id, err := r.parseID(str)
+	if err != nil {
+		return account.UserID(id.String()), err
+	}
+
+	return account.UserID(id.String()), nil
+}
+
+func (r *AccountRepo) NextRoleID(ctx context.Context) (account.RoleID, error) {
+	id, err := r.nextID()
+	if err != nil {
+		return account.RoleID(id.String()), err
+	}
+
+	return account.RoleID(id.String()), nil
+}
+
+func (r *AccountRepo) ParseRoleID(str string) (account.RoleID, error) {
+	id, err := r.parseID(str)
+	if err != nil {
+		return account.RoleID(id.String()), err
+	}
+
+	return account.RoleID(id.String()), nil
 }
 
 func (r *AccountRepo) FindUserByID(ctx context.Context, id string) (*account.User, error) {
@@ -1192,8 +1228,8 @@ func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter permis
 	return permissions, total, nil
 }
 
-func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string) (account.ID, error) {
-	id, err := r.NextID(ctx)
+func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string) (uuid.UUID, error) {
+	id, err := r.nextID()
 	if err != nil {
 		return id, fmt.Errorf("next id: %w", err)
 	}
