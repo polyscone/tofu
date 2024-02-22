@@ -8,7 +8,7 @@ import (
 
 var ErrInsufficientTokens = errors.New("insufficient tokens")
 
-// TokenBucket implements a simple leaky bucket rate limiter.
+// TokenBucket implements a simple token bucket rate limiter.
 // It is safe to use concurrently, though it should be noted that some token
 // loss may occur around the limits of the bucket's capacity.
 type TokenBucket struct {
@@ -19,7 +19,7 @@ type TokenBucket struct {
 	replenishedAt time.Time
 }
 
-// NewTokenBucket returns a new leaky token bucket where the number of tokens
+// NewTokenBucket returns a new token bucket where the number of tokens
 // is equal to the capacity.
 //
 // The capacity represents the maximum number of tokens in the bucket, and the
@@ -33,19 +33,19 @@ func NewTokenBucket(capacity, replenish float64) *TokenBucket {
 	}
 }
 
-// Leak will first replenish r*s tokens, where r is the replenish number set at
+// Take will first replenish r*s tokens, where r is the replenish number set at
 // bucket creation, and s is the number of seconds since the last time the
 // bucket was replenished.
 //
 // The last time the bucket was replenished is recorded as the time
 // argument passed in.
 //
-// After replenishing tokens it will then leak n tokens.
-// An error is returned if the bucket has less than n tokens before leaking.
+// After replenishing tokens it will then take n tokens.
+// An error is returned if the bucket has less than n tokens before taking.
 //
 // The number of remaining tokens returned always represents full tokens and any
 // decimal value is truncated.
-func (tb *TokenBucket) Leak(n float64, t time.Time) (int, error) {
+func (tb *TokenBucket) Take(n float64, t time.Time) (int, error) {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 

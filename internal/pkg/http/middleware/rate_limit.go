@@ -77,7 +77,7 @@ func RateLimit(capacity, replenish float64, config *RateLimitConfig) Middleware 
 
 				client := getClient(ip)
 
-				if _, err := client.bucket.Leak(1, time.Now()); err != nil {
+				if _, err := client.bucket.Take(1, time.Now()); err != nil {
 					handleError(w, r, err, config.ErrorHandler, http.StatusTooManyRequests)
 
 					return

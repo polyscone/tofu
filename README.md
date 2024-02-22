@@ -127,7 +127,7 @@ If you need to detect new password hashing parameters, due an upgrade in hardwar
 
 ### Proxies and rate limiting
 
-The main web adapter application implements a simple leaky bucket style rate limiter which is based on IP addresses. Since IP addresses are used to keep track of the number of remaining tokens this means you'll need to tell the application about any trusted proxy IP addresses that may show up in a request.
+The main web adapter application implements a simple token bucket style rate limiter which is based on IP addresses. Since IP addresses are used to keep track of the number of remaining tokens this means you'll need to tell the application about any trusted proxy IP addresses that may show up in a request.
 
 By default the IP addresses `::1` and `127.0.0.1` are always implicitly trusted, so these never need to be defined, but if you know that you'll need to ignore certain other proxy IP addresses you can do that by passing a space separated list to the application through the `-trusted-proxies` flag.
 
