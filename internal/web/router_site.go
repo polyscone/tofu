@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"errors"
+	"expvar"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -42,6 +43,9 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	h.Broker.Listen(event.TOTPDisabledHandler(h))
 	h.Broker.Listen(event.TOTPSMSRequestedHandler(h))
 
+	metrics := func(r *http.Request) *expvar.Map {
+		return h.Metrics
+	}
 	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		if errors.Is(err, context.Canceled) {
 			w.WriteHeader(httputil.StatusClientClosedRequest)
@@ -63,7 +67,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	}
 
 	mux.Use(middleware.Recover(errorHandler("recover middleware")))
-	mux.Use(middleware.Metrics(h.Metrics, "requests.Site"))
+	mux.Use(middleware.Metrics(metrics, "requests.Site"))
 	mux.Use(h.AttachContextLogger)
 	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
 		ErrorHandler: timeoutErrorHandler,

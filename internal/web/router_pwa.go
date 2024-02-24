@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"errors"
+	"expvar"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -35,6 +36,9 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	h.Broker.Listen(event.TOTPSMSRequestedHandler(h))
 
 	routePrefix := "#!"
+	metrics := func(r *http.Request) *expvar.Map {
+		return h.Metrics
+	}
 	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		if errors.Is(err, context.Canceled) {
 			w.WriteHeader(httputil.StatusClientClosedRequest)
@@ -66,7 +70,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	}
 
 	mux.Use(middleware.Recover(errorHandler("recover middleware")))
-	mux.Use(middleware.Metrics(h.Metrics, "requests.PWA"))
+	mux.Use(middleware.Metrics(metrics, "requests.PWA"))
 	mux.Use(h.AttachContextLogger)
 	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
 		ErrorHandler: timeoutErrorHandler,

@@ -11,29 +11,36 @@ import (
 	"time"
 )
 
-func Metrics(metrics *expvar.Map, name string) Middleware {
-	var statusCodes *expvar.Map
-	group, ok := metrics.Get(name).(*expvar.Map)
-	if ok {
-		statusCodes, _ = group.Get("totalResponseStatusCodes").(*expvar.Map)
-	} else {
-		statusCodes = &expvar.Map{}
-		group = &expvar.Map{}
-
-		group.Set("totalResponseStatusCodes", statusCodes)
-		group.Set("totalRequestsReceived", &expvar.Int{})
-		group.Set("totalResponsesSent", &expvar.Int{})
-		group.Set("totalConnectionsHijacked", &expvar.Int{})
-		group.Set("totalBytesRead", &expvar.Int{})
-		group.Set("totalBytesWritten", &expvar.Int{})
-		group.Set("totalTimeUntilFirstWrite", &expvar.Int{})
-		group.Set("totalTimeInHandlers", &expvar.Int{})
-
-		metrics.Set(name, group)
-	}
-
+func Metrics(metricsMap func(*http.Request) *expvar.Map, name string) Middleware {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+			metrics := metricsMap(r)
+			if metrics == nil {
+				next(w, r)
+
+				return
+			}
+
+			var statusCodes *expvar.Map
+			group, ok := metrics.Get(name).(*expvar.Map)
+			if ok {
+				statusCodes, _ = group.Get("totalResponseStatusCodes").(*expvar.Map)
+			} else {
+				statusCodes = &expvar.Map{}
+				group = &expvar.Map{}
+
+				group.Set("totalResponseStatusCodes", statusCodes)
+				group.Set("totalRequestsReceived", &expvar.Int{})
+				group.Set("totalResponsesSent", &expvar.Int{})
+				group.Set("totalConnectionsHijacked", &expvar.Int{})
+				group.Set("totalBytesRead", &expvar.Int{})
+				group.Set("totalBytesWritten", &expvar.Int{})
+				group.Set("totalTimeUntilFirstWrite", &expvar.Int{})
+				group.Set("totalTimeInHandlers", &expvar.Int{})
+
+				metrics.Set(name, group)
+			}
+
 			start := time.Now()
 			rw := &metricsResponseWriter{
 				ResponseWriter: w,
