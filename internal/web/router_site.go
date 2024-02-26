@@ -78,9 +78,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.NoContent)
 	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
 	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
-	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
-		ErrorHandler: errorHandler("session middleware"),
-	}))
+	mux.Use(middleware.Session(h.Sessions, errorHandler("session middleware")))
 	mux.Use(h.AttachContext)
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -107,9 +105,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		}
 	})
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
-		csrf := middleware.CSRF(&middleware.CSRFConfig{
-			ErrorHandler: errorHandler("CSRF middleware"),
-		})(next)
+		csrf := middleware.CSRF(errorHandler("CSRF middleware"))(next)
 
 		return func(w http.ResponseWriter, r *http.Request) {
 			// Google sign in provides its own CSRF token which is checked in the POST handler

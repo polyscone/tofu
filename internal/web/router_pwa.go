@@ -81,9 +81,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.NoContent)
 	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
 	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
-	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
-		ErrorHandler: errorHandler("session middleware"),
-	}))
+	mux.Use(middleware.Session(h.Sessions, errorHandler("session middleware")))
 	mux.Use(h.AttachContext)
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
@@ -103,9 +101,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 			next(w, r)
 		}
 	})
-	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
-		ErrorHandler: errorHandler("CSRF middleware"),
-	}))
+	mux.Use(middleware.CSRF(errorHandler("CSRF middleware")))
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
 		Consume: func(r *http.Request) bool {
 			whitelist := []string{".css", ".gif", ".ico", ".jpeg", ".jpg", ".js", ".png"}

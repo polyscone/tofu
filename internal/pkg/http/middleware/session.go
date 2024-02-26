@@ -19,24 +19,16 @@ const (
 	SessionCookieNameInsecure = "session"
 )
 
-type SessionConfig struct {
-	ErrorHandler ErrorHandler
-}
-
-func Session(sm *session.Manager, config *SessionConfig) Middleware {
-	if config == nil {
-		config = &SessionConfig{}
-	}
-
+func Session(sm *session.Manager, errorHandler ErrorHandler) Middleware {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			cookieSessionID, err := getSessionCookieID(r, config)
-			if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
+			cookieSessionID, err := getSessionCookieID(r)
+			if handleError(w, r, err, errorHandler, http.StatusInternalServerError) {
 				return
 			}
 
 			ctx, err := sm.Load(r.Context(), cookieSessionID)
-			if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
+			if handleError(w, r, err, errorHandler, http.StatusInternalServerError) {
 				return
 			}
 
@@ -50,7 +42,7 @@ func Session(sm *session.Manager, config *SessionConfig) Middleware {
 			rw := &sessionResponseWriter{
 				ResponseWriter:  w,
 				request:         r,
-				config:          config,
+				errorHandler:    errorHandler,
 				insecure:        !httputil.IsTLS(r),
 				sm:              sm,
 				ctx:             ctx,
@@ -71,7 +63,7 @@ type sessionResponseWriter struct {
 	http.ResponseWriter
 	mu              sync.Mutex
 	request         *http.Request
-	config          *SessionConfig
+	errorHandler    ErrorHandler
 	insecure        bool
 	sm              *session.Manager
 	ctx             context.Context
@@ -109,7 +101,7 @@ func (w *sessionResponseWriter) commit() {
 	w.committed = true
 
 	id, err := w.sm.Commit(w.ctx)
-	if handleError(w, w.request, err, w.config.ErrorHandler, http.StatusInternalServerError) {
+	if handleError(w, w.request, err, w.errorHandler, http.StatusInternalServerError) {
 		return
 	}
 
@@ -144,7 +136,7 @@ func (w *sessionResponseWriter) commit() {
 	}
 }
 
-func getSessionCookieID(r *http.Request, config *SessionConfig) (string, error) {
+func getSessionCookieID(r *http.Request) (string, error) {
 	name := SessionCookieNameInsecure
 	if httputil.IsTLS(r) {
 		name = SessionCookieName
