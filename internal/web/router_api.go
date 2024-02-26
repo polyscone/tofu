@@ -3,7 +3,6 @@ package web
 import (
 	"context"
 	"errors"
-	"expvar"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -25,9 +24,6 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	mux := router.NewServeMux()
 	h := api.NewHandler(base)
 
-	metrics := func(r *http.Request) *expvar.Map {
-		return h.Metrics
-	}
 	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		if errors.Is(err, context.Canceled) {
 			w.WriteHeader(httputil.StatusClientClosedRequest)
@@ -49,7 +45,7 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	}
 
 	mux.Use(middleware.Recover(errorHandler("recover middleware")))
-	mux.Use(middleware.Metrics(metrics, "requests.API"))
+	mux.Use(middleware.Metrics(h.Metrics, "requests.API"))
 	mux.Use(h.AttachContextLogger)
 	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
 		ErrorHandler: timeoutErrorHandler,

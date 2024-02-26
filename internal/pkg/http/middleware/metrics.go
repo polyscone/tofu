@@ -11,16 +11,9 @@ import (
 	"time"
 )
 
-func Metrics(metricsMap func(*http.Request) *expvar.Map, name string) Middleware {
+func Metrics(metrics *expvar.Map, name string) Middleware {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			metrics := metricsMap(r)
-			if metrics == nil {
-				next(w, r)
-
-				return
-			}
-
 			var statusCodes *expvar.Map
 			group, ok := metrics.Get(name).(*expvar.Map)
 			if ok {
