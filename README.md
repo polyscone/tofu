@@ -107,15 +107,13 @@ On Windows replace `$(go env GOROOT)` with `%GOROOT%` if it's set, otherwise run
 
 There's also a rule in the make file that will run this for you, which you can run with `make gen/cert`. By default it will generate a cert for you in the data folder for `localhost`. You can override the data folder name with the `DATA` variable, and you can override the certificate hosts with the `GEN_CERT_HOST` variable.
 
-If you have an HTTP server like Caddy setup as a reverse proxy, then you might need to keep things like secure cookie flags, but allow an insecure HTTP connection. In that case you can use the `-behind-secure-proxy` flag instead. This will allow an insecure HTTP connection for the reverse proxy, but allow the main application to stick with the secure defaults internally, like secure cookies.
-
 Setting the `-log-style` flag to `dev` will enable more readable log output than the default JSON style.
 
 Choosing an address for the `-debug-addr` flag will enable Go's built-in debug endpoints. These endpoints do not use the standard library's default serve mux, and run on a separate serve mux from the main application to avoid accidentally exposing the endpoints publicly.
 
 Finally you should pass the `-dev` flag, which will do things like disabling HTML template caching.
 
-There is also a rule in the `Makefile` that will set a few of these basic flags for you; you can run that with `make web/dev`. If you need to append any additional flags you can set then with the `WEB_DEV_FLAGS` variable, for example: `make web/dev WEB_DEV_FLAGS=-insecure`, or `make web/dev WEB_DEV_FLAGS=-behind-secure-proxy`.
+There is also a rule in the `Makefile` that will set a few of these basic flags for you; you can run that with `make web/dev`. If you need to append any additional flags you can set then with the `WEB_DEV_FLAGS` variable, for example: `make web/dev WEB_DEV_FLAGS=-insecure`.
 
 ### Password hashing parameters
 

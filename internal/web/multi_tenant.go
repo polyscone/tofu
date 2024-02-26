@@ -9,6 +9,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/pkg/cache"
 	"github.com/polyscone/tofu/internal/web/handler"
+	"github.com/polyscone/tofu/internal/web/httputil"
 )
 
 var ErrTenantNotFound = errors.New("not found")
@@ -16,19 +17,17 @@ var ErrTenantNotFound = errors.New("not found")
 type NewTenantFunc func(hostname string) (*handler.Tenant, error)
 
 type MultiTenantHandler struct {
-	logger            *slog.Logger
-	behindSecureProxy bool
-	newTenant         NewTenantFunc
-	muxesMu           sync.RWMutex
-	muxes             *cache.Cache[string, http.Handler]
+	logger    *slog.Logger
+	newTenant NewTenantFunc
+	muxesMu   sync.RWMutex
+	muxes     *cache.Cache[string, http.Handler]
 }
 
-func NewMultiTenantHandler(logger *slog.Logger, behindSecureProxy bool, newTenant NewTenantFunc) *MultiTenantHandler {
+func NewMultiTenantHandler(logger *slog.Logger, newTenant NewTenantFunc) *MultiTenantHandler {
 	return &MultiTenantHandler{
-		logger:            logger,
-		behindSecureProxy: behindSecureProxy,
-		newTenant:         newTenant,
-		muxes:             cache.New[string, http.Handler](),
+		logger:    logger,
+		newTenant: newTenant,
+		muxes:     cache.New[string, http.Handler](),
 	}
 }
 
@@ -42,10 +41,9 @@ func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 			panic("tenant logger must be set")
 		}
 
-		if r.TLS != nil || h.behindSecureProxy {
+		tenant.Scheme = "http"
+		if httputil.IsTLS(r) {
 			tenant.Scheme = "https"
-		} else {
-			tenant.Scheme = "http"
 		}
 
 		tenant.Host = r.Host

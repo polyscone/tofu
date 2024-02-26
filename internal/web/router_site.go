@@ -79,7 +79,6 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
 	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
 	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
-		Insecure:     h.Insecure,
 		ErrorHandler: errorHandler("session middleware"),
 	}))
 	mux.Use(h.AttachContext)
@@ -109,7 +108,6 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	})
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		csrf := middleware.CSRF(&middleware.CSRFConfig{
-			Insecure:     h.Insecure,
 			ErrorHandler: errorHandler("CSRF middleware"),
 		})(next)
 

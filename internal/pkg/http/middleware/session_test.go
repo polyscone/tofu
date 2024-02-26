@@ -16,7 +16,7 @@ func TestSession(t *testing.T) {
 
 	mux := router.NewServeMux()
 
-	mux.Use(middleware.Session(sm, &middleware.SessionConfig{Insecure: true}))
+	mux.Use(middleware.Session(sm, nil))
 
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()

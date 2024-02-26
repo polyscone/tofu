@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/pkg/session"
+	"github.com/polyscone/tofu/internal/web/httputil"
 )
 
 const (
@@ -19,7 +20,6 @@ const (
 )
 
 type SessionConfig struct {
-	Insecure     bool
 	ErrorHandler ErrorHandler
 }
 
@@ -51,6 +51,7 @@ func Session(sm *session.Manager, config *SessionConfig) Middleware {
 				ResponseWriter:  w,
 				request:         r,
 				config:          config,
+				insecure:        !httputil.IsTLS(r),
 				sm:              sm,
 				ctx:             ctx,
 				cookieSessionID: cookieSessionID,
@@ -71,6 +72,7 @@ type sessionResponseWriter struct {
 	mu              sync.Mutex
 	request         *http.Request
 	config          *SessionConfig
+	insecure        bool
 	sm              *session.Manager
 	ctx             context.Context
 	cookieSessionID string
@@ -112,7 +114,7 @@ func (w *sessionResponseWriter) commit() {
 	}
 
 	name := SessionCookieName
-	if w.config.Insecure {
+	if w.insecure {
 		name = SessionCookieNameInsecure
 	}
 
@@ -125,7 +127,7 @@ func (w *sessionResponseWriter) commit() {
 			MaxAge:   -1000,
 			Expires:  time.Now().Add(-1 * time.Hour),
 			HttpOnly: true,
-			Secure:   !w.config.Insecure,
+			Secure:   !w.insecure,
 			SameSite: http.SameSiteLaxMode,
 		})
 
@@ -136,16 +138,16 @@ func (w *sessionResponseWriter) commit() {
 			Path:     "/",
 			MaxAge:   0,
 			HttpOnly: true,
-			Secure:   !w.config.Insecure,
+			Secure:   !w.insecure,
 			SameSite: http.SameSiteLaxMode,
 		})
 	}
 }
 
 func getSessionCookieID(r *http.Request, config *SessionConfig) (string, error) {
-	name := SessionCookieName
-	if config.Insecure {
-		name = SessionCookieNameInsecure
+	name := SessionCookieNameInsecure
+	if httputil.IsTLS(r) {
+		name = SessionCookieName
 	}
 
 	cookie, err := r.Cookie(name)

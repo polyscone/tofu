@@ -11,6 +11,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/pkg/csrf"
 	"github.com/polyscone/tofu/internal/pkg/size"
+	"github.com/polyscone/tofu/internal/web/httputil"
 )
 
 const (
@@ -21,7 +22,6 @@ const (
 )
 
 type CSRFConfig struct {
-	Insecure     bool
 	ErrorHandler ErrorHandler
 }
 
@@ -32,9 +32,9 @@ func CSRF(config *CSRFConfig) Middleware {
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			name := CSRFTokenCookieName
-			if config.Insecure {
-				name = CSRFTokenCookieNameInsecure
+			name := CSRFTokenCookieNameInsecure
+			if httputil.IsTLS(r) {
+				name = CSRFTokenCookieName
 			}
 
 			var cookieToken []byte
@@ -104,9 +104,8 @@ func CSRF(config *CSRFConfig) Middleware {
 			rw := &csrfResponseWriter{
 				ResponseWriter: w,
 				r:              r,
-				config:         config,
 				ctx:            ctx,
-				insecure:       config.Insecure,
+				insecure:       !httputil.IsTLS(r),
 			}
 			r = r.WithContext(ctx)
 
@@ -123,7 +122,6 @@ type csrfResponseWriter struct {
 	http.ResponseWriter
 	mu        sync.Mutex
 	r         *http.Request
-	config    *CSRFConfig
 	ctx       context.Context
 	insecure  bool
 	committed bool
@@ -160,7 +158,7 @@ func (w *csrfResponseWriter) commit() {
 
 	if csrf.IsNew(w.ctx) {
 		name := CSRFTokenCookieName
-		if w.config.Insecure {
+		if w.insecure {
 			name = CSRFTokenCookieNameInsecure
 		}
 
@@ -172,7 +170,7 @@ func (w *csrfResponseWriter) commit() {
 			Path:     "/",
 			MaxAge:   0,
 			HttpOnly: true,
-			Secure:   !w.config.Insecure,
+			Secure:   !w.insecure,
 			SameSite: http.SameSiteLaxMode,
 		})
 	}

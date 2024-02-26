@@ -60,7 +60,6 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
 	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
 	mux.Use(middleware.Session(h.Sessions, &middleware.SessionConfig{
-		Insecure:     h.Insecure,
 		ErrorHandler: errorHandler("session middleware"),
 	}))
 	mux.Use(h.AttachContext)
@@ -83,7 +82,6 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 		}
 	})
 	mux.Use(middleware.CSRF(&middleware.CSRFConfig{
-		Insecure:     h.Insecure,
 		ErrorHandler: errorHandler("CSRF middleware"),
 	}))
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{

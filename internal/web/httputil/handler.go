@@ -44,3 +44,7 @@ func RewriteHandler(handler http.Handler, path string) http.Handler {
 		handler.ServeHTTP(w, r)
 	})
 }
+
+func IsTLS(r *http.Request) bool {
+	return r.TLS != nil || r.Header.Get("x-forwarded-proto") == "https"
+}

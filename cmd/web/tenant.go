@@ -220,17 +220,16 @@ func newTenant(host string) (*handler.Tenant, error) {
 	}
 
 	tenant := handler.Tenant{
-		Key:      host + "." + data.Name,
-		Kind:     data.Kind,
-		Hosts:    data.Hosts,
-		Dev:      opts.dev,
-		Insecure: opts.server.insecure,
-		Proxies:  opts.server.proxies,
-		Broker:   broker,
-		Email:    mailer,
-		Logger:   logger,
-		Metrics:  metrics,
-		Svc:      svc,
+		Key:     host + "." + data.Name,
+		Kind:    data.Kind,
+		Hosts:   data.Hosts,
+		Dev:     opts.dev,
+		Proxies: opts.server.proxies,
+		Broker:  broker,
+		Email:   mailer,
+		Logger:  logger,
+		Metrics: metrics,
+		Svc:     svc,
 		Repo: handler.Repo{
 			Account: repo.account,
 			System:  repo.system,

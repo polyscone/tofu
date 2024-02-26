@@ -35,10 +35,9 @@ var opts struct {
 	}
 
 	server struct {
-		addr              Addr
-		insecure          bool
-		behindSecureProxy bool
-		proxies           Proxies
+		addr     Addr
+		insecure bool
+		proxies  Proxies
 	}
 
 	debug struct {
@@ -87,7 +86,6 @@ func main() {
 	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json|dev)")
 	flag.Var(&opts.server.addr, "addr", "The address to run the server on, for example :8080; random if empty")
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
-	flag.BoolVar(&opts.server.behindSecureProxy, "behind-secure-proxy", false, "Run without HTTPS but assume a reverse proxy with HTTPS")
 	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
 	flag.Var(&opts.debug.addr, "debug-addr", "The address to run the private debug server on, for example :8081; random if empty")
 	flag.DurationVar(&opts.password.duration, "password-hash-duration", 1*time.Second, "The target duration of a password hash")
@@ -206,7 +204,7 @@ func main() {
 
 	slog.SetDefault(logger)
 
-	opts.server.addr.insecure = opts.server.insecure || opts.server.behindSecureProxy
+	opts.server.addr.insecure = opts.server.insecure
 	opts.debug.addr.insecure = true
 
 	// Required flag checks
@@ -281,7 +279,7 @@ func main() {
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       web.HandlerTimeout + readHeaderTimeout + spill,
 		WriteTimeout:      web.HandlerTimeout + spill,
-		Handler:           web.NewMultiTenantHandler(logger, opts.server.behindSecureProxy, newTenant),
+		Handler:           web.NewMultiTenantHandler(logger, newTenant),
 	}
 
 	go func() {

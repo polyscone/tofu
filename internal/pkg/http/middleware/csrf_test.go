@@ -16,7 +16,7 @@ import (
 func TestCSRF(t *testing.T) {
 	mux := router.NewServeMux()
 
-	mux.Use(middleware.CSRF(&middleware.CSRFConfig{Insecure: true}))
+	mux.Use(middleware.CSRF(nil))
 
 	mux.HandleFunc("CONNECT /", func(w http.ResponseWriter, r *http.Request) {})
 	mux.HandleFunc("HEAD /", func(w http.ResponseWriter, r *http.Request) {})
