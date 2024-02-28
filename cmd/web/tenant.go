@@ -196,7 +196,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 
 	id, err := repo.account.NextRoleID(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("next id: %w", err)
+		return nil, fmt.Errorf("next role id: %w", err)
 	}
 
 	superRole := account.NewRole(id, "Super", "Has full access to the system; can't be edited or deleted.", permissions)

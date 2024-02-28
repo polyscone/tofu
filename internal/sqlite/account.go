@@ -86,24 +86,6 @@ func (r *AccountRepo) ParseUserID(str string) (account.UserID, error) {
 	return account.UserID(id.String()), nil
 }
 
-func (r *AccountRepo) NextRoleID(ctx context.Context) (account.RoleID, error) {
-	id, err := r.nextID()
-	if err != nil {
-		return account.RoleID(id.String()), err
-	}
-
-	return account.RoleID(id.String()), nil
-}
-
-func (r *AccountRepo) ParseRoleID(str string) (account.RoleID, error) {
-	id, err := r.parseID(str)
-	if err != nil {
-		return account.RoleID(id.String()), err
-	}
-
-	return account.RoleID(id.String()), nil
-}
-
 func (r *AccountRepo) FindUserByID(ctx context.Context, id string) (*account.User, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -314,6 +296,24 @@ func (r *AccountRepo) DeleteStaleSignInAttemptLogs(ctx context.Context, ttl time
 	}
 
 	return nil
+}
+
+func (r *AccountRepo) NextRoleID(ctx context.Context) (account.RoleID, error) {
+	id, err := r.nextID()
+	if err != nil {
+		return account.RoleID(id.String()), err
+	}
+
+	return account.RoleID(id.String()), nil
+}
+
+func (r *AccountRepo) ParseRoleID(str string) (account.RoleID, error) {
+	id, err := r.parseID(str)
+	if err != nil {
+		return account.RoleID(id.String()), err
+	}
+
+	return account.RoleID(id.String()), nil
 }
 
 func (r *AccountRepo) FindRoleByID(ctx context.Context, roleID string) (*account.Role, error) {

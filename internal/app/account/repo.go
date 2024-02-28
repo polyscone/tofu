@@ -17,12 +17,10 @@ import (
 type Reader interface {
 	NextRoleID(ctx context.Context) (RoleID, error)
 	ParseRoleID(str string) (RoleID, error)
+	FindRoleByID(ctx context.Context, id string) (*Role, error)
 
 	NextUserID(ctx context.Context) (UserID, error)
 	ParseUserID(str string) (UserID, error)
-
-	FindRoleByID(ctx context.Context, id string) (*Role, error)
-
 	CountUsers(ctx context.Context) (int, error)
 	FindUserByID(ctx context.Context, id string) (*User, error)
 	FindUserByEmail(ctx context.Context, email string) (*User, error)
