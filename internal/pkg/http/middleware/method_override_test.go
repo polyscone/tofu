@@ -3,8 +3,6 @@ package middleware_test
 import (
 	"io"
 	"net/http"
-	"net/url"
-	"strings"
 	"testing"
 
 	"github.com/polyscone/tofu/internal/pkg/errsx"
@@ -28,24 +26,24 @@ func TestMethodOverride(t *testing.T) {
 
 	tt := []struct {
 		name   string
-		form   string
+		query  string
 		header string
 		want   string
 	}{
-		{"post override form value", http.MethodPost, "", http.MethodPost},
-		{"put override form value", http.MethodPut, "", http.MethodPut},
-		{"patch override form value", http.MethodPatch, "", http.MethodPatch},
-		{"delete override form value", http.MethodDelete, "", http.MethodDelete},
+		{"post override query value", http.MethodPost, "", http.MethodPost},
+		{"put override query value", http.MethodPut, "", http.MethodPut},
+		{"patch override query value", http.MethodPatch, "", http.MethodPatch},
+		{"delete override query value", http.MethodDelete, "", http.MethodDelete},
 
 		{"post override header value", "", http.MethodPost, http.MethodPost},
 		{"put override header value", "", http.MethodPut, http.MethodPut},
 		{"patch override header value", "", http.MethodPatch, http.MethodPatch},
 		{"delete override header value", "", http.MethodDelete, http.MethodDelete},
 
-		{"post override form value preferred over header value", http.MethodPost, http.MethodPut, http.MethodPost},
-		{"put override form value preferred over header value", http.MethodPut, http.MethodPatch, http.MethodPut},
-		{"patch override form value preferred over header value", http.MethodPatch, http.MethodDelete, http.MethodPatch},
-		{"delete override form value preferred over header value", http.MethodDelete, http.MethodPost, http.MethodDelete},
+		{"post override query value preferred over header value", http.MethodPost, http.MethodPut, http.MethodPost},
+		{"put override query value preferred over header value", http.MethodPut, http.MethodPatch, http.MethodPut},
+		{"patch override query value preferred over header value", http.MethodPatch, http.MethodDelete, http.MethodPatch},
+		{"delete override query value preferred over header value", http.MethodDelete, http.MethodPost, http.MethodDelete},
 
 		{"ignore options override", http.MethodOptions, http.MethodOptions, http.MethodPost},
 		{"ignore connect override", http.MethodConnect, http.MethodConnect, http.MethodPost},
@@ -55,13 +53,12 @@ func TestMethodOverride(t *testing.T) {
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			var form io.Reader
-
-			if tc.form != "" {
-				form = strings.NewReader(url.Values{"_method": {tc.form}}.Encode())
+			var query string
+			if tc.query != "" {
+				query = "&_method=" + tc.query
 			}
 
-			req := errsx.Must(http.NewRequest(http.MethodPost, ts.URL+"/?want="+tc.want, form))
+			req := errsx.Must(http.NewRequest(http.MethodPost, ts.URL+"/?want="+tc.want+query, nil))
 
 			req.Header.Set("content-type", "application/x-www-form-urlencoded")
 
