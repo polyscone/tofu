@@ -1,6 +1,5 @@
-{{define "com_form_input" -}}
+{{define "com_textarea_input" -}}
 
-{{$type := .Props.Type}}
 {{$name := .Props.Name}}
 {{$id := or .Props.ID (printf "form__%v" $name)}}
 {{$label := .Props.Label}}
@@ -10,14 +9,13 @@
 {{$required := .Props.Required}}
 {{$autocomplete := .Props.Autocomplete}}
 {{$autofocus := .Props.Autofocus}}
-{{$accept := .Props.Accept}}
 {{$disabled := .Props.Disabled}}
 {{$pattern := .Props.Pattern}}
 {{$minlength := .Props.MinLength}}
 {{$maxlength := .Props.MaxLength}}
 {{$error := .Errors.Get (ReplaceAll $name "-" " ")}}
 
-{{if and $type $name}}
+{{if $name}}
 	{{if $label}}
 		<label
 			for="{{$id}}"
@@ -28,25 +26,21 @@
 		</label>
 	{{end}}
 
-	<input
+	<textarea
 		{{if or $id $label}}id="{{$id}}"{{end}}
-		type="{{$type}}"
 		name="{{$name}}"
-		{{if $value}}value="{{$value}}"{{end}}
 		{{if $placeholder}}placeholder="{{$placeholder}}"{{end}}
 		{{if $autocomplete}}autocomplete="{{$autocomplete}}"{{end}}
 		{{if $autofocus}}autofocus{{end}}
-		{{if $pattern}}pattern="{{$pattern}}"{{end}}
 		{{if $minlength}}minlength="{{$minlength}}"{{end}}
 		{{if $maxlength}}maxlength="{{$maxlength}}"{{end}}
 		{{if $required}}required{{end}}
 		{{if $disabled}}disabled{{end}}
-		{{if $accept}}accept="{{$accept}}"{{end}}
 		{{if $error}}class="invalid"{{end}}
-	>
+	>{{$value}}</textarea>
 	<p class="error">{{$error}}</p>
 {{else}}
-	<p>Form input component: required fields: Type, Name.</p>
+	<p>Form input component: required fields: Name.</p>
 {{end}}
 
 {{- end}}

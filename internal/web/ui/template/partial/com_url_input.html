@@ -1,0 +1,12 @@
+{{define "com_url_input" -}}
+
+{{$placeholder := or .Props.Placeholder "https://example.com"}}
+
+{{template "com_form_input" .WithProps
+	"Props" .Props
+	"Type" "url"
+	"Placeholder" $placeholder
+	"MaxLength" 100
+}}
+
+{{- end}}
