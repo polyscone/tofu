@@ -2,11 +2,13 @@ package httputil
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/internal/app"
 	"github.com/polyscone/tofu/internal/app/account"
 	"github.com/polyscone/tofu/internal/pkg/csrf"
+	"github.com/polyscone/tofu/internal/pkg/human"
 	"github.com/polyscone/tofu/internal/pkg/rate"
 )
 
@@ -130,6 +132,11 @@ func ErrorMessage(err error) string {
 		return "Could not connect to the datasource."
 
 	default:
+		var maxBytesError *http.MaxBytesError
+		if errors.As(err, &maxBytesError) {
+			return fmt.Sprintf("Your request must be no larger than %v.", human.SizeSI(uint64(maxBytesError.Limit)))
+		}
+
 		return "An error has occurred."
 	}
 }
