@@ -76,6 +76,14 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
 	mux.Use(middleware.Session(h.Sessions, errorHandler("session middleware")))
 	mux.Use(h.AttachContext)
+	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
+		switch r.Method {
+		case http.MethodPost, http.MethodPut, http.MethodPatch:
+			return 100 * size.Kilobyte
+		}
+
+		return 0
+	}))
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -120,14 +128,6 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		},
 		ErrorHandler:   errorHandler("rate limit middleware"),
 		TrustedProxies: h.Proxies,
-	}))
-	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
-		switch r.Method {
-		case http.MethodPost, http.MethodPut, http.MethodPatch:
-			return 100 * size.Kilobyte
-		}
-
-		return 0
 	}))
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		var setupDone atomic.Bool
