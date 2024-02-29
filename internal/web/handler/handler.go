@@ -66,7 +66,7 @@ func (h *Handler) AttachContextLogger(next http.HandlerFunc) http.HandlerFunc {
 
 		logger := h.Logger(ctx)
 
-		requestID, err := uuid.NewV4()
+		requestID, err := uuid.NewV7()
 		if err != nil {
 			logger.Error("handler middleware: new v4 UUID", "error", err)
 
