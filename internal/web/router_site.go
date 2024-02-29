@@ -178,10 +178,6 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		}
 	})
 
-	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))
-
-	mux.Handle("/favicon.ico", httputil.RewriteHandler(mux, "/favicon.png"))
-
 	mux.HandleFunc("GET /robots.txt", h.Plain.HandlerFunc("file/robots"))
 	mux.HandleFunc("GET /.well-known/security.txt", h.Plain.HandlerFunc("file/security"))
 
@@ -208,6 +204,10 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	system.RegisterConfigHandlers(h, mux)
 	system.RegisterMetricsHandlers(h, mux)
 	system.RegisterSetupHandlers(h, mux)
+
+	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))
+
+	mux.Handle("/favicon.ico", httputil.RewriteHandler(mux, "/favicon.png"))
 
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)

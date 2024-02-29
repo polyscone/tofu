@@ -116,14 +116,13 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		TrustedProxies: h.Proxies,
 	}))
 
+	mux.HandleFunc("GET /robots.txt", h.Plain.HandlerFunc("file/robots"))
+	mux.HandleFunc("GET /.well-known/security.txt", h.Plain.HandlerFunc("file/security"))
+	mux.HandleFunc("GET /pwa.webmanifest", h.JSON.HandlerFunc("file/pwa_webmanifest"))
 
 	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))
 
 	mux.Handle("/favicon.ico", httputil.RewriteHandler(mux, "/favicon.png"))
-
-	mux.HandleFunc("GET /robots.txt", h.Plain.HandlerFunc("file/robots"))
-	mux.HandleFunc("GET /.well-known/security.txt", h.Plain.HandlerFunc("file/security"))
-	mux.HandleFunc("GET /pwa.webmanifest", h.JSON.HandlerFunc("file/pwa_webmanifest"))
 
 	rootVars := func(h *ui.Handler, r *http.Request) handler.Vars {
 		ctx := r.Context()
