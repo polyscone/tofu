@@ -223,6 +223,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 		Key:     host + "." + data.Name,
 		Kind:    data.Kind,
 		Hosts:   data.Hosts,
+		Data:    filepath.Join(opts.data, data.Name),
 		Dev:     opts.dev,
 		Proxies: opts.server.proxies,
 		Broker:  broker,

@@ -67,6 +67,7 @@ type Tenant struct {
 	Scheme   string
 	Host     string
 	Hosts    map[string]string
+	Data     string
 	Dev      bool
 	Insecure bool
 	Proxies  []string
