@@ -1,6 +1,7 @@
 package httputil
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
@@ -291,7 +292,7 @@ func DecodeRequestForm(dst any, r *http.Request) error {
 
 		if r.PostForm == nil {
 			err := r.ParseMultipartForm(maxMemory)
-			if err != nil {
+			if err != nil && !errors.Is(err, http.ErrNotMultipart) {
 				return nil, fmt.Errorf("parse multipart form: %w", err)
 			}
 		}
