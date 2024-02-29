@@ -120,7 +120,7 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 			case err == nil:
 				user = u
 
-			case err != nil && !errors.Is(err, app.ErrNotFound):
+			case !errors.Is(err, app.ErrNotFound):
 				logger.Error("handler middleware: find user by id", "error", err)
 			}
 		}
