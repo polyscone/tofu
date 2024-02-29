@@ -167,7 +167,7 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 			return nil, fmt.Errorf("find user by id: %w", err)
 		}
 
-		userIsSuper := h.PassportByUser(user).IsSuper
+		userIsSuper := h.PassportByUser(ctx, user).IsSuper
 
 		var userRoleIDs []string
 		if user.Roles != nil {
@@ -237,7 +237,7 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if p := h.PassportByUser(user); p.IsSuper && !containsSuper {
+		if p := h.PassportByUser(ctx, user); p.IsSuper && !containsSuper {
 			h.HTML.ErrorView(w, r, "cannot remove super role", app.ErrForbidden, "site/account/management/user/edit", nil)
 
 			return
@@ -280,7 +280,7 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if p := h.PassportByUser(user); p.IsSuper {
+		if p := h.PassportByUser(ctx, user); p.IsSuper {
 			h.HTML.ErrorView(w, r, "cannot suspend a user with the super role", app.ErrForbidden, "site/account/management/user/edit", nil)
 
 			return
