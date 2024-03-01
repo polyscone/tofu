@@ -27,7 +27,7 @@ func NewPermission(name string) (Permission, error) {
 		return "", errors.New("cannot be empty")
 	}
 
-	if strings.ContainsAny(name, " \t\n\r") {
+	if strings.ContainsAny(name, " \t\r\n") {
 		return "", errors.New("cannot contain whitespace")
 	}
 	if strings.ContainsAny(name, `"'`) {

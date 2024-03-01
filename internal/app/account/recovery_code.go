@@ -29,7 +29,7 @@ func NewRecoveryCode(code string) (RecoveryCode, error) {
 		return "", errors.New("cannot be empty")
 	}
 
-	if strings.ContainsAny(code, " \t\n\r") {
+	if strings.ContainsAny(code, " \t\r\n") {
 		return "", errors.New("cannot contain whitespace")
 	}
 	if strings.ContainsAny(code, `"'`) {

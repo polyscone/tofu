@@ -25,7 +25,7 @@ func NewEmail(email string) (Email, error) {
 		return "", errors.New("cannot be empty")
 	}
 
-	if strings.ContainsAny(email, " \t\n\r") {
+	if strings.ContainsAny(email, " \t\r\n") {
 		return "", errors.New("cannot contain whitespace")
 	}
 	if strings.ContainsAny(email, `"'`) {
