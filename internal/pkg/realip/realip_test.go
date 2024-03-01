@@ -15,7 +15,7 @@ func TestFromRequest(t *testing.T) {
 
 		req.RemoteAddr = "1.2.3.4"
 
-		if want, got := "1.2.3.4", errsx.Must(realip.FromRequest(req)); want != got {
+		if want, got := "1.2.3.4", errsx.Must(realip.FromRequest(req, nil)); want != got {
 			t.Errorf("want %q; got %q", want, got)
 		}
 	})
@@ -29,7 +29,7 @@ func TestFromRequest(t *testing.T) {
 		req.Header.Add("x-forwarded-for", "3.3.3.3")
 		req.Header.Add("x-forwarded-for", "4.4.4.4, 5.5.5.5, 6.6.6.6")
 
-		if want, got := "1.2.3.4", errsx.Must(realip.FromRequest(req)); want != got {
+		if want, got := "1.2.3.4", errsx.Must(realip.FromRequest(req, nil)); want != got {
 			t.Errorf("want %q; got %q", want, got)
 		}
 	})
@@ -45,7 +45,7 @@ func TestFromRequest(t *testing.T) {
 
 		proxies := []string{"6.6.6.6", "2.2.2.2", "4.4.4.4", "5.5.5.5"}
 
-		if want, got := "1.2.3.4", errsx.Must(realip.FromRequest(req, proxies...)); want != got {
+		if want, got := "1.2.3.4", errsx.Must(realip.FromRequest(req, proxies)); want != got {
 			t.Errorf("want %q; got %q", want, got)
 		}
 	})
@@ -61,7 +61,7 @@ func TestFromRequest(t *testing.T) {
 
 		proxies := []string{"6.6.6.6", "2.2.2.2", "4.4.4.4", "5.5.5.5", "1.2.3.4"}
 
-		if want, got := "3.3.3.3", errsx.Must(realip.FromRequest(req, proxies...)); want != got {
+		if want, got := "3.3.3.3", errsx.Must(realip.FromRequest(req, proxies)); want != got {
 			t.Errorf("want %q; got %q", want, got)
 		}
 	})
@@ -77,7 +77,7 @@ func TestFromRequest(t *testing.T) {
 
 		proxies := []string{"1.1.1.1", "3.3.3.3", "6.6.6.6", "2.2.2.2", "4.4.4.4", "5.5.5.5", "1.2.3.4"}
 
-		if want, got := "1.1.1.1", errsx.Must(realip.FromRequest(req, proxies...)); want != got {
+		if want, got := "1.1.1.1", errsx.Must(realip.FromRequest(req, proxies)); want != got {
 			t.Errorf("want %q; got %q", want, got)
 		}
 	})
@@ -87,7 +87,7 @@ func TestFromRequest(t *testing.T) {
 
 		req.RemoteAddr = "1.2.3.4:8080"
 
-		if want, got := "1.2.3.4", errsx.Must(realip.FromRequest(req)); want != got {
+		if want, got := "1.2.3.4", errsx.Must(realip.FromRequest(req, nil)); want != got {
 			t.Errorf("want %q; got %q", want, got)
 		}
 	})
@@ -101,7 +101,7 @@ func TestFromRequest(t *testing.T) {
 
 		proxies := []string{"1.2.3.4", "2.2.2.2"}
 
-		if want, got := "1.1.1.1", errsx.Must(realip.FromRequest(req, proxies...)); want != got {
+		if want, got := "1.1.1.1", errsx.Must(realip.FromRequest(req, proxies)); want != got {
 			t.Errorf("want %q; got %q", want, got)
 		}
 	})
@@ -115,7 +115,7 @@ func TestFromRequest(t *testing.T) {
 			req.Header.Add("x-forwarded-for", "0.0.0.0")
 		}
 
-		_, err := realip.FromRequest(req, "1.1.1.1")
+		_, err := realip.FromRequest(req, []string{"1.1.1.1"})
 		if want, got := realip.ErrTooManyAddresses, err; !errors.Is(got, want) {
 			t.Errorf("want realip.ErrTooManyAddresses; got %q", got)
 		}

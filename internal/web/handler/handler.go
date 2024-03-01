@@ -75,7 +75,7 @@ func (h *Handler) AttachContextLogger(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		remoteAddr, err := realip.FromRequest(r, h.Proxies...)
+		remoteAddr, err := realip.FromRequest(r, h.Proxies)
 		if err != nil {
 			remoteAddr = r.RemoteAddr
 

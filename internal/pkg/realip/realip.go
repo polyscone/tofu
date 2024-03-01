@@ -19,7 +19,7 @@ var ErrTooManyAddresses = errors.New("too many addresses")
 // In the case where a list of trusted proxies is given then the address to the
 // left of the rightmost address in the x-forwarded-for chain is returned
 // assuming the remote address is also a trusted proxy.
-func FromRequest(r *http.Request, proxies ...string) (string, error) {
+func FromRequest(r *http.Request, proxies []string) (string, error) {
 	remoteAddr := r.RemoteAddr
 	if strings.Contains(remoteAddr, ":") {
 		ip, _, err := net.SplitHostPort(remoteAddr)

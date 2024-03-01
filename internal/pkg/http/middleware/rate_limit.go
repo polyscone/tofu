@@ -70,7 +70,7 @@ func RateLimit(capacity, replenish float64, config *RateLimitConfig) Middleware 
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			if config.Consume == nil || config.Consume(r) {
-				ip, err := realip.FromRequest(r, config.TrustedProxies...)
+				ip, err := realip.FromRequest(r, config.TrustedProxies)
 				if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
 					return
 				}
