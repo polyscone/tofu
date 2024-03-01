@@ -471,7 +471,7 @@ func (r *WebRepo) upsertSession(ctx context.Context, tx *Tx, sess session.Sessio
 		)
 		ON CONFLICT DO
 			UPDATE SET
-				data = :data,
+				data = excluded.data,
 				updated_at = :updated_at
 	`,
 		sql.Named("id", sess.ID),

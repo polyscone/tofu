@@ -153,23 +153,40 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 		)
 		ON CONFLICT DO
 			UPDATE SET
-				system_email = :system_email,
-				security_email = :security_email,
-				sign_up_enabled = :sign_up_enabled,
-				sign_up_auto_activate_enabled = :sign_up_auto_activate_enabled,
-				totp_required = :totp_required,
-				totp_sms_enabled = :totp_sms_enabled,
-				magic_link_sign_in_enabled = :magic_link_sign_in_enabled,
-				google_sign_in_enabled = :google_sign_in_enabled,
-				google_sign_in_client_id = :google_sign_in_client_id,
-				facebook_sign_in_enabled = :facebook_sign_in_enabled,
-				facebook_sign_in_app_id = :facebook_sign_in_app_id,
-				facebook_sign_in_app_secret = :facebook_sign_in_app_secret,
-				resend_api_key = :resend_api_key,
-				twilio_sid = :twilio_sid,
-				twilio_token = :twilio_token,
-				twilio_from_tel = :twilio_from_tel,
+				system_email = excluded.system_email,
+				security_email = excluded.security_email,
+				sign_up_enabled = excluded.sign_up_enabled,
+				sign_up_auto_activate_enabled = excluded.sign_up_auto_activate_enabled,
+				totp_required = excluded.totp_required,
+				totp_sms_enabled = excluded.totp_sms_enabled,
+				magic_link_sign_in_enabled = excluded.magic_link_sign_in_enabled,
+				google_sign_in_enabled = excluded.google_sign_in_enabled,
+				google_sign_in_client_id = excluded.google_sign_in_client_id,
+				facebook_sign_in_enabled = excluded.facebook_sign_in_enabled,
+				facebook_sign_in_app_id = excluded.facebook_sign_in_app_id,
+				facebook_sign_in_app_secret = excluded.facebook_sign_in_app_secret,
+				resend_api_key = excluded.resend_api_key,
+				twilio_sid = excluded.twilio_sid,
+				twilio_token = excluded.twilio_token,
+				twilio_from_tel = excluded.twilio_from_tel,
 				updated_at = :updated_at
+			WHERE
+				system_email != excluded.system_email OR
+				security_email != excluded.security_email OR
+				sign_up_enabled != excluded.sign_up_enabled OR
+				sign_up_auto_activate_enabled != excluded.sign_up_auto_activate_enabled OR
+				totp_required != excluded.totp_required OR
+				totp_sms_enabled != excluded.totp_sms_enabled OR
+				magic_link_sign_in_enabled != excluded.magic_link_sign_in_enabled OR
+				google_sign_in_enabled != excluded.google_sign_in_enabled OR
+				google_sign_in_client_id != excluded.google_sign_in_client_id OR
+				facebook_sign_in_enabled != excluded.facebook_sign_in_enabled OR
+				facebook_sign_in_app_id != excluded.facebook_sign_in_app_id OR
+				facebook_sign_in_app_secret != excluded.facebook_sign_in_app_secret OR
+				resend_api_key != excluded.resend_api_key OR
+				twilio_sid != excluded.twilio_sid OR
+				twilio_token != excluded.twilio_token OR
+				twilio_from_tel != excluded.twilio_from_tel
 	`,
 		sql.Named("id", "0feca0fa-254f-4a42-b76d-95548020110a"),
 		sql.Named("system_email", config.SystemEmail),

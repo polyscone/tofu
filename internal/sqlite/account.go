@@ -951,9 +951,12 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 			)
 			ON CONFLICT DO
 				UPDATE SET
-					requested_at = :requested_at,
-					approved_at = :approved_at,
+					requested_at = excluded.requested_at,
+					approved_at = excluded.approved_at,
 					updated_at = :updated_at
+				WHERE
+					ifnull(requested_at, '') != ifnull(excluded.requested_at, '') OR
+					ifnull(approved_at, '') != ifnull(excluded.approved_at, '')
 		`,
 			sql.Named("user_id", user.ID),
 			sql.Named("requested_at", NullTime(user.TOTPResetRequestedAt)),
@@ -1132,9 +1135,12 @@ func (r *AccountRepo) upsertSignInAttemptLog(ctx context.Context, tx *Tx, log *a
 		)
 		ON CONFLICT DO
 			UPDATE SET
-				attempts = :attempts,
-				last_attempt_at = :last_attempt_at,
+				attempts = excluded.attempts,
+				last_attempt_at = excluded.last_attempt_at,
 				updated_at = :updated_at
+			WHERE
+				attempts != excluded.attempts OR
+				last_attempt_at != excluded.last_attempt_at
 	`,
 		sql.Named("email", log.Email),
 		sql.Named("attempts", log.Attempts),
@@ -1246,7 +1252,7 @@ func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string)
 		)
 		ON CONFLICT DO
 			UPDATE SET
-				name = :name,
+				name = excluded.name,
 				updated_at = :updated_at
 		RETURNING id
 	`,
