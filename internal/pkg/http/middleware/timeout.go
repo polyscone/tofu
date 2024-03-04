@@ -115,11 +115,11 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 					goto TimeoutSelect
 				}
 
+				rw.mu.Unlock()
+
 				cancel()
 
 				config.ErrorHandler(w, r, http.ErrHandlerTimeout)
-
-				rw.mu.Unlock()
 
 			case <-ctx.Done():
 				rw.mu.Lock()
@@ -132,6 +132,8 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 					goto TimeoutSelect
 				}
 
+				rw.mu.Unlock()
+
 				switch err := ctx.Err(); err {
 				case context.DeadlineExceeded:
 					config.ErrorHandler(w, r, http.ErrHandlerTimeout)
@@ -139,8 +141,6 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 				default:
 					config.ErrorHandler(w, r, err)
 				}
-
-				rw.mu.Unlock()
 			}
 		}
 	}
