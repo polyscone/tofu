@@ -6,6 +6,8 @@ GOROOT := $(subst \,/,$(shell go env GOROOT))
 PKG := ./...
 OUT := .
 TAGS := json1 fts5
+GCFLAGS :=
+LDFLAGS :=
 BENCH_COUNT := 3
 DATA := ./.data
 
@@ -23,7 +25,7 @@ ifdef DEBUG
 	# -N disables all optimisations
 	# -l disables inlining
 	# See: go tool compile -help
-	BUILD_FLAGS += -gcflags "-N -l"
+	GCFLAGS += -N -l
 
 	ifeq ($(OS),Windows_NT)
 		ifneq ($(PKG),./...)
@@ -31,7 +33,7 @@ ifdef DEBUG
 			# in position-independent executables (PIE), which is the default
 			# build mode for Go
 			#
-			# Because of thise Windows has to set its build mode to exe, but
+			# Because of this Windows has to set its build mode to exe, but
 			# the exe build mode can only be used in builds where there is one
 			# main function, so we only include the flag when we're not building
 			# all packages
@@ -43,22 +45,30 @@ else
 endif
 
 ifdef OPTIMISATIONS
-	BUILD_FLAGS += -gcflags "$(OPTIMISATIONS)=-m"
+	GCFLAGS += $(OPTIMISATIONS)=-m
 endif
 
 ifdef CHECK_BCE
-	BUILD_FLAGS += -gcflags "$(CHECK_BCE)=-d=ssa/check_bce"
+	GCFLAGS += $(CHECK_BCE)=-d=ssa/check_bce
 endif
 
 ifndef DEBUG
 	# -s disables the symbol table
 	# -w disables DWARF generation
 	# See: go tool link -help
-	BUILD_FLAGS += -ldflags "-s -w"
+	LDFLAGS += -s -w
 endif
 
 ifdef WINDOWSGUI
-	BUILD_FLAGS += -ldflags "-H windowsgui"
+	LDFLAGS += -H windowsgui
+endif
+
+ifdef GCFLAGS
+	BUILD_FLAGS += -gcflags "$(GCFLAGS)"
+endif
+
+ifdef LDFLAGS
+	BUILD_FLAGS += -ldflags "$(LDFLAGS)"
 endif
 
 .PHONY: build
