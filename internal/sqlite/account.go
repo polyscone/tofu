@@ -536,7 +536,7 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			u.suspended_reason,
 			tr.requested_at,
 			tr.approved_at,
-			COUNT(1) OVER () AS total
+			COUNT(*) OVER () AS total
 		FROM account__users AS u
 		`+strings.Join(joins, "\n")+`
 		`+whereSQL(where)+`
@@ -1201,7 +1201,7 @@ func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter permis
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
 			name,
-			COUNT(1) OVER () AS total
+			COUNT(*) OVER () AS total
 		FROM account__permissions AS p
 		`+strings.Join(joins, "\n")+`
 		`+whereSQL(where),
@@ -1304,7 +1304,7 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 			id,
 			name,
 			description,
-			COUNT(1) OVER () AS total
+			COUNT(*) OVER () AS total
 		FROM account__roles AS r
 		`+strings.Join(joins, "\n")+`
 		`+whereSQL(where)+`
@@ -1479,7 +1479,7 @@ func (r *AccountRepo) findHashedRecoveryCodes(ctx context.Context, tx *Tx, userI
 	rows, err := tx.QueryContext(ctx, `
 		SELECT
 			hashed_code,
-			COUNT(1) OVER () AS total
+			COUNT(*) OVER () AS total
 		FROM account__recovery_codes
 		WHERE user_id = :user_id
 	`,

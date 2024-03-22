@@ -184,7 +184,7 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 	}
 
 	var count int
-	if err := tx.QueryRowContext(ctx, "SELECT COUNT(1) FROM _migrations;").Scan(&count); err != nil {
+	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM _migrations;").Scan(&count); err != nil {
 		return err
 	}
 
