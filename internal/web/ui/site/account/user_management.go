@@ -84,7 +84,7 @@ func userListGet(h *ui.Handler) http.HandlerFunc {
 		sorts := r.URL.Query()["sort"]
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
-		users, total, err := h.Repo.Account.FindUsersPageBySearch(ctx, sortTopID, sorts, search, page, size)
+		users, total, err := h.Repo.Account.FindUsersPageBySearch(ctx, page, size, sortTopID, sorts, search)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find users page by search", err, "site/error", nil)
 

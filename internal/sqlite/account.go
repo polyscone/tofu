@@ -210,7 +210,7 @@ func (r *AccountRepo) AddUser(ctx context.Context, user *account.User) error {
 	return nil
 }
 
-func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, sortTopID string, sorts []string, search string, page, size int) ([]*account.User, int, error) {
+func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, page, size int, sortTopID string, sorts []string, search string) ([]*account.User, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, fmt.Errorf("begin tx: %w", err)
@@ -386,7 +386,7 @@ func (r *AccountRepo) FindRoles(ctx context.Context, sortTopID string) ([]*accou
 	return r.findRoles(ctx, tx, account.RoleFilter{SortTopID: sortTopID})
 }
 
-func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, sortTopID string, sorts []string, search string, page, size int) ([]*account.Role, int, error) {
+func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, page, size int, sortTopID string, sorts []string, search string) ([]*account.Role, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, fmt.Errorf("begin tx: %w", err)

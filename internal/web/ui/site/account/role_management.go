@@ -56,7 +56,7 @@ func roleListGet(h *ui.Handler) http.HandlerFunc {
 		sorts := r.URL.Query()["sort"]
 		search := r.URL.Query().Get("search")
 		page, size := httputil.Pagination(r)
-		roles, total, err := h.Repo.Account.FindRolesPageBySearch(ctx, sortTopID, sorts, search, page, size)
+		roles, total, err := h.Repo.Account.FindRolesPageBySearch(ctx, page, size, sortTopID, sorts, search)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find roles page by search", err, "site/error", nil)
 
