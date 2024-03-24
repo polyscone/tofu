@@ -360,7 +360,7 @@ func whereSQL(where []string) string {
 		return ""
 	}
 
-	return "WHERE " + strings.Join(where, " AND ")
+	return "WHERE (" + strings.Join(where, ") AND (") + ")"
 }
 
 func orderBySQL(sorts []string) string {
