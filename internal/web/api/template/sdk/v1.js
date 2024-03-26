@@ -2,17 +2,20 @@
 
 {{define "view_body" -}}
 
-{{$def := "const sdk =" | UnescapeJS -}}
-{{$export := "export default sdk" | UnescapeJS -}}
+{{$factoryName := or (.URL.Query.Get "factory-name") "createSDK" -}}
 
-{{$windowName := .URL.Query.Get "window-name" -}}
-{{if $windowName -}}
-	{{$def = printf "window[%q] ||=" $windowName | UnescapeJS -}}
-	{{$export = "" | UnescapeJS -}}
-{{end -}}
-
-{{$def}} (function () {
+function {{$factoryName | UnescapeJS}} (opts) {
 	"use strict"
+
+	opts ||= {}
+	opts.host ||= ""
+
+	if (!opts.fetch && typeof window !== "undefined") {
+		opts.fetch = window.fetch
+	}
+
+	const host = opts.host
+	const fetch = opts.fetch
 
 	let _pollSessionHandle = null
 	let _pollNetworkStatusHandle = null
@@ -52,6 +55,10 @@
 
 	const account = {
 		session () {
+			if (typeof localStorage === "undefined") {
+				return {}
+			}
+
 			const value = localStorage.getItem("sdk.session")
 
 			if (!value) {
@@ -62,6 +69,10 @@
 		},
 
 		async pollSession () {
+			if (typeof localStorage === "undefined") {
+				return {}
+			}
+
 			clearTimeout(_pollSessionHandle)
 
 			if (sdk.network === "connected") {
@@ -232,6 +243,10 @@
 
 	const meta = {
 		async pollNetworkStatus () {
+			if (typeof navigator === "undefined") {
+				return
+			}
+
 			_pollingNetworkStatus = true
 
 			clearTimeout(_pollNetworkStatusHandle)
@@ -286,7 +301,7 @@
 		}
 
 		try {
-			const res = await fetch(sdk.prefix + url, opts)
+			const res = await fetch(host + sdk.prefix + url, opts)
 
 			security.csrfToken = res.headers.get("x-csrf-token") || security.csrfToken
 
@@ -380,8 +395,15 @@
 	}
 
 	return sdk
-})()
+}
 
-{{$export}}
+{{$globalName := .URL.Query.Get "global-name" -}}
+{{if $globalName -}}
+	{{printf "global[%q] ||= %v" $globalName $factoryName | UnescapeJS -}}
+{{end -}}
+
+{{if .URL.Query.Get "export" -}}
+	export default {{$factoryName | UnescapeJS}}()
+{{end -}}
 
 {{- end}}
