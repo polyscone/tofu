@@ -393,6 +393,17 @@ func limitOffsetSQL(limit, offset int) string {
 	return ""
 }
 
+func inSQL[T any](args []T) (string, []any) {
+	placeholders := strings.Join(strings.Split(strings.Repeat("?", len(args)), ""), ", ")
+
+	values := make([]any, len(args))
+	for i := 0; i < len(values); i++ {
+		values[i] = args[i]
+	}
+
+	return placeholders, values
+}
+
 const RFC3339NanoZero = "2006-01-02T15:04:05.000000000Z07:00"
 
 type Time time.Time
