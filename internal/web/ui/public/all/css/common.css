@@ -180,7 +180,7 @@
 
 	:is(input, textarea, select).invalid:placeholder-shown,
 	:is(input, textarea, select).invalid:not(:placeholder-shown),
-	:is(input:not([type="time"]), textarea):invalid:not(:placeholder-shown),
+	:is(input:not([type="time"], [type="file"]), textarea):invalid:not(:placeholder-shown),
 	[data-invalid] :is(input, textarea, select):invalid {
 		background: var(--clr-invalid-100);
 		border-color: var(--clr-invalid-400);
