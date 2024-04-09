@@ -22,7 +22,7 @@ func verifyPost(h *api.Handler) http.HandlerFunc {
 			Password      string
 			PasswordCheck string
 		}
-		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return

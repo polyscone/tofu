@@ -34,7 +34,7 @@ func signInPost(h *api.Handler) http.HandlerFunc {
 			Email    string
 			Password string
 		}
-		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -73,7 +73,7 @@ func signInMagicLinkRequestPost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			Email string
 		}
-		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -107,7 +107,7 @@ func signInMagicLinkPost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			Token string
 		}
-		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -132,7 +132,7 @@ func signInTOTPPost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string
 		}
-		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -171,7 +171,7 @@ func signInRecoveryCodePost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			RecoveryCode string
 		}
-		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -196,7 +196,7 @@ func signInGooglePost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			JWT string
 		}
-		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -223,7 +223,7 @@ func signInFacebookPost(h *api.Handler) http.HandlerFunc {
 			AccessToken string
 			Email       string
 		}
-		if err := httputil.DecodeJSON(&input, r.Body); err != nil {
+		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return

@@ -301,6 +301,11 @@ function {{$factoryName | UnescapeJS}} (opts) {
 		}
 
 		try {
+			if (opts.body && (!opts.headers || !opts.headers["content-type"])) {
+				opts.headers ||= {}
+				opts.headers["content-type"] = "application/json"
+			}
+
 			const res = await fetch(host + sdk.prefix + url, opts)
 
 			security.csrfToken = res.headers.get("x-csrf-token") || security.csrfToken

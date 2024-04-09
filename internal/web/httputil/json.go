@@ -80,9 +80,7 @@ func DecodeRequestJSON(dst any, r *http.Request) error {
 		return ErrExpectedJSON
 	}
 
-	const disallowUnknownFields = true
-
-	return decodeJSON(dst, r.Body, disallowUnknownFields)
+	return DecodeJSON(dst, r.Body)
 }
 
 func RelaxedDecodeRequestJSON(dst any, r *http.Request) error {
@@ -90,7 +88,5 @@ func RelaxedDecodeRequestJSON(dst any, r *http.Request) error {
 		return ErrExpectedJSON
 	}
 
-	const disallowUnknownFields = false
-
-	return decodeJSON(dst, r.Body, disallowUnknownFields)
+	return RelaxedDecodeJSON(dst, r.Body)
 }
