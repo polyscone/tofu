@@ -18,6 +18,7 @@ function {{$factoryName | UnescapeJS}} (opts) {
 	const fetch = opts.fetch
 
 	let _pollSessionHandle = null
+	let _pollingSession = false
 	let _pollNetworkStatusHandle = null
 	let _pollingNetworkStatus = false
 	let _isFirstRequest = true
@@ -73,6 +74,8 @@ function {{$factoryName | UnescapeJS}} (opts) {
 				return {}
 			}
 
+			_pollingSession = true
+
 			clearTimeout(_pollSessionHandle)
 
 			if (sdk.network === "connected") {
@@ -91,6 +94,7 @@ function {{$factoryName | UnescapeJS}} (opts) {
 			}
 
 			_pollSessionHandle = setTimeout(account.pollSession, 1 * 60 * 1000)
+			_pollingSession = false
 		},
 
 		async signUp (email) {
@@ -334,6 +338,16 @@ function {{$factoryName | UnescapeJS}} (opts) {
 			await meta.pollNetworkStatus()
 		}
 
+		const maybeSessionExpired = [
+			platform.http.unauthorised,
+			platform.http.forbidden,
+			platform.http.internalServerError,
+		].includes(ret.status)
+
+		if (maybeSessionExpired && !_pollingSession) {
+			await api.account.pollSession()
+		}
+
 		if (!ret.ok && ret.body.csrf && !opts.refreshCSRF) {
 			opts.refreshCSRF = true
 
@@ -392,7 +406,10 @@ function {{$factoryName | UnescapeJS}} (opts) {
 		http: {
 			noContent: 204,
 			badRequest: 400,
+			unauthorised: 401,
+			forbidden: 403,
 			tooManyRequests: 429,
+			internalServerError: 500,
 			badGateway: 502,
 			gatewayTimeout: 504,
 		},
