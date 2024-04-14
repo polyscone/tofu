@@ -18,9 +18,11 @@ type RateLimitConfig struct {
 	ErrorHandler   ErrorHandler
 }
 
+var defaultRateLimitConfig RateLimitConfig
+
 func RateLimit(capacity, replenish float64, config *RateLimitConfig) Middleware {
 	if config == nil {
-		config = &RateLimitConfig{}
+		config = &defaultRateLimitConfig
 	}
 
 	type client struct {

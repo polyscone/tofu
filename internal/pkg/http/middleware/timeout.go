@@ -16,6 +16,15 @@ type TimeoutConfig struct {
 	Logger       func(r *http.Request) *slog.Logger
 }
 
+var defaultTimeoutConfig = TimeoutConfig{
+	ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+		http.Error(w, http.StatusText(http.StatusGatewayTimeout), http.StatusGatewayTimeout)
+	},
+	Logger: func(r *http.Request) *slog.Logger {
+		return slog.Default()
+	},
+}
+
 // Timeout returns a new timeout middleware configured using the given TTL.
 //
 // If a response is flushed at all then the timeout is ignored and left up to
@@ -26,17 +35,13 @@ type TimeoutConfig struct {
 // expires before then.
 func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 	if config == nil {
-		config = &TimeoutConfig{}
+		config = &defaultTimeoutConfig
 	}
 	if config.ErrorHandler == nil {
-		config.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, http.StatusText(http.StatusGatewayTimeout), http.StatusGatewayTimeout)
-		}
+		config.ErrorHandler = defaultTimeoutConfig.ErrorHandler
 	}
 	if config.Logger == nil {
-		config.Logger = func(r *http.Request) *slog.Logger {
-			return slog.Default()
-		}
+		config.Logger = defaultTimeoutConfig.Logger
 	}
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
