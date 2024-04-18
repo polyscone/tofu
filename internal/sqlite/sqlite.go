@@ -183,11 +183,6 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 		return err
 	}
 
-	var count int
-	if err := tx.QueryRowContext(ctx, "SELECT COUNT(*) FROM _migrations;").Scan(&count); err != nil {
-		return err
-	}
-
 	var version int
 	stmt = "SELECT version FROM _migrations WHERE name = :name;"
 	args = []any{sql.Named("name", name)}
@@ -210,10 +205,6 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 	// If the version is the same as the number of migration strings then we must be up to date
 	if nm == version {
 		return nil
-	}
-
-	if _, err := tx.ExecContext(ctx, "PRAGMA foreign_keys = OFF;"); err != nil {
-		return err
 	}
 
 	for i, stmt := range migrations {
@@ -253,13 +244,29 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 		}
 	}
 
-	_, err := tx.ExecContext(ctx, "PRAGMA foreign_keys = ON;")
-
-	return err
+	return nil
 }
 
 func migrateFS(ctx context.Context, db *sql.DB, name string, fsys fs.FS) error {
-	tx, err := db.BeginTx(ctx, nil)
+	// We get a connection from the pool directly here so we can make
+	// sure that pragmas run on this connection will be in effect for the
+	// transaction we use for migrations
+	//
+	// If we use sql.DB.BeginTx directly then the connection used for the
+	// transaction could end up being a different one from the pool
+	conn, err := db.Conn(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer conn.Close()
+
+	// Pragmas need to be set before the transaction starts, which is why
+	// we do it on the connection here
+	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys = OFF;"); err != nil {
+		return err
+	}
+
+	tx, err := conn.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -296,6 +303,12 @@ func migrateFS(ctx context.Context, db *sql.DB, name string, fsys fs.FS) error {
 
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	// Since pragmas are set outside of the transaction we need to
+	// make sure we revert the changes here
+	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys = ON;"); err != nil {
+		return err
 	}
 
 	return nil
