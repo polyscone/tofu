@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/polyscone/tofu/internal/pkg/human"
 )
+
+const telMaxLength = 100
 
 var (
 	invalidTelChars = regexp.MustCompile(`[^\d+ ]`)
@@ -17,8 +20,19 @@ var (
 type Tel string
 
 func NewTel(tel string) (Tel, error) {
-	if strings.TrimSpace(tel) == "" {
+	tel = strings.TrimSpace(tel)
+	if tel == "" {
 		return "", errors.New("cannot be empty")
+	}
+
+	tel = strings.Join(strings.Fields(tel), " ")
+
+	if rc := utf8.RuneCountInString(tel); rc > telMaxLength {
+		return "", fmt.Errorf("cannot be a over %v characters in length", telMaxLength)
+	}
+
+	if strings.Contains(tel, "+") && tel[0] != '+' {
+		return "", errors.New("+ sign must come at the beginning")
 	}
 
 	if matches := invalidTelChars.FindAllString(tel, -1); len(matches) != 0 {
