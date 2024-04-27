@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/polyscone/tofu/internal/pkg/smtp"
-	"github.com/polyscone/tofu/internal/sqlite"
+	"github.com/polyscone/tofu/pkg/smtp"
+	"github.com/polyscone/tofu/sqlite"
 )
 
 type smtpConfig struct {

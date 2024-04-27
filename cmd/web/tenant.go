@@ -12,17 +12,17 @@ import (
 	"path/filepath"
 	"sync"
 
-	"github.com/polyscone/tofu/internal/app"
-	"github.com/polyscone/tofu/internal/app/account"
-	"github.com/polyscone/tofu/internal/app/system"
-	"github.com/polyscone/tofu/internal/pkg/errsx"
-	"github.com/polyscone/tofu/internal/pkg/event"
-	"github.com/polyscone/tofu/internal/pkg/slogger"
-	"github.com/polyscone/tofu/internal/pkg/smtp"
-	"github.com/polyscone/tofu/internal/sqlite"
-	"github.com/polyscone/tofu/internal/web"
-	"github.com/polyscone/tofu/internal/web/guard"
-	"github.com/polyscone/tofu/internal/web/handler"
+	"github.com/polyscone/tofu/app"
+	"github.com/polyscone/tofu/app/account"
+	"github.com/polyscone/tofu/app/system"
+	"github.com/polyscone/tofu/pkg/errsx"
+	"github.com/polyscone/tofu/pkg/event"
+	"github.com/polyscone/tofu/pkg/slogger"
+	"github.com/polyscone/tofu/pkg/smtp"
+	"github.com/polyscone/tofu/sqlite"
+	"github.com/polyscone/tofu/web"
+	"github.com/polyscone/tofu/web/guard"
+	"github.com/polyscone/tofu/web/handler"
 )
 
 var tenants = make(map[string]Tenant)

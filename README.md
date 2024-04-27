@@ -15,9 +15,9 @@ Setting the `RACE` variable to anything will build with `-race`.
 
 Setting the `DEBUG` variable to anything will build with optimisations and inlining disabled. Otherwise builds are done in "release" mode where paths are trimmed, and the symbol table and DWARF generation is disabled.
 
-The `OPTIMISATIONS` variable controls the package pattern to use when printing compiler optimisation decisions. For example, `make OPTIMISATIONS=./internal/foo` will build with `-gcflags "./internal/foo=-m"`.
+The `OPTIMISATIONS` variable controls the package pattern to use when printing compiler optimisation decisions. For example, `make OPTIMISATIONS=./foo` will build with `-gcflags "./foo=-m"`.
 
-The `CHECK_BCE` variable controls the package pattern to use when printing compiler bounds check elimination decisions. For example, `make CHECK_BCE=./internal/foo` will build with `-gcflags "./internal/foo=-d=ssa/check_bce"`.
+The `CHECK_BCE` variable controls the package pattern to use when printing compiler bounds check elimination decisions. For example, `make CHECK_BCE=./foo` will build with `-gcflags "./foo=-d=ssa/check_bce"`.
 
 The benchmark count can be set via the `BENCH_COUNT` variable.
 

@@ -95,7 +95,7 @@ vulncheck:
 bench:
 ifeq ($(PKG),./...)
 	@echo Please set the PKG variable to the specific package you want to benchmark
-	@echo For example: make bench PKG=./internal/foo
+	@echo For example: make bench PKG=./foo
 else
 	go test $(BUILD_TAGS) -vet off -run no-tests -bench . -count $(BENCH_COUNT) $(PKG)
 endif

@@ -20,9 +20,9 @@ import (
 	"time"
 	_ "time/tzdata"
 
-	"github.com/polyscone/tofu/internal/pkg/size"
-	"github.com/polyscone/tofu/internal/pkg/slogger"
-	"github.com/polyscone/tofu/internal/web"
+	"github.com/polyscone/tofu/pkg/size"
+	"github.com/polyscone/tofu/pkg/slogger"
+	"github.com/polyscone/tofu/web"
 )
 
 var opts struct {
