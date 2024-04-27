@@ -33,6 +33,9 @@ var defaultTimeoutConfig = TimeoutConfig{
 // If the request's write deadline is set through an http.ResponseController then
 // the timeout will be extended to at least that time if the original timeout
 // expires before then.
+//
+// Any writes to the handler's ResponseWriter after the deadline will return
+// an http.ErrHandlerTimeout.
 func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 	if config == nil {
 		config = &defaultTimeoutConfig
@@ -126,6 +129,8 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 
 				config.ErrorHandler(w, r, http.ErrHandlerTimeout)
 
+				rw.err = http.ErrHandlerTimeout
+
 			case <-ctx.Done():
 				rw.mu.Lock()
 
@@ -143,6 +148,8 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 				case context.DeadlineExceeded:
 					config.ErrorHandler(w, r, http.ErrHandlerTimeout)
 
+					rw.err = http.ErrHandlerTimeout
+
 				default:
 					config.ErrorHandler(w, r, err)
 				}
@@ -156,6 +163,7 @@ var _ Unwrapper = (*timeoutWriter)(nil)
 type timeoutWriter struct {
 	http.ResponseWriter
 	mu         sync.Mutex
+	err        error
 	h          http.Header
 	r          *http.Request
 	rc         *http.ResponseController
@@ -218,6 +226,10 @@ func (w *timeoutWriter) Header() http.Header {
 func (w *timeoutWriter) Write(b []byte) (int, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
+
+	if w.err != nil {
+		return 0, w.err
+	}
 
 	return w.buf.Write(b)
 }
