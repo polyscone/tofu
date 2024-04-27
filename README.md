@@ -27,7 +27,7 @@ For all available `make` rules check the `Makefile` in the root of the project.
 
 ## The web application adapter
 
-The `web` binary built from the `cmd/web` directory is an HTTP web adapter for the main application. It implements an MPA style web interface, SPA style PWA, and a simple JSON API that both the MPA and SPA can interact with.
+The `web` binary built from the `cmd/webd` directory is an HTTP web adapter for the main application. It implements an MPA style web interface, SPA style PWA, and a simple JSON API that both the MPA and SPA can interact with.
 
 ### Web application tenants
 
@@ -113,7 +113,7 @@ Choosing an address for the `-debug-addr` flag will enable Go's built-in debug e
 
 Finally you should pass the `-dev` flag, which will do things like disabling HTML template caching.
 
-There is also a rule in the `Makefile` that will set a few of these basic flags for you; you can run that with `make web/dev`. If you need to append any additional flags you can set then with the `WEB_DEV_FLAGS` variable, for example: `make web/dev WEB_DEV_FLAGS=-insecure`.
+There is also a rule in the `Makefile` that will set a few of these basic flags for you; you can run that with `make webd/dev`. If you need to append any additional flags you can set then with the `WEBD_DEV_FLAGS` variable, for example: `make webd/dev WEBD_DEV_FLAGS=-insecure`.
 
 ### Password hashing parameters
 
