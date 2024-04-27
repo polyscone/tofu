@@ -3,7 +3,6 @@ package middleware
 import (
 	"fmt"
 	"net/http"
-	"sync"
 )
 
 func NoContent(next http.HandlerFunc) http.HandlerFunc {
@@ -22,7 +21,6 @@ var _ Unwrapper = (*noContentResponseWriter)(nil)
 
 type noContentResponseWriter struct {
 	http.ResponseWriter
-	mu     sync.Mutex
 	header bool
 	body   bool
 }
@@ -32,9 +30,6 @@ func (w *noContentResponseWriter) Unwrap() http.ResponseWriter {
 }
 
 func (w *noContentResponseWriter) Write(b []byte) (int, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	i, err := w.ResponseWriter.Write(b)
 	if err != nil {
 		err = fmt.Errorf("no content: write response: %w", err)
@@ -47,9 +42,6 @@ func (w *noContentResponseWriter) Write(b []byte) (int, error) {
 }
 
 func (w *noContentResponseWriter) WriteHeader(statusCode int) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	w.header = true
 
 	w.ResponseWriter.WriteHeader(statusCode)

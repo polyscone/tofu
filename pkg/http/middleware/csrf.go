@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"slices"
 	"strings"
-	"sync"
 
 	"github.com/polyscone/tofu/pkg/csrf"
 	"github.com/polyscone/tofu/pkg/size"
@@ -112,7 +111,6 @@ var _ Unwrapper = (*csrfResponseWriter)(nil)
 
 type csrfResponseWriter struct {
 	http.ResponseWriter
-	mu        sync.Mutex
 	r         *http.Request
 	ctx       context.Context
 	insecure  bool
@@ -124,18 +122,12 @@ func (w *csrfResponseWriter) Unwrap() http.ResponseWriter {
 }
 
 func (w *csrfResponseWriter) Write(b []byte) (int, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	w.commit()
 
 	return w.ResponseWriter.Write(b)
 }
 
 func (w *csrfResponseWriter) WriteHeader(statusCode int) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	w.commit()
 
 	w.ResponseWriter.WriteHeader(statusCode)

@@ -7,7 +7,6 @@ import (
 	"net"
 	"net/http"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -100,7 +99,6 @@ var _ Unwrapper = (*metricsResponseWriter)(nil)
 
 type metricsResponseWriter struct {
 	http.ResponseWriter
-	mu           sync.Mutex
 	rc           *http.ResponseController
 	group        *expvar.Map
 	statusCode   int
@@ -148,18 +146,12 @@ func (w *metricsResponseWriter) WriteHeader(statusCode int) {
 }
 
 func (w *metricsResponseWriter) recordFirstWrite() {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	if w.firstWriteAt.IsZero() {
 		w.firstWriteAt = time.Now()
 	}
 }
 
 func (w *metricsResponseWriter) recordHijack() {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	if w.hijackedAt.IsZero() {
 		w.hijackedAt = time.Now()
 	}

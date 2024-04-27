@@ -8,7 +8,6 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
-	"sync"
 )
 
 type ETagConfig struct {
@@ -85,7 +84,6 @@ var _ Unwrapper = (*etagResponseWriter)(nil)
 
 type etagResponseWriter struct {
 	http.ResponseWriter
-	mu         sync.Mutex
 	rc         *http.ResponseController
 	buf        *bytes.Buffer
 	w          io.Writer
@@ -100,9 +98,6 @@ func (w *etagResponseWriter) Unwrap() http.ResponseWriter {
 }
 
 func (w *etagResponseWriter) FlushError() error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	if !w.flushed {
 		if w.statusCode == 0 {
 			w.statusCode = http.StatusOK
@@ -121,16 +116,10 @@ func (w *etagResponseWriter) FlushError() error {
 }
 
 func (w *etagResponseWriter) Write(b []byte) (int, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	return w.w.Write(b)
 }
 
 func (w *etagResponseWriter) WriteHeader(statusCode int) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	if w.statusCode == 0 {
 		w.statusCode = statusCode
 	} else {
