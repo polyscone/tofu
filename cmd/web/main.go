@@ -65,6 +65,8 @@ func main() {
 			message := fmt.Errorf("%v\n%s", err, buf)
 
 			slog.Error("panic", "error", message)
+
+			os.Exit(1)
 		}
 	}()
 
