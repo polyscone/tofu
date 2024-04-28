@@ -87,10 +87,6 @@ audit:
 	go vet $(BUILD_TAGS) ./...
 	go test $(BUILD_TAGS) -race -vet off ./...
 
-.PHONY: vulncheck
-vulncheck:
-	govulncheck $(BUILD_TAGS) ./...
-
 .PHONY: bench
 bench:
 ifeq ($(PKG),./...)
