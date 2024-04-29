@@ -1,10 +1,12 @@
 package middleware
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"runtime/debug"
 	"sync"
@@ -56,7 +58,6 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 
 			rw := &timeoutWriter{
 				ResponseWriter: w,
-				h:              make(http.Header),
 				r:              r,
 				rc:             http.NewResponseController(w),
 				config:         config,
@@ -88,23 +89,21 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 				rw.mu.Lock()
 				defer rw.mu.Unlock()
 
-				dst := w.Header()
-				for key, value := range rw.h {
-					dst[key] = value
-				}
+				if !rw.hijacked {
+					if !rw.flushed && rw.statusCode != 0 {
+						w.WriteHeader(rw.statusCode)
+					}
 
-				if !rw.flushed && rw.statusCode != 0 {
-					w.WriteHeader(rw.statusCode)
+					w.Write(rw.buf.Bytes())
 				}
-
-				w.Write(rw.buf.Bytes())
 
 			case <-timeout.C:
 				rw.mu.Lock()
 
-				// If we already flushed data to the client we ignore the timeout
-				// and let whatever handler is below us decide what to do
-				if rw.flushed {
+				// If we already hijacked or flushed data to the client we
+				// ignore the context and let whatever handler is below us
+				// decide what to do
+				if rw.flushed || rw.hijacked {
 					rw.mu.Unlock()
 
 					goto TimeoutSelect
@@ -134,9 +133,10 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 			case <-ctx.Done():
 				rw.mu.Lock()
 
-				// If we already flushed data to the client we ignore the context
-				// and let whatever handler is below us decide what to do
-				if rw.flushed {
+				// If we already hijacked or flushed data to the client we
+				// ignore the context and let whatever handler is below us
+				// decide what to do
+				if rw.flushed || rw.hijacked {
 					rw.mu.Unlock()
 
 					goto TimeoutSelect
@@ -164,12 +164,12 @@ type timeoutWriter struct {
 	http.ResponseWriter
 	mu         sync.Mutex
 	err        error
-	h          http.Header
 	r          *http.Request
 	rc         *http.ResponseController
 	buf        bytes.Buffer
 	config     *TimeoutConfig
 	flushed    bool
+	hijacked   bool
 	deadline   time.Time
 	statusCode int
 }
@@ -195,11 +195,6 @@ func (w *timeoutWriter) FlushError() error {
 	defer w.mu.Unlock()
 
 	if !w.flushed {
-		dst := w.ResponseWriter.Header()
-		for key, value := range w.h {
-			dst[key] = value
-		}
-
 		if w.statusCode == 0 {
 			w.statusCode = http.StatusOK
 		}
@@ -216,11 +211,16 @@ func (w *timeoutWriter) FlushError() error {
 	return w.rc.Flush()
 }
 
-func (w *timeoutWriter) Header() http.Header {
+func (w *timeoutWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	return w.h
+	conn, bufrw, err := w.rc.Hijack()
+	if err == nil {
+		w.hijacked = true
+	}
+
+	return conn, bufrw, err
 }
 
 func (w *timeoutWriter) Write(b []byte) (int, error) {

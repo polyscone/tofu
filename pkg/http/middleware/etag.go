@@ -1,12 +1,14 @@
 package middleware
 
 import (
+	"bufio"
 	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 )
 
@@ -50,7 +52,7 @@ func ETag(config *ETagConfig) Middleware {
 
 			next(rw, r)
 
-			if buf.Len() > 0 {
+			if buf.Len() > 0 && !rw.hijacked {
 				if !rw.flushed {
 					var etag string
 					if etags := w.Header().Values("etag"); len(etags) != 0 {
@@ -90,6 +92,7 @@ type etagResponseWriter struct {
 	r          *http.Request
 	config     *ETagConfig
 	flushed    bool
+	hijacked   bool
 	statusCode int
 }
 
@@ -113,6 +116,22 @@ func (w *etagResponseWriter) FlushError() error {
 	}
 
 	return w.rc.Flush()
+}
+
+func (w *etagResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	conn, bufrw, err := w.rc.Hijack()
+	if err == nil {
+		w.hijacked = true
+
+		// If the connection was successfully hijacked we dump any
+		// buffered output into the hijacked buffer so the caller can
+		// decide what to do with it
+		if _, err := w.buf.WriteTo(bufrw); err != nil {
+			return conn, bufrw, fmt.Errorf("etag: flush response buffer to hijacked buffer: %w", err)
+		}
+	}
+
+	return conn, bufrw, err
 }
 
 func (w *etagResponseWriter) Write(b []byte) (int, error) {

@@ -118,7 +118,7 @@ func (w *metricsResponseWriter) FlushError() error {
 
 func (w *metricsResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	conn, bufrw, err := w.rc.Hijack()
-	if err != nil {
+	if err == nil {
 		w.recordHijack()
 
 		w.group.Add("totalConnectionsHijacked", 1)
