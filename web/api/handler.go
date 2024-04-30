@@ -65,12 +65,12 @@ func NewHandler(base *handler.Handler) *Handler {
 }
 
 func (h *Handler) JSON(w http.ResponseWriter, r *http.Request, status int, data any) {
-	ctx := r.Context()
-
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(status)
 
 	if err := json.NewEncoder(w).Encode(data); err != nil {
+		ctx := r.Context()
+
 		h.Logger(ctx).Error("write JSON response", "error", err)
 	}
 }
@@ -79,7 +79,11 @@ func (h *Handler) RawJSON(w http.ResponseWriter, r *http.Request, status int, da
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(status)
 
-	fmt.Fprint(w, data)
+	if _, err := fmt.Fprint(w, data); err != nil {
+		ctx := r.Context()
+
+		h.Logger(ctx).Error("write raw JSON response", "error", err)
+	}
 }
 
 func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, err error) {
