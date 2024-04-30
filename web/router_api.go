@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/polyscone/tofu/pkg/http/middleware"
 	"github.com/polyscone/tofu/pkg/http/router"
@@ -25,6 +26,13 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	h := api.NewHandler(base)
 
 	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
+		rc := http.NewResponseController(w)
+
+		// Since this is the handler for a timeout we could be quite close to the
+		// write deadline for the underlying TCP/IP connection, so we should extend
+		// it to ensure we have enough time to write any response
+		rc.SetWriteDeadline(time.Now().Add(3 * time.Second))
+
 		if errors.Is(err, context.Canceled) {
 			w.WriteHeader(httputil.StatusClientClosedRequest)
 
