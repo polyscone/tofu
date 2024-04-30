@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"bufio"
-	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
@@ -29,15 +28,20 @@ var defaultTimeoutConfig = TimeoutConfig{
 
 // Timeout returns a new timeout middleware configured using the given TTL.
 //
-// If a response is flushed at all then the timeout is ignored and left up to
-// the handler that called Flush().
+// If any response is written/flushed, or if the request is hijacked then
+// the timeout is ignored.
 //
-// If the request's write deadline is set through an http.ResponseController then
-// the timeout will be extended to at least that time if the original timeout
-// expires before then.
+// If the write deadline is set through an http.ResponseController then
+// the timeout will be extended to just before that time if the original timeout
+// would expire before then.
+// Any error handlers should extend the write deadline if needed.
 //
 // Any writes to the handler's ResponseWriter after the deadline will return
-// an http.ErrHandlerTimeout.
+// an http.ErrHandlerTimeout if the timeout has not been ignored due to an
+// earlier write before the deadline.
+//
+// On timeout the configured error handler will be called to allow for a custom
+// response, or a default gateway timeout response will be sent.
 func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 	if config == nil {
 		config = &defaultTimeoutConfig
@@ -58,8 +62,8 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 
 			rw := &timeoutWriter{
 				ResponseWriter: w,
-				r:              r,
 				rc:             http.NewResponseController(w),
+				h:              w.Header().Clone(),
 				config:         config,
 			}
 
@@ -86,43 +90,32 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 				panic(p)
 
 			case <-done:
-				rw.mu.Lock()
-				defer rw.mu.Unlock()
-
-				if !rw.hijacked {
-					if !rw.flushed && rw.statusCode != 0 {
-						w.WriteHeader(rw.statusCode)
-					}
-
-					w.Write(rw.buf.Bytes())
-				}
+				// Do nothing; handler executed
 
 			case <-timeout.C:
 				rw.mu.Lock()
 
-				// If we already hijacked or flushed data to the client we
-				// ignore the context and let whatever handler is below us
-				// decide what to do
-				if rw.flushed || rw.hijacked {
+				if rw.noTimeout {
 					rw.mu.Unlock()
 
 					goto TimeoutSelect
 				}
 
-				// If the write timeout was set to some other value then we
-				// reset the timeout to a duration that would end just after the
-				// new write timeout
-				if rw.deadline.After(time.Now()) {
-					const spill = 500 * time.Millisecond
-
-					timeout.Reset(time.Until(rw.deadline) + spill)
+				// If we observed that the write deadline was set to some other
+				// value then we reset the timeout to a duration that would end
+				// just before the new write deadline
+				//
+				// The new timeout duration ends just before the write deadline to
+				// give error handlers a chance to extend it if they want to write
+				// anything in the response writer
+				const spill = 10 * time.Millisecond
+				if d := time.Until(rw.deadline) - spill; d > 0 {
+					timeout.Reset(d)
 
 					rw.mu.Unlock()
 
 					goto TimeoutSelect
 				}
-
-				rw.mu.Unlock()
 
 				cancel()
 
@@ -130,19 +123,16 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 
 				rw.err = http.ErrHandlerTimeout
 
+				rw.mu.Unlock()
+
 			case <-ctx.Done():
 				rw.mu.Lock()
 
-				// If we already hijacked or flushed data to the client we
-				// ignore the context and let whatever handler is below us
-				// decide what to do
-				if rw.flushed || rw.hijacked {
+				if rw.noTimeout {
 					rw.mu.Unlock()
 
 					goto TimeoutSelect
 				}
-
-				rw.mu.Unlock()
 
 				switch err := ctx.Err(); err {
 				case context.DeadlineExceeded:
@@ -152,7 +142,11 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 
 				default:
 					config.ErrorHandler(w, r, err)
+
+					rw.err = err
 				}
+
+				rw.mu.Unlock()
 			}
 		}
 	}
@@ -162,16 +156,13 @@ var _ Unwrapper = (*timeoutWriter)(nil)
 
 type timeoutWriter struct {
 	http.ResponseWriter
-	mu         sync.Mutex
-	err        error
-	r          *http.Request
-	rc         *http.ResponseController
-	buf        bytes.Buffer
-	config     *TimeoutConfig
-	flushed    bool
-	hijacked   bool
-	deadline   time.Time
-	statusCode int
+	mu        sync.Mutex
+	err       error
+	rc        *http.ResponseController
+	h         http.Header
+	config    *TimeoutConfig
+	noTimeout bool
+	deadline  time.Time
 }
 
 func (w *timeoutWriter) Unwrap() http.ResponseWriter {
@@ -180,12 +171,13 @@ func (w *timeoutWriter) Unwrap() http.ResponseWriter {
 
 func (w *timeoutWriter) SetWriteDeadline(deadline time.Time) error {
 	w.mu.Lock()
+	defer w.mu.Unlock()
 
-	if deadline.After(w.deadline) {
-		w.deadline = deadline
+	if w.err != nil {
+		return w.err
 	}
 
-	w.mu.Unlock()
+	w.deadline = deadline
 
 	return w.rc.SetWriteDeadline(deadline)
 }
@@ -194,19 +186,13 @@ func (w *timeoutWriter) FlushError() error {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if !w.flushed {
-		if w.statusCode == 0 {
-			w.statusCode = http.StatusOK
-		}
-
-		w.ResponseWriter.WriteHeader(w.statusCode)
+	if w.err != nil {
+		return w.err
 	}
 
-	w.flushed = true
+	w.noTimeout = true
 
-	if _, err := w.buf.WriteTo(w.ResponseWriter); err != nil {
-		return fmt.Errorf("timeout: flush response buffer: %w", err)
-	}
+	w.copyHeaders()
 
 	return w.rc.Flush()
 }
@@ -215,9 +201,13 @@ func (w *timeoutWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
+	if w.err != nil {
+		return nil, nil, w.err
+	}
+
 	conn, bufrw, err := w.rc.Hijack()
 	if err == nil {
-		w.hijacked = true
+		w.noTimeout = true
 	}
 
 	return conn, bufrw, err
@@ -231,16 +221,42 @@ func (w *timeoutWriter) Write(b []byte) (int, error) {
 		return 0, w.err
 	}
 
-	return w.buf.Write(b)
+	w.noTimeout = true
+
+	w.copyHeaders()
+
+	return w.ResponseWriter.Write(b)
 }
 
 func (w *timeoutWriter) WriteHeader(statusCode int) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 
-	if w.statusCode == 0 {
-		w.statusCode = statusCode
-	} else {
-		w.config.Logger(w.r).Error("timeout: superfluous response.WriteHeader call")
+	if w.err != nil {
+		return
+	}
+
+	w.noTimeout = true
+
+	w.copyHeaders()
+
+	w.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (w *timeoutWriter) Header() http.Header {
+	return w.h
+}
+
+func (w *timeoutWriter) copyHeaders() {
+	// Since the main handler function is run in another goroutine
+	// it means the header map can be accessed from multiple goroutines
+	// through the use of w.Header(), which can cause data races
+	//
+	// To prevent potential data races and prevent triggering the race detector
+	// the handler needs its own header map which we have to key-wise copy
+	// into the actual response writer header map
+	dst := w.ResponseWriter.Header()
+	for key, value := range w.h {
+		dst[key] = value
 	}
 }
