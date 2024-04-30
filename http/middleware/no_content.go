@@ -46,15 +46,15 @@ func (w *noContentResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) 
 }
 
 func (w *noContentResponseWriter) Write(b []byte) (int, error) {
-	i, err := w.ResponseWriter.Write(b)
+	n, err := w.ResponseWriter.Write(b)
 	if err != nil {
 		err = fmt.Errorf("no content: write response: %w", err)
 	}
-	if i > 0 {
+	if n > 0 {
 		w.body = true
 	}
 
-	return i, err
+	return n, err
 }
 
 func (w *noContentResponseWriter) WriteHeader(statusCode int) {
