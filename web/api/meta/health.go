@@ -14,11 +14,10 @@ func RegisterHealthHandlers(h *api.Handler, mux *router.ServeMux) {
 
 func healthGet(h *api.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("content-type", "application/json")
 		w.Header().Set("cache-control", "no-cache")
 
 		if r.Method == http.MethodGet {
-			w.Write([]byte(`{"status":"available"}`))
+			h.RawJSON(w, r, http.StatusOK, `{"status":"available"}`)
 		}
 	}
 }
