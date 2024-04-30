@@ -7,9 +7,9 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/pkg/csrf"
-	"github.com/polyscone/tofu/pkg/human"
-	"github.com/polyscone/tofu/pkg/rate"
+	"github.com/polyscone/tofu/csrf"
+	"github.com/polyscone/tofu/human"
+	"github.com/polyscone/tofu/rate"
 )
 
 const StatusClientClosedRequest = 499

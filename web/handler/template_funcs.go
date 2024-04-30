@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/polyscone/tofu/pkg/human"
+	"github.com/polyscone/tofu/human"
 	"github.com/polyscone/tofu/web/httputil"
 )
 

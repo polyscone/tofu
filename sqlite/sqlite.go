@@ -18,8 +18,8 @@ import (
 
 	"github.com/mattn/go-sqlite3"
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/pkg/errsx"
-	"github.com/polyscone/tofu/pkg/uuid"
+	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/uuid"
 )
 
 //go:embed "all:migrations"

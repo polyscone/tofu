@@ -3,8 +3,8 @@ package account
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/pkg/http/router"
-	"github.com/polyscone/tofu/pkg/password/pwned"
+	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/password/pwned"
 	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"

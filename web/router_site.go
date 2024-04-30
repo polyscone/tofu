@@ -14,9 +14,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/polyscone/tofu/pkg/http/middleware"
-	"github.com/polyscone/tofu/pkg/http/router"
-	"github.com/polyscone/tofu/pkg/size"
+	"github.com/polyscone/tofu/http/middleware"
+	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/size"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"

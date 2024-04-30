@@ -1,6 +1,6 @@
 package system
 
-import "github.com/polyscone/tofu/pkg/event"
+import "github.com/polyscone/tofu/event"
 
 type Service struct {
 	broker event.Broker

@@ -3,7 +3,7 @@ package account
 import (
 	"time"
 
-	"github.com/polyscone/tofu/pkg/aggregate"
+	"github.com/polyscone/tofu/aggregate"
 )
 
 type SignInAttemptLog struct {

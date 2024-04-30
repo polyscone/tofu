@@ -3,7 +3,7 @@ package system
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/pkg/http/router"
+	"github.com/polyscone/tofu/http/router"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/ui"

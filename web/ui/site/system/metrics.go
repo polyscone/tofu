@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/polyscone/tofu/pkg/http/router"
+	"github.com/polyscone/tofu/http/router"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/ui"

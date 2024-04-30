@@ -7,7 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/polyscone/tofu/pkg/password/argon2"
+	"github.com/polyscone/tofu/password/argon2"
 )
 
 var hasher *Hasher

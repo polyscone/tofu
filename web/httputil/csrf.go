@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 
-	"github.com/polyscone/tofu/pkg/csrf"
+	"github.com/polyscone/tofu/csrf"
 )
 
 func MaskedCSRFToken(ctx context.Context) string {

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/pkg/errsx"
+	"github.com/polyscone/tofu/errsx"
 )
 
 func (s *Service) SignInWithTOTP(ctx context.Context, userID, totp string) error {

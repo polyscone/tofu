@@ -1,7 +1,7 @@
 package admin
 
 import (
-	"github.com/polyscone/tofu/pkg/http/router"
+	"github.com/polyscone/tofu/http/router"
 	"github.com/polyscone/tofu/web/ui"
 )
 

@@ -10,8 +10,8 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/pkg/errsx"
-	"github.com/polyscone/tofu/pkg/testutil"
+	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/testutil"
 )
 
 func TestSignUpInitialUser(t *testing.T) {

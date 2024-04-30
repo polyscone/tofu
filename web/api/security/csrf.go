@@ -3,7 +3,7 @@ package security
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/pkg/http/router"
+	"github.com/polyscone/tofu/http/router"
 	"github.com/polyscone/tofu/web/api"
 	"github.com/polyscone/tofu/web/httputil"
 )

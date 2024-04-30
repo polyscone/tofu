@@ -1,6 +1,6 @@
 package account
 
-import "github.com/polyscone/tofu/pkg/aggregate"
+import "github.com/polyscone/tofu/aggregate"
 
 type RoleID string
 

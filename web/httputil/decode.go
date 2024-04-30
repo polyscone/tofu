@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/polyscone/tofu/pkg/size"
+	"github.com/polyscone/tofu/size"
 )
 
 var decodeTimeFormats = []string{

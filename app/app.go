@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/polyscone/tofu/pkg/errsx"
+	"github.com/polyscone/tofu/errsx"
 )
 
 const (

@@ -1,6 +1,6 @@
 package account
 
-import "github.com/polyscone/tofu/pkg/event"
+import "github.com/polyscone/tofu/event"
 
 type Hasher interface {
 	EncodedPasswordHash(password []byte) ([]byte, error)

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/polyscone/tofu/pkg/errsx"
-	"github.com/polyscone/tofu/pkg/session"
+	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/session"
 	"github.com/polyscone/tofu/sqlite"
 )
 

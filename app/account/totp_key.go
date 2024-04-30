@@ -1,6 +1,6 @@
 package account
 
-import "github.com/polyscone/tofu/pkg/otp"
+import "github.com/polyscone/tofu/otp"
 
 type TOTPKey struct {
 	_ [0]func() // Disallow comparison

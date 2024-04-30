@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/polyscone/tofu/pkg/cache"
-	"github.com/polyscone/tofu/pkg/dev"
-	"github.com/polyscone/tofu/pkg/errsx"
-	"github.com/polyscone/tofu/pkg/fstack"
+	"github.com/polyscone/tofu/cache"
+	"github.com/polyscone/tofu/dev"
+	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/fstack"
 	"github.com/polyscone/tofu/web/handler"
 )
 

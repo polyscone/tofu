@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/pkg/errsx"
+	"github.com/polyscone/tofu/errsx"
 )
 
 func (s *Service) SignUp(ctx context.Context, email string) error {

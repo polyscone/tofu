@@ -17,7 +17,7 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/pkg/password/pwned"
+	"github.com/polyscone/tofu/password/pwned"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"

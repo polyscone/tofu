@@ -12,9 +12,9 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/pkg/background"
-	"github.com/polyscone/tofu/pkg/errsx"
-	"github.com/polyscone/tofu/pkg/uuid"
+	"github.com/polyscone/tofu/background"
+	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/uuid"
 )
 
 type AccountRepo struct {

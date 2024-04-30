@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/pkg/errsx"
+	"github.com/polyscone/tofu/errsx"
 )
 
 type MagicLinkSignInBehaviour byte

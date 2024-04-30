@@ -20,8 +20,8 @@ import (
 	"time"
 	_ "time/tzdata"
 
-	"github.com/polyscone/tofu/pkg/size"
-	"github.com/polyscone/tofu/pkg/slogger"
+	"github.com/polyscone/tofu/size"
+	"github.com/polyscone/tofu/slogger"
 	"github.com/polyscone/tofu/web"
 )
 

@@ -3,7 +3,7 @@ package event
 import (
 	"context"
 
-	"github.com/polyscone/tofu/pkg/human"
+	"github.com/polyscone/tofu/human"
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/ui"
