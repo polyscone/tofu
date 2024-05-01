@@ -11,8 +11,6 @@ func Recover(errorHandler ErrorHandler) Middleware {
 		return func(w http.ResponseWriter, r *http.Request) {
 			defer func() {
 				if err := recover(); err != nil && err != http.ErrAbortHandler {
-					w.Header().Set("connection", "close")
-
 					const size = 64 << 10
 
 					buf := make([]byte, size)
