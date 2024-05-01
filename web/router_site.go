@@ -70,7 +70,10 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		return h.Logger(ctx)
 	}
 
-	mux.Use(middleware.Recover(errorHandler("recover middleware")))
+	mux.Use(middleware.Recover(&middleware.RecoverConfig{
+		ErrorHandler: errorHandler("recover middleware"),
+		Logger:       logger,
+	}))
 	mux.Use(middleware.Metrics(h.Metrics, "requests.Site"))
 	mux.Use(h.AttachContextLogger)
 	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
