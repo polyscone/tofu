@@ -16,18 +16,14 @@ type ETagConfig struct {
 	Logger func(r *http.Request) *slog.Logger
 }
 
-var defaultETagConfig = ETagConfig{
-	Logger: func(r *http.Request) *slog.Logger {
-		return slog.Default()
-	},
-}
-
 func ETag(config *ETagConfig) Middleware {
 	if config == nil {
-		config = &defaultETagConfig
+		config = &ETagConfig{}
 	}
 	if config.Logger == nil {
-		config.Logger = defaultETagConfig.Logger
+		config.Logger = func(r *http.Request) *slog.Logger {
+			return slog.Default()
+		}
 	}
 
 	return func(next http.HandlerFunc) http.HandlerFunc {

@@ -11,18 +11,14 @@ type SecurityHeadersConfig struct {
 	Logger func(r *http.Request) *slog.Logger
 }
 
-var defaultSecurityHeadersConfig = SecurityHeadersConfig{
-	Logger: func(r *http.Request) *slog.Logger {
-		return slog.Default()
-	},
-}
-
 func SecurityHeaders(config *SecurityHeadersConfig) Middleware {
 	if config == nil {
-		config = &defaultSecurityHeadersConfig
+		config = &SecurityHeadersConfig{}
 	}
 	if config.Logger == nil {
-		config.Logger = defaultSecurityHeadersConfig.Logger
+		config.Logger = func(r *http.Request) *slog.Logger {
+			return slog.Default()
+		}
 	}
 
 	return func(next http.HandlerFunc) http.HandlerFunc {

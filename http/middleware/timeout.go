@@ -13,17 +13,8 @@ import (
 )
 
 type TimeoutConfig struct {
-	ErrorHandler ErrorHandler
 	Logger       func(r *http.Request) *slog.Logger
-}
-
-var defaultTimeoutConfig = TimeoutConfig{
-	ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-		http.Error(w, http.StatusText(http.StatusGatewayTimeout), http.StatusGatewayTimeout)
-	},
-	Logger: func(r *http.Request) *slog.Logger {
-		return slog.Default()
-	},
+	ErrorHandler ErrorHandler
 }
 
 // Timeout returns a new timeout middleware configured using the given TTL.
@@ -44,13 +35,19 @@ var defaultTimeoutConfig = TimeoutConfig{
 // response, or a default gateway timeout response will be sent.
 func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 	if config == nil {
-		config = &defaultTimeoutConfig
-	}
-	if config.ErrorHandler == nil {
-		config.ErrorHandler = defaultTimeoutConfig.ErrorHandler
+		config = &TimeoutConfig{}
 	}
 	if config.Logger == nil {
-		config.Logger = defaultTimeoutConfig.Logger
+		config.Logger = func(r *http.Request) *slog.Logger {
+			return slog.Default()
+		}
+	}
+	if config.ErrorHandler == nil {
+		config.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+			config.Logger(r).Error("timeout middleware", "error", err)
+
+			http.Error(w, http.StatusText(http.StatusGatewayTimeout), http.StatusGatewayTimeout)
+		}
 	}
 
 	return func(next http.HandlerFunc) http.HandlerFunc {
