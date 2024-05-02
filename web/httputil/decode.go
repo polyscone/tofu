@@ -1,8 +1,8 @@
 package httputil
 
 import (
-	"errors"
 	"fmt"
+	"mime"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -288,12 +288,18 @@ func DecodeRequestForm(dst any, r *http.Request) error {
 			key = fieldName
 		}
 
-		const maxMemory = 32 * size.Megabyte
+		if err := r.ParseForm(); err != nil {
+			return nil, fmt.Errorf("parse form: %w", err)
+		}
 
-		if r.PostForm == nil {
-			err := r.ParseMultipartForm(maxMemory)
-			if err != nil && !errors.Is(err, http.ErrNotMultipart) {
-				return nil, fmt.Errorf("parse multipart form: %w", err)
+		if r.MultipartForm == nil {
+			contentType := r.Header.Get("content-type")
+			mediaType, _, err := mime.ParseMediaType(contentType)
+			if err == nil && (mediaType == "multipart/form-data" || mediaType == "multipart/mixed") {
+				const maxMemory = 32 * size.Megabyte
+				if err := r.ParseMultipartForm(maxMemory); err != nil {
+					return nil, fmt.Errorf("parse multipart form: %w", err)
+				}
 			}
 		}
 
