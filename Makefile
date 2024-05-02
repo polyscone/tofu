@@ -52,14 +52,14 @@ ifdef CHECK_BCE
 	GCFLAGS += $(CHECK_BCE)=-d=ssa/check_bce
 endif
 
-ifndef DEBUG
+ifdef STRIP_SYMBOLS
 	# -s disables the symbol table
 	# -w disables DWARF generation
 	# See: go tool link -help
 	LDFLAGS += -s -w
 endif
 
-ifdef WINDOWSGUI
+ifdef WINDOWS_GUI
 	LDFLAGS += -H windowsgui
 endif
 
