@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/polyscone/tofu/csrf"
-	"github.com/polyscone/tofu/size"
 	"github.com/polyscone/tofu/web/httputil"
 )
 
@@ -55,17 +54,22 @@ func CSRF(errorHandler ErrorHandler) Middleware {
 				// Do nothing for safe methods
 
 			default:
-				if r.PostForm == nil {
-					err := r.ParseMultipartForm(32 * size.Megabyte)
-					if err != nil && !errors.Is(err, http.ErrNotMultipart) {
-						handleError(w, r, err, errorHandler, http.StatusInternalServerError)
-
-						return
-					}
-				}
-
 				sentToken := r.Header.Get(CSRFTokenHeaderName)
 				if sentToken == "" {
+					if r.PostForm == nil {
+						// We don't actually need to call parse form since PostFormValue
+						// will do it for us, but we do it here anyway so we can pass any
+						// errors related to reading the body to the error handler properly
+						// There might be an error related to a max bytes reader, for example
+						// Since ParseForm is idempotent there's no harm in doing this and
+						// it allows us to display a more accurate error to the user
+						if err := r.ParseForm(); err != nil {
+							handleError(w, r, err, errorHandler, http.StatusInternalServerError)
+
+							return
+						}
+					}
+
 					sentToken = r.PostFormValue(CSRFTokenFieldName)
 				}
 				if sentToken == "" {
