@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"fmt"
+	"mime"
 	"net/http"
 	"slices"
 	"strings"
 
 	"github.com/polyscone/tofu/csrf"
+	"github.com/polyscone/tofu/size"
 	"github.com/polyscone/tofu/web/httputil"
 )
 
@@ -54,23 +57,53 @@ func CSRF(errorHandler ErrorHandler) Middleware {
 				// Do nothing for safe methods
 
 			default:
+				var mustRenew bool
 				sentToken := r.Header.Get(CSRFTokenHeaderName)
 				if sentToken == "" {
-					if r.PostForm == nil {
-						// We don't actually need to call parse form since PostFormValue
-						// will do it for us, but we do it here anyway so we can pass any
-						// errors related to reading the body to the error handler properly
-						// There might be an error related to a max bytes reader, for example
-						// Since ParseForm is idempotent there's no harm in doing this and
-						// it allows us to display a more accurate error to the user
-						if err := r.ParseForm(); err != nil {
-							handleError(w, r, err, errorHandler, http.StatusInternalServerError)
+					// Although not technically needed, parsing the form as a separate
+					// here step allows us to handle any body reader errors, like a max bytes
+					// error in normal posts
+					//
+					// r.ParseForm is idempotent so there's no harm in just calling it here
+					if err := r.ParseForm(); err != nil {
+						handleError(w, r, err, errorHandler, http.StatusInternalServerError)
 
-							return
-						}
+						return
 					}
 
 					sentToken = r.PostFormValue(CSRFTokenFieldName)
+					if sentToken == "" && r.MultipartForm == nil {
+						contentType := r.Header.Get("content-type")
+						mediaType, _, err := mime.ParseMediaType(contentType)
+						if err == nil && (mediaType == "multipart/form-data" || mediaType == "multipart/mixed") {
+							// If the sent token is still empty then we might be receiving a
+							// multipart form, in which case we do allow for the CSRF token
+							// to be read from the query string, but require that it be renewed
+							// immediately in case of accidental leaks
+							//
+							// We prefer to do this so that the middleware doesn't force a read
+							// of the multipart form body when a handler may want to stream it with a
+							// multipart reader instead, especially for things like large file uploads
+							sentToken = r.URL.Query().Get(CSRFTokenFieldName)
+							if sentToken != "" {
+								mustRenew = true
+							} else {
+								// If all else fails then we're forced to read the multipart
+								// form body to get the CSRF token
+								const maxMemory = 32 * size.Megabyte
+								if err := r.ParseMultipartForm(maxMemory); err != nil {
+									err = fmt.Errorf("parse multipart form: %w", err)
+
+									handleError(w, r, err, errorHandler, http.StatusInternalServerError)
+
+									return
+								}
+
+								sentToken = r.PostFormValue(CSRFTokenFieldName)
+							}
+						}
+					}
+
 				}
 				if sentToken == "" {
 					handleError(w, r, csrf.ErrEmptyToken, errorHandler, http.StatusBadRequest)
@@ -86,6 +119,16 @@ func CSRF(errorHandler ErrorHandler) Middleware {
 				err = csrf.Check(ctx, decoded)
 				if handleError(w, r, err, errorHandler, http.StatusInternalServerError) {
 					return
+				}
+
+				if mustRenew {
+					if err := csrf.RenewToken(ctx); err != nil {
+						err = fmt.Errorf("renew CSRF token: %w", err)
+
+						handleError(w, r, err, errorHandler, http.StatusInternalServerError)
+
+						return
+					}
 				}
 			}
 
