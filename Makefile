@@ -107,9 +107,9 @@ gen/cert:
 	cd $(DATA) && \
 	go run $(GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits 2048 -host "$(GEN_CERT_HOST)"
 
-WEBD_DEV_ADDR := :8080
-WEBD_DEV_DEBUG_ADDR := :8081
-override WEBD_DEV_FLAGS := -dev -addr $(WEBD_DEV_ADDR) -debug-addr $(WEBD_DEV_DEBUG_ADDR) -log-style dev $(WEBD_DEV_FLAGS)
-.PHONY: webd/dev
-webd/dev:
-	$(CURDIR)/webd $(WEBD_DEV_FLAGS)
+HTTPD_DEV_ADDR := :8080
+HTTPD_DEV_DEBUG_ADDR := :8081
+override HTTPD_DEV_FLAGS := -dev -addr $(HTTPD_DEV_ADDR) -debug-addr $(HTTPD_DEV_DEBUG_ADDR) -log-style dev $(HTTPD_DEV_FLAGS)
+.PHONY: httpd/dev
+httpd/dev:
+	$(CURDIR)/httpd $(HTTPD_DEV_FLAGS)
