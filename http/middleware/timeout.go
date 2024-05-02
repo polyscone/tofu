@@ -70,7 +70,7 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 			go func() {
 				defer func() {
 					if p := recover(); p != nil {
-						_panic <- fmt.Sprintf("%v\npreserved stack trace:\n%s", p, debug.Stack())
+						_panic <- fmt.Sprintf("%v\n\n%s", p, debug.Stack())
 					}
 				}()
 
@@ -92,7 +92,7 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 			case <-timeout.C:
 				rw.mu.Lock()
 
-				if rw.noTimeout {
+				if rw.written {
 					rw.mu.Unlock()
 
 					goto TimeoutSelect
@@ -114,18 +114,24 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 					goto TimeoutSelect
 				}
 
+				rw.err = http.ErrHandlerTimeout
+
 				cancel()
 
-				config.ErrorHandler(w, r, http.ErrHandlerTimeout)
-
-				rw.err = http.ErrHandlerTimeout
+				// Don't try to use the response writer if it's already been written to
+				// or if the connection has been hijacked
+				if rw.written {
+					config.Logger(r).Error("timeout middleware", "error", rw.err)
+				} else {
+					config.ErrorHandler(w, r, rw.err)
+				}
 
 				rw.mu.Unlock()
 
 			case <-ctx.Done():
 				rw.mu.Lock()
 
-				if rw.noTimeout {
+				if rw.written {
 					rw.mu.Unlock()
 
 					goto TimeoutSelect
@@ -133,14 +139,18 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 
 				switch err := ctx.Err(); err {
 				case context.DeadlineExceeded:
-					config.ErrorHandler(w, r, http.ErrHandlerTimeout)
-
 					rw.err = http.ErrHandlerTimeout
 
 				default:
-					config.ErrorHandler(w, r, err)
-
 					rw.err = err
+				}
+
+				// Don't try to use the response writer if it's already been written to
+				// or if the connection has been hijacked
+				if rw.written {
+					config.Logger(r).Error("timeout middleware", "error", rw.err)
+				} else {
+					config.ErrorHandler(w, r, rw.err)
 				}
 
 				rw.mu.Unlock()
@@ -153,13 +163,13 @@ var _ Unwrapper = (*timeoutWriter)(nil)
 
 type timeoutWriter struct {
 	http.ResponseWriter
-	mu        sync.Mutex
-	err       error
-	rc        *http.ResponseController
-	h         http.Header
-	config    *TimeoutConfig
-	noTimeout bool
-	deadline  time.Time
+	mu       sync.Mutex
+	err      error
+	rc       *http.ResponseController
+	h        http.Header
+	config   *TimeoutConfig
+	written  bool
+	deadline time.Time
 }
 
 func (w *timeoutWriter) Unwrap() http.ResponseWriter {
@@ -187,7 +197,7 @@ func (w *timeoutWriter) FlushError() error {
 		return w.err
 	}
 
-	w.noTimeout = true
+	w.written = true
 
 	w.copyHeaders()
 
@@ -204,7 +214,7 @@ func (w *timeoutWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 
 	conn, bufrw, err := w.rc.Hijack()
 	if err == nil {
-		w.noTimeout = true
+		w.written = true
 	}
 
 	return conn, bufrw, err
@@ -218,7 +228,7 @@ func (w *timeoutWriter) Write(b []byte) (int, error) {
 		return 0, w.err
 	}
 
-	w.noTimeout = true
+	w.written = true
 
 	w.copyHeaders()
 
@@ -233,7 +243,7 @@ func (w *timeoutWriter) WriteHeader(statusCode int) {
 		return
 	}
 
-	w.noTimeout = true
+	w.written = true
 
 	w.copyHeaders()
 
