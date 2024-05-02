@@ -75,16 +75,25 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		Logger:       logger,
 	}))
 	mux.Use(middleware.Metrics(h.Metrics, "requests.Site"))
+	mux.Use(middleware.RemoveTrailingSlash)
+	mux.Use(middleware.MethodOverride)
+	mux.Use(middleware.NoContent)
 	mux.Use(h.AttachContextLogger)
+	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
+	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
+	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
+		Consume: func(r *http.Request) bool {
+			whitelist := []string{".css", ".gif", ".ico", ".jpeg", ".jpg", ".js", ".png"}
+
+			return !slices.Contains(whitelist, filepath.Ext(r.URL.Path))
+		},
+		ErrorHandler:   errorHandler("rate limit middleware"),
+		TrustedProxies: h.Proxies,
+	}))
 	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
 		ErrorHandler: timeoutErrorHandler,
 		Logger:       logger,
 	}))
-	mux.Use(middleware.RemoveTrailingSlash)
-	mux.Use(middleware.MethodOverride)
-	mux.Use(middleware.NoContent)
-	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
-	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
 	mux.Use(middleware.Session(h.Sessions, errorHandler("session middleware")))
 	mux.Use(h.AttachContext)
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
@@ -95,6 +104,22 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 		return 0
 	}))
+
+	// CSRF must come after max bytes middleware because it could read the request
+	// body which the max bytes middleware needs to wrap first
+	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
+		csrf := middleware.CSRF(errorHandler("CSRF middleware"))(next)
+
+		return func(w http.ResponseWriter, r *http.Request) {
+			// Google sign in provides its own CSRF token which is checked in the POST handler
+			if r.URL.Path == mux.Path("account.sign_in.google.post") {
+				next(w, r)
+			} else {
+				csrf(w, r)
+			}
+		}
+	})
+
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -119,27 +144,6 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 			next(w, r)
 		}
 	})
-	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
-		csrf := middleware.CSRF(errorHandler("CSRF middleware"))(next)
-
-		return func(w http.ResponseWriter, r *http.Request) {
-			// Google sign in provides its own CSRF token which is checked in the POST handler
-			if r.URL.Path == mux.Path("account.sign_in.google.post") {
-				next(w, r)
-			} else {
-				csrf(w, r)
-			}
-		}
-	})
-	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
-		Consume: func(r *http.Request) bool {
-			whitelist := []string{".css", ".gif", ".ico", ".jpeg", ".jpg", ".js", ".png"}
-
-			return !slices.Contains(whitelist, filepath.Ext(r.URL.Path))
-		},
-		ErrorHandler:   errorHandler("rate limit middleware"),
-		TrustedProxies: h.Proxies,
-	}))
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		var setupDone atomic.Bool
 

@@ -57,15 +57,19 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 		Logger:       logger,
 	}))
 	mux.Use(middleware.Metrics(h.Metrics, "requests.API"))
+	mux.Use(middleware.RemoveTrailingSlash)
+	mux.Use(middleware.NoContent)
 	mux.Use(h.AttachContextLogger)
+	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
+	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
+	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
+		ErrorHandler:   errorHandler("rate limit middleware"),
+		TrustedProxies: h.Proxies,
+	}))
 	mux.Use(middleware.Timeout(HandlerTimeout, &middleware.TimeoutConfig{
 		ErrorHandler: timeoutErrorHandler,
 		Logger:       logger,
 	}))
-	mux.Use(middleware.RemoveTrailingSlash)
-	mux.Use(middleware.NoContent)
-	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
-	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
 	mux.Use(middleware.Session(h.Sessions, errorHandler("session middleware")))
 	mux.Use(h.AttachContext)
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
@@ -76,6 +80,11 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 
 		return 0
 	}))
+
+	// CSRF must come after max bytes middleware because it could read the request
+	// body which the max bytes middleware needs to wrap first
+	mux.Use(middleware.CSRF(errorHandler("CSRF middleware")))
+
 	mux.Use(func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
@@ -94,11 +103,6 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 			next(w, r)
 		}
 	})
-	mux.Use(middleware.CSRF(errorHandler("CSRF middleware")))
-	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
-		ErrorHandler:   errorHandler("rate limit middleware"),
-		TrustedProxies: h.Proxies,
-	}))
 
 	mux.HandleFunc("GET /sdk.js", h.JavaScript.HandlerFunc("sdk/v1.js"))
 
