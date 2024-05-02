@@ -47,16 +47,13 @@ func Recover(config *RecoverConfig) Middleware {
 
 					errp := fmt.Errorf("panic serving %v: %v\n%s", r.RemoteAddr, err, buf)
 
-					// If a response has been at least partially written, flushed, or
-					// the connection has been hijacked we still want to log the panic
-					// but not try to use the response writer
+					// Don't try to use the response writer if it's already been written to
+					// or if the connection has been hijacked
 					if rw.written {
 						config.Logger(r).Error("recover middleware", "error", errp)
-
-						return
+					} else {
+						config.ErrorHandler(w, r, errp)
 					}
-
-					config.ErrorHandler(w, r, errp)
 				}
 			}()
 
