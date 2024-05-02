@@ -22,12 +22,20 @@ func Session(sm *session.Manager, errorHandler ErrorHandler) Middleware {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			cookieSessionID, err := getSessionCookieID(r)
-			if handleError(w, r, err, errorHandler, http.StatusInternalServerError) {
+			if err != nil {
+				err = fmt.Errorf("get session cookie id: %w", err)
+
+				handleError(w, r, err, errorHandler, http.StatusInternalServerError)
+
 				return
 			}
 
 			ctx, err := sm.Load(r.Context(), cookieSessionID)
-			if handleError(w, r, err, errorHandler, http.StatusInternalServerError) {
+			if err != nil {
+				err = fmt.Errorf("session manager: load: %w", err)
+
+				handleError(w, r, err, errorHandler, http.StatusInternalServerError)
+
 				return
 			}
 

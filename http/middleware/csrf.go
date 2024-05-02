@@ -32,14 +32,20 @@ func CSRF(errorHandler ErrorHandler) Middleware {
 
 			var cookieToken []byte
 			cookie, err := r.Cookie(name)
-			if !errors.Is(err, http.ErrNoCookie) {
-				if handleError(w, r, err, errorHandler, http.StatusInternalServerError) {
-					return
-				}
+			if err != nil && !errors.Is(err, http.ErrNoCookie) {
+				err = fmt.Errorf("read cookie: %w", err)
+
+				handleError(w, r, err, errorHandler, http.StatusInternalServerError)
+
+				return
 			}
 			if err == nil {
 				decoded, err := base64.RawURLEncoding.DecodeString(cookie.Value)
-				if handleError(w, r, err, errorHandler, http.StatusInternalServerError) {
+				if err != nil {
+					err = fmt.Errorf("decode cookie token: %w", err)
+
+					handleError(w, r, err, errorHandler, http.StatusInternalServerError)
+
 					return
 				}
 
@@ -48,7 +54,11 @@ func CSRF(errorHandler ErrorHandler) Middleware {
 
 			ctx := r.Context()
 			ctx, err = csrf.SetToken(ctx, cookieToken)
-			if handleError(w, r, err, errorHandler, http.StatusInternalServerError) {
+			if err != nil {
+				err = fmt.Errorf("CSRF set token: %w", err)
+
+				handleError(w, r, err, errorHandler, http.StatusInternalServerError)
+
 				return
 			}
 
@@ -66,6 +76,8 @@ func CSRF(errorHandler ErrorHandler) Middleware {
 					//
 					// r.ParseForm is idempotent so there's no harm in just calling it here
 					if err := r.ParseForm(); err != nil {
+						err = fmt.Errorf("parse form: %w", err)
+
 						handleError(w, r, err, errorHandler, http.StatusInternalServerError)
 
 						return
@@ -112,18 +124,26 @@ func CSRF(errorHandler ErrorHandler) Middleware {
 				}
 
 				decoded, err := base64.RawURLEncoding.DecodeString(sentToken)
-				if handleError(w, r, err, errorHandler, http.StatusInternalServerError) {
+				if err != nil {
+					err = fmt.Errorf("decode sent token: %w", err)
+
+					handleError(w, r, err, errorHandler, http.StatusInternalServerError)
+
 					return
 				}
 
 				err = csrf.Check(ctx, decoded)
-				if handleError(w, r, err, errorHandler, http.StatusInternalServerError) {
+				if err != nil {
+					err = fmt.Errorf("CSRF check: %w", err)
+
+					handleError(w, r, err, errorHandler, http.StatusInternalServerError)
+
 					return
 				}
 
 				if mustRenew {
 					if err := csrf.RenewToken(ctx); err != nil {
-						err = fmt.Errorf("renew CSRF token: %w", err)
+						err = fmt.Errorf("CSRF renew token: %w", err)
 
 						handleError(w, r, err, errorHandler, http.StatusInternalServerError)
 

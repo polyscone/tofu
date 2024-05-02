@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -71,7 +72,11 @@ func RateLimit(capacity, replenish float64, config *RateLimitConfig) Middleware 
 		return func(w http.ResponseWriter, r *http.Request) {
 			if config.Consume == nil || config.Consume(r) {
 				ip, err := realip.FromRequest(r, config.TrustedProxies)
-				if handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError) {
+				if err != nil {
+					err = fmt.Errorf("realip from request: %w", err)
+
+					handleError(w, r, err, config.ErrorHandler, http.StatusInternalServerError)
+
 					return
 				}
 
