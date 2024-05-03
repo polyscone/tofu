@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -272,6 +273,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	baseCtx, baseCtxCancel := context.WithCancel(context.Background())
 	spill := 500 * time.Millisecond
 	readHeaderTimeout := 5 * time.Second
 	srv := http.Server{
@@ -282,6 +284,9 @@ func main() {
 		ReadTimeout:       web.HandlerTimeout + readHeaderTimeout + spill,
 		WriteTimeout:      web.HandlerTimeout + spill,
 		Handler:           web.NewMultiTenantHandler(logger, newTenant),
+		BaseContext: func(_ net.Listener) context.Context {
+			return baseCtx
+		},
 	}
 
 	go func() {
@@ -330,8 +335,15 @@ func main() {
 
 	slog.Info("shutting down", "signal", caught.String())
 
-	ctxShutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	shutdownTimeout := 5 * time.Second
+	go func() {
+		time.Sleep(shutdownTimeout / 2)
+
+		baseCtxCancel()
+	}()
+
+	ctxShutdown, ctxShutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer ctxShutdownCancel()
 
 	if err := srv.Shutdown(ctxShutdown); err != nil {
 		slog.Error("shut down", "error", err)
