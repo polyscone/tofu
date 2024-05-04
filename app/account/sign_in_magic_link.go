@@ -19,7 +19,7 @@ const (
 
 var ErrMagicLinkSignUpDisabled = errors.New("magic link sign up disabled")
 
-func (s *Service) SignInWithMagicLink(ctx context.Context, email string, behaviour MagicLinkSignInBehaviour) (bool, error) {
+func (s *Service) signInWithMagicLink(ctx context.Context, email string, behaviour MagicLinkSignInBehaviour) (bool, error) {
 	var input struct {
 		email Email
 	}
@@ -91,6 +91,15 @@ func (s *Service) SignInWithMagicLink(ctx context.Context, email string, behavio
 	}
 
 	s.broker.Flush(&user.Events)
+
+	return signedIn, nil
+}
+
+func (s *Service) SignInWithMagicLink(ctx context.Context, email string, behaviour MagicLinkSignInBehaviour) (bool, error) {
+	signedIn, err := s.signInWithMagicLink(ctx, email, behaviour)
+	if err != nil {
+		return signedIn, fmt.Errorf("%w: %w", ErrAuth, err)
+	}
 
 	return signedIn, nil
 }

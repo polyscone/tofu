@@ -1,6 +1,12 @@
 package account
 
-import "github.com/polyscone/tofu/event"
+import (
+	"errors"
+
+	"github.com/polyscone/tofu/event"
+)
+
+var ErrAuth = errors.New("auth")
 
 type Hasher interface {
 	EncodedPasswordHash(password []byte) ([]byte, error)

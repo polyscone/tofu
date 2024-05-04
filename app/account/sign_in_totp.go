@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/errsx"
 )
 
-func (s *Service) SignInWithTOTP(ctx context.Context, userID, totp string) error {
+func (s *Service) signInWithTOTP(ctx context.Context, userID, totp string) error {
 	var input struct {
 		userID UserID
 		totp   TOTP
@@ -43,6 +43,15 @@ func (s *Service) SignInWithTOTP(ctx context.Context, userID, totp string) error
 	}
 
 	s.broker.Flush(&user.Events)
+
+	return nil
+}
+
+func (s *Service) SignInWithTOTP(ctx context.Context, userID, totp string) error {
+	err := s.signInWithTOTP(ctx, userID, totp)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrAuth, err)
+	}
 
 	return nil
 }

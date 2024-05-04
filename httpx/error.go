@@ -29,7 +29,13 @@ func ErrorStatus(err error) int {
 	case errors.Is(err, http.ErrHandlerTimeout):
 		return http.StatusGatewayTimeout
 
-	case errors.Is(err, account.ErrGoogleSignUpDisabled),
+	case errors.Is(err, rate.ErrInsufficientTokens),
+		errors.Is(err, account.ErrSignInThrottled):
+
+		return http.StatusTooManyRequests
+
+	case errors.Is(err, account.ErrAuth),
+		errors.Is(err, account.ErrGoogleSignUpDisabled),
 		errors.Is(err, app.ErrMalformedInput),
 		errors.Is(err, app.ErrInvalidInput),
 		errors.Is(err, app.ErrConflict),
@@ -61,11 +67,6 @@ func ErrorStatus(err error) int {
 
 	case errors.Is(err, ErrExpectedJSON):
 		return http.StatusUnsupportedMediaType
-
-	case errors.Is(err, rate.ErrInsufficientTokens),
-		errors.Is(err, account.ErrSignInThrottled):
-
-		return http.StatusTooManyRequests
 
 	default:
 		var maxBytesError *http.MaxBytesError

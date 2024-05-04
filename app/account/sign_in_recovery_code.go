@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/errsx"
 )
 
-func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID, recoveryCode string) error {
+func (s *Service) signInWithRecoveryCode(ctx context.Context, userID, recoveryCode string) error {
 	var input struct {
 		userID       UserID
 		recoveryCode RecoveryCode
@@ -43,6 +43,15 @@ func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID, recoveryCo
 	}
 
 	s.broker.Flush(&user.Events)
+
+	return nil
+}
+
+func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID, recoveryCode string) error {
+	err := s.signInWithRecoveryCode(ctx, userID, recoveryCode)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrAuth, err)
+	}
 
 	return nil
 }

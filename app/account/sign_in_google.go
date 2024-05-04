@@ -19,7 +19,7 @@ const (
 
 var ErrGoogleSignUpDisabled = errors.New("Google sign up disabled")
 
-func (s *Service) SignInWithGoogle(ctx context.Context, email string, behaviour GoogleSignInBehaviour) (bool, error) {
+func (s *Service) signInWithGoogle(ctx context.Context, email string, behaviour GoogleSignInBehaviour) (bool, error) {
 	var input struct {
 		email Email
 	}
@@ -91,6 +91,15 @@ func (s *Service) SignInWithGoogle(ctx context.Context, email string, behaviour 
 	}
 
 	s.broker.Flush(&user.Events)
+
+	return signedIn, nil
+}
+
+func (s *Service) SignInWithGoogle(ctx context.Context, email string, behaviour GoogleSignInBehaviour) (bool, error) {
+	signedIn, err := s.signInWithGoogle(ctx, email, behaviour)
+	if err != nil {
+		return signedIn, fmt.Errorf("%w: %w", ErrAuth, err)
+	}
 
 	return signedIn, nil
 }

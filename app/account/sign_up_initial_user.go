@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/errsx"
 )
 
-func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []string) error {
+func (s *Service) signUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []string) error {
 	var input struct {
 		email         Email
 		password      Password
@@ -75,6 +75,15 @@ func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwo
 	}
 
 	s.broker.Flush(&user.Events)
+
+	return nil
+}
+
+func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []string) error {
+	err := s.signUpInitialUser(ctx, email, password, passwordCheck, roleIDs)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrAuth, err)
+	}
 
 	return nil
 }

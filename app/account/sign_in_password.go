@@ -28,7 +28,7 @@ func (t SignInThrottleError) Error() string {
 	return fmt.Sprintf("delayed for %v: unlocking at %v", t.Delay, t.UnlockAt.Format("15:04:05 MST"))
 }
 
-func (s *Service) SignInWithPassword(ctx context.Context, email, password string) error {
+func (s *Service) signInWithPassword(ctx context.Context, email, password string) error {
 	var input struct {
 		email    Email
 		password Password
@@ -112,6 +112,15 @@ func (s *Service) SignInWithPassword(ctx context.Context, email, password string
 	}
 
 	s.broker.Flush(&user.Events)
+
+	return nil
+}
+
+func (s *Service) SignInWithPassword(ctx context.Context, email, password string) error {
+	err := s.signInWithPassword(ctx, email, password)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrAuth, err)
+	}
 
 	return nil
 }

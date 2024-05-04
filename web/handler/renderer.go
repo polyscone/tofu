@@ -236,6 +236,17 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 
 	status := httpx.ErrorStatus(err)
 
+	if status == http.StatusTooManyRequests {
+		// If a client is hitting a rate limit we set the connection header to
+		// close which will trigger the standard library's HTTP server to close
+		// the connection after the response is sent
+		//
+		// Doing this means the client needs to go through the handshake process
+		// again to make a new connection the next time, which should help to slow
+		// down additional requests for clients that keep on hitting the limit
+		w.Header().Set("connection", "close")
+	}
+
 	rn.ViewFunc(w, r, status, view, func(data *ViewData) {
 		data.ErrorMessage = httpx.ErrorMessage(err)
 

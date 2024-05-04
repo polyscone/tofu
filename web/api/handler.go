@@ -88,14 +88,25 @@ func (h *Handler) RawJSON(w http.ResponseWriter, r *http.Request, status int, da
 
 func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, err error) {
 	ctx := r.Context()
+	logger := h.Logger(ctx)
 
-	h.Logger(ctx).Error(msg, "error", err)
+	logger.Error(msg, "error", err)
 
 	status := httpx.ErrorStatus(err)
-
 	isPublic := slices.ContainsFunc(publicErrors, func(el error) bool {
 		return errors.Is(err, el)
 	})
+
+	if status == http.StatusTooManyRequests {
+		// If a client is hitting a rate limit we set the connection header to
+		// close which will trigger the standard library's HTTP server to close
+		// the connection after the response is sent
+		//
+		// Doing this means the client needs to go through the handshake process
+		// again to make a new connection the next time, which should help to slow
+		// down additional requests for clients that keep on hitting the limit
+		w.Header().Set("connection", "close")
+	}
 
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(status)
@@ -125,7 +136,7 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 	}
 
 	if err := json.NewEncoder(w).Encode(detail); err != nil {
-		h.Logger(ctx).Error("write error JSON response", "error", err)
+		logger.Error("write error JSON response", "error", err)
 	}
 }
 

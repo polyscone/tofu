@@ -42,19 +42,13 @@ func signInPost(h *api.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		if err := auth.SignInWithPassword(ctx, h.Handler, w, r, input.Email, input.Password); err != nil {
-			switch {
-			case errors.Is(err, app.ErrNotFound),
-				errors.Is(err, account.ErrInvalidPassword):
-
+		if err := auth.SignInWithPassword(ctx, h.Handler, input.Email, input.Password); err != nil {
+			if errors.Is(err, app.ErrNotFound) || errors.Is(err, account.ErrInvalidPassword) {
 				h.JSON(w, r, http.StatusBadRequest, map[string]any{
 					"error": "Either your credentials are incorrect, or you're not authorised to access this application.",
 				})
 
 				return
-
-			case !errors.Is(err, account.ErrSignInThrottled):
-				err = fmt.Errorf("%w: %w", app.ErrBadRequest, err)
 			}
 
 			h.ErrorJSON(w, r, "sign in with password", err)
@@ -115,7 +109,7 @@ func signInMagicLinkPost(h *api.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		if _, err := auth.SignInWithMagicLink(ctx, h.Handler, w, r, input.Token); err != nil {
+		if _, err := auth.SignInWithMagicLink(ctx, h.Handler, input.Token); err != nil {
 			h.ErrorJSON(w, r, "sign in with magic link", err)
 
 			return
@@ -140,7 +134,7 @@ func signInTOTPPost(h *api.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		if err := auth.SignInWithTOTP(ctx, h.Handler, w, r, input.TOTP); err != nil {
+		if err := auth.SignInWithTOTP(ctx, h.Handler, input.TOTP); err != nil {
 			h.ErrorJSON(w, r, "sign in with TOTP", err)
 
 			return
@@ -179,7 +173,7 @@ func signInRecoveryCodePost(h *api.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		if err := auth.SignInWithRecoveryCode(ctx, h.Handler, w, r, input.RecoveryCode); err != nil {
+		if err := auth.SignInWithRecoveryCode(ctx, h.Handler, input.RecoveryCode); err != nil {
 			h.ErrorJSON(w, r, "sign in with recovery code", err)
 
 			return
@@ -204,7 +198,7 @@ func signInGooglePost(h *api.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		if _, err := auth.SignInWithGoogle(ctx, h.Handler, w, r, input.JWT); err != nil {
+		if _, err := auth.SignInWithGoogle(ctx, h.Handler, input.JWT); err != nil {
 			h.ErrorJSON(w, r, "sign in with Google", err)
 
 			return
@@ -231,7 +225,7 @@ func signInFacebookPost(h *api.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		if _, err := auth.SignInWithFacebook(ctx, h.Handler, w, r, input.UserID, input.AccessToken, input.Email); err != nil {
+		if _, err := auth.SignInWithFacebook(ctx, h.Handler, input.UserID, input.AccessToken, input.Email); err != nil {
 			h.ErrorJSON(w, r, "sign in with Facebook", err)
 
 			return

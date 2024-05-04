@@ -152,7 +152,7 @@ func signInMagicLinkPost(h *ui.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		signedIn, err := auth.SignInWithMagicLink(ctx, h.Handler, w, r, input.Token)
+		signedIn, err := auth.SignInWithMagicLink(ctx, h.Handler, input.Token)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "sign in with magic link", err, "site/account/sign_in/magic_link", nil)
 
@@ -207,7 +207,7 @@ func signInTOTPPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if err := auth.SignInWithTOTP(ctx, h.Handler, w, r, input.TOTP); err != nil {
+		if err := auth.SignInWithTOTP(ctx, h.Handler, input.TOTP); err != nil {
 			h.HTML.ErrorView(w, r, "sign in with TOTP", err, "site/account/sign_in/totp", nil)
 
 			return
@@ -360,7 +360,7 @@ func signInRecoveryCodePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if err := auth.SignInWithRecoveryCode(ctx, h.Handler, w, r, input.RecoveryCode); err != nil {
+		if err := auth.SignInWithRecoveryCode(ctx, h.Handler, input.RecoveryCode); err != nil {
 			h.HTML.ErrorView(w, r, "sign in with recovery code", err, "site/account/sign_in/recovery_code", nil)
 
 			return
@@ -414,7 +414,7 @@ func signInGooglePost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		jwt := r.PostFormValue("credential")
-		signedIn, err := auth.SignInWithGoogle(ctx, h.Handler, w, r, jwt)
+		signedIn, err := auth.SignInWithGoogle(ctx, h.Handler, jwt)
 		if err != nil {
 			if errors.Is(err, account.ErrGoogleSignUpDisabled) {
 				h.AddFlashErrorf(ctx, "Either your credentials are incorrect, or you're not authorised to access this application.")
@@ -452,7 +452,7 @@ func signInFacebookPost(h *ui.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		signedIn, err := auth.SignInWithFacebook(ctx, h.Handler, w, r, input.UserID, input.AccessToken, input.Email)
+		signedIn, err := auth.SignInWithFacebook(ctx, h.Handler, input.UserID, input.AccessToken, input.Email)
 		if err != nil {
 			if errors.Is(err, account.ErrFacebookSignUpDisabled) {
 				h.AddFlashErrorf(ctx, "Either your credentials are incorrect, or you're not authorised to access this application.")
@@ -476,7 +476,7 @@ func signInFacebookPost(h *ui.Handler) http.HandlerFunc {
 }
 
 func signInWithPassword(ctx context.Context, h *ui.Handler, w http.ResponseWriter, r *http.Request, email, password string) {
-	if err := auth.SignInWithPassword(ctx, h.Handler, w, r, email, password); err != nil {
+	if err := auth.SignInWithPassword(ctx, h.Handler, email, password); err != nil {
 		h.HTML.ErrorViewFunc(w, r, "sign in with password", err, "site/account/sign_in/web_form", func(data *handler.ViewData) {
 			var throttle *account.SignInThrottleError
 			if errors.As(err, &throttle) {

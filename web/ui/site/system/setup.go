@@ -86,7 +86,7 @@ func systemSetupPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = auth.SignInWithPassword(ctx, h.Handler, w, r, input.Email, input.Password)
+		err = auth.SignInWithPassword(ctx, h.Handler, input.Email, input.Password)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "sign in with password", err, "site/system/setup", nil)
 

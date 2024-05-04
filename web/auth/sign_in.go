@@ -25,7 +25,7 @@ import (
 
 var client = http.Client{Timeout: 10 * time.Second}
 
-func SignInWithPassword(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email, password string) error {
+func SignInWithPassword(ctx context.Context, h *handler.Handler, email, password string) error {
 	logger := h.Logger(ctx)
 
 	attempts := h.Sessions.GetInt(ctx, sess.SignInAttempts)
@@ -57,7 +57,7 @@ func SignInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 		return fmt.Errorf("renew session: %w", err)
 	}
 
-	if err := SignInSetSession(ctx, h, w, r, email); err != nil {
+	if err := SignInSetSession(ctx, h, email); err != nil {
 		return fmt.Errorf("sign in set session: %w", err)
 	}
 
@@ -72,7 +72,7 @@ func SignInWithPassword(ctx context.Context, h *handler.Handler, w http.Response
 	return nil
 }
 
-func SignInWithMagicLink(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, token string) (bool, error) {
+func SignInWithMagicLink(ctx context.Context, h *handler.Handler, token string) (bool, error) {
 	if token == "" {
 		return false, fmt.Errorf("%w: empty token", app.ErrInvalidInput)
 	}
@@ -112,7 +112,7 @@ func SignInWithMagicLink(ctx context.Context, h *handler.Handler, w http.Respons
 			return signedIn, fmt.Errorf("renew session: %w", err)
 		}
 
-		if err := SignInSetSession(ctx, h, w, r, email); err != nil {
+		if err := SignInSetSession(ctx, h, email); err != nil {
 			return signedIn, fmt.Errorf("sign in set session: %w", err)
 		}
 	}
@@ -120,7 +120,7 @@ func SignInWithMagicLink(ctx context.Context, h *handler.Handler, w http.Respons
 	return signedIn, nil
 }
 
-func SignInWithTOTP(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, totp string) error {
+func SignInWithTOTP(ctx context.Context, h *handler.Handler, totp string) error {
 	user := h.User(ctx)
 
 	err := h.Svc.Account.SignInWithTOTP(ctx, user.ID, totp)
@@ -138,7 +138,7 @@ func SignInWithTOTP(ctx context.Context, h *handler.Handler, w http.ResponseWrit
 	return nil
 }
 
-func SignInWithRecoveryCode(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, recoveryCode string) error {
+func SignInWithRecoveryCode(ctx context.Context, h *handler.Handler, recoveryCode string) error {
 	user := h.User(ctx)
 
 	err := h.Svc.Account.SignInWithRecoveryCode(ctx, user.ID, recoveryCode)
@@ -156,7 +156,7 @@ func SignInWithRecoveryCode(ctx context.Context, h *handler.Handler, w http.Resp
 	return nil
 }
 
-func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, jwt string) (bool, error) {
+func SignInWithGoogle(ctx context.Context, h *handler.Handler, jwt string) (bool, error) {
 	config := h.Config(ctx)
 
 	if !config.GoogleSignInEnabled {
@@ -279,7 +279,7 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 			return signedIn, fmt.Errorf("renew session: %w", err)
 		}
 
-		if err := SignInSetSession(ctx, h, w, r, claims.Email); err != nil {
+		if err := SignInSetSession(ctx, h, claims.Email); err != nil {
 			return signedIn, fmt.Errorf("sign in set session: %w", err)
 		}
 	}
@@ -287,7 +287,7 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 	return signedIn, nil
 }
 
-func SignInWithFacebook(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, userID, accessToken, email string) (bool, error) {
+func SignInWithFacebook(ctx context.Context, h *handler.Handler, userID, accessToken, email string) (bool, error) {
 	config := h.Config(ctx)
 
 	if !config.FacebookSignInEnabled {
@@ -373,7 +373,7 @@ func SignInWithFacebook(ctx context.Context, h *handler.Handler, w http.Response
 			return signedIn, fmt.Errorf("renew session: %w", err)
 		}
 
-		if err := SignInSetSession(ctx, h, w, r, me.Email); err != nil {
+		if err := SignInSetSession(ctx, h, me.Email); err != nil {
 			return signedIn, fmt.Errorf("sign in set session: %w", err)
 		}
 	}
@@ -381,7 +381,7 @@ func SignInWithFacebook(ctx context.Context, h *handler.Handler, w http.Response
 	return signedIn, nil
 }
 
-func SignInSetSession(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, email string) error {
+func SignInSetSession(ctx context.Context, h *handler.Handler, email string) error {
 	user, err := h.Repo.Account.FindUserByEmail(ctx, email)
 	if err != nil {
 		return fmt.Errorf("find user by email: %w", err)

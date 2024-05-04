@@ -19,7 +19,7 @@ const (
 
 var ErrFacebookSignUpDisabled = errors.New("Facebook sign up disabled")
 
-func (s *Service) SignInWithFacebook(ctx context.Context, email string, behaviour FacebookSignInBehaviour) (bool, error) {
+func (s *Service) signInWithFacebook(ctx context.Context, email string, behaviour FacebookSignInBehaviour) (bool, error) {
 	var input struct {
 		email Email
 	}
@@ -91,6 +91,15 @@ func (s *Service) SignInWithFacebook(ctx context.Context, email string, behaviou
 	}
 
 	s.broker.Flush(&user.Events)
+
+	return signedIn, nil
+}
+
+func (s *Service) SignInWithFacebook(ctx context.Context, email string, behaviour FacebookSignInBehaviour) (bool, error) {
+	signedIn, err := s.signInWithFacebook(ctx, email, behaviour)
+	if err != nil {
+		return signedIn, fmt.Errorf("%w: %w", ErrAuth, err)
+	}
 
 	return signedIn, nil
 }
