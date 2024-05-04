@@ -3,7 +3,7 @@ package account
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/ui"
 )
 

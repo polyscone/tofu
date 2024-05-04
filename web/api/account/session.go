@@ -4,7 +4,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/api"
 	"github.com/polyscone/tofu/web/sess"
 )

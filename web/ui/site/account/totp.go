@@ -16,11 +16,11 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/sms"
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
@@ -99,7 +99,7 @@ func totpSetupPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			Method string `form:"method"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -202,7 +202,7 @@ func totpSetupAppPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string `form:"totp"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -269,7 +269,7 @@ func totpSetupSMSPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			Tel string `form:"tel"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -345,7 +345,7 @@ func totpSetupSMSVerifyPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string `form:"totp"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -430,7 +430,7 @@ func totpDisablePost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			Password string `form:"password"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -479,7 +479,7 @@ func totpResetPost(h *ui.Handler) http.HandlerFunc {
 			Token    string `form:"token"`
 			Password string `form:"password"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -561,7 +561,7 @@ func totpRecoveryCodesPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string `form:"totp"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return

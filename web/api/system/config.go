@@ -3,10 +3,10 @@ package system
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/http/middleware"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/middleware"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/api"
-	"github.com/polyscone/tofu/web/httputil"
 )
 
 func RegisterConfigHandlers(h *api.Handler, mux *router.ServeMux) {
@@ -18,7 +18,7 @@ func configGet(h *api.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		config := h.Config(ctx)
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, map[string]any{
 			"signUpEnabled":          config.SignUpEnabled,

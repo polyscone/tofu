@@ -8,8 +8,8 @@ import (
 	"sync"
 
 	"github.com/polyscone/tofu/cache"
+	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/httputil"
 )
 
 var ErrTenantNotFound = errors.New("not found")
@@ -42,7 +42,7 @@ func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 		}
 
 		tenant.Scheme = "http"
-		if httputil.IsTLS(r) {
+		if httpx.IsTLS(r) {
 			tenant.Scheme = "https"
 		}
 

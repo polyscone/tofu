@@ -7,10 +7,10 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/collection"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
@@ -83,7 +83,7 @@ func userListGet(h *ui.Handler) http.HandlerFunc {
 		}
 		sorts := r.URL.Query()["sort"]
 		search := r.URL.Query().Get("search")
-		page, size := httputil.Pagination(r)
+		page, size := httpx.Pagination(r)
 		users, total, err := h.Repo.Account.FindUsersPageBySearch(ctx, page, size, sortTopID, sorts, search)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find users page by search", err, "site/error", nil)
@@ -125,7 +125,7 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			Email string `form:"email"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -207,7 +207,7 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 			Grants  []string `form:"grants"`
 			Denials []string `form:"denials"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -263,7 +263,7 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			SuspendedReason string `form:"suspended-reason"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return

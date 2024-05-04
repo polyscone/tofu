@@ -12,12 +12,12 @@ import (
 	"github.com/polyscone/tofu/background"
 	"github.com/polyscone/tofu/csrf"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/human"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
@@ -74,7 +74,7 @@ func signInPasswordPost(h *ui.Handler) http.HandlerFunc {
 			Email    string `form:"email"`
 			Password string `form:"password"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -91,7 +91,7 @@ func signInMagicLinkRequestPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			Email string `form:"email"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -138,7 +138,7 @@ func signInMagicLinkPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			Token string `form:"token"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -192,7 +192,7 @@ func signInTOTPPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string `form:"totp"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -287,7 +287,7 @@ func signInTOTPResetRequestPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			Token string `form:"token"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -345,7 +345,7 @@ func signInRecoveryCodePost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			RecoveryCode string `form:"recovery-code"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -444,7 +444,7 @@ func signInFacebookPost(h *ui.Handler) http.HandlerFunc {
 			AccessToken string `form:"access-token"`
 			Email       string `form:"email"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return

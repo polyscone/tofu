@@ -7,12 +7,12 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/http/middleware"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/middleware"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/api"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/event"
-	"github.com/polyscone/tofu/web/httputil"
 )
 
 func RegisterResetPasswordHandlers(h *api.Handler, mux *router.ServeMux) {
@@ -25,7 +25,7 @@ func resetPasswordPost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			Email string
 		}
-		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
+		if err := httpx.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -47,7 +47,7 @@ func resetPasswordPost(h *api.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		w.WriteHeader(http.StatusOK)
 	}
@@ -60,7 +60,7 @@ func resetPasswordNewPasswordPost(h *api.Handler) http.HandlerFunc {
 			NewPassword      string
 			NewPasswordCheck string
 		}
-		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
+		if err := httpx.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -75,7 +75,7 @@ func resetPasswordNewPasswordPost(h *api.Handler) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, map[string]any{
 			"email": email,

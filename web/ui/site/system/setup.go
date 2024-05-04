@@ -3,9 +3,9 @@ package system
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/auth"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/ui"
 )
 
@@ -55,7 +55,7 @@ func systemSetupPost(h *ui.Handler) http.HandlerFunc {
 			SystemEmail   string `form:"system-email"`
 			SecurityEmail string `form:"security-email"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return

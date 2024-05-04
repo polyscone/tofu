@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/human"
-	"github.com/polyscone/tofu/web/httputil"
 )
 
 func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
@@ -298,7 +298,7 @@ func TmplInts(start, end int) []int {
 }
 
 func TmplStatusText(code int) string {
-	if code == httputil.StatusClientClosedRequest {
+	if code == httpx.StatusClientClosedRequest {
 		return "Client Closed Request"
 	}
 

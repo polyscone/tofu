@@ -3,11 +3,11 @@ package account
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/http/middleware"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/middleware"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/api"
 	"github.com/polyscone/tofu/web/auth"
-	"github.com/polyscone/tofu/web/httputil"
 )
 
 func RegisterSignUpHandlers(h *api.Handler, mux *router.ServeMux) {
@@ -19,7 +19,7 @@ func signUpPost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			Email string
 		}
-		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
+		if err := httpx.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -33,7 +33,7 @@ func signUpPost(h *api.Handler) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}

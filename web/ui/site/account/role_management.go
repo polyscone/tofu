@@ -6,10 +6,10 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/collection"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
@@ -55,7 +55,7 @@ func roleListGet(h *ui.Handler) http.HandlerFunc {
 		sortTopID := h.Sessions.PopString(ctx, sess.SortTopID)
 		sorts := r.URL.Query()["sort"]
 		search := r.URL.Query().Get("search")
-		page, size := httputil.Pagination(r)
+		page, size := httpx.Pagination(r)
 		roles, total, err := h.Repo.Account.FindRolesPageBySearch(ctx, page, size, sortTopID, sorts, search)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find roles page by search", err, "site/error", nil)
@@ -89,7 +89,7 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 			Description string   `form:"description"`
 			Permissions []string `form:"permissions"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -162,7 +162,7 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 			Description string   `form:"description"`
 			Permissions []string `form:"permissions"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return

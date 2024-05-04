@@ -4,11 +4,11 @@ import (
 	"net/http"
 
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/http/middleware"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/middleware"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/api"
 	"github.com/polyscone/tofu/web/auth"
-	"github.com/polyscone/tofu/web/httputil"
 )
 
 func RegisterVerifyHandlers(h *api.Handler, mux *router.ServeMux) {
@@ -22,7 +22,7 @@ func verifyPost(h *api.Handler) http.HandlerFunc {
 			Password      string
 			PasswordCheck string
 		}
-		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
+		if err := httpx.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -37,7 +37,7 @@ func verifyPost(h *api.Handler) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, map[string]any{
 			"email":       email,

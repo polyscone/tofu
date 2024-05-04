@@ -6,7 +6,7 @@ import (
 	"html/template"
 	"net/url"
 
-	"github.com/polyscone/tofu/web/httputil"
+	"github.com/polyscone/tofu/httpx"
 )
 
 type CSRF struct {
@@ -14,7 +14,7 @@ type CSRF struct {
 }
 
 func (c CSRF) Token() string {
-	return httputil.MaskedCSRFToken(c.Ctx)
+	return httpx.MaskedCSRFToken(c.Ctx)
 }
 
 type Form struct {

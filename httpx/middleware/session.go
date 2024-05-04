@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/session"
-	"github.com/polyscone/tofu/web/httputil"
 )
 
 const (
@@ -50,7 +50,7 @@ func Session(sm *session.Manager, errorHandler ErrorHandler) Middleware {
 				ResponseWriter:  w,
 				request:         r,
 				errorHandler:    errorHandler,
-				insecure:        !httputil.IsTLS(r),
+				insecure:        !httpx.IsTLS(r),
 				sm:              sm,
 				ctx:             ctx,
 				cookieSessionID: cookieSessionID,
@@ -138,7 +138,7 @@ func (w *sessionResponseWriter) commit() {
 
 func getSessionCookieID(r *http.Request) (string, error) {
 	name := SessionCookieNameInsecure
-	if httputil.IsTLS(r) {
+	if httpx.IsTLS(r) {
 		name = SessionCookieName
 	}
 

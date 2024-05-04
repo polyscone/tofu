@@ -9,12 +9,12 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/http/middleware"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/middleware"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/api"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/event"
-	"github.com/polyscone/tofu/web/httputil"
 )
 
 func RegisterSignInHandlers(h *api.Handler, mux *router.ServeMux) {
@@ -34,7 +34,7 @@ func signInPost(h *api.Handler) http.HandlerFunc {
 			Email    string
 			Password string
 		}
-		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
+		if err := httpx.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -62,7 +62,7 @@ func signInPost(h *api.Handler) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
@@ -73,7 +73,7 @@ func signInMagicLinkRequestPost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			Email string
 		}
-		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
+		if err := httpx.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -96,7 +96,7 @@ func signInMagicLinkRequestPost(h *api.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		w.WriteHeader(http.StatusOK)
 	}
@@ -107,7 +107,7 @@ func signInMagicLinkPost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			Token string
 		}
-		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
+		if err := httpx.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -121,7 +121,7 @@ func signInMagicLinkPost(h *api.Handler) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
@@ -132,7 +132,7 @@ func signInTOTPPost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			TOTP string
 		}
-		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
+		if err := httpx.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -146,7 +146,7 @@ func signInTOTPPost(h *api.Handler) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
@@ -171,7 +171,7 @@ func signInRecoveryCodePost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			RecoveryCode string
 		}
-		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
+		if err := httpx.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -185,7 +185,7 @@ func signInRecoveryCodePost(h *api.Handler) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
@@ -196,7 +196,7 @@ func signInGooglePost(h *api.Handler) http.HandlerFunc {
 		var input struct {
 			JWT string
 		}
-		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
+		if err := httpx.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -210,7 +210,7 @@ func signInGooglePost(h *api.Handler) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}
@@ -223,7 +223,7 @@ func signInFacebookPost(h *api.Handler) http.HandlerFunc {
 			AccessToken string
 			Email       string
 		}
-		if err := httputil.DecodeRequestJSON(&input, r); err != nil {
+		if err := httpx.DecodeRequestJSON(&input, r); err != nil {
 			h.ErrorJSON(w, r, "decode JSON", err)
 
 			return
@@ -237,7 +237,7 @@ func signInFacebookPost(h *api.Handler) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}

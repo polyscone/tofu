@@ -17,9 +17,9 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
+	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/password/pwned"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"
 )
 
@@ -174,7 +174,7 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, w http.ResponseWr
 	defer res.Body.Close()
 
 	certs := make(map[string]string)
-	if err := httputil.DecodeJSON(&certs, res.Body); err != nil {
+	if err := httpx.DecodeJSON(&certs, res.Body); err != nil {
 		return false, fmt.Errorf("decode Google OAuth2 certs JSON: %w", err)
 	}
 
@@ -322,7 +322,7 @@ func SignInWithFacebook(ctx context.Context, h *handler.Handler, w http.Response
 			IsValid bool   `json:"is_valid"`
 		}
 	}
-	if err := httputil.RelaxedDecodeJSON(&token, res.Body); err != nil {
+	if err := httpx.RelaxedDecodeJSON(&token, res.Body); err != nil {
 		return false, fmt.Errorf("decode Facebook access token debug data: %w", err)
 	}
 
@@ -346,7 +346,7 @@ func SignInWithFacebook(ctx context.Context, h *handler.Handler, w http.Response
 	var me struct {
 		Email string
 	}
-	if err := httputil.RelaxedDecodeJSON(&me, res.Body); err != nil {
+	if err := httpx.RelaxedDecodeJSON(&me, res.Body); err != nil {
 		return false, fmt.Errorf("decode Facebook user data: %w", err)
 	}
 

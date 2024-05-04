@@ -13,8 +13,8 @@ import (
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/app/system"
 	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/web/guard"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"
 )
 
@@ -234,10 +234,10 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 
 	rn.h.Logger(ctx).Error(msg, "error", err)
 
-	status := httputil.ErrorStatus(err)
+	status := httpx.ErrorStatus(err)
 
 	rn.ViewFunc(w, r, status, view, func(data *ViewData) {
-		data.ErrorMessage = httputil.ErrorMessage(err)
+		data.ErrorMessage = httpx.ErrorMessage(err)
 
 		switch {
 		case errors.Is(err, app.ErrMalformedInput),

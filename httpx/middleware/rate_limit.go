@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/background"
+	"github.com/polyscone/tofu/httpx/realip"
 	"github.com/polyscone/tofu/rate"
-	"github.com/polyscone/tofu/realip"
 )
 
 type ConsumeFunc func(r *http.Request) bool

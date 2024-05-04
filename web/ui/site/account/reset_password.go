@@ -7,10 +7,10 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/event"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/ui"
 )
 
@@ -29,7 +29,7 @@ func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
 		var input struct {
 			Email string `form:"email"`
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return
@@ -60,7 +60,7 @@ func resetPasswordNewPasswordPost(h *ui.Handler) http.HandlerFunc {
 			NewPassword      string `form:"new-password"`
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field
 		}
-		if err := httputil.DecodeRequestForm(&input, r); err != nil {
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
 			h.HTML.ErrorView(w, r, "decode form", err, "site/error", nil)
 
 			return

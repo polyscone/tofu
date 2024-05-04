@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/realip"
+	"github.com/polyscone/tofu/httpx/realip"
 )
 
 func TestFromRequest(t *testing.T) {

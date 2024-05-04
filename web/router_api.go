@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/polyscone/tofu/http/middleware"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/middleware"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/size"
 	"github.com/polyscone/tofu/web/api"
 	"github.com/polyscone/tofu/web/api/account"
@@ -17,7 +18,6 @@ import (
 	"github.com/polyscone/tofu/web/api/security"
 	"github.com/polyscone/tofu/web/api/system"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"
 )
 
@@ -34,7 +34,7 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 		rc.SetWriteDeadline(time.Now().Add(3 * time.Second))
 
 		if errors.Is(err, context.Canceled) {
-			w.WriteHeader(httputil.StatusClientClosedRequest)
+			w.WriteHeader(httpx.StatusClientClosedRequest)
 
 			return
 		}
@@ -120,15 +120,15 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	system.RegisterConfigHandlers(h, mux)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if allowed, ok := httputil.MethodNotAllowed(mux, r); ok {
+		if allowed, ok := httpx.MethodNotAllowed(mux, r); ok {
 			w.Header().Set("allow", strings.Join(allowed, ", "))
 
-			h.ErrorJSON(w, r, "handler", httputil.ErrMethodNotAllowed)
+			h.ErrorJSON(w, r, "handler", httpx.ErrMethodNotAllowed)
 
 			return
 		}
 
-		h.ErrorJSON(w, r, "handler", httputil.ErrNotFound)
+		h.ErrorJSON(w, r, "handler", httpx.ErrNotFound)
 	})
 
 	return mux

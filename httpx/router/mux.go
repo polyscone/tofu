@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/polyscone/tofu/http/middleware"
+	"github.com/polyscone/tofu/httpx/middleware"
 )
 
 const (

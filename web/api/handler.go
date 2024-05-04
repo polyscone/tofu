@@ -17,9 +17,9 @@ import (
 	"github.com/polyscone/tofu/dev"
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/fstack"
+	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/human"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"
 )
 
@@ -91,7 +91,7 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 
 	h.Logger(ctx).Error(msg, "error", err)
 
-	status := httputil.ErrorStatus(err)
+	status := httpx.ErrorStatus(err)
 
 	isPublic := slices.ContainsFunc(publicErrors, func(el error) bool {
 		return errors.Is(err, el)
@@ -102,7 +102,7 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 
 	detail := map[string]any{"error": strings.ToLower(http.StatusText(status))}
 	if isPublic && 400 <= status && status <= 499 {
-		detail["error"] = httputil.ErrorMessage(err)
+		detail["error"] = httpx.ErrorMessage(err)
 
 		var errs errsx.Map
 		if errors.As(err, &errs) {

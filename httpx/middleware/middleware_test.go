@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/polyscone/tofu/http/middleware"
+	"github.com/polyscone/tofu/httpx/middleware"
 )
 
 func TestApply(t *testing.T) {

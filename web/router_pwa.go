@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/polyscone/tofu/http/middleware"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/middleware"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/size"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 	"github.com/polyscone/tofu/web/ui/pwa/event"
@@ -45,7 +45,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		rc.SetWriteDeadline(time.Now().Add(3 * time.Second))
 
 		if errors.Is(err, context.Canceled) {
-			w.WriteHeader(httputil.StatusClientClosedRequest)
+			w.WriteHeader(httpx.StatusClientClosedRequest)
 
 			return
 		}
@@ -136,7 +136,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))
 
-	mux.Handle("/favicon.ico", httputil.RewriteHandler(mux, "/favicon.png"))
+	mux.Handle("/favicon.ico", httpx.RewriteHandler(mux, "/favicon.png"))
 
 	rootVars := func(h *ui.Handler, r *http.Request) handler.Vars {
 		ctx := r.Context()
@@ -159,7 +159,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if allowed, ok := httputil.MethodNotAllowed(mux, r); ok {
+		if allowed, ok := httpx.MethodNotAllowed(mux, r); ok {
 			w.Header().Set("allow", strings.Join(allowed, ", "))
 
 			http.Redirect(w, r, routePrefix+"/error/405", http.StatusSeeOther)

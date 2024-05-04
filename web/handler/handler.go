@@ -18,7 +18,7 @@ import (
 	"github.com/polyscone/tofu/cache"
 	"github.com/polyscone/tofu/csrf"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/realip"
+	"github.com/polyscone/tofu/httpx/realip"
 	"github.com/polyscone/tofu/session"
 	"github.com/polyscone/tofu/sms"
 	"github.com/polyscone/tofu/smtp"

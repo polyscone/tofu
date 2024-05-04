@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/testutil"
 )
 

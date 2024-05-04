@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/polyscone/tofu/csrf"
+	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/size"
-	"github.com/polyscone/tofu/web/httputil"
 )
 
 const (
@@ -26,7 +26,7 @@ func CSRF(errorHandler ErrorHandler) Middleware {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			name := CSRFTokenCookieNameInsecure
-			if httputil.IsTLS(r) {
+			if httpx.IsTLS(r) {
 				name = CSRFTokenCookieName
 			}
 
@@ -163,7 +163,7 @@ func CSRF(errorHandler ErrorHandler) Middleware {
 				ResponseWriter: w,
 				r:              r,
 				ctx:            ctx,
-				insecure:       !httputil.IsTLS(r),
+				insecure:       !httpx.IsTLS(r),
 			}
 			r = r.WithContext(ctx)
 

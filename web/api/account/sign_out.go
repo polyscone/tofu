@@ -3,10 +3,10 @@ package account
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/http/middleware"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/middleware"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/api"
-	"github.com/polyscone/tofu/web/httputil"
 )
 
 func RegisterSignOutHandlers(h *api.Handler, mux *router.ServeMux) {
@@ -26,7 +26,7 @@ func signOutPost(h *api.Handler) http.HandlerFunc {
 
 		h.Sessions.Destroy(r.Context())
 
-		w.Header().Set(middleware.CSRFTokenHeaderName, httputil.MaskedCSRFToken(ctx))
+		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
 		h.JSON(w, r, http.StatusOK, SessionData(ctx, h))
 	}

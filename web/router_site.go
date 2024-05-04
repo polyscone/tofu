@@ -14,11 +14,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/polyscone/tofu/http/middleware"
-	"github.com/polyscone/tofu/http/router"
+	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/httpx/middleware"
+	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/size"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/httputil"
 	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 	"github.com/polyscone/tofu/web/ui/site/account"
@@ -52,7 +52,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		rc.SetWriteDeadline(time.Now().Add(3 * time.Second))
 
 		if errors.Is(err, context.Canceled) {
-			w.WriteHeader(httputil.StatusClientClosedRequest)
+			w.WriteHeader(httpx.StatusClientClosedRequest)
 
 			return
 		}
@@ -222,15 +222,15 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))
 
-	mux.Handle("/favicon.ico", httputil.RewriteHandler(mux, "/favicon.png"))
+	mux.Handle("/favicon.ico", httpx.RewriteHandler(mux, "/favicon.png"))
 
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if allowed, ok := httputil.MethodNotAllowed(mux, r); ok {
+		if allowed, ok := httpx.MethodNotAllowed(mux, r); ok {
 			w.Header().Set("allow", strings.Join(allowed, ", "))
 
-			h.HTML.ErrorView(w, r, "static file", httputil.ErrMethodNotAllowed, "site/error", nil)
+			h.HTML.ErrorView(w, r, "static file", httpx.ErrMethodNotAllowed, "site/error", nil)
 
 			return
 		}
@@ -245,15 +245,15 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		stat, err := fs.Stat(publicFiles, strings.TrimPrefix(upath, "/"))
 		if err != nil {
 			if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) {
-				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrNotFound, err), "site/error", nil)
+				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httpx.ErrNotFound, err), "site/error", nil)
 			} else {
-				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httputil.ErrInternalServerError, err), "site/error", nil)
+				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httpx.ErrInternalServerError, err), "site/error", nil)
 			}
 
 			return
 		}
 		if stat.IsDir() {
-			h.HTML.ErrorView(w, r, "static file", httputil.ErrForbidden, "site/error", nil)
+			h.HTML.ErrorView(w, r, "static file", httpx.ErrForbidden, "site/error", nil)
 
 			return
 		}
