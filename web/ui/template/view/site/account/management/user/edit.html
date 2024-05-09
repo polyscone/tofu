@@ -24,11 +24,11 @@
 		</div>
 	{{end}}
 
-	{{if .Vars.User.VerifiedAt.IsZero}}
+	{{if not .Vars.User.IsVerified}}
 		<p class="text-italic text-bold">This account has not yet been verified.</p>
 	{{end}}
 
-	{{if not .Vars.User.LastSignedInAt.IsZero}}
+	{{if .Vars.User.HasSignedIn}}
 		<p>
 			Last signed in
 			<time datetime="{{FormatTime .Vars.User.LastSignedInAt "RFC3339"}}" data-date="full">{{FormatTime .Vars.User.LastSignedInAt "DateTime"}}</time>

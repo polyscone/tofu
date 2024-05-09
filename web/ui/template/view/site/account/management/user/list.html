@@ -33,7 +33,7 @@
 			<tr{{if eq .ID $.Session.HighlightID}} class="data-table__highlight"{{end}}>
 				<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
 				<td>
-					{{if not .LastSignedInAt.IsZero}}
+					{{if .HasSignedIn}}
 						<time
 							title="{{FormatTime .LastSignedInAt "RFC1123"}}"
 							datetime="{{FormatTime .LastSignedInAt "RFC3339"}}"
@@ -47,9 +47,9 @@
 						Suspended
 					{{end}}
 
-					{{if .VerifiedAt.IsZero}}
+					{{if not .IsVerified}}
 						Unverified
-					{{else if .ActivatedAt.IsZero}}
+					{{else if not .IsActivated}}
 						{{if $.Passport.Account.CanActivateUsers}}
 							<a href="{{Path "account.management.user.activate" "{userID}" .ID}}{{$.URL.Query.String}}">Activate</a>
 						{{else}}

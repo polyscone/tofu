@@ -145,8 +145,20 @@ func (u *User) HasActivatedTOTP() bool {
 	return !u.TOTPActivatedAt.IsZero()
 }
 
+func (u *User) IsVerified() bool {
+	return !u.VerifiedAt.IsZero()
+}
+
+func (u *User) IsActivated() bool {
+	return !u.ActivatedAt.IsZero()
+}
+
 func (u *User) IsSuspended() bool {
 	return !u.SuspendedAt.IsZero()
+}
+
+func (u *User) HasSignedIn() bool {
+	return !u.LastSignedInAt.IsZero()
 }
 
 func (u *User) Invite(system string) error {
