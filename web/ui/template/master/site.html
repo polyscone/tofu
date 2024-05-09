@@ -60,29 +60,7 @@
 
 			{{block "view_head" .}}{{end}}
 
-			{{if and .ErrorMessage (ne .View "site/error")}}
-				<div class="error-banner center">
-					<p>{{.ErrorMessage}}</p>
-				</div>
-			{{end}}
-
-			{{range $flash := .Session.FlashError}}
-				<div class="error-banner center">
-					<p>{{UnescapeHTML $flash}}</p>
-				</div>
-			{{end}}
-
-			{{range $flash := .Session.FlashImportant}}
-				<div class="flash-banner flash-banner--important center">
-					<p>{{UnescapeHTML $flash}}</p>
-				</div>
-			{{end}}
-
-			{{range $flash := .Session.Flash}}
-				<div class="flash-banner center">
-					<p>{{UnescapeHTML $flash}}</p>
-				</div>
-			{{end}}
+			{{template "site_message_banners" .}}
 
 			{{block "view_body" .}}{{end}}
 		</main>
