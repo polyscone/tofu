@@ -42,9 +42,7 @@ func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, user
 		return fmt.Errorf("find user by id: %w", err)
 	}
 
-	if err := user.Suspend(input.suspendedReason); err != nil {
-		return err
-	}
+	user.Suspend(input.suspendedReason)
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
 		return fmt.Errorf("save user: %w", err)

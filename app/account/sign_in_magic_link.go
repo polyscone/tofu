@@ -61,9 +61,8 @@ func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavio
 		}
 
 		user = NewUser(id, input.email)
-		if err := user.SignUpWithMagicLink(s.system); err != nil {
-			return false, err
-		}
+
+		user.SignUpWithMagicLink(s.system)
 
 		if behaviour == MagicLinkAllowSignUpActivate {
 			if err := user.Activate(); err != nil {

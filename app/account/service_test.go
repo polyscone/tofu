@@ -75,10 +75,10 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 		errsx.Must0(user.Invite(tu.SignUpSystem))
 
 	case tu.VerifyNoPassword:
-		errsx.Must0(user.SignUpWithGoogle(tu.SignUpSystem))
+		user.SignUpWithGoogle(tu.SignUpSystem)
 
 	default:
-		errsx.Must0(user.SignUp(tu.SignUpSystem))
+		user.SignUp(tu.SignUpSystem)
 	}
 
 	if tu.Verify {
@@ -109,7 +109,7 @@ func MustAddUserRecoveryCodes(t *testing.T, ctx context.Context, repo account.Re
 		errsx.Must0(user.ActivateTOTP())
 	}
 	if tu.Suspend {
-		errsx.Must0(user.Suspend("Foo bar baz"))
+		user.Suspend("Foo bar baz")
 	}
 
 	errsx.Must0(repo.AddUser(ctx, user))

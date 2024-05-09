@@ -61,9 +61,8 @@ func (s *Service) signInWithFacebook(ctx context.Context, email string, behaviou
 		}
 
 		user = NewUser(id, input.email)
-		if err := user.SignUpWithFacebook(s.system); err != nil {
-			return false, err
-		}
+
+		user.SignUpWithFacebook(s.system)
 
 		if behaviour == FacebookAllowSignUpActivate {
 			if err := user.Activate(); err != nil {

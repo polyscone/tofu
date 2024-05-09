@@ -217,7 +217,7 @@ func (u *User) SignUpAsInitialUser(system string, roles []*Role, password Passwo
 	return nil
 }
 
-func (u *User) SignUp(system string) error {
+func (u *User) SignUp(system string) {
 	if !u.ActivatedAt.IsZero() {
 		u.Events.Enqueue(AlreadySignedUp{
 			Email:       u.Email,
@@ -226,7 +226,7 @@ func (u *User) SignUp(system string) error {
 			HasPassword: len(u.HashedPassword) != 0,
 		})
 
-		return nil
+		return
 	}
 
 	if u.SignedUpAt.IsZero() {
@@ -242,13 +242,11 @@ func (u *User) SignUp(system string) error {
 		Method:     SignUpMethodWebForm,
 		IsVerified: !u.VerifiedAt.IsZero(),
 	})
-
-	return nil
 }
 
-func (u *User) SignUpWithMagicLink(system string) error {
+func (u *User) SignUpWithMagicLink(system string) {
 	if !u.ActivatedAt.IsZero() {
-		return nil
+		return
 	}
 
 	now := time.Now().UTC()
@@ -270,13 +268,11 @@ func (u *User) SignUpWithMagicLink(system string) error {
 		Method:     SignUpMethodMagicLink,
 		IsVerified: !u.VerifiedAt.IsZero(),
 	})
-
-	return nil
 }
 
-func (u *User) SignUpWithGoogle(system string) error {
+func (u *User) SignUpWithGoogle(system string) {
 	if !u.ActivatedAt.IsZero() {
-		return nil
+		return
 	}
 
 	now := time.Now().UTC()
@@ -298,13 +294,11 @@ func (u *User) SignUpWithGoogle(system string) error {
 		Method:     SignUpMethodGoogle,
 		IsVerified: !u.VerifiedAt.IsZero(),
 	})
-
-	return nil
 }
 
-func (u *User) SignUpWithFacebook(system string) error {
+func (u *User) SignUpWithFacebook(system string) {
 	if !u.ActivatedAt.IsZero() {
-		return nil
+		return
 	}
 
 	now := time.Now().UTC()
@@ -326,8 +320,6 @@ func (u *User) SignUpWithFacebook(system string) error {
 		Method:     SignUpMethodFacebook,
 		IsVerified: !u.VerifiedAt.IsZero(),
 	})
-
-	return nil
 }
 
 func (u *User) Verify(password Password, hasher Hasher) error {
@@ -518,7 +510,7 @@ func (u *User) ActivateTOTP() error {
 	return nil
 }
 
-func (u *User) Suspend(reason SuspendedReason) error {
+func (u *User) Suspend(reason SuspendedReason) {
 	if u.IsSuspended() {
 		if u.SuspendedReason != reason.String() {
 			u.SuspendedReason = reason.String()
@@ -529,7 +521,7 @@ func (u *User) Suspend(reason SuspendedReason) error {
 			})
 		}
 
-		return nil
+		return
 	}
 
 	u.SuspendedAt = time.Now().UTC()
@@ -539,8 +531,6 @@ func (u *User) Suspend(reason SuspendedReason) error {
 		Email:  u.Email,
 		Reason: u.SuspendedReason,
 	})
-
-	return nil
 }
 
 func (u *User) Unsuspend() {
@@ -969,7 +959,7 @@ func (u *User) SignInWithFacebook(system string) error {
 	return nil
 }
 
-func (u *User) ChangeRoles(roles []*Role, grants, denials []Permission) error {
+func (u *User) ChangeRoles(roles []*Role, grants, denials []Permission) {
 	u.Roles = roles
 
 	u.Grants = nil
@@ -994,6 +984,4 @@ GrantLoop:
 	}
 
 	u.Events.Enqueue(RolesChanged{Email: u.Email})
-
-	return nil
 }

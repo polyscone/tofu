@@ -29,9 +29,7 @@ func (s *Service) SignUp(ctx context.Context, email string) error {
 	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	switch {
 	case err == nil:
-		if err := user.SignUp(s.system); err != nil {
-			return fmt.Errorf("sign up existing: %w", err)
-		}
+		user.SignUp(s.system)
 
 		if err := s.repo.SaveUser(ctx, user); err != nil {
 			return fmt.Errorf("save user: %w", err)
@@ -45,9 +43,7 @@ func (s *Service) SignUp(ctx context.Context, email string) error {
 
 		user = NewUser(id, input.email)
 
-		if err := user.SignUp(s.system); err != nil {
-			return fmt.Errorf("sign up: %w", err)
-		}
+		user.SignUp(s.system)
 
 		if err := s.repo.AddUser(ctx, user); err != nil {
 			return fmt.Errorf("add user: %w", err)

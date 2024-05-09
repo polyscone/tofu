@@ -61,9 +61,8 @@ func (s *Service) signInWithGoogle(ctx context.Context, email string, behaviour 
 		}
 
 		user = NewUser(id, input.email)
-		if err := user.SignUpWithGoogle(s.system); err != nil {
-			return false, err
-		}
+
+		user.SignUpWithGoogle(s.system)
 
 		if behaviour == GoogleAllowSignUpActivate {
 			if err := user.Activate(); err != nil {
