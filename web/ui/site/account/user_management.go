@@ -79,7 +79,7 @@ func userListGet(h *ui.Handler) http.HandlerFunc {
 
 		sortTopID := h.Sessions.PopString(ctx, sess.SortTopID)
 		if sortTopID == "" {
-			sortTopID = h.Sessions.GetString(ctx, sess.UserID)
+			sortTopID = h.User(ctx).ID
 		}
 		sorts := r.URL.Query()["sort"]
 		search := r.URL.Query().Get("search")
