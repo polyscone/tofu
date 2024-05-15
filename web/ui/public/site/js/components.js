@@ -15,8 +15,12 @@ onMount("textarea", node => {
 	node.style.height = node.scrollHeight + "px"
 
 	node.addEventListener("input", () => {
-		node.style.height = "auto"
-		node.style.height = node.scrollHeight + "px"
+		const scrollHeight = node.scrollHeight + "px"
+
+		if (scrollHeight != node.style.height) {
+			node.style.height = "auto"
+			node.style.height = scrollHeight
+		}
 	})
 })
 
