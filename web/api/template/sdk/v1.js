@@ -339,9 +339,9 @@ function {{$factoryName | UnescapeJS}} (opts) {
 		}
 
 		const maybeSessionExpired = [
-			platform.http.unauthorised,
-			platform.http.forbidden,
-			platform.http.internalServerError,
+			sdk.http.unauthorised,
+			sdk.http.forbidden,
+			sdk.http.internalServerError,
 		].includes(ret.status)
 
 		if (maybeSessionExpired && !_pollingSession) {
