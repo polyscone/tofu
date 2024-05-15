@@ -159,8 +159,8 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if allowed, ok := httpx.MethodNotAllowed(mux, r); ok {
-			w.Header().Set("allow", strings.Join(allowed, ", "))
+		if allowedMethods, notAllowed := httpx.MethodNotAllowed(mux, r); notAllowed {
+			w.Header().Set("allow", strings.Join(allowedMethods, ", "))
 
 			http.Redirect(w, r, routePrefix+"/error/405", http.StatusSeeOther)
 

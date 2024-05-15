@@ -120,8 +120,8 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	system.RegisterConfigHandlers(h, mux)
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if allowed, ok := httpx.MethodNotAllowed(mux, r); ok {
-			w.Header().Set("allow", strings.Join(allowed, ", "))
+		if allowedMethods, notAllowed := httpx.MethodNotAllowed(mux, r); notAllowed {
+			w.Header().Set("allow", strings.Join(allowedMethods, ", "))
 
 			h.ErrorJSON(w, r, "handler", httpx.ErrMethodNotAllowed)
 

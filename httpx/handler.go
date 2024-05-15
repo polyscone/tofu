@@ -18,23 +18,23 @@ var methods = []string{
 	http.MethodTrace,
 }
 
-func MethodNotAllowed(mux ServeMux, r *http.Request) ([]string, bool) {
+func MethodNotAllowed(mux ServeMux, r *http.Request) (_ []string, notAllowed bool) {
 	method := r.Method
 	_, current := mux.Handler(r)
-	var allowed []string
+	var allowedMethods []string
 	for _, method := range methods {
 		// If we find a pattern that's different from the pattern for the current
 		// fallback handler then we know there are actually other handlers that
 		// could match with a method change, so we should handle as method not allowed
 		r.Method = method
 		if _, pattern := mux.Handler(r); pattern != current {
-			allowed = append(allowed, method)
+			allowedMethods = append(allowedMethods, method)
 		}
 	}
 
 	r.Method = method
 
-	return allowed, len(allowed) > 0
+	return allowedMethods, len(allowedMethods) > 0
 }
 
 func RewriteHandler(handler http.Handler, path string) http.Handler {

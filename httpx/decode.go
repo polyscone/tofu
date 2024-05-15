@@ -246,7 +246,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 					}
 
 					if strings.Contains(str, ".") {
-						_sec, _nsec, ok := strings.Cut(str, ".")
+						_sec, _nsec, found := strings.Cut(str, ".")
 
 						sec, err := strconv.ParseInt(_sec, 10, 64)
 						if err != nil {
@@ -254,7 +254,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 						}
 
 						var nsec int64
-						if ok {
+						if found {
 							var err error
 							nsec, err = strconv.ParseInt(_nsec, 10, 64)
 							if err != nil {
