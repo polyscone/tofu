@@ -60,6 +60,8 @@ func ETag(config *ETagConfig) Middleware {
 					w.Header().Set("etag", etag)
 				}
 
+				w.Header().Set("cache-control", "no-cache")
+
 				if r.Header.Get("if-none-match") == etag {
 					w.WriteHeader(http.StatusNotModified)
 
