@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/httpx/middleware"
 	"github.com/polyscone/tofu/httpx/router"
@@ -24,7 +25,7 @@ import (
 
 func NewPWARouter(base *handler.Handler) http.Handler {
 	mux := router.NewServeMux()
-	h := ui.NewHandler(base, mux, func() string {
+	h := ui.NewHandler(base, mux, app.BaseURL, func() string {
 		return "/sign-in"
 	})
 

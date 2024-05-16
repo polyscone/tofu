@@ -113,6 +113,7 @@ type AppData struct {
 	ShortName   string
 	Description string
 	ThemeColour string
+	BaseURL     string
 }
 
 type SessionData struct {

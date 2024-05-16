@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/app"
@@ -125,6 +126,11 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	user := rn.h.User(ctx)
 	passport := rn.h.Passport(ctx)
 
+	urlPath := r.URL.Path
+	if app.BaseURL != "" && !strings.HasSuffix(urlPath, app.BaseURL) {
+		urlPath = strings.TrimSuffix(app.BaseURL+urlPath, "/")
+	}
+
 	data := ViewData{
 		View:   view,
 		Status: status,
@@ -134,7 +140,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 		URL: URL{
 			Scheme: rn.h.Tenant.Scheme,
 			Host:   rn.h.Tenant.Host,
-			Path:   template.URL(r.URL.Path),
+			Path:   template.URL(urlPath),
 			Query:  Query{Values: r.URL.Query()},
 		},
 		App: AppData{
@@ -142,6 +148,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 			ShortName:   app.ShortName,
 			Description: app.Description,
 			ThemeColour: app.ThemeColour,
+			BaseURL:     app.BaseURL,
 		},
 		Session: SessionData{
 			// Global session keys

@@ -32,6 +32,7 @@ var templateFiles = fstack.New(dev.RelDirFS(templateDir), errsx.Must(fs.Sub(file
 type Handler struct {
 	*handler.Handler
 	signInPath func() string
+	baseURL    string
 	mux        *router.ServeMux
 	funcs      template.FuncMap
 	Plain      *handler.Renderer
@@ -39,10 +40,11 @@ type Handler struct {
 	JSON       *handler.Renderer
 }
 
-func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() string) *Handler {
+func NewHandler(base *handler.Handler, mux *router.ServeMux, baseURL string, signInPath func() string) *Handler {
 	h := &Handler{
 		Handler:    base,
 		signInPath: signInPath,
+		baseURL:    baseURL,
 		mux:        mux,
 	}
 
@@ -84,12 +86,12 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 }
 
 func (h *Handler) tmplPath(name string, paramArgPairs ...any) template.URL {
-	return template.URL(h.mux.Path(name, paramArgPairs...))
+	return template.URL(h.Path(name, paramArgPairs...))
 }
 
 func (h *Handler) tmplHasPathPrefix(value any, name string, paramArgPairs ...any) bool {
 	v := fmt.Sprintf("%v", value)
-	p := h.mux.Path(name, paramArgPairs...)
+	p := h.Path(name, paramArgPairs...)
 	p = strings.TrimSuffix(p, "/")
 
 	return v == p || strings.HasPrefix(v, p+"/")
@@ -109,7 +111,12 @@ func (h *Handler) HasPathPrefix(value string, name string, paramArgPairs ...any)
 }
 
 func (h *Handler) Path(name string, paramArgPairs ...any) string {
-	return h.mux.Path(name, paramArgPairs...)
+	p := h.mux.Path(name, paramArgPairs...)
+	if h.baseURL != "" && !strings.HasSuffix(p, h.baseURL) {
+		p = strings.TrimSuffix(h.baseURL+p, "/")
+	}
+
+	return p
 }
 
 func (h *Handler) PathQuery(r *http.Request, name string, paramArgPairs ...any) string {
@@ -118,7 +125,7 @@ func (h *Handler) PathQuery(r *http.Request, name string, paramArgPairs ...any) 
 		q = "?" + q
 	}
 
-	return h.mux.Path(name, paramArgPairs...) + q
+	return h.Path(name, paramArgPairs...) + q
 }
 
 func (h *Handler) AddFlashf(ctx context.Context, format string, a ...any) {

@@ -21,6 +21,7 @@ import (
 	"time"
 	_ "time/tzdata"
 
+	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/size"
 	"github.com/polyscone/tofu/slogger"
 	"github.com/polyscone/tofu/web"
@@ -30,6 +31,7 @@ var opts struct {
 	version bool
 	dev     bool
 	data    string
+	baseURL string
 
 	log struct {
 		style slogger.Style
@@ -84,6 +86,7 @@ func main() {
 	}
 
 	flag.StringVar(&opts.data, "data", "./.data", "The directory to use for storing application data")
+	flag.StringVar(&opts.baseURL, "base-url", "", "A prefix to add to all URLs and redirects")
 	flag.BoolVar(&opts.dev, "dev", false, "Whether to run in development mode")
 	flag.BoolVar(&opts.version, "version", false, "Display binary version information")
 	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json|dev)")
@@ -239,6 +242,10 @@ func main() {
 		flag.Usage()
 
 		os.Exit(2)
+	}
+
+	if opts.baseURL != "" {
+		app.BaseURL = opts.baseURL
 	}
 
 	if err := os.MkdirAll(opts.data, 0755); err != nil {
