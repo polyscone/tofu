@@ -9,8 +9,18 @@ go build -trimpath ./cmd/httpd
 
 Run locally with:
 ```sh
-./httpd -dev -insecure
+./httpd -dev -insecure -addr :8080
 ```
+
+This will start an insecure server over HTTP.
+
+If you'd like to run locally with HTTPS then you'll need `cert.pem` and `key.pem` files to be available in the data directory. You can do this by running the following command after navigating to the data directory, changing the comma separated `-host` flag value to match the hosts you want to use:
+
+```sh
+go run $(go env GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits 2048 -host "localhost,app.local.com"
+```
+
+On Windows replace `$(go env GOROOT)` with `%GOROOT%` if it's set, otherwise run `go env GOROOT` and copy the path into the command.
 
 See `httpd -help` for more options.
 
@@ -50,22 +60,7 @@ The `"aliases"` key is used to associate more hosts with an application type if 
 
 Each tenant will share the same repositories and other data structures internally regardless of the host/alias. This means that a tenant accessed from any configured host/alias will use, for example, the same database.
 
-### Running locally
-
-If you want to run locally with insecure HTTP, rather than HTTPS, you'll need to use the `-insecure` flag when running the server.
-
-If you'd like to run locally with HTTPS then you'll need `cert.pem` and `key.pem` files to be available in the data directory. You can do this by running the following command after navigating to the data directory, changing the comma separated `-host` flag value to match the hosts you want to use:
-
-```sh
-go run $(go env GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits 2048 -host "localhost,app.local.com"
-```
-
-On Windows replace `$(go env GOROOT)` with `%GOROOT%` if it's set, otherwise run `go env GOROOT` and copy the path into the command.
-
-
-When running the server should pass the `-dev` flag, which will do things like disabling HTML template caching.
-
-### Password hashing parameters
+## Password hashing parameters
 
 Password hashing parameters are detected for the hardware you're running the application on to reach a target duration of 1 second hashing time.
 
@@ -73,7 +68,7 @@ When you first run the application it will detect the correct parameters for you
 
 If you need to detect new password hashing parameters, due an upgrade in hardware or a move to another machine, deleting the `argon2_params.json` file will trigger detection again the next time you start the application.
 
-### Proxies and rate limiting
+## Proxies and rate limiting
 
 The server uses a simple token bucket style rate limiter middleware which is based on IP addresses. Since IP addresses are used to keep track of the number of remaining tokens this means you'll need to tell the application about any trusted proxy IP addresses that may show up in a request.
 
