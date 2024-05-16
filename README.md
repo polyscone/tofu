@@ -1,10 +1,18 @@
 # Readme
 
-## Building
+## Building and running
 
-Running `make` will invoke the default `build` rule which will build all binaries using `./...`.
+Build with:
+```sh
+go build -trimpath ./cmd/httpd
+```
 
-For more options see the Makefile.
+Run locally with:
+```sh
+./httpd -dev -insecure
+```
+
+See `httpd -help` for more options.
 
 ## Web tenant configuration
 
