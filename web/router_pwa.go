@@ -79,6 +79,15 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		Logger:       logger,
 	}))
 	mux.Use(middleware.Metrics(h.Metrics, "requests.PWA"))
+
+	if len(h.IPWhitelist) > 0 {
+		mux.Use(middleware.IPWhitelist(&middleware.IPWhitelistConfig{
+			ErrorHandler:   errorHandler("ip whitelist middleware"),
+			IPs:            h.IPWhitelist,
+			TrustedProxies: h.Proxies,
+		}))
+	}
+
 	mux.Use(middleware.RemoveTrailingSlash)
 	mux.Use(middleware.NoContent)
 	mux.Use(h.AttachContextLogger)

@@ -38,9 +38,10 @@ var opts struct {
 	}
 
 	server struct {
-		addr     Addr
-		insecure bool
-		proxies  Proxies
+		addr        Addr
+		insecure    bool
+		ipWhitelist IPWhitelist
+		proxies     Proxies
 	}
 
 	debug struct {
@@ -92,6 +93,7 @@ func main() {
 	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json|dev)")
 	flag.Var(&opts.server.addr, "addr", "The address to run the server on, for example :8080; random if empty")
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
+	flag.Var(&opts.server.ipWhitelist, "ip-whitelist", "A space separated list of whitelisted ip addresses")
 	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
 	flag.Var(&opts.debug.addr, "debug-addr", "The address to run the private debug server on, for example :8081; random if empty")
 	flag.DurationVar(&opts.password.duration, "password-hash-duration", 1*time.Second, "The target duration of a password hash")
@@ -254,7 +256,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	// We always implicitly trust localhost
+	if len(opts.server.ipWhitelist) > 0 {
+		// We always want to implicitly whitelist localhost as an IP
+		if ip := "::1"; !slices.Contains(opts.server.ipWhitelist, ip) {
+			opts.server.ipWhitelist = append(opts.server.ipWhitelist, ip)
+		}
+		if ip := "127.0.0.1"; !slices.Contains(opts.server.ipWhitelist, ip) {
+			opts.server.ipWhitelist = append(opts.server.ipWhitelist, ip)
+		}
+	}
+
+	// We always want to implicitly trust localhost as a proxy
 	if ip := "::1"; !slices.Contains(opts.server.proxies, ip) {
 		opts.server.proxies = append(opts.server.proxies, ip)
 	}

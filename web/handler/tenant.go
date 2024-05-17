@@ -62,19 +62,20 @@ type Repo struct {
 }
 
 type Tenant struct {
-	Key      string
-	Kind     string
-	Scheme   string
-	Host     string
-	Hosts    map[string]string
-	Data     string
-	Dev      bool
-	Insecure bool
-	Proxies  []string
-	Broker   event.Broker
-	Email    smtp.Mailer
-	Logger   *slog.Logger
-	Metrics  *expvar.Map
+	Key         string
+	Kind        string
+	Scheme      string
+	Host        string
+	Hosts       map[string]string
+	Data        string
+	Dev         bool
+	Insecure    bool
+	IPWhitelist []string
+	Proxies     []string
+	Broker      event.Broker
+	Email       smtp.Mailer
+	Logger      *slog.Logger
+	Metrics     *expvar.Map
 
 	Svc       Svc
 	Repo      Repo
