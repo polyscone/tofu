@@ -501,7 +501,7 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 		sorts, args = append(sorts, "CASE u.id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
 	}
 
-	if s := NewSorts(filter.Sorts, findUserSortKeyCols); len(s) > 0 {
+	if s := newSorts(filter.Sorts, findUserSortKeyCols); len(s) > 0 {
 		sorts = append(sorts, s...)
 	} else {
 		sorts = append(sorts, "tr.requested_at DESC, u.email ASC")
@@ -1293,7 +1293,7 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 		sorts, args = append(sorts, "CASE r.id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
 	}
 
-	if s := NewSorts(filter.Sorts, findRolesSortKeyCols); len(s) > 0 {
+	if s := newSorts(filter.Sorts, findRolesSortKeyCols); len(s) > 0 {
 		sorts = append(sorts, s...)
 	} else {
 		sorts = append(sorts, "r.name ASC")

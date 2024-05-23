@@ -1236,7 +1236,7 @@ func (rs *Rows) Scan(dst ...any) error {
 	return repoerr(rs.Rows.Scan(dst...))
 }
 
-func NewSorts(sorts []string, keysToCols map[string]string) []string {
+func newSorts(sorts []string, keysToCols map[string]string) []string {
 	if len(sorts) == 0 || len(keysToCols) == 0 {
 		return nil
 	}
