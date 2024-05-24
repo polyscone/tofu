@@ -40,21 +40,21 @@ var decodeTimeFormats = []string{
 type DecodeValueFunc func(r *http.Request, fieldName, tagValue string) ([]string, error)
 
 func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc) error {
-	value := reflect.ValueOf(dst)
-	if value.Kind() != reflect.Ptr {
+	ptr := reflect.ValueOf(dst)
+	if ptr.Kind() != reflect.Ptr {
 		panic(fmt.Sprintf("want pointer to a struct; got %T", dst))
 	}
 
-	s := value.Elem()
-	if s.Kind() != reflect.Struct {
+	value := ptr.Elem()
+	if value.Kind() != reflect.Struct {
 		panic(fmt.Sprintf("want pointer to a struct; got %T", dst))
 	}
 
-	for i := range s.NumField() {
-		typeField := s.Type().Field(i)
+	for i := range value.NumField() {
+		typeField := value.Type().Field(i)
 
 		tagValue := typeField.Tag.Get(tagName)
-		field := s.Field(i)
+		field := value.Field(i)
 
 		strs, err := fn(r, typeField.Name, tagValue)
 		if err != nil {
@@ -241,7 +241,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 						if t, err := time.ParseInLocation(format, str, time.UTC); err == nil {
 							field.Set(reflect.ValueOf(t))
 
-							return nil
+							goto TimeSuccess
 						}
 					}
 
@@ -266,10 +266,12 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 
 						field.Set(reflect.ValueOf(t))
 
-						return nil
+						goto TimeSuccess
 					}
 
 					return fmt.Errorf("parse time.Time: string value %q is an invalid time format", str)
+
+				TimeSuccess:
 				}
 
 			default:
