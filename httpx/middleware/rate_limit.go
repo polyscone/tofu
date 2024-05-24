@@ -2,7 +2,9 @@ package middleware
 
 import (
 	"fmt"
+	"math"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -68,6 +70,8 @@ func RateLimit(capacity, replenish float64, config *RateLimitConfig) Middleware 
 		}
 	})
 
+	capacityHeaderValue := strconv.FormatFloat(capacity, 'f', -1, 64)
+
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			if config.Consume == nil || config.Consume(r) {
@@ -81,8 +85,16 @@ func RateLimit(capacity, replenish float64, config *RateLimitConfig) Middleware 
 				}
 
 				client := getClient(ip)
+				remaining, bucketTakeErr := client.bucket.Take(1, time.Now())
 
-				if _, err := client.bucket.Take(1, time.Now()); err != nil {
+				fullReplenishDuration := time.Duration(math.Round((capacity-float64(remaining))/replenish)) * time.Second
+				fullReplenishAt := time.Now().Add(fullReplenishDuration)
+
+				w.Header().Set("x-ratelimit-limit", capacityHeaderValue)
+				w.Header().Set("x-ratelimit-remaining", strconv.Itoa(remaining))
+				w.Header().Set("x-ratelimit-reset", strconv.FormatInt(fullReplenishAt.Unix(), 10))
+
+				if err := bucketTakeErr; err != nil {
 					// If a client is hitting the rate limit we set the connection header to
 					// close which will trigger the standard library's HTTP server to close
 					// the connection after the response is sent
