@@ -345,7 +345,7 @@ function {{$factoryName | UnescapeJS}} (opts) {
 		].includes(ret.status)
 
 		if (maybeSessionExpired && !_pollingSession) {
-			await api.account.pollSession()
+			await account.pollSession()
 		}
 
 		if (!ret.ok && ret.body.csrf && !opts.refreshCSRF) {
