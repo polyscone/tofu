@@ -73,7 +73,7 @@ func ETag(config *ETagConfig) Middleware {
 				}
 
 				if _, err := buf.WriteTo(w); err != nil {
-					config.Logger(r).Error("etag: write end of response buffer to response: %w", err)
+					config.Logger(r).Error("etag middleware: write end of response buffer to response", "error", err)
 				}
 			}
 		}
@@ -112,7 +112,7 @@ func (w *etagResponseWriter) FlushError() error {
 	w.ResponseWriter.WriteHeader(w.statusCode)
 
 	if _, err := w.buf.WriteTo(w.ResponseWriter); err != nil {
-		return fmt.Errorf("etag: write response buffer: %w", err)
+		return fmt.Errorf("etag middleware: write response buffer: %w", err)
 	}
 
 	return w.rc.Flush()
@@ -127,7 +127,7 @@ func (w *etagResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		// buffered output into the hijacked buffer so the caller can
 		// decide what to do with it
 		if _, err := w.buf.WriteTo(bufrw); err != nil {
-			return conn, bufrw, fmt.Errorf("etag: write response buffer to hijacked buffer: %w", err)
+			return conn, bufrw, fmt.Errorf("etag middleware: write response buffer to hijacked buffer: %w", err)
 		}
 	}
 
@@ -152,6 +152,6 @@ func (w *etagResponseWriter) WriteHeader(statusCode int) {
 	if w.statusCode == 0 {
 		w.statusCode = statusCode
 	} else {
-		w.config.Logger(w.r).Error("etag: superfluous response.WriteHeader call")
+		w.config.Logger(w.r).Error("etag middleware", "error", "superfluous response.WriteHeader call")
 	}
 }

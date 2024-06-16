@@ -51,7 +51,7 @@ func SecurityHeaders(config *SecurityHeadersConfig) Middleware {
 			}
 
 			if len(messages) > 0 {
-				config.Logger(r).Error("security headers", "messages", strings.Join(messages, "\n"))
+				config.Logger(r).Error("security headers middleware", "error", strings.Join(messages, "\n"))
 			}
 		}
 	}
