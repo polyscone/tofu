@@ -95,7 +95,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
 		Consume: func(r *http.Request) bool {
-			whitelist := []string{".css", ".gif", ".ico", ".jpeg", ".jpg", ".js", ".png"}
+			whitelist := []string{".css", ".gif", ".ico", ".jpeg", ".jpg", ".js", ".png", ".webp"}
 
 			return !slices.Contains(whitelist, filepath.Ext(r.URL.Path))
 		},
