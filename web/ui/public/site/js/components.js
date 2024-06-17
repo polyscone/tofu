@@ -45,12 +45,29 @@ onMount(".invalid", node => {
 	})
 })
 
+onMount("[data-char-count-for]", node => {
+	const id = node.dataset.charCountFor
+	const el = document.getElementById(id)
+
+	if (!el) {
+		return
+	}
+
+	const max = Number(el.getAttribute("maxlength"))
+
+	if (max <= 0 || isNaN(max)) {
+		return
+	}
+
+	node.innerText = formatNumber(el.value.length) + "/" + formatNumber(max)
+
+	el.addEventListener("input", () => {
+		node.innerText = formatNumber(el.value.length) + "/" + formatNumber(max)
+	})
+})
+
 onMount("[data-locale-number]", node => {
-	node.innerHTML = node.innerHTML.replaceAll(/\d+(\.\d+)?/g, match => Number(match).toLocaleString(langs, {
-		style: node.dataset.style,
-		currency: node.dataset.currency,
-		currencyDisplay: node.dataset.currencyDisplay || "narrowSymbol",
-	}))
+	node.innerHTML = node.innerHTML.replaceAll(/\d+(\.\d+)?/g, match => formatNumber(match, node.dataset))
 })
 
 onMount("time", node => {
@@ -159,4 +176,19 @@ function onDestroy (selector, callback) {
 	_componentsInit()
 
 	window._components.actions.destroy.push({ selector, callback })
+}
+
+function formatNumber (number, opts) {
+	number = Number(number)
+	if (isNaN(number)) {
+		return
+	}
+
+	opts ||= {}
+
+	return number.toLocaleString(langs, {
+		style: opts.style,
+		currency: opts.currency,
+		currencyDisplay: opts.currencyDisplay || "narrowSymbol",
+	})
 }
