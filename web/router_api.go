@@ -5,6 +5,8 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -72,6 +74,11 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
 	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
 	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
+		Consume: func(r *http.Request) bool {
+			whitelist := []string{".js"}
+
+			return !slices.Contains(whitelist, filepath.Ext(r.URL.Path))
+		},
 		ErrorHandler:   errorHandler("rate limit middleware"),
 		TrustedProxies: h.Proxies,
 	}))
