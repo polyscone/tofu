@@ -3,6 +3,16 @@ package human
 import "strings"
 
 func List(strs []string, sep, conjunction string) string {
+	for i, str := range strs {
+		switch str {
+		case "\r":
+			strs[i] = "<CR>"
+
+		case "\n":
+			strs[i] = "<LF>"
+		}
+	}
+
 	switch n := len(strs); n {
 	case 0:
 		return ""
