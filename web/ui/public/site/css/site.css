@@ -21,6 +21,10 @@
 		text-align: center;
 	}
 
+	.site-title img {
+		width: 100%;
+	}
+
 	.header,
 	.main,
 	.footer {

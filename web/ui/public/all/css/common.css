@@ -14,11 +14,13 @@
 		"Apple Color Emoji",
 		"Segoe UI Emoji";
 
-	--clr-black-100: hsl(170, 0%, 80%);
-	--clr-black-200: hsl(170, 0%, 60%);
-	--clr-black-400: hsl(170, 0%, 5%);
+	--clr-black-100: hsl(0, 0%, 80%);
+	--clr-black-200: hsl(0, 0%, 60%);
+	--clr-black-400: hsl(0, 0%, 5%);
 
-	--clr-white-400: hsl(170, 0%, 100%);
+	--clr-white-400: hsl(0, 0%, 100%);
+
+	--clr-background-400: hsl(0, 0%, 100%);
 
 	--clr-link-400: LinkText;
 	--clr-visited-400: VisitedText;
@@ -94,7 +96,7 @@
 	}
 
 	body {
-		background: var(--clr-white-400);
+		background: var(--clr-background-400);
 		color: var(--clr-black-400);
 		padding-inline: 1rem;
 	}
@@ -136,7 +138,7 @@
 	thead, th {
 		position: sticky;
 		top: 0;
-		background: var(--clr-white-400);
+		background: var(--clr-background-400);
 		text-align: left;
 		vertical-align: bottom;
 		z-index: 1;
@@ -156,6 +158,11 @@
 
 	textarea {
 		resize: vertical;
+		max-height: 500px;
+	}
+
+	iframe {
+		max-width: 100%;
 	}
 
 	input, textarea, select {
@@ -306,6 +313,10 @@
 		border: 1px solid var(--clr-warning-400);
 	}
 
+	.error-text {
+		color: var(--clr-error-400);
+	}
+
 	.error {
 		color: var(--clr-error-400);
 		margin-block: 0;
@@ -317,6 +328,8 @@
 
 	.error-banner::first-letter,
 	.error-banner *::first-letter,
+	.error-text::first-letter,
+	.error-text *::first-letter,
 	.error::first-letter,
 	.error *::first-letter {
 		text-transform: capitalize;
@@ -338,6 +351,7 @@
 		text-decoration: none;
 		text-align: center;
 		cursor: default;
+		border-radius: 3px;
 	}
 
 	:is(button, .btn):not([disabled]):hover,
