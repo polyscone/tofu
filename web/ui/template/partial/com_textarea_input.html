@@ -4,6 +4,7 @@
 {{$id := or .Props.ID (printf "form__%v" $name)}}
 {{$label := .Props.Label}}
 {{$hint := .Props.Hint}}
+{{$description := .Props.Description}}
 {{$placeholder := .Props.Placeholder}}
 {{$value := or .Props.Value (.Form.Get $name)}}
 {{$required := .Props.Required}}
@@ -25,6 +26,10 @@
 			{{$label}}
 			{{- if $hint}} <small>{{$hint}}</small>{{end -}}
 		</label>
+	{{end}}
+
+	{{range $paragraph := $description}}
+		<p>{{$paragraph}}</p>
 	{{end}}
 
 	<textarea
