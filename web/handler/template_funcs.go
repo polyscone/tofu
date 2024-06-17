@@ -47,6 +47,7 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 		"HasSuffix":          TmplHasSuffix,
 		"HasString":          TmplHasString,
 		"ToStrings":          TmplToStrings,
+		"Split":              TmplSplit,
 		"Join":               TmplJoin,
 		"ReplaceAll":         TmplReplaceAll,
 		"MarshalJSON":        TmplMarshalJSON,
@@ -456,6 +457,10 @@ func TmplToStrings(value any) ([]string, error) {
 	default:
 		return nil, fmt.Errorf("unsupported value type %T", value)
 	}
+}
+
+func TmplSplit(str, sep string) []string {
+	return strings.Split(str, sep)
 }
 
 func TmplJoin(strs []string, sep string) string {
