@@ -8,7 +8,7 @@ type Mailer interface {
 
 type Msg struct {
 	From    string
-	ReplyTo string
+	ReplyTo []string
 	To      []string
 	Cc      []string
 	Bcc     []string

@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/errsx"
-	"github.com/wneessen/go-mail"
 )
 
 var client = http.Client{Timeout: 10 * time.Second}
@@ -33,22 +32,14 @@ type ResendMsg struct {
 }
 
 type Client struct {
-	config   ClientConfigReader
-	clientMu sync.Mutex
-	client   *mail.Client
-	resend   chan ResendMsg
-	logger   *slog.Logger
+	config ClientConfigReader
+	resend chan ResendMsg
+	logger *slog.Logger
 }
 
 func NewClient(logger *slog.Logger, config ClientConfigReader) (*Client, error) {
-	client, err := mail.NewClient("localhost", mail.WithPort(25), mail.WithTLSPolicy(mail.TLSOpportunistic))
-	if err != nil {
-		return nil, err
-	}
-
 	c := &Client{
 		config: config,
-		client: client,
 		resend: make(chan ResendMsg, 100),
 		logger: logger,
 	}
@@ -58,66 +49,83 @@ func NewClient(logger *slog.Logger, config ClientConfigReader) (*Client, error) 
 	return c, nil
 }
 
-func (c *Client) sendDial(ctx context.Context, _msgs []Msg) error {
-	c.clientMu.Lock()
-	defer c.clientMu.Unlock()
+func (c *Client) send(ctx context.Context, msgs []Msg) error {
+	var errs errsx.Slice
+SendLoop:
+	for _, msg := range msgs {
+		email, err := NewEmail()
+		if err != nil {
+			errs.Append(fmt.Errorf("from address: %w", err))
 
-	msgs := make([]*mail.Msg, len(_msgs))
-	for i, msg := range _msgs {
-		m := mail.NewMsg()
+			continue SendLoop
+		}
 
-		if msg.From != "" {
-			if err := m.From(msg.From); err != nil {
-				return fmt.Errorf("from address: %w", err)
+		if err := email.SetFrom(msg.From); err != nil {
+			errs.Append(fmt.Errorf("from address: %w", err))
+
+			continue SendLoop
+		}
+
+		for _, addr := range msg.ReplyTo {
+			if err := email.AddReplyTo(addr); err != nil {
+				errs.Append(fmt.Errorf("reply-to address: %w", err))
+
+				continue SendLoop
 			}
 		}
 
-		if msg.ReplyTo != "" {
-			if err := m.ReplyTo(msg.ReplyTo); err != nil {
-				return fmt.Errorf("reply-to address: %w", err)
+		for _, addr := range msg.To {
+			if err := email.AddTo(addr); err != nil {
+				errs.Append(fmt.Errorf("to address: %w", err))
+
+				continue SendLoop
 			}
 		}
 
-		if len(msg.To) > 0 {
-			if err := m.To(msg.To...); err != nil {
-				return fmt.Errorf("to address: %w", err)
+		for _, addr := range msg.Cc {
+			if err := email.AddCc(addr); err != nil {
+				errs.Append(fmt.Errorf("cc address: %w", err))
+
+				continue SendLoop
 			}
 		}
 
-		if len(msg.Cc) > 0 {
-			if err := m.Cc(msg.Cc...); err != nil {
-				return fmt.Errorf("cc address: %w", err)
+		for _, addr := range msg.Bcc {
+			if err := email.AddBcc(addr); err != nil {
+				errs.Append(fmt.Errorf("bcc address: %w", err))
+
+				continue SendLoop
 			}
 		}
 
-		if len(msg.Bcc) > 0 {
-			if err := m.Bcc(msg.Bcc...); err != nil {
-				return fmt.Errorf("bcc address: %w", err)
+		if err := email.SetSubject(msg.Subject); err != nil {
+			errs.Append(fmt.Errorf("subject: %w", err))
+
+			continue SendLoop
+		}
+
+		if msg.Plain != "" {
+			if err := email.AddBody("text/plain", msg.Plain); err != nil {
+				errs.Append(fmt.Errorf("add plain body: %w", err))
+
+				continue SendLoop
 			}
 		}
 
-		m.Subject(msg.Subject)
+		if msg.HTML != "" {
+			if err := email.AddBody("text/html", msg.HTML); err != nil {
+				errs.Append(fmt.Errorf("add HTML body: %w", err))
 
-		switch {
-		case msg.Plain != "" && msg.HTML != "":
-			m.SetBodyString(mail.TypeTextPlain, msg.Plain)
-			m.AddAlternativeString(mail.TypeTextHTML, msg.HTML)
-
-		case msg.Plain != "":
-			m.SetBodyString(mail.TypeTextPlain, msg.Plain)
-
-		case msg.HTML != "":
-			m.SetBodyString(mail.TypeTextHTML, msg.HTML)
+				continue SendLoop
+			}
 		}
 
-		msgs[i] = m
+		if err := email.Send("localhost:25", nil); err != nil {
+			errs.Append(fmt.Errorf("send: %w", err))
+		}
 	}
 
-	if err := c.client.DialAndSendWithContext(ctx, msgs...); err != nil {
-		return fmt.Errorf("dial and send: %w", err)
-	}
-
-	return nil
+	return errs.Err()
 }
 
 func (c *Client) sendResendAPI(ctx context.Context, msg Msg, apiKey string) error {
@@ -127,7 +135,7 @@ func (c *Client) sendResendAPI(ctx context.Context, msg Msg, apiKey string) erro
 		"subject": msg.Subject,
 	}
 
-	if msg.ReplyTo != "" {
+	if len(msg.ReplyTo) > 0 {
 		data["reply_to"] = msg.ReplyTo
 	}
 
@@ -257,8 +265,8 @@ func (c *Client) Send(ctx context.Context, msgs ...Msg) error {
 	}
 
 	attempts++
-	if err := c.sendDial(ctx, msgs); err != nil {
-		errs.Append(fmt.Errorf("dial: %w", err))
+	if err := c.send(ctx, msgs); err != nil {
+		errs.Append(fmt.Errorf("email message: %w", err))
 	}
 
 	// If one of the services produced an error but the emails were
