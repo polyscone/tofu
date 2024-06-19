@@ -10,28 +10,39 @@ type Slice []error
 
 // Append pushes the given error onto the end of the slice.
 // Any nil errors are ignored and discarded.
-func (s *Slice) Append(msg any) {
-	if msg == nil {
+func (s *Slice) Append(value any) {
+	if value == nil {
 		return
 	}
 
-	var err error
-	switch msg := msg.(type) {
+	switch value := value.(type) {
 	case error:
-		if msg == nil {
+		if value == nil {
 			return
 		}
 
-		err = msg
+		*s = append(*s, value)
+
+	case []error:
+		for _, err := range value {
+			if err == nil {
+				return
+			}
+
+			*s = append(*s, err)
+		}
 
 	case string:
-		err = errors.New(msg)
+		*s = append(*s, errors.New(value))
+
+	case []string:
+		for _, str := range value {
+			*s = append(*s, errors.New(str))
+		}
 
 	default:
 		panic("want error or string message")
 	}
-
-	*s = append(*s, err)
 }
 
 func (s Slice) Err() error {
