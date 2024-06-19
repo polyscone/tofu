@@ -46,7 +46,7 @@
 	>{{$value}}</textarea>
 
 	<div class="bag">
-		<p class="error" data-locale-number>{{$error}}</p>
+		<p class="error grow" data-locale-number>{{$error}}</p>
 		{{if and $showmaxcount $id $maxlength}}
 			<small data-char-count-for="{{$id}}" class="push-inline-end">Max. {{$maxlength}}</small>
 		{{end}}
