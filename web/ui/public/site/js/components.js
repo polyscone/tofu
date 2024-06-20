@@ -11,17 +11,20 @@ if (lang) {
 }
 
 onMount("textarea", node => {
-	node.style.height = "auto"
-	node.style.height = node.scrollHeight + "px"
+	function resize () {
+		const computed = getComputedStyle(node)
+		const borderBlock = parseInt(computed.borderWidth) * 2
+		const height = node.scrollHeight + borderBlock + "px"
 
-	node.addEventListener("input", () => {
-		const scrollHeight = node.scrollHeight + "px"
-
-		if (scrollHeight != node.style.height) {
+		if (height != node.style.height) {
 			node.style.height = "auto"
-			node.style.height = scrollHeight
+			node.style.height = height
 		}
-	})
+	}
+
+	resize()
+
+	node.addEventListener("input", resize)
 })
 
 onMount("input, textarea", node => {
