@@ -262,6 +262,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 			return
 		}
+
 		if stat.IsDir() {
 			h.HTML.ErrorView(w, r, "static file", httpx.ErrForbidden, "site/error", nil)
 

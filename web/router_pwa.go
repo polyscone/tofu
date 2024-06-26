@@ -199,6 +199,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 			return
 		}
+
 		if stat.IsDir() {
 			h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars(h, r))
 
