@@ -11,7 +11,33 @@ if (lang) {
 }
 
 onMount("textarea", node => {
-	function resize () {
+	let mouseDown = false
+	let userResized = false
+
+	node.addEventListener("mousedown", () => {
+		mouseDown = true
+	})
+
+	function unsetMouseDown () {
+		mouseDown = false
+	}
+
+	node.addEventListener("mouseup", unsetMouseDown)
+	window.addEventListener("blur", unsetMouseDown)
+
+	onDestroy(node, () => {
+		window.removeEventListener("blur", windowblur)
+	})
+
+	window._components.observeResize(node, () => {
+		userResized ||= mouseDown
+	})
+
+	function autosize () {
+		if (userResized) {
+			return
+		}
+
 		const computed = getComputedStyle(node)
 		const borderBlock = parseInt(computed.borderWidth) * 2
 		const height = node.scrollHeight + borderBlock + "px"
@@ -22,9 +48,9 @@ onMount("textarea", node => {
 		}
 	}
 
-	resize()
+	autosize()
 
-	node.addEventListener("input", resize)
+	node.addEventListener("input", autosize)
 })
 
 onMount("input, textarea", node => {
@@ -114,18 +140,34 @@ onMount("time", node => {
 function _componentsInit () {
 	window._components ||= {
 		initialised: false,
-		actions: {
+		resizeActions: [],
+		resizeObserver: new ResizeObserver(entries => {
+			for (const entry of entries) {
+				for (const action of window._components.resizeActions) {
+					if (entry.target !== action.node) {
+						continue
+					}
+
+					action.callback(entry)
+				}
+			}
+		}),
+		observeResize (node, callback) {
+			window._components.resizeActions.push({ node, callback })
+			window._components.resizeObserver.observe(node)
+		},
+		mutationActions: {
 			mount: [],
 			destroy: [],
 		},
-		observer: new MutationObserver(mutations => {
+		mutationObserver: new MutationObserver(mutations => {
 			for (const mutation of mutations) {
 				for (const node of mutation.addedNodes) {
 					if (!node.matches) {
 						continue
 					}
 
-					for (const action of window._components.actions.mount) {
+					for (const action of window._components.mutationActions.mount) {
 						if (!node.matches(action.selector)) {
 							continue
 						}
@@ -139,8 +181,8 @@ function _componentsInit () {
 						continue
 					}
 
-					for (const action of window._components.actions.destroy) {
-						if (!node.matches(action.selector)) {
+					for (const action of window._components.mutationActions.destroy) {
+						if (node !== action.node) {
 							continue
 						}
 
@@ -157,7 +199,7 @@ function _componentsInit () {
 
 	window._components.initialised = true
 
-	window._components.observer.observe(document.body, {
+	window._components.mutationObserver.observe(document.body, {
 		childList: true,
 		subtree: true,
 	})
@@ -172,13 +214,13 @@ function onMount (selector, callback) {
 		callback(node)
 	}
 
-	window._components.actions.mount.push({ selector, callback })
+	window._components.mutationActions.mount.push({ selector, callback })
 }
 
-function onDestroy (selector, callback) {
+function onDestroy (node, callback) {
 	_componentsInit()
 
-	window._components.actions.destroy.push({ selector, callback })
+	window._components.mutationActions.destroy.push({ node, callback })
 }
 
 function formatNumber (number, opts) {
