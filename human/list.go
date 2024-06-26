@@ -1,10 +1,20 @@
 package human
 
-import "strings"
+import (
+	"slices"
+	"strings"
+)
 
 func List(strs []string, sep, conjunction string) string {
+	slices.Sort(strs)
+
+	strs = slices.Compact(strs)
+
 	for i, str := range strs {
 		switch str {
+		case "\t":
+			strs[i] = "<Tab>"
+
 		case "\r":
 			strs[i] = "<CR>"
 
@@ -34,6 +44,18 @@ func AndList(strs []string) string {
 	return List(strs, ", ", " and ")
 }
 
+func AndListString(str string) string {
+	strs := strings.Split(str, "")
+
+	return AndList(strs)
+}
+
 func OrList(strs []string) string {
 	return List(strs, ", ", " or ")
+}
+
+func OrListString(str string) string {
+	strs := strings.Split(str, "")
+
+	return OrList(strs)
 }
