@@ -36,7 +36,7 @@ func List(strs []string, sep, conjunction string) string {
 	default:
 		first, last := strs[:n-1], strs[n-1]
 
-		return strings.Join(first, sep) + conjunction + last
+		return strings.Join(first, sep) + ", " + conjunction + last
 	}
 }
 
