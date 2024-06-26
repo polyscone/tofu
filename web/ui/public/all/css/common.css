@@ -197,7 +197,8 @@
 	}
 
 	:is(input, textarea, select).invalid:focus,
-	:is(input, textarea, select):invalid:focus {
+	:is(input, textarea, select):invalid:focus,
+	:is(input:not([type="time"], [type="file"]), textarea):invalid:focus {
 		background: var(--clr-focus-400);
 	}
 
