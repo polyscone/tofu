@@ -77,7 +77,7 @@ func main() {
 
 	flag.Usage = func() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %v:\n", os.Args[0])
-		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-dev] [-addr <addr>] [-log-style <text|json|dev>]\n", os.Args[0])
+		fmt.Fprintf(flag.CommandLine.Output(), "  %v [command] [-dev] [-addr <addr>] [-log-style <text|json>]\n", os.Args[0])
 		fmt.Fprintln(flag.CommandLine.Output(), "Commands:")
 		fmt.Fprintf(flag.CommandLine.Output(), "  version\n")
 		fmt.Fprintf(flag.CommandLine.Output(), "    \tDisplay binary version information\n")
@@ -89,7 +89,7 @@ func main() {
 	flag.StringVar(&opts.baseURL, "base-url", "", "A prefix to add to all URLs and redirects")
 	flag.BoolVar(&opts.dev, "dev", false, "Whether to run in development mode")
 	flag.BoolVar(&opts.version, "version", false, "Display binary version information")
-	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json|dev)")
+	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json)")
 	flag.Var(&opts.server.addr, "addr", "The address to run the server on, for example :8080; random if empty")
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
 	flag.Var(&opts.server.ipWhitelist, "ip-whitelist", "A space separated list of whitelisted ip addresses")
