@@ -126,10 +126,10 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var passport guard.Passport
-		if !h.Sessions.GetBool(ctx, sess.IsSignedIn) {
-			passport = h.PassportByUser(ctx, nil)
-		} else {
+		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
 			passport = h.PassportByUser(ctx, user)
+		} else {
+			passport = h.PassportByUser(ctx, nil)
 		}
 
 		// Only set the user id in the logger if user isn't in the context yet
