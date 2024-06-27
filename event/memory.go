@@ -3,8 +3,6 @@ package event
 import (
 	"fmt"
 	"reflect"
-
-	"github.com/polyscone/tofu/background"
 )
 
 const (
@@ -13,12 +11,8 @@ const (
 )
 
 // MemoryBroker implements an in-memory event broker.
-//
-// The Synchronous flag can be set to true to ensure handlers are run
-// synchronously, rather than in goroutines, for simpler use in tests.
 type MemoryBroker struct {
-	Synchronous bool
-	handlers    map[string][]reflect.Value
+	handlers map[string][]reflect.Value
 }
 
 // NewMemoryBroker returns a new in-memory event broker.
@@ -89,22 +83,12 @@ func (mb *MemoryBroker) Dispatch(evt Event) {
 		key = fallbackKey
 	}
 
-	if mb.Synchronous {
-		for _, handler := range mb.handlers[key] {
-			handler.Call(args)
-		}
+	for _, handler := range mb.handlers[key] {
+		handler.Call(args)
+	}
 
-		for _, handler := range mb.handlers[anyKey] {
-			handler.Call(args)
-		}
-	} else {
-		for _, handler := range mb.handlers[key] {
-			background.Go(func() { handler.Call(args) })
-		}
-
-		for _, handler := range mb.handlers[anyKey] {
-			background.Go(func() { handler.Call(args) })
-		}
+	for _, handler := range mb.handlers[anyKey] {
+		handler.Call(args)
 	}
 }
 
