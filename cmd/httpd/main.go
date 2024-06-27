@@ -23,7 +23,6 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/size"
-	"github.com/polyscone/tofu/slogger"
 	"github.com/polyscone/tofu/web"
 )
 
@@ -34,7 +33,7 @@ var opts struct {
 	baseURL string
 
 	log struct {
-		style slogger.Style
+		style LogStyle
 	}
 
 	server struct {
@@ -193,17 +192,17 @@ func main() {
 	}))
 
 	if opts.log.style == "" {
-		opts.log.style = slogger.StyleJSON
+		opts.log.style = "json"
 	}
 
-	handler, err := slogger.NewHandler(opts.log.style, nil)
+	handler, err := opts.log.style.NewHandler(nil)
 	if err != nil {
 		fmt.Println(err)
 
 		os.Exit(2)
 	}
 
-	logger, err := slogger.New(opts.log.style, nil)
+	logger, err := opts.log.style.NewLogger(nil)
 	if err != nil {
 		fmt.Println(err)
 

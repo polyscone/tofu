@@ -17,7 +17,6 @@ import (
 	"github.com/polyscone/tofu/app/system"
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/event"
-	"github.com/polyscone/tofu/slogger"
 	"github.com/polyscone/tofu/smtp"
 	"github.com/polyscone/tofu/sqlite"
 	"github.com/polyscone/tofu/web"
@@ -96,7 +95,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 	logger, ok := cache.loggers[data.Name]
 	if !ok {
 		var err error
-		logger, err = slogger.New(opts.log.style, nil)
+		logger, err = opts.log.style.NewLogger(nil)
 		if err != nil {
 			return nil, fmt.Errorf("new logger: %w", err)
 		}
