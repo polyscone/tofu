@@ -163,7 +163,7 @@ func OpenInMemoryTestDatabase(ctx context.Context) *DB {
 	return errsx.Must(Open(ctx, KindMemory, randomName, nil))
 }
 
-func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) error {
+func migrate(ctx context.Context, tx *Tx, name string, migrations []string) error {
 	if len(migrations) == 0 {
 		return nil
 	}
@@ -247,7 +247,7 @@ func migrate(ctx context.Context, tx *sql.Tx, name string, migrations []string) 
 	return nil
 }
 
-func migrateFS(ctx context.Context, db *sql.DB, name string, fsys fs.FS) error {
+func migrateFS(ctx context.Context, db *DB, name string, fsys fs.FS) error {
 	// We get a connection from the pool directly here so we can make
 	// sure that pragmas run on this connection will be in effect for the
 	// transaction we use for migrations
@@ -266,7 +266,7 @@ func migrateFS(ctx context.Context, db *sql.DB, name string, fsys fs.FS) error {
 		return err
 	}
 
-	tx, err := conn.BeginTx(ctx, nil)
+	tx, err := conn.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}

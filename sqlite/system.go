@@ -21,7 +21,7 @@ func NewSystemRepo(ctx context.Context, db *DB) (*SystemRepo, error) {
 		return nil, fmt.Errorf("initialise system migrations FS: %w", err)
 	}
 
-	if err := migrateFS(ctx, db.DB, "system", migrations); err != nil {
+	if err := migrateFS(ctx, db, "system", migrations); err != nil {
 		return nil, fmt.Errorf("migrate system: %w", err)
 	}
 
@@ -41,7 +41,7 @@ func (r *SystemRepo) FindConfig(ctx context.Context) (*system.Config, error) {
 }
 
 func (r *SystemRepo) SaveConfig(ctx context.Context, config *system.Config) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}

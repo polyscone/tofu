@@ -27,7 +27,7 @@ func NewAccountRepo(ctx context.Context, db *DB, signInThrottleTTL time.Duration
 		return nil, fmt.Errorf("initialise account migrations FS: %w", err)
 	}
 
-	if err := migrateFS(ctx, db.DB, "account", migrations); err != nil {
+	if err := migrateFS(ctx, db, "account", migrations); err != nil {
 		return nil, fmt.Errorf("migrate account: %w", err)
 	}
 
@@ -193,7 +193,7 @@ func (r *AccountRepo) CountUsersByRoleID(ctx context.Context, roleID string) (in
 }
 
 func (r *AccountRepo) AddUser(ctx context.Context, user *account.User) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -229,7 +229,7 @@ func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, page, size int,
 }
 
 func (r *AccountRepo) SaveUser(ctx context.Context, user *account.User) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -257,7 +257,7 @@ func (r *AccountRepo) FindSignInAttemptLogByEmail(ctx context.Context, email str
 }
 
 func (r *AccountRepo) SaveSignInAttemptLog(ctx context.Context, log *account.SignInAttemptLog) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -281,7 +281,7 @@ func (r *AccountRepo) SaveSignInAttemptLog(ctx context.Context, log *account.Sig
 }
 
 func (r *AccountRepo) DeleteStaleSignInAttemptLogs(ctx context.Context, ttl time.Duration) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -405,7 +405,7 @@ func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, page, size int,
 }
 
 func (r *AccountRepo) AddRole(ctx context.Context, role *account.Role) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -423,7 +423,7 @@ func (r *AccountRepo) AddRole(ctx context.Context, role *account.Role) error {
 }
 
 func (r *AccountRepo) SaveRole(ctx context.Context, role *account.Role) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -441,7 +441,7 @@ func (r *AccountRepo) SaveRole(ctx context.Context, role *account.Role) error {
 }
 
 func (r *AccountRepo) RemoveRole(ctx context.Context, roleID string) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}

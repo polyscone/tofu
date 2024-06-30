@@ -39,7 +39,7 @@ func NewWebRepo(ctx context.Context, db *DB, sessionTTL time.Duration) (*WebRepo
 		return nil, fmt.Errorf("initialise web migrations FS: %w", err)
 	}
 
-	if err := migrateFS(ctx, db.DB, "web", migrations); err != nil {
+	if err := migrateFS(ctx, db, "web", migrations); err != nil {
 		return nil, fmt.Errorf("migrate web: %w", err)
 	}
 
@@ -84,7 +84,7 @@ func (r *WebRepo) FindSessionDataByID(ctx context.Context, id string) (session.D
 }
 
 func (r *WebRepo) SaveSession(ctx context.Context, sess session.Session) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -102,7 +102,7 @@ func (r *WebRepo) SaveSession(ctx context.Context, sess session.Session) error {
 }
 
 func (r *WebRepo) DestroySession(ctx context.Context, id string) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -120,7 +120,7 @@ func (r *WebRepo) DestroySession(ctx context.Context, id string) error {
 }
 
 func (r *WebRepo) DestroyExpiredSessions(ctx context.Context) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -148,7 +148,7 @@ func (r *WebRepo) FindEmailVerificationTokenEmail(ctx context.Context, token str
 }
 
 func (r *WebRepo) AddEmailVerificationToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
 	}
@@ -167,7 +167,7 @@ func (r *WebRepo) AddEmailVerificationToken(ctx context.Context, email string, t
 }
 
 func (r *WebRepo) ConsumeEmailVerificationToken(ctx context.Context, token string) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -200,7 +200,7 @@ func (r *WebRepo) FindResetPasswordTokenEmail(ctx context.Context, token string)
 }
 
 func (r *WebRepo) AddResetPasswordToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
 	}
@@ -219,7 +219,7 @@ func (r *WebRepo) AddResetPasswordToken(ctx context.Context, email string, ttl t
 }
 
 func (r *WebRepo) ConsumeResetPasswordToken(ctx context.Context, token string) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -252,7 +252,7 @@ func (r *WebRepo) FindSignInMagicLinkTokenEmail(ctx context.Context, token strin
 }
 
 func (r *WebRepo) AddSignInMagicLinkToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
 	}
@@ -275,7 +275,7 @@ func (r *WebRepo) AddSignInMagicLinkToken(ctx context.Context, email string, ttl
 }
 
 func (r *WebRepo) ConsumeSignInMagicLinkToken(ctx context.Context, token string) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -308,7 +308,7 @@ func (r *WebRepo) FindTOTPResetVerifyTokenEmail(ctx context.Context, token strin
 }
 
 func (r *WebRepo) AddTOTPResetVerifyToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
 	}
@@ -327,7 +327,7 @@ func (r *WebRepo) AddTOTPResetVerifyToken(ctx context.Context, email string, ttl
 }
 
 func (r *WebRepo) ConsumeTOTPResetVerifyToken(ctx context.Context, token string) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -360,7 +360,7 @@ func (r *WebRepo) FindResetTOTPTokenEmail(ctx context.Context, token string) (st
 }
 
 func (r *WebRepo) AddResetTOTPToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
 	}
@@ -379,7 +379,7 @@ func (r *WebRepo) AddResetTOTPToken(ctx context.Context, email string, ttl time.
 }
 
 func (r *WebRepo) ConsumeResetTOTPToken(ctx context.Context, token string) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
@@ -402,7 +402,7 @@ func (r *WebRepo) ConsumeResetTOTPToken(ctx context.Context, token string) error
 }
 
 func (r *WebRepo) DeleteExpiredTokens(ctx context.Context) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
