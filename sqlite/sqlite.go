@@ -34,7 +34,7 @@ func init() {
 				PRAGMA encoding = 'UTF-8';
 				PRAGMA busy_timeout = 30000;
 				PRAGMA temp_store = MEMORY;
-				PRAGMA cache_size = 50000;
+				PRAGMA cache_size = 5000;
 				PRAGMA journal_mode = WAL;
 				PRAGMA foreign_keys = ON;
 				PRAGMA secure_delete = ON;
