@@ -241,20 +241,18 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 						if t, err := time.ParseInLocation(format, str, time.UTC); err == nil {
 							field.Set(reflect.ValueOf(t))
 
-							goto TimeSuccess
+							return nil
 						}
 					}
 
-					if strings.Contains(str, ".") {
-						_sec, _nsec, found := strings.Cut(str, ".")
-
+					if _sec, _nsec, found := strings.Cut(str, "."); found {
 						sec, err := strconv.ParseInt(_sec, 10, 64)
 						if err != nil {
 							return fmt.Errorf("parse time.Time: string value %q is an invalid unix timestamp", str)
 						}
 
 						var nsec int64
-						if found {
+						if _nsec != "" {
 							var err error
 							nsec, err = strconv.ParseInt(_nsec, 10, 64)
 							if err != nil {
@@ -266,12 +264,10 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 
 						field.Set(reflect.ValueOf(t))
 
-						goto TimeSuccess
+						return nil
 					}
 
 					return fmt.Errorf("parse time.Time: string value %q is an invalid time format", str)
-
-				TimeSuccess:
 				}
 
 			default:
