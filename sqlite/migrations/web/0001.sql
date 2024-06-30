@@ -1,15 +1,15 @@
 CREATE TABLE web__sessions (
 	id         TEXT NOT NULL PRIMARY KEY,
-	data       TEXT NOT NULL,
-	created_at DATETIME NOT NULL,
-	updated_at DATETIME NOT NULL
-);
+	data       BLOB NOT NULL,
+	created_at TEXT NOT NULL,
+	updated_at TEXT NOT NULL
+) STRICT;
 
 CREATE TABLE web__tokens (
-	hash       TEXT NOT NULL PRIMARY KEY,
+	hash       BLOB NOT NULL PRIMARY KEY,
 	value      TEXT NOT NULL,
 	kind       TEXT NOT NULL,
-	expires_at DATETIME NOT NULL,
-	created_at DATETIME NOT NULL,
-	updated_at DATETIME
-);
+	expires_at TEXT NOT NULL,
+	created_at TEXT NOT NULL,
+	updated_at TEXT
+) STRICT;

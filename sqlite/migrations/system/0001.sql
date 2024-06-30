@@ -16,6 +16,6 @@ CREATE TABLE system__config (
 	twilio_sid                    TEXT NOT NULL,
 	twilio_token                  TEXT NOT NULL,
 	twilio_from_tel               TEXT NOT NULL,
-	created_at                    DATETIME NOT NULL,
-	updated_at                    DATETIME
-);
+	created_at                    TEXT NOT NULL,
+	updated_at                    TEXT
+) STRICT;
