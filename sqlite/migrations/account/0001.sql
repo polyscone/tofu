@@ -1,110 +1,110 @@
-CREATE TABLE account__users (
-	id                          TEXT NOT NULL PRIMARY KEY,
-	email                       TEXT NOT NULL UNIQUE COLLATE NOCASE,
-	hashed_password             BLOB,
-	totp_method                 TEXT NOT NULL,
-	totp_tel                    TEXT NOT NULL,
-	totp_key                    BLOB,
-	totp_algorithm              TEXT NOT NULL,
-	totp_digits                 INTEGER NOT NULL,
-	totp_period                 TEXT NOT NULL,
-	totp_verified_at            TEXT,
-	totp_activated_at           TEXT,
-	invited_at                  TEXT,
-	signed_up_at                TEXT,
-	signed_up_system            TEXT NOT NULL,
-	signed_up_method            TEXT NOT NULL,
-	verified_at                 TEXT,
-	activated_at                TEXT,
-	last_sign_in_attempt_at     TEXT,
-	last_sign_in_attempt_system TEXT NOT NULL,
-	last_sign_in_attempt_method TEXT NOT NULL,
-	last_signed_in_at           TEXT,
-	last_signed_in_system       TEXT NOT NULL,
-	last_signed_in_method       TEXT NOT NULL,
-	suspended_at                TEXT,
-	suspended_reason            TEXT NOT NULL,
-	created_at                  TEXT NOT NULL,
-	updated_at                  TEXT
-) STRICT;
+create table account__users (
+	id                          text not null primary key,
+	email                       text not null unique collate nocase,
+	hashed_password             blob,
+	totp_method                 text not null,
+	totp_tel                    text not null,
+	totp_key                    blob,
+	totp_algorithm              text not null,
+	totp_digits                 integer not null,
+	totp_period                 text not null,
+	totp_verified_at            text,
+	totp_activated_at           text,
+	invited_at                  text,
+	signed_up_at                text,
+	signed_up_system            text not null,
+	signed_up_method            text not null,
+	verified_at                 text,
+	activated_at                text,
+	last_sign_in_attempt_at     text,
+	last_sign_in_attempt_system text not null,
+	last_sign_in_attempt_method text not null,
+	last_signed_in_at           text,
+	last_signed_in_system       text not null,
+	last_signed_in_method       text not null,
+	suspended_at                text,
+	suspended_reason            text not null,
+	created_at                  text not null,
+	updated_at                  text
+) strict;
 
-CREATE TABLE account__totp_reset_requests (
-	user_id      TEXT NOT NULL PRIMARY KEY,
-	requested_at TEXT,
-	approved_at  TEXT,
-	created_at   TEXT NOT NULL,
-	updated_at   TEXT,
-	FOREIGN KEY (user_id) REFERENCES account__users(id) ON DELETE CASCADE ON UPDATE CASCADE
-) STRICT;
+create table account__totp_reset_requests (
+	user_id      text not null primary key,
+	requested_at text,
+	approved_at  text,
+	created_at   text not null,
+	updated_at   text,
+	foreign key (user_id) references account__users(id) on delete cascade on update cascade
+) strict;
 
-CREATE TABLE account__sign_in_attempt_logs (
-	email           TEXT NOT NULL PRIMARY KEY,
-	attempts        INTEGER NOT NULL,
-	last_attempt_at TEXT NOT NULL,
-	created_at      TEXT NOT NULL,
-	updated_at      TEXT
-) STRICT;
+create table account__sign_in_attempt_logs (
+	email           text not null primary key,
+	attempts        integer not null,
+	last_attempt_at text not null,
+	created_at      text not null,
+	updated_at      text
+) strict;
 
-CREATE TABLE account__roles (
-	id          TEXT NOT NULL PRIMARY KEY,
-	name        TEXT NOT NULL UNIQUE COLLATE NOCASE,
-	description TEXT NOT NULL COLLATE NOCASE,
-	created_at  TEXT NOT NULL,
-	updated_at  TEXT
-) STRICT;
+create table account__roles (
+	id          text not null primary key,
+	name        text not null unique collate nocase,
+	description text not null collate nocase,
+	created_at  text not null,
+	updated_at  text
+) strict;
 
-CREATE TABLE account__permissions (
-	id         TEXT NOT NULL PRIMARY KEY,
-	name       TEXT NOT NULL UNIQUE COLLATE NOCASE,
-	created_at TEXT NOT NULL,
-	updated_at TEXT
-) STRICT;
+create table account__permissions (
+	id         text not null primary key,
+	name       text not null unique collate nocase,
+	created_at text not null,
+	updated_at text
+) strict;
 
-CREATE TABLE account__role_permissions (
-	role_id       TEXT NOT NULL,
-	permission_id TEXT NOT NULL,
-	created_at    TEXT NOT NULL,
-	updated_at    TEXT,
-	FOREIGN KEY (role_id) REFERENCES account__roles(id) ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY (permission_id) REFERENCES account__permissions(id) ON DELETE CASCADE ON UPDATE CASCADE,
-	PRIMARY KEY (role_id, permission_id)
-) STRICT;
+create table account__role_permissions (
+	role_id       text not null,
+	permission_id text not null,
+	created_at    text not null,
+	updated_at    text,
+	foreign key (role_id) references account__roles(id) on delete cascade on update cascade,
+	foreign key (permission_id) references account__permissions(id) on delete cascade on update cascade,
+	primary key (role_id, permission_id)
+) strict;
 
-CREATE TABLE account__user_roles (
-	user_id    TEXT NOT NULL,
-	role_id    TEXT NOT NULL,
-	created_at TEXT NOT NULL,
-	updated_at TEXT,
-	FOREIGN KEY (user_id) REFERENCES account__users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY (role_id) REFERENCES account__roles(id) ON DELETE CASCADE ON UPDATE CASCADE,
-	PRIMARY KEY (user_id, role_id)
-) STRICT;
+create table account__user_roles (
+	user_id    text not null,
+	role_id    text not null,
+	created_at text not null,
+	updated_at text,
+	foreign key (user_id) references account__users(id) on delete cascade on update cascade,
+	foreign key (role_id) references account__roles(id) on delete cascade on update cascade,
+	primary key (user_id, role_id)
+) strict;
 
-CREATE TABLE account__user_grants (
-	user_id       TEXT NOT NULL,
-	permission_id TEXT NOT NULL,
-	created_at    TEXT NOT NULL,
-	updated_at    TEXT,
-	FOREIGN KEY (user_id) REFERENCES account__users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY (permission_id) REFERENCES account__permissions(id) ON DELETE CASCADE ON UPDATE CASCADE,
-	PRIMARY KEY (user_id, permission_id)
-) STRICT;
+create table account__user_grants (
+	user_id       text not null,
+	permission_id text not null,
+	created_at    text not null,
+	updated_at    text,
+	foreign key (user_id) references account__users(id) on delete cascade on update cascade,
+	foreign key (permission_id) references account__permissions(id) on delete cascade on update cascade,
+	primary key (user_id, permission_id)
+) strict;
 
-CREATE TABLE account__user_denials (
-	user_id       TEXT NOT NULL,
-	permission_id TEXT NOT NULL,
-	created_at    TEXT NOT NULL,
-	updated_at    TEXT,
-	FOREIGN KEY (user_id) REFERENCES account__users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-	FOREIGN KEY (permission_id) REFERENCES account__permissions(id) ON DELETE CASCADE ON UPDATE CASCADE,
-	PRIMARY KEY (user_id, permission_id)
-) STRICT;
+create table account__user_denials (
+	user_id       text not null,
+	permission_id text not null,
+	created_at    text not null,
+	updated_at    text,
+	foreign key (user_id) references account__users(id) on delete cascade on update cascade,
+	foreign key (permission_id) references account__permissions(id) on delete cascade on update cascade,
+	primary key (user_id, permission_id)
+) strict;
 
-CREATE TABLE account__recovery_codes (
-	user_id     TEXT NOT NULL,
-	hashed_code BLOB NOT NULL,
-	created_at  TEXT NOT NULL,
-	updated_at  TEXT,
-	FOREIGN KEY (user_id) REFERENCES account__users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-	PRIMARY KEY (user_id, hashed_code)
-) STRICT;
+create table account__recovery_codes (
+	user_id     text not null,
+	hashed_code blob not null,
+	created_at  text not null,
+	updated_at  text,
+	foreign key (user_id) references account__users(id) on delete cascade on update cascade,
+	primary key (user_id, hashed_code)
+) strict;

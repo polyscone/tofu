@@ -422,10 +422,10 @@ func (r *WebRepo) DeleteExpiredTokens(ctx context.Context) error {
 func (r *WebRepo) findSessionDataByID(ctx context.Context, tx *Tx, id string) (session.Data, error) {
 	var data []byte
 	err := tx.QueryRowContext(ctx, `
-		SELECT data
-		FROM web__sessions
-		WHERE
-			id = :id AND
+		select data
+		from web__sessions
+		where
+			id = :id and
 			updated_at > :valid_window_start
 	`,
 		sql.Named("id", id),
@@ -458,19 +458,19 @@ func (r *WebRepo) upsertSession(ctx context.Context, tx *Tx, sess session.Sessio
 	}
 
 	_, err = tx.ExecContext(ctx, `
-		INSERT INTO web__sessions (
+		insert into web__sessions (
 			id,
 			data,
 			created_at,
 			updated_at
-		) VALUES (
+		) values (
 			:id,
 			:data,
 			:created_at,
 			:updated_at
 		)
-		ON CONFLICT DO
-			UPDATE SET
+		on conflict do
+			update set
 				data = excluded.data,
 				updated_at = :updated_at
 	`,
@@ -485,8 +485,8 @@ func (r *WebRepo) upsertSession(ctx context.Context, tx *Tx, sess session.Sessio
 
 func (r *WebRepo) destroySession(ctx context.Context, tx *Tx, id string) error {
 	_, err := tx.ExecContext(ctx, `
-		DELETE FROM web__sessions
-		WHERE id = :id
+		delete from web__sessions
+		where id = :id
 	`,
 		sql.Named("id", id),
 	)
@@ -496,8 +496,8 @@ func (r *WebRepo) destroySession(ctx context.Context, tx *Tx, id string) error {
 
 func (r *WebRepo) destroyExpiredSessions(ctx context.Context, tx *Tx) error {
 	_, err := tx.ExecContext(ctx, `
-		DELETE FROM web__sessions
-		WHERE updated_at <= :valid_window_start
+		delete from web__sessions
+		where updated_at <= :valid_window_start
 	`,
 		sql.Named("valid_window_start", Time(tx.now.Add(-r.sessionTTL).UTC())),
 	)
@@ -511,11 +511,11 @@ func (r *WebRepo) findToken(ctx context.Context, tx *Tx, token, kind string) (st
 
 	var value string
 	err := tx.QueryRowContext(ctx, `
-		SELECT value
-		FROM web__tokens
-		WHERE
-			hash = :hash AND
-			kind = :kind AND
+		select value
+		from web__tokens
+		where
+			hash = :hash and
+			kind = :kind and
 			expires_at > :expires_at
 	`,
 		sql.Named("hash", hash),
@@ -532,12 +532,12 @@ func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) 
 
 	var value string
 	err := tx.QueryRowContext(ctx, `
-		DELETE FROM web__tokens
-		WHERE
-			hash = :hash AND
-			kind = :kind AND
+		delete from web__tokens
+		where
+			hash = :hash and
+			kind = :kind and
 			expires_at > :expires_at
-		RETURNING value
+		returning value
 	`,
 		sql.Named("hash", hash),
 		sql.Named("kind", kind),
@@ -569,13 +569,13 @@ func (r *WebRepo) createToken(ctx context.Context, tx *Tx, value string, ttl tim
 	expiresAt := Time(tx.now.Add(ttl).UTC())
 
 	_, err := tx.ExecContext(ctx, `
-		INSERT INTO web__tokens (
+		insert into web__tokens (
 			hash,
 			value,
 			kind,
 			expires_at,
 			created_at
-		) VALUES (
+		) values (
 			:hash,
 			:value,
 			:kind,
@@ -595,9 +595,9 @@ func (r *WebRepo) createToken(ctx context.Context, tx *Tx, value string, ttl tim
 
 func (r *WebRepo) deleteTokensByKind(ctx context.Context, tx *Tx, value string, kind Kind) error {
 	_, err := tx.ExecContext(ctx, `
-		DELETE FROM web__tokens
-		WHERE
-			value = :value AND
+		delete from web__tokens
+		where
+			value = :value and
 			kind = :kind
 	`,
 		sql.Named("value", value),
@@ -609,8 +609,8 @@ func (r *WebRepo) deleteTokensByKind(ctx context.Context, tx *Tx, value string, 
 
 func (r *WebRepo) deleteExpiredTokens(ctx context.Context, tx *Tx) error {
 	_, err := tx.ExecContext(ctx, `
-		DELETE FROM web__tokens
-		WHERE expires_at <= :expires_at
+		delete from web__tokens
+		where expires_at <= :expires_at
 	`,
 		sql.Named("expires_at", Time(tx.now.UTC())),
 	)

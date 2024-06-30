@@ -61,7 +61,7 @@ func (r *SystemRepo) SaveConfig(ctx context.Context, config *system.Config) erro
 func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, error) {
 	var config system.Config
 	err := tx.QueryRowContext(ctx, `
-		SELECT
+		select
 			system_email,
 			security_email,
 			sign_up_enabled,
@@ -78,7 +78,7 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 			twilio_sid,
 			twilio_token,
 			twilio_from_tel
-		FROM system__config
+		from system__config
 	`).Scan(
 		&config.SystemEmail,
 		&config.SecurityEmail,
@@ -112,7 +112,7 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 
 func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Config) error {
 	_, err := tx.ExecContext(ctx, `
-		INSERT INTO system__config (
+		insert into system__config (
 			id,
 			system_email,
 			security_email,
@@ -131,7 +131,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 			twilio_token,
 			twilio_from_tel,
 			created_at
-		) VALUES (
+		) values (
 			:id,
 			:system_email,
 			:security_email,
@@ -151,8 +151,8 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 			:twilio_from_tel,
 			:created_at
 		)
-		ON CONFLICT DO
-			UPDATE SET
+		on conflict do
+			update set
 				system_email = excluded.system_email,
 				security_email = excluded.security_email,
 				sign_up_enabled = excluded.sign_up_enabled,
@@ -170,22 +170,22 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 				twilio_token = excluded.twilio_token,
 				twilio_from_tel = excluded.twilio_from_tel,
 				updated_at = :updated_at
-			WHERE
-				system_email != excluded.system_email OR
-				security_email != excluded.security_email OR
-				sign_up_enabled != excluded.sign_up_enabled OR
-				sign_up_auto_activate_enabled != excluded.sign_up_auto_activate_enabled OR
-				totp_required != excluded.totp_required OR
-				totp_sms_enabled != excluded.totp_sms_enabled OR
-				magic_link_sign_in_enabled != excluded.magic_link_sign_in_enabled OR
-				google_sign_in_enabled != excluded.google_sign_in_enabled OR
-				google_sign_in_client_id != excluded.google_sign_in_client_id OR
-				facebook_sign_in_enabled != excluded.facebook_sign_in_enabled OR
-				facebook_sign_in_app_id != excluded.facebook_sign_in_app_id OR
-				facebook_sign_in_app_secret != excluded.facebook_sign_in_app_secret OR
-				resend_api_key != excluded.resend_api_key OR
-				twilio_sid != excluded.twilio_sid OR
-				twilio_token != excluded.twilio_token OR
+			where
+				system_email != excluded.system_email or
+				security_email != excluded.security_email or
+				sign_up_enabled != excluded.sign_up_enabled or
+				sign_up_auto_activate_enabled != excluded.sign_up_auto_activate_enabled or
+				totp_required != excluded.totp_required or
+				totp_sms_enabled != excluded.totp_sms_enabled or
+				magic_link_sign_in_enabled != excluded.magic_link_sign_in_enabled or
+				google_sign_in_enabled != excluded.google_sign_in_enabled or
+				google_sign_in_client_id != excluded.google_sign_in_client_id or
+				facebook_sign_in_enabled != excluded.facebook_sign_in_enabled or
+				facebook_sign_in_app_id != excluded.facebook_sign_in_app_id or
+				facebook_sign_in_app_secret != excluded.facebook_sign_in_app_secret or
+				resend_api_key != excluded.resend_api_key or
+				twilio_sid != excluded.twilio_sid or
+				twilio_token != excluded.twilio_token or
 				twilio_from_tel != excluded.twilio_from_tel
 	`,
 		sql.Named("id", "0feca0fa-254f-4a42-b76d-95548020110a"),

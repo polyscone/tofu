@@ -31,14 +31,14 @@ func init() {
 	sql.Register(driverName, &sqlite3.SQLiteDriver{
 		ConnectHook: func(conn *sqlite3.SQLiteConn) error {
 			_, err := conn.Exec(`
-				PRAGMA encoding = 'UTF-8';
-				PRAGMA busy_timeout = 30000;
-				PRAGMA temp_store = MEMORY;
-				PRAGMA cache_size = 5000;
-				PRAGMA journal_mode = WAL;
-				PRAGMA foreign_keys = ON;
-				PRAGMA secure_delete = ON;
-				PRAGMA synchronous = NORMAL;
+				pragma encoding = 'UTF-8';
+				pragma busy_timeout = 30000;
+				pragma temp_store = memory;
+				pragma cache_size = 5000;
+				pragma journal_mode = wal;
+				pragma foreign_keys = on;
+				pragma secure_delete = on;
+				pragma synchronous = normal;
 			`, nil)
 
 			return err
@@ -169,14 +169,14 @@ func migrate(ctx context.Context, tx *Tx, name string, migrations []string) erro
 	}
 
 	stmt := `
-		CREATE TABLE IF NOT EXISTS _migrations (
-			name       TEXT PRIMARY KEY NOT NULL,
-			version    INTEGER NOT NULL,
-			created_at DATETIME NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', CURRENT_TIMESTAMP)),
-			updated_at DATETIME
-		);
+		create table if not exists _migrations (
+			name       text primary key not null,
+			version    integer not null,
+			created_at text not null default (strftime('%Y-%m-%d %H:%M:%SZ', current_timestamp)),
+			updated_at text
+		) strict;
 
-		INSERT OR IGNORE INTO _migrations (name, version) VALUES (:name, 0);
+		insert or ignore into _migrations (name, version) values (:name, 0);
 	`
 	args := []any{sql.Named("name", name)}
 	if _, err := tx.ExecContext(ctx, stmt, args...); err != nil {
@@ -184,7 +184,7 @@ func migrate(ctx context.Context, tx *Tx, name string, migrations []string) erro
 	}
 
 	var version int
-	stmt = "SELECT version FROM _migrations WHERE name = :name;"
+	stmt = "select version from _migrations where name = :name;"
 	args = []any{sql.Named("name", name)}
 	if err := tx.QueryRowContext(ctx, stmt, args...).Scan(&version); err != nil {
 		return err
@@ -229,10 +229,10 @@ func migrate(ctx context.Context, tx *Tx, name string, migrations []string) erro
 	// should attempt to set the migration version to the new number
 	if migration > version {
 		stmt := `
-			UPDATE _migrations SET
+			update _migrations set
 				version = :version,
 				updated_at = :updated_at
-			WHERE name = :name;
+			where name = :name;
 		`
 		args := []any{
 			sql.Named("version", migration),
@@ -262,7 +262,7 @@ func migrateFS(ctx context.Context, db *DB, name string, fsys fs.FS) error {
 
 	// Pragmas need to be set before the transaction starts, which is why
 	// we do it on the connection here
-	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys = OFF;"); err != nil {
+	if _, err := conn.ExecContext(ctx, "pragma foreign_keys = off;"); err != nil {
 		return err
 	}
 
@@ -307,7 +307,7 @@ func migrateFS(ctx context.Context, db *DB, name string, fsys fs.FS) error {
 
 	// Since pragmas are set outside of the transaction we need to
 	// make sure we revert the changes here
-	if _, err := conn.ExecContext(ctx, "PRAGMA foreign_keys = ON;"); err != nil {
+	if _, err := conn.ExecContext(ctx, "pragma foreign_keys = on;"); err != nil {
 		return err
 	}
 
@@ -373,7 +373,7 @@ func whereSQL(where []string) string {
 		return ""
 	}
 
-	return "WHERE (" + strings.Join(where, ") AND (") + ")"
+	return "where (" + strings.Join(where, ") and (") + ")"
 }
 
 func orderBySQL(sorts []string) string {
@@ -381,7 +381,7 @@ func orderBySQL(sorts []string) string {
 		return ""
 	}
 
-	return "ORDER BY " + strings.Join(sorts, ", ")
+	return "order by " + strings.Join(sorts, ", ")
 }
 
 func pageLimitOffset(page, size int) (int, int) {
@@ -394,13 +394,13 @@ func pageLimitOffset(page, size int) (int, int) {
 func limitOffsetSQL(limit, offset int) string {
 	switch {
 	case limit > 0 && offset > 0:
-		return fmt.Sprintf("LIMIT %v offset %v", limit, offset)
+		return fmt.Sprintf("limit %v offset %v", limit, offset)
 
 	case limit > 0:
-		return fmt.Sprintf("LIMIT %v", limit)
+		return fmt.Sprintf("limit %v", limit)
 
 	case offset > 0:
-		return fmt.Sprintf("OFFSET %v", offset)
+		return fmt.Sprintf("offset %v", offset)
 	}
 
 	return ""
@@ -658,7 +658,7 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	return _tx, nil
 }
 
-// BeginImmediateTx starts an immediate transaction with "BEGIN IMMEDIATE".
+// BeginImmediateTx starts an immediate transaction with "begin immediate".
 //
 // This is a workaround for Go's database/sql package not providing a way to set
 // the transaction type per connection.
@@ -673,9 +673,9 @@ func (c *Conn) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, 
 	}
 
 	// The returned transaction is a connection from a connection pool, so we
-	// can rollback the (by default) "DEFERRED" transaction and start a new
-	// "IMMEDIATE" one
-	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN IMMEDIATE"); err != nil {
+	// can rollback the (by default) "deferred" transaction and start a new
+	// "immediate" one
+	if _, err := tx.ExecContext(ctx, "rollback; begin immediate"); err != nil {
 		return nil, err
 	}
 
@@ -686,7 +686,7 @@ func (c *Conn) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, 
 	return tx, nil
 }
 
-// BeginExclusiveTx starts an exclusive transaction with "BEGIN EXCLUSIVE".
+// BeginExclusiveTx starts an exclusive transaction with "begin exclusive".
 //
 // This is a workaround for Go's database/sql package not providing a way to set
 // the transaction type per connection.
@@ -701,9 +701,9 @@ func (c *Conn) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, 
 	}
 
 	// The returned transaction is a connection from a connection pool, so we
-	// can rollback the (by default) "DEFERRED" transaction and start a new
-	// "EXCLUSIVE" one
-	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN EXCLUSIVE"); err != nil {
+	// can rollback the (by default) "deferred" transaction and start a new
+	// "exclusive" one
+	if _, err := tx.ExecContext(ctx, "rollback; begin exclusive"); err != nil {
 		return nil, err
 	}
 
@@ -813,7 +813,7 @@ func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 	return _tx, nil
 }
 
-// BeginImmediateTx starts an immediate transaction with "BEGIN IMMEDIATE".
+// BeginImmediateTx starts an immediate transaction with "begin immediate".
 //
 // This is a workaround for Go's database/sql package not providing a way to set
 // the transaction type per connection.
@@ -828,9 +828,9 @@ func (db *DB) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, e
 	}
 
 	// The returned transaction is a connection from a connection pool, so we
-	// can rollback the (by default) "DEFERRED" transaction and start a new
-	// "IMMEDIATE" one
-	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN IMMEDIATE"); err != nil {
+	// can rollback the (by default) "deferred" transaction and start a new
+	// "immediate" one
+	if _, err := tx.ExecContext(ctx, "rollback; begin immediate"); err != nil {
 		return nil, err
 	}
 
@@ -841,7 +841,7 @@ func (db *DB) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, e
 	return tx, nil
 }
 
-// BeginExclusiveTx starts an exclusive transaction with "BEGIN EXCLUSIVE".
+// BeginExclusiveTx starts an exclusive transaction with "begin exclusive".
 //
 // This is a workaround for Go's database/sql package not providing a way to set
 // the transaction type per connection.
@@ -856,9 +856,9 @@ func (db *DB) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, e
 	}
 
 	// The returned transaction is a connection from a connection pool, so we
-	// can rollback the (by default) "DEFERRED" transaction and start a new
-	// "EXCLUSIVE" one
-	if _, err := tx.ExecContext(ctx, "ROLLBACK; BEGIN EXCLUSIVE"); err != nil {
+	// can rollback the (by default) "deferred" transaction and start a new
+	// "exclusive" one
+	if _, err := tx.ExecContext(ctx, "rollback; begin exclusive"); err != nil {
 		return nil, err
 	}
 
@@ -1059,7 +1059,7 @@ func (tx *Tx) Rollback() error {
 		// When using Go's SQL package queries that can modify the
 		// database should be called using the Exec* methods
 		//
-		// Because of this, and because a transaction of only SELECTs
+		// Because of this, and because a transaction of only selects
 		// doesn't need to be committed, we assume that if an Exec*
 		// method wasn't called then it counts as a read-only transaction
 		// where a call to rollback was used instead of commit for brevity in code
@@ -1112,7 +1112,7 @@ func (tx *Tx) ExecContext(ctx context.Context, query string, args ...any) (sql.R
 	//
 	// In these cases we don't want to record the exec call because it will be used to
 	// determine whether a transaction possibly modified the database
-	if query != "ROLLBACK; BEGIN EXCLUSIVE" && query != "ROLLBACK; BEGIN IMMEDIATE" {
+	if query != "rollback; begin exclusive" && query != "rollback; begin immediate" {
 		recordKind = recordKindWrite
 		tx.maybeWrite = true
 	}
@@ -1288,10 +1288,10 @@ func newSorts(sorts []string, keysToCols map[string]string) []string {
 
 		switch dir {
 		case "asc":
-			results = append(results, col+" ASC")
+			results = append(results, col+" asc")
 
 		case "desc":
-			results = append(results, col+" DESC")
+			results = append(results, col+" desc")
 		}
 	}
 

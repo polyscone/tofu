@@ -487,28 +487,28 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 		where, args = append(where, "u.email = ?"), append(args, *v)
 	}
 	if v := filter.Search; v != nil && *v != "" {
-		where, args = append(where, "u.email LIKE ?"), append(args, "%"+*v+"%")
+		where, args = append(where, "u.email like ?"), append(args, "%"+*v+"%")
 	}
 	if v := filter.RoleID; v != nil {
-		joins = append(joins, "INNER JOIN account__user_roles AS ur ON u.id = ur.user_id")
+		joins = append(joins, "inner join account__user_roles as ur on u.id = ur.user_id")
 		where, args = append(where, "ur.role_id = ?"), append(args, *v)
 	}
 
-	joins = append(joins, "LEFT JOIN account__totp_reset_requests AS tr ON u.id = tr.user_id")
+	joins = append(joins, "left join account__totp_reset_requests as tr on u.id = tr.user_id")
 
 	var sorts []string
 	if filter.SortTopID != "" {
-		sorts, args = append(sorts, "CASE u.id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
+		sorts, args = append(sorts, "case u.id when ? then 0 else 1 end asc"), append(args, filter.SortTopID)
 	}
 
 	if s := newSorts(filter.Sorts, findUserSortKeyCols); len(s) > 0 {
 		sorts = append(sorts, s...)
 	} else {
-		sorts = append(sorts, "tr.requested_at DESC, u.email ASC")
+		sorts = append(sorts, "tr.requested_at desc, u.email asc")
 	}
 
 	rows, err := tx.QueryContext(ctx, `
-		SELECT
+		select
 			u.id,
 			u.email,
 			u.hashed_password,
@@ -536,8 +536,8 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			u.suspended_reason,
 			tr.requested_at,
 			tr.approved_at,
-			COUNT(*) OVER () AS total
-		FROM account__users AS u
+			count(*) over () as total
+		from account__users as u
 		`+strings.Join(joins, "\n")+`
 		`+whereSQL(where)+`
 		`+orderBySQL(sorts)+`
@@ -647,7 +647,7 @@ func (r *AccountRepo) attachUserDenials(ctx context.Context, tx *Tx, user *accou
 
 func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User) error {
 	_, err := tx.ExecContext(ctx, `
-		INSERT INTO account__users (
+		insert into account__users (
 			id,
 			email,
 			hashed_password,
@@ -674,7 +674,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 			suspended_at,
 			suspended_reason,
 			created_at
-		) VALUES (
+		) values (
 			:id,
 			:email,
 			:hashed_password,
@@ -742,12 +742,12 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 
 	if !user.TOTPResetRequestedAt.IsZero() || !user.TOTPResetApprovedAt.IsZero() {
 		_, err := tx.ExecContext(ctx, `
-			INSERT INTO account__totp_reset_requests (
+			insert into account__totp_reset_requests (
 				user_id,
 				requested_at,
 				approved_at,
 				created_at
-			) VALUES (
+			) values (
 				:user_id,
 				:requested_at,
 				:approved_at,
@@ -766,11 +766,11 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 
 	for _, rc := range user.HashedRecoveryCodes {
 		_, err := tx.ExecContext(ctx, `
-			INSERT INTO account__recovery_codes (
+			insert into account__recovery_codes (
 				user_id,
 				hashed_code,
 				created_at
-			) VALUES (
+			) values (
 				:user_id,
 				:hashed_code,
 				:created_at
@@ -787,11 +787,11 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 
 	for _, role := range user.Roles {
 		_, err := tx.ExecContext(ctx, `
-			INSERT INTO account__user_roles (
+			insert into account__user_roles (
 				user_id,
 				role_id,
 				created_at
-			) VALUES (
+			) values (
 				:user_id,
 				:role_id,
 				:created_at
@@ -813,11 +813,11 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 		}
 
 		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__user_grants (
+			insert into account__user_grants (
 				user_id,
 				permission_id,
 				created_at
-			) VALUES (
+			) values (
 				:user_id,
 				:permission_id,
 				:created_at
@@ -839,11 +839,11 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 		}
 
 		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__user_denials (
+			insert into account__user_denials (
 				user_id,
 				permission_id,
 				created_at
-			) VALUES (
+			) values (
 				:user_id,
 				:permission_id,
 				:created_at
@@ -863,7 +863,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 
 func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User) error {
 	_, err := tx.ExecContext(ctx, `
-		UPDATE account__users SET
+		update account__users set
 			email = :email,
 			hashed_password = :hashed_password,
 			totp_method = :totp_method,
@@ -889,7 +889,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 			suspended_at = :suspended_at,
 			suspended_reason = :suspended_reason,
 			updated_at = :updated_at
-		WHERE id = :id
+		where id = :id
 	`,
 		sql.Named("id", user.ID),
 		sql.Named("email", user.Email),
@@ -930,7 +930,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 
 	if user.TOTPResetRequestedAt.IsZero() && user.TOTPResetApprovedAt.IsZero() {
 		_, err := tx.ExecContext(ctx,
-			"DELETE FROM account__totp_reset_requests WHERE user_id = :user_id",
+			"delete from account__totp_reset_requests where user_id = :user_id",
 			sql.Named("user_id", user.ID),
 		)
 		if err != nil {
@@ -938,24 +938,24 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		}
 	} else {
 		_, err := tx.ExecContext(ctx, `
-			INSERT INTO account__totp_reset_requests (
+			insert into account__totp_reset_requests (
 				user_id,
 				requested_at,
 				approved_at,
 				created_at
-			) VALUES (
+			) values (
 				:user_id,
 				:requested_at,
 				:approved_at,
 				:created_at
 			)
-			ON CONFLICT DO
-				UPDATE SET
+			on conflict do
+				update set
 					requested_at = excluded.requested_at,
 					approved_at = excluded.approved_at,
 					updated_at = :updated_at
-				WHERE
-					ifnull(requested_at, '') != ifnull(excluded.requested_at, '') OR
+				where
+					ifnull(requested_at, '') != ifnull(excluded.requested_at, '') or
 					ifnull(approved_at, '') != ifnull(excluded.approved_at, '')
 		`,
 			sql.Named("user_id", user.ID),
@@ -970,7 +970,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 	}
 
 	_, err = tx.ExecContext(ctx,
-		"DELETE FROM account__recovery_codes WHERE user_id = :user_id",
+		"delete from account__recovery_codes where user_id = :user_id",
 		sql.Named("user_id", user.ID),
 	)
 	if err != nil {
@@ -979,11 +979,11 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 
 	for _, rc := range user.HashedRecoveryCodes {
 		_, err := tx.ExecContext(ctx, `
-			INSERT INTO account__recovery_codes (
+			insert into account__recovery_codes (
 				user_id,
 				hashed_code,
 				created_at
-			) VALUES (
+			) values (
 				:user_id,
 				:hashed_code,
 				:created_at
@@ -999,7 +999,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 	}
 
 	_, err = tx.ExecContext(ctx,
-		"DELETE FROM account__user_roles WHERE user_id = :user_id",
+		"delete from account__user_roles where user_id = :user_id",
 		sql.Named("user_id", user.ID),
 	)
 	if err != nil {
@@ -1008,11 +1008,11 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 
 	for _, role := range user.Roles {
 		_, err := tx.ExecContext(ctx, `
-			INSERT INTO account__user_roles (
+			insert into account__user_roles (
 				user_id,
 				role_id,
 				created_at
-			) VALUES (
+			) values (
 				:user_id,
 				:role_id,
 				:created_at
@@ -1028,7 +1028,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 	}
 
 	_, err = tx.ExecContext(ctx,
-		"DELETE FROM account__user_grants WHERE user_id = :user_id",
+		"delete from account__user_grants where user_id = :user_id",
 		sql.Named("user_id", user.ID),
 	)
 	if err != nil {
@@ -1042,11 +1042,11 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		}
 
 		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__user_grants (
+			insert into account__user_grants (
 				user_id,
 				permission_id,
 				created_at
-			) VALUES (
+			) values (
 				:user_id,
 				:permission_id,
 				:created_at
@@ -1062,7 +1062,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 	}
 
 	_, err = tx.ExecContext(ctx,
-		"DELETE FROM account__user_denials WHERE user_id = :user_id",
+		"delete from account__user_denials where user_id = :user_id",
 		sql.Named("user_id", user.ID),
 	)
 	if err != nil {
@@ -1076,11 +1076,11 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		}
 
 		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__user_denials (
+			insert into account__user_denials (
 				user_id,
 				permission_id,
 				created_at
-			) VALUES (
+			) values (
 				:user_id,
 				:permission_id,
 				:created_at
@@ -1102,11 +1102,11 @@ func (r *AccountRepo) findSignInAttemptLog(ctx context.Context, tx *Tx, email st
 	log := account.SignInAttemptLog{Email: email}
 
 	err := tx.QueryRowContext(ctx, `
-		SELECT
+		select
 			attempts,
 			last_attempt_at
-		FROM account__sign_in_attempt_logs
-		WHERE email = :email
+		from account__sign_in_attempt_logs
+		where email = :email
 	`,
 		sql.Named("email", email),
 	).Scan(
@@ -1122,24 +1122,24 @@ func (r *AccountRepo) findSignInAttemptLog(ctx context.Context, tx *Tx, email st
 
 func (r *AccountRepo) upsertSignInAttemptLog(ctx context.Context, tx *Tx, log *account.SignInAttemptLog) error {
 	_, err := tx.ExecContext(ctx, `
-		INSERT INTO account__sign_in_attempt_logs (
+		insert into account__sign_in_attempt_logs (
 			email,
 			attempts,
 			last_attempt_at,
 			created_at
-		) VALUES (
+		) values (
 			:email,
 			:attempts,
 			:last_attempt_at,
 			:created_at
 		)
-		ON CONFLICT DO
-			UPDATE SET
+		on conflict do
+			update set
 				attempts = excluded.attempts,
 				last_attempt_at = excluded.last_attempt_at,
 				updated_at = :updated_at
-			WHERE
-				attempts != excluded.attempts OR
+			where
+				attempts != excluded.attempts or
 				last_attempt_at != excluded.last_attempt_at
 	`,
 		sql.Named("email", log.Email),
@@ -1154,8 +1154,8 @@ func (r *AccountRepo) upsertSignInAttemptLog(ctx context.Context, tx *Tx, log *a
 
 func (r *AccountRepo) deleteSignInAttemptLog(ctx context.Context, tx *Tx, email string) error {
 	_, err := tx.ExecContext(ctx, `
-		DELETE FROM account__sign_in_attempt_logs
-		WHERE email = :email
+		delete from account__sign_in_attempt_logs
+		where email = :email
 	`,
 		sql.Named("email", email),
 	)
@@ -1165,8 +1165,8 @@ func (r *AccountRepo) deleteSignInAttemptLog(ctx context.Context, tx *Tx, email 
 
 func (r *AccountRepo) deleteStaleSignInAttemptLogs(ctx context.Context, tx *Tx, ttl time.Duration) error {
 	_, err := tx.ExecContext(ctx, `
-		DELETE FROM account__sign_in_attempt_logs
-		WHERE last_attempt_at <= :valid_window_start
+		delete from account__sign_in_attempt_logs
+		where last_attempt_at <= :valid_window_start
 	`,
 		sql.Named("valid_window_start", Time(tx.now.Add(-ttl).UTC())),
 	)
@@ -1186,23 +1186,23 @@ func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter permis
 	var args []any
 
 	if v := filter.roleID; v != nil {
-		joins = append(joins, "INNER JOIN account__role_permissions AS rp ON p.id = rp.permission_id")
+		joins = append(joins, "inner join account__role_permissions as rp on p.id = rp.permission_id")
 		where, args = append(where, "rp.role_id = ?"), append(args, *v)
 	}
 	if v := filter.grantsUserID; v != nil {
-		joins = append(joins, "INNER JOIN account__user_grants AS ug ON p.id = ug.permission_id")
+		joins = append(joins, "inner join account__user_grants as ug on p.id = ug.permission_id")
 		where, args = append(where, "ug.user_id = ?"), append(args, *v)
 	}
 	if v := filter.denialsUserID; v != nil {
-		joins = append(joins, "INNER JOIN account__user_denials AS ud ON p.id = ud.permission_id")
+		joins = append(joins, "inner join account__user_denials as ud on p.id = ud.permission_id")
 		where, args = append(where, "ud.user_id = ?"), append(args, *v)
 	}
 
 	rows, err := tx.QueryContext(ctx, `
-		SELECT
+		select
 			name,
-			COUNT(*) OVER () AS total
-		FROM account__permissions AS p
+			count(*) over () as total
+		from account__permissions as p
 		`+strings.Join(joins, "\n")+`
 		`+whereSQL(where),
 		args...,
@@ -1241,20 +1241,20 @@ func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string)
 	}
 
 	err = tx.QueryRowContext(ctx, `
-		INSERT INTO account__permissions (
+		insert into account__permissions (
 			id,
 			name,
 			created_at
-		) VALUES (
+		) values (
 			:id,
 			:name,
 			:created_at
 		)
-		ON CONFLICT DO
-			UPDATE SET
+		on conflict do
+			update set
 				name = excluded.name,
 				updated_at = :updated_at
-		RETURNING id
+		returning id
 	`,
 		sql.Named("id", id),
 		sql.Named("name", name),
@@ -1278,34 +1278,34 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 		where, args = append(where, "r.id = ?"), append(args, *v)
 	}
 	if v := filter.UserID; v != nil {
-		joins = append(joins, "INNER JOIN account__user_roles AS ur ON r.id = ur.role_id")
+		joins = append(joins, "inner join account__user_roles as ur on r.id = ur.role_id")
 		where, args = append(where, "ur.user_id = ?"), append(args, *v)
 	}
 	if v := filter.Name; v != nil && *v != "" {
 		where, args = append(where, "r.name = ?"), append(args, *v)
 	}
 	if v := filter.Search; v != nil && *v != "" {
-		where, args = append(where, "r.name LIKE ?"), append(args, "%"+*v+"%")
+		where, args = append(where, "r.name like ?"), append(args, "%"+*v+"%")
 	}
 
 	var sorts []string
 	if filter.SortTopID != "" {
-		sorts, args = append(sorts, "CASE r.id WHEN ? THEN 0 ELSE 1 END ASC"), append(args, filter.SortTopID)
+		sorts, args = append(sorts, "case r.id when ? then 0 else 1 end asc"), append(args, filter.SortTopID)
 	}
 
 	if s := newSorts(filter.Sorts, findRolesSortKeyCols); len(s) > 0 {
 		sorts = append(sorts, s...)
 	} else {
-		sorts = append(sorts, "r.name ASC")
+		sorts = append(sorts, "r.name asc")
 	}
 
 	rows, err := tx.QueryContext(ctx, `
-		SELECT
+		select
 			id,
 			name,
 			description,
-			COUNT(*) OVER () AS total
-		FROM account__roles AS r
+			count(*) over () as total
+		from account__roles as r
 		`+strings.Join(joins, "\n")+`
 		`+whereSQL(where)+`
 		`+orderBySQL(sorts)+`
@@ -1354,12 +1354,12 @@ func (r *AccountRepo) attachRolePermissions(ctx context.Context, tx *Tx, role *a
 
 func (r *AccountRepo) createRole(ctx context.Context, tx *Tx, role *account.Role) error {
 	_, err := tx.ExecContext(ctx, `
-		INSERT INTO account__roles (
+		insert into account__roles (
 			id,
 			name,
 			description,
 			created_at
-		) VALUES (
+		) values (
 			:id,
 			:name,
 			:description,
@@ -1388,11 +1388,11 @@ func (r *AccountRepo) createRole(ctx context.Context, tx *Tx, role *account.Role
 		}
 
 		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__role_permissions (
+			insert into account__role_permissions (
 				role_id,
 				permission_id,
 				created_at
-			) VALUES (
+			) values (
 				:role_id,
 				:permission_id,
 				:created_at
@@ -1412,11 +1412,11 @@ func (r *AccountRepo) createRole(ctx context.Context, tx *Tx, role *account.Role
 
 func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role) error {
 	_, err := tx.ExecContext(ctx, `
-		UPDATE account__roles SET
+		update account__roles set
 			name = :name,
 			description = :description,
 			updated_at = :updated_at
-		WHERE id = :id
+		where id = :id
 	`,
 		sql.Named("id", role.ID),
 		sql.Named("name", role.Name),
@@ -1430,7 +1430,7 @@ func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role
 	}
 
 	_, err = tx.ExecContext(ctx,
-		"DELETE FROM account__role_permissions WHERE role_id = :role_id",
+		"delete from account__role_permissions where role_id = :role_id",
 		sql.Named("role_id", role.ID),
 	)
 	if err != nil {
@@ -1444,11 +1444,11 @@ func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role
 		}
 
 		_, err = tx.ExecContext(ctx, `
-			INSERT INTO account__role_permissions (
+			insert into account__role_permissions (
 				role_id,
 				permission_id,
 				created_at
-			) VALUES (
+			) values (
 				:role_id,
 				:permission_id,
 				:created_at
@@ -1468,7 +1468,7 @@ func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role
 
 func (r *AccountRepo) deleteRole(ctx context.Context, tx *Tx, roleID string) error {
 	_, err := tx.ExecContext(ctx,
-		"DELETE FROM account__roles WHERE id = :id",
+		"delete from account__roles where id = :id",
 		sql.Named("id", roleID),
 	)
 
@@ -1477,11 +1477,11 @@ func (r *AccountRepo) deleteRole(ctx context.Context, tx *Tx, roleID string) err
 
 func (r *AccountRepo) findHashedRecoveryCodes(ctx context.Context, tx *Tx, userID string) ([][]byte, int, error) {
 	rows, err := tx.QueryContext(ctx, `
-		SELECT
+		select
 			hashed_code,
-			COUNT(*) OVER () AS total
-		FROM account__recovery_codes
-		WHERE user_id = :user_id
+			count(*) over () as total
+		from account__recovery_codes
+		where user_id = :user_id
 	`,
 		sql.Named("user_id", userID),
 	)
