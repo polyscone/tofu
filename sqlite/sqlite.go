@@ -417,7 +417,32 @@ func inSQL[T any](args []T) (string, []any) {
 	return placeholders, values
 }
 
-const RFC3339NanoZero = "2006-01-02T15:04:05.000000000Z07:00"
+const RFC3339NanoZero = "2006-01-02 15:04:05.000000000Z07:00"
+
+var decodeTimeFormats = []string{
+	"2006-01-02 15:04:05.999999999Z07:00",
+	"2006-01-02T15:04:05.999999999Z07:00",
+	"2006-01-02 15:04:05.999999999",
+	"2006-01-02T15:04:05.999999999",
+	"2006-01-02 15:04:05Z07:00",
+	"2006-01-02T15:04:05Z07:00",
+	"2006-01-02 15:04:05",
+	"2006-01-02T15:04:05",
+	"2006-01-02 15:04Z07:00",
+	"2006-01-02T15:04Z07:00",
+	"2006-01-02 15:04",
+	"2006-01-02T15:04",
+	"2006-01-02Z07:00",
+	"2006-01-02",
+	"2006-01",
+	"2006",
+	"15:04:05.999999999Z07:00",
+	"15:04:05.999999999",
+	"15:04:05Z07:00",
+	"15:04:05",
+	"15:04Z07:00",
+	"15:04",
+}
 
 type Time time.Time
 
@@ -437,12 +462,15 @@ func (t *Time) Scan(value any) error {
 		*t = Time(*value)
 
 	case string:
-		parsed, err := time.Parse(RFC3339NanoZero, value)
-		if err != nil {
-			return fmt.Errorf("parse RFC3339 nano with trailing zeros: %w", err)
+		for _, format := range decodeTimeFormats {
+			if parsed, err := time.Parse(format, value); err == nil {
+				*t = Time(parsed)
+
+				return nil
+			}
 		}
 
-		*t = Time(parsed)
+		return fmt.Errorf("%T: could not parse to time.Time: %q", Time{}, value)
 
 	default:
 		return fmt.Errorf("%T: cannot scan to time.Time: %T", Time{}, value)
@@ -473,12 +501,15 @@ func (t *NullTime) Scan(value any) error {
 		*t = NullTime(*value)
 
 	case string:
-		parsed, err := time.Parse(RFC3339NanoZero, value)
-		if err != nil {
-			return fmt.Errorf("parse RFC3339 nano with trailing zeros: %w", err)
+		for _, format := range decodeTimeFormats {
+			if parsed, err := time.Parse(format, value); err == nil {
+				*t = NullTime(parsed)
+
+				return nil
+			}
 		}
 
-		*t = NullTime(parsed)
+		return fmt.Errorf("%T: could not parse to time.Time: %q", Time{}, value)
 
 	default:
 		return fmt.Errorf("%T: cannot scan to time.Time: %T", NullTime{}, value)
