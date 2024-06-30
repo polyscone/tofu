@@ -29,12 +29,11 @@ create table account__users (
 ) strict;
 
 create table account__totp_reset_requests (
-	user_id      text not null primary key,
+	user_id      text not null primary key references account__users(id) on delete cascade on update cascade,
 	requested_at text,
 	approved_at  text,
 	created_at   text not null,
-	updated_at   text,
-	foreign key (user_id) references account__users(id) on delete cascade on update cascade
+	updated_at   text
 ) strict;
 
 create table account__sign_in_attempt_logs (
@@ -61,50 +60,41 @@ create table account__permissions (
 ) strict;
 
 create table account__role_permissions (
-	role_id       text not null,
-	permission_id text not null,
+	role_id       text not null references account__roles(id) on delete cascade on update cascade,
+	permission_id text not null references account__permissions(id) on delete cascade on update cascade,
 	created_at    text not null,
 	updated_at    text,
-	foreign key (role_id) references account__roles(id) on delete cascade on update cascade,
-	foreign key (permission_id) references account__permissions(id) on delete cascade on update cascade,
 	primary key (role_id, permission_id)
 ) strict;
 
 create table account__user_roles (
-	user_id    text not null,
-	role_id    text not null,
+	user_id    text not null references account__users(id) on delete cascade on update cascade,
+	role_id    text not null references account__roles(id) on delete cascade on update cascade,
 	created_at text not null,
 	updated_at text,
-	foreign key (user_id) references account__users(id) on delete cascade on update cascade,
-	foreign key (role_id) references account__roles(id) on delete cascade on update cascade,
 	primary key (user_id, role_id)
 ) strict;
 
 create table account__user_grants (
-	user_id       text not null,
-	permission_id text not null,
+	user_id       text not null references account__users(id) on delete cascade on update cascade,
+	permission_id text not null references account__permissions(id) on delete cascade on update cascade,
 	created_at    text not null,
 	updated_at    text,
-	foreign key (user_id) references account__users(id) on delete cascade on update cascade,
-	foreign key (permission_id) references account__permissions(id) on delete cascade on update cascade,
 	primary key (user_id, permission_id)
 ) strict;
 
 create table account__user_denials (
-	user_id       text not null,
-	permission_id text not null,
+	user_id       text not null references account__users(id) on delete cascade on update cascade,
+	permission_id text not null references account__permissions(id) on delete cascade on update cascade,
 	created_at    text not null,
 	updated_at    text,
-	foreign key (user_id) references account__users(id) on delete cascade on update cascade,
-	foreign key (permission_id) references account__permissions(id) on delete cascade on update cascade,
 	primary key (user_id, permission_id)
 ) strict;
 
 create table account__recovery_codes (
-	user_id     text not null,
+	user_id     text not null references account__users(id) on delete cascade on update cascade,
 	hashed_code blob not null,
 	created_at  text not null,
 	updated_at  text,
-	foreign key (user_id) references account__users(id) on delete cascade on update cascade,
 	primary key (user_id, hashed_code)
 ) strict;
