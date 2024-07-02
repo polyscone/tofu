@@ -12,14 +12,14 @@ type ChangeTOTPTelGuard interface {
 	CanChangeTOTPTel(userID int) bool
 }
 
-func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, userID int, newTel string) error {
+func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, userID int, newTel string) (*User, error) {
 	var input struct {
 		userID int
 		newTel Tel
 	}
 	{
 		if !guard.CanChangeTOTPTel(userID) {
-			return app.ErrForbidden
+			return nil, app.ErrForbidden
 		}
 
 		var err error
@@ -32,24 +32,24 @@ func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, u
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return fmt.Errorf("find user by id: %w", err)
+		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
 	if err := user.ChangeTOTPTel(input.newTel); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
-		return fmt.Errorf("save user: %w", err)
+		return nil, fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return user, nil
 }

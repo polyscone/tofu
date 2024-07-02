@@ -12,7 +12,7 @@ type ChoosePasswordGuard interface {
 	CanChoosePassword(userID int) bool
 }
 
-func (s *Service) ChoosePassword(ctx context.Context, guard ChoosePasswordGuard, userID int, newPassword, newPasswordCheck string) error {
+func (s *Service) ChoosePassword(ctx context.Context, guard ChoosePasswordGuard, userID int, newPassword, newPasswordCheck string) (*User, error) {
 	var input struct {
 		userID           int
 		newPassword      Password
@@ -20,7 +20,7 @@ func (s *Service) ChoosePassword(ctx context.Context, guard ChoosePasswordGuard,
 	}
 	{
 		if !guard.CanChoosePassword(userID) {
-			return app.ErrForbidden
+			return nil, app.ErrForbidden
 		}
 
 		var err error
@@ -37,24 +37,24 @@ func (s *Service) ChoosePassword(ctx context.Context, guard ChoosePasswordGuard,
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return fmt.Errorf("find user by id: %w", err)
+		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
 	if err := user.ChoosePassword(input.newPassword, s.hasher); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
-		return fmt.Errorf("save user: %w", err)
+		return nil, fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return user, nil
 }

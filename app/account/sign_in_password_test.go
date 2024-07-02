@@ -26,7 +26,7 @@ func TestSignInWithPassword(t *testing.T) {
 			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
 		}
 
-		err := svc.SignInWithPassword(ctx, user.Email, "password")
+		_, err := svc.SignInWithPassword(ctx, user.Email, "password")
 		if err != nil {
 			t.Errorf("want <nil>; got %v", err)
 		}
@@ -85,7 +85,7 @@ func TestSignInWithPassword(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				t.Run("fail until throttle trigger", func(t *testing.T) {
 					for i := range account.MaxFreeSignInAttempts {
-						err := svc.SignInWithPassword(ctx, tc.user.Email, "foobarbaz")
+						_, err := svc.SignInWithPassword(ctx, tc.user.Email, "foobarbaz")
 						if err == nil {
 							t.Error("want error; got <nil>")
 						}
@@ -105,7 +105,7 @@ func TestSignInWithPassword(t *testing.T) {
 				})
 
 				t.Run("fail over the throttle trigger point", func(t *testing.T) {
-					err := svc.SignInWithPassword(ctx, tc.user.Email, "foobarbaz")
+					_, err := svc.SignInWithPassword(ctx, tc.user.Email, "foobarbaz")
 					if !errors.Is(err, account.ErrSignInThrottled) {
 						t.Errorf("want error: %v; got %v", account.ErrSignInThrottled, err)
 					}
@@ -122,7 +122,7 @@ func TestSignInWithPassword(t *testing.T) {
 
 				if tc.user.ID != 0 {
 					t.Run("actual user correct password throttled", func(t *testing.T) {
-						err := svc.SignInWithPassword(ctx, tc.user.Email, "password")
+						_, err := svc.SignInWithPassword(ctx, tc.user.Email, "password")
 						var throttle *account.SignInThrottleError
 						if !errors.As(err, &throttle) {
 							t.Errorf("want %T; got %T", throttle, err)
@@ -172,7 +172,7 @@ func TestSignInWithPassword(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.SignInWithPassword(ctx, tc.email, tc.password)
+				_, err := svc.SignInWithPassword(ctx, tc.email, tc.password)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
@@ -217,7 +217,7 @@ func TestSignInWithPassword(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.SignInWithPassword(ctx, tc.email, tc.password)
+				_, err := svc.SignInWithPassword(ctx, tc.email, tc.password)
 				switch {
 				case err == nil:
 					events.Expect(account.SignedIn{

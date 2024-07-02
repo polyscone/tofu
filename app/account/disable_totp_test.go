@@ -33,7 +33,7 @@ func TestDisableTOTP(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.DisableTOTP(ctx, validGuard, user.ID, "password")
+		_, err := svc.DisableTOTP(ctx, validGuard, user.ID, "password")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -96,7 +96,7 @@ func TestDisableTOTP(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.DisableTOTP(ctx, tc.guard, tc.userID, tc.password)
+				_, err := svc.DisableTOTP(ctx, tc.guard, tc.userID, tc.password)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

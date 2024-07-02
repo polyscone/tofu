@@ -12,7 +12,7 @@ type ResetPasswordGuard interface {
 	CanResetPassword(userID int) bool
 }
 
-func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, userID int, newPassword, newPasswordCheck string) error {
+func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, userID int, newPassword, newPasswordCheck string) (*User, error) {
 	var input struct {
 		userID           int
 		email            Email
@@ -21,7 +21,7 @@ func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, u
 	}
 	{
 		if !guard.CanResetPassword(userID) {
-			return app.ErrForbidden
+			return nil, app.ErrForbidden
 		}
 
 		var err error
@@ -38,24 +38,24 @@ func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, u
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return fmt.Errorf("find user by id: %w", err)
+		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
 	if err := user.ResetPassword(input.newPassword, s.hasher); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
-		return fmt.Errorf("save user: %w", err)
+		return nil, fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return user, nil
 }

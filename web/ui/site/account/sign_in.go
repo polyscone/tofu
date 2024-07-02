@@ -302,7 +302,7 @@ func signInTOTPResetRequestPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Svc.Account.RequestTOTPReset(ctx, email)
+		_, err = h.Svc.Account.RequestTOTPReset(ctx, email)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "request TOTP reset", err, "site/account/totp/reset/request", nil)
 

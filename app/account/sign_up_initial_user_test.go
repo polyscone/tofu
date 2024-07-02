@@ -27,7 +27,7 @@ func TestSignUpInitialUser(t *testing.T) {
 		defer events.Check(t)
 
 		password := errsx.Must(account.NewPassword("password123"))
-		if err := svc.SignUpInitialUser(ctx, "foo@example.com", password.String(), password.String(), roleIDs); err != nil {
+		if _, err := svc.SignUpInitialUser(ctx, "foo@example.com", password.String(), password.String(), roleIDs); err != nil {
 			t.Fatal(err)
 		}
 
@@ -83,7 +83,7 @@ func TestSignUpInitialUser(t *testing.T) {
 			t.Errorf("want to be able to sign in with new password; got %q", err)
 		}
 
-		if err := svc.SignUpInitialUser(ctx, "bar@example.com", "password", "password", nil); err == nil {
+		if _, err := svc.SignUpInitialUser(ctx, "bar@example.com", "password", "password", nil); err == nil {
 			t.Error("want error after initial user created; got <nil>")
 		}
 	})
@@ -120,7 +120,7 @@ func TestSignUpInitialUser(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.SignUpInitialUser(ctx, tc.email, tc.password, tc.passwordCheck, nil)
+				_, err := svc.SignUpInitialUser(ctx, tc.email, tc.password, tc.passwordCheck, nil)
 				switch {
 				case err == nil:
 					events.Expect(account.InitialUserSignedUp{

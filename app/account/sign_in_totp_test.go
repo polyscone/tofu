@@ -24,7 +24,7 @@ func TestSignInWithTOTP(t *testing.T) {
 			t.Errorf("want last signed in at to be zero; got %v", user.LastSignedInAt)
 		}
 
-		err := svc.SignInWithPassword(ctx, user.Email, "password")
+		_, err := svc.SignInWithPassword(ctx, user.Email, "password")
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
@@ -60,7 +60,7 @@ func TestSignInWithTOTP(t *testing.T) {
 
 		otp.CleanUsedTOTP(totp)
 
-		err = svc.SignInWithTOTP(ctx, user.ID, totp)
+		_, err = svc.SignInWithTOTP(ctx, user.ID, totp)
 		if err != nil {
 			t.Errorf("want <nil>; got %q", err)
 		}
@@ -136,7 +136,7 @@ func TestSignInWithTOTP(t *testing.T) {
 					}
 				}
 
-				err := svc.SignInWithTOTP(ctx, tc.userID, totp)
+				_, err := svc.SignInWithTOTP(ctx, tc.userID, totp)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
@@ -171,7 +171,7 @@ func TestSignInWithTOTP(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "joe@bloggs.com", ActivateTOTP: true})
 
-				err := svc.SignInWithTOTP(ctx, user.ID, tc.totp)
+				_, err := svc.SignInWithTOTP(ctx, user.ID, tc.totp)
 				switch {
 				case err == nil:
 					events.Expect(account.SignedIn{

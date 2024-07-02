@@ -39,7 +39,7 @@ func SignInWithPassword(ctx context.Context, h *handler.Handler, email, password
 		return fmt.Errorf("check session sign in throttle: %w", err)
 	}
 
-	err := h.Svc.Account.SignInWithPassword(ctx, email, password)
+	_, err := h.Svc.Account.SignInWithPassword(ctx, email, password)
 	if err != nil {
 		attempts++
 		lastAttemptAt = time.Now().UTC()
@@ -97,7 +97,7 @@ func SignInWithMagicLink(ctx context.Context, h *handler.Handler, token string) 
 		}
 	}
 
-	signedIn, err := h.Svc.Account.SignInWithMagicLink(ctx, email, behaviour)
+	_, signedIn, err := h.Svc.Account.SignInWithMagicLink(ctx, email, behaviour)
 	if err != nil {
 		return false, fmt.Errorf("sign in wih magic link: %w", err)
 	}
@@ -123,7 +123,7 @@ func SignInWithMagicLink(ctx context.Context, h *handler.Handler, token string) 
 func SignInWithTOTP(ctx context.Context, h *handler.Handler, totp string) error {
 	user := h.User(ctx)
 
-	err := h.Svc.Account.SignInWithTOTP(ctx, user.ID, totp)
+	_, err := h.Svc.Account.SignInWithTOTP(ctx, user.ID, totp)
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func SignInWithTOTP(ctx context.Context, h *handler.Handler, totp string) error 
 func SignInWithRecoveryCode(ctx context.Context, h *handler.Handler, recoveryCode string) error {
 	user := h.User(ctx)
 
-	err := h.Svc.Account.SignInWithRecoveryCode(ctx, user.ID, recoveryCode)
+	_, err := h.Svc.Account.SignInWithRecoveryCode(ctx, user.ID, recoveryCode)
 	if err != nil {
 		return err
 	}
@@ -269,7 +269,7 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, jwt string) (bool
 		}
 	}
 
-	signedIn, err := h.Svc.Account.SignInWithGoogle(ctx, claims.Email, behaviour)
+	_, signedIn, err := h.Svc.Account.SignInWithGoogle(ctx, claims.Email, behaviour)
 	if err != nil {
 		return false, fmt.Errorf("sign in wih Google: %w", err)
 	}
@@ -363,7 +363,7 @@ func SignInWithFacebook(ctx context.Context, h *handler.Handler, userID string, 
 		}
 	}
 
-	signedIn, err := h.Svc.Account.SignInWithFacebook(ctx, me.Email, behaviour)
+	_, signedIn, err := h.Svc.Account.SignInWithFacebook(ctx, me.Email, behaviour)
 	if err != nil {
 		return false, fmt.Errorf("sign in wih Facebook: %w", err)
 	}

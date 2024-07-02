@@ -49,7 +49,7 @@ func TestDeleteRole(t *testing.T) {
 					t.Fatal(err)
 				}
 
-				err = svc.DeleteRole(ctx, tc.guard, role.ID)
+				_, err = svc.DeleteRole(ctx, tc.guard, role.ID)
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
 				}

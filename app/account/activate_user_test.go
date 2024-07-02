@@ -33,11 +33,11 @@ func TestActivateUser(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		if err := svc.VerifyUser(ctx, user1.Email, "password", "password", account.VerifyUserOnly); err != nil {
+		if _, err := svc.VerifyUser(ctx, user1.Email, "password", "password", account.VerifyUserOnly); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := svc.ActivateUser(ctx, validGuard, user1.ID); err != nil {
+		if _, err := svc.ActivateUser(ctx, validGuard, user1.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -55,7 +55,7 @@ func TestActivateUser(t *testing.T) {
 			t.Error("want non-zero verified at; got zero")
 		}
 
-		if err := svc.SignInWithPassword(ctx, user1.Email, "password"); err != nil {
+		if _, err := svc.SignInWithPassword(ctx, user1.Email, "password"); err != nil {
 			t.Errorf("want to be able to sign in with chosen password; got error: %v", err)
 		}
 
@@ -65,11 +65,11 @@ func TestActivateUser(t *testing.T) {
 			Method: account.SignInMethodPassword,
 		})
 
-		if err := svc.VerifyUser(ctx, user2.Email, "password", "password", account.VerifyUserOnly); err != nil {
+		if _, err := svc.VerifyUser(ctx, user2.Email, "password", "password", account.VerifyUserOnly); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := svc.ActivateUser(ctx, validGuard, user2.ID); err != nil {
+		if _, err := svc.ActivateUser(ctx, validGuard, user2.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -104,7 +104,7 @@ func TestActivateUser(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.ActivateUser(ctx, tc.guard, tc.userID)
+				_, err := svc.ActivateUser(ctx, tc.guard, tc.userID)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

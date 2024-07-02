@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/errsx"
 )
 
-func (s *Service) signInWithRecoveryCode(ctx context.Context, userID int, recoveryCode string) error {
+func (s *Service) signInWithRecoveryCode(ctx context.Context, userID int, recoveryCode string) (*User, error) {
 	var input struct {
 		userID       int
 		recoveryCode RecoveryCode
@@ -24,33 +24,33 @@ func (s *Service) signInWithRecoveryCode(ctx context.Context, userID int, recove
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return fmt.Errorf("find user by id: %w", err)
+		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
 	if err := user.SignInWithRecoveryCode(s.system, input.recoveryCode); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
-		return fmt.Errorf("save user: %w", err)
+		return nil, fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return user, nil
 }
 
-func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, recoveryCode string) error {
-	err := s.signInWithRecoveryCode(ctx, userID, recoveryCode)
+func (s *Service) SignInWithRecoveryCode(ctx context.Context, userID int, recoveryCode string) (*User, error) {
+	user, err := s.signInWithRecoveryCode(ctx, userID, recoveryCode)
 	if err != nil {
-		return fmt.Errorf("%w: %w", ErrAuth, err)
+		return nil, fmt.Errorf("%w: %w", ErrAuth, err)
 	}
 
-	return nil
+	return user, nil
 }

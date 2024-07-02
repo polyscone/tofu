@@ -28,103 +28,6 @@ func (t SignInThrottleError) Error() string {
 	return fmt.Sprintf("delayed for %v: unlocking at %v", t.Delay, t.UnlockAt.Format("15:04:05 MST"))
 }
 
-func (s *Service) signInWithPassword(ctx context.Context, email, password string) error {
-	var input struct {
-		email    Email
-		password Password
-	}
-	{
-		var err error
-		var errs errsx.Map
-
-		if input.email, err = NewEmail(email); err != nil {
-			errs.Set("email", err)
-		}
-		if input.password, err = NewPassword(password); err != nil {
-			errs.Set("password", err)
-		}
-
-		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
-	}
-
-	log, err := s.repo.FindSignInAttemptLogByEmail(ctx, email)
-	if err != nil {
-		return fmt.Errorf("find sign in attempt log by email: %w", err)
-	}
-
-	if err := s.CheckSignInThrottle(log.Attempts, log.LastAttemptAt); err != nil {
-		return fmt.Errorf("check sign in throttle: %w", err)
-	}
-
-	// Even in the case where a user doesn't exist we always want to log
-	// failed sign in attempts to prevent leaking information about which
-	// users exist in the system
-	//
-	// These values are set to their zero values on a successful
-	// sign in or account verification
-	log.Attempts++
-	log.LastAttemptAt = time.Now()
-
-	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
-	if err != nil {
-		if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
-			return fmt.Errorf("save sign in attempt log: %w", err)
-		}
-
-		// Always check a password even when we error finding a user to help
-		// avoid leaking info that would allow enumeration of valid emails
-		if err := s.hasher.CheckDummyPasswordHash(); err != nil {
-			return fmt.Errorf("check dummy password hash: %w", err)
-		}
-
-		return fmt.Errorf("find user by email: %w", err)
-	}
-
-	if _, err := user.SignInWithPassword(s.system, input.password, s.hasher); err != nil {
-		switch {
-		case errors.Is(err, ErrNotVerified),
-			errors.Is(err, ErrNotActivated),
-			errors.Is(err, ErrInvalidPassword):
-
-			if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
-				return fmt.Errorf("save sign in attempt log: %w", err)
-			}
-
-			if err := s.repo.SaveUser(ctx, user); err != nil {
-				return fmt.Errorf("save user: %w", err)
-			}
-		}
-
-		return err
-	}
-
-	log.Attempts = 0
-	log.LastAttemptAt = time.Time{}
-
-	if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
-		return fmt.Errorf("save sign in attempt log: %w", err)
-	}
-
-	if err := s.repo.SaveUser(ctx, user); err != nil {
-		return fmt.Errorf("save user: %w", err)
-	}
-
-	s.broker.Flush(&user.Events)
-
-	return nil
-}
-
-func (s *Service) SignInWithPassword(ctx context.Context, email, password string) error {
-	err := s.signInWithPassword(ctx, email, password)
-	if err != nil {
-		return fmt.Errorf("%w: %w", ErrAuth, err)
-	}
-
-	return nil
-}
-
 func (s *Service) CheckSignInThrottle(attempts int, lastAttemptAt time.Time) error {
 	if attempts >= MaxFreeSignInAttempts {
 		shift := attempts - (MaxFreeSignInAttempts - 1)
@@ -147,4 +50,101 @@ func (s *Service) CheckSignInThrottle(attempts int, lastAttemptAt time.Time) err
 	}
 
 	return nil
+}
+
+func (s *Service) signInWithPassword(ctx context.Context, email, password string) (*User, error) {
+	var input struct {
+		email    Email
+		password Password
+	}
+	{
+		var err error
+		var errs errsx.Map
+
+		if input.email, err = NewEmail(email); err != nil {
+			errs.Set("email", err)
+		}
+		if input.password, err = NewPassword(password); err != nil {
+			errs.Set("password", err)
+		}
+
+		if errs != nil {
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		}
+	}
+
+	log, err := s.repo.FindSignInAttemptLogByEmail(ctx, email)
+	if err != nil {
+		return nil, fmt.Errorf("find sign in attempt log by email: %w", err)
+	}
+
+	if err := s.CheckSignInThrottle(log.Attempts, log.LastAttemptAt); err != nil {
+		return nil, fmt.Errorf("check sign in throttle: %w", err)
+	}
+
+	// Even in the case where a user doesn't exist we always want to log
+	// failed sign in attempts to prevent leaking information about which
+	// users exist in the system
+	//
+	// These values are set to their zero values on a successful
+	// sign in or account verification
+	log.Attempts++
+	log.LastAttemptAt = time.Now()
+
+	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
+	if err != nil {
+		if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
+			return nil, fmt.Errorf("save sign in attempt log: %w", err)
+		}
+
+		// Always check a password even when we error finding a user to help
+		// avoid leaking info that would allow enumeration of valid emails
+		if err := s.hasher.CheckDummyPasswordHash(); err != nil {
+			return nil, fmt.Errorf("check dummy password hash: %w", err)
+		}
+
+		return nil, fmt.Errorf("find user by email: %w", err)
+	}
+
+	if _, err := user.SignInWithPassword(s.system, input.password, s.hasher); err != nil {
+		switch {
+		case errors.Is(err, ErrNotVerified),
+			errors.Is(err, ErrNotActivated),
+			errors.Is(err, ErrInvalidPassword):
+
+			if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
+				return nil, fmt.Errorf("save sign in attempt log: %w", err)
+			}
+
+			if err := s.repo.SaveUser(ctx, user); err != nil {
+				return nil, fmt.Errorf("save user: %w", err)
+			}
+		}
+
+		return nil, err
+	}
+
+	log.Attempts = 0
+	log.LastAttemptAt = time.Time{}
+
+	if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
+		return nil, fmt.Errorf("save sign in attempt log: %w", err)
+	}
+
+	if err := s.repo.SaveUser(ctx, user); err != nil {
+		return nil, fmt.Errorf("save user: %w", err)
+	}
+
+	s.broker.Flush(&user.Events)
+
+	return user, nil
+}
+
+func (s *Service) SignInWithPassword(ctx context.Context, email, password string) (*User, error) {
+	user, err := s.signInWithPassword(ctx, email, password)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %w", ErrAuth, err)
+	}
+
+	return user, nil
 }

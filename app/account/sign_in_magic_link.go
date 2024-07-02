@@ -19,7 +19,7 @@ const (
 
 var ErrMagicLinkSignUpDisabled = errors.New("magic link sign up disabled")
 
-func (s *Service) signInWithMagicLink(ctx context.Context, email string, behaviour MagicLinkSignInBehaviour) (bool, error) {
+func (s *Service) signInWithMagicLink(ctx context.Context, email string, behaviour MagicLinkSignInBehaviour) (*User, bool, error) {
 	var input struct {
 		email Email
 	}
@@ -32,7 +32,7 @@ func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavio
 		}
 
 		if errs != nil {
-			return false, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, false, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
@@ -41,18 +41,18 @@ func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavio
 	switch {
 	case err == nil:
 		if err := user.SignInWithMagicLink(s.system); err != nil {
-			return false, err
+			return nil, false, err
 		}
 
 		signedIn = true
 
 		if err := s.repo.SaveUser(ctx, user); err != nil {
-			return false, fmt.Errorf("save user: %w", err)
+			return nil, false, fmt.Errorf("save user: %w", err)
 		}
 
 	case errors.Is(err, app.ErrNotFound):
 		if behaviour == MagicLinkSignInOnly {
-			return false, ErrMagicLinkSignUpDisabled
+			return nil, false, ErrMagicLinkSignUpDisabled
 		}
 
 		user = NewUser(input.email)
@@ -61,11 +61,11 @@ func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavio
 
 		if behaviour == MagicLinkAllowSignUpActivate {
 			if err := user.Activate(); err != nil {
-				return false, err
+				return nil, false, err
 			}
 
 			if err := user.SignInWithMagicLink(s.system); err != nil {
-				return false, err
+				return nil, false, err
 			}
 
 			signedIn = true
@@ -74,26 +74,26 @@ func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavio
 		if err := s.repo.AddUser(ctx, user); err != nil {
 			var conflict *app.ConflictError
 			if errors.As(err, &conflict) {
-				return false, fmt.Errorf("add user: %w: %w", app.ErrConflict, conflict)
+				return nil, false, fmt.Errorf("add user: %w: %w", app.ErrConflict, conflict)
 			}
 
-			return false, fmt.Errorf("add user: %w", err)
+			return nil, false, fmt.Errorf("add user: %w", err)
 		}
 
 	default:
-		return false, fmt.Errorf("find user by email: %w", err)
+		return nil, false, fmt.Errorf("find user by email: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return signedIn, nil
+	return user, signedIn, nil
 }
 
-func (s *Service) SignInWithMagicLink(ctx context.Context, email string, behaviour MagicLinkSignInBehaviour) (bool, error) {
-	signedIn, err := s.signInWithMagicLink(ctx, email, behaviour)
+func (s *Service) SignInWithMagicLink(ctx context.Context, email string, behaviour MagicLinkSignInBehaviour) (*User, bool, error) {
+	user, signedIn, err := s.signInWithMagicLink(ctx, email, behaviour)
 	if err != nil {
-		return signedIn, fmt.Errorf("%w: %w", ErrAuth, err)
+		return user, signedIn, fmt.Errorf("%w: %w", ErrAuth, err)
 	}
 
-	return signedIn, nil
+	return user, signedIn, nil
 }

@@ -20,7 +20,7 @@ func TestRequestTOTPReset(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.RequestTOTPReset(ctx, user.Email)
+		_, err := svc.RequestTOTPReset(ctx, user.Email)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -51,7 +51,7 @@ func TestRequestTOTPReset(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.RequestTOTPReset(ctx, tc.email)
+				_, err := svc.RequestTOTPReset(ctx, tc.email)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

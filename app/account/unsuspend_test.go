@@ -41,11 +41,11 @@ func TestUnsuspendUser(t *testing.T) {
 		}
 
 		// Unsuspending a user who isn't suspended shouldn't error or generate any events
-		if err := svc.UnsuspendUser(ctx, validGuard, user.ID); err != nil {
+		if _, err := svc.UnsuspendUser(ctx, validGuard, user.ID); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := svc.SuspendUser(ctx, validGuard, user.ID, "Foo bar baz"); err != nil {
+		if _, err := svc.SuspendUser(ctx, validGuard, user.ID, "Foo bar baz"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -64,7 +64,7 @@ func TestUnsuspendUser(t *testing.T) {
 			t.Errorf("want suspended reason to be %q; got %q", want, user.SuspendedReason)
 		}
 
-		if err := svc.UnsuspendUser(ctx, validGuard, user.ID); err != nil {
+		if _, err := svc.UnsuspendUser(ctx, validGuard, user.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -98,7 +98,7 @@ func TestUnsuspendUser(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.UnsuspendUser(ctx, tc.guard, tc.userID)
+				_, err := svc.UnsuspendUser(ctx, tc.guard, tc.userID)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

@@ -30,7 +30,7 @@ func ResetPassword(ctx context.Context, h *handler.Handler, w http.ResponseWrite
 		return "", fmt.Errorf("passport by email: %w", err)
 	}
 
-	err = h.Svc.Account.ResetPassword(ctx, passport.Account, user.ID, newPassword, newPasswordCheck)
+	_, err = h.Svc.Account.ResetPassword(ctx, passport.Account, user.ID, newPassword, newPasswordCheck)
 	if err != nil {
 		return "", err
 	}

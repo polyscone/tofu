@@ -28,7 +28,7 @@ func Verify(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *h
 		behaviour = account.VerifyUserOnly
 	}
 
-	err = h.Svc.Account.VerifyUser(ctx, email, password, passwordCheck, behaviour)
+	_, err = h.Svc.Account.VerifyUser(ctx, email, password, passwordCheck, behaviour)
 	if err != nil {
 		return "", 0, fmt.Errorf("verify user: %w", err)
 	}

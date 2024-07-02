@@ -35,7 +35,7 @@ func TestChangeTOTPTel(t *testing.T) {
 
 		newTel := errsx.Must(account.NewTel("+81 70 0000 0000"))
 
-		err := svc.ChangeTOTPTel(ctx, validGuard, user.ID, newTel.String())
+		_, err := svc.ChangeTOTPTel(ctx, validGuard, user.ID, newTel.String())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -52,7 +52,7 @@ func TestChangeTOTPTel(t *testing.T) {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
-		err = svc.ChangeTOTPTel(ctx, validGuard, user.ID, user.TOTPTel)
+		_, err = svc.ChangeTOTPTel(ctx, validGuard, user.ID, user.TOTPTel)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,7 +79,7 @@ func TestChangeTOTPTel(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.ChangeTOTPTel(ctx, tc.guard, tc.userID, tc.newTel)
+				_, err := svc.ChangeTOTPTel(ctx, tc.guard, tc.userID, tc.newTel)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
@@ -115,7 +115,7 @@ func TestChangeTOTPTel(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", SetupTOTPTel: true, VerifyTOTP: true})
 
-				err := svc.ChangeTOTPTel(ctx, validGuard, user.ID, tc.newTel)
+				_, err := svc.ChangeTOTPTel(ctx, validGuard, user.ID, tc.newTel)
 				switch {
 				case err == nil:
 					events.Expect(account.TOTPTelChanged{

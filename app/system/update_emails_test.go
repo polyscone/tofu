@@ -34,7 +34,7 @@ func TestUpdateEmails(t *testing.T) {
 		systemEmail := "foo@example.com"
 		securityEmail := "bar@example.com"
 
-		err := svc.UpdateEmails(ctx, validGuard, systemEmail, securityEmail)
+		_, err := svc.UpdateEmails(ctx, validGuard, systemEmail, securityEmail)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -51,7 +51,7 @@ func TestUpdateEmails(t *testing.T) {
 		systemEmail = "bar@example.com"
 		securityEmail = "baz@example.com"
 
-		err = svc.UpdateEmails(ctx, validGuard, systemEmail, securityEmail)
+		_, err = svc.UpdateEmails(ctx, validGuard, systemEmail, securityEmail)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -112,7 +112,7 @@ func TestUpdateEmails(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				config := c(tc.overrides)
 
-				err := svc.UpdateEmails(ctx, tc.guard, config.SystemEmail, config.SecurityEmail)
+				_, err := svc.UpdateEmails(ctx, tc.guard, config.SystemEmail, config.SecurityEmail)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

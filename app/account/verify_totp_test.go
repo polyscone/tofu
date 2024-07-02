@@ -38,7 +38,7 @@ func TestVerifyTOTP(t *testing.T) {
 		// Deliberately set the method to SMS so we can check it's changed by the service
 		user.TOTPMethod = account.TOTPMethodSMS.String()
 
-		codes, err := svc.VerifyTOTP(ctx, validGuard, user.ID, totp, account.TOTPMethodApp.String())
+		_, codes, err := svc.VerifyTOTP(ctx, validGuard, user.ID, totp, account.TOTPMethodApp.String())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -77,7 +77,7 @@ func TestVerifyTOTP(t *testing.T) {
 		// Deliberately set the method to app so we can check it's changed by the service
 		user.TOTPMethod = account.TOTPMethodSMS.String()
 
-		codes, err := svc.VerifyTOTP(ctx, validGuard, user.ID, totp, account.TOTPMethodApp.String())
+		_, codes, err := svc.VerifyTOTP(ctx, validGuard, user.ID, totp, account.TOTPMethodApp.String())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -133,7 +133,7 @@ func TestVerifyTOTP(t *testing.T) {
 					totp = errsx.Must(tc.totpUser.GenerateTOTP())
 				}
 
-				_, err := svc.VerifyTOTP(ctx, tc.guard, tc.userID, totp, account.TOTPMethodApp.String())
+				_, _, err := svc.VerifyTOTP(ctx, tc.guard, tc.userID, totp, account.TOTPMethodApp.String())
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
@@ -168,7 +168,7 @@ func TestVerifyTOTP(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "joe@bloggs.com", ActivateTOTP: true})
 
-				_, err := svc.VerifyTOTP(ctx, validGuard, user.ID, tc.totp, account.TOTPMethodApp.String())
+				_, _, err := svc.VerifyTOTP(ctx, validGuard, user.ID, tc.totp, account.TOTPMethodApp.String())
 				switch {
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)

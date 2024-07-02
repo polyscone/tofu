@@ -19,14 +19,14 @@ func TestDenyTOTPResetRequest(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.RequestTOTPReset(ctx, user.Email)
+		_, err := svc.RequestTOTPReset(ctx, user.Email)
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		events.Expect(account.TOTPResetRequested{Email: user.Email})
 
-		err = svc.DenyTOTPResetRequest(ctx, user.ID)
+		_, err = svc.DenyTOTPResetRequest(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -30,18 +30,18 @@ func TestResetTOTP(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", ActivateTOTP: true})
 
-		if err := svc.RequestTOTPReset(ctx, user.Email); err != nil {
+		if _, err := svc.RequestTOTPReset(ctx, user.Email); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := svc.ApproveTOTPResetRequest(ctx, user.ID); err != nil {
+		if _, err := svc.ApproveTOTPResetRequest(ctx, user.ID); err != nil {
 			t.Fatal(err)
 		}
 
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.ResetTOTP(ctx, validGuard, user.ID, "password")
+		_, err := svc.ResetTOTP(ctx, validGuard, user.ID, "password")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -95,11 +95,11 @@ func TestResetTOTP(t *testing.T) {
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", ActivateTOTP: true})
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "qux@bar.com", ActivateTOTP: true})
 
-		if err := svc.RequestTOTPReset(ctx, user2.Email); err != nil {
+		if _, err := svc.RequestTOTPReset(ctx, user2.Email); err != nil {
 			t.Fatal(err)
 		}
 
-		if err := svc.ApproveTOTPResetRequest(ctx, user3.ID); err != nil {
+		if _, err := svc.ApproveTOTPResetRequest(ctx, user3.ID); err != nil {
 			t.Fatal(err)
 		}
 
@@ -120,7 +120,7 @@ func TestResetTOTP(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.ResetTOTP(ctx, tc.guard, tc.userID, tc.password)
+				_, err := svc.ResetTOTP(ctx, tc.guard, tc.userID, tc.password)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

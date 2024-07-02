@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/errsx"
 )
 
-func (s *Service) SignUp(ctx context.Context, email string) error {
+func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 	var input struct {
 		email Email
 	}
@@ -22,7 +22,7 @@ func (s *Service) SignUp(ctx context.Context, email string) error {
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
@@ -32,7 +32,7 @@ func (s *Service) SignUp(ctx context.Context, email string) error {
 		user.SignUp(s.system)
 
 		if err := s.repo.SaveUser(ctx, user); err != nil {
-			return fmt.Errorf("save user: %w", err)
+			return nil, fmt.Errorf("save user: %w", err)
 		}
 
 	case errors.Is(err, app.ErrNotFound):
@@ -41,14 +41,14 @@ func (s *Service) SignUp(ctx context.Context, email string) error {
 		user.SignUp(s.system)
 
 		if err := s.repo.AddUser(ctx, user); err != nil {
-			return fmt.Errorf("add user: %w", err)
+			return nil, fmt.Errorf("add user: %w", err)
 		}
 
 	default:
-		return fmt.Errorf("find user by email: %w", err)
+		return nil, fmt.Errorf("find user by email: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return user, nil
 }

@@ -19,7 +19,7 @@ func TestSignUp(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		if err := svc.SignUp(ctx, "foo@example.com"); err != nil {
+		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -45,7 +45,7 @@ func TestSignUp(t *testing.T) {
 			t.Errorf("want signed up method to be %q; got %q", want, got)
 		}
 
-		if err := svc.SignUp(ctx, "foo@example.com"); err != nil {
+		if _, err := svc.SignUp(ctx, "foo@example.com"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -66,7 +66,7 @@ func TestSignUp(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		if err := svc.SignUp(ctx, user.Email); err != nil {
+		if _, err := svc.SignUp(ctx, user.Email); err != nil {
 			t.Fatal(err)
 		}
 
@@ -98,7 +98,7 @@ func TestSignUp(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		if err := svc.SignUp(ctx, user.Email); err != nil {
+		if _, err := svc.SignUp(ctx, user.Email); err != nil {
 			t.Fatal(err)
 		}
 
@@ -145,7 +145,7 @@ func TestSignUp(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.SignUp(ctx, tc.email)
+				_, err := svc.SignUp(ctx, tc.email)
 				switch {
 				case err == nil:
 					user := errsx.Must(repo.FindUserByEmail(ctx, tc.email))

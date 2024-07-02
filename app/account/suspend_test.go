@@ -41,7 +41,7 @@ func TestSuspendUser(t *testing.T) {
 			t.Error("want user to not be suspended")
 		}
 
-		if err := svc.SuspendUser(ctx, validGuard, user.ID, "Foo bar baz"); err != nil {
+		if _, err := svc.SuspendUser(ctx, validGuard, user.ID, "Foo bar baz"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -61,7 +61,7 @@ func TestSuspendUser(t *testing.T) {
 			t.Errorf("want suspended reason to be %q; got %q", want, user.SuspendedReason)
 		}
 
-		if err := svc.SuspendUser(ctx, validGuard, user.ID, "Qux"); err != nil {
+		if _, err := svc.SuspendUser(ctx, validGuard, user.ID, "Qux"); err != nil {
 			t.Fatal(err)
 		}
 
@@ -101,7 +101,7 @@ func TestSuspendUser(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.SuspendUser(ctx, tc.guard, tc.userID, "")
+				_, err := svc.SuspendUser(ctx, tc.guard, tc.userID, "")
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
@@ -134,7 +134,7 @@ func TestSuspendUser(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.SuspendUser(ctx, validGuard, user.ID, tc.suspendedReason)
+				_, err := svc.SuspendUser(ctx, validGuard, user.ID, tc.suspendedReason)
 				switch {
 				case err == nil:
 					if user.IsSuspended() {

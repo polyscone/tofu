@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/errsx"
 )
 
-func (s *Service) signInWithTOTP(ctx context.Context, userID int, totp string) error {
+func (s *Service) signInWithTOTP(ctx context.Context, userID int, totp string) (*User, error) {
 	var input struct {
 		userID int
 		totp   TOTP
@@ -24,33 +24,33 @@ func (s *Service) signInWithTOTP(ctx context.Context, userID int, totp string) e
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return fmt.Errorf("find user by id: %w", err)
+		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
 	if err := user.SignInWithTOTP(s.system, input.totp); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
-		return fmt.Errorf("save user: %w", err)
+		return nil, fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return user, nil
 }
 
-func (s *Service) SignInWithTOTP(ctx context.Context, userID int, totp string) error {
-	err := s.signInWithTOTP(ctx, userID, totp)
+func (s *Service) SignInWithTOTP(ctx context.Context, userID int, totp string) (*User, error) {
+	user, err := s.signInWithTOTP(ctx, userID, totp)
 	if err != nil {
-		return fmt.Errorf("%w: %w", ErrAuth, err)
+		return nil, fmt.Errorf("%w: %w", ErrAuth, err)
 	}
 
-	return nil
+	return user, nil
 }

@@ -13,13 +13,13 @@ type InviteUserGuard interface {
 	CanInviteUsers() bool
 }
 
-func (s *Service) InviteUser(ctx context.Context, guard InviteUserGuard, email string) error {
+func (s *Service) InviteUser(ctx context.Context, guard InviteUserGuard, email string) (*User, error) {
 	var input struct {
 		email Email
 	}
 	{
 		if !guard.CanInviteUsers() {
-			return app.ErrForbidden
+			return nil, app.ErrForbidden
 		}
 
 		var err error
@@ -30,7 +30,7 @@ func (s *Service) InviteUser(ctx context.Context, guard InviteUserGuard, email s
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
@@ -38,25 +38,25 @@ func (s *Service) InviteUser(ctx context.Context, guard InviteUserGuard, email s
 	switch {
 	case err == nil:
 		if err := user.Invite(s.system); err != nil {
-			return fmt.Errorf("invite existing user: %w", err)
+			return nil, fmt.Errorf("invite existing user: %w", err)
 		}
 
 	case errors.Is(err, app.ErrNotFound):
 		user = NewUser(input.email)
 
 		if err := user.Invite(s.system); err != nil {
-			return fmt.Errorf("invite new user: %w", err)
+			return nil, fmt.Errorf("invite new user: %w", err)
 		}
 
 		if err := s.repo.AddUser(ctx, user); err != nil {
-			return fmt.Errorf("add user: %w", err)
+			return nil, fmt.Errorf("add user: %w", err)
 		}
 
 	default:
-		return fmt.Errorf("find user by email: %w", err)
+		return nil, fmt.Errorf("find user by email: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return user, nil
 }

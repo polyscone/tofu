@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/errsx"
 )
 
-func (s *Service) RequestTOTPReset(ctx context.Context, email string) error {
+func (s *Service) RequestTOTPReset(ctx context.Context, email string) (*User, error) {
 	var input struct {
 		email Email
 	}
@@ -21,24 +21,24 @@ func (s *Service) RequestTOTPReset(ctx context.Context, email string) error {
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	if err != nil {
-		return fmt.Errorf("find user by email: %w", err)
+		return nil, fmt.Errorf("find user by email: %w", err)
 	}
 
 	if err := user.RequestTOTPReset(); err != nil {
-		return err
+		return nil, err
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
-		return fmt.Errorf("save user: %w", err)
+		return nil, fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return user, nil
 }

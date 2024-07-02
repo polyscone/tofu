@@ -56,7 +56,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		err := h.Svc.System.UpdateConfig(ctx,
+		_, err := h.Svc.System.UpdateConfig(ctx,
 			passport.System,
 			input.SystemEmail,
 			input.SecurityEmail,

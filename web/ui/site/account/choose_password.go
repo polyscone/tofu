@@ -52,7 +52,7 @@ func choosePasswordPost(h *ui.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		err := h.Svc.Account.ChoosePassword(ctx,
+		_, err := h.Svc.Account.ChoosePassword(ctx,
 			passport.Account,
 			user.ID,
 			input.NewPassword,

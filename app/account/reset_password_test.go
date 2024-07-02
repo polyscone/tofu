@@ -35,7 +35,7 @@ func TestResetPassword(t *testing.T) {
 		defer events.Check(t)
 
 		newPassword := errsx.Must(account.NewPassword("password123"))
-		err := svc.ResetPassword(ctx, validGuard, user.ID, newPassword.String(), newPassword.String())
+		_, err := svc.ResetPassword(ctx, validGuard, user.ID, newPassword.String(), newPassword.String())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -74,7 +74,7 @@ func TestResetPassword(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.ResetPassword(ctx, tc.guard, tc.userID, tc.newPassword, tc.newPassword)
+				_, err := svc.ResetPassword(ctx, tc.guard, tc.userID, tc.newPassword, tc.newPassword)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
@@ -111,7 +111,7 @@ func TestResetPassword(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Activate: true})
 
-				err := svc.ResetPassword(ctx, validGuard, user.ID, tc.newPassword, tc.newPasswordCheck)
+				_, err := svc.ResetPassword(ctx, validGuard, user.ID, tc.newPassword, tc.newPasswordCheck)
 				switch {
 				case err == nil:
 					events.Expect(account.PasswordReset{Email: user.Email})

@@ -16,7 +16,7 @@ const (
 	VerifyUserActivate
 )
 
-func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck string, behaviour VerifyUserBehaviour) error {
+func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck string, behaviour VerifyUserBehaviour) (*User, error) {
 	var input struct {
 		email         Email
 		password      Password
@@ -38,27 +38,27 @@ func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	log, err := s.repo.FindSignInAttemptLogByEmail(ctx, email)
 	if err != nil {
-		return fmt.Errorf("find sign in attempt log by email: %w", err)
+		return nil, fmt.Errorf("find sign in attempt log by email: %w", err)
 	}
 
 	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
 	if err != nil {
-		return fmt.Errorf("find user by email: %w", err)
+		return nil, fmt.Errorf("find user by email: %w", err)
 	}
 
 	if err := user.Verify(input.password, s.hasher); err != nil {
-		return err
+		return nil, err
 	}
 
 	if isInvited := !user.InvitedAt.IsZero(); isInvited || behaviour == VerifyUserActivate {
 		if err := user.Activate(); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
@@ -66,14 +66,14 @@ func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck
 	log.LastAttemptAt = time.Time{}
 
 	if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
-		return fmt.Errorf("save sign in attempt log: %w", err)
+		return nil, fmt.Errorf("save sign in attempt log: %w", err)
 	}
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
-		return fmt.Errorf("save user: %w", err)
+		return nil, fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return user, nil
 }

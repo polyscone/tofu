@@ -31,7 +31,7 @@ func TestActivateTOTP(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		err := svc.ActivateTOTP(ctx, validGuard, user.ID)
+		_, err := svc.ActivateTOTP(ctx, validGuard, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -65,7 +65,7 @@ func TestActivateTOTP(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.ActivateTOTP(ctx, tc.guard, tc.userID)
+				_, err := svc.ActivateTOTP(ctx, tc.guard, tc.userID)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

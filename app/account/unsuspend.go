@@ -11,13 +11,13 @@ type UnsuspendUsersGuard interface {
 	CanUnsuspendUsers() bool
 }
 
-func (s *Service) UnsuspendUser(ctx context.Context, guard UnsuspendUsersGuard, userID int) error {
+func (s *Service) UnsuspendUser(ctx context.Context, guard UnsuspendUsersGuard, userID int) (*User, error) {
 	var input struct {
 		userID int
 	}
 	{
 		if !guard.CanUnsuspendUsers() {
-			return app.ErrForbidden
+			return nil, app.ErrForbidden
 		}
 
 		input.userID = userID
@@ -25,16 +25,16 @@ func (s *Service) UnsuspendUser(ctx context.Context, guard UnsuspendUsersGuard, 
 
 	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
-		return fmt.Errorf("find user by id: %w", err)
+		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
 	user.Unsuspend()
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
-		return fmt.Errorf("save user: %w", err)
+		return nil, fmt.Errorf("save user: %w", err)
 	}
 
 	s.broker.Flush(&user.Events)
 
-	return nil
+	return user, nil
 }

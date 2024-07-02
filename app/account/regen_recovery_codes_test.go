@@ -36,7 +36,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 		originals := user.HashedRecoveryCodes
 
 		totp := errsx.Must(user.GenerateTOTP())
-		codes, err := svc.RegenerateRecoveryCodes(ctx, validGuard, user.ID, totp)
+		_, codes, err := svc.RegenerateRecoveryCodes(ctx, validGuard, user.ID, totp)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -98,7 +98,7 @@ func TestRegenRecoveryCodes(t *testing.T) {
 					totp = errsx.Must(tc.totpUser.GenerateTOTP())
 				}
 
-				_, err := svc.RegenerateRecoveryCodes(ctx, tc.guard, tc.userID, totp)
+				_, _, err := svc.RegenerateRecoveryCodes(ctx, tc.guard, tc.userID, totp)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

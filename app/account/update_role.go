@@ -13,7 +13,7 @@ type UpdateRoleGuard interface {
 	CanUpdateRoles() bool
 }
 
-func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID int, name, description string, permissions []string) error {
+func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID int, name, description string, permissions []string) (*Role, error) {
 	var input struct {
 		roleID      int
 		name        RoleName
@@ -22,7 +22,7 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID 
 	}
 	{
 		if !guard.CanUpdateRoles() {
-			return app.ErrForbidden
+			return nil, app.ErrForbidden
 		}
 
 		var err error
@@ -48,13 +48,13 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID 
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
 	role, err := s.repo.FindRoleByID(ctx, roleID)
 	if err != nil {
-		return fmt.Errorf("find role by id: %w", err)
+		return nil, fmt.Errorf("find role by id: %w", err)
 	}
 
 	role.Name = input.name.String()
@@ -68,11 +68,11 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID 
 	if err := s.repo.SaveRole(ctx, role); err != nil {
 		var conflict *app.ConflictError
 		if errors.As(err, &conflict) {
-			return fmt.Errorf("save role: %w: %w", app.ErrConflict, conflict)
+			return nil, fmt.Errorf("save role: %w: %w", app.ErrConflict, conflict)
 		}
 
-		return fmt.Errorf("save role: %w", err)
+		return nil, fmt.Errorf("save role: %w", err)
 	}
 
-	return nil
+	return role, nil
 }

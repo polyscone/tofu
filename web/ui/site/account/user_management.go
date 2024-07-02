@@ -135,16 +135,9 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		err := h.Svc.Account.InviteUser(ctx, passport.Account, input.Email)
+		user, err := h.Svc.Account.InviteUser(ctx, passport.Account, input.Email)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "invite", err, "site/account/management/user/new", nil)
-
-			return
-		}
-
-		user, err := h.Repo.Account.FindUserByEmail(ctx, input.Email)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "invite", err, "site/error", nil)
 
 			return
 		}
@@ -244,7 +237,7 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		err = h.Svc.Account.ChangeRoles(ctx, passport.Account, userID, input.RoleIDs, input.Grants, input.Denials)
+		_, err = h.Svc.Account.ChangeRoles(ctx, passport.Account, userID, input.RoleIDs, input.Grants, input.Denials)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "change roles", err, "site/account/management/user/edit", nil)
 
@@ -289,7 +282,7 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 
 		wasSuspended := user.IsSuspended()
 
-		err = h.Svc.Account.SuspendUser(ctx, passport.Account, userID, input.SuspendedReason)
+		_, err = h.Svc.Account.SuspendUser(ctx, passport.Account, userID, input.SuspendedReason)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "suspend user", err, "site/account/management/user/edit", nil)
 
@@ -314,14 +307,7 @@ func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		userID, _ := strconv.Atoi(r.PathValue("userID"))
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
-
-			return
-		}
-
-		err = h.Svc.Account.UnsuspendUser(ctx, passport.Account, userID)
+		user, err := h.Svc.Account.UnsuspendUser(ctx, passport.Account, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "unsuspend user", err, "site/account/management/user/edit", nil)
 
@@ -362,14 +348,7 @@ func userActivatePost(h *ui.Handler) http.HandlerFunc {
 		passport := h.Passport(ctx)
 
 		userID, _ := strconv.Atoi(r.PathValue("userID"))
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
-
-			return
-		}
-
-		err = h.Svc.Account.ActivateUser(ctx, passport.Account, userID)
+		user, err := h.Svc.Account.ActivateUser(ctx, passport.Account, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "activate user", err, "site/account/management/user/activate", nil)
 
@@ -427,14 +406,8 @@ func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 		config := h.Config(ctx)
 
 		userID, _ := strconv.Atoi(r.PathValue("userID"))
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Svc.Account.ApproveTOTPResetRequest(ctx, userID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
-
-			return
-		}
-
-		if err := h.Svc.Account.ApproveTOTPResetRequest(ctx, user.ID); err != nil {
 			h.HTML.ErrorView(w, r, "approve TOTP reset request", err, "site/error", nil)
 
 			return
@@ -481,14 +454,8 @@ func userTOTPResetDenyPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		userID, _ := strconv.Atoi(r.PathValue("userID"))
-		user, err := h.Repo.Account.FindUserByID(ctx, userID)
+		user, err := h.Svc.Account.DenyTOTPResetRequest(ctx, userID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by id", err, "site/error", nil)
-
-			return
-		}
-
-		if err := h.Svc.Account.DenyTOTPResetRequest(ctx, user.ID); err != nil {
 			h.HTML.ErrorView(w, r, "deny TOTP reset request", err, "site/error", nil)
 
 			return

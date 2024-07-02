@@ -165,16 +165,9 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		err := h.Svc.Account.UpdateRole(ctx, passport.Account, roleID, input.Name, input.Description, input.Permissions)
+		role, err := h.Svc.Account.UpdateRole(ctx, passport.Account, roleID, input.Name, input.Description, input.Permissions)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "update role", err, "site/account/management/role/edit", nil)
-
-			return
-		}
-
-		role, err := h.Repo.Account.FindRoleByID(ctx, roleID)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "find role by id", err, "site/error", nil)
 
 			return
 		}
@@ -231,14 +224,7 @@ func roleDeletePost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		role, err := h.Repo.Account.FindRoleByID(ctx, roleID)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "find role by id", err, "site/error", nil)
-
-			return
-		}
-
-		err = h.Svc.Account.DeleteRole(ctx, passport.Account, roleID)
+		role, err := h.Svc.Account.DeleteRole(ctx, passport.Account, roleID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "delete role", err, "site/error", nil)
 

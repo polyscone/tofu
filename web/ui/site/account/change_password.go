@@ -54,7 +54,7 @@ func changePasswordPost(h *ui.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		err := h.Svc.Account.ChangePassword(ctx,
+		_, err := h.Svc.Account.ChangePassword(ctx,
 			passport.Account,
 			user.ID,
 			input.OldPassword,

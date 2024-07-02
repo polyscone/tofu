@@ -20,7 +20,7 @@ func TestSignInWithFacebook(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		signedIn, err := svc.SignInWithFacebook(ctx, user1.Email, account.FacebookSignInOnly)
+		_, signedIn, err := svc.SignInWithFacebook(ctx, user1.Email, account.FacebookSignInOnly)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -58,7 +58,7 @@ func TestSignInWithFacebook(t *testing.T) {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
-		signedIn, err = svc.SignInWithFacebook(ctx, "bar@example.com", account.FacebookAllowSignUpActivate)
+		_, signedIn, err = svc.SignInWithFacebook(ctx, "bar@example.com", account.FacebookAllowSignUpActivate)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -114,7 +114,7 @@ func TestSignInWithFacebook(t *testing.T) {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
-		signedIn, err = svc.SignInWithFacebook(ctx, "bar@example.com", account.FacebookSignInOnly)
+		_, signedIn, err = svc.SignInWithFacebook(ctx, "bar@example.com", account.FacebookSignInOnly)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -174,7 +174,7 @@ func TestSignInWithFacebook(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				signedIn, err := svc.SignInWithFacebook(ctx, tc.email, tc.behaviour)
+				_, signedIn, err := svc.SignInWithFacebook(ctx, tc.email, tc.behaviour)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
@@ -215,7 +215,7 @@ func TestSignInWithFacebook(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				signedIn, err := svc.SignInWithFacebook(ctx, tc.email, account.FacebookAllowSignUpActivate)
+				_, signedIn, err := svc.SignInWithFacebook(ctx, tc.email, account.FacebookAllowSignUpActivate)
 				switch {
 				case err == nil:
 					events.Expect(account.SignedIn{

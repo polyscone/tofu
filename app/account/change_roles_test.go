@@ -46,7 +46,7 @@ func TestChangeRoles(t *testing.T) {
 				roleIDs := []int{role1.ID, role2.ID}
 				grants := []string{"a", "b", "c"}
 				denials := []string{"b", "c", "d"}
-				err := svc.ChangeRoles(ctx, validGuard, user.ID, roleIDs, grants, denials)
+				_, err := svc.ChangeRoles(ctx, validGuard, user.ID, roleIDs, grants, denials)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -127,7 +127,7 @@ func TestChangeRoles(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				err := svc.ChangeRoles(ctx, tc.guard, tc.userID, tc.roleIDs, nil, nil)
+				_, err := svc.ChangeRoles(ctx, tc.guard, tc.userID, tc.roleIDs, nil, nil)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
