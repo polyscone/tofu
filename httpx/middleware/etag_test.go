@@ -7,7 +7,7 @@ import (
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/httpx/middleware"
 	"github.com/polyscone/tofu/httpx/router"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestETag(t *testing.T) {
@@ -37,7 +37,7 @@ func TestETag(t *testing.T) {
 		}
 	})
 
-	ts := testutil.NewServer(t, mux)
+	ts := testx.NewServer(t, mux)
 	defer ts.Close()
 
 	tt := []struct {

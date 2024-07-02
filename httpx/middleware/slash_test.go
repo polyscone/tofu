@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/httpx/middleware"
 	"github.com/polyscone/tofu/httpx/router"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestRemoveTrailingSlash(t *testing.T) {
@@ -34,7 +34,7 @@ func TestRemoveTrailingSlash(t *testing.T) {
 	mux.HandleFunc("PATCH /foo/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(r.URL.String())) })
 	mux.HandleFunc("DELETE /foo/", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(r.URL.String())) })
 
-	ts := testutil.NewServer(t, mux)
+	ts := testx.NewServer(t, mux)
 	defer ts.Close()
 
 	tt := []struct {

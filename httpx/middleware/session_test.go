@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/httpx/middleware"
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/session"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestSession(t *testing.T) {
@@ -48,7 +48,7 @@ func TestSession(t *testing.T) {
 		}
 	})
 
-	ts := testutil.NewServer(t, mux)
+	ts := testx.NewServer(t, mux)
 	defer ts.Close()
 
 	var sessionCookie *http.Cookie

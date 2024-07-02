@@ -7,7 +7,7 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestSignInWithFacebook(t *testing.T) {
@@ -17,7 +17,7 @@ func TestSignInWithFacebook(t *testing.T) {
 
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", ActivateTOTP: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		signedIn, err := svc.SignInWithFacebook(ctx, user1.Email, account.FacebookSignInOnly)
@@ -154,7 +154,7 @@ func TestSignInWithFacebook(t *testing.T) {
 		user4 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", Verify: true, Suspend: true})
 		user5 := MustAddUser(t, ctx, repo, TestUser{Email: "baz@qux.com", Activate: true, Suspend: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {
@@ -195,7 +195,7 @@ func TestSignInWithFacebook(t *testing.T) {
 
 		MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Verify: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

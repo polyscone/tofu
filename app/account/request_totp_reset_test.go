@@ -7,7 +7,7 @@ import (
 
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestRequestTOTPReset(t *testing.T) {
@@ -17,7 +17,7 @@ func TestRequestTOTPReset(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", ActivateTOTP: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		err := svc.RequestTOTPReset(ctx, user.Email)
@@ -39,7 +39,7 @@ func TestRequestTOTPReset(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", SetupTOTPTel: true, VerifyTOTP: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

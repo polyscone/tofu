@@ -8,13 +8,13 @@ import (
 
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/httpx/router"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestMux2(t *testing.T) {
 	mux := router.NewServeMux()
 
-	ts := testutil.NewServer(t, mux)
+	ts := testx.NewServer(t, mux)
 	defer ts.Close()
 
 	echoHandler := func(w http.ResponseWriter, r *http.Request) {

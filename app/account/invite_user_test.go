@@ -7,7 +7,7 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 type inviteUserGuard struct {
@@ -26,7 +26,7 @@ func TestInviteUser(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		if err := svc.InviteUser(ctx, validGuard, "foo@example.com"); err != nil {
@@ -72,7 +72,7 @@ func TestInviteUser(t *testing.T) {
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Verify: true})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "bar@example.com", Activate: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {
@@ -103,7 +103,7 @@ func TestInviteUser(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, _ := NewTestEnvWithSystem(ctx, "site")
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

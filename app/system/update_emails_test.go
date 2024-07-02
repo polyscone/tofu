@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/system"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 type updateEmailsGuard struct {
@@ -28,7 +28,7 @@ func TestUpdateEmails(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		systemEmail := "foo@example.com"
@@ -70,7 +70,7 @@ func TestUpdateEmails(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, _ := NewTestEnv(ctx)
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		type vals map[string]any

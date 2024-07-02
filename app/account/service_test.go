@@ -10,10 +10,10 @@ import (
 	"github.com/polyscone/tofu/event"
 	"github.com/polyscone/tofu/otp"
 	"github.com/polyscone/tofu/sqlite"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
-var hasher = testutil.NewPasswordHasher()
+var hasher = testx.NewPasswordHasher()
 
 func NewTestEnvWithSystem(ctx context.Context, system string) (*account.Service, event.Broker, account.ReadWriter) {
 	broker := event.NewMemoryBroker()

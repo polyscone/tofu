@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 type setupTOTPGuard struct {
@@ -30,7 +30,7 @@ func TestSetupTOTP(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Activate: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		err := svc.SetupTOTP(ctx, validGuard, user.ID)
@@ -82,7 +82,7 @@ func TestSetupTOTP(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "lisa@jones.com", VerifyTOTP: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		err := svc.SetupTOTP(ctx, validGuard, user.ID)
@@ -122,7 +122,7 @@ func TestSetupTOTP(t *testing.T) {
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", ActivateTOTP: true})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@bloggs.com", Verify: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

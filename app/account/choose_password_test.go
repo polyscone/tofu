@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 type choosePasswordGuard struct {
@@ -31,7 +31,7 @@ func TestChoosePassword(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", VerifyNoPassword: true, Activate: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		newPassword := errsx.Must(account.NewPassword("password123"))
@@ -61,7 +61,7 @@ func TestChoosePassword(t *testing.T) {
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "alan@doe.com", Verify: true, Activate: true})
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@doe.com", VerifyNoPassword: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {
@@ -94,7 +94,7 @@ func TestChoosePassword(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

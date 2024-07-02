@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/otp"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestSignInWithTOTP(t *testing.T) {
@@ -53,7 +53,7 @@ func TestSignInWithTOTP(t *testing.T) {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		totp := errsx.Must(user.GenerateTOTP())
@@ -102,7 +102,7 @@ func TestSignInWithTOTP(t *testing.T) {
 		user9 := MustAddUser(t, ctx, repo, TestUser{Email: "bob+suspended@jones.com", ActivateTOTP: true, Suspend: true})
 		user10 := MustAddUser(t, ctx, repo, TestUser{Email: "jane+suspended@jones.com", Activate: true, Suspend: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {
@@ -152,7 +152,7 @@ func TestSignInWithTOTP(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

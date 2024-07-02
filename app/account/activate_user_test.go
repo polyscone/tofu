@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 type activateUsersGuard struct {
@@ -30,7 +30,7 @@ func TestActivateUser(t *testing.T) {
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com"})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		if err := svc.VerifyUser(ctx, user1.Email, "password", "password", account.VerifyUserOnly); err != nil {
@@ -89,7 +89,7 @@ func TestActivateUser(t *testing.T) {
 		user1 := MustAddUser(t, ctx, repo, TestUser{Email: "john@doe.com"})
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jane@doe.com", Activate: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

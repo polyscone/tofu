@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestSignInWithRecoveryCode(t *testing.T) {
@@ -54,7 +54,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 			t.Errorf("want last signed in method to be %q; got %q", want, got)
 		}
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		// We're using the saved slice of code hashes here because reading the
@@ -110,7 +110,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@bloggs.com", Verify: true})
 		user4, user4Codes := MustAddUserRecoveryCodes(t, ctx, repo, TestUser{Email: "foo@bar.com", ActivateTOTP: true, Suspend: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		incorrectCode := errsx.Must(account.NewRandomRecoveryCode()).String()
@@ -146,7 +146,7 @@ func TestSignInWithRecoveryCode(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

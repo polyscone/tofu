@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestSignUpInitialUser(t *testing.T) {
@@ -23,7 +23,7 @@ func TestSignUpInitialUser(t *testing.T) {
 		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 		roleIDs := []int{role1.ID, role2.ID}
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		password := errsx.Must(account.NewPassword("password123"))
@@ -92,7 +92,7 @@ func TestSignUpInitialUser(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, _ := NewTestEnvWithSystem(ctx, "site")
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/httpx/middleware"
 	"github.com/polyscone/tofu/httpx/router"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestMethodOverride(t *testing.T) {
@@ -21,7 +21,7 @@ func TestMethodOverride(t *testing.T) {
 	mux.HandleFunc("PATCH /", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodPatch)) })
 	mux.HandleFunc("DELETE /", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte(http.MethodDelete)) })
 
-	ts := testutil.NewServer(t, mux)
+	ts := testx.NewServer(t, mux)
 	defer ts.Close()
 
 	tt := []struct {

@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 type deleteRoleGuard struct {
@@ -30,7 +30,7 @@ func TestDeleteRole(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

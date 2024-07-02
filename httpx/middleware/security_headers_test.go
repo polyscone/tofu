@@ -7,7 +7,7 @@ import (
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/httpx/middleware"
 	"github.com/polyscone/tofu/httpx/router"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestSecurityHeaders(t *testing.T) {
@@ -15,7 +15,7 @@ func TestSecurityHeaders(t *testing.T) {
 
 	mux.Use(middleware.SecurityHeaders(nil))
 
-	ts := testutil.NewServer(t, mux)
+	ts := testx.NewServer(t, mux)
 	defer ts.Close()
 
 	req := errsx.Must(http.NewRequest(http.MethodGet, ts.URL, nil))

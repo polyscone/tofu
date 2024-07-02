@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 type setRolesGuard struct {
@@ -40,7 +40,7 @@ func TestChangeRoles(t *testing.T) {
 				role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 				role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 
-				events := testutil.NewEventLog(broker)
+				events := testx.NewEventLog(broker)
 				defer events.Check(t)
 
 				roleIDs := []int{role1.ID, role2.ID}
@@ -111,7 +111,7 @@ func TestChangeRoles(t *testing.T) {
 		role1 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 1", Permissions: []string{"1", "2"}})
 		role2 := MustAddRole(t, ctx, repo, TestRole{Name: "Role 2", Permissions: []string{"2", "3"}})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

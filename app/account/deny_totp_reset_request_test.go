@@ -6,7 +6,7 @@ import (
 
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestDenyTOTPResetRequest(t *testing.T) {
@@ -16,7 +16,7 @@ func TestDenyTOTPResetRequest(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", ActivateTOTP: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		err := svc.RequestTOTPReset(ctx, user.Email)

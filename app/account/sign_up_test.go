@@ -8,7 +8,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestSignUp(t *testing.T) {
@@ -16,7 +16,7 @@ func TestSignUp(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnvWithSystem(ctx, "site")
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		if err := svc.SignUp(ctx, "foo@example.com"); err != nil {
@@ -63,7 +63,7 @@ func TestSignUp(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", SignUpSystem: "site", Verify: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		if err := svc.SignUp(ctx, user.Email); err != nil {
@@ -95,7 +95,7 @@ func TestSignUp(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", SignUpSystem: "site", Activate: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		if err := svc.SignUp(ctx, user.Email); err != nil {
@@ -125,7 +125,7 @@ func TestSignUp(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, repo := NewTestEnv(ctx)
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

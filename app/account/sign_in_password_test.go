@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestSignInWithPassword(t *testing.T) {
@@ -19,7 +19,7 @@ func TestSignInWithPassword(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Activate: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		if !user.LastSignedInAt.IsZero() {
@@ -147,7 +147,7 @@ func TestSignInWithPassword(t *testing.T) {
 		user5 := MustAddUser(t, ctx, repo, TestUser{Email: "foo@bar.com", Verify: true, Suspend: true})
 		user6 := MustAddUser(t, ctx, repo, TestUser{Email: "baz@qux.com", Activate: true, Suspend: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {
@@ -190,7 +190,7 @@ func TestSignInWithPassword(t *testing.T) {
 
 		MustAddUser(t, ctx, repo, TestUser{Email: "foo@example.com", Activate: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

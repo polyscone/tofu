@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 type suspendUserGuard struct {
@@ -34,7 +34,7 @@ func TestSuspendUser(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		if user.IsSuspended() {
@@ -88,7 +88,7 @@ func TestSuspendUser(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, _ := NewTestEnv(ctx)
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {
@@ -119,7 +119,7 @@ func TestSuspendUser(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "john@doe.com"})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

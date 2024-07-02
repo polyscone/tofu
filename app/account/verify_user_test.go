@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 func TestVerifyUser(t *testing.T) {
@@ -19,7 +19,7 @@ func TestVerifyUser(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		if err := svc.VerifyUser(ctx, user.Email, "password", "password", account.VerifyUserOnly); err != nil {
@@ -45,7 +45,7 @@ func TestVerifyUser(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com"})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		if err := svc.VerifyUser(ctx, user.Email, "password", "password", account.VerifyUserActivate); err != nil {
@@ -76,7 +76,7 @@ func TestVerifyUser(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Invited: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		if err := svc.VerifyUser(ctx, user.Email, "password", "password", account.VerifyUserOnly); err != nil {
@@ -107,7 +107,7 @@ func TestVerifyUser(t *testing.T) {
 
 		user := MustAddUser(t, ctx, repo, TestUser{Email: "joe@bloggs.com", Verify: true})
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		if err := svc.VerifyUser(ctx, user.Email, "password", "password", account.VerifyUserOnly); err == nil {
@@ -119,7 +119,7 @@ func TestVerifyUser(t *testing.T) {
 		ctx := context.Background()
 		svc, broker, _ := NewTestEnv(ctx)
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {

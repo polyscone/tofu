@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/testutil"
+	"github.com/polyscone/tofu/testx"
 )
 
 type resetTOTPGuard struct {
@@ -38,7 +38,7 @@ func TestResetTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		err := svc.ResetTOTP(ctx, validGuard, user.ID, "password")
@@ -103,7 +103,7 @@ func TestResetTOTP(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		events := testutil.NewEventLog(broker)
+		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
 		tt := []struct {
