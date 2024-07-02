@@ -16,7 +16,7 @@ type disableTOTPGuard struct {
 	value bool
 }
 
-func (g disableTOTPGuard) CanDisableTOTP(userID string) bool {
+func (g disableTOTPGuard) CanDisableTOTP(userID int) bool {
 	return g.value
 }
 
@@ -86,11 +86,11 @@ func TestDisableTOTP(t *testing.T) {
 		tt := []struct {
 			name     string
 			guard    disableTOTPGuard
-			userID   string
+			userID   int
 			password string
 			want     error
 		}{
-			{"invalid guard", invalidGuard, "", "", app.ErrForbidden},
+			{"invalid guard", invalidGuard, 0, "", app.ErrForbidden},
 			{"incorrect password", validGuard, user2.ID, "12345678", nil},
 			{"unactivated TOTP", validGuard, user1.ID, "password", nil},
 		}

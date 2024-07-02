@@ -55,12 +55,7 @@ func (s *Service) signInWithFacebook(ctx context.Context, email string, behaviou
 			return false, ErrFacebookSignUpDisabled
 		}
 
-		id, err := s.repo.NextUserID(ctx)
-		if err != nil {
-			return false, fmt.Errorf("next user id: %w", err)
-		}
-
-		user = NewUser(id, input.email)
+		user = NewUser(input.email)
 
 		user.SignUpWithFacebook(s.system)
 

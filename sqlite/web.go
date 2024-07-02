@@ -469,7 +469,7 @@ func (r *WebRepo) upsertSession(ctx context.Context, tx *Tx, sess session.Sessio
 			:created_at,
 			:updated_at
 		)
-		on conflict do
+		on conflict (id) do
 			update set
 				data = excluded.data,
 				updated_at = :updated_at

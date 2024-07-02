@@ -91,10 +91,10 @@ func TestUnsuspendUser(t *testing.T) {
 		tt := []struct {
 			name   string
 			guard  unsuspendUserGuard
-			userID string
+			userID int
 			want   error
 		}{
-			{"invalid guard", invalidGuard, "", app.ErrForbidden},
+			{"invalid guard", invalidGuard, 0, app.ErrForbidden},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

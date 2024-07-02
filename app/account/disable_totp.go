@@ -10,12 +10,12 @@ import (
 )
 
 type DisableTOTPGuard interface {
-	CanDisableTOTP(userID string) bool
+	CanDisableTOTP(userID int) bool
 }
 
-func (s *Service) DisableTOTP(ctx context.Context, guard DisableTOTPGuard, userID, password string) error {
+func (s *Service) DisableTOTP(ctx context.Context, guard DisableTOTPGuard, userID int, password string) error {
 	var input struct {
-		userID   UserID
+		userID   int
 		password Password
 	}
 	{
@@ -26,9 +26,8 @@ func (s *Service) DisableTOTP(ctx context.Context, guard DisableTOTPGuard, userI
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
-			errs.Set("user id", err)
-		}
+		input.userID = userID
+
 		if input.password, err = NewPassword(password); err != nil {
 			errs.Set("password", err)
 		}
@@ -38,7 +37,7 @@ func (s *Service) DisableTOTP(ctx context.Context, guard DisableTOTPGuard, userI
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}

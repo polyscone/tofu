@@ -20,7 +20,7 @@ func (g suspendUserGuard) CanSuspendUsers() bool {
 	return g.value
 }
 
-func (g suspendUserGuard) CanChangeRoles(userID string) bool {
+func (g suspendUserGuard) CanChangeRoles(userID int) bool {
 	return true
 }
 
@@ -94,10 +94,10 @@ func TestSuspendUser(t *testing.T) {
 		tt := []struct {
 			name   string
 			guard  suspendUserGuard
-			userID string
+			userID int
 			want   error
 		}{
-			{"invalid guard", invalidGuard, "", app.ErrForbidden},
+			{"invalid guard", invalidGuard, 0, app.ErrForbidden},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {

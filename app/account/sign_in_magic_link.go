@@ -55,12 +55,7 @@ func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavio
 			return false, ErrMagicLinkSignUpDisabled
 		}
 
-		id, err := s.repo.NextUserID(ctx)
-		if err != nil {
-			return false, fmt.Errorf("next user id: %w", err)
-		}
-
-		user = NewUser(id, input.email)
+		user = NewUser(input.email)
 
 		user.SignUpWithMagicLink(s.system)
 

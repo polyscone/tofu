@@ -5,35 +5,25 @@ import (
 	"fmt"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/errsx"
 )
 
 type UnsuspendUsersGuard interface {
 	CanUnsuspendUsers() bool
 }
 
-func (s *Service) UnsuspendUser(ctx context.Context, guard UnsuspendUsersGuard, userID string) error {
+func (s *Service) UnsuspendUser(ctx context.Context, guard UnsuspendUsersGuard, userID int) error {
 	var input struct {
-		userID UserID
+		userID int
 	}
 	{
 		if !guard.CanUnsuspendUsers() {
 			return app.ErrForbidden
 		}
 
-		var err error
-		var errs errsx.Map
-
-		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
-			errs.Set("user id", err)
-		}
-
-		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
+		input.userID = userID
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}

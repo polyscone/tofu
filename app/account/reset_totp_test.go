@@ -16,7 +16,7 @@ type resetTOTPGuard struct {
 	value bool
 }
 
-func (g resetTOTPGuard) CanResetTOTP(userID string) bool {
+func (g resetTOTPGuard) CanResetTOTP(userID int) bool {
 	return g.value
 }
 
@@ -109,11 +109,11 @@ func TestResetTOTP(t *testing.T) {
 		tt := []struct {
 			name     string
 			guard    resetTOTPGuard
-			userID   string
+			userID   int
 			password string
 			want     error
 		}{
-			{"invalid guard", invalidGuard, "", "", app.ErrForbidden},
+			{"invalid guard", invalidGuard, 0, "", app.ErrForbidden},
 			{"unactivated TOTP", validGuard, user1.ID, "password", nil},
 			{"no reset requested approved", validGuard, user2.ID, "password", nil},
 			{"incorrect password", validGuard, user3.ID, "123123123", nil},

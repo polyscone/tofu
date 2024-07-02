@@ -107,12 +107,12 @@ func TestSignInWithTOTP(t *testing.T) {
 
 		tt := []struct {
 			name     string
-			userID   string
+			userID   int
 			totpUser *account.User
 			want     error
 		}{
-			{"empty user id correct TOTP", "", user4, app.ErrNotFound},
-			{"empty user id incorrect TOTP", "", nil, app.ErrNotFound},
+			{"non-existent user id correct TOTP", 999, user4, app.ErrNotFound},
+			{"non-existent user id incorrect TOTP", 999, nil, app.ErrNotFound},
 			{"activated user id no TOTP", user5.ID, nil, nil},
 			{"activated user id incorrect TOTP", user4.ID, nil, app.ErrInvalidInput},
 			{"activated user id unverified correct TOTP", user2.ID, user2, nil},
@@ -127,10 +127,6 @@ func TestSignInWithTOTP(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				if tc.userID == "" {
-					tc.userID = errsx.Must(repo.NextUserID(ctx)).String()
-				}
-
 				totp := "000000"
 				if tc.totpUser != nil {
 					var err error

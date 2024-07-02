@@ -287,7 +287,7 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, jwt string) (bool
 	return signedIn, nil
 }
 
-func SignInWithFacebook(ctx context.Context, h *handler.Handler, userID, accessToken, email string) (bool, error) {
+func SignInWithFacebook(ctx context.Context, h *handler.Handler, userID string, accessToken, email string) (bool, error) {
 	config := h.Config(ctx)
 
 	if !config.FacebookSignInEnabled {

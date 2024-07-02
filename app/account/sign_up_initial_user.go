@@ -9,18 +9,19 @@ import (
 	"github.com/polyscone/tofu/errsx"
 )
 
-func (s *Service) signUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []string) error {
+func (s *Service) signUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []int) error {
 	var input struct {
 		email         Email
 		password      Password
 		passwordCheck Password
-		roleIDs       []string
+		roleIDs       []int
 	}
 	{
 		var err error
 		var errs errsx.Map
 
 		input.passwordCheck, _ = NewPassword(passwordCheck)
+
 		input.roleIDs = roleIDs
 
 		if input.email, err = NewEmail(email); err != nil {
@@ -59,12 +60,7 @@ func (s *Service) signUpInitialUser(ctx context.Context, email, password, passwo
 		return errors.New("cannot sign up initial user when other users already exist")
 	}
 
-	id, err := s.repo.NextUserID(ctx)
-	if err != nil {
-		return fmt.Errorf("next user id: %w", err)
-	}
-
-	user := NewUser(id, input.email)
+	user := NewUser(input.email)
 
 	if err := user.SignUpAsInitialUser(s.system, roles, input.password, s.hasher); err != nil {
 		return fmt.Errorf("sign up: %w", err)
@@ -79,7 +75,7 @@ func (s *Service) signUpInitialUser(ctx context.Context, email, password, passwo
 	return nil
 }
 
-func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []string) error {
+func (s *Service) SignUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []int) error {
 	err := s.signUpInitialUser(ctx, email, password, passwordCheck, roleIDs)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrAuth, err)

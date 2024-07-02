@@ -1,5 +1,5 @@
 create table system__config (
-	id                            text not null primary key,
+	id                            integer primary key autoincrement,
 	system_email                  text not null collate nocase,
 	security_email                text not null collate nocase,
 	sign_up_enabled               integer not null,

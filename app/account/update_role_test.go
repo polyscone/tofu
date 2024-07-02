@@ -8,7 +8,6 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/testutil"
 )
 
@@ -67,13 +66,12 @@ func TestUpdateRole(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				roleID := errsx.Must(repo.NextRoleID(ctx))
-				err := svc.CreateRole(ctx, tc.guard, roleID.String(), tc.before.Name, tc.before.Description, tc.before.Permissions)
+				role, err := svc.CreateRole(ctx, tc.guard, tc.before.Name, tc.before.Description, tc.before.Permissions)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				err = svc.UpdateRole(ctx, tc.guard, roleID.String(), tc.after.Name, tc.after.Description, tc.after.Permissions)
+				err = svc.UpdateRole(ctx, tc.guard, role.ID, tc.after.Name, tc.after.Description, tc.after.Permissions)
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
 				}
@@ -82,7 +80,7 @@ func TestUpdateRole(t *testing.T) {
 					return
 				}
 
-				after, err := repo.FindRoleByID(ctx, roleID.String())
+				after, err := repo.FindRoleByID(ctx, role.ID)
 				if err != nil {
 					t.Fatal(err)
 				}

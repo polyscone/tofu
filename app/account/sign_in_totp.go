@@ -8,18 +8,17 @@ import (
 	"github.com/polyscone/tofu/errsx"
 )
 
-func (s *Service) signInWithTOTP(ctx context.Context, userID, totp string) error {
+func (s *Service) signInWithTOTP(ctx context.Context, userID int, totp string) error {
 	var input struct {
-		userID UserID
+		userID int
 		totp   TOTP
 	}
 	{
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
-			errs.Set("user id", err)
-		}
+		input.userID = userID
+
 		if input.totp, err = NewTOTP(totp); err != nil {
 			errs.Set("totp", err)
 		}
@@ -29,7 +28,7 @@ func (s *Service) signInWithTOTP(ctx context.Context, userID, totp string) error
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}
@@ -47,7 +46,7 @@ func (s *Service) signInWithTOTP(ctx context.Context, userID, totp string) error
 	return nil
 }
 
-func (s *Service) SignInWithTOTP(ctx context.Context, userID, totp string) error {
+func (s *Service) SignInWithTOTP(ctx context.Context, userID int, totp string) error {
 	err := s.signInWithTOTP(ctx, userID, totp)
 	if err != nil {
 		return fmt.Errorf("%w: %w", ErrAuth, err)

@@ -156,10 +156,10 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 			FlashImportant: rn.h.Sessions.PopStrings(ctx, sess.FlashImportant),
 			FlashError:     rn.h.Sessions.PopStrings(ctx, sess.FlashError),
 			Redirect:       rn.h.Sessions.GetString(ctx, sess.Redirect),
-			HighlightID:    rn.h.Sessions.PopString(ctx, sess.HighlightID),
+			HighlightID:    rn.h.Sessions.PopInt(ctx, sess.HighlightID),
 
 			// Account session keys
-			UserID:                   rn.h.Sessions.GetString(ctx, sess.UserID),
+			UserID:                   rn.h.Sessions.GetInt(ctx, sess.UserID),
 			Email:                    rn.h.Sessions.GetString(ctx, sess.Email),
 			TOTPMethod:               rn.h.Sessions.GetString(ctx, sess.TOTPMethod),
 			HasActivatedTOTP:         rn.h.Sessions.GetBool(ctx, sess.HasActivatedTOTP),

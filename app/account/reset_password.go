@@ -9,12 +9,12 @@ import (
 )
 
 type ResetPasswordGuard interface {
-	CanResetPassword(userID string) bool
+	CanResetPassword(userID int) bool
 }
 
-func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, userID string, newPassword, newPasswordCheck string) error {
+func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, userID int, newPassword, newPasswordCheck string) error {
 	var input struct {
-		userID           UserID
+		userID           int
 		email            Email
 		newPassword      Password
 		newPasswordCheck Password
@@ -29,9 +29,8 @@ func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, u
 
 		newPasswordCheck, _ := NewPassword(newPasswordCheck)
 
-		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
-			errs.Set("user id", err)
-		}
+		input.userID = userID
+
 		if input.newPassword, err = NewPassword(newPassword); err != nil {
 			errs.Set("new password", err)
 		} else if !input.newPassword.Equal(newPasswordCheck) {
@@ -43,7 +42,7 @@ func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, u
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}

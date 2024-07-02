@@ -10,12 +10,12 @@ import (
 )
 
 type ResetTOTPGuard interface {
-	CanResetTOTP(userID string) bool
+	CanResetTOTP(userID int) bool
 }
 
-func (s *Service) ResetTOTP(ctx context.Context, guard ResetTOTPGuard, userID, password string) error {
+func (s *Service) ResetTOTP(ctx context.Context, guard ResetTOTPGuard, userID int, password string) error {
 	var input struct {
-		userID   UserID
+		userID   int
 		password Password
 	}
 	{
@@ -26,9 +26,8 @@ func (s *Service) ResetTOTP(ctx context.Context, guard ResetTOTPGuard, userID, p
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
-			errs.Set("user id", err)
-		}
+		input.userID = userID
+
 		if input.password, err = NewPassword(password); err != nil {
 			errs.Set("password", err)
 		}
@@ -38,7 +37,7 @@ func (s *Service) ResetTOTP(ctx context.Context, guard ResetTOTPGuard, userID, p
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by email: %w", err)
 	}

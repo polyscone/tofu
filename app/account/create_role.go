@@ -13,24 +13,20 @@ type CreateRoleGuard interface {
 	CanCreateRoles() bool
 }
 
-func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, roleID, name, description string, permissions []string) error {
+func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, description string, permissions []string) (*Role, error) {
 	var input struct {
-		roleID      RoleID
 		name        RoleName
 		description RoleDesc
 		permissions []Permission
 	}
 	{
 		if !guard.CanCreateRoles() {
-			return app.ErrForbidden
+			return nil, app.ErrForbidden
 		}
 
 		var err error
 		var errs errsx.Map
 
-		if input.roleID, err = s.repo.ParseRoleID(roleID); err != nil {
-			errs.Set("role id", err)
-		}
 		if input.name, err = NewRoleName(name); err != nil {
 			errs.Set("name", err)
 		}
@@ -49,20 +45,20 @@ func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, roleID,
 		}
 
 		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 		}
 	}
 
-	role := NewRole(input.roleID, input.name, input.description, input.permissions)
+	role := NewRole(input.name, input.description, input.permissions)
 
 	if err := s.repo.AddRole(ctx, role); err != nil {
 		var conflict *app.ConflictError
 		if errors.As(err, &conflict) {
-			return fmt.Errorf("add role: %w: %w", app.ErrConflict, conflict)
+			return nil, fmt.Errorf("add role: %w: %w", app.ErrConflict, conflict)
 		}
 
-		return fmt.Errorf("add role: %w", err)
+		return nil, fmt.Errorf("add role: %w", err)
 	}
 
-	return nil
+	return role, nil
 }

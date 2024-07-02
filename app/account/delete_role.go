@@ -5,35 +5,25 @@ import (
 	"fmt"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/errsx"
 )
 
 type DeleteRoleGuard interface {
 	CanDeleteRoles() bool
 }
 
-func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID string) error {
+func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID int) error {
 	var input struct {
-		roleID RoleID
+		roleID int
 	}
 	{
 		if !guard.CanDeleteRoles() {
 			return app.ErrForbidden
 		}
 
-		var err error
-		var errs errsx.Map
-
-		if input.roleID, err = s.repo.ParseRoleID(roleID); err != nil {
-			errs.Set("role id", err)
-		}
-
-		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
+		input.roleID = roleID
 	}
 
-	err := s.repo.RemoveRole(ctx, input.roleID.String())
+	err := s.repo.RemoveRole(ctx, input.roleID)
 	if err != nil {
 		return fmt.Errorf("remove role: %w", err)
 	}

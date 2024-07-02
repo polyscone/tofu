@@ -9,12 +9,12 @@ import (
 )
 
 type ChangeTOTPTelGuard interface {
-	CanChangeTOTPTel(userID string) bool
+	CanChangeTOTPTel(userID int) bool
 }
 
-func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, userID string, newTel string) error {
+func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, userID int, newTel string) error {
 	var input struct {
-		userID UserID
+		userID int
 		newTel Tel
 	}
 	{
@@ -25,9 +25,8 @@ func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, u
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
-			errs.Set("user id", err)
-		}
+		input.userID = userID
+
 		if input.newTel, err = NewTel(newTel); err != nil {
 			errs.Set("new phone", err)
 		}
@@ -37,7 +36,7 @@ func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, u
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}

@@ -6,35 +6,25 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/errsx"
 )
 
 type ActivateUsersGuard interface {
 	CanActivateUsers() bool
 }
 
-func (s *Service) ActivateUser(ctx context.Context, guard ActivateUsersGuard, userID string) error {
+func (s *Service) ActivateUser(ctx context.Context, guard ActivateUsersGuard, userID int) error {
 	var input struct {
-		userID UserID
+		userID int
 	}
 	{
 		if !guard.CanActivateUsers() {
 			return app.ErrForbidden
 		}
 
-		var err error
-		var errs errsx.Map
-
-		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
-			errs.Set("user id", err)
-		}
-
-		if errs != nil {
-			return fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
+		input.userID = userID
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by email: %w", err)
 	}

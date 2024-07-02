@@ -12,9 +12,9 @@ type SuspendUsersGuard interface {
 	CanSuspendUsers() bool
 }
 
-func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, userID, suspendedReason string) error {
+func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, userID int, suspendedReason string) error {
 	var input struct {
-		userID          UserID
+		userID          int
 		suspendedReason SuspendedReason
 	}
 	{
@@ -25,9 +25,8 @@ func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, user
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
-			errs.Set("user id", err)
-		}
+		input.userID = userID
+
 		if input.suspendedReason, err = NewSuspendedReason(suspendedReason); err != nil {
 			errs.Set("suspended reason", err)
 		}
@@ -37,7 +36,7 @@ func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, user
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}

@@ -16,7 +16,7 @@ type verifyTOTPGuard struct {
 	value bool
 }
 
-func (g verifyTOTPGuard) CanVerifyTOTP(userID string) bool {
+func (g verifyTOTPGuard) CanVerifyTOTP(userID int) bool {
 	return g.value
 }
 
@@ -116,22 +116,18 @@ func TestVerifyTOTP(t *testing.T) {
 		tt := []struct {
 			name     string
 			guard    verifyTOTPGuard
-			userID   string
+			userID   int
 			totpUser *account.User
 			want     error
 		}{
-			{"invalid guard", invalidGuard, "", nil, app.ErrForbidden},
-			{"empty user id correct TOTP", validGuard, "", user2, app.ErrNotFound},
-			{"empty user id incorrect TOTP", validGuard, "", nil, app.ErrNotFound},
+			{"invalid guard", invalidGuard, 0, nil, app.ErrForbidden},
+			{"non-existent user id correct TOTP", validGuard, 999, user2, app.ErrNotFound},
+			{"non-existent user id incorrect TOTP", validGuard, 999, nil, app.ErrNotFound},
 			{"no TOTP user id correct TOTP", validGuard, user1.ID, user2, nil},
 			{"already activated TOTP", validGuard, user3.ID, user3, nil},
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				if tc.userID == "" {
-					tc.userID = errsx.Must(repo.NextUserID(ctx)).String()
-				}
-
 				totp := "000000"
 				if tc.totpUser != nil {
 					totp = errsx.Must(tc.totpUser.GenerateTOTP())

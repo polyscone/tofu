@@ -9,12 +9,12 @@ import (
 )
 
 type RegenerateRecoveryCodesGuard interface {
-	CanRegenerateRecoveryCodes(userID string) bool
+	CanRegenerateRecoveryCodes(userID int) bool
 }
 
-func (s *Service) RegenerateRecoveryCodes(ctx context.Context, guard RegenerateRecoveryCodesGuard, userID, totp string) ([]string, error) {
+func (s *Service) RegenerateRecoveryCodes(ctx context.Context, guard RegenerateRecoveryCodesGuard, userID int, totp string) ([]string, error) {
 	var input struct {
-		userID UserID
+		userID int
 		totp   TOTP
 	}
 	{
@@ -25,9 +25,8 @@ func (s *Service) RegenerateRecoveryCodes(ctx context.Context, guard RegenerateR
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
-			errs.Set("user id", err)
-		}
+		input.userID = userID
+
 		if input.totp, err = NewTOTP(totp); err != nil {
 			errs.Set("totp", err)
 		}
@@ -37,7 +36,7 @@ func (s *Service) RegenerateRecoveryCodes(ctx context.Context, guard RegenerateR
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}

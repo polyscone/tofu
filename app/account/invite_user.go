@@ -42,12 +42,7 @@ func (s *Service) InviteUser(ctx context.Context, guard InviteUserGuard, email s
 		}
 
 	case errors.Is(err, app.ErrNotFound):
-		id, err := s.repo.NextUserID(ctx)
-		if err != nil {
-			return fmt.Errorf("next user id: %w", err)
-		}
-
-		user = NewUser(id, input.email)
+		user = NewUser(input.email)
 
 		if err := user.Invite(s.system); err != nil {
 			return fmt.Errorf("invite new user: %w", err)

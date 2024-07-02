@@ -70,8 +70,7 @@ func TestSignInWithPassword(t *testing.T) {
 		user2 := MustAddUser(t, ctx, repo, TestUser{Email: "jim@bloggs.com", Verify: true})
 		user3 := MustAddUser(t, ctx, repo, TestUser{Email: "bob@bloggs.com", Activate: true})
 
-		user4ID := errsx.Must(repo.NextUserID(ctx))
-		user4 := account.NewUser(user4ID, errsx.Must(account.NewEmail("not@found.com")))
+		user4 := account.NewUser(errsx.Must(account.NewEmail("not@found.com")))
 
 		tt := []struct {
 			name string
@@ -121,7 +120,7 @@ func TestSignInWithPassword(t *testing.T) {
 					}
 				})
 
-				if tc.user.ID != "" {
+				if tc.user.ID != 0 {
 					t.Run("actual user correct password throttled", func(t *testing.T) {
 						err := svc.SignInWithPassword(ctx, tc.user.Email, "password")
 						var throttle *account.SignInThrottleError

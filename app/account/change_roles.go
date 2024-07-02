@@ -9,13 +9,13 @@ import (
 )
 
 type ChangeRolesGuard interface {
-	CanChangeRoles(userID string) bool
+	CanChangeRoles(userID int) bool
 }
 
-func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userID string, roleIDs, grants, denials []string) error {
+func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userID int, roleIDs []int, grants, denials []string) error {
 	var input struct {
-		userID  UserID
-		roleIDs []RoleID
+		userID  int
+		roleIDs []int
 		grants  []Permission
 		denials []Permission
 	}
@@ -27,18 +27,8 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		var err error
 		var errs errsx.Map
 
-		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
-			errs.Set("user id", err)
-		}
-
-		for _, roleID := range roleIDs {
-			id, err := s.repo.ParseRoleID(roleID)
-			if err != nil {
-				errs.Set("role ids", err)
-			}
-
-			input.roleIDs = append(input.roleIDs, id)
-		}
+		input.userID = userID
+		input.roleIDs = roleIDs
 
 		if grants != nil {
 			input.grants = make([]Permission, len(grants))
@@ -66,7 +56,7 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}
@@ -76,7 +66,7 @@ func (s *Service) ChangeRoles(ctx context.Context, guard ChangeRolesGuard, userI
 		roles = make([]*Role, len(input.roleIDs))
 
 		for i, roleID := range input.roleIDs {
-			role, err := s.repo.FindRoleByID(ctx, roleID.String())
+			role, err := s.repo.FindRoleByID(ctx, roleID)
 			if err != nil {
 				return fmt.Errorf("find role by id: %w", err)
 			}

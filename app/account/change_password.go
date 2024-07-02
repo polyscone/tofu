@@ -9,12 +9,12 @@ import (
 )
 
 type ChangePasswordGuard interface {
-	CanChangePassword(userID string) bool
+	CanChangePassword(userID int) bool
 }
 
-func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard, userID, oldPassword, newPassword, newPasswordCheck string) error {
+func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard, userID int, oldPassword, newPassword, newPasswordCheck string) error {
 	var input struct {
-		userID           UserID
+		userID           int
 		oldPassword      Password
 		newPassword      Password
 		newPasswordCheck Password
@@ -29,9 +29,8 @@ func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard,
 
 		newPasswordCheck, _ := NewPassword(newPasswordCheck)
 
-		if input.userID, err = s.repo.ParseUserID(userID); err != nil {
-			errs.Set("user id", err)
-		}
+		input.userID = userID
+
 		if input.oldPassword, err = NewPassword(oldPassword); err != nil {
 			errs.Set("old password", err)
 		}
@@ -46,7 +45,7 @@ func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard,
 		}
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID.String())
+	user, err := s.repo.FindUserByID(ctx, input.userID)
 	if err != nil {
 		return fmt.Errorf("find user by id: %w", err)
 	}

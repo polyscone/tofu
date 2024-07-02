@@ -14,7 +14,7 @@ type activateTOTPGuard struct {
 	value bool
 }
 
-func (g activateTOTPGuard) CanActivateTOTP(userID string) bool {
+func (g activateTOTPGuard) CanActivateTOTP(userID int) bool {
 	return g.value
 }
 
@@ -56,10 +56,10 @@ func TestActivateTOTP(t *testing.T) {
 		tt := []struct {
 			name   string
 			guard  activateTOTPGuard
-			userID string
+			userID int
 			want   error
 		}{
-			{"invalid guard", invalidGuard, "", app.ErrForbidden},
+			{"invalid guard", invalidGuard, 0, app.ErrForbidden},
 			{"unverified TOTP", validGuard, user1.ID, nil},
 			{"already activated TOTP", validGuard, user2.ID, nil},
 		}

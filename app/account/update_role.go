@@ -13,9 +13,9 @@ type UpdateRoleGuard interface {
 	CanUpdateRoles() bool
 }
 
-func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID, name, description string, permissions []string) error {
+func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID int, name, description string, permissions []string) error {
 	var input struct {
-		roleID      RoleID
+		roleID      int
 		name        RoleName
 		description RoleDesc
 		permissions []Permission
@@ -28,9 +28,8 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID,
 		var err error
 		var errs errsx.Map
 
-		if input.roleID, err = s.repo.ParseRoleID(roleID); err != nil {
-			errs.Set("role id", err)
-		}
+		input.roleID = roleID
+
 		if input.name, err = NewRoleName(name); err != nil {
 			errs.Set("name", err)
 		}
@@ -53,14 +52,20 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID,
 		}
 	}
 
-	if _, err := s.repo.FindRoleByID(ctx, roleID); err != nil {
+	role, err := s.repo.FindRoleByID(ctx, roleID)
+	if err != nil {
 		return fmt.Errorf("find role by id: %w", err)
 	}
 
-	role := NewRole(input.roleID, input.name, input.description, input.permissions)
+	role.Name = input.name.String()
+	role.Description = input.description.String()
 
-	err := s.repo.SaveRole(ctx, role)
-	if err != nil {
+	role.Permissions = nil
+	for _, permission := range input.permissions {
+		role.Permissions = append(role.Permissions, permission.String())
+	}
+
+	if err := s.repo.SaveRole(ctx, role); err != nil {
 		var conflict *app.ConflictError
 		if errors.As(err, &conflict) {
 			return fmt.Errorf("save role: %w: %w", app.ErrConflict, conflict)

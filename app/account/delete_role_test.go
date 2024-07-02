@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/testutil"
 )
 
@@ -44,14 +43,13 @@ func TestDeleteRole(t *testing.T) {
 		}
 		for i, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				roleID := errsx.Must(repo.NextRoleID(ctx))
 				name := "Role " + strconv.Itoa(i)
-				err := svc.CreateRole(ctx, tc.guard, roleID.String(), name, "", nil)
+				role, err := svc.CreateRole(ctx, tc.guard, name, "", nil)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				err = svc.DeleteRole(ctx, tc.guard, roleID.String())
+				err = svc.DeleteRole(ctx, tc.guard, role.ID)
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
 				}
@@ -60,7 +58,7 @@ func TestDeleteRole(t *testing.T) {
 					return
 				}
 
-				if _, err := repo.FindRoleByID(ctx, roleID.String()); err == nil {
+				if _, err := repo.FindRoleByID(ctx, role.ID); err == nil {
 					t.Errorf("want error: %v; got <nil>", app.ErrNotFound)
 				}
 			})

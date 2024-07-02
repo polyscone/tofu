@@ -17,11 +17,11 @@ type AccountReader interface {
 	account.Reader
 
 	FindRoleByName(ctx context.Context, name string) (*account.Role, error)
-	FindRoles(ctx context.Context, sortTopID string) ([]*account.Role, int, error)
-	FindRolesPageBySearch(ctx context.Context, page, size int, sortTopID string, sorts []string, search string) ([]*account.Role, int, error)
+	FindRoles(ctx context.Context, sortTopID int) ([]*account.Role, int, error)
+	FindRolesPageBySearch(ctx context.Context, page, size int, sortTopID int, sorts []string, search string) ([]*account.Role, int, error)
 
-	CountUsersByRoleID(ctx context.Context, roleID string) (int, error)
-	FindUsersPageBySearch(ctx context.Context, page, size int, sortTopID string, sorts []string, search string) ([]*account.User, int, error)
+	CountUsersByRoleID(ctx context.Context, roleID int) (int, error)
+	FindUsersPageBySearch(ctx context.Context, page, size int, sortTopID int, sorts []string, search string) ([]*account.User, int, error)
 }
 
 type SystemReader system.Reader

@@ -3,6 +3,7 @@ package account
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/collection"
@@ -52,7 +53,7 @@ func roleListGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		sortTopID := h.Sessions.PopString(ctx, sess.SortTopID)
+		sortTopID := h.Sessions.PopInt(ctx, sess.SortTopID)
 		sorts := r.URL.Query()["sort"]
 		search := r.URL.Query().Get("search")
 		page, size := httpx.Pagination(r)
@@ -98,23 +99,9 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		roleID, err := h.Repo.Account.NextRoleID(ctx)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "next id", err, "site/error", nil)
-
-			return
-		}
-
-		err = h.Svc.Account.CreateRole(ctx, passport.Account, roleID.String(), input.Name, input.Description, input.Permissions)
+		role, err := h.Svc.Account.CreateRole(ctx, passport.Account, input.Name, input.Description, input.Permissions)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "create role", err, "site/account/management/role/new", nil)
-
-			return
-		}
-
-		role, err := h.Repo.Account.FindRoleByID(ctx, roleID.String())
-		if err != nil {
-			h.HTML.ErrorView(w, r, "find role by id", err, "site/error", nil)
 
 			return
 		}
@@ -130,7 +117,7 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 
 func roleEditGet(h *ui.Handler) http.HandlerFunc {
 	h.HTML.SetViewVars("site/account/management/role/edit", func(r *http.Request) (handler.Vars, error) {
-		roleID := r.PathValue("roleID")
+		roleID, _ := strconv.Atoi(r.PathValue("roleID"))
 		if roleID == h.SuperRole.ID {
 			return nil, fmt.Errorf("edit super role: %w", app.ErrForbidden)
 		}
@@ -168,7 +155,7 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		roleID := r.PathValue("roleID")
+		roleID, _ := strconv.Atoi(r.PathValue("roleID"))
 		if roleID == h.SuperRole.ID {
 			h.HTML.ErrorView(w, r, "edit super role", app.ErrForbidden, "site/error", nil)
 
@@ -202,7 +189,7 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 
 func roleDeleteGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		roleID := r.PathValue("roleID")
+		roleID, _ := strconv.Atoi(r.PathValue("roleID"))
 		if roleID == h.SuperRole.ID {
 			h.HTML.ErrorView(w, r, "delete super role", app.ErrForbidden, "site/error", nil)
 
@@ -234,7 +221,7 @@ func roleDeleteGet(h *ui.Handler) http.HandlerFunc {
 
 func roleDeletePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		roleID := r.PathValue("roleID")
+		roleID, _ := strconv.Atoi(r.PathValue("roleID"))
 		if roleID == h.SuperRole.ID {
 			h.HTML.ErrorView(w, r, "delete super role", app.ErrForbidden, "site/error", nil)
 

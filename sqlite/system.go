@@ -151,7 +151,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 			:twilio_from_tel,
 			:created_at
 		)
-		on conflict do
+		on conflict (id) do
 			update set
 				system_email = excluded.system_email,
 				security_email = excluded.security_email,
@@ -188,7 +188,7 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 				twilio_token != excluded.twilio_token or
 				twilio_from_tel != excluded.twilio_from_tel
 	`,
-		sql.Named("id", "0feca0fa-254f-4a42-b76d-95548020110a"),
+		sql.Named("id", 1),
 		sql.Named("system_email", config.SystemEmail),
 		sql.Named("security_email", config.SecurityEmail),
 		sql.Named("sign_up_enabled", config.SignUpEnabled),

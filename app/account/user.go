@@ -38,16 +38,10 @@ var (
 	ErrInvalidPassword = errors.New("invalid password")
 )
 
-type UserID string
-
-func (id UserID) String() string {
-	return string(id)
-}
-
 type User struct {
 	aggregate.Root
 
-	ID                      string
+	ID                      int
 	Email                   string
 	HashedPassword          []byte
 	TOTPMethod              string
@@ -81,23 +75,20 @@ type User struct {
 }
 
 type UserFilter struct {
-	ID     *string
+	ID     *int
 	Email  *string
 	Search *string
-	RoleID *string
+	RoleID *int
 
-	SortTopID string
+	SortTopID int
 	Sorts     []string
 
 	Limit  int
 	Offset int
 }
 
-func NewUser(id UserID, email Email) *User {
-	return &User{
-		ID:    id.String(),
-		Email: email.String(),
-	}
+func NewUser(email Email) *User {
+	return &User{Email: email.String()}
 }
 
 func (u *User) Permissions() []string {

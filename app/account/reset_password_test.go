@@ -17,7 +17,7 @@ type resetPasswordGuard struct {
 	value bool
 }
 
-func (g resetPasswordGuard) CanResetPassword(userID string) bool {
+func (g resetPasswordGuard) CanResetPassword(userID int) bool {
 	return g.value
 }
 
@@ -65,11 +65,11 @@ func TestResetPassword(t *testing.T) {
 		tt := []struct {
 			name        string
 			guard       resetPasswordGuard
-			userID      string
+			userID      int
 			newPassword string
 			want        error
 		}{
-			{"invalid guard", invalidGuard, "", "", app.ErrForbidden},
+			{"invalid guard", invalidGuard, 0, "", app.ErrForbidden},
 			{"unactivated", validGuard, user1.ID, "password123", nil},
 		}
 		for _, tc := range tt {
