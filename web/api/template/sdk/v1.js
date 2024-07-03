@@ -304,13 +304,15 @@ function {{$factoryName | UnescapeJS}} (opts) {
 			networkError: null,
 		}
 
+		const fullURL = host + sdk.prefix + url
+
 		try {
 			if (opts.body && (!opts.headers || !opts.headers["content-type"])) {
 				opts.headers ||= {}
 				opts.headers["content-type"] = "application/json"
 			}
 
-			const res = await fetch(host + sdk.prefix + url, opts)
+			const res = await fetch(fullURL, opts)
 
 			security.csrfToken = res.headers.get("x-csrf-token") || security.csrfToken
 
@@ -327,7 +329,7 @@ function {{$factoryName | UnescapeJS}} (opts) {
 		} catch (error) {
 			ret.networkError = error
 
-			console.error(`api fetch failed: ${error}: ${url}`)
+			console.error(`api fetch failed: ${fullURL}: ${error}`)
 		}
 
 		ret.body ||= {}
