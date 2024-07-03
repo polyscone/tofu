@@ -1,15 +1,8 @@
 package human
 
-import (
-	"slices"
-	"strings"
-)
+import "strings"
 
 func List(strs []string, sep, conjunction string) string {
-	slices.Sort(strs)
-
-	strs = slices.Compact(strs)
-
 	for i, str := range strs {
 		switch str {
 		case "\t":
@@ -36,7 +29,7 @@ func List(strs []string, sep, conjunction string) string {
 	default:
 		first, last := strs[:n-1], strs[n-1]
 
-		return strings.Join(first, sep) + ", " + conjunction + last
+		return strings.Join(first, sep) + "," + conjunction + last
 	}
 }
 
