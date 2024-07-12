@@ -322,7 +322,7 @@ func SignInWithFacebook(ctx context.Context, h *handler.Handler, userID string, 
 			IsValid bool   `json:"is_valid"`
 		}
 	}
-	if err := httpx.RelaxedDecodeJSON(&token, res.Body); err != nil {
+	if err := httpx.DecodeJSONRelaxed(&token, res.Body); err != nil {
 		return false, fmt.Errorf("decode Facebook access token debug data: %w", err)
 	}
 
@@ -346,7 +346,7 @@ func SignInWithFacebook(ctx context.Context, h *handler.Handler, userID string, 
 	var me struct {
 		Email string
 	}
-	if err := httpx.RelaxedDecodeJSON(&me, res.Body); err != nil {
+	if err := httpx.DecodeJSONRelaxed(&me, res.Body); err != nil {
 		return false, fmt.Errorf("decode Facebook user data: %w", err)
 	}
 

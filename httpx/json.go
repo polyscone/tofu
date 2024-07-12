@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"strings"
 )
@@ -69,24 +70,34 @@ func DecodeJSON(dst any, r io.Reader) error {
 	return decodeJSON(dst, r, disallowUnknownFields)
 }
 
-func RelaxedDecodeJSON(dst any, r io.Reader) error {
+func DecodeJSONRelaxed(dst any, r io.Reader) error {
 	const disallowUnknownFields = false
 
 	return decodeJSON(dst, r, disallowUnknownFields)
 }
 
 func DecodeRequestJSON(dst any, r *http.Request) error {
-	if !strings.HasPrefix(r.Header.Get("content-type"), "application/json") {
+	contentType := r.Header.Get("content-type")
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return err
+	}
+	if mediaType != "application/json" {
 		return ErrExpectedJSON
 	}
 
 	return DecodeJSON(dst, r.Body)
 }
 
-func RelaxedDecodeRequestJSON(dst any, r *http.Request) error {
-	if !strings.HasPrefix(r.Header.Get("content-type"), "application/json") {
+func DecodeRequestJSONRelaxed(dst any, r *http.Request) error {
+	contentType := r.Header.Get("content-type")
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return err
+	}
+	if mediaType != "application/json" {
 		return ErrExpectedJSON
 	}
 
-	return RelaxedDecodeJSON(dst, r.Body)
+	return DecodeJSONRelaxed(dst, r.Body)
 }
