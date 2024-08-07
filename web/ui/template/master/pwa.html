@@ -7,15 +7,15 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>{{block "meta_title" .}}{{.App.Name}}{{end}}</title>
 		<meta name="description" content="{{block "meta_description" .}}{{.App.Description}}{{end}}">
-		<link rel="manifest" href="{{.App.BaseURL}}/pwa.webmanifest">
-		<link rel="stylesheet" href="{{.App.BaseURL}}/all/css/common.css">
-		<link rel="stylesheet" href="{{.App.BaseURL}}/pwa/css/pwa.css">
+		<link rel="manifest" href="{{.App.BasePath}}/pwa.webmanifest">
+		<link rel="stylesheet" href="{{.App.BasePath}}/all/css/common.css">
+		<link rel="stylesheet" href="{{.App.BasePath}}/pwa/css/pwa.css">
 		<meta name="theme-color" content="{{.App.ThemeColour}}">
 	</head>
 	<body>
 		<script>const __STATE__ = {{UnescapeJS (MarshalJSON .Vars)}}</script>
-		<script src="{{.App.BaseURL}}/pwa/js/mithril/v2.2.2.min.js"></script>
-		<script src="{{.App.BaseURL}}/pwa/js/app/main.js" type="module"></script>
+		<script src="{{.App.BasePath}}/pwa/js/mithril/v2.2.2.min.js"></script>
+		<script src="{{.App.BasePath}}/pwa/js/app/main.js" type="module"></script>
 		<noscript>
 			<p class="text-center">JavaScript is required to use this application.</p>
 		</noscript>

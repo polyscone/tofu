@@ -1,8 +1,8 @@
 const cacheName = "pwa.assets"
 const strategies = {
 	networkOnly: [
-		"/api/v1/account/session",
-		"/api/v1/security/csrf",
+		"{{.App.BasePath}}/api/v1/account/session",
+		"{{.App.BasePath}}/api/v1/security/csrf",
 	],
 }
 
@@ -11,12 +11,12 @@ self.addEventListener("install", event => {
 		const cache = await caches.open(cacheName)
 
 		return cache.addAll([
-			"/",
-			"/pwa_service_worker.js",
-			"/all/css/common.css",
-			"/pwa/css/pwa.css",
-			"/pwa/js/mithril/v2.2.2.min.js",
-			"/pwa/js/app/main.js",
+			"{{.App.BasePath}}/",
+			"{{.App.BasePath}}/pwa_service_worker.js",
+			"{{.App.BasePath}}/all/css/common.css",
+			"{{.App.BasePath}}/pwa/css/pwa.css",
+			"{{.App.BasePath}}/pwa/js/mithril/v2.2.2.min.js",
+			"{{.App.BasePath}}/pwa/js/app/main.js",
 		])
 	}
 

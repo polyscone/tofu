@@ -32,19 +32,15 @@ var templateFiles = fstack.New(dev.RelDirFS(templateDir), errsx.Must(fs.Sub(file
 type Handler struct {
 	*handler.Handler
 	signInPath func() string
-	baseURL    string
 	mux        *router.ServeMux
 	funcs      template.FuncMap
-	Plain      *handler.Renderer
 	HTML       *handler.Renderer
-	JSON       *handler.Renderer
 }
 
-func NewHandler(base *handler.Handler, mux *router.ServeMux, baseURL string, signInPath func() string) *Handler {
+func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() string) *Handler {
 	h := &Handler{
 		Handler:    base,
 		signInPath: signInPath,
-		baseURL:    baseURL,
 		mux:        mux,
 	}
 
@@ -64,20 +60,8 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, baseURL string, sig
 		}
 	}
 
-	h.Plain = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, func(w http.ResponseWriter, r *http.Request, template *bytes.Buffer) []byte {
-		w.Header().Set("content-type", "text/plain; charset=utf-8")
-
-		return nil
-	})
-
 	h.HTML = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, func(w http.ResponseWriter, r *http.Request, template *bytes.Buffer) []byte {
 		w.Header().Set("content-type", "text/html; charset=utf-8")
-
-		return nil
-	})
-
-	h.JSON = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, func(w http.ResponseWriter, r *http.Request, template *bytes.Buffer) []byte {
-		w.Header().Set("content-type", "application/json")
 
 		return nil
 	})
@@ -111,12 +95,7 @@ func (h *Handler) HasPathPrefix(value string, name string, paramArgPairs ...any)
 }
 
 func (h *Handler) Path(name string, paramArgPairs ...any) string {
-	p := h.mux.Path(name, paramArgPairs...)
-	if h.baseURL != "" && !strings.HasSuffix(p, h.baseURL) {
-		p = strings.TrimSuffix(h.baseURL+p, "/")
-	}
-
-	return p
+	return h.mux.Path(name, paramArgPairs...)
 }
 
 func (h *Handler) PathQuery(r *http.Request, name string, paramArgPairs ...any) string {

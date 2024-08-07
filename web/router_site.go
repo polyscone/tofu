@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -30,7 +31,10 @@ import (
 
 func NewSiteRouter(base *handler.Handler) http.Handler {
 	mux := router.NewServeMux()
-	h := ui.NewHandler(base, mux, app.BaseURL, func() string {
+
+	mux.BasePath = app.BasePath
+
+	h := ui.NewHandler(base, mux, func() string {
 		return mux.Path("account.sign_in")
 	})
 
@@ -203,9 +207,6 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		}
 	})
 
-	mux.HandleFunc("GET /robots.txt", h.Plain.HandlerFunc("file/robots"))
-	mux.HandleFunc("GET /.well-known/security.txt", h.Plain.HandlerFunc("file/security"))
-
 	mux.HandleFunc("GET /{$}", h.HTML.HandlerFunc("site/page/home"), "page.home")
 
 	mux.Named("account.section", "/account")
@@ -234,6 +235,8 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 	mux.Handle("/favicon.ico", httpx.RewriteHandler(mux, "/favicon.png"))
 
+	funcs := handler.NewTemplateFuncs(nil)
+	renderer := handler.NewRenderer(h.Handler, nil, nil, funcs, nil)
 	publicFilesRoot := http.FS(publicFiles)
 	fileServer := http.FileServer(publicFilesRoot)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -246,6 +249,10 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		}
 
 		upath := r.URL.Path
+		if mux.BasePath != "" {
+			upath = strings.TrimPrefix(upath, mux.BasePath)
+			r.URL.Path = upath
+		}
 		if !strings.HasPrefix(upath, "/") {
 			upath = "/" + upath
 			r.URL.Path = upath
@@ -269,7 +276,15 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 			return
 		}
 
-		fileServer.ServeHTTP(w, r)
+		var buf bytes.Buffer
+		rw := &fsResponseWriter{
+			ResponseWriter: w,
+			buf:            &buf,
+		}
+
+		fileServer.ServeHTTP(rw, r)
+
+		renderer.Text(w, r, rw.statusCode, buf.String(), nil)
 	})
 
 	return mux

@@ -7,7 +7,7 @@ import (
 	"html/template"
 	"io/fs"
 	"net/http"
-	"strings"
+	texttemplate "text/template"
 	"time"
 
 	"github.com/polyscone/tofu/app"
@@ -51,6 +51,7 @@ func (s *State) Store(key string, value any) bool {
 
 type ViewData struct {
 	View         string
+	TextTemplate string
 	Status       int
 	CSRF         CSRF
 	ErrorMessage string
@@ -126,11 +127,6 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	user := rn.h.User(ctx)
 	passport := rn.h.Passport(ctx)
 
-	urlPath := r.URL.Path
-	if app.BaseURL != "" && !strings.HasSuffix(urlPath, app.BaseURL) {
-		urlPath = strings.TrimSuffix(app.BaseURL+urlPath, "/")
-	}
-
 	data := ViewData{
 		View:   view,
 		Status: status,
@@ -140,7 +136,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 		URL: URL{
 			Scheme: rn.h.Tenant.Scheme,
 			Host:   rn.h.Tenant.Host,
-			Path:   template.URL(urlPath),
+			Path:   template.URL(r.URL.Path),
 			Query:  Query{Values: r.URL.Query()},
 		},
 		App: AppData{
@@ -148,7 +144,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 			ShortName:   app.ShortName,
 			Description: app.Description,
 			ThemeColour: app.ThemeColour,
-			BaseURL:     app.BaseURL,
+			BasePath:    app.BasePath,
 		},
 		Session: SessionData{
 			// Global session keys
@@ -191,15 +187,36 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	// Make sure the current view name isn't overwritten by a user function
 	data.View = view
 
-	tmpl := rn.h.Template(rn.templateFiles, rn.templatePaths(view), rn.funcs, view)
-
 	var buf bytes.Buffer
-	if err := tmpl.ExecuteTemplate(&buf, "master", data); err != nil {
-		rn.h.Logger(ctx).Error("execute view template", "error", err)
+	if data.TextTemplate != "" {
+		tmpl := texttemplate.New("").Option("missingkey=default").Funcs(rn.funcs)
 
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		_, err := tmpl.Parse(data.TextTemplate)
+		if err != nil {
+			rn.h.Logger(ctx).Error("parse template string", "error", err)
 
-		return
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+
+			return
+		}
+
+		if err := tmpl.Execute(&buf, data); err != nil {
+			rn.h.Logger(ctx).Error("execute template", "error", err)
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+
+			return
+		}
+	} else {
+		tmpl := rn.h.Template(rn.templateFiles, rn.templatePaths(view), rn.funcs, view)
+
+		if err := tmpl.ExecuteTemplate(&buf, "master", data); err != nil {
+			rn.h.Logger(ctx).Error("execute view template", "error", err)
+
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+
+			return
+		}
 	}
 
 	if rn.process != nil {
@@ -218,6 +235,13 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 
 func (rn *Renderer) View(w http.ResponseWriter, r *http.Request, status int, view string, vars Vars) {
 	rn.ViewFunc(w, r, status, view, func(data *ViewData) {
+		data.Vars = data.Vars.Merge(vars)
+	})
+}
+
+func (rn *Renderer) Text(w http.ResponseWriter, r *http.Request, status int, text string, vars Vars) {
+	rn.ViewFunc(w, r, status, "texttemplate", func(data *ViewData) {
+		data.TextTemplate = text
 		data.Vars = data.Vars.Merge(vars)
 	})
 }

@@ -39,7 +39,7 @@ if (platform.config.prefix) {
 }
 
 if ("serviceWorker" in navigator) {
-	navigator.serviceWorker.register("/pwa_service_worker.js")
+	navigator.serviceWorker.register("{{.App.BasePath}}/pwa_service_worker.js")
 }
 
 onMount("textarea", node => {

@@ -27,10 +27,10 @@ import (
 )
 
 var opts struct {
-	version bool
-	dev     bool
-	data    string
-	baseURL string
+	version  bool
+	dev      bool
+	data     string
+	basePath string
 
 	log struct {
 		style LogStyle
@@ -86,7 +86,7 @@ func main() {
 	}
 
 	flag.StringVar(&opts.data, "data", "./.data", "The directory to use for storing application data")
-	flag.StringVar(&opts.baseURL, "base-url", "", "A prefix to add to all URLs and redirects")
+	flag.StringVar(&opts.basePath, "base-path", "", "A prefix path to add to all routes")
 	flag.BoolVar(&opts.dev, "dev", false, "Whether to run in development mode")
 	flag.BoolVar(&opts.version, "version", false, "Display binary version information")
 	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json)")
@@ -245,8 +245,8 @@ func main() {
 		os.Exit(2)
 	}
 
-	if opts.baseURL != "" {
-		app.BaseURL = opts.baseURL
+	if opts.basePath != "" {
+		app.BasePath = opts.basePath
 	}
 
 	if err := os.MkdirAll(opts.data, 0755); err != nil {

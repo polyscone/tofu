@@ -1,4 +1,4 @@
-import sdk from "/api/v1/sdk.js?export=1"
+import sdk from "{{.App.BasePath}}/api/v1/sdk.js?export=1"
 import { show as showLoading, hide as hideLoading } from "./components/loading.js"
 import { open as openModal, close as closeModal } from "./components/modal.js"
 

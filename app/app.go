@@ -17,7 +17,7 @@ const (
 	SignInThrottleTTL = 30 * time.Minute
 )
 
-var BaseURL = ""
+var BasePath = ""
 
 var (
 	ErrBadRequest     = errors.New("bad request")

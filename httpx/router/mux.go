@@ -16,6 +16,7 @@ const (
 
 type ServeMux struct {
 	*http.ServeMux
+	BasePath    string
 	middlewares []middleware.Middleware
 	befores     []middleware.Middleware
 	handler     http.Handler
@@ -70,6 +71,41 @@ func (mux *ServeMux) Named(name, pattern string) {
 }
 
 func (mux *ServeMux) Handle(pattern string, handler http.Handler, names ...string) {
+	if mux.BasePath != "" {
+		method, rest, ok := strings.Cut(pattern, " ")
+		if !ok {
+			rest = method
+			method = ""
+		}
+
+		if rest == "/{$}" {
+			// If the original pattern was supposed to match only the root
+			// forward slash then we need to replace it with an empty string
+			// so it can turn into an exact match for the base path instead
+			rest = ""
+		}
+
+		pattern = mux.BasePath + rest
+		if method != "" {
+			pattern = method + " " + pattern
+		}
+
+		if rest == "/" {
+			// If the original pattern defined a catch-all slash then then
+			// mux base path would turn it into a sub-tree
+			// The serve mux in Go's standard library redirects sub-trees without
+			// a trailing slash to add the trailing slash, which isn't what
+			// we want to happen at all
+			// For example "/foo/bar" would redirect to "/foo/bar/" if the mux
+			// base path here is "/foo/bar"
+			// To prevent that from happening we also need to register a route for
+			// the same handler but without the trailing slash
+			mux.ServeMux.Handle(pattern, handler)
+
+			pattern = strings.TrimSuffix(pattern, "/")
+		}
+	}
+
 	if len(names) > 0 {
 		for _, name := range names {
 			mux.Named(name, pattern)

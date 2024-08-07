@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/httpx/middleware"
 	"github.com/polyscone/tofu/httpx/router"
@@ -25,6 +26,9 @@ import (
 
 func NewAPIRouter(base *handler.Handler) http.Handler {
 	mux := router.NewServeMux()
+
+	mux.BasePath = app.BasePath + "/api/v1"
+
 	h := api.NewHandler(base)
 
 	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {

@@ -1,7 +1,0 @@
-{{define "master" -}}
-
-Contact: mailto:{{or .Config.SecurityEmail .Config.SystemEmail}}
-Preferred-Languages: en
-Canonical: {{.URL.Scheme}}://{{.URL.Host}}/.well-known/security.txt
-
-{{end}}

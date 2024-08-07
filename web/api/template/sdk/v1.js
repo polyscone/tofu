@@ -394,7 +394,7 @@ function {{$factoryName | UnescapeJS}} (opts) {
 	const sdk = {
 		addEventListener,
 		removeEventListener,
-		prefix: "/api/v1",
+		prefix: "{{.App.BasePath}}/api/v1",
 		api: {
 			account,
 			system,

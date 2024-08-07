@@ -1,11 +1,14 @@
 package web
 
 import (
+	"bytes"
 	"embed"
 	"io/fs"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/cache"
 	"github.com/polyscone/tofu/dev"
 	"github.com/polyscone/tofu/errsx"
@@ -38,10 +41,38 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 			mux.Handle("/", NewSiteRouter(h))
 
 		case "pwa":
-			mux.Handle("/", NewPWARouter(h))
-			mux.Handle("/api/v1/", http.StripPrefix("/api/v1", NewAPIRouter(h)))
+			pwa := NewPWARouter(h)
+			api := NewAPIRouter(h)
+
+			mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+				if strings.HasPrefix(r.URL.Path, app.BasePath+"/api/") {
+					api.ServeHTTP(w, r)
+
+					return
+				}
+
+				pwa.ServeHTTP(w, r)
+			})
 		}
 
 		return mux
 	})
+}
+
+type fsResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+	buf        *bytes.Buffer
+}
+
+func (w *fsResponseWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
+}
+
+func (w *fsResponseWriter) Write(b []byte) (int, error) {
+	return w.buf.Write(b)
+}
+
+func (w *fsResponseWriter) WriteHeader(statusCode int) {
+	w.statusCode = statusCode
 }
