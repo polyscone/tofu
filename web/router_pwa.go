@@ -1,13 +1,11 @@
 package web
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"io/fs"
 	"log/slog"
 	"net/http"
-	"path"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -40,7 +38,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	h.Broker.Listen(event.SignedUpHandler(h))
 	h.Broker.Listen(event.TOTPSMSRequestedHandler(h))
 
-	routePrefix := "#!"
+	routePrefix := mux.BasePath
 	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		rc := http.NewResponseController(w)
 
@@ -152,8 +150,16 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		ctx := r.Context()
 		config := h.Config(ctx)
 
+		url := r.URL.String()
+		if mux.BasePath != "" {
+			url = strings.TrimPrefix(url, mux.BasePath)
+		}
+		if url == "" {
+			url = "/"
+		}
+
 		return handler.Vars{
-			"url": r.URL.String(),
+			"url": url,
 			"config": map[string]any{
 				"prefix":                 routePrefix,
 				"signUpEnabled":          config.SignUpEnabled,
@@ -166,62 +172,16 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		}
 	}
 
-	funcs := handler.NewTemplateFuncs(nil)
-	renderer := handler.NewRenderer(h.Handler, nil, nil, funcs, nil)
-	publicFilesRoot := http.FS(publicFiles)
-	fileServer := http.FileServer(publicFilesRoot)
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if allowedMethods, notAllowed := httpx.MethodNotAllowed(mux, r); notAllowed {
-			w.Header().Set("allow", strings.Join(allowedMethods, ", "))
-
-			http.Redirect(w, r, routePrefix+"/error/405", http.StatusSeeOther)
-
-			return
-		}
-
-		upath := r.URL.Path
-		if mux.BasePath != "" {
-			upath = strings.TrimPrefix(upath, mux.BasePath)
-			r.URL.Path = upath
-		}
-		if !strings.HasPrefix(upath, "/") {
-			upath = "/" + upath
-			r.URL.Path = upath
-		}
-		upath = path.Clean(upath)
-
-		stat, err := fs.Stat(publicFiles, strings.TrimPrefix(upath, "/"))
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) {
-				h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars(h, r))
-			} else {
-				ctx := r.Context()
-				logger := h.Logger(ctx)
-
-				logger.Error("static file", "error", err)
-
-				http.Redirect(w, r, routePrefix+"/error/500", http.StatusSeeOther)
-			}
-
-			return
-		}
-
-		if stat.IsDir() {
+	renderer := handler.NewRenderer(h.Handler, nil, nil, h.Funcs, nil)
+	mux.HandleFunc("/", newFileServer(uiPublicFiles, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
+		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) || errors.Is(err, ErrNoIndex) {
 			h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars(h, r))
 
 			return
 		}
 
-		var buf bytes.Buffer
-		rw := &fsResponseWriter{
-			ResponseWriter: w,
-			buf:            &buf,
-		}
-
-		fileServer.ServeHTTP(rw, r)
-
-		renderer.Text(w, r, rw.statusCode, buf.String(), nil)
-	})
+		h.HTML.ErrorView(w, r, "static file", err, "site/error", nil)
+	}))
 
 	return mux
 }

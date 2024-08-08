@@ -1,12 +1,9 @@
 package api
 
 import (
-	"bytes"
-	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/fs"
 	"net/http"
 	"slices"
 	"strings"
@@ -14,21 +11,12 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/csrf"
-	"github.com/polyscone/tofu/dev"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/fstack"
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/human"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/sess"
 )
-
-//go:embed "all:template"
-var files embed.FS
-
-const templateDir = "template"
-
-var templateFiles = fstack.New(dev.RelDirFS(templateDir), errsx.Must(fs.Sub(files, templateDir)))
 
 var publicErrors = []error{
 	account.ErrSignInThrottled,
@@ -40,28 +28,10 @@ var publicErrors = []error{
 
 type Handler struct {
 	*handler.Handler
-	JavaScript *handler.Renderer
 }
 
 func NewHandler(base *handler.Handler) *Handler {
-	templatePaths := func(view string) []string {
-		return []string{view, "master.html"}
-	}
-
-	funcs := handler.NewTemplateFuncs(nil)
-
-	return &Handler{
-		Handler: base,
-		JavaScript: handler.NewRenderer(base, templateFiles, templatePaths, funcs, func(w http.ResponseWriter, r *http.Request, template *bytes.Buffer) []byte {
-			w.Header().Set("content-type", "application/javascript")
-
-			b := template.Bytes()
-			b = bytes.TrimPrefix(b, []byte("<script>"))
-			b = bytes.TrimSuffix(b, []byte("</script>"))
-
-			return b
-		}),
-	}
+	return &Handler{Handler: base}
 }
 
 func (h *Handler) JSON(w http.ResponseWriter, r *http.Request, status int, data any) {

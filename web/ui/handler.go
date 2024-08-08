@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"bytes"
 	"context"
 	"embed"
 	"fmt"
@@ -33,7 +32,7 @@ type Handler struct {
 	*handler.Handler
 	signInPath func() string
 	mux        *router.ServeMux
-	funcs      template.FuncMap
+	Funcs      template.FuncMap
 	HTML       *handler.Renderer
 }
 
@@ -44,7 +43,7 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		mux:        mux,
 	}
 
-	h.funcs = handler.NewTemplateFuncs(template.FuncMap{
+	h.Funcs = handler.NewTemplateFuncs(template.FuncMap{
 		"Path":          h.tmplPath,
 		"HasPathPrefix": h.tmplHasPathPrefix,
 	})
@@ -60,10 +59,8 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		}
 	}
 
-	h.HTML = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.funcs, func(w http.ResponseWriter, r *http.Request, template *bytes.Buffer) []byte {
+	h.HTML = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.Funcs, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "text/html; charset=utf-8")
-
-		return nil
 	})
 
 	return h
@@ -84,7 +81,7 @@ func (h *Handler) tmplHasPathPrefix(value any, name string, paramArgPairs ...any
 func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, vars handler.Vars) error {
 	templatePaths := []string{"email/" + view + ".html"}
 
-	return h.Handler.SendEmail(ctx, templateFiles, templatePaths, h.funcs, from, to, view, vars)
+	return h.Handler.SendEmail(ctx, templateFiles, templatePaths, h.Funcs, from, to, view, vars)
 }
 
 func (h *Handler) HasPathPrefix(value string, name string, paramArgPairs ...any) bool {

@@ -510,8 +510,10 @@ func totpResetPost(h *ui.Handler) http.HandlerFunc {
 
 		_, err = h.Svc.Account.ResetTOTP(ctx, passport.Account, user.ID, input.Password)
 		if err != nil {
-			h.HTML.ErrorViewFunc(w, r, "reset TOTP", err, "site/account/totp/reset/reset", func(data *handler.ViewData) {
+			h.HTML.ErrorViewFunc(w, r, "reset TOTP", err, "site/account/totp/reset/reset", func(data *handler.ViewData) error {
 				data.ErrorMessage = "Either your credentials are incorrect, or you're not authorised to access this application."
+
+				return nil
 			})
 
 			return

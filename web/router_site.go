@@ -1,17 +1,12 @@
 package web
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"fmt"
-	"io/fs"
 	"log/slog"
 	"net/http"
-	"path"
 	"path/filepath"
 	"slices"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -235,57 +230,10 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 	mux.Handle("/favicon.ico", httpx.RewriteHandler(mux, "/favicon.png"))
 
-	funcs := handler.NewTemplateFuncs(nil)
-	renderer := handler.NewRenderer(h.Handler, nil, nil, funcs, nil)
-	publicFilesRoot := http.FS(publicFiles)
-	fileServer := http.FileServer(publicFilesRoot)
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if allowedMethods, notAllowed := httpx.MethodNotAllowed(mux, r); notAllowed {
-			w.Header().Set("allow", strings.Join(allowedMethods, ", "))
-
-			h.HTML.ErrorView(w, r, "static file", httpx.ErrMethodNotAllowed, "site/error", nil)
-
-			return
-		}
-
-		upath := r.URL.Path
-		if mux.BasePath != "" {
-			upath = strings.TrimPrefix(upath, mux.BasePath)
-			r.URL.Path = upath
-		}
-		if !strings.HasPrefix(upath, "/") {
-			upath = "/" + upath
-			r.URL.Path = upath
-		}
-		upath = path.Clean(upath)
-
-		stat, err := fs.Stat(publicFiles, strings.TrimPrefix(upath, "/"))
-		if err != nil {
-			if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) {
-				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httpx.ErrNotFound, err), "site/error", nil)
-			} else {
-				h.HTML.ErrorView(w, r, "static file", fmt.Errorf("%w: %w", httpx.ErrInternalServerError, err), "site/error", nil)
-			}
-
-			return
-		}
-
-		if stat.IsDir() {
-			h.HTML.ErrorView(w, r, "static file", httpx.ErrForbidden, "site/error", nil)
-
-			return
-		}
-
-		var buf bytes.Buffer
-		rw := &fsResponseWriter{
-			ResponseWriter: w,
-			buf:            &buf,
-		}
-
-		fileServer.ServeHTTP(rw, r)
-
-		renderer.Text(w, r, rw.statusCode, buf.String(), nil)
-	})
+	renderer := handler.NewRenderer(h.Handler, nil, nil, h.Funcs, nil)
+	mux.HandleFunc("/", newFileServer(uiPublicFiles, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
+		h.HTML.ErrorView(w, r, "static file", err, "site/error", nil)
+	}))
 
 	return mux
 }

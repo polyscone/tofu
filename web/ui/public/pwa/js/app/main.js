@@ -29,10 +29,10 @@ router()
 // path in the URL with / and instead set the router state to
 // whatever the URL was, but this time with the prefix
 if (platform.config.prefix) {
-	const route = m.route.get() || "/"
+	const route = m.route.get() || "{{.App.BasePath}}/"
 
 	if (route !== __STATE__.url) {
-		history.replaceState(null, "", "/")
+		history.replaceState(null, "", "{{.App.BasePath}}/")
 
 		m.route.set(__STATE__.url)
 	}

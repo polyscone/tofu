@@ -1,7 +1,3 @@
-{{define "master"}}{{template "master_js" .}}{{end}}
-
-{{define "view_body" -}}
-
 {{$factoryName := or (.URL.Query.Get "factory-name") "createSDK" -}}
 
 function {{$factoryName | UnescapeJS}} (opts) {
@@ -429,5 +425,3 @@ function {{$factoryName | UnescapeJS}} (opts) {
 {{if .URL.Query.Get "export" -}}
 	export default {{$factoryName | UnescapeJS}}()
 {{end -}}
-
-{{- end}}

@@ -2,9 +2,11 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"net/http"
 	texttemplate "text/template"
@@ -51,7 +53,6 @@ func (s *State) Store(key string, value any) bool {
 
 type ViewData struct {
 	View         string
-	TextTemplate string
 	Status       int
 	CSRF         CSRF
 	ErrorMessage string
@@ -96,10 +97,14 @@ func (v ViewData) WithProps(pairs ...any) (ViewData, error) {
 	return v, nil
 }
 
-type ViewDataFunc func(data *ViewData)
+type Templater interface {
+	Execute(wr io.Writer, data any) error
+}
+
+type ViewDataFunc func(data *ViewData) error
 type ViewVarsFunc func(r *http.Request) (Vars, error)
 type TemplatePathsFunc func(view string) []string
-type TemplateProcessFunc func(w http.ResponseWriter, r *http.Request, template *bytes.Buffer) []byte
+type TemplateProcessFunc func(w http.ResponseWriter, r *http.Request)
 
 type Renderer struct {
 	h             *Handler
@@ -121,8 +126,7 @@ func NewRenderer(h *Handler, templateFiles fs.FS, templatePaths TemplatePathsFun
 	}
 }
 
-func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc ViewDataFunc) {
-	ctx := r.Context()
+func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view string) (ViewData, error) {
 	config := rn.h.Config(ctx)
 	user := rn.h.User(ctx)
 	passport := rn.h.Passport(ctx)
@@ -172,46 +176,34 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	if vars, ok := rn.viewVarsFuncs[view]; ok {
 		defaults, err := vars(r)
 		if err != nil {
-			rn.ErrorView(w, r, "vars", err, "site/error", nil)
-
-			return
+			return data, fmt.Errorf("vars: %w", err)
 		}
 
 		data.Vars = data.Vars.Merge(defaults)
 	}
 
-	if dataFunc != nil {
-		dataFunc(&data)
-	}
-
 	// Make sure the current view name isn't overwritten by a user function
 	data.View = view
 
-	var buf bytes.Buffer
-	if data.TextTemplate != "" {
-		tmpl := texttemplate.New("").Option("missingkey=default").Funcs(rn.funcs)
+	return data, nil
+}
 
-		_, err := tmpl.Parse(data.TextTemplate)
-		if err != nil {
-			rn.h.Logger(ctx).Error("parse template string", "error", err)
+func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc ViewDataFunc) {
+	ctx := r.Context()
+	tmpl := rn.h.Template(rn.templateFiles, rn.templatePaths(view), rn.funcs, view)
 
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	data, err := rn.data(ctx, r, status, view)
+	if err != nil {
+		rn.h.Logger(ctx).Error("view data", "error", err)
 
-			return
-		}
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 
-		if err := tmpl.Execute(&buf, data); err != nil {
-			rn.h.Logger(ctx).Error("execute template", "error", err)
+		return
+	}
 
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-
-			return
-		}
-	} else {
-		tmpl := rn.h.Template(rn.templateFiles, rn.templatePaths(view), rn.funcs, view)
-
-		if err := tmpl.ExecuteTemplate(&buf, "master", data); err != nil {
-			rn.h.Logger(ctx).Error("execute view template", "error", err)
+	if dataFunc != nil {
+		if err := dataFunc(&data); err != nil {
+			rn.h.Logger(ctx).Error("execute view data func", "error", err)
 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 
@@ -219,11 +211,17 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 		}
 	}
 
+	var buf bytes.Buffer
+	if err := tmpl.ExecuteTemplate(&buf, "master", data); err != nil {
+		rn.h.Logger(ctx).Error("execute view template", "error", err)
+
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+
+		return
+	}
+
 	if rn.process != nil {
-		b := rn.process(w, r, &buf)
-		if b != nil {
-			buf = *bytes.NewBuffer(b)
-		}
+		rn.process(w, r)
 	}
 
 	w.WriteHeader(status)
@@ -234,15 +232,10 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 }
 
 func (rn *Renderer) View(w http.ResponseWriter, r *http.Request, status int, view string, vars Vars) {
-	rn.ViewFunc(w, r, status, view, func(data *ViewData) {
+	rn.ViewFunc(w, r, status, view, func(data *ViewData) error {
 		data.Vars = data.Vars.Merge(vars)
-	})
-}
 
-func (rn *Renderer) Text(w http.ResponseWriter, r *http.Request, status int, text string, vars Vars) {
-	rn.ViewFunc(w, r, status, "texttemplate", func(data *ViewData) {
-		data.TextTemplate = text
-		data.Vars = data.Vars.Merge(vars)
+		return nil
 	})
 }
 
@@ -252,6 +245,48 @@ func (rn *Renderer) SetViewVars(name string, vars ViewVarsFunc) {
 	}
 
 	rn.viewVarsFuncs[name] = vars
+}
+
+func (rn *Renderer) Text(dst io.Writer, r *http.Request, status int, text string, vars Vars) error {
+	ctx := r.Context()
+	data, err := rn.data(ctx, r, status, "text_template")
+	if err != nil {
+		return fmt.Errorf("text template data: %w", err)
+	}
+
+	data.Vars = data.Vars.Merge(vars)
+
+	tmpl := texttemplate.New("").Option("missingkey=default").Funcs(rn.funcs)
+	if _, err := tmpl.Parse(text); err != nil {
+		return fmt.Errorf("parse text template: %w", err)
+	}
+
+	if err := tmpl.Execute(dst, data); err != nil {
+		return fmt.Errorf("execute text template: %w", err)
+	}
+
+	return nil
+}
+
+func (rn *Renderer) HTML(dst io.Writer, r *http.Request, status int, html string, vars Vars) error {
+	ctx := r.Context()
+	data, err := rn.data(ctx, r, status, "html_template")
+	if err != nil {
+		return fmt.Errorf("HTML template data: %w", err)
+	}
+
+	data.Vars = data.Vars.Merge(vars)
+
+	tmpl := template.New("").Option("missingkey=default").Funcs(rn.funcs)
+	if _, err := tmpl.Parse(html); err != nil {
+		return fmt.Errorf("parse HTML template: %w", err)
+	}
+
+	if err := tmpl.Execute(dst, data); err != nil {
+		return fmt.Errorf("execute HTML template: %w", err)
+	}
+
+	return nil
 }
 
 func (rn *Renderer) HandlerFunc(view string) http.HandlerFunc {
@@ -278,7 +313,7 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 		w.Header().Set("connection", "close")
 	}
 
-	rn.ViewFunc(w, r, status, view, func(data *ViewData) {
+	rn.ViewFunc(w, r, status, view, func(data *ViewData) error {
 		data.ErrorMessage = httpx.ErrorMessage(err)
 
 		switch {
@@ -293,13 +328,17 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 		}
 
 		if dataFunc != nil {
-			dataFunc(data)
+			return dataFunc(data)
 		}
+
+		return nil
 	})
 }
 
 func (rn *Renderer) ErrorView(w http.ResponseWriter, r *http.Request, msg string, err error, view string, vars Vars) {
-	rn.ErrorViewFunc(w, r, msg, err, view, func(data *ViewData) {
+	rn.ErrorViewFunc(w, r, msg, err, view, func(data *ViewData) error {
 		data.Vars = data.Vars.Merge(vars)
+
+		return nil
 	})
 }

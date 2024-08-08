@@ -2,29 +2,40 @@ package web
 
 import (
 	"context"
+	"embed"
 	"errors"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"path/filepath"
 	"slices"
-	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/app"
+	"github.com/polyscone/tofu/dev"
+	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/fstack"
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/httpx/middleware"
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/size"
 	"github.com/polyscone/tofu/web/api"
-	"github.com/polyscone/tofu/web/api/account"
-	"github.com/polyscone/tofu/web/api/meta"
-	"github.com/polyscone/tofu/web/api/security"
-	"github.com/polyscone/tofu/web/api/system"
+	"github.com/polyscone/tofu/web/api/v1/account"
+	"github.com/polyscone/tofu/web/api/v1/meta"
+	"github.com/polyscone/tofu/web/api/v1/security"
+	"github.com/polyscone/tofu/web/api/v1/system"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/sess"
 )
 
-func NewAPIRouter(base *handler.Handler) http.Handler {
+//go:embed "all:api/v1/public"
+var apiFilesV1 embed.FS
+
+const apiPublicDirV1 = "api/v1/public"
+
+var apiPublicFilesV1 = fstack.New(dev.RelDirFS(apiPublicDirV1), errsx.Must(fs.Sub(apiFilesV1, apiPublicDirV1)))
+
+func NewAPIRouterV1(base *handler.Handler) http.Handler {
 	mux := router.NewServeMux()
 
 	mux.BasePath = app.BasePath + "/api/v1"
@@ -124,8 +135,6 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 		}
 	})
 
-	mux.HandleFunc("GET /sdk.js", h.JavaScript.HandlerFunc("sdk/v1.js"))
-
 	account.RegisterResetPasswordHandlers(h, mux)
 	account.RegisterSessionHandlers(h, mux)
 	account.RegisterSignInHandlers(h, mux)
@@ -139,17 +148,11 @@ func NewAPIRouter(base *handler.Handler) http.Handler {
 
 	system.RegisterConfigHandlers(h, mux)
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if allowedMethods, notAllowed := httpx.MethodNotAllowed(mux, r); notAllowed {
-			w.Header().Set("allow", strings.Join(allowedMethods, ", "))
-
-			h.ErrorJSON(w, r, "handler", httpx.ErrMethodNotAllowed)
-
-			return
-		}
-
-		h.ErrorJSON(w, r, "handler", httpx.ErrNotFound)
-	})
+	funcs := handler.NewTemplateFuncs(nil)
+	renderer := handler.NewRenderer(h.Handler, nil, nil, funcs, nil)
+	mux.HandleFunc("/", newFileServer(apiPublicFilesV1, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
+		h.ErrorJSON(w, r, "static file", err)
+	}))
 
 	return mux
 }

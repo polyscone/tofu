@@ -1,0 +1,3 @@
+Contact: mailto:{{or .Config.SecurityEmail .Config.SystemEmail}}
+Preferred-Languages: en
+Canonical: {{.URL.Scheme}}://{{.URL.Host}}{{.App.BasePath}}/.well-known/security.txt
