@@ -1,74 +1,92 @@
+{{define "master_site_styles"}}
+	<link rel="stylesheet" href="{{.App.BasePath}}/all/css/common.css">
+	<link rel="stylesheet" href="{{.App.BasePath}}/site/css/site.css">
+{{end}}
+
 {{define "master_site" -}}
 
+{{if or (not .Stream) (eq .Stream "begin") -}}
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>{{block "meta_title" .}}{{.App.Name}}{{end}}</title>
-		<meta name="description" content="{{block "meta_description" .}}{{.App.Description}}{{end}}">
-		<link rel="stylesheet" href="{{.App.BasePath}}/all/css/common.css">
-		<link rel="stylesheet" href="{{.App.BasePath}}/site/css/site.css">
-	</head>
-	<body>
-		<script src="{{.App.BasePath}}/site/js/components.js"></script>
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>{{block "meta_title" .}}{{.App.Name}}{{end}}</title>
+	<meta name="description" content="{{block "meta_description" .}}{{.App.Description}}{{end}}">
+	{{template "master_site_styles" .}}
+</head>
+<body>
+	{{if eq .Stream "begin" -}}
+		<template shadowrootmode="open">
+			{{template "master_site_styles" .}}
+	{{- end}}
 
-		<a href="#main-content" class="skip-nav-link">Skip navigation</a>
+	<script src="{{.App.BasePath}}/site/js/components.js"></script>
 
-		<header class="header">
-			<p class="site-title">
-				<a href="{{Path "page.home"}}">{{.App.Name}}</a>
-			</p>
+	<a href="#main-content" class="skip-nav-link">Skip navigation</a>
 
-			<nav class="nav">
-				<ul>
-					<li><a href="{{Path "page.home"}}">Home</a></li>
+	<header class="header">
+		<p class="site-title">
+			<a href="{{Path "page.home"}}">{{.App.Name}}</a>
+		</p>
 
-					{{if .Session.IsSignedIn}}
-						<li><a href="{{Path "account.dashboard"}}">Account</a></li>
+		<nav class="nav">
+			<ul>
+				<li><a href="{{Path "page.home"}}">Home</a></li>
 
-						{{if .Passport.CanAccessAdmin}}
-							<li><a href="{{Path "admin.dashboard"}}">Admin</a></li>
-						{{end}}
+				{{if .Session.IsSignedIn}}
+					<li><a href="{{Path "account.dashboard"}}">Account</a></li>
 
-						<li>
-							<form action="{{Path "account.sign_out.post"}}" method="POST">
-								{{template "com_csrf_input" .}}
-
-								<button type="submit" class="btn--link">Sign out</button>
-							</form>
-						</li>
-					{{else}}
-						<li><a href="{{Path "account.sign_in"}}">Sign in</a></li>
-					{{end}}
-				</ul>
-			</nav>
-		</header>
-
-		<main id="main-content" class="main">
-			{{if .Session.IsSignedIn}}
-				<div class="top-bar">
-					{{if HasPathPrefix .URL.Path "admin.section"}}
-						{{template "site_nav_admin" .}}
+					{{if .Passport.CanAccessAdmin}}
+						<li><a href="{{Path "admin.dashboard"}}">Admin</a></li>
 					{{end}}
 
-					{{if HasPathPrefix .URL.Path "account.section"}}
-						{{template "site_nav_account" .}}
-					{{end}}
-				</div>
-			{{end}}
+					<li>
+						<form action="{{Path "account.sign_out.post"}}" method="POST">
+							{{template "com_csrf_input" .}}
 
-			{{block "view_head" .}}{{end}}
+							<button type="submit" class="btn--link">Sign out</button>
+						</form>
+					</li>
+				{{else}}
+					<li><a href="{{Path "account.sign_in"}}">Sign in</a></li>
+				{{end}}
+			</ul>
+		</nav>
+	</header>
 
-			{{template "site_message_banners" .}}
+	<main id="main-content" class="main">
+		{{if .Session.IsSignedIn}}
+			<div class="top-bar">
+				{{if HasPathPrefix .URL.Path "admin.section"}}
+					{{template "site_nav_admin" .}}
+				{{end}}
 
-			{{block "view_body" .}}{{end}}
-		</main>
+				{{if HasPathPrefix .URL.Path "account.section"}}
+					{{template "site_nav_account" .}}
+				{{end}}
+			</div>
+		{{end}}
 
-		<footer class="footer">
-			<p>Lorem ipsum dolor, sit amet, consectetur adipisicing elit...</p>
-		</footer>
-	</body>
+		{{block "view_head" .}}{{end}}
+
+		{{template "site_message_banners" .}}
+
+		{{block "view_body" .}}{{end}}
+	</main>
+
+	<footer class="footer">
+		<p>Lorem ipsum dolor, sit amet, consectetur adipisicing elit...</p>
+	</footer>
+
+	{{if eq .Stream "begin" -}}
+		</template>
+	{{- end}}
+{{- end}}
+
+{{if or (not .Stream) (eq .Stream "end") -}}
+</body>
 </html>
+{{- end}}
 
 {{- end}}
