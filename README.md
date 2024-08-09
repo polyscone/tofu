@@ -6,10 +6,18 @@ Build with:
 ```sh
 go build -trimpath ./cmd/httpd
 ```
+...or...
+```sh
+make PKG=./cmd/httpd
+```
 
 Run locally with:
 ```sh
 ./httpd -dev -insecure -addr :8080
+```
+...or...
+```sh
+make httpd/dev HTTPD_DEV_FLAGS=-insecure
 ```
 
 This will start an insecure server over HTTP.
@@ -22,7 +30,7 @@ go run $(go env GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits 2048 -host "lo
 
 On Windows replace `$(go env GOROOT)` with `%GOROOT%` if it's set, otherwise run `go env GOROOT` and copy the path into the command.
 
-See `httpd -help` for more options.
+See `httpd -help` for more application options and see the Makefile for more build options.
 
 ## Web tenant configuration
 
