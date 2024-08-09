@@ -53,6 +53,7 @@ func (s *State) Store(key string, value any) bool {
 
 type ViewData struct {
 	View         string
+	Stream       string
 	Status       int
 	CSRF         CSRF
 	ErrorMessage string
@@ -224,7 +225,9 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 		rn.process(w, r)
 	}
 
-	w.WriteHeader(status)
+	if status != 0 {
+		w.WriteHeader(status)
+	}
 
 	if _, err := buf.WriteTo(w); err != nil {
 		rn.h.Logger(ctx).Error("write view template response", "error", err)
@@ -237,6 +240,24 @@ func (rn *Renderer) View(w http.ResponseWriter, r *http.Request, status int, vie
 
 		return nil
 	})
+}
+
+func (rn *Renderer) StreamView(w http.ResponseWriter, r *http.Request, status int, view string, vars Vars) func() {
+	rn.ViewFunc(w, r, status, view, func(data *ViewData) error {
+		data.Stream = "begin"
+		data.Vars = data.Vars.Merge(vars)
+
+		return nil
+	})
+
+	return func() {
+		rn.ViewFunc(w, r, 0, view, func(data *ViewData) error {
+			data.Stream = "end"
+			data.Vars = data.Vars.Merge(vars)
+
+			return nil
+		})
+	}
 }
 
 func (rn *Renderer) SetViewVars(name string, vars ViewVarsFunc) {
