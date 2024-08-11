@@ -115,6 +115,8 @@ func newFileServer(fsys fs.FS, mux *router.ServeMux, renderer *handler.Renderer,
 		if stat.IsDir() {
 			if !strings.HasSuffix(fpath, "/") {
 				fpath += "/"
+			}
+			if !strings.HasSuffix(upath, "/") {
 				upath += "/"
 			}
 
@@ -145,12 +147,6 @@ func newFileServer(fsys fs.FS, mux *router.ServeMux, renderer *handler.Renderer,
 
 				return
 			}
-		}
-
-		if _, ok := f.(io.ReadSeeker); !ok {
-			errorHandler(w, r, fmt.Errorf("%w: file does not implement io.ReadSeeker", httpx.ErrInternalServerError))
-
-			return
 		}
 
 		b, err := io.ReadAll(f)
