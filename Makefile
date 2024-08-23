@@ -112,7 +112,7 @@ gen/cert:
 
 HTTPD_DEV_ADDR := :8080
 HTTPD_DEV_DEBUG_ADDR := :8081
-override HTTPD_DEV_FLAGS := -dev -addr $(HTTPD_DEV_ADDR) -debug-addr $(HTTPD_DEV_DEBUG_ADDR) -log-style text $(HTTPD_DEV_FLAGS)
+override HTTPD_DEV_FLAGS := -dev -addr $(HTTPD_DEV_ADDR) -debug-addr $(HTTPD_DEV_DEBUG_ADDR) -log-style dev $(HTTPD_DEV_FLAGS)
 .PHONY: httpd/dev
 httpd/dev:
 	$(CURDIR)/httpd $(HTTPD_DEV_FLAGS)
