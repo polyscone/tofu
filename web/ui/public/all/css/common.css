@@ -38,6 +38,9 @@
 	--clr-invalid-100: hsl(0, 100%, 95%);
 	--clr-invalid-400: hsl(0, 100%, 50%);
 
+	--clr-info-100: hsl(207, 100%, 95%);
+	--clr-info-400: hsl(207, 100%, 50%);
+
 	--clr-warning-100: hsl(45, 100%, 95%);
 	--clr-warning-400: hsl(40, 100%, 50%);
 
@@ -304,8 +307,8 @@
 	}
 
 	.flash-banner {
-		background: var(--clr-accent-100);
-		border: 1px solid var(--clr-accent-400);
+		background: var(--clr-info-100);
+		border: 1px solid var(--clr-info-400);
 		text-align: center;
 	}
 
