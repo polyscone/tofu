@@ -43,6 +43,8 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 		"FormatDurationStat": TmplFormatDurationStat,
 		"FormatSizeSI":       TmplFormatSizeSI,
 		"FormatSizeIEC":      TmplFormatSizeIEC,
+		"TrimPrefix":         TmplTrimPrefix,
+		"TrimSuffix":         TmplTrimSuffix,
 		"HasPrefix":          TmplHasPrefix,
 		"HasSuffix":          TmplHasSuffix,
 		"HasString":          TmplHasString,
@@ -410,6 +412,20 @@ func TmplFormatSizeSI(bytes uint64) string {
 
 func TmplFormatSizeIEC(bytes uint64) string {
 	return human.SizeIEC(bytes)
+}
+
+func TmplTrimPrefix(value, prefix any) string {
+	v := fmt.Sprintf("%v", value)
+	p := fmt.Sprintf("%v", prefix)
+
+	return strings.TrimPrefix(v, p)
+}
+
+func TmplTrimSuffix(value, suffix any) string {
+	v := fmt.Sprintf("%v", value)
+	s := fmt.Sprintf("%v", suffix)
+
+	return strings.TrimSuffix(v, s)
 }
 
 func TmplHasPrefix(value, prefix any) bool {
