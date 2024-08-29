@@ -20,8 +20,8 @@ import (
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/httpx/realip"
 	"github.com/polyscone/tofu/session"
-	"github.com/polyscone/tofu/sms"
 	"github.com/polyscone/tofu/smtp"
+	"github.com/polyscone/tofu/twilio"
 	"github.com/polyscone/tofu/uuid"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/sess"
@@ -319,7 +319,7 @@ func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePa
 		HTML:    html,
 	}
 
-	return h.Email.Send(ctx, msg)
+	return h.Email.SendEmail(ctx, msg)
 }
 
 func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
@@ -329,9 +329,9 @@ func (h *Handler) SendSMS(ctx context.Context, to, body string) error {
 	}
 
 	// TODO: Reuse client for as long as Twilio config hasn't changed
-	messager := sms.NewTwilioClient(&httpClient, config.TwilioSID, config.TwilioToken)
+	messager := twilio.NewTwilioClient(&httpClient, config.TwilioSID, config.TwilioToken)
 
-	return messager.Send(ctx, config.TwilioFromTel, to, body)
+	return messager.SendSMS(ctx, config.TwilioFromTel, to, body)
 }
 
 func (h *Handler) SendTOTPSMS(email, tel string) error {

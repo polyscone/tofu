@@ -245,7 +245,7 @@ func (c *Client) enqueueResendAPI(ctx context.Context, msgs []Msg, apiKey string
 	return joined.Err()
 }
 
-func (c *Client) Send(ctx context.Context, msgs ...Msg) error {
+func (c *Client) SendEmail(ctx context.Context, msgs ...Msg) error {
 	config, err := c.config.Read(ctx)
 	if err != nil {
 		return fmt.Errorf("resend API key: %w", err)

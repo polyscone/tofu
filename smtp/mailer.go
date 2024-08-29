@@ -3,7 +3,7 @@ package smtp
 import "context"
 
 type Mailer interface {
-	Send(ctx context.Context, msgs ...Msg) error
+	SendEmail(ctx context.Context, msgs ...Msg) error
 }
 
 type Msg struct {

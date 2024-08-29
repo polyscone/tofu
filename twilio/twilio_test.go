@@ -1,4 +1,4 @@
-package sms_test
+package twilio_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/polyscone/tofu/sms"
+	"github.com/polyscone/tofu/twilio"
 )
 
 func TestMessages(t *testing.T) {
@@ -103,10 +103,10 @@ func TestMessages(t *testing.T) {
 			defer ts.Close()
 
 			client := http.Client{Timeout: 10 * time.Second}
-			tw := sms.NewTwilioClient(&client, tc.sid, tc.token)
+			tw := twilio.NewTwilioClient(&client, tc.sid, tc.token)
 			tw.Endpoint = ts.URL
 
-			err := tw.Send(context.Background(), tc.from, tc.to, tc.body)
+			err := tw.SendSMS(context.Background(), tc.from, tc.to, tc.body)
 			if tc.wantErr {
 				if err == nil {
 					t.Error("want error, got nil")

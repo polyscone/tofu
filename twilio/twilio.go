@@ -1,4 +1,4 @@
-package sms
+package twilio
 
 import (
 	"context"
@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/polyscone/tofu/sms"
 )
 
 const codeInvalidToNumber = 21211
@@ -47,7 +49,7 @@ func (c *Client) isValid() error {
 }
 
 // Send will use the Twilio API to send an SMS message using the given data.
-func (c *Client) Send(ctx context.Context, from, to, body string) error {
+func (c *Client) SendSMS(ctx context.Context, from, to, body string) error {
 	if err := c.isValid(); err != nil {
 		return fmt.Errorf("invalid client: %w", err)
 	}
@@ -122,10 +124,10 @@ func (c *Client) Send(ctx context.Context, from, to, body string) error {
 		switch data.Code {
 		case codeInvalidToNumber:
 			if from == to {
-				return fmt.Errorf("%w: the from and to numbers cannot be the same", ErrInvalidNumber)
+				return fmt.Errorf("%w: the from and to numbers cannot be the same", sms.ErrInvalidNumber)
 			}
 
-			return fmt.Errorf("%w: %v is an invalid number", ErrInvalidNumber, to)
+			return fmt.Errorf("%w: %v is an invalid number", sms.ErrInvalidNumber, to)
 
 		default:
 			return fmt.Errorf("code %v: %v", data.Code, data.Message)
