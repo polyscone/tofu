@@ -137,6 +137,26 @@ onMount("time", node => {
 	}
 })
 
+function _flattenNodes (node) {
+	const nodes = [node]
+
+	for (const child of node.childNodes) {
+		nodes.push(child)
+
+		const flattened = _flattenNodes(child)
+
+		for (const grandchild of flattened) {
+			nodes.push(grandchild)
+		}
+	}
+
+	return nodes
+}
+
+function _flattenNodesUnique (node) {
+	return [...new Set(_flattenNodes(node))]
+}
+
 function _componentsInit () {
 	window._components ||= {
 		initialised: false,
@@ -161,32 +181,47 @@ function _componentsInit () {
 			destroy: [],
 		},
 		mutationObserver: new MutationObserver(mutations => {
+			const seenAdded = []
+			const seenRemoved = []
+
 			for (const mutation of mutations) {
 				for (const node of mutation.addedNodes) {
-					if (!node.matches) {
-						continue
-					}
+					const nodes = _flattenNodesUnique(node)
 
-					for (const action of window._components.mutationActions.mount) {
-						if (!node.matches(action.selector)) {
+					for (const node of nodes) {
+						if (seenAdded.includes(node) || !node.matches) {
 							continue
 						}
 
-						action.callback(node)
+						seenAdded.push(node)
+
+						for (const action of window._components.mutationActions.mount) {
+							if (!node.matches(action.selector)) {
+								continue
+							}
+
+							action.callback(node)
+						}
 					}
 				}
 
 				for (const node of mutation.removedNodes) {
-					if (!node.matches) {
-						continue
-					}
+					const nodes = _flattenNodesUnique(node)
 
-					for (const action of window._components.mutationActions.destroy) {
-						if (node !== action.node) {
+					for (const node of nodes) {
+						if (seenRemoved.includes(node) || !node.matches) {
 							continue
 						}
 
-						action.callback(node)
+						seenRemoved.push(node)
+
+						for (const action of window._components.mutationActions.destroy) {
+							if (node !== action.node) {
+								continue
+							}
+
+							action.callback(node)
+						}
 					}
 				}
 			}
