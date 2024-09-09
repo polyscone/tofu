@@ -7,6 +7,7 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"reflect"
 	"slices"
 	"strconv"
 	"strings"
@@ -49,6 +50,7 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 		"HasSuffix":          TmplHasSuffix,
 		"HasString":          TmplHasString,
 		"ToStrings":          TmplToStrings,
+		"Fields":             TmplFields,
 		"Split":              TmplSplit,
 		"Join":               TmplJoin,
 		"ReplaceAll":         TmplReplaceAll,
@@ -58,6 +60,7 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 		"Slice":              TmplSlice,
 		"SliceContains":      TmplSliceContains,
 		"Map":                TmplMap,
+		"GetOr":              TmplGetOr,
 	}
 
 	for key, value := range custom {
@@ -475,6 +478,10 @@ func TmplToStrings(value any) ([]string, error) {
 	}
 }
 
+func TmplFields(str string) []string {
+	return strings.Fields(str)
+}
+
 func TmplSplit(str, sep string) []string {
 	return strings.Split(str, sep)
 }
@@ -528,4 +535,38 @@ func TmplMap(pairs ...any) (map[string]any, error) {
 	}
 
 	return m, nil
+}
+
+func TmplGetOr(src any, key string, fallback any) any {
+	switch v := src.(type) {
+	case map[string]any:
+		if value, ok := v[key]; ok {
+			return value
+		}
+
+	case map[string]string:
+		if value, ok := v[key]; ok {
+			return value
+		}
+
+	case map[string]int:
+		if value, ok := v[key]; ok {
+			return value
+		}
+
+	default:
+		rv := reflect.ValueOf(src)
+		if rv.Kind() == reflect.Ptr {
+			rv = rv.Elem()
+		}
+		if rv.Kind() != reflect.Struct {
+			return false
+		}
+
+		if field := rv.FieldByName(key); field.IsValid() {
+			return field.Interface()
+		}
+	}
+
+	return fallback
 }
