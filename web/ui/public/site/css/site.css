@@ -93,7 +93,7 @@
 		margin-block-start: 1rem;
 	}
 
-	.data-table tr:hover td {
+	.data-table tr:hover {
 		background: var(--clr-accent-100);
 	}
 
@@ -106,11 +106,11 @@
 		font-style: italic;
 	}
 
-	.data-table .data-table__highlight td {
+	.data-table .data-table__highlight {
 		background: var(--clr-highlight-100);
 	}
 
-	.data-table .data-table__highlight:hover td {
+	.data-table .data-table__highlight:hover {
 		background: var(--clr-highlight-400);
 	}
 
