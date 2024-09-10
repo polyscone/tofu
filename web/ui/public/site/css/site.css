@@ -79,6 +79,10 @@
 		margin-block-start: 1rem;
 	}
 
+	details fieldset {
+		margin-block-start: 0.5rem;
+	}
+
 	.top-bar ul {
 		display: flex;
 		flex-wrap: wrap;

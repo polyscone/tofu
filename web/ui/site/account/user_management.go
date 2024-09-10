@@ -297,6 +297,12 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 
 		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
 
+		q := r.URL.Query()
+
+		q.Del("suspend")
+
+		r.URL.RawQuery = q.Encode()
+
 		http.Redirect(w, r, h.PathQuery(r, "account.management.user.list"), http.StatusSeeOther)
 	}
 }
