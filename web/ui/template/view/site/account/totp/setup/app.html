@@ -21,7 +21,9 @@
 		<li>1Password (<a href="https://support.1password.com/one-time-passwords/" target="_blank" rel="noopener noreferrer">Android, iOS, Windows, Mac</a>)</li>
 	</ul>
 
-	<p><a href="{{Path "account.totp.setup.sms"}}">Can't install an authenticator app? Click here to use SMS.</a></p>
+	{{if .Config.TOTPSMSEnabled}}
+		<p><a href="{{Path "account.totp.setup.sms"}}">Can't install an authenticator app? Click here to use SMS.</a></p>
+	{{end}}
 
 	<p>
 		Use your authenticator app to scan the QR code below.
