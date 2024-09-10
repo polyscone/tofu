@@ -18,6 +18,10 @@
 				in a <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer">database of security breaches</a> and isn't considered to be secure.
 			</p>
 			<p>We recommend that you change it to a more secure one as soon as possible.</p>
+
+			{{if and (not .Config.TOTPRequired) (not .User.HasActivatedTOTP)}}
+				<p>Also consider <a href="{{Path "account.totp.setup"}}">setting up two-factor authentication</a> to help secure your account even further.</p>
+			{{end}}
 		</div>
 	{{end}}
 

@@ -18,6 +18,12 @@
 	</div>
 {{end}}
 
+{{range $flash := .Session.FlashWarning}}
+	<div class="message-banner flash-banner flash-banner--warning center">
+		<p>{{UnescapeHTML $flash}}</p>
+	</div>
+{{end}}
+
 {{range $flash := .Session.Flash}}
 	<div class="message-banner flash-banner center">
 		<p>{{UnescapeHTML $flash}}</p>

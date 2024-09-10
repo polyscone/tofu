@@ -514,6 +514,17 @@ func signInSuccessRedirect(h *ui.Handler, w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	config := h.Config(ctx)
+	user := h.User(ctx)
+
+	if !config.TOTPRequired && !user.HasActivatedTOTP() {
+		h.AddFlashWarningf(ctx, `
+			Please consider
+			<a href="`+h.Path("account.totp.setup")+`">setting up two-factor authentication</a>
+			to help secure your account even further.
+		`)
+	}
+
 	if redirect := h.Sessions.PopString(ctx, sess.Redirect); redirect != "" {
 		http.Redirect(w, r, redirect, http.StatusSeeOther)
 

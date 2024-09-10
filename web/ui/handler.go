@@ -112,6 +112,14 @@ func (h *Handler) AddFlashf(ctx context.Context, format string, a ...any) {
 	h.Sessions.Set(ctx, sess.Flash, flash)
 }
 
+func (h *Handler) AddFlashWarningf(ctx context.Context, format string, a ...any) {
+	flash := h.Sessions.GetStrings(ctx, sess.FlashWarning)
+
+	flash = append(flash, fmt.Sprintf(format, a...))
+
+	h.Sessions.Set(ctx, sess.FlashWarning, flash)
+}
+
 func (h *Handler) AddFlashImportantf(ctx context.Context, format string, a ...any) {
 	flash := h.Sessions.GetStrings(ctx, sess.FlashImportant)
 

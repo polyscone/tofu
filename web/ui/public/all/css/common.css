@@ -312,6 +312,11 @@
 		text-align: center;
 	}
 
+	.flash-banner--warning {
+		background: var(--clr-warning-100);
+		border-color: var(--clr-warning-400);
+	}
+
 	.flash-banner--important {
 		background: var(--clr-danger-100);
 		border-color: var(--clr-danger-400);

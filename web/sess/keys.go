@@ -3,6 +3,7 @@ package sess
 const (
 	// Global session keys
 	Flash          = "global.flash"
+	FlashWarning   = "global.flash_warning"
 	FlashImportant = "global.flash_important"
 	FlashError     = "global.flash_error"
 	Redirect       = "global.redirect"

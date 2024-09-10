@@ -154,6 +154,7 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 		Session: SessionData{
 			// Global session keys
 			Flash:          rn.h.Sessions.PopStrings(ctx, sess.Flash),
+			FlashWarning:   rn.h.Sessions.PopStrings(ctx, sess.FlashWarning),
 			FlashImportant: rn.h.Sessions.PopStrings(ctx, sess.FlashImportant),
 			FlashError:     rn.h.Sessions.PopStrings(ctx, sess.FlashError),
 			Redirect:       rn.h.Sessions.GetString(ctx, sess.Redirect),

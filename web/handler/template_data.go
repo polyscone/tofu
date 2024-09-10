@@ -119,6 +119,7 @@ type AppData struct {
 type SessionData struct {
 	// General session keys
 	Flash          []string
+	FlashWarning   []string
 	FlashImportant []string
 	FlashError     []string
 	Redirect       string
