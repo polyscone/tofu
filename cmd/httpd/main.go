@@ -26,6 +26,9 @@ import (
 	"github.com/polyscone/tofu/web"
 )
 
+// Set through ldflags at build time
+var target string
+
 var opts struct {
 	version  bool
 	dev      bool
@@ -138,9 +141,14 @@ func main() {
 			revision += " (uncommitted changes)"
 		}
 
+		if target == "" {
+			target = "-"
+		}
+
 		if opts.version || flag.Arg(0) == "version" {
 			var version string
 
+			version += fmt.Sprintln("Target:       ", target)
 			version += fmt.Sprintln("Revision:     ", revision)
 			version += fmt.Sprintln("Tags:         ", tags)
 			version += fmt.Sprintln("Go version:   ", _go)
@@ -162,6 +170,7 @@ func main() {
 
 		version := expvar.NewMap("version")
 
+		version.Set("target", newString(target))
 		version.Set("revision", newString(revision))
 		version.Set("tags", newString(tags))
 		version.Set("go", newString(_go))
