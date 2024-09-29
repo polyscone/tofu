@@ -16,6 +16,7 @@ const (
 
 	viewConfig   = "system:config:view"
 	updateConfig = "system:config:update"
+	viewMetrics  = "system:metrics:view"
 )
 
 var PermissionGroups = []PermissionGroup{
@@ -45,6 +46,7 @@ var PermissionGroups = []PermissionGroup{
 		Permissions: []Permission{
 			{DisplayName: "View system config", Name: viewConfig},
 			{DisplayName: "Edit system config", Name: updateConfig},
+			{DisplayName: "View system metrics", Name: viewMetrics},
 		},
 	},
 }

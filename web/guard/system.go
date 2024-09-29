@@ -13,5 +13,5 @@ func (s System) CanUpdateConfig() bool {
 }
 
 func (s System) CanViewMetrics() bool {
-	return s.IsSuper
+	return s.can(viewMetrics)
 }
