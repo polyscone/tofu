@@ -49,6 +49,7 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		version := expvar.Get("version").(*expvar.Map)
 
+		target := varAs[string](version.Get("target"))
 		revision := varAs[string](version.Get("revision"))
 		tags := varAs[string](version.Get("tags"))
 		_go := varAs[string](version.Get("go"))
@@ -243,6 +244,7 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 		})
 
 		h.HTML.View(w, r, http.StatusOK, "site/system/metrics", handler.Vars{
+			"Target":            target,
 			"Revision":          revision,
 			"Tags":              tags,
 			"Go":                _go,
