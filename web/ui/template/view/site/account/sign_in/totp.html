@@ -31,10 +31,10 @@
 		}}
 
 		<div class="bag reverse">
-			<button type="submit"{{if not $useSMS}} class="push-inline-end" {{end}}>Sign in</button>
+			<button{{if not $useSMS}} class="push-inline-end" {{end}}>Sign in</button>
 
 			{{if $useSMS}}
-				<button type="submit" formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt push-inline-end">Resend passcode SMS</button>
+				<button formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt push-inline-end">Resend passcode SMS</button>
 			{{end}}
 
 			<div class="stack">

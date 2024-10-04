@@ -75,10 +75,10 @@
 
 					<div class="bag reverse">
 						{{if .Vars.User.IsSuspended}}
-							<button type="submit">Update reason</button>
-							<button type="submit" formnovalidate formaction="{{Path "account.management.user.unsuspend.post" "{userID}" .Vars.User.ID}}" class="btn--danger push-inline-end">Unsuspend user</button>
+							<button>Update reason</button>
+							<button formnovalidate formaction="{{Path "account.management.user.unsuspend.post" "{userID}" .Vars.User.ID}}" class="btn--danger push-inline-end">Unsuspend user</button>
 						{{else}}
-							<button type="submit" class="btn--danger push-inline-end">Suspend user</button>
+							<button class="btn--danger push-inline-end">Suspend user</button>
 						{{end}}
 
 						<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
@@ -259,7 +259,7 @@
 				{{end}}
 
 				<div class="bag reverse">
-					<button type="submit" class="push-inline-end">Update user</button>
+					<button class="push-inline-end">Update user</button>
 
 					<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
 				</div>

@@ -24,7 +24,7 @@
 			{{template "com_csrf_input" .}}
 
 			<div class="bag">
-				<button type="submit" class="btn--link">Click here to sign out.</button>
+				<button class="btn--link">Click here to sign out.</button>
 			</div>
 		</form>
 	{{else if not (.URL.Query.Get "token")}}
@@ -44,7 +44,7 @@
 			}}
 
 			<div class="bag reverse">
-				<button type="submit">Use this password and verify account</button>
+				<button>Use this password and verify account</button>
 			</div>
 		</form>
 	{{end}}

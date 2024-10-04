@@ -17,7 +17,7 @@
 		{{template "com_csrf_input" .}}
 
 		<div class="bag reverse">
-			<button type="submit">Yes, send a reset link</button>
+			<button>Yes, send a reset link</button>
 			<a href="{{Path "account.management.user.totp_reset_review" "{userID}" .Vars.User.ID}}" class="btn btn--alt push-inline-end">No, go back</a>
 		</div>
 	</form>

@@ -27,7 +27,7 @@
 		{{template "com_csrf_input" .}}
 
 		<div class="bag reverse">
-			<button type="submit" class="btn--danger push-inline-end">Yes, delete {{printf "%q" .Vars.Role.Name}}</button>
+			<button class="btn--danger push-inline-end">Yes, delete {{printf "%q" .Vars.Role.Name}}</button>
 
 			<a href="{{Path "account.management.role.list"}}{{.URL.Query.String}}">Cancel</a>
 		</div>

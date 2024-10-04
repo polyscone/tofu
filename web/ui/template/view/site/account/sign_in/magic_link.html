@@ -24,7 +24,7 @@
 			{{template "com_csrf_input" .}}
 
 			<div class="bag">
-				<button type="submit" class="btn--link">Click here to sign out.</button>
+				<button class="btn--link">Click here to sign out.</button>
 			</div>
 		</form>
 	{{else if not (.URL.Query.Get "token")}}
@@ -37,7 +37,7 @@
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
 			<div class="bag">
-				<button type="submit">Sign in</button>
+				<button>Sign in</button>
 			</div>
 		</form>
 

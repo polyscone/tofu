@@ -17,7 +17,7 @@
 		{{template "com_csrf_input" .}}
 
 		<div class="bag reverse">
-			<button type="submit" class="push-inline-end">Yes, activate {{.Vars.User.Email}}</button>
+			<button class="push-inline-end">Yes, activate {{.Vars.User.Email}}</button>
 
 			<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
 		</div>

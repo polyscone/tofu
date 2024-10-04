@@ -61,13 +61,13 @@
 
 			<div class="bag reverse">
 				{{if eq (len .Vars.HashedRecoveryCodes) 0}}
-					<button type="submit">Generate Recovery Codes</button>
+					<button>Generate Recovery Codes</button>
 				{{else}}
-					<button type="submit">Replace Recovery Codes</button>
+					<button>Replace Recovery Codes</button>
 				{{end}}
 
 				{{if eq .Session.TOTPMethod "sms"}}
-					<button type="submit" formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt">Send passcode SMS</button>
+					<button formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt">Send passcode SMS</button>
 				{{end}}
 			</div>
 		</form>
