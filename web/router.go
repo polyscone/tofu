@@ -15,9 +15,8 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/cache"
-	"github.com/polyscone/tofu/dev"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/fstack"
+	"github.com/polyscone/tofu/fsx"
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/handler"
@@ -28,7 +27,7 @@ var uiFiles embed.FS
 
 const uiPublicDir = "ui/public"
 
-var uiPublicFiles = fstack.New(dev.RelDirFS(uiPublicDir), errsx.Must(fs.Sub(uiFiles, uiPublicDir)))
+var uiPublicFiles = fsx.NewStack(fsx.RelDirFS(uiPublicDir), errsx.Must(fs.Sub(uiFiles, uiPublicDir)))
 
 // HandlerTimeout should be used as the value in all timeout middleware, and as the
 // base value to calculate http.Server timeouts from.

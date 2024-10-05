@@ -11,9 +11,8 @@ import (
 	"strings"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/dev"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/fstack"
+	"github.com/polyscone/tofu/fsx"
 	"github.com/polyscone/tofu/httpx/middleware"
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/guard"
@@ -26,7 +25,7 @@ var files embed.FS
 
 const templateDir = "template"
 
-var templateFiles = fstack.New(dev.RelDirFS(templateDir), errsx.Must(fs.Sub(files, templateDir)))
+var templateFiles = fsx.NewStack(fsx.RelDirFS(templateDir), errsx.Must(fs.Sub(files, templateDir)))
 
 type Handler struct {
 	*handler.Handler

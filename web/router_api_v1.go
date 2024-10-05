@@ -12,9 +12,8 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/dev"
 	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/fstack"
+	"github.com/polyscone/tofu/fsx"
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/httpx/middleware"
 	"github.com/polyscone/tofu/httpx/router"
@@ -33,7 +32,7 @@ var apiFilesV1 embed.FS
 
 const apiPublicDirV1 = "api/v1/public"
 
-var apiPublicFilesV1 = fstack.New(dev.RelDirFS(apiPublicDirV1), errsx.Must(fs.Sub(apiFilesV1, apiPublicDirV1)))
+var apiPublicFilesV1 = fsx.NewStack(fsx.RelDirFS(apiPublicDirV1), errsx.Must(fs.Sub(apiFilesV1, apiPublicDirV1)))
 
 func NewAPIRouterV1(base *handler.Handler) http.Handler {
 	mux := router.NewServeMux()

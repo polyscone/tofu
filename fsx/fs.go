@@ -1,4 +1,4 @@
-package dev
+package fsx
 
 import (
 	"io/fs"
