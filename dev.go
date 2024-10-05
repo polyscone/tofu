@@ -21,7 +21,7 @@ var tags = struct {
 }
 
 var opts struct {
-	cmd         string
+	pkg         string
 	goos        string
 	goarch      string
 	tags        string
@@ -33,7 +33,7 @@ var opts struct {
 }
 
 func main() {
-	flag.StringVar(&opts.cmd, "cmd", "build", "Sets the command to run <build|generate|vet|test|cover>")
+	flag.StringVar(&opts.pkg, "pkg", "./cmd/...", "A specific package to build")
 	flag.StringVar(&opts.goos, "goos", "", "Sets the GOOS environment variable for the build")
 	flag.StringVar(&opts.goarch, "goarch", "", "Sets the GOARCH environment variable for the build")
 	flag.StringVar(&opts.tags, "tags", "", "Additional build tags")
@@ -54,18 +54,6 @@ func main() {
 	}
 	tags.test = strings.TrimSpace(tags.build + " " + tags.test)
 
-	mainPackages, err := packages()
-	if err != nil {
-		fmt.Println(err)
-
-		os.Exit(1)
-	}
-
-	pkgs := flag.Args()
-	if len(pkgs) == 0 {
-		pkgs = mainPackages
-	}
-
 	if opts.goos == "" {
 		opts.goos = runtime.GOOS
 	}
@@ -74,12 +62,14 @@ func main() {
 		opts.goarch = runtime.GOARCH
 	}
 
-	switch opts.cmd {
+	command := flag.Arg(0)
+	if command == "" {
+		command = "build"
+	}
+	switch command {
 	case "build":
-		for _, pkg := range pkgs {
-			if err := build(pkg); err != nil {
-				os.Exit(1)
-			}
+		if err := build(); err != nil {
+			os.Exit(1)
 		}
 
 	case "generate":
@@ -103,7 +93,7 @@ func main() {
 		}
 
 	default:
-		fmt.Printf("Unknown command %q, please see help for details\n", opts.cmd)
+		fmt.Printf("Unknown command %q, please see help for details\n", command)
 	}
 }
 
@@ -124,28 +114,6 @@ func command(program string, args ...string) (string, []string, string) {
 	message := fmt.Sprintf("%v "+strings.Join(verbs, " "), append([]any{program}, messageValues...)...)
 
 	return program, args, message
-}
-
-func packages() ([]string, error) {
-	out, err := exec.Command("go", "list", "-f", "[{{ .Name }}]{{ .ImportPath }}", "./...").CombinedOutput()
-	if err != nil {
-		if len(out) > 0 {
-			fmt.Println(string(out))
-		}
-
-		return nil, err
-	}
-
-	var packages []string
-	for _, pkg := range strings.Split(string(out), "\n") {
-		if !strings.HasPrefix(pkg, "[main]") {
-			continue
-		}
-
-		packages = append(packages, strings.TrimPrefix(pkg, "[main]"))
-	}
-
-	return packages, nil
 }
 
 func generate() error {
@@ -298,7 +266,7 @@ func vet() error {
 	return nil
 }
 
-func build(pkg string) error {
+func build() error {
 	var gcflags []string
 	var ldflags []string
 	args := []string{"build", "-o", "."}
@@ -345,7 +313,7 @@ func build(pkg string) error {
 		args = append(args, "-ldflags", strings.Join(ldflags, " "))
 	}
 
-	args = append(args, pkg)
+	args = append(args, opts.pkg)
 
 	var env []string
 	if opts.goos != "" {
@@ -359,7 +327,7 @@ func build(pkg string) error {
 	if opts.verbose {
 		fmt.Printf("-> %v ... ", message)
 	} else {
-		fmt.Printf("-> go build %v ... ", pkg)
+		fmt.Printf("-> go build %v ... ", opts.pkg)
 	}
 
 	cmd := exec.Command(program, args...)
