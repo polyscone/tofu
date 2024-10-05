@@ -15,7 +15,6 @@ import (
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/human"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/sess"
 )
 
 var publicErrors = []error{
@@ -113,7 +112,7 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 func (h *Handler) RequireSignIn(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+		isSignedIn := h.Session.IsSignedIn(ctx)
 
 		if !isSignedIn {
 			h.ErrorJSON(w, r, "require sign in", app.ErrUnauthorised)

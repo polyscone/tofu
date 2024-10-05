@@ -7,7 +7,6 @@ import (
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/guard"
-	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
 
@@ -84,7 +83,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 		h.AddFlashf(ctx, "System configuration successfully updated.")
 
 		var redirect string
-		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
+		if h.Session.IsSignedIn(ctx) {
 			redirect = h.Path("system.config")
 		} else {
 			redirect = h.Path("account.sign_up")

@@ -12,7 +12,6 @@ import (
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
 
@@ -78,7 +77,7 @@ func userListGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		sortTopID := h.Sessions.PopInt(ctx, sess.SortTopID)
+		sortTopID := h.Session.PopSortTopID(ctx)
 		if sortTopID == 0 {
 			sortTopID = h.User(ctx).ID
 		}
@@ -144,8 +143,8 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 
 		h.AddFlashf(ctx, "An invite to verify an account has been sent to %q.", user.Email)
 
-		h.Sessions.Set(ctx, sess.SortTopID, user.ID)
-		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
+		h.Session.SetSortTopID(ctx, user.ID)
+		h.Session.SetHighlightID(ctx, user.ID)
 
 		http.Redirect(w, r, h.Path("account.management.user.edit", "{userID}", user.ID), http.StatusSeeOther)
 	}
@@ -246,7 +245,7 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 
 		h.AddFlashf(ctx, "User %v updated successfully.", user.Email)
 
-		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
+		h.Session.SetHighlightID(ctx, user.ID)
 
 		http.Redirect(w, r, h.PathQuery(r, "account.management.user.list"), http.StatusSeeOther)
 	}
@@ -295,7 +294,7 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 			h.AddFlashf(ctx, "User %v was suspended.", user.Email)
 		}
 
-		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
+		h.Session.SetHighlightID(ctx, user.ID)
 
 		q := r.URL.Query()
 
@@ -322,7 +321,7 @@ func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 
 		h.AddFlashf(ctx, "User %v was unsuspended.", user.Email)
 
-		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
+		h.Session.SetHighlightID(ctx, user.ID)
 
 		http.Redirect(w, r, h.PathQuery(r, "account.management.user.list"), http.StatusSeeOther)
 	}
@@ -363,7 +362,7 @@ func userActivatePost(h *ui.Handler) http.HandlerFunc {
 
 		h.AddFlashf(ctx, "User %v activated successfully.", user.Email)
 
-		h.Sessions.Set(ctx, sess.HighlightID, user.ID)
+		h.Session.SetHighlightID(ctx, user.ID)
 
 		http.Redirect(w, r, h.PathQuery(r, "account.management.user.list"), http.StatusSeeOther)
 	}

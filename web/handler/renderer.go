@@ -18,7 +18,6 @@ import (
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/web/guard"
-	"github.com/polyscone/tofu/web/sess"
 )
 
 type State struct {
@@ -153,21 +152,21 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 		},
 		Session: SessionData{
 			// Global session keys
-			Flash:          rn.h.Sessions.PopStrings(ctx, sess.Flash),
-			FlashWarning:   rn.h.Sessions.PopStrings(ctx, sess.FlashWarning),
-			FlashImportant: rn.h.Sessions.PopStrings(ctx, sess.FlashImportant),
-			FlashError:     rn.h.Sessions.PopStrings(ctx, sess.FlashError),
-			Redirect:       rn.h.Sessions.GetString(ctx, sess.Redirect),
-			HighlightID:    rn.h.Sessions.PopInt(ctx, sess.HighlightID),
+			Flash:          rn.h.Session.PopFlash(ctx),
+			FlashWarning:   rn.h.Session.PopFlashWarning(ctx),
+			FlashImportant: rn.h.Session.PopFlashImportant(ctx),
+			FlashError:     rn.h.Session.PopFlashError(ctx),
+			Redirect:       rn.h.Session.Redirect(ctx),
+			HighlightID:    rn.h.Session.PopHighlightID(ctx),
 
 			// Account session keys
-			UserID:                   rn.h.Sessions.GetInt(ctx, sess.UserID),
-			Email:                    rn.h.Sessions.GetString(ctx, sess.Email),
-			TOTPMethod:               rn.h.Sessions.GetString(ctx, sess.TOTPMethod),
-			HasActivatedTOTP:         rn.h.Sessions.GetBool(ctx, sess.HasActivatedTOTP),
-			IsAwaitingTOTP:           rn.h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
-			IsSignedIn:               rn.h.Sessions.GetBool(ctx, sess.IsSignedIn),
-			KnownPasswordBreachCount: rn.h.Sessions.GetInt(ctx, sess.KnownPasswordBreachCount),
+			UserID:                   rn.h.Session.UserID(ctx),
+			Email:                    rn.h.Session.Email(ctx),
+			TOTPMethod:               rn.h.Session.TOTPMethod(ctx),
+			HasActivatedTOTP:         rn.h.Session.HasActivatedTOTP(ctx),
+			IsAwaitingTOTP:           rn.h.Session.IsAwaitingTOTP(ctx),
+			IsSignedIn:               rn.h.Session.IsSignedIn(ctx),
+			KnownPasswordBreachCount: rn.h.Session.KnownPasswordBreachCount(ctx),
 		},
 		Config:   config,
 		User:     user,

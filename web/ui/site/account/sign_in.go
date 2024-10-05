@@ -18,7 +18,6 @@ import (
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
 
@@ -58,7 +57,7 @@ func signInGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
+		if h.Session.IsSignedIn(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/sign_out/signed_in", nil)
 
 			return
@@ -123,7 +122,7 @@ func signInMagicLinkGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
+		if h.Session.IsSignedIn(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/sign_out/signed_in", nil)
 
 			return
@@ -171,13 +170,13 @@ func signInTOTPGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		if !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+		if !h.Session.IsAwaitingTOTP(ctx) {
 			http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
 
 			return
 		}
 
-		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
+		if h.Session.IsSignedIn(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/sign_out/signed_in", nil)
 
 			return
@@ -201,7 +200,7 @@ func signInTOTPPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		user := h.User(ctx)
 
-		if !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+		if !h.Session.IsAwaitingTOTP(ctx) {
 			http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
 
 			return
@@ -239,7 +238,7 @@ func signInTOTPResetGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		if !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+		if !h.Session.IsAwaitingTOTP(ctx) {
 			http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
 
 			return
@@ -254,9 +253,9 @@ func signInTOTPResetPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		logger := h.Logger(ctx)
 		config := h.Config(ctx)
-		email := h.Sessions.GetString(ctx, sess.Email)
+		email := h.Session.Email(ctx)
 
-		if email == "" || !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+		if email == "" || !h.Session.IsAwaitingTOTP(ctx) {
 			http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
 
 			return
@@ -324,13 +323,13 @@ func signInRecoveryCodeGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		if !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+		if !h.Session.IsAwaitingTOTP(ctx) {
 			http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
 
 			return
 		}
 
-		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
+		if h.Session.IsSignedIn(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/sign_out/signed_in", nil)
 
 			return
@@ -354,7 +353,7 @@ func signInRecoveryCodePost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		user := h.User(ctx)
 
-		if !h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+		if !h.Session.IsAwaitingTOTP(ctx) {
 			http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
 
 			return
@@ -502,13 +501,13 @@ func signInWithPassword(ctx context.Context, h *ui.Handler, w http.ResponseWrite
 func signInSuccessRedirect(h *ui.Handler, w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	if h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP) {
+	if h.Session.IsAwaitingTOTP(ctx) {
 		http.Redirect(w, r, h.Path("account.sign_in.totp"), http.StatusSeeOther)
 
 		return
 	}
 
-	if h.Sessions.GetInt(ctx, sess.KnownPasswordBreachCount) > 0 {
+	if h.Session.KnownPasswordBreachCount(ctx) > 0 {
 		http.Redirect(w, r, h.Path("account.change_password"), http.StatusSeeOther)
 
 		return
@@ -525,7 +524,7 @@ func signInSuccessRedirect(h *ui.Handler, w http.ResponseWriter, r *http.Request
 		`)
 	}
 
-	if redirect := h.Sessions.PopString(ctx, sess.Redirect); redirect != "" {
+	if redirect := h.Session.PopRedirect(ctx); redirect != "" {
 		http.Redirect(w, r, redirect, http.StatusSeeOther)
 
 		return

@@ -9,7 +9,6 @@ import (
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
 
@@ -31,7 +30,7 @@ func signUpGet(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
+		if h.Session.IsSignedIn(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/sign_out/signed_in", nil)
 
 			return
@@ -64,7 +63,7 @@ func signUpPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.Sessions.Set(ctx, "account.sign_up.email", input.Email)
+		h.Session.Set(ctx, "account.sign_up.email", input.Email)
 
 		http.Redirect(w, r, h.Path("account.sign_up.success"), http.StatusSeeOther)
 	}
@@ -75,7 +74,7 @@ func signUpSuccessGet(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 
 		h.HTML.View(w, r, http.StatusOK, "site/account/sign_up/success", handler.Vars{
-			"Email": h.Sessions.PopString(ctx, "account.sign_up.email"),
+			"Email": h.Session.PopString(ctx, "account.sign_up.email"),
 		})
 	}
 }

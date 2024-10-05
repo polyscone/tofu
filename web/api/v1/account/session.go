@@ -6,7 +6,6 @@ import (
 
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/api"
-	"github.com/polyscone/tofu/web/sess"
 )
 
 func RegisterSessionHandlers(h *api.Handler, mux *router.ServeMux) {
@@ -25,12 +24,12 @@ func SessionData(ctx context.Context, h *api.Handler) map[string]any {
 	config := h.Config(ctx)
 	user := h.User(ctx)
 
-	isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+	isSignedIn := h.Session.IsSignedIn(ctx)
 
 	return map[string]any{
 		"isSignedIn":     isSignedIn,
-		"isAwaitingTOTP": h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP),
-		"totpMethod":     h.Sessions.GetString(ctx, sess.TOTPMethod),
+		"isAwaitingTOTP": h.Session.IsAwaitingTOTP(ctx),
+		"totpMethod":     h.Session.TOTPMethod(ctx),
 		"isTOTPRequired": isSignedIn && config.TOTPRequired && !user.HasActivatedTOTP(),
 	}
 }

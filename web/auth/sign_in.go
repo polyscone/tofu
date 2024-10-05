@@ -20,7 +20,6 @@ import (
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/password/pwned"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/sess"
 )
 
 var client = http.Client{Timeout: 10 * time.Second}
@@ -28,8 +27,8 @@ var client = http.Client{Timeout: 10 * time.Second}
 func SignInWithPassword(ctx context.Context, h *handler.Handler, email, password string) error {
 	logger := h.Logger(ctx)
 
-	attempts := h.Sessions.GetInt(ctx, sess.SignInAttempts)
-	lastAttemptAt := h.Sessions.GetTime(ctx, sess.LastSignInAttemptAt)
+	attempts := h.Session.SignInAttempts(ctx)
+	lastAttemptAt := h.Session.LastSignInAttemptAt(ctx)
 	if time.Since(lastAttemptAt) > app.SignInThrottleTTL {
 		attempts = 0
 		lastAttemptAt = time.Time{}
@@ -44,14 +43,14 @@ func SignInWithPassword(ctx context.Context, h *handler.Handler, email, password
 		attempts++
 		lastAttemptAt = time.Now().UTC()
 
-		h.Sessions.Set(ctx, sess.SignInAttempts, attempts)
-		h.Sessions.Set(ctx, sess.LastSignInAttemptAt, lastAttemptAt)
+		h.Session.SetSignInAttempts(ctx, attempts)
+		h.Session.SetLastSignInAttemptAt(ctx, lastAttemptAt)
 
 		return err
 	}
 
-	h.Sessions.Delete(ctx, sess.SignInAttempts)
-	h.Sessions.Delete(ctx, sess.LastSignInAttemptAt)
+	h.Session.DeleteSignInAttempts(ctx)
+	h.Session.DeleteLastSignInAttemptAt(ctx)
 
 	if _, err := h.RenewSession(ctx); err != nil {
 		return fmt.Errorf("renew session: %w", err)
@@ -66,7 +65,7 @@ func SignInWithPassword(ctx context.Context, h *handler.Handler, email, password
 		logger.Error("known password breach count", "error", err)
 	}
 	if knownBreachCount > 0 {
-		h.Sessions.Set(ctx, sess.KnownPasswordBreachCount, knownBreachCount)
+		h.Session.SetKnownPasswordBreachCount(ctx, knownBreachCount)
 	}
 
 	return nil
@@ -132,8 +131,8 @@ func SignInWithTOTP(ctx context.Context, h *handler.Handler, totp string) error 
 		return fmt.Errorf("renew session: %w", err)
 	}
 
-	h.Sessions.Set(ctx, sess.IsSignedIn, true)
-	h.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
+	h.Session.SetIsSignedIn(ctx, true)
+	h.Session.DeleteIsAwaitingTOTP(ctx)
 
 	return nil
 }
@@ -150,8 +149,8 @@ func SignInWithRecoveryCode(ctx context.Context, h *handler.Handler, recoveryCod
 		return fmt.Errorf("renew session: %w", err)
 	}
 
-	h.Sessions.Set(ctx, sess.IsSignedIn, true)
-	h.Sessions.Delete(ctx, sess.IsAwaitingTOTP)
+	h.Session.SetIsSignedIn(ctx, true)
+	h.Session.DeleteIsAwaitingTOTP(ctx)
 
 	return nil
 }
@@ -387,12 +386,12 @@ func SignInSetSession(ctx context.Context, h *handler.Handler, email string) err
 		return fmt.Errorf("find user by email: %w", err)
 	}
 
-	h.Sessions.Set(ctx, sess.UserID, user.ID)
-	h.Sessions.Set(ctx, sess.Email, email)
-	h.Sessions.Set(ctx, sess.TOTPMethod, user.TOTPMethod)
-	h.Sessions.Set(ctx, sess.HasActivatedTOTP, user.HasActivatedTOTP())
-	h.Sessions.Set(ctx, sess.IsAwaitingTOTP, user.HasActivatedTOTP())
-	h.Sessions.Set(ctx, sess.IsSignedIn, !user.HasActivatedTOTP())
+	h.Session.SetUserID(ctx, user.ID)
+	h.Session.SetEmail(ctx, email)
+	h.Session.SetTOTPMethod(ctx, user.TOTPMethod)
+	h.Session.SetHasActivatedTOTP(ctx, user.HasActivatedTOTP())
+	h.Session.SetIsAwaitingTOTP(ctx, user.HasActivatedTOTP())
+	h.Session.SetIsSignedIn(ctx, !user.HasActivatedTOTP())
 
 	return nil
 }

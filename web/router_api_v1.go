@@ -24,7 +24,6 @@ import (
 	"github.com/polyscone/tofu/web/api/v1/security"
 	"github.com/polyscone/tofu/web/api/v1/system"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/sess"
 )
 
 //go:embed "all:api/v1/public"
@@ -100,7 +99,7 @@ func NewAPIRouterV1(base *handler.Handler) http.Handler {
 		ErrorHandler: timeoutErrorHandler,
 		Logger:       logger,
 	}))
-	mux.Use(middleware.Session(h.Sessions, errorHandler("session middleware")))
+	mux.Use(middleware.Session(h.Session.Manager, errorHandler("session middleware")))
 	mux.Use(h.AttachContext)
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
 		switch r.Method {
@@ -120,14 +119,14 @@ func NewAPIRouterV1(base *handler.Handler) http.Handler {
 			ctx := r.Context()
 			user := h.User(ctx)
 
-			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+			isSignedIn := h.Session.IsSignedIn(ctx)
 			if isSignedIn && user.IsSuspended() {
 				logger := h.Logger(ctx)
 
 				logger.Info("user forcibly signed out due to suspension of account")
 
-				h.Sessions.Clear(ctx)
-				h.Sessions.Renew(ctx)
+				h.Session.Clear(ctx)
+				h.Session.Renew(ctx)
 			}
 
 			next(w, r)

@@ -6,7 +6,6 @@ import (
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/password/pwned"
-	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
 
@@ -77,19 +76,19 @@ func changePasswordPost(h *ui.Handler) http.HandlerFunc {
 		if err != nil {
 			logger.Error("known password breach count", "error", err)
 
-			h.Sessions.Delete(ctx, sess.KnownPasswordBreachCount)
+			h.Session.DeleteKnownPasswordBreachCount(ctx)
 		} else {
 			if knownBreachCount > 0 {
-				h.Sessions.Set(ctx, sess.KnownPasswordBreachCount, knownBreachCount)
+				h.Session.SetKnownPasswordBreachCount(ctx, knownBreachCount)
 			} else {
-				h.Sessions.Delete(ctx, sess.KnownPasswordBreachCount)
+				h.Session.DeleteKnownPasswordBreachCount(ctx)
 			}
 		}
 
 		h.AddFlashf(ctx, "Your password has been successfully changed.")
 
 		var redirect string
-		if r := h.Sessions.PopString(ctx, sess.Redirect); r != "" {
+		if r := h.Session.PopRedirect(ctx); r != "" {
 			redirect = r
 		} else {
 			redirect = h.Path("account.change_password")

@@ -17,7 +17,6 @@ import (
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/sess"
 )
 
 //go:embed "all:template"
@@ -104,44 +103,44 @@ func (h *Handler) PathQuery(r *http.Request, name string, paramArgPairs ...any) 
 }
 
 func (h *Handler) AddFlashf(ctx context.Context, format string, a ...any) {
-	flash := h.Sessions.GetStrings(ctx, sess.Flash)
+	flash := h.Session.Flash(ctx)
 
 	flash = append(flash, fmt.Sprintf(format, a...))
 
-	h.Sessions.Set(ctx, sess.Flash, flash)
+	h.Session.SetFlash(ctx, flash)
 }
 
 func (h *Handler) AddFlashWarningf(ctx context.Context, format string, a ...any) {
-	flash := h.Sessions.GetStrings(ctx, sess.FlashWarning)
+	flash := h.Session.FlashWarning(ctx)
 
 	flash = append(flash, fmt.Sprintf(format, a...))
 
-	h.Sessions.Set(ctx, sess.FlashWarning, flash)
+	h.Session.SetFlashWarning(ctx, flash)
 }
 
 func (h *Handler) AddFlashImportantf(ctx context.Context, format string, a ...any) {
-	flash := h.Sessions.GetStrings(ctx, sess.FlashImportant)
+	flash := h.Session.FlashImportant(ctx)
 
 	flash = append(flash, fmt.Sprintf(format, a...))
 
-	h.Sessions.Set(ctx, sess.FlashImportant, flash)
+	h.Session.SetFlashImportant(ctx, flash)
 }
 
 func (h *Handler) AddFlashErrorf(ctx context.Context, format string, a ...any) {
-	flash := h.Sessions.GetStrings(ctx, sess.FlashError)
+	flash := h.Session.FlashError(ctx)
 
 	flash = append(flash, fmt.Sprintf(format, a...))
 
-	h.Sessions.Set(ctx, sess.FlashError, flash)
+	h.Session.SetFlashError(ctx, flash)
 }
 
 func (h *Handler) RequireSignIn(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+		isSignedIn := h.Session.IsSignedIn(ctx)
 
 		if !isSignedIn {
-			h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+			h.Session.SetRedirect(ctx, r.URL.String())
 
 			http.Redirect(w, r, h.signInPath(), http.StatusSeeOther)
 
@@ -158,11 +157,11 @@ func (h *Handler) RequireSignInIf(check PredicateFunc) middleware.Middleware {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+			isSignedIn := h.Session.IsSignedIn(ctx)
 			passport := h.Passport(ctx)
 
 			if !isSignedIn && check(passport) {
-				h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+				h.Session.SetRedirect(ctx, r.URL.String())
 
 				http.Redirect(w, r, h.signInPath(), http.StatusSeeOther)
 

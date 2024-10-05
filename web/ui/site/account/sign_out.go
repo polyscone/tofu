@@ -22,7 +22,7 @@ func signOutPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.Sessions.Destroy(r.Context())
+		h.Session.Destroy(r.Context())
 
 		http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
 	}

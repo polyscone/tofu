@@ -16,7 +16,6 @@ import (
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/size"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 	"github.com/polyscone/tofu/web/ui/site/account"
 	"github.com/polyscone/tofu/web/ui/site/admin"
@@ -103,7 +102,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 		ErrorHandler: timeoutErrorHandler,
 		Logger:       logger,
 	}))
-	mux.Use(middleware.Session(h.Sessions, errorHandler("session middleware")))
+	mux.Use(middleware.Session(h.Session.Manager, errorHandler("session middleware")))
 	mux.Use(h.AttachContext)
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
 		switch r.Method {
@@ -134,14 +133,14 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 			ctx := r.Context()
 			user := h.User(ctx)
 
-			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+			isSignedIn := h.Session.IsSignedIn(ctx)
 			if isSignedIn && user.IsSuspended() {
 				logger := h.Logger(ctx)
 
 				logger.Info("user forcibly signed out due to suspension of account")
 
-				h.Sessions.Clear(ctx)
-				h.Sessions.Renew(ctx)
+				h.Session.Clear(ctx)
+				h.Session.Renew(ctx)
 
 				h.AddFlashErrorf(ctx, "You're not authorised to access this application.")
 
@@ -189,7 +188,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 			isChoosePasswordSection := h.HasPathPrefix(r.URL.Path, "account.choose_password.section")
 			isSignOut := r.URL.Path == h.Path("account.sign_out.post")
 			isAllowedPath := isTOTPSection || isChoosePasswordSection || isSignOut
-			isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
+			isSignedIn := h.Session.IsSignedIn(ctx)
 			if isSignedIn && config.TOTPRequired && !user.HasActivatedTOTP() && !isAllowedPath {
 				h.AddFlashf(ctx, "Two-factor authentication is required to use this application.")
 

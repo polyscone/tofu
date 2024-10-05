@@ -21,7 +21,6 @@ import (
 	"github.com/polyscone/tofu/sms"
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
 
@@ -41,7 +40,7 @@ func RegisterTOTPHandlers(h *ui.Handler, mux *router.ServeMux) {
 				if len(user.HashedPassword) == 0 {
 					h.AddFlashf(ctx, "You need to choose a password before you can setup two-factor authentication.")
 
-					h.Sessions.Set(ctx, sess.Redirect, r.URL.String())
+					h.Session.SetRedirect(ctx, r.URL.String())
 
 					http.Redirect(w, r, h.Path("account.choose_password"), http.StatusSeeOther)
 
@@ -84,7 +83,7 @@ func totpSetupGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
+		if h.Session.HasActivatedTOTP(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/enabled", nil)
 
 			return
@@ -142,7 +141,7 @@ func totpSetupAppGet(h *ui.Handler) http.HandlerFunc {
 
 		keyBase32 := base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(user.TOTPKey)
 		issuer := app.Name
-		accountName := h.Sessions.GetString(ctx, sess.Email)
+		accountName := h.Session.Email(ctx)
 		qrcode, err := qr.Encode(
 			"otpauth://totp/"+
 				issuer+":"+accountName+
@@ -187,7 +186,7 @@ func totpSetupAppGet(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
+		if h.Session.HasActivatedTOTP(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/enabled", nil)
 
 			return
@@ -254,7 +253,7 @@ func totpSetupSMSGet(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
+		if h.Session.HasActivatedTOTP(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/enabled", nil)
 
 			return
@@ -330,7 +329,7 @@ func totpSetupSMSVerifyGet(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		if h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
+		if h.Session.HasActivatedTOTP(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/totp/setup/enabled", nil)
 
 			return
@@ -404,8 +403,8 @@ func totpSetupActivatePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.Sessions.Set(ctx, sess.TOTPMethod, user.TOTPMethod)
-		h.Sessions.Set(ctx, sess.HasActivatedTOTP, true)
+		h.Session.SetTOTPMethod(ctx, user.TOTPMethod)
+		h.Session.SetHasActivatedTOTP(ctx, true)
 
 		http.Redirect(w, r, h.Path("account.totp.setup.success"), http.StatusSeeOther)
 	}
@@ -415,7 +414,7 @@ func totpDisableGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		if !h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
+		if !h.Session.HasActivatedTOTP(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/totp/disable/disabled", nil)
 
 			return
@@ -466,8 +465,8 @@ func totpDisablePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.Sessions.Set(ctx, sess.TOTPMethod, "")
-		h.Sessions.Set(ctx, sess.HasActivatedTOTP, false)
+		h.Session.SetTOTPMethod(ctx, "")
+		h.Session.SetHasActivatedTOTP(ctx, false)
 
 		http.Redirect(w, r, h.Path("account.totp.disable.success"), http.StatusSeeOther)
 	}
@@ -548,7 +547,7 @@ func totpRecoveryCodesGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		if !h.Sessions.GetBool(ctx, sess.HasActivatedTOTP) {
+		if !h.Session.HasActivatedTOTP(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/totp/recovery_codes/setup_required", nil)
 
 			return

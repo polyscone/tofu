@@ -11,7 +11,6 @@ import (
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
-	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
 
@@ -53,7 +52,7 @@ func roleListGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		sortTopID := h.Sessions.PopInt(ctx, sess.SortTopID)
+		sortTopID := h.Session.PopSortTopID(ctx)
 		sorts := r.URL.Query()["sort"]
 		search := r.URL.Query().Get("search")
 		page, size := httpx.Pagination(r)
@@ -108,8 +107,8 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 
 		h.AddFlashf(ctx, "Role %q created successfully.", role.Name)
 
-		h.Sessions.Set(ctx, sess.SortTopID, role.ID)
-		h.Sessions.Set(ctx, sess.HighlightID, role.ID)
+		h.Session.SetSortTopID(ctx, role.ID)
+		h.Session.SetHighlightID(ctx, role.ID)
 
 		http.Redirect(w, r, h.Path("account.management.role.list"), http.StatusSeeOther)
 	}
@@ -174,7 +173,7 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 
 		h.AddFlashf(ctx, "Role %q updated successfully.", role.Name)
 
-		h.Sessions.Set(ctx, sess.HighlightID, role.ID)
+		h.Session.SetHighlightID(ctx, role.ID)
 
 		http.Redirect(w, r, h.PathQuery(r, "account.management.role.list"), http.StatusSeeOther)
 	}

@@ -24,7 +24,6 @@ import (
 	"github.com/polyscone/tofu/twilio"
 	"github.com/polyscone/tofu/uuid"
 	"github.com/polyscone/tofu/web/guard"
-	"github.com/polyscone/tofu/web/sess"
 )
 
 var httpClient = http.Client{Timeout: 10 * time.Second}
@@ -42,14 +41,14 @@ type Handler struct {
 	*Tenant
 
 	templates *cache.Cache[string, *template.Template]
-	Sessions  *session.Manager
+	Session   Session
 }
 
 func New(tenant *Tenant) *Handler {
 	return &Handler{
 		Tenant:    tenant,
 		templates: cache.New[string, *template.Template](),
-		Sessions:  session.NewManager(tenant.Repo.Web),
+		Session:   Session{Manager: session.NewManager(tenant.Repo.Web)},
 	}
 }
 
@@ -111,9 +110,9 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		user := &account.User{}
-		userID := h.Sessions.GetInt(ctx, sess.UserID)
-		isSignedIn := h.Sessions.GetBool(ctx, sess.IsSignedIn)
-		isAwaitingTOTP := h.Sessions.GetBool(ctx, sess.IsAwaitingTOTP)
+		userID := h.Session.UserID(ctx)
+		isSignedIn := h.Session.IsSignedIn(ctx)
+		isAwaitingTOTP := h.Session.IsAwaitingTOTP(ctx)
 		if isSignedIn || isAwaitingTOTP {
 			u, err := h.Repo.Account.FindUserByID(ctx, userID)
 			switch {
@@ -126,7 +125,7 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		var passport guard.Passport
-		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
+		if h.Session.IsSignedIn(ctx) {
 			passport = h.PassportByUser(ctx, user)
 		} else {
 			passport = h.PassportByUser(ctx, nil)
@@ -146,8 +145,8 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 
 		// The redirect key in the session is supposed to be a one-time temporary
 		// redirect target, so we ensure it's deleted if we're visiting the target
-		if h.Sessions.GetString(ctx, sess.Redirect) == r.URL.String() {
-			h.Sessions.Delete(ctx, sess.Redirect)
+		if h.Session.Redirect(ctx) == r.URL.String() {
+			h.Session.DeleteRedirect(ctx)
 		}
 
 		next(w, r)
@@ -230,7 +229,7 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 		return nil, fmt.Errorf("renew CSRF token: %w", err)
 	}
 
-	if err := h.Sessions.Renew(ctx); err != nil {
+	if err := h.Session.Renew(ctx); err != nil {
 		return nil, err
 	}
 

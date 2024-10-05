@@ -7,7 +7,6 @@ import (
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/httpx/router"
 	"github.com/polyscone/tofu/web/auth"
-	"github.com/polyscone/tofu/web/sess"
 	"github.com/polyscone/tofu/web/ui"
 )
 
@@ -22,7 +21,7 @@ func verifyGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		if h.Sessions.GetBool(ctx, sess.IsSignedIn) {
+		if h.Session.IsSignedIn(ctx) {
 			h.HTML.View(w, r, http.StatusOK, "site/account/sign_out/signed_in", nil)
 
 			return
