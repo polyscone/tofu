@@ -12,40 +12,50 @@ type VerifyTOTPGuard interface {
 	CanVerifyTOTP(userID int) bool
 }
 
+type VerifyTOTPInput struct {
+	UserID     int
+	TOTP       TOTP
+	TOTPMethod TOTPMethod
+}
+
+func (s *Service) VerifyTOTPValidate(guard VerifyTOTPGuard, userID int, totp, totpMethod string) (VerifyTOTPInput, error) {
+	var input VerifyTOTPInput
+
+	if !guard.CanVerifyTOTP(userID) {
+		return input, app.ErrForbidden
+	}
+
+	var err error
+	var errs errsx.Map
+
+	input.UserID = userID
+
+	if input.TOTP, err = NewTOTP(totp); err != nil {
+		errs.Set("totp", err)
+	}
+	if input.TOTPMethod, err = NewTOTPMethod(totpMethod); err != nil {
+		errs.Set("totp kind", err)
+	}
+
+	if errs != nil {
+		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+	}
+
+	return input, nil
+}
+
 func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID int, totp, totpMethod string) (*User, []string, error) {
-	var input struct {
-		userID     int
-		totp       TOTP
-		totpMethod TOTPMethod
-	}
-	{
-		if !guard.CanVerifyTOTP(userID) {
-			return nil, nil, app.ErrForbidden
-		}
-
-		var err error
-		var errs errsx.Map
-
-		input.userID = userID
-
-		if input.totp, err = NewTOTP(totp); err != nil {
-			errs.Set("totp", err)
-		}
-		if input.totpMethod, err = NewTOTPMethod(totpMethod); err != nil {
-			errs.Set("totp kind", err)
-		}
-
-		if errs != nil {
-			return nil, nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
+	input, err := s.VerifyTOTPValidate(guard, userID, totp, totpMethod)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.repo.FindUserByID(ctx, input.UserID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("find user by id: %w", err)
 	}
 
-	codes, err := user.VerifyTOTP(input.totp, input.totpMethod)
+	codes, err := user.VerifyTOTP(input.TOTP, input.TOTPMethod)
 	if err != nil {
 		return nil, nil, err
 	}

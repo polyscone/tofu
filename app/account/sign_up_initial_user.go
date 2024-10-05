@@ -9,40 +9,49 @@ import (
 	"github.com/polyscone/tofu/errsx"
 )
 
-func (s *Service) signUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []int) (*User, error) {
-	var input struct {
-		email         Email
-		password      Password
-		passwordCheck Password
-		roleIDs       []int
+type SignUpInitialUserInput struct {
+	Email         Email
+	Password      Password
+	PasswordCheck Password
+	RoleIDs       []int
+}
+
+func (s *Service) SignUpInitialUserValidate(email, password, passwordCheck string, roleIDs []int) (SignUpInitialUserInput, error) {
+	var input SignUpInitialUserInput
+	var err error
+	var errs errsx.Map
+
+	input.PasswordCheck, _ = NewPassword(passwordCheck)
+
+	input.RoleIDs = roleIDs
+
+	if input.Email, err = NewEmail(email); err != nil {
+		errs.Set("email", err)
 	}
-	{
-		var err error
-		var errs errsx.Map
+	if input.Password, err = NewPassword(password); err != nil {
+		errs.Set("password", err)
+	} else if !input.Password.Equal(input.PasswordCheck) {
+		errs.Set("password", "passwords do not match")
+	}
 
-		input.passwordCheck, _ = NewPassword(passwordCheck)
+	if errs != nil {
+		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+	}
 
-		input.roleIDs = roleIDs
+	return input, nil
+}
 
-		if input.email, err = NewEmail(email); err != nil {
-			errs.Set("email", err)
-		}
-		if input.password, err = NewPassword(password); err != nil {
-			errs.Set("password", err)
-		} else if !input.password.Equal(input.passwordCheck) {
-			errs.Set("password", "passwords do not match")
-		}
-
-		if errs != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
+func (s *Service) signUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []int) (*User, error) {
+	input, err := s.SignUpInitialUserValidate(email, password, passwordCheck, roleIDs)
+	if err != nil {
+		return nil, err
 	}
 
 	var roles []*Role
-	if input.roleIDs != nil {
-		roles = make([]*Role, len(input.roleIDs))
+	if input.RoleIDs != nil {
+		roles = make([]*Role, len(input.RoleIDs))
 
-		for i, roleID := range input.roleIDs {
+		for i, roleID := range input.RoleIDs {
 			role, err := s.repo.FindRoleByID(ctx, roleID)
 			if err != nil {
 				return nil, fmt.Errorf("find role by id: %w", err)
@@ -60,9 +69,9 @@ func (s *Service) signUpInitialUser(ctx context.Context, email, password, passwo
 		return nil, errors.New("cannot sign up initial user when other users already exist")
 	}
 
-	user := NewUser(input.email)
+	user := NewUser(input.Email)
 
-	if err := user.SignUpAsInitialUser(s.system, roles, input.password, s.hasher); err != nil {
+	if err := user.SignUpAsInitialUser(s.system, roles, input.Password, s.hasher); err != nil {
 		return nil, fmt.Errorf("sign up: %w", err)
 	}
 

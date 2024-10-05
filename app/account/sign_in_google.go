@@ -19,25 +19,34 @@ const (
 
 var ErrGoogleSignUpDisabled = errors.New("Google sign up disabled")
 
-func (s *Service) signInWithGoogle(ctx context.Context, email string, behaviour GoogleSignInBehaviour) (*User, bool, error) {
-	var input struct {
-		email Email
+type SignInWithGoogleInput struct {
+	Email Email
+}
+
+func (s *Service) SignInWithGoogleValidate(email string) (SignInWithGoogleInput, error) {
+	var input SignInWithGoogleInput
+	var err error
+	var errs errsx.Map
+
+	if input.Email, err = NewEmail(email); err != nil {
+		errs.Set("email", err)
 	}
-	{
-		var err error
-		var errs errsx.Map
 
-		if input.email, err = NewEmail(email); err != nil {
-			errs.Set("email", err)
-		}
+	if errs != nil {
+		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+	}
 
-		if errs != nil {
-			return nil, false, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
+	return input, nil
+}
+
+func (s *Service) signInWithGoogle(ctx context.Context, email string, behaviour GoogleSignInBehaviour) (*User, bool, error) {
+	input, err := s.SignInWithGoogleValidate(email)
+	if err != nil {
+		return nil, false, err
 	}
 
 	var signedIn bool
-	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
+	user, err := s.repo.FindUserByEmail(ctx, input.Email.String())
 	switch {
 	case err == nil:
 		if err := user.SignInWithGoogle(s.system); err != nil {
@@ -55,7 +64,7 @@ func (s *Service) signInWithGoogle(ctx context.Context, email string, behaviour 
 			return nil, false, ErrGoogleSignUpDisabled
 		}
 
-		user = NewUser(input.email)
+		user = NewUser(input.Email)
 
 		user.SignUpWithGoogle(s.system)
 

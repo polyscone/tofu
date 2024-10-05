@@ -8,24 +8,33 @@ import (
 	"github.com/polyscone/tofu/errsx"
 )
 
+type RequestTOTPResetInput struct {
+	Email Email
+}
+
+func (s *Service) RequestTOTPResetValidate(email string) (RequestTOTPResetInput, error) {
+	var input RequestTOTPResetInput
+	var err error
+	var errs errsx.Map
+
+	if input.Email, err = NewEmail(email); err != nil {
+		errs.Set("email", err)
+	}
+
+	if errs != nil {
+		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+	}
+
+	return input, nil
+}
+
 func (s *Service) RequestTOTPReset(ctx context.Context, email string) (*User, error) {
-	var input struct {
-		email Email
-	}
-	{
-		var err error
-		var errs errsx.Map
-
-		if input.email, err = NewEmail(email); err != nil {
-			errs.Set("email", err)
-		}
-
-		if errs != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
+	input, err := s.RequestTOTPResetValidate(email)
+	if err != nil {
+		return nil, err
 	}
 
-	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
+	user, err := s.repo.FindUserByEmail(ctx, input.Email.String())
 	if err != nil {
 		return nil, fmt.Errorf("find user by email: %w", err)
 	}

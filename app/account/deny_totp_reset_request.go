@@ -5,15 +5,25 @@ import (
 	"fmt"
 )
 
+type DenyTOTPResetRequestInput struct {
+	UserID int
+}
+
+func (s *Service) DenyTOTPResetRequestValidate(userID int) (DenyTOTPResetRequestInput, error) {
+	var input DenyTOTPResetRequestInput
+
+	input.UserID = userID
+
+	return input, nil
+}
+
 func (s *Service) DenyTOTPResetRequest(ctx context.Context, userID int) (*User, error) {
-	var input struct {
-		userID int
-	}
-	{
-		input.userID = userID
+	input, err := s.DenyTOTPResetRequestValidate(userID)
+	if err != nil {
+		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.repo.FindUserByID(ctx, input.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}

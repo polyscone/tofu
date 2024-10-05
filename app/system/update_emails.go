@@ -12,29 +12,39 @@ type UpdateEmailsGuard interface {
 	CanUpdateEmails() bool
 }
 
-func (s *Service) UpdateEmails(ctx context.Context, guard UpdateEmailsGuard, systemEmail, securityEmail string) (*Config, error) {
-	var input struct {
-		systemEmail   Email
-		securityEmail Email
+type UpdateEmailsInput struct {
+	SystemEmail   Email
+	SecurityEmail Email
+}
+
+func (s *Service) UpdateEmailsValidate(guard UpdateEmailsGuard, systemEmail, securityEmail string) (UpdateEmailsInput, error) {
+	var input UpdateEmailsInput
+
+	if !guard.CanUpdateEmails() {
+		return input, app.ErrForbidden
 	}
-	{
-		if !guard.CanUpdateEmails() {
-			return nil, app.ErrForbidden
-		}
 
-		var err error
-		var errs errsx.Map
+	var err error
+	var errs errsx.Map
 
-		if input.systemEmail, err = NewEmail(systemEmail); err != nil {
-			errs.Set("system email", err)
-		}
-		if input.securityEmail, err = NewEmail(securityEmail); err != nil {
-			errs.Set("security email", err)
-		}
+	if input.SystemEmail, err = NewEmail(systemEmail); err != nil {
+		errs.Set("system email", err)
+	}
+	if input.SecurityEmail, err = NewEmail(securityEmail); err != nil {
+		errs.Set("security email", err)
+	}
 
-		if errs != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
+	if errs != nil {
+		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+	}
+
+	return input, nil
+}
+
+func (s *Service) UpdateEmails(ctx context.Context, guard UpdateEmailsGuard, systemEmail, securityEmail string) (*Config, error) {
+	input, err := s.UpdateEmailsValidate(guard, systemEmail, securityEmail)
+	if err != nil {
+		return nil, err
 	}
 
 	config, err := s.repo.FindConfig(ctx)
@@ -42,8 +52,8 @@ func (s *Service) UpdateEmails(ctx context.Context, guard UpdateEmailsGuard, sys
 		return nil, fmt.Errorf("find config: %w", err)
 	}
 
-	config.ChangeSystemEmail(input.systemEmail)
-	config.ChangeSecurityEmail(input.securityEmail)
+	config.ChangeSystemEmail(input.SystemEmail)
+	config.ChangeSecurityEmail(input.SecurityEmail)
 
 	if err := s.repo.SaveConfig(ctx, config); err != nil {
 		return nil, fmt.Errorf("save config: %w", err)

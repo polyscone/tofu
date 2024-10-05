@@ -13,43 +13,53 @@ type CreateRoleGuard interface {
 	CanCreateRoles() bool
 }
 
-func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, description string, permissions []string) (*Role, error) {
-	var input struct {
-		name        RoleName
-		description RoleDesc
-		permissions []Permission
+type CreateRoleInput struct {
+	Name        RoleName
+	Description RoleDesc
+	Permissions []Permission
+}
+
+func (s *Service) CreateRoleValidate(guard CreateRoleGuard, name, description string, permissions []string) (CreateRoleInput, error) {
+	var input CreateRoleInput
+
+	if !guard.CanCreateRoles() {
+		return input, app.ErrForbidden
 	}
-	{
-		if !guard.CanCreateRoles() {
-			return nil, app.ErrForbidden
-		}
 
-		var err error
-		var errs errsx.Map
+	var err error
+	var errs errsx.Map
 
-		if input.name, err = NewRoleName(name); err != nil {
-			errs.Set("name", err)
-		}
-		if input.description, err = NewRoleDesc(description); err != nil {
-			errs.Set("description", err)
-		}
-		if permissions != nil {
-			input.permissions = make([]Permission, len(permissions))
+	if input.Name, err = NewRoleName(name); err != nil {
+		errs.Set("name", err)
+	}
+	if input.Description, err = NewRoleDesc(description); err != nil {
+		errs.Set("description", err)
+	}
+	if permissions != nil {
+		input.Permissions = make([]Permission, len(permissions))
 
-			for i, permission := range permissions {
-				input.permissions[i], err = NewPermission(permission)
-				if err != nil {
-					errs.Set("permissions", err)
-				}
+		for i, permission := range permissions {
+			input.Permissions[i], err = NewPermission(permission)
+			if err != nil {
+				errs.Set("permissions", err)
 			}
 		}
-
-		if errs != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
 	}
 
-	role := NewRole(input.name, input.description, input.permissions)
+	if errs != nil {
+		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+	}
+
+	return input, nil
+}
+
+func (s *Service) CreateRole(ctx context.Context, guard CreateRoleGuard, name, description string, permissions []string) (*Role, error) {
+	input, err := s.CreateRoleValidate(guard, name, description, permissions)
+	if err != nil {
+		return nil, err
+	}
+
+	role := NewRole(input.Name, input.Description, input.Permissions)
 
 	if err := s.repo.AddRole(ctx, role); err != nil {
 		var conflict *app.ConflictError

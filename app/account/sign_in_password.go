@@ -52,25 +52,34 @@ func (s *Service) CheckSignInThrottle(attempts int, lastAttemptAt time.Time) err
 	return nil
 }
 
-func (s *Service) signInWithPassword(ctx context.Context, email, password string) (*User, error) {
-	var input struct {
-		email    Email
-		password Password
+type SignInWithPasswordInput struct {
+	Email    Email
+	Password Password
+}
+
+func (s *Service) SignInWithPasswordValidate(email, password string) (SignInWithPasswordInput, error) {
+	var input SignInWithPasswordInput
+	var err error
+	var errs errsx.Map
+
+	if input.Email, err = NewEmail(email); err != nil {
+		errs.Set("email", err)
 	}
-	{
-		var err error
-		var errs errsx.Map
+	if input.Password, err = NewPassword(password); err != nil {
+		errs.Set("password", err)
+	}
 
-		if input.email, err = NewEmail(email); err != nil {
-			errs.Set("email", err)
-		}
-		if input.password, err = NewPassword(password); err != nil {
-			errs.Set("password", err)
-		}
+	if errs != nil {
+		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+	}
 
-		if errs != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
+	return input, nil
+}
+
+func (s *Service) signInWithPassword(ctx context.Context, email, password string) (*User, error) {
+	input, err := s.SignInWithPasswordValidate(email, password)
+	if err != nil {
+		return nil, err
 	}
 
 	log, err := s.repo.FindSignInAttemptLogByEmail(ctx, email)
@@ -91,7 +100,7 @@ func (s *Service) signInWithPassword(ctx context.Context, email, password string
 	log.Attempts++
 	log.LastAttemptAt = time.Now()
 
-	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
+	user, err := s.repo.FindUserByEmail(ctx, input.Email.String())
 	if err != nil {
 		if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
 			return nil, fmt.Errorf("save sign in attempt log: %w", err)
@@ -106,7 +115,7 @@ func (s *Service) signInWithPassword(ctx context.Context, email, password string
 		return nil, fmt.Errorf("find user by email: %w", err)
 	}
 
-	if _, err := user.SignInWithPassword(s.system, input.password, s.hasher); err != nil {
+	if _, err := user.SignInWithPassword(s.system, input.Password, s.hasher); err != nil {
 		switch {
 		case errors.Is(err, ErrNotVerified),
 			errors.Is(err, ErrNotActivated),

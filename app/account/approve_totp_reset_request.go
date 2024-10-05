@@ -5,15 +5,25 @@ import (
 	"fmt"
 )
 
+type ApproveTOTPResetRequestInput struct {
+	UserID int
+}
+
+func (s *Service) ApproveTOTPResetRequestValidate(userID int) (ApproveTOTPResetRequestInput, error) {
+	var input ApproveTOTPResetRequestInput
+
+	input.UserID = userID
+
+	return input, nil
+}
+
 func (s *Service) ApproveTOTPResetRequest(ctx context.Context, userID int) (*User, error) {
-	var input struct {
-		userID int
-	}
-	{
-		input.userID = userID
+	input, err := s.ApproveTOTPResetRequestValidate(userID)
+	if err != nil {
+		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.userID)
+	user, err := s.repo.FindUserByID(ctx, input.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}

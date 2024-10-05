@@ -13,28 +13,38 @@ type InviteUserGuard interface {
 	CanInviteUsers() bool
 }
 
+type InviteUserInput struct {
+	Email Email
+}
+
+func (s *Service) InviteUserValidate(guard InviteUserGuard, email string) (InviteUserInput, error) {
+	var input InviteUserInput
+
+	if !guard.CanInviteUsers() {
+		return input, app.ErrForbidden
+	}
+
+	var err error
+	var errs errsx.Map
+
+	if input.Email, err = NewEmail(email); err != nil {
+		errs.Set("email", err)
+	}
+
+	if errs != nil {
+		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+	}
+
+	return input, nil
+}
+
 func (s *Service) InviteUser(ctx context.Context, guard InviteUserGuard, email string) (*User, error) {
-	var input struct {
-		email Email
-	}
-	{
-		if !guard.CanInviteUsers() {
-			return nil, app.ErrForbidden
-		}
-
-		var err error
-		var errs errsx.Map
-
-		if input.email, err = NewEmail(email); err != nil {
-			errs.Set("email", err)
-		}
-
-		if errs != nil {
-			return nil, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
-		}
+	input, err := s.InviteUserValidate(guard, email)
+	if err != nil {
+		return nil, err
 	}
 
-	user, err := s.repo.FindUserByEmail(ctx, input.email.String())
+	user, err := s.repo.FindUserByEmail(ctx, input.Email.String())
 	switch {
 	case err == nil:
 		if err := user.Invite(s.system); err != nil {
@@ -42,7 +52,7 @@ func (s *Service) InviteUser(ctx context.Context, guard InviteUserGuard, email s
 		}
 
 	case errors.Is(err, app.ErrNotFound):
-		user = NewUser(input.email)
+		user = NewUser(input.Email)
 
 		if err := user.Invite(s.system); err != nil {
 			return nil, fmt.Errorf("invite new user: %w", err)

@@ -11,16 +11,26 @@ type DeleteRoleGuard interface {
 	CanDeleteRoles() bool
 }
 
-func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID int) (*Role, error) {
-	var input struct {
-		roleID int
-	}
-	{
-		if !guard.CanDeleteRoles() {
-			return nil, app.ErrForbidden
-		}
+type DeleteRoleInput struct {
+	RoleID int
+}
 
-		input.roleID = roleID
+func (s *Service) DeleteRoleValidate(guard DeleteRoleGuard, roleID int) (DeleteRoleInput, error) {
+	var input DeleteRoleInput
+
+	if !guard.CanDeleteRoles() {
+		return input, app.ErrForbidden
+	}
+
+	input.RoleID = roleID
+
+	return input, nil
+}
+
+func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID int) (*Role, error) {
+	input, err := s.DeleteRoleValidate(guard, roleID)
+	if err != nil {
+		return nil, err
 	}
 
 	role, err := s.repo.FindRoleByID(ctx, roleID)
@@ -28,7 +38,7 @@ func (s *Service) DeleteRole(ctx context.Context, guard DeleteRoleGuard, roleID 
 		return nil, fmt.Errorf("find role by id: %w", err)
 	}
 
-	if err := s.repo.RemoveRole(ctx, input.roleID); err != nil {
+	if err := s.repo.RemoveRole(ctx, input.RoleID); err != nil {
 		return nil, fmt.Errorf("remove role: %w", err)
 	}
 
