@@ -78,7 +78,6 @@ func (m Map) String() string {
 	return m.Error()
 }
 
-// MarshalJSON implements the json.Marshaler interface.
 func (m Map) MarshalJSON() ([]byte, error) {
 	errs := make([]string, 0, len(m))
 	for key, err := range m {
