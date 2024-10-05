@@ -4,7 +4,7 @@
 
 Build with:
 ```sh
-go run build.go ./cmd/httpd
+go run dev.go
 ```
 
 Run locally with:
