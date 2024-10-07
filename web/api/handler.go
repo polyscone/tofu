@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"slices"
 	"strings"
@@ -44,11 +43,11 @@ func (h *Handler) JSON(w http.ResponseWriter, r *http.Request, status int, data 
 	}
 }
 
-func (h *Handler) RawJSON(w http.ResponseWriter, r *http.Request, status int, data string) {
+func (h *Handler) RawJSON(w http.ResponseWriter, r *http.Request, status int, data []byte) {
 	w.Header().Set("content-type", "application/json")
 	w.WriteHeader(status)
 
-	if _, err := fmt.Fprint(w, data); err != nil {
+	if _, err := w.Write(data); err != nil {
 		ctx := r.Context()
 
 		h.Logger(ctx).Error("write raw JSON response", "error", err)

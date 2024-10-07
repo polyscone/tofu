@@ -17,7 +17,7 @@ func healthGet(h *api.Handler) http.HandlerFunc {
 		w.Header().Set("cache-control", "no-cache")
 
 		if r.Method == http.MethodGet {
-			h.RawJSON(w, r, http.StatusOK, `{"status":"available"}`)
+			h.RawJSON(w, r, http.StatusOK, []byte(`{"status":"available"}`))
 		}
 	}
 }
