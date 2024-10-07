@@ -481,7 +481,7 @@ func (rn *Renderer) TagAsset(location, tag string) {
 	}
 
 	rn.assetTagLocations.LoadOrStore(tag, func() string { return location })
-	rn.assetTagLocations.LoadOrStore(location, func() string { return tag })
+	rn.assetTagLocations.LoadOrStore("loc:"+location, func() string { return tag })
 }
 
 func (rn *Renderer) AssetTagLocation(tag string) (string, bool) {
@@ -497,5 +497,5 @@ func (rn *Renderer) AssetLocationTag(location string) (string, bool) {
 		return "", false
 	}
 
-	return rn.assetTagLocations.Load(location)
+	return rn.assetTagLocations.Load("loc:" + location)
 }
