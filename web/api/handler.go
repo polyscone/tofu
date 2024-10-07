@@ -20,7 +20,7 @@ import (
 	"github.com/polyscone/tofu/web/handler"
 )
 
-var AssetTagLocationsV1 = cache.New[string, string]()
+var AssetTagsV1 = cache.New[string, string]()
 
 //go:embed "all:v1/public"
 var publicFilesV1 embed.FS

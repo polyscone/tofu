@@ -136,10 +136,10 @@ func NewAPIRouterV1(base *handler.Handler) http.Handler {
 	system.RegisterConfigHandlers(h, mux)
 
 	renderer := handler.NewRenderer(handler.RendererConfig{
-		Handler:           h.Handler,
-		AssetTagLocations: api.AssetTagLocationsV1,
-		AssetFiles:        api.PublicFilesV1,
-		Funcs:             handler.NewTemplateFuncs(nil),
+		Handler:    h.Handler,
+		AssetTags:  api.AssetTagsV1,
+		AssetFiles: api.PublicFilesV1,
+		Funcs:      handler.NewTemplateFuncs(nil),
 	})
 	mux.HandleFunc("/", newFileServer(mux.BasePath+"/api/v1", mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		h.ErrorJSON(w, r, "static file", err)

@@ -4,47 +4,113 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 
-	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/httpx"
 )
 
 type AssetPipeline struct {
-	scope string
-	rn    *Renderer
-	r     *http.Request
+	scope   string
+	rn      *Renderer
+	r       *http.Request
+	imports []string
 }
 
-func (a AssetPipeline) Tag(location string) string {
-	original := app.BasePath + location
-	tagged, ok := a.rn.AssetLocationTag(original)
-	if !a.rn.h.Tenant.Dev && ok {
-		return tagged
+func (a *AssetPipeline) tag(asset string) (string, string, string) {
+	key := asset
+	tagged := asset
+
+	u, err := url.Parse(asset)
+	if err != nil {
+		return key, asset, tagged
 	}
 
-	_, _, b, err := a.rn.Asset(a.r, location)
+	ctx := context.Background()
+	r := a.r.Clone(ctx)
+
+	r.URL.Path = u.Path
+	r.URL.RawQuery = u.RawQuery
+
+	_, _, b, err := a.rn.Asset(r, a, u.Path)
 	if err != nil {
-		return original
+		return key, asset, tagged
 	}
 
 	hash := md5.New()
 	if _, err := hash.Write(b); err != nil {
-		return original
+		return key, asset, tagged
 	}
 
-	tag := hex.EncodeToString(hash.Sum(nil))
-	ext := path.Ext(location)
-	tagged = strings.TrimSuffix(location, ext) + "." + tag + ext
+	hashsum := hex.EncodeToString(hash.Sum(nil))
+	ext := path.Ext(asset)
+	tagged = strings.TrimSuffix(asset, ext) + "." + hashsum + ext
 
-	a.rn.TagAsset(original, tagged)
+	// We only set the asset to the path without query string here because
+	// we want to make sure the tagged itself preserved the query string
+	asset = u.Path
+
+	return key, asset, tagged
+}
+
+func (a *AssetPipeline) Tag(asset string) string {
+	tagged, ok := a.rn.FindTaggedByAsset(asset)
+	if !a.rn.h.Tenant.Dev && ok {
+		return tagged
+	}
+
+	key, asset, tagged := a.tag(asset)
+
+	a.rn.TagAsset(key, asset, tagged)
 
 	return tagged
+}
+
+func (a *AssetPipeline) TagImport(asset string) string {
+	a.imports = append(a.imports, asset)
+
+	_, ok := a.rn.FindTaggedByAsset(asset)
+	if !a.rn.h.Tenant.Dev && ok {
+		return asset
+	}
+
+	key, asset, tagged := a.tag(asset)
+
+	a.rn.TagAsset(key, asset, tagged)
+
+	return asset
+}
+
+func (a *AssetPipeline) ImportMap() string {
+	slices.Sort(a.imports)
+
+	a.imports = slices.Compact(a.imports)
+	if len(a.imports) == 0 {
+		return ""
+	}
+
+	imports := make(map[string]string, len(a.imports))
+	for _, im := range a.imports {
+		tagged, ok := a.rn.FindTaggedByAsset(im)
+		if !ok {
+			continue
+		}
+
+		imports[im] = tagged
+	}
+
+	b, err := json.Marshal(map[string]any{"imports": imports})
+	if err != nil {
+		return ""
+	}
+
+	return string(b)
 }
 
 type CSRF struct {

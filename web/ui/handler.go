@@ -20,7 +20,7 @@ import (
 	"github.com/polyscone/tofu/web/handler"
 )
 
-var AssetTagLocations = cache.New[string, string]()
+var AssetTags = cache.New[string, string]()
 
 //go:embed "all:public"
 var publicFiles embed.FS
@@ -68,12 +68,12 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 	}
 
 	h.HTML = handler.NewRenderer(handler.RendererConfig{
-		Handler:           h.Handler,
-		AssetTagLocations: AssetTagLocations,
-		AssetFiles:        PublicFiles,
-		TemplateFiles:     templateFiles,
-		TemplatePaths:     templatePaths,
-		Funcs:             h.Funcs,
+		Handler:       h.Handler,
+		AssetTags:     AssetTags,
+		AssetFiles:    PublicFiles,
+		TemplateFiles: templateFiles,
+		TemplatePaths: templatePaths,
+		Funcs:         h.Funcs,
 		Process: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html; charset=utf-8")
 		},

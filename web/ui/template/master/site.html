@@ -15,6 +15,7 @@
 	<meta name="description" content="{{block "meta_description" .}}{{.App.Description}}{{end}}">
 	{{template "master_site_styles" .}}
 	<link rel="icon" href="{{.Asset.Tag "/favicon.png"}}" type="image/png">
+	<script type="importmap"></script>
 </head>
 <body>
 	{{if eq .Stream "begin" -}}

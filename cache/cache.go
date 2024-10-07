@@ -20,6 +20,13 @@ func (c *Cache[K, V]) Load(key K) (V, bool) {
 	return v, ok
 }
 
+func (c *Cache[K, V]) Store(key K, value V) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.data[key] = value
+}
+
 func (c *Cache[K, V]) LoadOrMaybeStore(key K, value func() (V, error)) (V, error) {
 	c.mu.RLock()
 

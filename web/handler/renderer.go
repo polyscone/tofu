@@ -57,7 +57,7 @@ func (s *State) Store(key string, value any) bool {
 }
 
 type ViewData struct {
-	Asset        AssetPipeline
+	Asset        *AssetPipeline
 	View         string
 	Stream       string
 	Status       int
@@ -114,49 +114,53 @@ type TemplatePathsFunc func(view string) []string
 type TemplateProcessFunc func(w http.ResponseWriter, r *http.Request)
 
 type RendererConfig struct {
-	Handler           *Handler
-	AssetTagLocations *cache.Cache[string, string]
-	AssetFiles        fs.FS
-	TemplateFiles     fs.FS
-	TemplatePaths     TemplatePathsFunc
-	Funcs             template.FuncMap
-	Process           TemplateProcessFunc
+	Handler       *Handler
+	AssetTags     *cache.Cache[string, string]
+	AssetFiles    fs.FS
+	TemplateFiles fs.FS
+	TemplatePaths TemplatePathsFunc
+	Funcs         template.FuncMap
+	Process       TemplateProcessFunc
 }
 
 type Renderer struct {
-	h                 *Handler
-	assetTagLocations *cache.Cache[string, string]
-	assetFiles        fs.FS
-	templateFiles     fs.FS
-	templatePaths     TemplatePathsFunc
-	funcs             template.FuncMap
-	viewVarsFuncs     map[string]ViewVarsFunc
-	process           TemplateProcessFunc
+	h             *Handler
+	assetTags     *cache.Cache[string, string]
+	assetFiles    fs.FS
+	templateFiles fs.FS
+	templatePaths TemplatePathsFunc
+	funcs         template.FuncMap
+	viewVarsFuncs map[string]ViewVarsFunc
+	process       TemplateProcessFunc
 }
 
 func NewRenderer(config RendererConfig) *Renderer {
 	return &Renderer{
-		h:                 config.Handler,
-		assetTagLocations: config.AssetTagLocations,
-		assetFiles:        config.AssetFiles,
-		templateFiles:     config.TemplateFiles,
-		templatePaths:     config.TemplatePaths,
-		funcs:             config.Funcs,
-		viewVarsFuncs:     make(map[string]ViewVarsFunc),
-		process:           config.Process,
+		h:             config.Handler,
+		assetTags:     config.AssetTags,
+		assetFiles:    config.AssetFiles,
+		templateFiles: config.TemplateFiles,
+		templatePaths: config.TemplatePaths,
+		funcs:         config.Funcs,
+		viewVarsFuncs: make(map[string]ViewVarsFunc),
+		process:       config.Process,
 	}
 }
 
-func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view string) (ViewData, error) {
+func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view string, assetPipeline *AssetPipeline) (ViewData, error) {
 	config := rn.h.Config(ctx)
 	user := rn.h.User(ctx)
 	passport := rn.h.Passport(ctx)
 
-	data := ViewData{
-		Asset: AssetPipeline{
+	if assetPipeline == nil {
+		assetPipeline = &AssetPipeline{
 			rn: rn,
 			r:  r,
-		},
+		}
+	}
+
+	data := ViewData{
+		Asset:  assetPipeline,
 		View:   view,
 		Status: status,
 		CSRF:   CSRF{Ctx: ctx},
@@ -218,7 +222,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	ctx := r.Context()
 	tmpl := rn.h.Template(rn.templateFiles, rn.templatePaths(view), rn.funcs, view)
 
-	data, err := rn.data(ctx, r, status, view)
+	data, err := rn.data(ctx, r, status, view, nil)
 	if err != nil {
 		rn.h.Logger(ctx).Error("view data", "error", err)
 
@@ -246,6 +250,8 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 		return
 	}
 
+	rn.postProcess(&buf, &data)
+
 	if rn.process != nil {
 		rn.process(w, r)
 	}
@@ -256,6 +262,23 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 
 	if _, err := buf.WriteTo(w); err != nil {
 		rn.h.Logger(ctx).Error("write view template response", "error", err)
+	}
+}
+
+func (rn *Renderer) postProcess(buf *bytes.Buffer, data *ViewData) {
+	if data.Stream == "" {
+		im := data.Asset.ImportMap()
+		if im != "" {
+			b := buf.Bytes()
+
+			b = bytes.ReplaceAll(
+				b,
+				[]byte(`<script type="importmap"></script>`),
+				[]byte(`<script type="importmap">`+im+`</script>`),
+			)
+
+			*buf = *bytes.NewBuffer(b)
+		}
 	}
 }
 
@@ -293,9 +316,9 @@ func (rn *Renderer) SetViewVars(name string, vars ViewVarsFunc) {
 	rn.viewVarsFuncs[name] = vars
 }
 
-func (rn *Renderer) Text(dst io.Writer, r *http.Request, status int, text string, vars Vars) error {
+func (rn *Renderer) Text(buf *bytes.Buffer, assetPipeline *AssetPipeline, r *http.Request, status int, text string, vars Vars) error {
 	ctx := r.Context()
-	data, err := rn.data(ctx, r, status, "text_template")
+	data, err := rn.data(ctx, r, status, "text_template", assetPipeline)
 	if err != nil {
 		return fmt.Errorf("text template data: %w", err)
 	}
@@ -307,16 +330,18 @@ func (rn *Renderer) Text(dst io.Writer, r *http.Request, status int, text string
 		return fmt.Errorf("parse text template: %w", err)
 	}
 
-	if err := tmpl.Execute(dst, data); err != nil {
+	if err := tmpl.Execute(buf, data); err != nil {
 		return fmt.Errorf("execute text template: %w", err)
 	}
+
+	rn.postProcess(buf, &data)
 
 	return nil
 }
 
-func (rn *Renderer) HTML(dst io.Writer, r *http.Request, status int, html string, vars Vars) error {
+func (rn *Renderer) HTML(buf *bytes.Buffer, assetPipeline *AssetPipeline, r *http.Request, status int, html string, vars Vars) error {
 	ctx := r.Context()
-	data, err := rn.data(ctx, r, status, "html_template")
+	data, err := rn.data(ctx, r, status, "html_template", assetPipeline)
 	if err != nil {
 		return fmt.Errorf("HTML template data: %w", err)
 	}
@@ -328,9 +353,11 @@ func (rn *Renderer) HTML(dst io.Writer, r *http.Request, status int, html string
 		return fmt.Errorf("parse HTML template: %w", err)
 	}
 
-	if err := tmpl.Execute(dst, data); err != nil {
+	if err := tmpl.Execute(buf, data); err != nil {
 		return fmt.Errorf("execute HTML template: %w", err)
 	}
+
+	rn.postProcess(buf, &data)
 
 	return nil
 }
@@ -389,7 +416,7 @@ func (rn *Renderer) ErrorView(w http.ResponseWriter, r *http.Request, msg string
 	})
 }
 
-func (rn *Renderer) Asset(r *http.Request, upath string) (string, time.Time, []byte, error) {
+func (rn *Renderer) Asset(r *http.Request, assetPipeline *AssetPipeline, upath string) (string, time.Time, []byte, error) {
 	fpath := strings.TrimPrefix(upath, "/")
 	f, err := rn.assetFiles.Open(fpath)
 	if err != nil {
@@ -465,7 +492,7 @@ func (rn *Renderer) Asset(r *http.Request, upath string) (string, time.Time, []b
 		}
 
 		var buf bytes.Buffer
-		if err := render(&buf, r, http.StatusOK, string(b), nil); err != nil {
+		if err := render(&buf, assetPipeline, r, http.StatusOK, string(b), nil); err != nil {
 			return "", time.Time{}, nil, fmt.Errorf("%w: render: %w", httpx.ErrInternalServerError, err)
 		}
 
@@ -475,27 +502,27 @@ func (rn *Renderer) Asset(r *http.Request, upath string) (string, time.Time, []b
 	return stat.Name(), modtime, b, nil
 }
 
-func (rn *Renderer) TagAsset(location, tag string) {
-	if rn.assetTagLocations == nil {
+func (rn *Renderer) TagAsset(key, asset, tagged string) {
+	if rn.assetTags == nil {
 		return
 	}
 
-	rn.assetTagLocations.LoadOrStore(tag, func() string { return location })
-	rn.assetTagLocations.LoadOrStore("loc:"+location, func() string { return tag })
+	rn.assetTags.Store(tagged, asset)
+	rn.assetTags.Store("key:"+key, tagged)
 }
 
-func (rn *Renderer) AssetTagLocation(tag string) (string, bool) {
-	if rn.assetTagLocations == nil {
+func (rn *Renderer) FindAssetByTagged(tagged string) (string, bool) {
+	if rn.assetTags == nil {
 		return "", false
 	}
 
-	return rn.assetTagLocations.Load(tag)
+	return rn.assetTags.Load(tagged)
 }
 
-func (rn *Renderer) AssetLocationTag(location string) (string, bool) {
-	if rn.assetTagLocations == nil {
+func (rn *Renderer) FindTaggedByAsset(asset string) (string, bool) {
+	if rn.assetTags == nil {
 		return "", false
 	}
 
-	return rn.assetTagLocations.Load("loc:" + location)
+	return rn.assetTags.Load("key:" + asset)
 }

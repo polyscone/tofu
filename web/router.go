@@ -73,15 +73,19 @@ func newFileServer(basePath string, mux *router.ServeMux, renderer *handler.Rend
 		}
 		upath = path.Clean(upath)
 
-		if location, ok := renderer.AssetTagLocation(upath); ok {
+		tagged := upath
+		if q := r.URL.RawQuery; q != "" {
+			tagged += "?" + q
+		}
+		if asset, ok := renderer.FindAssetByTagged(tagged); ok {
 			maxAge := int((365 * 24 * time.Hour).Seconds())
 			cacheControl := fmt.Sprintf("public, max-age=%v, immutable", maxAge)
 			w.Header().Set("cache-control", cacheControl)
 
-			upath = location
+			upath = asset
 		}
 
-		name, modtime, b, err := renderer.Asset(r, upath)
+		name, modtime, b, err := renderer.Asset(r, nil, upath)
 		if err != nil {
 			errorHandler(w, r, err)
 

@@ -228,10 +228,10 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))
 
 	renderer := handler.NewRenderer(handler.RendererConfig{
-		Handler:           h.Handler,
-		AssetTagLocations: ui.AssetTagLocations,
-		AssetFiles:        ui.PublicFiles,
-		Funcs:             h.Funcs,
+		Handler:    h.Handler,
+		AssetTags:  ui.AssetTags,
+		AssetFiles: ui.PublicFiles,
+		Funcs:      h.Funcs,
 	})
 	mux.HandleFunc("/", newFileServer(mux.BasePath, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		h.HTML.ErrorView(w, r, "static file", err, "site/error", nil)
