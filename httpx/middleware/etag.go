@@ -49,23 +49,26 @@ func ETag(config *ETagConfig) Middleware {
 			next(rw, r)
 
 			if buf.Len() > 0 && !rw.flushed && !rw.hijacked {
-				var etag string
-				if etags := w.Header().Values("etag"); len(etags) != 0 {
-					etag = etags[0]
+				hasCacheControl := len(w.Header().Values("cache-control")) > 0
+				if !hasCacheControl {
+					var etag string
+					if etags := w.Header().Values("etag"); len(etags) != 0 {
+						etag = etags[0]
 
-					w.Header().Set("etag", etag)
-				} else {
-					etag = hex.EncodeToString(hash.Sum(nil))
+						w.Header().Set("etag", etag)
+					} else {
+						etag = hex.EncodeToString(hash.Sum(nil))
 
-					w.Header().Set("etag", etag)
-				}
+						w.Header().Set("etag", etag)
+					}
 
-				w.Header().Set("cache-control", "no-cache")
+					w.Header().Set("cache-control", "no-cache")
 
-				if r.Header.Get("if-none-match") == etag {
-					w.WriteHeader(http.StatusNotModified)
+					if r.Header.Get("if-none-match") == etag {
+						w.WriteHeader(http.StatusNotModified)
 
-					return
+						return
+					}
 				}
 
 				if rw.statusCode != 0 {
