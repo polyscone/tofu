@@ -143,8 +143,6 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))
 
-	mux.Handle("/favicon.ico", httpx.RewriteHandler(mux, "/favicon.png"))
-
 	rootVars := func(h *ui.Handler, r *http.Request) handler.Vars {
 		ctx := r.Context()
 		config := h.Config(ctx)
@@ -171,9 +169,14 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		}
 	}
 
-	renderer := handler.NewRenderer(h.Handler, nil, nil, h.Funcs, nil)
-	mux.HandleFunc("/", newFileServer(uiPublicFiles, mux.BasePath, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
-		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) || errors.Is(err, ErrNoIndex) {
+	renderer := handler.NewRenderer(handler.RendererConfig{
+		Handler:           h.Handler,
+		AssetTagLocations: ui.AssetTagLocations,
+		AssetFiles:        ui.PublicFiles,
+		Funcs:             h.Funcs,
+	})
+	mux.HandleFunc("/", newFileServer(mux.BasePath, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
+		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) || errors.Is(err, handler.ErrNoIndex) {
 			h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars(h, r))
 
 			return

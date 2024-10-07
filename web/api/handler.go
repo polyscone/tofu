@@ -1,20 +1,33 @@
 package api
 
 import (
+	"embed"
 	"encoding/json"
 	"errors"
+	"io/fs"
 	"net/http"
 	"slices"
 	"strings"
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
+	"github.com/polyscone/tofu/cache"
 	"github.com/polyscone/tofu/csrf"
 	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/fsx"
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/human"
 	"github.com/polyscone/tofu/web/handler"
 )
+
+var AssetTagLocationsV1 = cache.New[string, string]()
+
+//go:embed "all:v1/public"
+var publicFilesV1 embed.FS
+
+const publicDirV1 = "v1/public"
+
+var PublicFilesV1 = fsx.NewStack(fsx.RelDirFS(publicDirV1), errsx.Must(fs.Sub(publicFilesV1, publicDirV1)))
 
 var publicErrors = []error{
 	account.ErrSignInThrottled,

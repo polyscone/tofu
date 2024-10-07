@@ -8,17 +8,23 @@ import (
 	"html/template"
 	"io"
 	"io/fs"
+	"mime"
 	"net/http"
+	"path"
+	"strings"
 	texttemplate "text/template"
 	"time"
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/app/system"
+	"github.com/polyscone/tofu/cache"
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/web/guard"
 )
+
+var ErrNoIndex = errors.New("no index file")
 
 type State struct {
 	data map[string]any
@@ -51,6 +57,7 @@ func (s *State) Store(key string, value any) bool {
 }
 
 type ViewData struct {
+	Asset        AssetPipeline
 	View         string
 	Stream       string
 	Status       int
@@ -106,23 +113,37 @@ type ViewVarsFunc func(r *http.Request) (Vars, error)
 type TemplatePathsFunc func(view string) []string
 type TemplateProcessFunc func(w http.ResponseWriter, r *http.Request)
 
-type Renderer struct {
-	h             *Handler
-	templateFiles fs.FS
-	templatePaths TemplatePathsFunc
-	funcs         template.FuncMap
-	viewVarsFuncs map[string]ViewVarsFunc
-	process       TemplateProcessFunc
+type RendererConfig struct {
+	Handler           *Handler
+	AssetTagLocations *cache.Cache[string, string]
+	AssetFiles        fs.FS
+	TemplateFiles     fs.FS
+	TemplatePaths     TemplatePathsFunc
+	Funcs             template.FuncMap
+	Process           TemplateProcessFunc
 }
 
-func NewRenderer(h *Handler, templateFiles fs.FS, templatePaths TemplatePathsFunc, funcs template.FuncMap, process TemplateProcessFunc) *Renderer {
+type Renderer struct {
+	h                 *Handler
+	assetTagLocations *cache.Cache[string, string]
+	assetFiles        fs.FS
+	templateFiles     fs.FS
+	templatePaths     TemplatePathsFunc
+	funcs             template.FuncMap
+	viewVarsFuncs     map[string]ViewVarsFunc
+	process           TemplateProcessFunc
+}
+
+func NewRenderer(config RendererConfig) *Renderer {
 	return &Renderer{
-		h:             h,
-		templateFiles: templateFiles,
-		templatePaths: templatePaths,
-		funcs:         funcs,
-		viewVarsFuncs: make(map[string]ViewVarsFunc),
-		process:       process,
+		h:                 config.Handler,
+		assetTagLocations: config.AssetTagLocations,
+		assetFiles:        config.AssetFiles,
+		templateFiles:     config.TemplateFiles,
+		templatePaths:     config.TemplatePaths,
+		funcs:             config.Funcs,
+		viewVarsFuncs:     make(map[string]ViewVarsFunc),
+		process:           config.Process,
 	}
 }
 
@@ -132,6 +153,10 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 	passport := rn.h.Passport(ctx)
 
 	data := ViewData{
+		Asset: AssetPipeline{
+			rn: rn,
+			r:  r,
+		},
 		View:   view,
 		Status: status,
 		CSRF:   CSRF{Ctx: ctx},
@@ -362,4 +387,115 @@ func (rn *Renderer) ErrorView(w http.ResponseWriter, r *http.Request, msg string
 
 		return nil
 	})
+}
+
+func (rn *Renderer) Asset(r *http.Request, upath string) (string, time.Time, []byte, error) {
+	fpath := strings.TrimPrefix(upath, "/")
+	f, err := rn.assetFiles.Open(fpath)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) {
+			return "", time.Time{}, nil, fmt.Errorf("%w: %w", httpx.ErrNotFound, err)
+		}
+
+		return "", time.Time{}, nil, fmt.Errorf("%w: %w", httpx.ErrInternalServerError, err)
+	}
+	defer f.Close()
+
+	stat, err := f.Stat()
+	if err != nil {
+		return "", time.Time{}, nil, fmt.Errorf("%w: stat: %w", httpx.ErrInternalServerError, err)
+	}
+
+	// If the directory has either an index.html or index.htm file then display that
+	// otherwise we forbid viewing directories
+	if stat.IsDir() {
+		if !strings.HasSuffix(fpath, "/") {
+			fpath += "/"
+		}
+		if !strings.HasSuffix(upath, "/") {
+			upath += "/"
+		}
+
+		var hasIndex bool
+		for _, name := range []string{"index.html", "index.htm"} {
+			if _f, err := rn.assetFiles.Open(fpath + name); err == nil {
+				defer _f.Close()
+
+				_stat, err := _f.Stat()
+				if err != nil {
+					return "", time.Time{}, nil, fmt.Errorf("%w: stat: %w", httpx.ErrInternalServerError, err)
+				}
+
+				f = _f
+				stat = _stat
+				fpath += name
+				upath += name
+				hasIndex = true
+
+				break
+			}
+		}
+
+		if !hasIndex {
+			return "", time.Time{}, nil, fmt.Errorf("%w: directory: %w", httpx.ErrForbidden, ErrNoIndex)
+		}
+	}
+
+	b, err := io.ReadAll(f)
+	if err != nil {
+		return "", time.Time{}, nil, fmt.Errorf("%w: read all: %w", httpx.ErrInternalServerError, err)
+	}
+
+	modtime := stat.ModTime()
+	if bytes.Contains(b, []byte("{{")) && bytes.Contains(b, []byte("}}")) {
+		modtime = time.Time{}
+
+		contentType := mime.TypeByExtension(path.Ext(upath))
+		if contentType == "" {
+			contentType = http.DetectContentType(b)
+		}
+		mediaType, _, _ := mime.ParseMediaType(contentType)
+		if mediaType == "" {
+			mediaType = "application/octet-stream"
+		}
+
+		render := rn.Text
+		if mediaType == "text/html" {
+			render = rn.HTML
+		}
+
+		var buf bytes.Buffer
+		if err := render(&buf, r, http.StatusOK, string(b), nil); err != nil {
+			return "", time.Time{}, nil, fmt.Errorf("%w: render: %w", httpx.ErrInternalServerError, err)
+		}
+
+		b = buf.Bytes()
+	}
+
+	return stat.Name(), modtime, b, nil
+}
+
+func (rn *Renderer) TagAsset(location, tag string) {
+	if rn.assetTagLocations == nil {
+		return
+	}
+
+	rn.assetTagLocations.LoadOrStore(tag, func() string { return location })
+	rn.assetTagLocations.LoadOrStore(location, func() string { return tag })
+}
+
+func (rn *Renderer) AssetTagLocation(tag string) (string, bool) {
+	if rn.assetTagLocations == nil {
+		return "", false
+	}
+
+	return rn.assetTagLocations.Load(tag)
+}
+
+func (rn *Renderer) AssetLocationTag(location string) (string, bool) {
+	if rn.assetTagLocations == nil {
+		return "", false
+	}
+
+	return rn.assetTagLocations.Load(location)
 }

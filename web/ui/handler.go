@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/polyscone/tofu/app"
+	"github.com/polyscone/tofu/cache"
 	"github.com/polyscone/tofu/errsx"
 	"github.com/polyscone/tofu/fsx"
 	"github.com/polyscone/tofu/httpx/middleware"
@@ -18,6 +19,15 @@ import (
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 )
+
+var AssetTagLocations = cache.New[string, string]()
+
+//go:embed "all:public"
+var publicFiles embed.FS
+
+const publicDir = "public"
+
+var PublicFiles = fsx.NewStack(fsx.RelDirFS(publicDir), errsx.Must(fs.Sub(publicFiles, publicDir)))
 
 //go:embed "all:template"
 var files embed.FS
@@ -57,8 +67,16 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		}
 	}
 
-	h.HTML = handler.NewRenderer(h.Handler, templateFiles, templatePaths, h.Funcs, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("content-type", "text/html; charset=utf-8")
+	h.HTML = handler.NewRenderer(handler.RendererConfig{
+		Handler:           h.Handler,
+		AssetTagLocations: AssetTagLocations,
+		AssetFiles:        PublicFiles,
+		TemplateFiles:     templateFiles,
+		TemplatePaths:     templatePaths,
+		Funcs:             h.Funcs,
+		Process: func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("content-type", "text/html; charset=utf-8")
+		},
 	})
 
 	return h

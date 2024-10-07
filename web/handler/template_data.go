@@ -2,12 +2,50 @@ package handler
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"html/template"
+	"net/http"
 	"net/url"
+	"path"
+	"strings"
 
+	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/httpx"
 )
+
+type AssetPipeline struct {
+	scope string
+	rn    *Renderer
+	r     *http.Request
+}
+
+func (a AssetPipeline) Tag(location string) string {
+	original := app.BasePath + location
+	tagged, ok := a.rn.AssetLocationTag(original)
+	if !a.rn.h.Tenant.Dev && ok {
+		return tagged
+	}
+
+	_, _, b, err := a.rn.Asset(a.r, location)
+	if err != nil {
+		return original
+	}
+
+	hash := md5.New()
+	if _, err := hash.Write(b); err != nil {
+		return original
+	}
+
+	tag := hex.EncodeToString(hash.Sum(nil))
+	ext := path.Ext(location)
+	tagged = strings.TrimSuffix(location, ext) + "." + tag + ext
+
+	a.rn.TagAsset(original, tagged)
+
+	return tagged
+}
 
 type CSRF struct {
 	Ctx context.Context

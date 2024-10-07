@@ -1,6 +1,6 @@
 {{define "master_site_styles"}}
-	<link rel="stylesheet" href="{{.App.BasePath}}/all/css/common.css">
-	<link rel="stylesheet" href="{{.App.BasePath}}/site/css/site.css">
+	<link rel="stylesheet" href="{{.Asset.Tag "/all/css/common.css"}}">
+	<link rel="stylesheet" href="{{.Asset.Tag "/site/css/site.css"}}">
 {{end}}
 
 {{define "master_site" -}}
@@ -14,6 +14,7 @@
 	<title>{{block "meta_title" .}}{{.App.Name}}{{end}}</title>
 	<meta name="description" content="{{block "meta_description" .}}{{.App.Description}}{{end}}">
 	{{template "master_site_styles" .}}
+	<link rel="icon" href="{{.Asset.Tag "/favicon.png"}}" type="image/png">
 </head>
 <body>
 	{{if eq .Stream "begin" -}}
@@ -21,7 +22,7 @@
 			{{template "master_site_styles" .}}
 	{{- end}}
 
-	<script src="{{.App.BasePath}}/site/js/components.js"></script>
+	<script src="{{.Asset.Tag "/site/js/components.js"}}"></script>
 
 	<a href="#main-content" class="skip-nav-link">Skip navigation</a>
 

@@ -2,9 +2,7 @@ package web
 
 import (
 	"context"
-	"embed"
 	"errors"
-	"io/fs"
 	"log/slog"
 	"net/http"
 	"path/filepath"
@@ -12,8 +10,6 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/fsx"
 	"github.com/polyscone/tofu/httpx"
 	"github.com/polyscone/tofu/httpx/middleware"
 	"github.com/polyscone/tofu/httpx/router"
@@ -25,13 +21,6 @@ import (
 	"github.com/polyscone/tofu/web/api/v1/system"
 	"github.com/polyscone/tofu/web/handler"
 )
-
-//go:embed "all:api/v1/public"
-var apiFilesV1 embed.FS
-
-const apiPublicDirV1 = "api/v1/public"
-
-var apiPublicFilesV1 = fsx.NewStack(fsx.RelDirFS(apiPublicDirV1), errsx.Must(fs.Sub(apiFilesV1, apiPublicDirV1)))
 
 func NewAPIRouterV1(base *handler.Handler) http.Handler {
 	mux := router.NewServeMux()
@@ -146,9 +135,13 @@ func NewAPIRouterV1(base *handler.Handler) http.Handler {
 
 	system.RegisterConfigHandlers(h, mux)
 
-	funcs := handler.NewTemplateFuncs(nil)
-	renderer := handler.NewRenderer(h.Handler, nil, nil, funcs, nil)
-	mux.HandleFunc("/", newFileServer(apiPublicFilesV1, mux.BasePath+"/api/v1", mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
+	renderer := handler.NewRenderer(handler.RendererConfig{
+		Handler:           h.Handler,
+		AssetTagLocations: api.AssetTagLocationsV1,
+		AssetFiles:        api.PublicFilesV1,
+		Funcs:             handler.NewTemplateFuncs(nil),
+	})
+	mux.HandleFunc("/", newFileServer(mux.BasePath+"/api/v1", mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		h.ErrorJSON(w, r, "static file", err)
 	}))
 
