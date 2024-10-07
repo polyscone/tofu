@@ -11,6 +11,15 @@ func New[K comparable, V any]() *Cache[K, V] {
 	return &Cache[K, V]{data: make(map[K]V)}
 }
 
+func (c *Cache[K, V]) Load(key K) (V, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	v, ok := c.data[key]
+
+	return v, ok
+}
+
 func (c *Cache[K, V]) LoadOrMaybeStore(key K, value func() (V, error)) (V, error) {
 	c.mu.RLock()
 
