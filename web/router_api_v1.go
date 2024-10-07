@@ -36,7 +36,7 @@ var apiPublicFilesV1 = fsx.NewStack(fsx.RelDirFS(apiPublicDirV1), errsx.Must(fs.
 func NewAPIRouterV1(base *handler.Handler) http.Handler {
 	mux := router.NewServeMux()
 
-	mux.BasePath = app.BasePath + "/api/v1"
+	mux.BasePath = app.BasePath
 
 	h := api.NewHandler(base)
 
@@ -148,7 +148,7 @@ func NewAPIRouterV1(base *handler.Handler) http.Handler {
 
 	funcs := handler.NewTemplateFuncs(nil)
 	renderer := handler.NewRenderer(h.Handler, nil, nil, funcs, nil)
-	mux.HandleFunc("/", newFileServer(apiPublicFilesV1, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
+	mux.HandleFunc("/", newFileServer(apiPublicFilesV1, mux.BasePath+"/api/v1", mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		h.ErrorJSON(w, r, "static file", err)
 	}))
 

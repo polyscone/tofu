@@ -69,7 +69,7 @@ var ErrNoIndex = errors.New("no index file")
 
 type FileServerErrorHandler func(w http.ResponseWriter, r *http.Request, err error)
 
-func newFileServer(fsys fs.FS, mux *router.ServeMux, renderer *handler.Renderer, errorHandler FileServerErrorHandler) http.HandlerFunc {
+func newFileServer(fsys fs.FS, basePath string, mux *router.ServeMux, renderer *handler.Renderer, errorHandler FileServerErrorHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if allowedMethods, notAllowed := httpx.MethodNotAllowed(mux, r); notAllowed {
 			w.Header().Set("allow", strings.Join(allowedMethods, ", "))
@@ -84,8 +84,8 @@ func newFileServer(fsys fs.FS, mux *router.ServeMux, renderer *handler.Renderer,
 			upath = "/" + upath
 			r.URL.Path = upath
 		}
-		if mux.BasePath != "" {
-			upath = strings.TrimPrefix(upath, mux.BasePath)
+		if basePath != "" {
+			upath = strings.TrimPrefix(upath, basePath)
 		}
 		upath = path.Clean(upath)
 

@@ -172,7 +172,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 	}
 
 	renderer := handler.NewRenderer(h.Handler, nil, nil, h.Funcs, nil)
-	mux.HandleFunc("/", newFileServer(uiPublicFiles, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
+	mux.HandleFunc("/", newFileServer(uiPublicFiles, mux.BasePath, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) || errors.Is(err, ErrNoIndex) {
 			h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars(h, r))
 

@@ -11,7 +11,7 @@ import (
 )
 
 func RegisterSignUpHandlers(h *api.Handler, mux *router.ServeMux) {
-	mux.HandleFunc("POST /account/sign-up", signUpPost(h))
+	mux.HandleFunc("POST /api/v1/account/sign-up", signUpPost(h))
 }
 
 func signUpPost(h *api.Handler) http.HandlerFunc {

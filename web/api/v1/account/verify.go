@@ -12,7 +12,7 @@ import (
 )
 
 func RegisterVerifyHandlers(h *api.Handler, mux *router.ServeMux) {
-	mux.HandleFunc("POST /account/verify", verifyPost(h))
+	mux.HandleFunc("POST /api/v1/account/verify", verifyPost(h))
 }
 
 func verifyPost(h *api.Handler) http.HandlerFunc {

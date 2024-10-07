@@ -9,7 +9,7 @@ import (
 )
 
 func RegisterSessionHandlers(h *api.Handler, mux *router.ServeMux) {
-	mux.HandleFunc("GET /account/session", sessionGet(h))
+	mux.HandleFunc("GET /api/v1/account/session", sessionGet(h))
 }
 
 func sessionGet(h *api.Handler) http.HandlerFunc {

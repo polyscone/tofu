@@ -9,7 +9,7 @@ import (
 )
 
 func RegisterCSRFHandlers(h *api.Handler, mux *router.ServeMux) {
-	mux.HandleFunc("GET /security/csrf", csrfGet(h))
+	mux.HandleFunc("GET /api/v1/security/csrf", csrfGet(h))
 }
 
 func csrfGet(h *api.Handler) http.HandlerFunc {

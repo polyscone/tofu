@@ -230,7 +230,7 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 	mux.Handle("/favicon.ico", httpx.RewriteHandler(mux, "/favicon.png"))
 
 	renderer := handler.NewRenderer(h.Handler, nil, nil, h.Funcs, nil)
-	mux.HandleFunc("/", newFileServer(uiPublicFiles, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
+	mux.HandleFunc("/", newFileServer(uiPublicFiles, mux.BasePath, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		h.HTML.ErrorView(w, r, "static file", err, "site/error", nil)
 	}))
 

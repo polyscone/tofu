@@ -16,8 +16,8 @@ import (
 )
 
 func RegisterResetPasswordHandlers(h *api.Handler, mux *router.ServeMux) {
-	mux.HandleFunc("POST /account/reset-password", resetPasswordPost(h))
-	mux.HandleFunc("POST /account/reset-password/new-password", resetPasswordNewPasswordPost(h))
+	mux.HandleFunc("POST /api/v1/account/reset-password", resetPasswordPost(h))
+	mux.HandleFunc("POST /api/v1/account/reset-password/new-password", resetPasswordNewPasswordPost(h))
 }
 
 func resetPasswordPost(h *api.Handler) http.HandlerFunc {

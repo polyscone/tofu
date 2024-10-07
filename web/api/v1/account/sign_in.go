@@ -18,14 +18,14 @@ import (
 )
 
 func RegisterSignInHandlers(h *api.Handler, mux *router.ServeMux) {
-	mux.HandleFunc("POST /account/sign-in", signInPost(h))
-	mux.HandleFunc("POST /account/sign-in/magic-link", signInMagicLinkPost(h))
-	mux.HandleFunc("POST /account/sign-in/magic-link/request", signInMagicLinkRequestPost(h))
-	mux.HandleFunc("POST /account/sign-in/totp", signInTOTPPost(h))
-	mux.HandleFunc("POST /account/sign-in/totp/send-sms", signInTOTPSendSMSPost(h))
-	mux.HandleFunc("POST /account/sign-in/recovery-code", signInRecoveryCodePost(h))
-	mux.HandleFunc("POST /account/sign-in/google", signInGooglePost(h))
-	mux.HandleFunc("POST /account/sign-in/facebook", signInFacebookPost(h))
+	mux.HandleFunc("POST /api/v1/account/sign-in", signInPost(h))
+	mux.HandleFunc("POST /api/v1/account/sign-in/magic-link", signInMagicLinkPost(h))
+	mux.HandleFunc("POST /api/v1/account/sign-in/magic-link/request", signInMagicLinkRequestPost(h))
+	mux.HandleFunc("POST /api/v1/account/sign-in/totp", signInTOTPPost(h))
+	mux.HandleFunc("POST /api/v1/account/sign-in/totp/send-sms", signInTOTPSendSMSPost(h))
+	mux.HandleFunc("POST /api/v1/account/sign-in/recovery-code", signInRecoveryCodePost(h))
+	mux.HandleFunc("POST /api/v1/account/sign-in/google", signInGooglePost(h))
+	mux.HandleFunc("POST /api/v1/account/sign-in/facebook", signInFacebookPost(h))
 }
 
 func signInPost(h *api.Handler) http.HandlerFunc {
