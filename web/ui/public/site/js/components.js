@@ -26,7 +26,7 @@ onMount("textarea", node => {
 	window.addEventListener("blur", unsetMouseDown)
 
 	onDestroy(node, () => {
-		window.removeEventListener("blur", windowblur)
+		window.removeEventListener("blur", unsetMouseDown)
 	})
 
 	window._components.observeResize(node, () => {
