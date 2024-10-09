@@ -64,8 +64,10 @@
 		</ul>
 	</nav>
 
-	{{if .State.Store "ComPagination_JSInitialised" true}}
-		<script>
+	{{if .State.Once "com_pagination_js"}}
+		<script type="module">
+			import { onMount } from "{{.Asset.TagImport "/site/js/components.js"}}"
+
 			onMount(".pagination__info select", node => {
 				const form = node.closest("form")
 

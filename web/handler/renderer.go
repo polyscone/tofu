@@ -56,6 +56,10 @@ func (s *State) Store(key string, value any) bool {
 	return true
 }
 
+func (s *State) Once(key string) bool {
+	return s.Store(key, true)
+}
+
 type ViewData struct {
 	Asset        *AssetPipeline
 	View         string
