@@ -1,4 +1,4 @@
-import { onMount, onDestroy } from "{{.Asset.TagImport "/site/js/components.js"}}"
+import { onMount } from "{{.Asset.TagImport "./components.js"}}"
 
 const langs = []
 

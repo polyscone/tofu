@@ -24,6 +24,19 @@ type AssetPipeline struct {
 	imports []string
 }
 
+func (a *AssetPipeline) resolve(asset string) string {
+	isRelative := strings.HasPrefix(asset, "./") || strings.HasPrefix(asset, "../")
+	if isRelative {
+		asset = path.Join(path.Dir(a.r.URL.Path), asset)
+	}
+
+	if !strings.HasPrefix(asset, app.BasePath) {
+		asset = app.BasePath + asset
+	}
+
+	return asset
+}
+
 func (a *AssetPipeline) tag(asset string) (string, string, string) {
 	key := asset
 	tagged := asset
@@ -61,7 +74,7 @@ func (a *AssetPipeline) tag(asset string) (string, string, string) {
 }
 
 func (a *AssetPipeline) Tag(asset string) string {
-	asset = app.BasePath + asset
+	asset = a.resolve(asset)
 	tagged, ok := a.rn.FindTaggedByAsset(asset)
 	if !a.rn.h.Tenant.Dev && ok {
 		return tagged
@@ -75,7 +88,7 @@ func (a *AssetPipeline) Tag(asset string) string {
 }
 
 func (a *AssetPipeline) TagImport(asset string) string {
-	asset = app.BasePath + asset
+	asset = a.resolve(asset)
 
 	a.imports = append(a.imports, asset)
 

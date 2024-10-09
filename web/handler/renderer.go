@@ -420,7 +420,8 @@ func (rn *Renderer) ErrorView(w http.ResponseWriter, r *http.Request, msg string
 	})
 }
 
-func (rn *Renderer) Asset(r *http.Request, assetPipeline *AssetPipeline, upath string) (string, time.Time, []byte, error) {
+func (rn *Renderer) Asset(r *http.Request, ap *AssetPipeline, upath string) (string, time.Time, []byte, error) {
+	upath = strings.TrimPrefix(upath, app.BasePath)
 	fpath := strings.TrimPrefix(upath, "/")
 	f, err := rn.assetFiles.Open(fpath)
 	if err != nil {
@@ -495,9 +496,19 @@ func (rn *Renderer) Asset(r *http.Request, assetPipeline *AssetPipeline, upath s
 			render = rn.HTML
 		}
 
+		var apr *http.Request
+		if ap != nil && ap.r != r {
+			apr = ap.r
+			ap.r = r
+		}
+
 		var buf bytes.Buffer
-		if err := render(&buf, assetPipeline, r, http.StatusOK, string(b), nil); err != nil {
+		if err := render(&buf, ap, r, http.StatusOK, string(b), nil); err != nil {
 			return "", time.Time{}, nil, fmt.Errorf("%w: render: %w", httpx.ErrInternalServerError, err)
+		}
+
+		if apr != nil {
+			ap.r = apr
 		}
 
 		b = buf.Bytes()

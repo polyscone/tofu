@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/app"
@@ -141,9 +142,14 @@ func NewAPIRouterV1(base *handler.Handler) http.Handler {
 		AssetFiles: api.PublicFilesV1,
 		Funcs:      handler.NewTemplateFuncs(nil),
 	})
-	mux.HandleFunc("/", newFileServer(mux.BasePath+"/api/v1", mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
+	serveFile := newFileServer(mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		h.ErrorJSON(w, r, "static file", err)
-	}))
+	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, mux.BasePath+"/api/v1")
+
+		serveFile(w, r)
+	})
 
 	return mux
 }

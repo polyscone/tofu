@@ -57,7 +57,7 @@ func NewRouter(tenant *handler.Tenant) http.Handler {
 
 type FileServerErrorHandler func(w http.ResponseWriter, r *http.Request, err error)
 
-func newFileServer(basePath string, mux *router.ServeMux, renderer *handler.Renderer, errorHandler FileServerErrorHandler) http.HandlerFunc {
+func newFileServer(mux *router.ServeMux, renderer *handler.Renderer, errorHandler FileServerErrorHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if allowedMethods, notAllowed := httpx.MethodNotAllowed(mux, r); notAllowed {
 			w.Header().Set("allow", strings.Join(allowedMethods, ", "))
@@ -71,9 +71,6 @@ func newFileServer(basePath string, mux *router.ServeMux, renderer *handler.Rend
 		if !strings.HasPrefix(upath, "/") {
 			upath = "/" + upath
 			r.URL.Path = upath
-		}
-		if basePath != "" {
-			upath = strings.TrimPrefix(upath, basePath)
 		}
 		upath = path.Clean(upath)
 

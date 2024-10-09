@@ -175,7 +175,7 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		AssetFiles: ui.PublicFiles,
 		Funcs:      h.Funcs,
 	})
-	mux.HandleFunc("/", newFileServer(mux.BasePath, mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
+	serveFile := newFileServer(mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) || errors.Is(err, handler.ErrNoIndex) {
 			h.HTML.View(w, r, http.StatusOK, "pwa/root", rootVars(h, r))
 
@@ -183,7 +183,8 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 		}
 
 		h.HTML.ErrorView(w, r, "static file", err, "site/error", nil)
-	}))
+	})
+	mux.HandleFunc("/", serveFile)
 
 	return mux
 }
