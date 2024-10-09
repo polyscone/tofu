@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/httpx"
 )
 
@@ -60,6 +61,7 @@ func (a *AssetPipeline) tag(asset string) (string, string, string) {
 }
 
 func (a *AssetPipeline) Tag(asset string) string {
+	asset = app.BasePath + asset
 	tagged, ok := a.rn.FindTaggedByAsset(asset)
 	if !a.rn.h.Tenant.Dev && ok {
 		return tagged
@@ -73,6 +75,8 @@ func (a *AssetPipeline) Tag(asset string) string {
 }
 
 func (a *AssetPipeline) TagImport(asset string) string {
+	asset = app.BasePath + asset
+
 	a.imports = append(a.imports, asset)
 
 	_, ok := a.rn.FindTaggedByAsset(asset)
