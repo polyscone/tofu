@@ -16,14 +16,13 @@
 	{{template "master_site_styles" .}}
 	<link rel="icon" href="{{.Asset.Tag "/favicon.png"}}" type="image/png">
 	<script type="importmap"></script>
+	<script src="{{.Asset.Tag "/site/js/main.js"}}" type="module"></script>
 </head>
 <body>
 	{{if eq .Stream "begin" -}}
 		<template shadowrootmode="open">
 			{{template "master_site_styles" .}}
 	{{- end}}
-
-	<script src="{{.Asset.Tag "/site/js/components.js"}}"></script>
 
 	<a href="#main-content" class="skip-nav-link">Skip navigation</a>
 
