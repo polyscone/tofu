@@ -75,10 +75,6 @@ func (a *AssetPipeline) tag(asset string) (string, string, string) {
 
 func (a *AssetPipeline) Tag(asset string) string {
 	asset = a.resolve(asset)
-	tagged, ok := a.rn.FindTaggedByAsset(asset)
-	if !a.rn.h.Tenant.Dev && ok {
-		return tagged
-	}
 
 	key, asset, tagged := a.tag(asset)
 
@@ -91,11 +87,6 @@ func (a *AssetPipeline) TagImport(asset string) string {
 	asset = a.resolve(asset)
 
 	a.imports = append(a.imports, asset)
-
-	_, ok := a.rn.FindTaggedByAsset(asset)
-	if !a.rn.h.Tenant.Dev && ok {
-		return asset
-	}
 
 	key, asset, tagged := a.tag(asset)
 
