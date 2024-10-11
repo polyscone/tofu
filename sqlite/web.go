@@ -53,7 +53,8 @@ func NewWebRepo(ctx context.Context, db *DB, sessionTTL time.Duration) (*WebRepo
 		ctx := context.Background()
 
 		for range time.Tick(5 * time.Minute) {
-			if err := r.DestroyExpiredSessions(ctx); err != nil {
+			validWindowStart := time.Now().Add(-r.sessionTTL).UTC()
+			if err := r.DestroyExpiredSessions(ctx, validWindowStart); err != nil {
 				slog.Error("web repo: destroy expired sessions", "error", err)
 			}
 		}
@@ -64,7 +65,8 @@ func NewWebRepo(ctx context.Context, db *DB, sessionTTL time.Duration) (*WebRepo
 		ctx := context.Background()
 
 		for range time.Tick(5 * time.Minute) {
-			if err := r.DeleteExpiredTokens(ctx); err != nil {
+			now := time.Now().UTC()
+			if err := r.DeleteExpiredTokens(ctx, now); err != nil {
 				slog.Error("web repo: delete expired tokens", "error", err)
 			}
 		}
@@ -119,14 +121,34 @@ func (r *WebRepo) DestroySession(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *WebRepo) DestroyExpiredSessions(ctx context.Context) error {
+func (r *WebRepo) CountExpiredSessions(ctx context.Context, validWindowStart time.Time) (int, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	total, err := r.countExpiredSessions(ctx, tx, validWindowStart)
+
+	return total, err
+}
+
+func (r *WebRepo) DestroyExpiredSessions(ctx context.Context, validWindowStart time.Time) error {
+	total, err := r.CountExpiredSessions(ctx, validWindowStart)
+	if err != nil {
+		return fmt.Errorf("count expired sessions: %w", err)
+	}
+	if total == 0 {
+		return nil
+	}
+
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	if err := r.destroyExpiredSessions(ctx, tx); err != nil {
+	if err := r.destroyExpiredSessions(ctx, tx, validWindowStart); err != nil {
 		return err
 	}
 
@@ -401,14 +423,34 @@ func (r *WebRepo) ConsumeResetTOTPToken(ctx context.Context, token string) error
 	return nil
 }
 
-func (r *WebRepo) DeleteExpiredTokens(ctx context.Context) error {
+func (r *WebRepo) CountExpiredTokens(ctx context.Context, now time.Time) (int, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	total, err := r.countExpiredTokens(ctx, tx, now)
+
+	return total, err
+}
+
+func (r *WebRepo) DeleteExpiredTokens(ctx context.Context, now time.Time) error {
+	total, err := r.CountExpiredTokens(ctx, now)
+	if err != nil {
+		return fmt.Errorf("count expired tokens: %w", err)
+	}
+	if total == 0 {
+		return nil
+	}
+
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	if err := r.deleteExpiredTokens(ctx, tx); err != nil {
+	if err := r.deleteExpiredTokens(ctx, tx, now); err != nil {
 		return err
 	}
 
@@ -494,12 +536,24 @@ func (r *WebRepo) destroySession(ctx context.Context, tx *Tx, id string) error {
 	return err
 }
 
-func (r *WebRepo) destroyExpiredSessions(ctx context.Context, tx *Tx) error {
+func (r *WebRepo) countExpiredSessions(ctx context.Context, tx *Tx, validWindowStart time.Time) (int, error) {
+	var count int
+	err := tx.QueryRowContext(ctx, `
+		select count(*) from web__sessions
+		where updated_at <= :valid_window_start
+	`,
+		sql.Named("valid_window_start", Time(validWindowStart)),
+	).Scan(&count)
+
+	return count, err
+}
+
+func (r *WebRepo) destroyExpiredSessions(ctx context.Context, tx *Tx, validWindowStart time.Time) error {
 	_, err := tx.ExecContext(ctx, `
 		delete from web__sessions
 		where updated_at <= :valid_window_start
 	`,
-		sql.Named("valid_window_start", Time(tx.now.Add(-r.sessionTTL).UTC())),
+		sql.Named("valid_window_start", Time(validWindowStart)),
 	)
 
 	return err
@@ -607,12 +661,24 @@ func (r *WebRepo) deleteTokensByKind(ctx context.Context, tx *Tx, value string, 
 	return err
 }
 
-func (r *WebRepo) deleteExpiredTokens(ctx context.Context, tx *Tx) error {
+func (r *WebRepo) countExpiredTokens(ctx context.Context, tx *Tx, now time.Time) (int, error) {
+	var count int
+	err := tx.QueryRowContext(ctx, `
+		select count(*) from web__tokens
+		where expires_at <= :now
+	`,
+		sql.Named("now", Time(now)),
+	).Scan(&count)
+
+	return count, err
+}
+
+func (r *WebRepo) deleteExpiredTokens(ctx context.Context, tx *Tx, now time.Time) error {
 	_, err := tx.ExecContext(ctx, `
 		delete from web__tokens
-		where expires_at <= :expires_at
+		where expires_at <= :now
 	`,
-		sql.Named("expires_at", Time(tx.now.UTC())),
+		sql.Named("now", Time(now)),
 	)
 
 	return err

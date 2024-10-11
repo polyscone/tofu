@@ -37,7 +37,8 @@ func NewAccountRepo(ctx context.Context, db *DB, signInThrottleTTL time.Duration
 		ctx := context.Background()
 
 		for range time.Tick(5 * time.Minute) {
-			if err := r.DeleteStaleSignInAttemptLogs(ctx, signInThrottleTTL); err != nil {
+			validWindowStart := time.Now().Add(-signInThrottleTTL).UTC()
+			if err := r.DeleteStaleSignInAttemptLogs(ctx, validWindowStart); err != nil {
 				slog.Error("account repo: delete stale sign in attempt logs", "error", err)
 			}
 		}
@@ -240,14 +241,34 @@ func (r *AccountRepo) SaveSignInAttemptLog(ctx context.Context, log *account.Sig
 	return nil
 }
 
-func (r *AccountRepo) DeleteStaleSignInAttemptLogs(ctx context.Context, ttl time.Duration) error {
+func (r *AccountRepo) CountStaleSignInAttemptLogs(ctx context.Context, validWindowStart time.Time) (int, error) {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	total, err := r.countStaleSignInAttemptLogs(ctx, tx, validWindowStart)
+
+	return total, err
+}
+
+func (r *AccountRepo) DeleteStaleSignInAttemptLogs(ctx context.Context, validWindowStart time.Time) error {
+	total, err := r.CountStaleSignInAttemptLogs(ctx, validWindowStart)
+	if err != nil {
+		return fmt.Errorf("count stale sign in attempt logs: %w", err)
+	}
+	if total == 0 {
+		return nil
+	}
+
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	if err := r.deleteStaleSignInAttemptLogs(ctx, tx, ttl); err != nil {
+	if err := r.deleteStaleSignInAttemptLogs(ctx, tx, validWindowStart); err != nil {
 		return err
 	}
 
@@ -1108,12 +1129,24 @@ func (r *AccountRepo) deleteSignInAttemptLog(ctx context.Context, tx *Tx, email 
 	return err
 }
 
-func (r *AccountRepo) deleteStaleSignInAttemptLogs(ctx context.Context, tx *Tx, ttl time.Duration) error {
+func (r *AccountRepo) countStaleSignInAttemptLogs(ctx context.Context, tx *Tx, validWindowStart time.Time) (int, error) {
+	var count int
+	err := tx.QueryRowContext(ctx, `
+		select count(*) from account__sign_in_attempt_logs
+		where last_attempt_at <= :valid_window_start
+	`,
+		sql.Named("valid_window_start", Time(validWindowStart)),
+	).Scan(&count)
+
+	return count, err
+}
+
+func (r *AccountRepo) deleteStaleSignInAttemptLogs(ctx context.Context, tx *Tx, validWindowStart time.Time) error {
 	_, err := tx.ExecContext(ctx, `
 		delete from account__sign_in_attempt_logs
 		where last_attempt_at <= :valid_window_start
 	`,
-		sql.Named("valid_window_start", Time(tx.now.Add(-ttl).UTC())),
+		sql.Named("valid_window_start", Time(validWindowStart)),
 	)
 
 	return err
