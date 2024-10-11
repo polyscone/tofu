@@ -56,8 +56,6 @@ onMount("textarea", node => {
 	node.addEventListener("input", autosize)
 
 	return () => {
-		console.log("On destroy running...")
-
 		window.removeEventListener("blur", unsetMouseDown)
 	}
 })
