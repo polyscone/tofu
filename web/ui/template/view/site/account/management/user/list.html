@@ -37,7 +37,6 @@
 						<time
 							title="{{FormatTime .LastSignedInAt "RFC1123"}}"
 							datetime="{{FormatTime .LastSignedInAt "RFC3339"}}"
-							data-skip
 						>{{FormatDuration (TimeSince .LastSignedInAt)}} ago</time>
 						({{.LastSignedInMethod}})
 					{{end}}

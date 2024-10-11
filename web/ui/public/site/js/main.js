@@ -1,4 +1,4 @@
-import { onMount } from "{{.Asset.TagImport "./components.js"}}"
+import { onMount, observeResize } from "{{.Asset.TagImport "./dom.js"}}"
 
 const langs = []
 
@@ -12,7 +12,7 @@ if (lang) {
 	langs.push(lang)
 }
 
-onMount("textarea", node => {
+onMount("textarea[data-autosize]", node => {
 	let mouseDown = false
 	let userResized = false
 
@@ -27,7 +27,7 @@ onMount("textarea", node => {
 	node.addEventListener("mouseup", unsetMouseDown)
 	window.addEventListener("blur", unsetMouseDown)
 
-	window._components.observeResize(node, () => {
+	observeResize(node, () => {
 		userResized ||= mouseDown
 	})
 
@@ -60,7 +60,7 @@ onMount("textarea", node => {
 	}
 })
 
-onMount("input, textarea", node => {
+onMount("form input, form textarea", node => {
 	// Set a data-invalid attribute on forms when they're submitted with
 	// malformed inputs
 	//
@@ -106,19 +106,26 @@ onMount("[data-locale-number]", node => {
 	node.innerHTML = node.innerHTML.replaceAll(/\d+(\.\d+)?/g, match => formatNumber(match, node.dataset))
 })
 
-onMount("time", node => {
-	if (typeof node.dataset.skip !== "undefined") {
+onMount("[data-locale-date], [data-locale-time]", node => {
+	const dateStyle = node.dataset.localeDate === "" ? "short" : node.dataset.localeDate
+	const timeStyle = node.dataset.localeTime === "" ? "medium" : node.dataset.localeTime
+
+	if (typeof dateStyle === "undefined" && typeof timeStyle === "undefined") {
 		return
 	}
 
 	let str = (node.getAttribute("datetime") || node.innerText).trim()
 
-	if (!str.trim()) {
+	if (!str) {
 		return
 	}
 
 	const hasDate = /\d{4}-\d{2}-\d{2}/.test(str)
 	const hasTime = /\d{2}:\d{2}/.test(str)
+
+	if (!hasDate && !hasTime) {
+		return
+	}
 
 	if (!hasDate && hasTime) {
 		const now = (new Date()).toISOString().split("T").shift()
@@ -128,24 +135,12 @@ onMount("time", node => {
 
 	const date = new Date(str)
 
-	if (hasDate && hasTime) {
-		node.innerText = date.toLocaleString(langs, {
-			dateStyle: node.dataset.date || "short",
-			timeStyle: node.dataset.time || "medium",
-		})
-	} else if (hasDate) {
-		node.innerText = date.toLocaleDateString(langs, {
-			dateStyle: node.dataset.date || "short",
-		})
-	} else if (hasTime) {
-		node.innerText = date.toLocaleTimeString(langs, {
-			timeStyle: node.dataset.time || "medium",
-		})
-	}
+	node.innerText = date.toLocaleString(langs, { dateStyle, timeStyle })
 })
 
 function formatNumber (number, opts) {
 	number = Number(number)
+
 	if (isNaN(number)) {
 		return
 	}

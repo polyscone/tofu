@@ -32,7 +32,13 @@
 	{{if .Vars.User.HasSignedIn}}
 		<p>
 			Last signed in
-			<time datetime="{{FormatTime .Vars.User.LastSignedInAt "RFC3339"}}" data-date="full">{{FormatTime .Vars.User.LastSignedInAt "DateTime"}}</time>
+			<time
+				datetime="{{FormatTime .Vars.User.LastSignedInAt "RFC3339"}}"
+				data-locale-date="full"
+				data-locale-time
+			>
+				{{FormatTime .Vars.User.LastSignedInAt "DateTime"}}
+			</time>
 		</p>
 	{{end}}
 
@@ -51,7 +57,13 @@
 					{{if .Vars.User.IsSuspended}}
 						<p>
 							This user was suspended on
-							<time datetime="{{FormatTime .Vars.User.SuspendedAt "RFC3339"}}" data-date="full">{{FormatTime .Vars.User.SuspendedAt "DateTime"}}</time>.
+							<time
+								datetime="{{FormatTime .Vars.User.SuspendedAt "RFC3339"}}"
+								data-locale-date="full"
+								data-locale-time
+							>
+								{{FormatTime .Vars.User.SuspendedAt "DateTime"}}
+							</time>.
 						</p>
 					{{else}}
 						<div class="warning-box">

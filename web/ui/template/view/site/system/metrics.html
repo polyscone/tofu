@@ -8,7 +8,7 @@
 
 {{define "view_body"}}
 
-<p><time datetime="{{FormatTime .Vars.Now "RFC3339"}}" data-date="full">{{FormatTime .Vars.Now "DateTime"}}</time></p>
+<p><time datetime="{{FormatTime .Vars.Now "RFC3339"}}" data-locale-date="full" data-locale-time>{{FormatTime .Vars.Now "DateTime"}}</time></p>
 
 <h2>Build</h2>
 
@@ -87,7 +87,7 @@
 		</tr>
 		<tr>
 			<td>Last GC cycle</td>
-			<td><time datetime="{{FormatTime .Vars.LastGC "RFC3339"}}" data-date="full">{{FormatTime .Vars.LastGC "DateTime"}}</time></td>
+			<td><time datetime="{{FormatTime .Vars.LastGC "RFC3339"}}" data-locale-date="full" data-locale-time>{{FormatTime .Vars.LastGC "DateTime"}}</time></td>
 		</tr>
 		<tr>
 			<td>Tot. GC pauses</td>
