@@ -27,26 +27,46 @@ func RateLimit(capacity, replenish float64, config *RateLimitConfig) Middleware 
 	}
 
 	type client struct {
+		mu     sync.Mutex
 		bucket *rate.TokenBucket
 		seenAt time.Time
 	}
 
-	var mu sync.Mutex
+	var clientsMu sync.RWMutex
 	clients := make(map[string]*client)
 
 	getClient := func(key string) *client {
-		mu.Lock()
-		defer mu.Unlock()
+		clientsMu.RLock()
 
-		if _, ok := clients[key]; !ok {
-			clients[key] = &client{
-				bucket: rate.NewTokenBucket(capacity, replenish),
-			}
+		if c, ok := clients[key]; ok {
+			clientsMu.RUnlock()
+
+			c.mu.Lock()
+			c.seenAt = time.Now()
+			c.mu.Unlock()
+
+			return c
 		}
 
-		c := clients[key]
+		clientsMu.RUnlock()
 
-		c.seenAt = time.Now()
+		clientsMu.Lock()
+		defer clientsMu.Unlock()
+
+		if c, ok := clients[key]; ok {
+			c.mu.Lock()
+			c.seenAt = time.Now()
+			c.mu.Unlock()
+
+			return c
+		}
+
+		c := &client{
+			bucket: rate.NewTokenBucket(capacity, replenish),
+			seenAt: time.Now(),
+		}
+
+		clients[key] = c
 
 		return c
 	}
@@ -56,17 +76,29 @@ func RateLimit(capacity, replenish float64, config *RateLimitConfig) Middleware 
 		secondsUntilFull := time.Duration(capacity/replenish) * time.Second
 		ttl := secondsUntilFull * 2
 
+		var expired []string
 		for range time.Tick(ttl) {
-			func() {
-				mu.Lock()
-				defer mu.Unlock()
+			expired = expired[:0]
 
-				for key, client := range clients {
-					if time.Since(client.seenAt) > ttl {
-						delete(clients, key)
-					}
+			clientsMu.RLock()
+
+			for key, client := range clients {
+				if time.Since(client.seenAt) > ttl {
+					expired = append(expired, key)
 				}
-			}()
+			}
+
+			clientsMu.RUnlock()
+
+			if len(expired) > 0 {
+				clientsMu.Lock()
+
+				for _, key := range expired {
+					delete(clients, key)
+				}
+
+				clientsMu.Unlock()
+			}
 		}
 	})
 
