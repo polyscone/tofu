@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 )
@@ -22,15 +23,20 @@ func (l LogStyle) NewHandler(level *slog.LevelVar) (slog.Handler, error) {
 		level = &slog.LevelVar{}
 	}
 
+	opts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     level,
+	}
+
 	switch l {
 	case "json":
-		return slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: level}), nil
+		return slog.NewJSONHandler(os.Stdout, opts), nil
 
 	case "text":
-		return slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: level}), nil
+		return slog.NewTextHandler(os.Stdout, opts), nil
 
 	case "dev":
-		return NewDevHandler(os.Stdout, &slog.HandlerOptions{Level: level}), nil
+		return NewDevHandler(os.Stdout, opts), nil
 
 	default:
 		return nil, fmt.Errorf("unknown log style %q", l)
@@ -97,8 +103,6 @@ func (h *DevHandler) Handle(ctx context.Context, r slog.Record) error {
 	var attrs string
 	for _, a := range h.attrs {
 		if !a.Equal(slog.Attr{}) {
-			attrs += "  "
-
 			if h.group != "" {
 				attrs += h.group + "."
 			}
@@ -109,8 +113,6 @@ func (h *DevHandler) Handle(ctx context.Context, r slog.Record) error {
 
 	r.Attrs(func(a slog.Attr) bool {
 		if !a.Equal(slog.Attr{}) {
-			attrs += "  "
-
 			if h.group != "" {
 				attrs += h.group + "."
 			}
@@ -128,7 +130,16 @@ func (h *DevHandler) Handle(ctx context.Context, r slog.Record) error {
 		newlines = "\n\n"
 	}
 
-	fmt.Fprintf(h.w, "[%v] %v\n%v%v", r.Time.Format("15:04:05 MST"), r.Message, attrs, newlines)
+	var source string
+	if h.opts.AddSource {
+		fs := runtime.CallersFrames([]uintptr{r.PC})
+		f, _ := fs.Next()
+
+		source += fmt.Sprintf("\nfunction: %v", f.Function)
+		source += fmt.Sprintf("\nsource: %v:%v", f.File, f.Line)
+	}
+
+	fmt.Fprintf(h.w, "[%v]\nmessage: %v\n%v%v%v", r.Time.Format("15:04:05 MST"), r.Message, attrs, source, newlines)
 
 	return nil
 }
