@@ -227,6 +227,8 @@ func NewSiteRouter(base *handler.Handler) http.Handler {
 
 	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))
 
+	mux.Handle("/favicon.ico", httpx.RewriteHandler(mux, "/favicon.png"))
+
 	renderer := handler.NewRenderer(handler.RendererConfig{
 		Handler:    h.Handler,
 		AssetTags:  ui.AssetTags,

@@ -143,6 +143,8 @@ func NewPWARouter(base *handler.Handler) http.Handler {
 
 	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))
 
+	mux.Handle("/favicon.ico", httpx.RewriteHandler(mux, "/favicon.png"))
+
 	rootVars := func(h *ui.Handler, r *http.Request) handler.Vars {
 		ctx := r.Context()
 		config := h.Config(ctx)
