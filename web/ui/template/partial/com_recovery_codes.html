@@ -17,7 +17,9 @@
 		</div>
 	</div>
 
-	<script>
+	<script type="module">
+		import { onMount } from "{{.Asset.TagImport "/site/js/dom.js"}}"
+
 		onMount(".recovery-code-list", node => {
 			const codeList = node.querySelector(".recovery-code-list__codes")
 

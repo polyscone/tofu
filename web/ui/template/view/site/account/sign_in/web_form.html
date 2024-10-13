@@ -172,7 +172,9 @@
 			{{end}}
 		</div>
 
-		<script>
+		<script type="module">
+			import { onMount } from "{{.Asset.TagImport "/site/js/dom.js"}}"
+
 			onMount(".sign-in-alt", node => {
 				node.removeAttribute("style")
 			})

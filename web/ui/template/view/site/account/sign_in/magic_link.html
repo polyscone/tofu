@@ -41,7 +41,9 @@
 			</div>
 		</form>
 
-		<script>
+		<script type="module">
+			import { onMount } from "{{.Asset.TagImport "/site/js/dom.js"}}"
+
 			onMount("#magic-link-sign-in-form", node => {
 				node.submit()
 			})
