@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/polyscone/tofu/httpx"
-	"github.com/polyscone/tofu/human"
+	"github.com/polyscone/tofu/internal/httpx"
+	"github.com/polyscone/tofu/internal/human"
 )
 
 func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {

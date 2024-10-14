@@ -12,7 +12,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/human"
+	"github.com/polyscone/tofu/internal/human"
 )
 
 const recoveryCodeLength = 13

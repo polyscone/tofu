@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/event"
-	"github.com/polyscone/tofu/otp"
+	"github.com/polyscone/tofu/internal/errsx"
+	"github.com/polyscone/tofu/internal/event"
+	"github.com/polyscone/tofu/internal/otp"
+	"github.com/polyscone/tofu/internal/testx"
 	"github.com/polyscone/tofu/sqlite"
-	"github.com/polyscone/tofu/testx"
 )
 
 var hasher = testx.NewPasswordHasher()

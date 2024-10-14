@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/human"
+	"github.com/polyscone/tofu/internal/human"
 )
 
 const totpLength = 6

@@ -6,9 +6,9 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/httpx"
-	"github.com/polyscone/tofu/httpx/router"
+	"github.com/polyscone/tofu/internal/errsx"
+	"github.com/polyscone/tofu/internal/httpx"
+	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/ui"

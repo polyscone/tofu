@@ -18,9 +18,9 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/app/system"
-	"github.com/polyscone/tofu/cache"
-	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/internal/cache"
+	"github.com/polyscone/tofu/internal/errsx"
+	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/web/guard"
 )
 
@@ -394,7 +394,7 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 
 	rn.h.Logger(ctx).Error(msg, "error", err)
 
-	status := httpx.ErrorStatus(err)
+	status := ErrorStatus(err)
 
 	if status == http.StatusTooManyRequests {
 		// If a client is hitting a rate limit we set the connection header to
@@ -408,7 +408,7 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 	}
 
 	rn.ViewFunc(w, r, status, view, func(data *ViewData) error {
-		data.ErrorMessage = httpx.ErrorMessage(err)
+		data.ErrorMessage = ErrorMessage(err)
 
 		switch {
 		case errors.Is(err, app.ErrMalformedInput),

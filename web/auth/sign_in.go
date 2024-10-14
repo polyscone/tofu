@@ -17,8 +17,8 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/httpx"
-	"github.com/polyscone/tofu/password/pwned"
+	"github.com/polyscone/tofu/internal/httpx"
+	"github.com/polyscone/tofu/internal/password/pwned"
 	"github.com/polyscone/tofu/web/handler"
 )
 

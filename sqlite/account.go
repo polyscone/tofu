@@ -12,8 +12,8 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/background"
-	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/internal/background"
+	"github.com/polyscone/tofu/internal/errsx"
 )
 
 type AccountRepo struct {

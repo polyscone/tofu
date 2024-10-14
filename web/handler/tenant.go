@@ -8,9 +8,9 @@ import (
 
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/app/system"
-	"github.com/polyscone/tofu/event"
-	"github.com/polyscone/tofu/session"
-	"github.com/polyscone/tofu/smtp"
+	"github.com/polyscone/tofu/internal/event"
+	"github.com/polyscone/tofu/internal/session"
+	"github.com/polyscone/tofu/internal/smtp"
 )
 
 type AccountReader interface {

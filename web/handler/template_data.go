@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/internal/httpx"
 )
 
 type AssetPipeline struct {

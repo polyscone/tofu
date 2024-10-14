@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/testx"
+	"github.com/polyscone/tofu/internal/testx"
 )
 
 type deleteRoleGuard struct {

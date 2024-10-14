@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/polyscone/tofu/human"
+	"github.com/polyscone/tofu/internal/human"
 )
 
 var (

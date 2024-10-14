@@ -1,6 +1,6 @@
 package account
 
-import "github.com/polyscone/tofu/aggregate"
+import "github.com/polyscone/tofu/internal/aggregate"
 
 type Role struct {
 	aggregate.Root

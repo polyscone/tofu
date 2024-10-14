@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/polyscone/tofu/session"
+	"github.com/polyscone/tofu/internal/session"
 )
 
 const (

@@ -16,8 +16,8 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/background"
-	"github.com/polyscone/tofu/session"
+	"github.com/polyscone/tofu/internal/background"
+	"github.com/polyscone/tofu/internal/session"
 )
 
 const (

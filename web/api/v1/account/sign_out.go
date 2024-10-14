@@ -3,9 +3,9 @@ package account
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/httpx"
-	"github.com/polyscone/tofu/httpx/middleware"
-	"github.com/polyscone/tofu/httpx/router"
+	"github.com/polyscone/tofu/internal/httpx"
+	"github.com/polyscone/tofu/internal/httpx/middleware"
+	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/web/api"
 )
 

@@ -3,7 +3,7 @@ package account
 import (
 	"errors"
 
-	"github.com/polyscone/tofu/event"
+	"github.com/polyscone/tofu/internal/event"
 )
 
 var ErrAuth = errors.New("auth")

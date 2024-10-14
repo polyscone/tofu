@@ -12,11 +12,11 @@ import (
 	"strings"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/cache"
-	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/fsx"
-	"github.com/polyscone/tofu/httpx/middleware"
-	"github.com/polyscone/tofu/httpx/router"
+	"github.com/polyscone/tofu/internal/cache"
+	"github.com/polyscone/tofu/internal/errsx"
+	"github.com/polyscone/tofu/internal/fsx"
+	"github.com/polyscone/tofu/internal/httpx/middleware"
+	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 )

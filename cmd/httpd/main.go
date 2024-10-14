@@ -22,7 +22,7 @@ import (
 	_ "time/tzdata"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/size"
+	"github.com/polyscone/tofu/internal/size"
 	"github.com/polyscone/tofu/web"
 )
 

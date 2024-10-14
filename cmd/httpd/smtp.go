@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/polyscone/tofu/smtp"
+	"github.com/polyscone/tofu/internal/smtp"
 	"github.com/polyscone/tofu/sqlite"
 )
 

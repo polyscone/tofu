@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/polyscone/tofu/aggregate"
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/internal/aggregate"
+	"github.com/polyscone/tofu/internal/errsx"
 )
 
 type Config struct {

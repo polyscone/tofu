@@ -11,12 +11,11 @@ import (
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/cache"
-	"github.com/polyscone/tofu/csrf"
-	"github.com/polyscone/tofu/errsx"
-	"github.com/polyscone/tofu/fsx"
-	"github.com/polyscone/tofu/httpx"
-	"github.com/polyscone/tofu/human"
+	"github.com/polyscone/tofu/internal/cache"
+	"github.com/polyscone/tofu/internal/csrf"
+	"github.com/polyscone/tofu/internal/errsx"
+	"github.com/polyscone/tofu/internal/fsx"
+	"github.com/polyscone/tofu/internal/human"
 	"github.com/polyscone/tofu/web/handler"
 )
 
@@ -73,7 +72,7 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 
 	logger.Error(msg, "error", err)
 
-	status := httpx.ErrorStatus(err)
+	status := handler.ErrorStatus(err)
 	isPublic := slices.ContainsFunc(publicErrors, func(el error) bool {
 		return errors.Is(err, el)
 	})
@@ -94,7 +93,7 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 
 	detail := map[string]any{"error": strings.ToLower(http.StatusText(status))}
 	if isPublic && 400 <= status && status <= 499 {
-		detail["error"] = httpx.ErrorMessage(err)
+		detail["error"] = handler.ErrorMessage(err)
 
 		var errs errsx.Map
 		if errors.As(err, &errs) {

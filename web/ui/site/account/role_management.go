@@ -6,9 +6,9 @@ import (
 	"strconv"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/collection"
-	"github.com/polyscone/tofu/httpx"
-	"github.com/polyscone/tofu/httpx/router"
+	"github.com/polyscone/tofu/internal/collection"
+	"github.com/polyscone/tofu/internal/httpx"
+	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/ui"

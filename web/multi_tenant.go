@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/polyscone/tofu/cache"
-	"github.com/polyscone/tofu/httpx"
+	"github.com/polyscone/tofu/internal/cache"
+	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/web/handler"
 )
 

@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/internal/errsx"
 )
 
 const (

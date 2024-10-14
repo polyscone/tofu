@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/polyscone/tofu/app/system"
-	"github.com/polyscone/tofu/errsx"
+	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/sqlite"
 )
 
