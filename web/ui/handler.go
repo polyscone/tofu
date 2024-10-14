@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"net/http"
 	"path"
+	"slices"
 	"strings"
 
 	"github.com/polyscone/tofu/app"
@@ -22,19 +23,41 @@ import (
 
 var AssetTags = cache.New[string, string]()
 
-//go:embed "all:public"
-var publicFiles embed.FS
-
-const publicDir = "public"
-
-var PublicFiles = fsx.NewStack(fsx.RelDirFS(publicDir), errsx.Must(fs.Sub(publicFiles, publicDir)))
-
 //go:embed "all:template"
 var files embed.FS
 
 const templateDir = "template"
 
 var templateFiles = fsx.NewStack(fsx.RelDirFS(templateDir), errsx.Must(fs.Sub(files, templateDir)))
+
+var componentFilesExtWhitelist = map[string]struct{}{
+	".bmp":  {},
+	".css":  {},
+	".gif":  {},
+	".jpeg": {},
+	".jpg":  {},
+	".js":   {},
+	".json": {},
+	".png":  {},
+}
+
+var componentFiles = fsx.NewRestricted(templateFiles, func(name string) bool {
+	if !strings.HasPrefix(name, "component/") {
+		return false
+	}
+
+	ext := path.Ext(name)
+	_, ok := componentFilesExtWhitelist[ext]
+
+	return ok
+})
+
+//go:embed "all:public"
+var publicFiles embed.FS
+
+const publicDir = "public"
+
+var PublicFiles = fsx.NewStack(componentFiles, fsx.RelDirFS(publicDir), errsx.Must(fs.Sub(publicFiles, publicDir)))
 
 type Handler struct {
 	*handler.Handler
@@ -56,24 +79,46 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		"HasPathPrefix": h.tmplHasPathPrefix,
 	})
 
-	templatePaths := func(view string) []string {
+	templatePatterns := func(view string) []string {
+		paths := []string{"partial/*.html"}
+		fs.WalkDir(templateFiles, ".", func(p string, entry fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if entry.IsDir() && p != "." && p != "component" && !strings.HasPrefix(p, "component/") {
+				return fs.SkipDir
+			}
+			if path.Ext(p) != ".html" {
+				return nil
+			}
+
+			dir := path.Dir(p)
+			tp := dir + "/*.html"
+			if !slices.Contains(paths, tp) {
+				paths = append(paths, tp)
+			}
+
+			return nil
+		})
+
 		dir := path.Dir(view)
 
-		return []string{
-			"partial/*.html",
-			"view/" + dir + "/com_*.html",
-			"view/" + view + ".html",
+		paths = append(paths,
+			"view/"+dir+"/com_*.html",
+			"view/"+view+".html",
 			"master/*.html",
-		}
+		)
+
+		return paths
 	}
 
 	h.HTML = handler.NewRenderer(handler.RendererConfig{
-		Handler:       h.Handler,
-		AssetTags:     AssetTags,
-		AssetFiles:    PublicFiles,
-		TemplateFiles: templateFiles,
-		TemplatePaths: templatePaths,
-		Funcs:         h.Funcs,
+		Handler:          h.Handler,
+		AssetTags:        AssetTags,
+		AssetFiles:       PublicFiles,
+		TemplateFiles:    templateFiles,
+		TemplatePatterns: templatePatterns,
+		Funcs:            h.Funcs,
 		Process: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html; charset=utf-8")
 		},
@@ -95,9 +140,11 @@ func (h *Handler) tmplHasPathPrefix(value any, name string, paramArgPairs ...any
 }
 
 func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, vars handler.Vars) error {
-	templatePaths := []string{"email/" + view + ".html"}
+	templatePatterns := func(name string) []string {
+		return []string{"email/" + view + ".html"}
+	}
 
-	return h.Handler.SendEmail(ctx, templateFiles, templatePaths, h.Funcs, from, to, view, vars)
+	return h.Handler.SendEmail(ctx, templateFiles, templatePatterns, h.Funcs, from, to, view, vars)
 }
 
 func (h *Handler) HasPathPrefix(value string, name string, paramArgPairs ...any) bool {

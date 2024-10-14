@@ -1,4 +1,4 @@
-import { onMount, observeResize } from "{{.Asset.TagImport "./dom.js"}}"
+import { onMount, observeResize } from "{{.Asset.TagJSImport "./dom.js"}}"
 
 const langs = []
 

@@ -1,11 +1,11 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <h1>User management</h1>
 
 <form class="bag">
-	{{template "com_query_inputs" .WithProps "Skip" (Slice "search" "page")}}
+	{{template "com.form.query_params" .WithProps "Skip" (Slice "search" "page")}}
 
 	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="Search" class="grow"{{if .URL.Query.Has "search"}} autofocus{{end}}>
 	<button>Search</button>
@@ -13,13 +13,13 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <table class="data-table">
 	<thead>
 		<tr>
-			<th>Email {{template "com_sort" .WithProps "Key" "email" "Direction" "desc"}}</th>
-			<th>Last sign in {{template "com_sort" .WithProps "Key" "last-sign-in"}}</th>
+			<th>Email {{template "com.datatable.sort" .WithProps "Key" "email" "Direction" "desc"}}</th>
+			<th>Last sign in {{template "com.datatable.sort" .WithProps "Key" "last-sign-in"}}</th>
 			<th class="text-right no-wrap">
 				{{if .Passport.Account.CanInviteUsers}}
 					<a href="{{Path "account.management.user.new"}}{{.URL.Query.String}}">Invite user</a>
@@ -37,7 +37,9 @@
 						<time
 							title="{{FormatTime .LastSignedInAt "RFC1123"}}"
 							datetime="{{FormatTime .LastSignedInAt "RFC3339"}}"
-						>{{FormatDuration (TimeSince .LastSignedInAt)}} ago</time>
+						>
+							{{FormatDuration (TimeSince .LastSignedInAt)}} ago
+						</time>
 						({{.LastSignedInMethod}})
 					{{end}}
 				</td>
@@ -73,6 +75,6 @@
 	</tbody>
 </table>
 
-{{template "com_pagination" .WithProps "Book" .Vars.Users}}
+{{template "com.pagination" .WithProps "Book" .Vars.Users}}
 
 {{end}}

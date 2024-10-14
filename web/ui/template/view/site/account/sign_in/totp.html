@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	<h1>Sign in with passcode</h1>
@@ -8,7 +8,7 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <div class="center">
 	{{$useSMS := eq .Session.TOTPMethod "sms"}}
@@ -20,9 +20,9 @@
 	{{end}}
 
 	<form action="{{Path "account.sign_in.totp.post"}}" method="POST">
-		{{template "com_csrf_input" .}}
+		{{template "com.form.csrf" .}}
 
-		{{template "com_passcode_input" .WithProps
+		{{template "com.form.passcode" .WithProps
 			"Label" "Passcode"
 			"Name" "totp"
 			"Required" true

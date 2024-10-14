@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	<h1>System configuration</h1>
@@ -8,18 +8,18 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 {{$disabled := not .Passport.System.CanUpdateConfig}}
 
 <div class="center">
 	<form action="{{Path "system.config.post"}}" method="POST">
-		{{template "com_csrf_input" .}}
+		{{template "com.form.csrf" .}}
 
 		<fieldset>
 			<legend>Email</legend>
 
-			{{template "com_email_input" .WithProps
+			{{template "com.form.email" .WithProps
 				"Label" "System email"
 				"Hint" "from address in system emails"
 				"Name" "system-email"
@@ -29,7 +29,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_email_input" .WithProps
+			{{template "com.form.email" .WithProps
 				"Label" "Security email"
 				"Hint" "for reporting security vulnerabilities"
 				"Name" "security-email"
@@ -43,7 +43,7 @@
 		<fieldset>
 			<legend>Accounts</legend>
 
-			{{template "com_form_select" .WithProps
+			{{template "com.form.select" .WithProps
 				"Label" "Enable sign up"
 				"Name" "sign-up-enabled"
 				"Value" (.Form.GetOr "sign-up-enabled" .Config.SignUpEnabled)
@@ -54,7 +54,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_form_select" .WithProps
+			{{template "com.form.select" .WithProps
 				"Label" "Enable automatic account activation on sign up"
 				"Name" "sign-up-auto-activate-enabled"
 				"Value" (.Form.GetOr "sign-up-auto-activate-enabled" .Config.SignUpAutoActivateEnabled)
@@ -65,7 +65,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_form_select" .WithProps
+			{{template "com.form.select" .WithProps
 				"Label" "Require two-factor authentication"
 				"Name" "totp-required"
 				"Value" (.Form.GetOr "totp-required" .Config.TOTPRequired)
@@ -76,7 +76,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_form_select" .WithProps
+			{{template "com.form.select" .WithProps
 				"Label" "Enable SMS for two-factor authentication"
 				"Name" "totp-sms-enabled"
 				"Value" (.Form.GetOr "totp-sms-enabled" .Config.TOTPSMSEnabled)
@@ -87,7 +87,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_form_select" .WithProps
+			{{template "com.form.select" .WithProps
 				"Label" "Enable magic link sign in"
 				"Hint" "allows magic link sign up when sign up is enabled"
 				"Name" "magic-link-sign-in-enabled"
@@ -99,7 +99,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_form_select" .WithProps
+			{{template "com.form.select" .WithProps
 				"Label" "Enable Google sign in"
 				"Hint" "allows Google sign up when sign up is enabled"
 				"Name" "google-sign-in-enabled"
@@ -111,7 +111,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_form_input" .WithProps
+			{{template "com.form.input" .WithProps
 				"Label" "Google sign in client id"
 				"Type" "text"
 				"Name" "google-sign-in-client-id"
@@ -122,7 +122,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_form_select" .WithProps
+			{{template "com.form.select" .WithProps
 				"Label" "Enable Facebook sign in"
 				"Hint" "allows Facebook sign up when sign up is enabled"
 				"Name" "facebook-sign-in-enabled"
@@ -134,7 +134,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_form_input" .WithProps
+			{{template "com.form.input" .WithProps
 				"Label" "Facebook sign in app id"
 				"Type" "text"
 				"Name" "facebook-sign-in-app-id"
@@ -145,7 +145,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_form_input" .WithProps
+			{{template "com.form.input" .WithProps
 				"Label" "Facebook sign in app secret"
 				"Type" "text"
 				"Name" "facebook-sign-in-app-secret"
@@ -160,7 +160,7 @@
 		<fieldset>
 			<legend>Resend</legend>
 
-			{{template "com_form_input" .WithProps
+			{{template "com.form.input" .WithProps
 				"Label" "API key"
 				"Type" "text"
 				"Hint" "36 character API key beginning with re_"
@@ -177,7 +177,7 @@
 		<fieldset>
 			<legend>Twilio</legend>
 
-			{{template "com_form_input" .WithProps
+			{{template "com.form.input" .WithProps
 				"Label" "SID"
 				"Type" "text"
 				"Hint" "34 character API SID beginning with AC"
@@ -190,7 +190,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_form_input" .WithProps
+			{{template "com.form.input" .WithProps
 				"Label" "Token"
 				"Type" "text"
 				"Hint" "32 character API token"
@@ -203,7 +203,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com_sms_tel_input" .WithProps
+			{{template "com.form.sms_tel" .WithProps
 				"Label" "From phone number"
 				"Name" "twilio-from-tel"
 				"Value" (.Form.GetOr "twilio-from-tel" .Config.TwilioFromTel)

@@ -1,11 +1,11 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <h1>Role management</h1>
 
 <form class="bag">
-	{{template "com_query_inputs" .WithProps "Skip" (Slice "search" "page")}}
+	{{template "com.form.query_params" .WithProps "Skip" (Slice "search" "page")}}
 
 	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="Search" class="grow"{{if .URL.Query.Has "search"}} autofocus{{end}}>
 	<button>Search</button>
@@ -13,12 +13,12 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <table class="data-table">
 	<thead>
 		<tr>
-			<th>Name {{template "com_sort" .WithProps "Key" "name" "Direction" "desc"}}</th>
+			<th>Name {{template "com.datatable.sort" .WithProps "Key" "name" "Direction" "desc"}}</th>
 			<th>Description</th>
 			<th class="text-right no-wrap">
 				{{if .Passport.Account.CanCreateRoles}}
@@ -53,6 +53,6 @@
 	</tbody>
 </table>
 
-{{template "com_pagination" .WithProps "Book" .Vars.Roles}}
+{{template "com.pagination" .WithProps "Book" .Vars.Roles}}
 
 {{end}}

@@ -1,29 +1,28 @@
-{{define "com_role_permission_groups" -}}
+{{define "com.view.form.role_permission_groups" -}}
 
 {{$name := .Props.Name}}
 {{$groups := .Props.Groups}}
 {{$selected := .Props.Selected}}
 
-{{if and $name $groups}}
-	{{range $groups}}
-		<div class="form">
-			<b>{{.Name}}</b>
+{{if not $name}}{{.Log.Warn "com.view.form.role_permission_groups: missing required prop: Name"}}{{end}}
+{{if not $groups}}{{.Log.Warn "com.view.form.role_permission_groups: missing required prop: Groups"}}{{end}}
 
-			{{range .Permissions}}
-				<label>
-					<input
-						type="checkbox"
-						name="{{$name}}"
-						value="{{.Name}}"
-						{{if HasString $selected .Name}}checked{{end}}
-					>
-					{{.DisplayName}}
-				</label>
-			{{end}}
-		</div>
-	{{end}}
-{{else}}
-	<p>Role permission groups component: required fields: Name, Groups.</p>
+{{range $groups}}
+	<div class="form">
+		<b>{{.Name}}</b>
+
+		{{range .Permissions}}
+			<label>
+				<input
+					type="checkbox"
+					name="{{$name}}"
+					value="{{.Name}}"
+					{{if HasString $selected .Name}}checked{{end}}
+				>
+				{{.DisplayName}}
+			</label>
+		{{end}}
+	</div>
 {{end}}
 
 {{- end}}

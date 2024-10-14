@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	<h1>Editing {{.Vars.User.Email}}</h1>
@@ -8,7 +8,7 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 {{$isEditUserSuper := .Vars.UserIsSuper}}
 {{$canAssignSuperRole := .Passport.Account.CanAssignSuperRole .Vars.User.ID}}
@@ -45,7 +45,7 @@
 	{{if or .Vars.User.IsSuspended $viewSuspend}}
 		{{if or $canSuspendUser $canUnsuspendUser}}
 			<form action="{{Path "account.management.user.suspend.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
-				{{template "com_csrf_input" .}}
+				{{template "com.form.csrf" .}}
 
 				<fieldset>
 					{{if .Vars.User.IsSuspended}}
@@ -71,7 +71,7 @@
 						</div>
 					{{end}}
 
-					{{template "com_form_input" .WithProps
+					{{template "com.form.input" .WithProps
 						"Label" "Reason for suspension"
 						"Type" "text"
 						"Name" "suspended-reason"
@@ -103,7 +103,7 @@
 	{{else}}
 		{{if $canChangeRoles}}
 			<form action="{{Path "account.management.user.roles.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
-				{{template "com_csrf_input" .}}
+				{{template "com.form.csrf" .}}
 
 				{{if $isEditUserSuper}}
 					<input type="hidden" name="roles" value="{{.Vars.SuperRole.ID}}">
@@ -226,7 +226,7 @@
 						</div>
 
 						<script type="module">
-							import { onMount } from "{{.Asset.TagImport "/site/js/dom.js"}}"
+							import { onMount } from "{{.Asset.TagJSImport "/site/js/dom.js"}}"
 
 							onMount("input[name='denials']", node => {
 								node.addEventListener("change", () => {

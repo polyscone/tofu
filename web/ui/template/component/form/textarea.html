@@ -1,0 +1,57 @@
+{{define "com.form.textarea" -}}
+
+{{$name := .Props.Name}}
+{{$id := or .Props.ID (printf "form__%v" $name)}}
+{{$label := .Props.Label}}
+{{$hint := .Props.Hint}}
+{{$description := .Props.Description}}
+{{$placeholder := .Props.Placeholder}}
+{{$value := or .Props.Value (.Form.Get $name)}}
+{{$required := .Props.Required}}
+{{$autocomplete := .Props.Autocomplete}}
+{{$autofocus := .Props.Autofocus}}
+{{$disabled := .Props.Disabled}}
+{{$pattern := .Props.Pattern}}
+{{$minlength := .Props.MinLength}}
+{{$maxlength := .Props.MaxLength}}
+{{$showmaxcount := .Props.ShowMaxCount}}
+{{$error := .Errors.Get (ReplaceAll $name "-" " ")}}
+
+{{if not $name}}{{.Log.Warn "com.form.textarea: missing required prop: Name"}}{{end}}
+
+{{if $label}}
+	<label
+		for="{{$id}}"
+		{{if $required}}class="required"{{end}}
+	>
+		{{$label}}
+		{{- if $hint}} <small>{{$hint}}</small>{{end -}}
+	</label>
+{{end}}
+
+{{range $paragraph := $description}}
+	<p>{{$paragraph}}</p>
+{{end}}
+
+<textarea
+	{{if or $id $label}}id="{{$id}}"{{end}}
+	name="{{$name}}"
+	{{if $placeholder}}placeholder="{{$placeholder}}"{{end}}
+	{{if $autocomplete}}autocomplete="{{$autocomplete}}"{{end}}
+	{{if $autofocus}}autofocus{{end}}
+	{{if $minlength}}minlength="{{$minlength}}"{{end}}
+	{{if $maxlength}}maxlength="{{$maxlength}}"{{end}}
+	{{if $required}}required{{end}}
+	{{if $disabled}}disabled{{end}}
+	{{if $error}}class="invalid"{{end}}
+	data-autosize
+>{{$value}}</textarea>
+
+<div class="bag">
+	<p class="error grow" data-locale-number>{{$error}}</p>
+	{{if and $showmaxcount $id $maxlength}}
+		<small data-char-count-for="{{$id}}" class="push-inline-end">Max. {{$maxlength}}</small>
+	{{end}}
+</div>
+
+{{- end}}

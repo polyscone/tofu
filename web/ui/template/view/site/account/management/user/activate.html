@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	<h1>Activate {{.Vars.User.Email}}</h1>
@@ -8,13 +8,13 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <div class="center">
 	<p>Are you sure you want to activate {{.Vars.User.Email}}?</p>
 
 	<form action="{{Path "account.management.user.activate.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
-		{{template "com_csrf_input" .}}
+		{{template "com.form.csrf" .}}
 
 		<div class="bag reverse">
 			<button class="push-inline-end">Yes, activate {{.Vars.User.Email}}</button>

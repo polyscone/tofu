@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	{{$isMagicLinkSignEnabled := .Config.MagicLinkSignInEnabled}}
@@ -16,7 +16,7 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 {{$isMagicLinkSignEnabled := .Config.MagicLinkSignInEnabled}}
 {{$isMagicLinkSignIn := and $isMagicLinkSignEnabled (ne (.URL.Query.Get "kind") "password")}}
@@ -28,9 +28,9 @@
 
 <div class="center">
 	<form action="{{$signInFormAction}}" method="POST">
-		{{template "com_csrf_input" .}}
+		{{template "com.form.csrf" .}}
 
-		{{template "com_email_input" .WithProps
+		{{template "com.form.email" .WithProps
 			"Label" "Email"
 			"Name" "email"
 			"Required" true
@@ -39,7 +39,7 @@
 		}}
 
 		{{if not $isMagicLinkSignIn}}
-			{{template "com_password_input" .WithProps
+			{{template "com.form.password" .WithProps
 				"Label" "Password"
 				"Name" "password"
 				"Required" true
@@ -163,7 +163,7 @@
 					data-onlogin="onFacebookSignIn"
 				></div>
 				<form action="/account/sign-in/facebook" method="POST" id="facebook-sign-in">
-					{{template "com_csrf_input" .}}
+					{{template "com.form.csrf" .}}
 
 					<input type="hidden" name="user-id">
 					<input type="hidden" name="access-token">
@@ -173,7 +173,7 @@
 		</div>
 
 		<script type="module">
-			import { onMount } from "{{.Asset.TagImport "/site/js/dom.js"}}"
+			import { onMount } from "{{.Asset.TagJSImport "/site/js/dom.js"}}"
 
 			onMount(".sign-in-alt", node => {
 				node.removeAttribute("style")

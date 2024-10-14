@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	<h1>New role</h1>
@@ -8,25 +8,25 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <div class="center">
 	<form action="{{Path "account.management.role.new.post"}}" method="POST">
-		{{template "com_csrf_input" .}}
+		{{template "com.form.csrf" .}}
 
-		{{template "com_role_name_input" .WithProps
+		{{template "com.view.form.role_name" .WithProps
 			"Label" "Name"
 			"Name" "name"
 			"Required" true
 		}}
 
-		{{template "com_role_description_input" .WithProps
+		{{template "com.view.form.role_description" .WithProps
 			"Label" "Description"
 			"Name" "description"
 		}}
 
 		<div class="cols-halves">
-			{{template "com_role_permission_groups" .WithProps
+			{{template "com.view.form.role_permission_groups" .WithProps
 				"Name" "permissions"
 				"Groups" .Vars.PermissionGroups
 				"Selected" (.Form.GetAll "permissions")

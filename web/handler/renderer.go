@@ -78,6 +78,7 @@ type ViewData struct {
 	Passport     guard.Passport
 	Props        map[string]any
 	State        *State
+	Log          Logger
 	Vars         Vars
 }
 
@@ -114,40 +115,39 @@ type Templater interface {
 
 type ViewDataFunc func(data *ViewData) error
 type ViewVarsFunc func(r *http.Request) (Vars, error)
-type TemplatePathsFunc func(view string) []string
 type TemplateProcessFunc func(w http.ResponseWriter, r *http.Request)
 
 type RendererConfig struct {
-	Handler       *Handler
-	AssetTags     *cache.Cache[string, string]
-	AssetFiles    fs.FS
-	TemplateFiles fs.FS
-	TemplatePaths TemplatePathsFunc
-	Funcs         template.FuncMap
-	Process       TemplateProcessFunc
+	Handler          *Handler
+	AssetTags        *cache.Cache[string, string]
+	AssetFiles       fs.FS
+	TemplateFiles    fs.FS
+	TemplatePatterns TemplatePatternsFunc
+	Funcs            template.FuncMap
+	Process          TemplateProcessFunc
 }
 
 type Renderer struct {
-	h             *Handler
-	assetTags     *cache.Cache[string, string]
-	assetFiles    fs.FS
-	templateFiles fs.FS
-	templatePaths TemplatePathsFunc
-	funcs         template.FuncMap
-	viewVarsFuncs map[string]ViewVarsFunc
-	process       TemplateProcessFunc
+	h                *Handler
+	assetTags        *cache.Cache[string, string]
+	assetFiles       fs.FS
+	templateFiles    fs.FS
+	templatePatterns TemplatePatternsFunc
+	funcs            template.FuncMap
+	viewVarsFuncs    map[string]ViewVarsFunc
+	process          TemplateProcessFunc
 }
 
 func NewRenderer(config RendererConfig) *Renderer {
 	return &Renderer{
-		h:             config.Handler,
-		assetTags:     config.AssetTags,
-		assetFiles:    config.AssetFiles,
-		templateFiles: config.TemplateFiles,
-		templatePaths: config.TemplatePaths,
-		funcs:         config.Funcs,
-		viewVarsFuncs: make(map[string]ViewVarsFunc),
-		process:       config.Process,
+		h:                config.Handler,
+		assetTags:        config.AssetTags,
+		assetFiles:       config.AssetFiles,
+		templateFiles:    config.TemplateFiles,
+		templatePatterns: config.TemplatePatterns,
+		funcs:            config.Funcs,
+		viewVarsFuncs:    make(map[string]ViewVarsFunc),
+		process:          config.Process,
 	}
 }
 
@@ -155,6 +155,7 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 	config := rn.h.Config(ctx)
 	user := rn.h.User(ctx)
 	passport := rn.h.Passport(ctx)
+	logger := rn.h.Logger(ctx)
 
 	if assetPipeline == nil {
 		assetPipeline = &AssetPipeline{
@@ -204,6 +205,7 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 		Config:   config,
 		User:     user,
 		Passport: passport,
+		Log:      Logger{logger: logger},
 		State:    &State{},
 	}
 
@@ -224,7 +226,7 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 
 func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int, view string, dataFunc ViewDataFunc) {
 	ctx := r.Context()
-	tmpl := rn.h.Template(rn.templateFiles, rn.templatePaths(view), rn.funcs, view)
+	tmpl := rn.h.Template(rn.templateFiles, rn.templatePatterns, rn.funcs, view)
 
 	data, err := rn.data(ctx, r, status, view, nil)
 	if err != nil {
@@ -246,7 +248,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	}
 
 	var buf bytes.Buffer
-	if err := tmpl.ExecuteTemplate(&buf, "master", data); err != nil {
+	if err := tmpl.ExecuteTemplate(&buf, "view.master", data); err != nil {
 		rn.h.Logger(ctx).Error("execute view template", "error", err)
 
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -271,18 +273,33 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 
 func (rn *Renderer) postProcess(buf *bytes.Buffer, data *ViewData) {
 	if data.Stream == "" {
-		im := data.Asset.ImportMap()
-		if im != "" {
-			b := buf.Bytes()
+		b := buf.Bytes()
 
+		if content := data.Asset.CSSLinks(); content != "" {
 			b = bytes.ReplaceAll(
 				b,
-				[]byte(`<script type="importmap"></script>`),
-				[]byte(`<script type="importmap">`+im+`</script>`),
+				[]byte(`<!-- Renderer: CSS links -->`),
+				[]byte(content),
 			)
-
-			*buf = *bytes.NewBuffer(b)
 		}
+
+		if content := data.Asset.JSImportMap(); content != "" {
+			b = bytes.ReplaceAll(
+				b,
+				[]byte(`<!-- Renderer: JS import map -->`),
+				[]byte(`<script type="importmap">`+content+`</script>`),
+			)
+		}
+
+		if content := data.Asset.JSImports(); content != "" {
+			b = bytes.ReplaceAll(
+				b,
+				[]byte(`<!-- Renderer: JS imports -->`),
+				[]byte(`<script type="module">`+content+`</script>`),
+			)
+		}
+
+		*buf = *bytes.NewBuffer(b)
 	}
 }
 

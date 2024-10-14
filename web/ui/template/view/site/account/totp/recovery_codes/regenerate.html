@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	{{if .Vars.RecoveryCodes}}
@@ -12,7 +12,7 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <div class="center">
 	{{if .Vars.RecoveryCodes}}
@@ -27,7 +27,7 @@
 			</p>
 		</div>
 
-		{{template "com_recovery_codes" .WithProps "Codes" .Vars.RecoveryCodes}}
+		{{template "com.recovery_codes" .WithProps "Codes" .Vars.RecoveryCodes}}
 	{{else}}
 		{{if ge (len .Vars.HashedRecoveryCodes) 1}}
 			{{if eq (len .Vars.HashedRecoveryCodes) 1}}
@@ -50,9 +50,9 @@
 		{{end}}
 
 		<form action="{{Path "account.totp.recovery_codes.post"}}" method="POST">
-			{{template "com_csrf_input" .}}
+			{{template "com.form.csrf" .}}
 
-			{{template "com_passcode_input" .WithProps
+			{{template "com.form.passcode" .WithProps
 				"Label" "Passcode"
 				"Name" "totp"
 				"Required" true

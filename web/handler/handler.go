@@ -37,6 +37,8 @@ const (
 	ctxPassport
 )
 
+type TemplatePatternsFunc func(view string) []string
+
 type Handler struct {
 	*Tenant
 
@@ -236,10 +238,10 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 	return csrf.MaskedToken(ctx), nil
 }
 
-func (h *Handler) template(files fs.FS, patterns []string, funcs template.FuncMap, name string) *template.Template {
+func (h *Handler) template(files fs.FS, patterns TemplatePatternsFunc, funcs template.FuncMap, name string) *template.Template {
 	tmpl := template.New(name).Option("missingkey=default").Funcs(funcs)
 
-	for _, pattern := range patterns {
+	for _, pattern := range patterns(name) {
 		if strings.Contains(pattern, "/com_*") {
 			// Ignore errors for com_* because not all folders will have them
 			fsTmpl, err := tmpl.ParseFS(files, pattern)
@@ -254,7 +256,7 @@ func (h *Handler) template(files fs.FS, patterns []string, funcs template.FuncMa
 	return tmpl
 }
 
-func (h *Handler) Template(files fs.FS, patterns []string, funcs template.FuncMap, name string) *template.Template {
+func (h *Handler) Template(files fs.FS, patterns TemplatePatternsFunc, funcs template.FuncMap, name string) *template.Template {
 	if h.Tenant.Dev {
 		return h.template(files, patterns, funcs, name)
 	}
@@ -264,7 +266,7 @@ func (h *Handler) Template(files fs.FS, patterns []string, funcs template.FuncMa
 	})
 }
 
-func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePaths []string, funcs template.FuncMap, from, to, view string, vars Vars) error {
+func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePatterns TemplatePatternsFunc, funcs template.FuncMap, from, to, view string, vars Vars) error {
 	data := struct {
 		URL  URL
 		App  AppData
@@ -285,7 +287,7 @@ func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePa
 
 	var buf bytes.Buffer
 	var subject, plain, html string
-	email := h.Template(templateFiles, templatePaths, funcs, view)
+	email := h.Template(templateFiles, templatePatterns, funcs, view)
 	for _, view := range []string{"subject", "plain", "html"} {
 		tmpl := email.Lookup(view)
 		if tmpl == nil {

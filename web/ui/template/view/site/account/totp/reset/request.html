@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	<h1>Reset two-factor authentication request</h1>
@@ -8,14 +8,14 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <div class="center">
 	<p>Requesting a two-factor authentication reset requires a manual review of your case, and could take a while to complete.</p>
 	<p>If the person reviewing your case believes it to be legitimate you will receive another email with a link to reset two-factor authentication for your account.</p>
 
 	<form action="{{Path "account.sign_in.totp.reset.request.post"}}{{.URL.Query.String}}" method="POST">
-		{{template "com_csrf_input" .}}
+		{{template "com.form.csrf" .}}
 		<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
 		<div class="bag reverse">

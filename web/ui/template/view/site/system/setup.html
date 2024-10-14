@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	<h1>Setup</h1>
@@ -8,25 +8,25 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <div class="center">
 	<form action="{{Path "system.setup.post"}}" method="POST">
-		{{template "com_csrf_input" .}}
+		{{template "com.form.csrf" .}}
 
 		<fieldset>
 			<legend>Account</legend>
 
 			<p>We'll create an admin account using the email and password you enter below.</p>
 
-			{{template "com_email_input" .WithProps
+			{{template "com.form.email" .WithProps
 				"Label" "Email"
 				"Name" "email"
 				"Required" true
 				"Autocomplete" "username"
 			}}
 
-			{{template "com_password_input" .WithProps
+			{{template "com.form.password" .WithProps
 				"Label" "Password"
 				"Name" "password"
 				"Required" true
@@ -37,7 +37,7 @@
 		<fieldset>
 			<legend>Email</legend>
 
-			{{template "com_email_input" .WithProps
+			{{template "com.form.email" .WithProps
 				"Label" "System email"
 				"Hint" "from address in system emails"
 				"Name" "system-email"
@@ -46,7 +46,7 @@
 				"Autocomplete" "email"
 			}}
 
-			{{template "com_email_input" .WithProps
+			{{template "com.form.email" .WithProps
 				"Label" "Security email"
 				"Hint" "for reporting security vulnerabilities"
 				"Name" "security-email"

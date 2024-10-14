@@ -134,29 +134,6 @@
 		padding: 0.1rem 0.3rem;
 	}
 
-	.pagination {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		padding-block-start: 1rem;
-	}
-
-	.pagination__links {
-		display: flex;
-		justify-content: end;
-		gap: 0.7rem;
-		margin: 0;
-		padding: 0;
-		list-style: none;
-	}
-
-	.pagination-link--active::before {
-		content: "[";
-	}
-
-	.pagination-link--active::after {
-		content: "]";
-	}
-
 	.totp__qrcode {
 		font-family: monospace;
 		font-size: 1.2rem;
@@ -165,23 +142,6 @@
 
 	.totp__qrcode img {
 		display: inline-block;
-	}
-
-	.recovery-code-list {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		margin-block: 1rem;
-	}
-
-	.recovery-code-list__codes {
-		font-family: monospace;
-		margin-block: 0;
-		padding: 0;
-	}
-
-	.recovery-code-list__actions {
-		margin-block-start: 1rem;
 	}
 
 	@media screen and (min-width: 400px) {

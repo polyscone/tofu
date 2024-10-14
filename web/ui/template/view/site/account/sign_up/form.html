@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	<h1>Sign up</h1>
@@ -8,16 +8,16 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <div class="center">
 	{{if .Config.SignUpEnabled}}
 		<p>You'll be able to choose your password after verifying your email address.</p>
 
 		<form action="{{Path "account.sign_up.post"}}" method="POST">
-			{{template "com_csrf_input" .}}
+			{{template "com.form.csrf" .}}
 
-			{{template "com_email_input" .WithProps
+			{{template "com.form.email" .WithProps
 				"Label" "Email"
 				"Name" "email"
 				"Required" true

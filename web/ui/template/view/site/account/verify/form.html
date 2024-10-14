@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	{{if .ErrorMessage}}
@@ -12,7 +12,7 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <div class="center">
 	{{if .ErrorMessage}}
@@ -21,7 +21,7 @@
 		<p>You're already signed in.</p>
 
 		<form action="{{Path "account.sign_out.post"}}" method="POST">
-			{{template "com_csrf_input" .}}
+			{{template "com.form.csrf" .}}
 
 			<div class="bag">
 				<button class="btn--link">Click here to sign out.</button>
@@ -33,10 +33,10 @@
 		<p>Use the form below to choose a password and we can verify your account.</p>
 
 		<form action="{{Path "account.verify.post"}}{{.URL.Query.String}}" method="POST">
-			{{template "com_csrf_input" .}}
+			{{template "com.form.csrf" .}}
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
-			{{template "com_password_input" .WithProps
+			{{template "com.form.password" .WithProps
 				"Label" "Choose a password"
 				"Name" "password"
 				"Required" true

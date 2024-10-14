@@ -1,9 +1,9 @@
-{{define "master_site_styles"}}
+{{define "master.site.styles"}}
 	<link rel="stylesheet" href="{{.Asset.Tag "/all/css/common.css"}}">
 	<link rel="stylesheet" href="{{.Asset.Tag "/site/css/site.css"}}">
 {{end}}
 
-{{define "master_site" -}}
+{{define "master.site" -}}
 
 {{if or (not .Stream) (eq .Stream "begin") -}}
 <!DOCTYPE html>
@@ -13,15 +13,16 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>{{block "meta_title" .}}{{.App.Name}}{{end}}</title>
 	<meta name="description" content="{{block "meta_description" .}}{{.App.Description}}{{end}}">
-	{{template "master_site_styles" .}}
+	{{template "master.site.styles" .}}
 	<link rel="icon" href="{{.Asset.Tag "/favicon.png"}}" type="image/png">
-	<script type="importmap"></script>
+	{{.Asset.WriteJSImportMap}}
 	<script src="{{.Asset.Tag "/site/js/main.js"}}" type="module"></script>
+	{{.Asset.WriteJSImports}}
 </head>
 <body>
 	{{if eq .Stream "begin" -}}
 		<template shadowrootmode="open">
-			{{template "master_site_styles" .}}
+			{{template "master.site.styles" .}}
 	{{- end}}
 
 	<a href="#main-content" class="skip-nav-link">Skip navigation</a>
@@ -44,7 +45,7 @@
 
 					<li>
 						<form action="{{Path "account.sign_out.post"}}" method="POST">
-							{{template "com_csrf_input" .}}
+							{{template "com.form.csrf" .}}
 
 							<button class="btn--link">Sign out</button>
 						</form>
@@ -60,25 +61,27 @@
 		{{if .Session.IsSignedIn}}
 			<div class="top-bar">
 				{{if HasPathPrefix .URL.Path "admin.section"}}
-					{{template "site_nav_admin" .}}
+					{{template "site.nav.admin" .}}
 				{{end}}
 
 				{{if HasPathPrefix .URL.Path "account.section"}}
-					{{template "site_nav_account" .}}
+					{{template "site.nav.account" .}}
 				{{end}}
 			</div>
 		{{end}}
 
-		{{block "view_head" .}}{{end}}
+		{{block "view.head" .}}{{end}}
 
-		{{template "site_message_banners" .}}
+		{{template "site.message_banners" .}}
 
-		{{block "view_body" .}}{{end}}
+		{{block "view.body" .}}{{end}}
 	</main>
 
 	<footer class="footer">
 		<p>Lorem ipsum dolor, sit amet, consectetur adipisicing elit...</p>
 	</footer>
+
+	{{.Asset.WriteCSSLinks}}
 
 	{{if eq .Stream "begin" -}}
 		</template>

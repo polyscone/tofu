@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	{{if .ErrorMessage}}
@@ -12,7 +12,7 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <div class="center">
 	{{if .ErrorMessage}}
@@ -21,7 +21,7 @@
 		<p>You're already signed in.</p>
 
 		<form action="{{Path "account.sign_out.post"}}" method="POST">
-			{{template "com_csrf_input" .}}
+			{{template "com.form.csrf" .}}
 
 			<div class="bag">
 				<button class="btn--link">Click here to sign out.</button>
@@ -33,7 +33,7 @@
 		<p>Click on the sign in button below if you aren't automatically redirected.</p>
 
 		<form action="{{Path "account.sign_in.magic_link.post"}}{{.URL.Query.String}}" method="POST" id="magic-link-sign-in-form">
-			{{template "com_csrf_input" .}}
+			{{template "com.form.csrf" .}}
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
 			<div class="bag">
@@ -42,7 +42,7 @@
 		</form>
 
 		<script type="module">
-			import { onMount } from "{{.Asset.TagImport "/site/js/dom.js"}}"
+			import { onMount } from "{{.Asset.TagJSImport "/site/js/dom.js"}}"
 
 			onMount("#magic-link-sign-in-form", node => {
 				node.submit()

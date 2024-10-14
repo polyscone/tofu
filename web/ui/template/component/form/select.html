@@ -1,0 +1,82 @@
+{{define "com.form.select" -}}
+
+{{$name := .Props.Name}}
+{{$id := or .Props.ID (printf "form__%v" $name)}}
+{{$label := .Props.Label}}
+{{$hint := .Props.Hint}}
+{{$placeholder := .Props.Placeholder}}
+{{$value := or .Props.Value (.Form.Get $name)}}
+{{$options := .Props.Options}}
+{{$multiple := .Props.Multiple}}
+{{$size := .Props.Size}}
+{{$required := .Props.Required}}
+{{$autocomplete := .Props.Autocomplete}}
+{{$autofocus := .Props.Autofocus}}
+{{$disabled := .Props.Disabled}}
+{{$error := .Errors.Get (ReplaceAll $name "-" " ")}}
+
+{{if not $name}}{{.Log.Warn "com.form.select: missing required prop: Name"}}{{end}}
+{{if not $options}}{{.Log.Warn "com.form.select: missing required prop: Options"}}{{end}}
+
+{{if $label}}
+	<label
+		for="{{$id}}"
+		{{if $required}}class="required"{{end}}
+	>
+		{{$label}}
+		{{- if $hint}} <small>{{$hint}}</small>{{end -}}
+	</label>
+{{end}}
+
+<select
+	{{if or $id $label}}id="{{$id}}"{{end}}
+	name="{{$name}}"
+	{{if $value}}value="{{$value}}"{{end}}
+	{{if $multiple}}multiple{{end}}
+	{{if $size}}size="{{$size}}"{{end}}
+	{{if $autocomplete}}autocomplete="{{$autocomplete}}"{{end}}
+	{{if $autofocus}}autofocus{{end}}
+	{{if $required}}required{{end}}
+	{{if $disabled}}disabled{{end}}
+	{{if $error}}class="invalid"{{end}}
+>
+	{{if $placeholder}}
+		<option value="" hidden disabled{{if not $value}} selected{{end}}>{{$placeholder}}</option>
+	{{end}}
+
+	{{range $option := $options}}
+		{{if $option.Options}}
+			<optgroup label="{{$option.Label}}">
+				{{range $option := $option.Options}}
+					{{$optval := or $option.Value $option.Label $option}}
+					{{$optlabel := or $option.Label $option.Value $option}}
+					{{$optdisabled := $option.Disabled}}
+
+					<option
+						value="{{$optval}}"
+						{{if eq $optval $value}}selected{{end}}
+						{{if $optdisabled}}disabled{{end}}
+					>
+						{{$optlabel}}
+					</option>
+				{{end}}
+			</optgroup>
+		{{else}}
+			{{$optval := or $option.Value $option.Label $option}}
+			{{$optlabel := or $option.Label $option.Value $option}}
+			{{$optdisabled := $option.Disabled}}
+
+			<option
+				value="{{$optval}}"
+				{{if eq $optval $value}}selected{{end}}
+				{{if $optdisabled}}disabled{{end}}
+			>
+				{{$optlabel}}
+			</option>
+		{{end}}
+	{{end}}
+</select>
+
+<p class="error" data-locale-number>{{$error}}</p>
+
+{{- end}}

@@ -1,6 +1,7 @@
 package fsx
 
 import (
+	"errors"
 	"io/fs"
 	"os"
 	"path"
@@ -17,6 +18,17 @@ var (
 	info   = errsx.MustOK(debug.ReadBuildInfo())
 )
 
+var ErrBlacklisted = errors.New("file is blacklisted")
+
+func fileDir(skip int) string {
+	_, file, _, ok := runtime.Caller(1 + skip)
+	if ok {
+		return path.Dir(file)
+	}
+
+	return ""
+}
+
 // RelDirFS will return an os.DirFS with the given directory relative to the
 // file it's called in.
 func RelDirFS(dir string) fs.FS {
@@ -27,11 +39,28 @@ func RelDirFS(dir string) fs.FS {
 	return os.DirFS(dir)
 }
 
-func fileDir(skip int) string {
-	_, file, _, ok := runtime.Caller(1 + skip)
-	if ok {
-		return path.Dir(file)
+type RestrictedFSAllowedFunc func(name string) bool
+
+type Restricted struct {
+	fsys    fs.FS
+	allowed RestrictedFSAllowedFunc
+}
+
+func NewRestricted(fsys fs.FS, allowed RestrictedFSAllowedFunc) *Restricted {
+	return &Restricted{
+		fsys:    fsys,
+		allowed: allowed,
+	}
+}
+
+func (r *Restricted) Open(name string) (fs.File, error) {
+	if !fs.ValidPath(name) {
+		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
 	}
 
-	return ""
+	if !r.allowed(name) {
+		return nil, &fs.PathError{Op: "open", Path: name, Err: ErrBlacklisted}
+	}
+
+	return r.fsys.Open(name)
 }

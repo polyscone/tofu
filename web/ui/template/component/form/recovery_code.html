@@ -1,9 +1,9 @@
-{{define "com_recovery_code_input" -}}
+{{define "com.form.recovery_code" -}}
 
 {{$hint := or .Props.Hint "13 alphanumeric characters"}}
 {{$placeholder := or .Props.Placeholder "ABCD234567XYZ"}}
 
-{{template "com_form_input" .WithProps
+{{template "com.form.input" .WithProps
 	"Props" .Props
 	"Type" "text"
 	"Hint" $hint

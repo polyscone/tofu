@@ -1,12 +1,12 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <h1>Metrics</h1>
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <p><time datetime="{{FormatTime .Vars.Now "RFC3339"}}" data-locale-date="full" data-locale-time>{{FormatTime .Vars.Now "DateTime"}}</time></p>
 

@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	<h1>Choose a password</h1>
@@ -8,16 +8,16 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <div class="center">
 	<p>Choosing a password will enable you to sign in directly through the <a href="{{Path "account.sign_in"}}">sign in form</a>.</p>
 	<p>It's also a requirement for setting up two-factor authentication. This is because if you decide to disable two-factor authentication later on we'll need to verify your identity by asking you for your password.</p>
 
 	<form action="{{Path "account.choose_password.post"}}" method="POST">
-		{{template "com_csrf_input" .}}
+		{{template "com.form.csrf" .}}
 
-		{{template "com_password_input" .WithProps
+		{{template "com.form.password" .WithProps
 			"Label" "New password"
 			"Name" "new-password"
 			"Required" true

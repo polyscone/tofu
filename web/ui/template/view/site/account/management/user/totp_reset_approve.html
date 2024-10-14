@@ -1,6 +1,6 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <div class="center">
 	<h1>Approve {{.Vars.User.Email}}</h1>
@@ -8,13 +8,13 @@
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <div class="center">
 	<p>Are you sure you want to send a link to {{.Vars.User.Email}} that would allow them to reset two-factor authentication?</p>
 
 	<form action="{{Path "account.management.user.totp_reset_approve.post" "{userID}" .Vars.User.ID}}" method="POST">
-		{{template "com_csrf_input" .}}
+		{{template "com.form.csrf" .}}
 
 		<div class="bag reverse">
 			<button>Yes, send a reset link</button>

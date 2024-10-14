@@ -1,12 +1,12 @@
-{{define "master"}}{{template "master_site" .}}{{end}}
+{{define "view.master"}}{{template "master.site" .}}{{end}}
 
-{{define "view_head"}}
+{{define "view.head"}}
 
 <h2>{{StatusText .Status}}</h2>
 
 {{end}}
 
-{{define "view_body"}}
+{{define "view.body"}}
 
 <p class="error-message">{{.ErrorMessage}}</p>
 

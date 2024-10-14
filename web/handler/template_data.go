@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"path"
@@ -18,10 +19,12 @@ import (
 )
 
 type AssetPipeline struct {
-	scope   string
-	rn      *Renderer
-	r       *http.Request
-	imports []string
+	scope            string
+	rn               *Renderer
+	r                *http.Request
+	cssLinks         []string
+	jsImportMappings []string
+	jsImports        []string
 }
 
 func (a *AssetPipeline) resolve(asset string) string {
@@ -78,33 +81,72 @@ func (a *AssetPipeline) Tag(asset string) string {
 
 	key, asset, tagged := a.tag(asset)
 
-	a.rn.TagAsset(key, asset, tagged)
+	if asset != tagged {
+		a.rn.TagAsset(key, asset, tagged)
+	}
 
 	return tagged
 }
 
-func (a *AssetPipeline) TagImport(asset string) string {
+func (a *AssetPipeline) TagJSImport(asset string) string {
 	asset = a.resolve(asset)
 
-	a.imports = append(a.imports, asset)
+	a.jsImportMappings = append(a.jsImportMappings, asset)
 
 	key, asset, tagged := a.tag(asset)
 
-	a.rn.TagAsset(key, asset, tagged)
+	if asset != tagged {
+		a.rn.TagAsset(key, asset, tagged)
+	}
 
 	return asset
 }
 
-func (a *AssetPipeline) ImportMap() string {
-	slices.Sort(a.imports)
+func (a *AssetPipeline) Register(asset string) template.HTML {
+	switch path.Ext(asset) {
+	case ".css":
+		asset = a.Tag(asset)
 
-	a.imports = slices.Compact(a.imports)
-	if len(a.imports) == 0 {
+		a.cssLinks = append(a.cssLinks, asset)
+
+	case ".js":
+		asset = a.TagJSImport(asset)
+
+		a.jsImports = append(a.jsImports, asset)
+
+	default:
+		return template.HTML(fmt.Sprintf("<!-- Unsupported register file extension in %q -->", asset))
+	}
+
+	return ""
+}
+
+func (a *AssetPipeline) CSSLinks() string {
+	slices.Sort(a.cssLinks)
+
+	a.cssLinks = slices.Compact(a.cssLinks)
+	if len(a.cssLinks) == 0 {
 		return ""
 	}
 
-	imports := make(map[string]string, len(a.imports))
-	for _, im := range a.imports {
+	links := make([]string, len(a.cssLinks))
+	for i, link := range a.cssLinks {
+		links[i] = fmt.Sprintf(`<link rel="stylesheet" href=%q>`, link)
+	}
+
+	return strings.Join(links, "\n")
+}
+
+func (a *AssetPipeline) JSImportMap() string {
+	slices.Sort(a.jsImportMappings)
+
+	a.jsImportMappings = slices.Compact(a.jsImportMappings)
+	if len(a.jsImportMappings) == 0 {
+		return ""
+	}
+
+	imports := make(map[string]string, len(a.jsImportMappings))
+	for _, im := range a.jsImportMappings {
 		tagged, ok := a.rn.FindTaggedByAsset(im)
 		if !ok {
 			continue
@@ -119,6 +161,56 @@ func (a *AssetPipeline) ImportMap() string {
 	}
 
 	return string(b)
+}
+
+func (a *AssetPipeline) JSImports() string {
+	slices.Sort(a.jsImports)
+
+	a.jsImports = slices.Compact(a.jsImports)
+	if len(a.jsImports) == 0 {
+		return ""
+	}
+
+	imports := make([]string, len(a.jsImports))
+	for i, module := range a.jsImports {
+		imports[i] = fmt.Sprintf("import %q", module)
+	}
+
+	return strings.Join(imports, "; ")
+}
+
+func (a *AssetPipeline) WriteCSSLinks() template.HTML {
+	return "<!-- Renderer: CSS links -->"
+}
+
+func (a *AssetPipeline) WriteJSImportMap() template.HTML {
+	return "<!-- Renderer: JS import map -->"
+}
+
+func (a *AssetPipeline) WriteJSImports() template.HTML {
+	return "<!-- Renderer: JS imports -->"
+}
+
+type Logger struct {
+	logger *slog.Logger
+}
+
+func (l Logger) Info(msg string, args ...any) string {
+	l.logger.Info(msg, args...)
+
+	return ""
+}
+
+func (l Logger) Warn(msg string, args ...any) string {
+	l.logger.Warn(msg, args...)
+
+	return ""
+}
+
+func (l Logger) Error(msg string, args ...any) string {
+	l.logger.Error(msg, args...)
+
+	return ""
 }
 
 type CSRF struct {

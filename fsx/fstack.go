@@ -20,13 +20,13 @@ func NewStack(stack ...fs.FS) *Stack {
 // configured file system stack one at a time.
 // The first file system in the stack to not return an error is the one that
 // will be returned from Open.
-func (f *Stack) Open(name string) (fs.File, error) {
+func (fst *Stack) Open(name string) (fs.File, error) {
 	if !fs.ValidPath(name) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
 	}
 
-	for _, el := range f.stack {
-		if f, err := el.Open(name); err == nil {
+	for _, ff := range fst.stack {
+		if f, err := ff.Open(name); err == nil {
 			return f, nil
 		}
 	}
