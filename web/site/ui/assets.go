@@ -9,6 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/cache"
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/fsx"
+	"github.com/polyscone/tofu/web/shared"
 )
 
 //go:embed "all:template"
@@ -47,6 +48,11 @@ var publicFiles embed.FS
 
 const publicDir = "public"
 
-var AssetFiles = fsx.NewStack(componentFiles, fsx.RelDirFS(publicDir), errsx.Must(fs.Sub(publicFiles, publicDir)))
+var AssetFiles = fsx.NewStack(
+	componentFiles,
+	fsx.RelDirFS(publicDir),
+	errsx.Must(fs.Sub(publicFiles, publicDir)),
+	shared.AssetFiles,
+)
 
 var AssetTags = cache.New[string, string]()
