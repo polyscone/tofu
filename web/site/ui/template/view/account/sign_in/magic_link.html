@@ -1,0 +1,54 @@
+{{define "view.master"}}{{template "master.site" .}}{{end}}
+
+{{define "view.head"}}
+
+<div class="center">
+	{{if .ErrorMessage}}
+		<h1>Sign in error</h1>
+	{{else}}
+		<h1>Sign in</h1>
+	{{end}}
+</div>
+
+{{end}}
+
+{{define "view.body"}}
+
+<div class="center">
+	{{if .ErrorMessage}}
+		<p>If your sign in link has expired <a href="{{Path "account.sign_in"}}">sign in again</a> using the same email address and we'll send you a new one.</p>
+	{{else if .Session.IsSignedIn}}
+		<p>You're already signed in.</p>
+
+		<form action="{{Path "account.sign_out.post"}}" method="POST">
+			{{template "com.form.csrf" .}}
+
+			<div class="bag">
+				<button class="btn--link">Click here to sign out.</button>
+			</div>
+		</form>
+	{{else if not (.URL.Query.Get "token")}}
+		<p>Sign in using the <a href="{{Path "account.sign_in"}}">sign in form</a> and we'll send you a link to verify your identity.</p>
+	{{else}}
+		<p>Click on the sign in button below if you aren't automatically redirected.</p>
+
+		<form action="{{Path "account.sign_in.magic_link.post"}}{{.URL.Query.String}}" method="POST" id="magic-link-sign-in-form">
+			{{template "com.form.csrf" .}}
+			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
+
+			<div class="bag">
+				<button>Sign in</button>
+			</div>
+		</form>
+
+		<script type="module">
+			import { onMount } from "{{.Asset.TagJSImport "/js/dom.js"}}"
+
+			onMount("#magic-link-sign-in-form", node => {
+				node.submit()
+			})
+		</script>
+	{{end}}
+</div>
+
+{{end}}

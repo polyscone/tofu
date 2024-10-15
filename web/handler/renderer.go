@@ -139,6 +139,10 @@ type Renderer struct {
 }
 
 func NewRenderer(config RendererConfig) *Renderer {
+	if config.AssetTags == nil {
+		config.AssetTags = cache.New[string, string]()
+	}
+
 	return &Renderer{
 		h:                config.Handler,
 		assetTags:        config.AssetTags,

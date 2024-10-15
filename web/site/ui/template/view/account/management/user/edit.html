@@ -1,0 +1,285 @@
+{{define "view.master"}}{{template "master.site" .}}{{end}}
+
+{{define "view.head"}}
+
+<div class="center">
+	<h1>Editing {{.Vars.User.Email}}</h1>
+</div>
+
+{{end}}
+
+{{define "view.body"}}
+
+{{$isEditUserSuper := .Vars.UserIsSuper}}
+{{$canAssignSuperRole := .Passport.Account.CanAssignSuperRole .Vars.User.ID}}
+{{$canChangeRoles := .Passport.Account.CanChangeRoles .Vars.User.ID}}
+{{$canSuspendUser := and .Passport.Account.CanSuspendUsers (not .Vars.User.IsSuspended) (not $isEditUserSuper)}}
+{{$canUnsuspendUser := and .Passport.Account.CanUnsuspendUsers .Vars.User.IsSuspended}}
+{{$viewSuspend := .URL.Query.Has "suspend"}}
+
+<div class="center">
+	{{if eq .Vars.User.ID .Session.UserID}}
+		<div class="warning-banner">
+			<p>You're currently editing yourself.</p>
+			<p>Any changes you make here may affect your current browsing session, so be careful to avoid making any changes you're unsure of.</p>
+		</div>
+	{{end}}
+
+	{{if not .Vars.User.IsVerified}}
+		<p class="text-italic text-bold">This account has not yet been verified.</p>
+	{{end}}
+
+	{{if .Vars.User.HasSignedIn}}
+		<p>
+			Last signed in
+			<time
+				datetime="{{FormatTime .Vars.User.LastSignedInAt "RFC3339"}}"
+				data-locale-date="full"
+				data-locale-time
+			>
+				{{FormatTime .Vars.User.LastSignedInAt "DateTime"}}
+			</time>
+		</p>
+	{{end}}
+
+	{{if or .Vars.User.IsSuspended $viewSuspend}}
+		{{if or $canSuspendUser $canUnsuspendUser}}
+			<form action="{{Path "account.management.user.suspend.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
+				{{template "com.form.csrf" .}}
+
+				<fieldset>
+					{{if .Vars.User.IsSuspended}}
+						<legend>Suspended user</legend>
+					{{else}}
+						<legend>Suspend user</legend>
+					{{end}}
+
+					{{if .Vars.User.IsSuspended}}
+						<p>
+							This user was suspended on
+							<time
+								datetime="{{FormatTime .Vars.User.SuspendedAt "RFC3339"}}"
+								data-locale-date="full"
+								data-locale-time
+							>
+								{{FormatTime .Vars.User.SuspendedAt "DateTime"}}
+							</time>.
+						</p>
+					{{else}}
+						<div class="warning-box">
+							<p>Once a user has been suspended they won't be able to sign in again, and if they're already signed in they'll be forcibly signed out.</p>
+						</div>
+					{{end}}
+
+					{{template "com.form.input" .WithProps
+						"Label" "Reason for suspension"
+						"Type" "text"
+						"Name" "suspended-reason"
+						"Value" (.Form.GetOr "suspended-reason" .Vars.User.SuspendedReason)
+						"Placeholder" "The reason for account suspension."
+						"Pattern" `^[ -~]*$`
+						"MaxLength" 100
+					}}
+
+					{{if $viewSuspend}}
+						<a href="{{or (.URL.Query.Replace "suspend" "") .URL.Path}}">Edit user</a>
+					{{end}}
+
+					<div class="bag reverse">
+						{{if .Vars.User.IsSuspended}}
+							<button>Update reason</button>
+							<button formnovalidate formaction="{{Path "account.management.user.unsuspend.post" "{userID}" .Vars.User.ID}}" class="btn--danger push-inline-end">Unsuspend user</button>
+						{{else}}
+							<button class="btn--danger push-inline-end">Suspend user</button>
+						{{end}}
+
+						<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+					</div>
+				</fieldset>
+			</form>
+		{{else}}
+			<p>You do not have permission to suspend users.</p>
+		{{end}}
+	{{else}}
+		{{if $canChangeRoles}}
+			<form action="{{Path "account.management.user.roles.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
+				{{template "com.form.csrf" .}}
+
+				{{if $isEditUserSuper}}
+					<input type="hidden" name="roles" value="{{.Vars.SuperRole.ID}}">
+				{{end}}
+
+				<fieldset>
+					<legend>Roles</legend>
+
+					{{$roleIDs := .Form.GetAllOr "roles" .Vars.UserRoleIDs}}
+					{{if (not $canChangeRoles)}}
+						{{$roleIDs = ToStrings .Vars.UserRoleIDs}}
+					{{end}}
+
+					{{range .Vars.Roles}}
+						{{$isSuperRole := eq .ID $.Vars.SuperRole.ID}}
+						{{if and $isSuperRole (not $isEditUserSuper)}}
+							{{continue}}
+						{{end}}
+
+						{{$isChecked := HasString $roleIDs .ID}}
+						{{$isDisabled := $isSuperRole}}
+
+						<label>
+							<input
+								type="checkbox"
+								name="roles"
+								value="{{.ID}}"
+								{{if $isChecked}}checked{{end}}
+								{{if $isDisabled}}disabled{{end}}
+							>
+							{{.Name}}
+						</label>
+					{{end}}
+
+					{{if and $canAssignSuperRole (not $isEditUserSuper)}}
+						<details>
+							<summary>I want to give this user the super role</summary>
+
+							<div class="warning-box">
+								<p>Once a user has been given the super role it <i>can't be removed</i>.</p>
+								<p>Please think carefully about whether this is actually what you need to do, or whether another role would be more appropriate.</p>
+
+								<p>
+									<label>
+										<input type="checkbox" name="roles" value="{{.Vars.SuperRole.ID}}">
+										I understand this <b>can't be undone</b>, give this user the super role
+									</label>
+								</p>
+							</div>
+						</details>
+					{{end}}
+				</fieldset>
+
+				{{if not $isEditUserSuper}}
+					<hr>
+
+					<div class="cols-halves">
+						<div>
+							<b>Grants</b>
+
+							{{$grants := .Form.GetAllOr "grants" .Vars.User.Grants}}
+							{{range .Vars.PermissionGroups}}
+								{{$count := 0}}
+								{{range .Permissions}}
+									{{if HasString $grants .Name}}
+										{{$count = Add $count 1}}
+									{{end}}
+								{{end}}
+
+								<details{{if $count}} open{{end}}>
+									<summary><b>{{.Name}}</b></summary>
+
+									<fieldset>
+										{{range .Permissions}}
+											<label>
+												<input
+													type="checkbox"
+													name="grants"
+													value="{{.Name}}"
+													{{if HasString $grants .Name}}checked{{end}}
+												>
+												{{.DisplayName}}
+											</label>
+										{{end}}
+									</fieldset>
+								</details>
+							{{end}}
+						</div>
+
+						<div>
+							<b>Denials</b>
+
+							{{$denials := .Form.GetAllOr "denials" .Vars.User.Denials}}
+							{{range .Vars.PermissionGroups}}
+								{{$count := 0}}
+								{{range .Permissions}}
+									{{if HasString $denials .Name}}
+										{{$count = Add $count 1}}
+									{{end}}
+								{{end}}
+
+								<details{{if $count}} open{{end}}>
+									<summary><b>{{.Name}}</b></summary>
+
+									<fieldset>
+										{{range .Permissions}}
+											<label>
+												<input
+													type="checkbox"
+													name="denials"
+													value="{{.Name}}"
+													{{if HasString $denials .Name}}checked{{end}}
+												>
+												{{.DisplayName}}
+											</label>
+										{{end}}
+									</fieldset>
+								</details>
+							{{end}}
+						</div>
+
+						<script type="module">
+							import { onMount } from "{{.Asset.TagJSImport "/js/dom.js"}}"
+
+							onMount("input[name='denials']", node => {
+								node.addEventListener("change", () => {
+									if (!node.checked) {
+										return
+									}
+
+									const denial = node.value
+									const checkboxes = Array.from(document.querySelectorAll(`input[name="grants"][value="${denial}"]`))
+
+									for (const checkbox of checkboxes) {
+										checkbox.checked = false
+									}
+								})
+							})
+
+							onMount("input[name='grants']", node => {
+								node.addEventListener("change", () => {
+									if (!node.checked) {
+										return
+									}
+
+									const grant = node.value
+									const checkboxes = Array.from(document.querySelectorAll(`input[name="denials"][value="${grant}"]`))
+
+									for (const checkbox of checkboxes) {
+										checkbox.checked = false
+									}
+								})
+							})
+						</script>
+					</div>
+
+					<details>
+						<summary>What are grants and denials?</summary>
+
+						<p>Grants and denials allow you to make fine-grained changes to a user's access level by overriding specific permissions after a user's roles have been applied.</p>
+						<p>Grants are used to give users additional permissions, and denials are used to take specific permissions away.</p>
+					</details>
+
+					<hr>
+
+					<a href="{{.URL.Query.Replace "suspend" "1"}}">Suspend user</a>
+				{{end}}
+
+				<div class="bag reverse">
+					<button class="push-inline-end">Update user</button>
+
+					<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+				</div>
+			</form>
+		{{end}}
+	{{end}}
+</div>
+
+{{end}}

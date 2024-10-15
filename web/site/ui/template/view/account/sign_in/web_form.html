@@ -1,0 +1,185 @@
+{{define "view.master"}}{{template "master.site" .}}{{end}}
+
+{{define "view.head"}}
+
+<div class="center">
+	{{$isMagicLinkSignEnabled := .Config.MagicLinkSignInEnabled}}
+	{{$isMagicLinkSignIn := and $isMagicLinkSignEnabled (ne (.URL.Query.Get "kind") "password")}}
+	{{$isMagicLinkSignUp := and $isMagicLinkSignIn (eq (.URL.Query.Get "kind") "sign-up")}}
+
+	{{if $isMagicLinkSignUp}}
+		<h1>Sign up</h1>
+	{{else}}
+		<h1>Sign in</h1>
+	{{end}}
+</div>
+
+{{end}}
+
+{{define "view.body"}}
+
+{{$isMagicLinkSignEnabled := .Config.MagicLinkSignInEnabled}}
+{{$isMagicLinkSignIn := and $isMagicLinkSignEnabled (ne (.URL.Query.Get "kind") "password")}}
+{{$isMagicLinkSignUp := and $isMagicLinkSignIn (eq (.URL.Query.Get "kind") "sign-up")}}
+{{$signInFormAction := printf "%v%v" (Path "account.sign_in.password.post") .URL.Query.String}}
+{{if $isMagicLinkSignIn}}
+	{{$signInFormAction = Path "account.sign_in.magic_link.request.post"}}
+{{end}}
+
+<div class="center">
+	<form action="{{$signInFormAction}}" method="POST">
+		{{template "com.form.csrf" .}}
+
+		{{template "com.form.email" .WithProps
+			"Label" "Email"
+			"Name" "email"
+			"Required" true
+			"Autocomplete" "username"
+			"Autofocus" true
+		}}
+
+		{{if not $isMagicLinkSignIn}}
+			{{template "com.form.password" .WithProps
+				"Label" "Password"
+				"Name" "password"
+				"Required" true
+				"Autocomplete" "current-password"
+			}}
+		{{end}}
+
+		<div class="bag reverse">
+			{{if $isMagicLinkSignIn}}
+				<button class="push-inline-end">Send magic link</button>
+			{{else}}
+				<button class="push-inline-end">Sign in</button>
+			{{end}}
+
+			<div class="stack">
+				{{if .Config.SignUpEnabled}}
+					{{if not $isMagicLinkSignUp}}
+						{{$signUpLink := printf "%v%v" (Path "account.sign_up") .URL.Query.String}}
+						{{if $isMagicLinkSignIn}}
+							{{$signUpLink = .URL.Query.Replace "kind" "sign-up"}}
+						{{end}}
+
+						<a href="{{$signUpLink}}">Sign up</a>
+					{{end}}
+				{{end}}
+
+				{{if $isMagicLinkSignUp}}
+					<a href="{{Path "account.sign_in"}}">Already have an account?</a>
+				{{end}}
+
+				{{if not $isMagicLinkSignIn}}
+					<a href="{{Path "account.reset_password"}}">Forgotten your password?</a>
+				{{end}}
+			</div>
+		</div>
+	</form>
+
+	{{$isGoogleSignInEnabled := and .Config.GoogleSignInEnabled .Config.GoogleSignInClientID}}
+	{{$isFacebookSignInEnabled := and .Config.FacebookSignInEnabled .Config.FacebookSignInAppID}}
+	{{if and (not $isMagicLinkSignUp) (or $isMagicLinkSignEnabled $isGoogleSignInEnabled $isFacebookSignInEnabled)}}
+		<div class="sign-in-alt text-center" style="display: none;">
+			<p class="sign-in-alt__title">Or</p>
+
+			{{if $isMagicLinkSignUp}}
+				<a href="{{Path "account.sign_up"}}{{.URL.Query.Replace "kind" "password"}}" class="btn btn--alt btn--large">Sign up with a password</a>
+			{{else if $isMagicLinkSignIn}}
+				<a href="{{Path "account.sign_in"}}{{.URL.Query.Replace "kind" "password"}}" class="btn btn--alt btn--large">Sign in with a password</a>
+			{{else if $isMagicLinkSignEnabled}}
+				<a href="{{Path "account.sign_in"}}{{.URL.Query.Replace "kind" ""}}" class="btn btn--alt btn--large">Sign in with a magic link</a>
+			{{end}}
+
+			{{if $isGoogleSignInEnabled}}
+				<script src="https://accounts.google.com/gsi/client" defer></script>
+				<div
+					id="g_id_onload"
+					data-client_id="{{.Config.GoogleSignInClientID}}"
+					data-context="signin"
+					data-ux_mode="popup"
+					data-login_uri="{{.URL.Scheme}}://{{.URL.Host}}/account/sign-in/google"
+					data-auto_prompt="false"
+				></div>
+				<div
+					class="g_id_signin"
+					data-type="standard"
+					data-shape="rectangle"
+					data-theme="outline"
+					data-text="signin_with"
+					data-size="large"
+					data-logo_alignment="center"
+				></div>
+			{{end}}
+
+			{{if $isFacebookSignInEnabled}}
+				<div id="fb-root"></div>
+				<script
+					src="https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v18.0&appId={{.Config.FacebookSignInAppID}}"
+					crossorigin="anonymous"
+					nonce="PewzUoD4"
+					defer
+				></script>
+
+				<script>
+					function onFacebookSignIn () {
+						FB.getLoginStatus(response => {
+							if (response.status !== "connected") {
+								console.error("the user either did not sign in to Facebook or did not authorise the app", response)
+
+								return
+							}
+
+							if (!response.authResponse) {
+								console.error("no auth response", response)
+
+								return
+							}
+
+							const userId = response.authResponse.userID
+							const accessToken = response.authResponse.accessToken
+
+							FB.api("/me?fields=email", response => {
+								const email = response.email
+								const form = document.getElementById("facebook-sign-in")
+
+								form.querySelector("[name='user-id']").value = userId
+								form.querySelector("[name='access-token']").value = accessToken
+								form.querySelector("[name='email']").value = email
+
+								form.submit()
+							})
+						})
+					}
+				</script>
+				<div
+					class="fb-login-button"
+					data-size="large"
+					data-button-type="continue_with"
+					data-layout="default"
+					data-auto-logout-link="false"
+					data-use-continue-as="false"
+					data-scope="email"
+					data-onlogin="onFacebookSignIn"
+				></div>
+				<form action="/account/sign-in/facebook" method="POST" id="facebook-sign-in">
+					{{template "com.form.csrf" .}}
+
+					<input type="hidden" name="user-id">
+					<input type="hidden" name="access-token">
+					<input type="hidden" name="email">
+				</form>
+			{{end}}
+		</div>
+
+		<script type="module">
+			import { onMount } from "{{.Asset.TagJSImport "/js/dom.js"}}"
+
+			onMount(".sign-in-alt", node => {
+				node.removeAttribute("style")
+			})
+		</script>
+	{{end}}
+</div>
+
+{{end}}

@@ -5,12 +5,24 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync"
+	"time"
 
+	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/internal/cache"
 	"github.com/polyscone/tofu/internal/httpx"
+	"github.com/polyscone/tofu/web/api"
 	"github.com/polyscone/tofu/web/handler"
+	"github.com/polyscone/tofu/web/pwa"
+	"github.com/polyscone/tofu/web/site"
 )
+
+// HandlerTimeout should be used as the value in all timeout middleware, and as the
+// base value to calculate http.Server timeouts from.
+const HandlerTimeout = 5 * time.Second
+
+var muxes = cache.New[string, *http.ServeMux]()
 
 var ErrTenantNotFound = errors.New("not found")
 
@@ -48,7 +60,38 @@ func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 
 		tenant.Host = r.Host
 
-		return NewRouter(tenant), nil
+		key := tenant.Key + "." + tenant.Kind
+		router := muxes.LoadOrStore(key, func() *http.ServeMux {
+			mux := http.NewServeMux()
+			h := handler.New(tenant)
+
+			var router http.Handler
+			switch tenant.Kind {
+			case "site":
+				router = site.NewRouter(h, HandlerTimeout)
+
+			case "pwa":
+				router = pwa.NewRouter(h, HandlerTimeout)
+			}
+
+			if router != nil {
+				apiV1 := api.NewRouterV1(h, HandlerTimeout)
+
+				mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+					if strings.HasPrefix(r.URL.Path, app.BasePath+"/api/") {
+						apiV1.ServeHTTP(w, r)
+
+						return
+					}
+
+					router.ServeHTTP(w, r)
+				})
+			}
+
+			return mux
+		})
+
+		return router, nil
 	})
 }
 

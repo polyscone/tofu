@@ -1,0 +1,14 @@
+package admin
+
+import (
+	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/web/site/ui"
+)
+
+func RegisterDashboardHandlers(h *ui.Handler, mux *router.ServeMux) {
+	mux.Group(func(mux *router.ServeMux) {
+		mux.Before(h.RequireSignIn)
+
+		mux.HandleFunc("GET /admin", h.HTML.HandlerFunc("admin/dashboard"), "admin.dashboard")
+	})
+}

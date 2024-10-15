@@ -1,0 +1,13 @@
+{{define "view.master"}}{{template "master.pwa" .}}{{end}}
+
+{{define "view.head"}}
+
+<h2>{{StatusText .Status}}</h2>
+
+{{end}}
+
+{{define "view.body"}}
+
+<p class="error-message">{{.ErrorMessage}}</p>
+
+{{end}}

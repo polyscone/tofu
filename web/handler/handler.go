@@ -37,6 +37,7 @@ const (
 	ctxPassport
 )
 
+type GuardPredicateFunc func(p guard.Passport) bool
 type TemplatePatternsFunc func(view string) []string
 
 type Handler struct {
