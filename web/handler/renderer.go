@@ -276,10 +276,11 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 }
 
 func (rn *Renderer) postProcess(buf *bytes.Buffer, data *ViewData) {
-	if data.Stream == "" {
+	if data.Stream == "" && buf.Len() > 0 {
 		b := buf.Bytes()
 
 		if content := data.Asset.CSSLinks(); content != "" {
+			buf.Reset()
 			b = bytes.ReplaceAll(
 				b,
 				[]byte(`<!-- Renderer: CSS links -->`),
@@ -288,6 +289,7 @@ func (rn *Renderer) postProcess(buf *bytes.Buffer, data *ViewData) {
 		}
 
 		if content := data.Asset.JSImportMap(); content != "" {
+			buf.Reset()
 			b = bytes.ReplaceAll(
 				b,
 				[]byte(`<!-- Renderer: JS import map -->`),
@@ -296,6 +298,7 @@ func (rn *Renderer) postProcess(buf *bytes.Buffer, data *ViewData) {
 		}
 
 		if content := data.Asset.JSImports(); content != "" {
+			buf.Reset()
 			b = bytes.ReplaceAll(
 				b,
 				[]byte(`<!-- Renderer: JS imports -->`),
@@ -303,7 +306,9 @@ func (rn *Renderer) postProcess(buf *bytes.Buffer, data *ViewData) {
 			)
 		}
 
-		*buf = *bytes.NewBuffer(b)
+		if buf.Len() == 0 {
+			buf.Write(b)
+		}
 	}
 }
 
