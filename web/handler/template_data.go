@@ -122,7 +122,7 @@ func (a *AssetPipeline) comment(message string) any {
 	}
 }
 
-func (a *AssetPipeline) Register(asset string, args ...string) any {
+func (a *AssetPipeline) Load(asset string, args ...string) any {
 	switch path.Ext(asset) {
 	case ".css":
 		asset = a.Tag(asset)

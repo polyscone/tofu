@@ -1,7 +1,7 @@
 {{define "com.pagination"}}
 
-{{.Asset.Register "/component/pagination/pagination.css"}}
-{{.Asset.Register "/component/pagination/pagination.js"}}
+{{.Asset.Load "/component/pagination/pagination.css"}}
+{{.Asset.Load "/component/pagination/pagination.js"}}
 
 {{$book := .Props.Book}}
 

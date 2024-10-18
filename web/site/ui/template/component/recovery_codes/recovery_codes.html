@@ -1,7 +1,7 @@
 {{define "com.recovery_codes"}}
 
-{{.Asset.Register "/component/recovery_codes/recovery_codes.css"}}
-{{.Asset.Register "/component/recovery_codes/recovery_codes.js"}}
+{{.Asset.Load "/component/recovery_codes/recovery_codes.css"}}
+{{.Asset.Load "/component/recovery_codes/recovery_codes.js"}}
 
 {{$codes := .Props.Codes}}
 

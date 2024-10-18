@@ -18,7 +18,7 @@
 	{{.Asset.WriteJSImportMap}}
 	{{.Asset.WriteJSImports}}
 	{{.Asset.WriteHTMLTemplates}}
-	{{.Asset.Register "/js/main.js"}}
+	{{.Asset.Load "/js/main.js"}}
 </head>
 <body>
 	{{if eq .Stream "begin" -}}

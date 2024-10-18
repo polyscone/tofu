@@ -15,7 +15,7 @@
 		{{.Asset.WriteJSImportMap}}
 		{{.Asset.WriteJSImports}}
 		{{.Asset.WriteHTMLTemplates}}
-		{{.Asset.Register "/js/app/main.js"}}
+		{{.Asset.Load "/js/app/main.js"}}
 		<script src="{{.Asset.Tag "/js/mithril/v2.2.8.min.js"}}"></script>
 	</head>
 	<body>
