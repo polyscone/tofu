@@ -23,6 +23,7 @@ type AssetPipeline struct {
 	rn               *Renderer
 	r                *http.Request
 	cssLinks         []string
+	htmlTemplates    []string
 	jsImportMappings []string
 	jsImports        []string
 }
@@ -40,13 +41,10 @@ func (a *AssetPipeline) resolve(asset string) string {
 	return asset
 }
 
-func (a *AssetPipeline) tag(asset string) (string, string, string) {
-	key := asset
-	tagged := asset
-
+func (a *AssetPipeline) data(asset string) ([]byte, string, error) {
 	u, err := url.Parse(asset)
 	if err != nil {
-		return key, asset, tagged
+		return nil, "", fmt.Errorf("URL parse: %w", err)
 	}
 
 	ctx := context.Background()
@@ -55,7 +53,19 @@ func (a *AssetPipeline) tag(asset string) (string, string, string) {
 	r.URL.Path = u.Path
 	r.URL.RawQuery = u.RawQuery
 
-	_, _, b, err := a.rn.Asset(r, a, u.Path)
+	_, _, b, err := a.rn.Asset(r, a, asset)
+	if err != nil {
+		return b, u.Path, fmt.Errorf("renderer asset: %w", err)
+	}
+
+	return b, u.Path, nil
+}
+
+func (a *AssetPipeline) tag(asset string) (string, string, string) {
+	key := asset
+	tagged := asset
+
+	b, upath, err := a.data(asset)
 	if err != nil {
 		return key, asset, tagged
 	}
@@ -71,7 +81,7 @@ func (a *AssetPipeline) tag(asset string) (string, string, string) {
 
 	// We only set the asset to the path without query string here because
 	// we want to make sure the tagged itself preserved the query string
-	asset = u.Path
+	asset = upath
 
 	return key, asset, tagged
 }
@@ -102,12 +112,39 @@ func (a *AssetPipeline) TagJSImport(asset string) string {
 	return asset
 }
 
-func (a *AssetPipeline) Register(asset string) template.HTML {
+func (a *AssetPipeline) comment(message string) any {
+	switch path.Ext(a.r.URL.Path) {
+	case ".css", ".js":
+		return template.JS(fmt.Sprintf("/* %v */", message))
+
+	default:
+		return template.HTML(fmt.Sprintf("<!-- %v -->", message))
+	}
+}
+
+func (a *AssetPipeline) Register(asset string, args ...string) any {
 	switch path.Ext(asset) {
 	case ".css":
 		asset = a.Tag(asset)
 
 		a.cssLinks = append(a.cssLinks, asset)
+
+	case ".html":
+		if len(args) == 0 {
+			return a.comment("an additional template id argument is required when registering .html files")
+		}
+
+		id := args[0]
+		asset = a.resolve(asset)
+
+		b, _, err := a.data(asset)
+		if err != nil {
+			break
+		}
+
+		tmpl := `<template id="` + id + `">` + string(b) + `</template>`
+
+		a.htmlTemplates = append(a.htmlTemplates, tmpl)
 
 	case ".js":
 		asset = a.TagJSImport(asset)
@@ -115,7 +152,9 @@ func (a *AssetPipeline) Register(asset string) template.HTML {
 		a.jsImports = append(a.jsImports, asset)
 
 	default:
-		return template.HTML(fmt.Sprintf("<!-- Unsupported register file extension in %q -->", asset))
+		message := fmt.Sprintf("unsupported register file extension in %q", asset)
+
+		return a.comment(message)
 	}
 
 	return ""
@@ -137,6 +176,17 @@ func (a *AssetPipeline) CSSLinks() string {
 	return strings.Join(links, "\n")
 }
 
+func (a *AssetPipeline) HTMLTemplates() string {
+	slices.Sort(a.htmlTemplates)
+
+	a.htmlTemplates = slices.Compact(a.htmlTemplates)
+	if len(a.htmlTemplates) == 0 {
+		return ""
+	}
+
+	return strings.Join(a.htmlTemplates, "\n")
+}
+
 func (a *AssetPipeline) JSImportMap() string {
 	slices.Sort(a.jsImportMappings)
 
@@ -155,7 +205,7 @@ func (a *AssetPipeline) JSImportMap() string {
 		imports[im] = tagged
 	}
 
-	b, err := json.Marshal(map[string]any{"imports": imports})
+	b, err := json.MarshalIndent(map[string]any{"imports": imports}, "", "\t")
 	if err != nil {
 		return ""
 	}
@@ -181,6 +231,10 @@ func (a *AssetPipeline) JSImports() string {
 
 func (a *AssetPipeline) WriteCSSLinks() template.HTML {
 	return "<!-- Renderer: CSS links -->"
+}
+
+func (a *AssetPipeline) WriteHTMLTemplates() template.HTML {
+	return "<!-- Renderer: HTML templates -->"
 }
 
 func (a *AssetPipeline) WriteJSImportMap() template.HTML {

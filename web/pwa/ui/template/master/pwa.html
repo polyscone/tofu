@@ -4,22 +4,29 @@
 <html lang="en">
 	<head>
 		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 		<title>{{block "meta_title" .}}{{.App.Name}}{{end}}</title>
 		<meta name="description" content="{{block "meta_description" .}}{{.App.Description}}{{end}}">
-		<link rel="manifest" href="{{.App.BasePath}}/pwa.webmanifest">
-		<link rel="stylesheet" href="{{.App.BasePath}}/css/common.css">
-		<link rel="stylesheet" href="{{.App.BasePath}}/css/pwa.css">
+		<link rel="manifest" href="{{.Asset.Tag "/app.webmanifest"}}">
+		<link rel="stylesheet" href="{{.Asset.Tag "/css/common.css"}}">
+		<link rel="stylesheet" href="{{.Asset.Tag "/css/pwa.css"}}">
 		<meta name="theme-color" content="{{.App.ThemeColour}}">
 		<link rel="icon" href="{{.Asset.Tag "/favicon.png"}}" type="image/png">
+		{{.Asset.WriteJSImportMap}}
+		{{.Asset.WriteJSImports}}
+		{{.Asset.WriteHTMLTemplates}}
+		{{.Asset.Register "/js/app/main.js"}}
+		<script src="{{.Asset.Tag "/js/mithril/v2.2.8.min.js"}}"></script>
 	</head>
 	<body>
-		<script>const __STATE__ = {{UnescapeJS (MarshalJSON .Vars)}}</script>
-		<script src="{{.App.BasePath}}/js/mithril/v2.2.2.min.js"></script>
-		<script src="{{.App.BasePath}}/js/app/main.js" type="module"></script>
+		<div id="root"></div>
+
+		<script>const __STATE__ = {{UnescapeJS (MarshalIndentJSON .Vars "" "\t")}}</script>
 		<noscript>
 			<p class="text-center">JavaScript is required to use this application.</p>
 		</noscript>
+
+		{{.Asset.WriteCSSLinks}}
 	</body>
 </html>
 

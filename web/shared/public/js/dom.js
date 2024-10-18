@@ -13,7 +13,7 @@ const components = {
 	}),
 	mutationActions: {
 		mount: [],
-		destroy: [],
+		unmount: [],
 	},
 	mutationObserver: new MutationObserver(mutations => {
 		const seenAdded = []
@@ -35,10 +35,10 @@ const components = {
 							continue
 						}
 
-						const onDestroyCallback = action.callback(node)
+						const onUnmountCallback = action.callback(node)
 
-						if (typeof onDestroyCallback === "function") {
-							onDestroy(node, onDestroyCallback)
+						if (typeof onUnmountCallback === "function") {
+							onUnmount(node, onUnmountCallback)
 						}
 					}
 				}
@@ -54,7 +54,7 @@ const components = {
 
 					seenRemoved.push(node)
 
-					for (const action of components.mutationActions.destroy) {
+					for (const action of components.mutationActions.unmount) {
 						if (node !== action.node) {
 							continue
 						}
@@ -96,18 +96,18 @@ export function onMount (selector, callback) {
 	const nodes = Array.from(document.querySelectorAll(selector))
 
 	for (const node of nodes) {
-		const onDestroyCallback = callback(node)
+		const onUnmountCallback = callback(node)
 
-		if (typeof onDestroyCallback === "function") {
-			onDestroy(node, onDestroyCallback)
+		if (typeof onUnmountCallback === "function") {
+			onUnmount(node, onUnmountCallback)
 		}
 	}
 
 	components.mutationActions.mount.push({ selector, callback })
 }
 
-export function onDestroy (node, callback) {
-	components.mutationActions.destroy.push({ node, callback })
+export function onUnmount (node, callback) {
+	components.mutationActions.unmount.push({ node, callback })
 }
 
 export function observeResize (node, callback) {

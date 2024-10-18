@@ -55,6 +55,7 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 		"Join":               TmplJoin,
 		"ReplaceAll":         TmplReplaceAll,
 		"MarshalJSON":        TmplMarshalJSON,
+		"MarshalIndentJSON":  TmplMarshalIndentJSON,
 		"UnescapeHTML":       TmplUnescapeHTML,
 		"UnescapeJS":         TmplUnescapeJS,
 		"Slice":              TmplSlice,
@@ -498,6 +499,15 @@ func TmplReplaceAll(value any, old, new string) string {
 
 func TmplMarshalJSON(value any) (string, error) {
 	b, err := json.Marshal(value)
+	if err != nil {
+		return "", fmt.Errorf("template marshal JSON: %w", err)
+	}
+
+	return string(b), nil
+}
+
+func TmplMarshalIndentJSON(value any, prefix, indent string) (string, error) {
+	b, err := json.MarshalIndent(value, prefix, indent)
 	if err != nil {
 		return "", fmt.Errorf("template marshal JSON: %w", err)
 	}

@@ -139,10 +139,6 @@ type Renderer struct {
 }
 
 func NewRenderer(config RendererConfig) *Renderer {
-	if config.AssetTags == nil {
-		config.AssetTags = cache.New[string, string]()
-	}
-
 	return &Renderer{
 		h:                config.Handler,
 		assetTags:        config.AssetTags,
@@ -284,6 +280,15 @@ func (rn *Renderer) postProcess(buf *bytes.Buffer, data *ViewData) {
 			b = bytes.ReplaceAll(
 				b,
 				[]byte(`<!-- Renderer: CSS links -->`),
+				[]byte(content),
+			)
+		}
+
+		if content := data.Asset.HTMLTemplates(); content != "" {
+			buf.Reset()
+			b = bytes.ReplaceAll(
+				b,
+				[]byte(`<!-- Renderer: HTML templates -->`),
 				[]byte(content),
 			)
 		}

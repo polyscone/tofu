@@ -418,10 +418,5 @@ function {{$factoryName | UnescapeJS}} (opts) {
 }
 
 {{$globalName := .URL.Query.Get "global-name" -}}
-{{if $globalName -}}
-	{{printf "global[%q] ||= %v" $globalName $factoryName | UnescapeJS -}}
-{{end -}}
-
-{{if .URL.Query.Get "export" -}}
-	export default {{$factoryName | UnescapeJS}}()
-{{end -}}
+{{if $globalName}}{{printf "globalThis[%q] ||= %v" $globalName $factoryName | UnescapeJS}}{{end}}
+{{if eq (.URL.Query.Get "type") "module"}}export default {{$factoryName | UnescapeJS}}(){{end}}

@@ -12,11 +12,9 @@ self.addEventListener("install", event => {
 
 		return cache.addAll([
 			"{{.App.BasePath}}/",
-			"{{.App.BasePath}}/pwa_service_worker.js",
 			"{{.App.BasePath}}/css/common.css",
 			"{{.App.BasePath}}/css/pwa.css",
-			"{{.App.BasePath}}/js/mithril/v2.2.2.min.js",
-			"{{.App.BasePath}}/js/app/main.js",
+			"{{.App.BasePath}}/app/main.js",
 		])
 	}
 

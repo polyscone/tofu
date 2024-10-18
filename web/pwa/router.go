@@ -173,6 +173,7 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler
 
 	renderer := handler.NewRenderer(handler.RendererConfig{
 		Handler:    h.Handler,
+		AssetTags:  ui.AssetTags,
 		AssetFiles: ui.AssetFiles,
 		Funcs:      h.Funcs,
 	})

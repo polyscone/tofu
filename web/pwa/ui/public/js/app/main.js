@@ -1,5 +1,6 @@
-import platform from "./platform.js"
-import router from "./router.js"
+import { onMount, observeResize } from "{{.Asset.TagJSImport "/js/dom.js"}}"
+import platform from "{{.Asset.TagJSImport "./platform.js"}}"
+import router from "{{.Asset.TagJSImport "./router.js"}}"
 
 window.addEventListener("load", async () => {
 	platform.addEventListener("network", () => {
@@ -39,75 +40,53 @@ if (platform.config.prefix) {
 }
 
 if ("serviceWorker" in navigator) {
-	navigator.serviceWorker.register("{{.App.BasePath}}/pwa_service_worker.js")
+	navigator.serviceWorker.register("{{.App.BasePath}}/service_worker.js", { type: "module" })
 }
 
-onMount("textarea", node => {
-	node.addEventListener("input", () => {
+onMount("textarea[data-autosize]", node => {
+	let mouseDown = false
+	let userResized = false
+
+	node.addEventListener("mousedown", () => {
+		mouseDown = true
+	})
+
+	function unsetMouseDown () {
+		mouseDown = false
+	}
+
+	node.addEventListener("mouseup", unsetMouseDown)
+	window.addEventListener("blur", unsetMouseDown)
+
+	observeResize(node, () => {
+		userResized ||= mouseDown
+	})
+
+	function autosize () {
+		// If the user explicitly resized the textarea themselves then
+		// we assume they want to keep it that size and don't do anything
+		if (userResized) {
+			return
+		}
+
 		node.style.height = "auto"
-		node.style.height = node.scrollHeight + "px"
-	})
+
+		const hasScrollbar = node.clientHeight < node.scrollHeight
+		const nodeHeight = hasScrollbar ? node.scrollHeight : node.clientHeight
+		const computed = getComputedStyle(node)
+		const additionalBlock = (parseInt(computed.paddingBlock) + parseInt(computed.borderWidth)) * 2
+		const height = nodeHeight + additionalBlock + "px"
+
+		if (height != node.style.height) {
+			node.style.height = height
+		}
+	}
+
+	autosize()
+
+	node.addEventListener("input", autosize)
+
+	return () => {
+		window.removeEventListener("blur", unsetMouseDown)
+	}
 })
-
-function _componentsInit () {
-	window._components ||= {
-		actions: {
-			mount: [],
-			destroy: [],
-		},
-		observer: new MutationObserver(mutations => {
-			for (const mutation of mutations) {
-				for (const node of mutation.addedNodes) {
-					if (!node.matches) {
-						continue
-					}
-
-					for (const action of window._components.actions.mount) {
-						if (!node.matches(action.selector)) {
-							continue
-						}
-
-						action.callback(node)
-					}
-				}
-
-				for (const node of mutation.removedNodes) {
-					if (!node.matches) {
-						continue
-					}
-
-					for (const action of window._components.actions.destroy) {
-						if (!node.matches(action.selector)) {
-							continue
-						}
-
-						action.callback(node)
-					}
-				}
-			}
-		}),
-	}
-
-	window._components.observer.observe(document.body, {
-		childList: true,
-		subtree: true,
-	})
-}
-
-function onMount (selector, callback) {
-	_componentsInit()
-
-	const nodes = Array.from(document.querySelectorAll(selector))
-
-	for (const node of nodes) {
-		callback(node)
-	}
-
-	window._components.actions.mount.push({ selector, callback })
-}
-
-function onDestroy (selector, callback) {
-	_componentsInit()
-
-	window._components.actions.destroy.push({ selector, callback })
-}

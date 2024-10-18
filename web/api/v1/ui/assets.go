@@ -4,6 +4,7 @@ import (
 	"embed"
 	"io/fs"
 
+	"github.com/polyscone/tofu/internal/cache"
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/fsx"
 	"github.com/polyscone/tofu/web/shared"
@@ -19,3 +20,5 @@ var AssetFilesV1 = fsx.NewStack(
 	errsx.Must(fs.Sub(publicFilesV1, publicDirV1)),
 	shared.AssetFiles,
 )
+
+var AssetTagsV1 = cache.New[string, string]()

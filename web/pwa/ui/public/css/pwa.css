@@ -14,9 +14,18 @@
 	}
 
 	@media screen and (display-mode: standalone) {
-		h1, h2, h3, h4, h5, h6, p, a
+		body {
+			padding-top: env(safe-area-inset-top, 0);
+			padding-bottom: env(safe-area-inset-bottom, 0);
+			padding-left: env(safe-area-inset-left, 0);
+			padding-right: env(safe-area-inset-right, 0);
+		}
+
+		h1, h2, h3, h4, h5, h6,
+		p, a,
 		button,
 		label {
+			-webkit-user-select: none;
 			user-select: none;
 		}
 	}

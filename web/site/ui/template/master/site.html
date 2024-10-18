@@ -16,8 +16,9 @@
 	{{template "master.site.styles" .}}
 	<link rel="icon" href="{{.Asset.Tag "/favicon.png"}}" type="image/png">
 	{{.Asset.WriteJSImportMap}}
-	<script src="{{.Asset.Tag "/js/main.js"}}" type="module"></script>
 	{{.Asset.WriteJSImports}}
+	{{.Asset.WriteHTMLTemplates}}
+	{{.Asset.Register "/js/main.js"}}
 </head>
 <body>
 	{{if eq .Stream "begin" -}}

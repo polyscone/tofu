@@ -1,9 +1,10 @@
 {
+	"id": "/",
 	"name": "{{.App.Name}}",
 	"short_name": "{{.App.ShortName}}",
 	"description": "{{.App.Description}}",
-	"start_url": "./",
-	"scope": "./",
+	"start_url": "{{.App.BasePath}}/",
+	"scope": "{{.App.BasePath}}/",
 	"orientation": "any",
 	"display": "standalone",
 	"lang": "en",
@@ -11,37 +12,39 @@
 	"theme_color": "{{.App.ThemeColour}}",
 	"icons": [
 		{
-			"src": "{{.App.BasePath}}/img/icons/192x192.png",
+			"src": "{{.Asset.Tag "/img/icons/192x192.png"}}",
 			"type": "image/png",
 			"sizes": "192x192"
 		},
 		{
-			"src": "{{.App.BasePath}}/img/icons/384x384.png",
-			"type": "image/png",
-			"sizes": "384x384"
-		},
-		{
-			"src": "{{.App.BasePath}}/img/icons/512x512.png",
+			"src": "{{.Asset.Tag "/img/icons/512x512.png"}}",
 			"type": "image/png",
 			"sizes": "512x512"
 		},
 		{
-			"src": "{{.App.BasePath}}/img/icons/512x512_maskable.png",
+			"src": "{{.Asset.Tag "/img/icons/512x512_maskable.png"}}",
 			"type": "image/png",
 			"sizes": "512x512",
 			"purpose": "maskable"
 		},
 		{
-			"src": "{{.App.BasePath}}/img/icons/1024x1024.png",
+			"src": "{{.Asset.Tag "/img/icons/1024x1024.png"}}",
 			"type": "image/png",
 			"sizes": "1024x1024"
 		}
 	],
 	"screenshots": [
 		{
-			"src": "{{.App.BasePath}}/img/screenshots/001.png",
+			"src": "{{.Asset.Tag "/img/screenshots/wide_001.png"}}",
 			"type": "image/png",
-			"sizes": "1280x720"
+			"sizes": "1280x720",
+			"form_factor": "wide"
+		},
+		{
+			"src": "{{.Asset.Tag "/img/screenshots/narrow_001.png"}}",
+			"type": "image/png",
+			"sizes": "720x1280",
+			"form_factor": "narrow"
 		}
 	]
 }

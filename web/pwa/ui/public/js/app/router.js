@@ -1,27 +1,27 @@
 // Pages
-import "./pages/home.js"
+import "{{.Asset.TagJSImport "./pages/home.js"}}"
 
 // Account sign up
-import "./pages/account/sign_up/form.js"
-import "./pages/account/sign_up/success.js"
-import "./pages/account/sign_up/verify.js"
+import "{{.Asset.TagJSImport "./pages/account/sign_up/form.js"}}"
+import "{{.Asset.TagJSImport "./pages/account/sign_up/success.js"}}"
+import "{{.Asset.TagJSImport "./pages/account/sign_up/verify.js"}}"
 
 // Account sign in
-import "./pages/account/sign_in/web_form.js"
-import "./pages/account/sign_in/recovery_code.js"
-import "./pages/account/sign_in/totp.js"
-import "./pages/account/sign_in/totp_required.js"
+import "{{.Asset.TagJSImport "./pages/account/sign_in/web_form.js"}}"
+import "{{.Asset.TagJSImport "./pages/account/sign_in/recovery_code.js"}}"
+import "{{.Asset.TagJSImport "./pages/account/sign_in/totp.js"}}"
+import "{{.Asset.TagJSImport "./pages/account/sign_in/totp_required.js"}}"
 
 // Account reset password
-import "./pages/account/reset_password/new_password.js"
-import "./pages/account/reset_password/request.js"
+import "{{.Asset.TagJSImport "./pages/account/reset_password/new_password.js"}}"
+import "{{.Asset.TagJSImport "./pages/account/reset_password/request.js"}}"
 
 // Errors
-import "./pages/error/not_found.js"
+import "{{.Asset.TagJSImport "./pages/error/not_found.js"}}"
 
 platform.routes.protect(/^\/$/)
 
-import Layout from "./master/layout.js"
+import Layout from "{{.Asset.TagJSImport "./master/layout.js"}}"
 
 function handle (opts) {
 	opts ||= {}

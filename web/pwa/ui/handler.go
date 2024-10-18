@@ -49,6 +49,7 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 
 	h.HTML = handler.NewRenderer(handler.RendererConfig{
 		Handler:          h.Handler,
+		AssetTags:        AssetTags,
 		AssetFiles:       AssetFiles,
 		TemplateFiles:    templateFiles,
 		TemplatePatterns: templatePatterns,

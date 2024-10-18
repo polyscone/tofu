@@ -1,6 +1,6 @@
-import sdk from "{{.App.BasePath}}/api/v1/sdk.js?export=1"
-import { show as showLoading, hide as hideLoading } from "./components/loading.js"
-import { open as openModal, close as closeModal } from "./components/modal.js"
+import sdk from "{{.Asset.TagJSImport "/api/v1/sdk.js?type=module"}}"
+import { show as showLoading, hide as hideLoading } from "{{.Asset.TagJSImport "./components/loading.js"}}"
+import { open as openModal, close as closeModal } from "{{.Asset.TagJSImport "./components/modal.js"}}"
 
 const langs = []
 

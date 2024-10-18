@@ -17,7 +17,10 @@ var files embed.FS
 
 const templateDir = "template"
 
-var templateFiles = fsx.NewStack(fsx.RelDirFS(templateDir), errsx.Must(fs.Sub(files, templateDir)))
+var templateFiles = fsx.NewStack(
+	fsx.RelDirFS(templateDir),
+	errsx.Must(fs.Sub(files, templateDir)),
+)
 
 var componentFilesExtWhitelist = map[string]struct{}{
 	".bmp":  {},
