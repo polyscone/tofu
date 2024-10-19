@@ -106,31 +106,11 @@ func (otp TimeBased) Check(key []byte, t time.Time, delaySteps int, userPassword
 	}
 	usedTOTPs.RUnlock()
 
-	// Check into the past
-	for i := range int(delaySteps) + 1 {
-		step := otp.timeStep * time.Duration(i)
-		password, err := otp.Generate(key, t.Add(-step))
+	for i := -delaySteps; i <= delaySteps; i++ {
+		offset := otp.timeStep * time.Duration(i)
+		password, err := otp.Generate(key, t.Add(offset))
 		if err != nil {
 			return false, fmt.Errorf("generate: %w", err)
-		}
-
-		if subtle.ConstantTimeCompare([]byte(password), []byte(userPassword)) == 1 {
-			usedTOTPs.Lock()
-			usedTOTPs.data[password] = time.Now()
-			usedTOTPs.Unlock()
-
-			return true, nil
-		}
-	}
-
-	// Check into the future
-	// We start at index 1 here because the checks into the past already include
-	// the current time (i = 0)
-	for i := 1; i <= int(delaySteps); i++ {
-		step := otp.timeStep * time.Duration(i)
-		password, err := otp.Generate(key, t.Add(step))
-		if err != nil {
-			return false, fmt.Errorf("generate delayed: %w", err)
 		}
 
 		if subtle.ConstantTimeCompare([]byte(password), []byte(userPassword)) == 1 {
