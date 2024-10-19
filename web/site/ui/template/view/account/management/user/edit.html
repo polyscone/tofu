@@ -113,7 +113,7 @@
 					<legend>Roles</legend>
 
 					{{$roleIDs := .Form.GetAllOr "roles" .Vars.UserRoleIDs}}
-					{{if (not $canChangeRoles)}}
+					{{if not $canChangeRoles}}
 						{{$roleIDs = ToStrings .Vars.UserRoleIDs}}
 					{{end}}
 
