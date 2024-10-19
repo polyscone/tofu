@@ -27,7 +27,7 @@ import (
 func RegisterTOTPHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.Named("account.totp.section", "/account/totp")
 
-	mux.HandleFunc("GET /account/totp/reset", h.HTML.HandlerFunc("account/totp/reset/reset"), "account.totp.reset")
+	mux.HandleFunc("GET /account/totp/reset", totpResetGet(h), "account.totp.reset")
 	mux.HandleFunc("POST /account/totp/reset", totpResetPost(h), "account.totp.reset.post")
 
 	mux.Group(func(mux *router.ServeMux) {
@@ -65,18 +65,83 @@ func RegisterTOTPHandlers(h *ui.Handler, mux *router.ServeMux) {
 
 		mux.HandleFunc("POST /account/totp/setup/activate", totpSetupActivatePost(h), "account.totp.setup.activate.post")
 
-		mux.HandleFunc("GET /account/totp/setup/success", h.HTML.HandlerFunc("account/totp/setup/success"), "account.totp.setup.success")
+		mux.HandleFunc("GET /account/totp/setup/success", totpSetupSuccessGet(h), "account.totp.setup.success")
 
 		mux.HandleFunc("GET /account/totp/disable", totpDisableGet(h), "account.totp.disable")
 		mux.HandleFunc("POST /account/totp/disable", totpDisablePost(h), "account.totp.disable.post")
 
-		mux.HandleFunc("GET /account/totp/disable/success", h.HTML.HandlerFunc("account/totp/disable/success"), "account.totp.disable.success")
+		mux.HandleFunc("GET /account/totp/disable/success", totpDisableSuccessGet(h), "account.totp.disable.success")
 
 		mux.HandleFunc("GET /account/totp/recovery-codes", totpRecoveryCodesGet(h), "account.totp.recovery_codes")
 		mux.HandleFunc("POST /account/totp/recovery-codes", totpRecoveryCodesPost(h), "account.totp.recovery_codes.post")
 
 		mux.HandleFunc("POST /account/totp/send-sms", totpSendSMSPost(h), "account.totp.sms.send_passcode.post")
 	})
+}
+
+func totpResetGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "account/totp/reset/reset", nil)
+	}
+}
+
+func totpResetPost(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input struct {
+			Token    string `form:"token"`
+			Password string `form:"password"`
+		}
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
+			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+
+			return
+		}
+
+		ctx := r.Context()
+
+		email, err := h.Repo.Web.FindResetTOTPTokenEmail(ctx, input.Token)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "find reset TOTP token email", err, "error", nil)
+
+			return
+		}
+
+		user, err := h.Repo.Account.FindUserByEmail(ctx, email)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "find user by email", err, "error", nil)
+
+			return
+		}
+
+		passport, err := h.PassportByEmail(ctx, email)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "passport by email", err, "error", nil)
+
+			return
+		}
+
+		_, err = h.Svc.Account.ResetTOTP(ctx, passport.Account, user.ID, input.Password)
+		if err != nil {
+			h.HTML.ErrorViewFunc(w, r, "reset TOTP", err, "account/totp/reset/reset", func(data *handler.ViewData) error {
+				data.ErrorMessage = "Either your credentials are incorrect, or you're not authorised to access this application."
+
+				return nil
+			})
+
+			return
+		}
+
+		err = h.Repo.Web.ConsumeResetTOTPToken(ctx, input.Token)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "consume reset TOTP token", err, "error", nil)
+
+			return
+		}
+
+		h.AddFlashf(ctx, "Two-factor authentication has been disabled for your account.")
+
+		signInWithPassword(ctx, h, w, r, email, input.Password)
+	}
 }
 
 func totpSetupGet(h *ui.Handler) http.HandlerFunc {
@@ -410,6 +475,12 @@ func totpSetupActivatePost(h *ui.Handler) http.HandlerFunc {
 	}
 }
 
+func totpSetupSuccessGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "account/totp/setup/success", nil)
+	}
+}
+
 func totpDisableGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -472,62 +543,9 @@ func totpDisablePost(h *ui.Handler) http.HandlerFunc {
 	}
 }
 
-func totpResetPost(h *ui.Handler) http.HandlerFunc {
+func totpDisableSuccessGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var input struct {
-			Token    string `form:"token"`
-			Password string `form:"password"`
-		}
-		if err := httpx.DecodeRequestForm(&input, r); err != nil {
-			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
-
-			return
-		}
-
-		ctx := r.Context()
-
-		email, err := h.Repo.Web.FindResetTOTPTokenEmail(ctx, input.Token)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "find reset TOTP token email", err, "error", nil)
-
-			return
-		}
-
-		user, err := h.Repo.Account.FindUserByEmail(ctx, email)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "find user by email", err, "error", nil)
-
-			return
-		}
-
-		passport, err := h.PassportByEmail(ctx, email)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "passport by email", err, "error", nil)
-
-			return
-		}
-
-		_, err = h.Svc.Account.ResetTOTP(ctx, passport.Account, user.ID, input.Password)
-		if err != nil {
-			h.HTML.ErrorViewFunc(w, r, "reset TOTP", err, "account/totp/reset/reset", func(data *handler.ViewData) error {
-				data.ErrorMessage = "Either your credentials are incorrect, or you're not authorised to access this application."
-
-				return nil
-			})
-
-			return
-		}
-
-		err = h.Repo.Web.ConsumeResetTOTPToken(ctx, input.Token)
-		if err != nil {
-			h.HTML.ErrorView(w, r, "consume reset TOTP token", err, "error", nil)
-
-			return
-		}
-
-		h.AddFlashf(ctx, "Two-factor authentication has been disabled for your account.")
-
-		signInWithPassword(ctx, h, w, r, email, input.Password)
+		h.HTML.View(w, r, http.StatusOK, "account/totp/disable/success", nil)
 	}
 }
 

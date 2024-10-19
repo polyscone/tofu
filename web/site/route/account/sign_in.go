@@ -31,7 +31,7 @@ func RegisterSignInHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("GET /account/sign-in/magic-link", signInMagicLinkGet(h), "account.sign_in.magic_link")
 	mux.HandleFunc("POST /account/sign-in/magic-link", signInMagicLinkPost(h), "account.sign_in.magic_link.post")
 	mux.HandleFunc("POST /account/sign-in/magic-link/request", signInMagicLinkRequestPost(h), "account.sign_in.magic_link.request.post")
-	mux.HandleFunc("GET /account/sign-in/magic-link/email-sent", h.HTML.HandlerFunc("account/sign_in/magic_link_sent"), "account.sign_in.magic_link.request.email_sent")
+	mux.HandleFunc("GET /account/sign-in/magic-link/email-sent", signInMagicLinkEmailSentGet(h), "account.sign_in.magic_link.request.email_sent")
 
 	mux.HandleFunc("GET /account/sign-in/totp", signInTOTPGet(h), "account.sign_in.totp")
 	mux.HandleFunc("POST /account/sign-in/totp", signInTOTPPost(h), "account.sign_in.totp.post")
@@ -39,12 +39,12 @@ func RegisterSignInHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("GET /account/sign-in/totp/reset", signInTOTPResetGet(h), "account.sign_in.totp.reset")
 	mux.HandleFunc("POST /account/sign-in/totp/reset", signInTOTPResetPost(h), "account.sign_in.totp.reset.post")
 
-	mux.HandleFunc("GET /account/sign-in/totp/email-sent", h.HTML.HandlerFunc("account/totp/reset/email_sent"), "account.sign_in.totp.reset.email_sent")
+	mux.HandleFunc("GET /account/sign-in/totp/email-sent", signInTOTPEmailSentGet(h), "account.sign_in.totp.reset.email_sent")
 
-	mux.HandleFunc("GET /account/sign-in/totp/request", h.HTML.HandlerFunc("account/totp/reset/request"), "account.sign_in.totp.reset.request")
+	mux.HandleFunc("GET /account/sign-in/totp/request", signInTOTPResetRequestGet(h), "account.sign_in.totp.reset.request")
 	mux.HandleFunc("POST /account/sign-in/totp/request", signInTOTPResetRequestPost(h), "account.sign_in.totp.reset.request.post")
 
-	mux.HandleFunc("GET /account/sign-in/totp/request/sent", h.HTML.HandlerFunc("account/totp/reset/request_sent"), "account.sign_in.totp.reset.request.sent")
+	mux.HandleFunc("GET /account/sign-in/totp/request/sent", signInTOTPResetRequestSentGet(h), "account.sign_in.totp.reset.request.sent")
 
 	mux.HandleFunc("GET /account/sign-in/recovery-code", signInRecoveryCodeGet(h), "account.sign_in.recovery_code")
 	mux.HandleFunc("POST /account/sign-in/recovery-code", signInRecoveryCodePost(h), "account.sign_in.recovery_code.post")
@@ -115,6 +115,12 @@ func signInMagicLinkRequestPost(h *ui.Handler) http.HandlerFunc {
 		qs := "?ttl=" + human.Duration(ttl)
 
 		http.Redirect(w, r, h.Path("account.sign_in.magic_link.request.email_sent")+qs, http.StatusSeeOther)
+	}
+}
+
+func signInMagicLinkEmailSentGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "account/sign_in/magic_link_sent", nil)
 	}
 }
 
@@ -281,6 +287,18 @@ func signInTOTPResetPost(h *ui.Handler) http.HandlerFunc {
 	}
 }
 
+func signInTOTPEmailSentGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "account/totp/reset/email_sent", nil)
+	}
+}
+
+func signInTOTPResetRequestGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "account/totp/reset/request", nil)
+	}
+}
+
 func signInTOTPResetRequestPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
@@ -316,6 +334,12 @@ func signInTOTPResetRequestPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		http.Redirect(w, r, h.Path("account.sign_in.totp.reset.request.sent"), http.StatusSeeOther)
+	}
+}
+
+func signInTOTPResetRequestSentGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "account/totp/reset/request_sent", nil)
 	}
 }
 

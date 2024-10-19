@@ -27,12 +27,18 @@ func RegisterChangePasswordHandlers(h *ui.Handler, mux *router.ServeMux) {
 			}
 		})
 
-		mux.HandleFunc("GET /account/change-password", h.HTML.HandlerFunc("account/change_password/form"), "account.change_password")
+		mux.HandleFunc("GET /account/change-password", changePasswordGet(h), "account.change_password")
 		mux.HandleFunc("POST /account/change-password", changePasswordPost(h), "account.change_password.post")
 	})
 
 	// Redirect to help password managers find the change password page
 	mux.Handle("/.well-known/change-password", http.RedirectHandler(h.Path("account.change_password"), http.StatusSeeOther))
+}
+
+func changePasswordGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "account/change_password/form", nil)
+	}
 }
 
 func changePasswordPost(h *ui.Handler) http.HandlerFunc {

@@ -19,6 +19,7 @@ import (
 	"github.com/polyscone/tofu/web/site/event"
 	"github.com/polyscone/tofu/web/site/route/account"
 	"github.com/polyscone/tofu/web/site/route/admin"
+	"github.com/polyscone/tofu/web/site/route/page"
 	"github.com/polyscone/tofu/web/site/route/system"
 	"github.com/polyscone/tofu/web/site/ui"
 )
@@ -201,7 +202,7 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler
 		}
 	})
 
-	mux.HandleFunc("GET /{$}", h.HTML.HandlerFunc("page/home"), "page.home")
+	page.RegisterHandlers(h, mux)
 
 	mux.Named("account.section", "/account")
 

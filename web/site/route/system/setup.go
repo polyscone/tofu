@@ -33,7 +33,7 @@ func RegisterSetupHandlers(h *ui.Handler, mux *router.ServeMux) {
 			}
 		})
 
-		mux.HandleFunc("GET /system/setup", h.HTML.HandlerFunc("system/setup"), "system.setup")
+		mux.HandleFunc("GET /system/setup", systemSetupGet(h), "system.setup")
 		mux.HandleFunc("POST /system/setup", systemSetupPost(h), "system.setup.post")
 	})
 }
@@ -44,6 +44,12 @@ type updateEmailsGuard struct {
 
 func (g updateEmailsGuard) CanUpdateEmails() bool {
 	return g.canUpdateEmails
+}
+
+func systemSetupGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "system/setup", nil)
+	}
 }
 
 func systemSetupPost(h *ui.Handler) http.HandlerFunc {

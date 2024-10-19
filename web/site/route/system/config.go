@@ -15,9 +15,15 @@ func RegisterConfigHandlers(h *ui.Handler, mux *router.ServeMux) {
 		mux.Before(h.RequireSignIn)
 		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
 
-		mux.HandleFunc("GET /admin/system/config", h.HTML.HandlerFunc("system/config"), "system.config")
+		mux.HandleFunc("GET /admin/system/config", systemConfigGet(h), "system.config")
 		mux.HandleFunc("POST /admin/system/config", systemConfigPost(h), "system.config.post")
 	})
+}
+
+func systemConfigGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "system/config", nil)
+	}
 }
 
 func systemConfigPost(h *ui.Handler) http.HandlerFunc {

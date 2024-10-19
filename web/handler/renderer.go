@@ -397,12 +397,6 @@ func (rn *Renderer) HTML(buf *bytes.Buffer, assetPipeline *AssetPipeline, r *htt
 	return nil
 }
 
-func (rn *Renderer) HandlerFunc(view string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		rn.View(w, r, http.StatusOK, view, nil)
-	}
-}
-
 func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg string, err error, view string, dataFunc ViewDataFunc) {
 	ctx := r.Context()
 

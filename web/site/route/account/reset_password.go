@@ -15,13 +15,19 @@ import (
 )
 
 func RegisterResetPasswordHandlers(h *ui.Handler, mux *router.ServeMux) {
-	mux.HandleFunc("GET /account/reset-password", h.HTML.HandlerFunc("account/reset_password/request"), "account.reset_password")
+	mux.HandleFunc("GET /account/reset-password", resetPasswordGet(h), "account.reset_password")
 	mux.HandleFunc("POST /account/reset-password", resetPasswordPost(h), "account.reset_password.post")
 
-	mux.HandleFunc("GET /account/reset-password/email-sent", h.HTML.HandlerFunc("account/reset_password/email_sent"), "account.reset_password.email_sent")
+	mux.HandleFunc("GET /account/reset-password/email-sent", resetPasswordEmailSentGet(h), "account.reset_password.email_sent")
 
-	mux.HandleFunc("GET /account/reset-password/new-password", h.HTML.HandlerFunc("account/reset_password/new_password"), "account.reset_password.new_password")
+	mux.HandleFunc("GET /account/reset-password/new-password", resetPasswordNewPasswordGet(h), "account.reset_password.new_password")
 	mux.HandleFunc("POST /account/reset-password/new-password", resetPasswordNewPasswordPost(h), "account.reset_password.new_password.post")
+}
+
+func resetPasswordGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "account/reset_password/request", nil)
+	}
 }
 
 func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
@@ -50,6 +56,18 @@ func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
 		})
 
 		http.Redirect(w, r, h.Path("account.reset_password.email_sent"), http.StatusSeeOther)
+	}
+}
+
+func resetPasswordNewPasswordGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "account/reset_password/email_sent", nil)
+	}
+}
+
+func resetPasswordEmailSentGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "account/reset_password/new_password", nil)
 	}
 }
 

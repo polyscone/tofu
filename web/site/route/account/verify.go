@@ -14,7 +14,7 @@ func RegisterVerifyHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("GET /account/verify", verifyGet(h), "account.verify")
 	mux.HandleFunc("POST /account/verify", verifyPost(h), "account.verify.post")
 
-	mux.HandleFunc("GET /account/verify/success", h.HTML.HandlerFunc("account/verify/success"), "account.verify.success")
+	mux.HandleFunc("GET /account/verify/success", verifySuccessGet(h), "account.verify.success")
 }
 
 func verifyGet(h *ui.Handler) http.HandlerFunc {
@@ -66,5 +66,11 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 		} else {
 			http.Redirect(w, r, h.Path("account.verify.success"), http.StatusSeeOther)
 		}
+	}
+}
+
+func verifySuccessGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		h.HTML.View(w, r, http.StatusOK, "account/verify/success", nil)
 	}
 }
