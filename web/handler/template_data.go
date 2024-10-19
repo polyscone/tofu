@@ -22,6 +22,8 @@ type AssetPipeline struct {
 	scope            string
 	rn               *Renderer
 	r                *http.Request
+	preloads         []string
+	prefetches       []string
 	cssLinks         []string
 	htmlTemplates    []string
 	jsImportMappings []string
@@ -122,6 +124,22 @@ func (a *AssetPipeline) comment(message string) any {
 	}
 }
 
+func (a *AssetPipeline) Preload(asset string) string {
+	asset = a.resolve(asset)
+
+	a.preloads = append(a.preloads, asset)
+
+	return asset
+}
+
+func (a *AssetPipeline) Prefetch(asset string) string {
+	asset = a.resolve(asset)
+
+	a.prefetches = append(a.prefetches, asset)
+
+	return asset
+}
+
 func (a *AssetPipeline) Load(asset string, args ...string) any {
 	switch path.Ext(asset) {
 	case ".css":
@@ -152,12 +170,56 @@ func (a *AssetPipeline) Load(asset string, args ...string) any {
 		a.jsImports = append(a.jsImports, asset)
 
 	default:
-		message := fmt.Sprintf("unsupported register file extension in %q", asset)
+		message := fmt.Sprintf("unsupported load file extension in %q", asset)
 
 		return a.comment(message)
 	}
 
 	return ""
+}
+
+func (a *AssetPipeline) Preloads() string {
+	slices.Sort(a.preloads)
+
+	a.preloads = slices.Compact(a.preloads)
+	if len(a.preloads) == 0 {
+		return ""
+	}
+
+	preloads := make([]string, len(a.preloads))
+	for i, preload := range a.preloads {
+		var as string
+		switch path.Ext(preload) {
+		case ".css":
+			as = "style"
+
+		case ".js":
+			as = "script"
+
+		default:
+			as = "document"
+		}
+
+		preloads[i] = fmt.Sprintf(`<link rel="preload" href=%q as=%q>`, preload, as)
+	}
+
+	return strings.Join(preloads, "\n")
+}
+
+func (a *AssetPipeline) Prefetches() string {
+	slices.Sort(a.prefetches)
+
+	a.prefetches = slices.Compact(a.prefetches)
+	if len(a.prefetches) == 0 {
+		return ""
+	}
+
+	prefetches := make([]string, len(a.prefetches))
+	for i, prefetch := range a.prefetches {
+		prefetches[i] = fmt.Sprintf(`<link rel="prefetch" href=%q>`, prefetch)
+	}
+
+	return strings.Join(prefetches, "\n")
 }
 
 func (a *AssetPipeline) CSSLinks() string {
@@ -227,6 +289,14 @@ func (a *AssetPipeline) JSImports() string {
 	}
 
 	return strings.Join(imports, "; ")
+}
+
+func (a *AssetPipeline) WritePreloads() template.HTML {
+	return "<!-- Renderer: Preloads -->"
+}
+
+func (a *AssetPipeline) WritePrefetches() template.HTML {
+	return "<!-- Renderer: Prefetches -->"
 }
 
 func (a *AssetPipeline) WriteCSSLinks() template.HTML {

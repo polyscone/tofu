@@ -16,6 +16,8 @@
 	{{template "master.site.styles" .}}
 	<link rel="icon" href="{{.Asset.Tag "/favicon.png"}}" type="image/png">
 	{{.Asset.WriteJSImportMap}}
+	{{.Asset.WritePreloads}}
+	{{.Asset.WritePrefetches}}
 	{{.Asset.WriteJSImports}}
 	{{.Asset.WriteHTMLTemplates}}
 	{{.Asset.Load "/js/main.js"}}

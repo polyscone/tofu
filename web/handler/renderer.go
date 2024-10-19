@@ -275,6 +275,24 @@ func (rn *Renderer) postProcess(buf *bytes.Buffer, data *ViewData) {
 	if data.Stream == "" && buf.Len() > 0 {
 		b := buf.Bytes()
 
+		if content := data.Asset.Preloads(); content != "" {
+			buf.Reset()
+			b = bytes.ReplaceAll(
+				b,
+				[]byte(`<!-- Renderer: Preloads -->`),
+				[]byte(content),
+			)
+		}
+
+		if content := data.Asset.Prefetches(); content != "" {
+			buf.Reset()
+			b = bytes.ReplaceAll(
+				b,
+				[]byte(`<!-- Renderer: Prefetches -->`),
+				[]byte(content),
+			)
+		}
+
 		if content := data.Asset.CSSLinks(); content != "" {
 			buf.Reset()
 			b = bytes.ReplaceAll(

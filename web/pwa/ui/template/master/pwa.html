@@ -13,6 +13,8 @@
 		<meta name="theme-color" content="{{.App.ThemeColour}}">
 		<link rel="icon" href="{{.Asset.Tag "/favicon.png"}}" type="image/png">
 		{{.Asset.WriteJSImportMap}}
+		{{.Asset.WritePreloads}}
+		{{.Asset.WritePrefetches}}
 		{{.Asset.WriteJSImports}}
 		{{.Asset.WriteHTMLTemplates}}
 		{{.Asset.Load "/js/app/main.js"}}
