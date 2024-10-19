@@ -32,10 +32,12 @@ const (
 )
 
 var (
-	ErrNotVerified     = errors.New("account is not verified")
-	ErrNotActivated    = errors.New("account is not activated")
-	ErrSuspended       = errors.New("account is suspended")
-	ErrInvalidPassword = errors.New("invalid password")
+	ErrNotVerified      = errors.New("account is not verified")
+	ErrAlreadyVerified  = errors.New("account is already verified")
+	ErrNotActivated     = errors.New("account is not activated")
+	ErrAlreadyActivated = errors.New("account is already activated")
+	ErrSuspended        = errors.New("account is suspended")
+	ErrInvalidPassword  = errors.New("invalid password")
 )
 
 type User struct {
@@ -315,7 +317,7 @@ func (u *User) SignUpWithFacebook(system string) {
 
 func (u *User) Verify(password Password, hasher Hasher) error {
 	if !u.VerifiedAt.IsZero() {
-		return errors.New("already verified")
+		return ErrAlreadyVerified
 	}
 
 	if err := u.setPassword(password, hasher); err != nil {
@@ -335,7 +337,7 @@ func (u *User) Activate() error {
 	}
 
 	if !u.ActivatedAt.IsZero() {
-		return errors.New("already activated")
+		return ErrAlreadyActivated
 	}
 
 	u.ActivatedAt = time.Now().UTC()
