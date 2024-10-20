@@ -59,13 +59,13 @@ func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
 	}
 }
 
-func resetPasswordNewPasswordGet(h *ui.Handler) http.HandlerFunc {
+func resetPasswordEmailSentGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		h.HTML.View(w, r, http.StatusOK, "account/reset_password/email_sent", nil)
 	}
 }
 
-func resetPasswordEmailSentGet(h *ui.Handler) http.HandlerFunc {
+func resetPasswordNewPasswordGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		h.HTML.View(w, r, http.StatusOK, "account/reset_password/new_password", nil)
 	}
