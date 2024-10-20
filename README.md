@@ -9,7 +9,7 @@ go run dev.go
 
 Run locally with:
 ```sh
-./httpd -dev -insecure -log-style dev -addr :8080
+./web -dev -insecure -log-style dev -addr localhost:8080
 ```
 
 This will start an insecure server over HTTP.
@@ -22,7 +22,7 @@ go run $(go env GOROOT)/src/crypto/tls/generate_cert.go -rsa-bits 2048 -host "lo
 
 On Windows replace `$(go env GOROOT)` with `%GOROOT%` if it's set, otherwise run `go env GOROOT` and copy the path into the command.
 
-See `httpd -help` for more application options.
+See `web -help` for more application options.
 
 ## Web tenant configuration
 
