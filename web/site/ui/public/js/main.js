@@ -12,6 +12,34 @@ if (lang) {
 	langs.push(lang)
 }
 
+onMount("form", node => {
+	let submitting = false
+
+	node.addEventListener("submit", event => {
+		if (submitting) {
+			event.preventDefault()
+
+			return
+		}
+
+		submitting = true
+
+		if (!event.submitter.classList.contains("btn--link")) {
+			event.submitter.classList.add("btn--loading")
+			event.submitter.textContent = "Please wait..."
+		}
+
+		const buttons = node.querySelectorAll(":is(button, .btn, input[type=button], input[type=submit]):not(.btn--link)")
+
+		for (const button of buttons) {
+			// We don't want to actually disable any buttons here just in case
+			// they're being used to send a value to the server, so we set
+			// a data attribute instead
+			button.dataset.disable = "loading"
+		}
+	})
+})
+
 onMount("textarea[data-autosize]", node => {
 	let mouseDown = false
 	let userResized = false

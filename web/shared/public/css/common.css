@@ -58,6 +58,8 @@
 	--clr-highlight-100: hsl(43, 100%, 90%);
 	--clr-highlight-400: hsl(43, 100%, 85%);
 
+	--clr-btn-loading-spinner: var(--clr-accent-100);
+
 	--icon-external-link: url(
 		'data:image/svg+xml,\
 		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"> \
@@ -362,29 +364,31 @@
 	}
 
 	button, .btn {
-		display: inline-block;
+		display: inline-flex;
 		padding-block: 0.4rem;
 		padding-inline: 1rem;
 		background: var(--clr-accent-400);
 		color: var(--clr-white-400);
 		text-decoration: none;
-		text-align: center;
 		cursor: default;
 		border-radius: var(--border-radius);
+		gap: 0.5rem;
+		align-items: center;
+		justify-content: center;
 	}
 
-	:is(button, .btn):not([disabled]):hover,
-	:is(button, .btn):not([disabled]):focus {
+	:is(button, .btn):not([disabled], [aria-disabled], [data-disable="loading"]):hover,
+	:is(button, .btn):not([disabled], [aria-disabled], [data-disable="loading"]):focus {
 		filter: brightness(1.2);
 	}
 
-	:is(button, .btn)[disabled] {
+	:is(button, .btn):is([disabled], [aria-disabled], [data-disable="loading"]) {
 		cursor: not-allowed;
 		filter: saturate(0.5);
 		opacity: 0.6;
 	}
 
-	:is(button, .btn)[disabled]:active {
+	:is(button, .btn):is([disabled], [aria-disabled], [data-disable="loading"]):active {
 		pointer-events: none;
 	}
 
@@ -414,6 +418,30 @@
 
 	.btn--link.btn--danger {
 		color: var(--clr-danger-400);
+	}
+
+	.btn--loading::before {
+		content: "";
+		display: block;
+		width: 0.9rem;
+		height: 0.9rem;
+		border-radius: 50%;
+		border: 2px solid transparent;
+		transition: border-color 300ms;
+		animation: btn-loading-spinner 1.2s ease-in-out infinite;
+	}
+
+	.btn--loading::before {
+		border-color:
+			var(--clr-btn-loading-spinner)
+			transparent
+			var(--clr-btn-loading-spinner)
+			transparent;
+	}
+
+	@keyframes btn-loading-spinner {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
 	}
 
 	.sign-in-alt {
