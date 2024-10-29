@@ -151,6 +151,18 @@
 							<td>Txs. cancelled</td>
 							<td data-locale-number>{{$database.TotalTransactionsCancelled}} <small data-locale-number>({{printf "%.2f" $database.TransactionCancelRate}}&percnt;)</small></td>
 						</tr>
+						<tr>
+							<td>Txs. awaited</td>
+							<td data-locale-number>{{$database.TotalTransactionsAwaited}} <small data-locale-number>({{printf "%.2f" $database.TransactionAwaitedRate}}&percnt;)</small></td>
+						</tr>
+						<tr>
+							<td>Txs. done</td>
+							<td data-locale-number>{{$database.TotalTransactionsDone}} <small data-locale-number>({{printf "%.2f" $database.TransactionDoneRate}}&percnt;)</small></td>
+						</tr>
+						<tr>
+							<td>Txs. awaiting</td>
+							<td data-locale-number>{{$database.TotalTransactionsAwaiting}} <small data-locale-number>({{printf "%.2f" $database.TransactionAwaitingRate}}&percnt;)</small></td>
+						</tr>
 					{{end}}
 
 					{{if $database.TotalReads}}

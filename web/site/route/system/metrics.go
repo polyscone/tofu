@@ -76,9 +76,15 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			TotalTransactionsCommitted  int64
 			TotalTransactionsRolledBack int64
 			TotalTransactionsCancelled  int64
+			TotalTransactionsAwaited    int64
+			TotalTransactionsDone       int64
+			TotalTransactionsAwaiting   int64
 			TransactionCommitRate       float64
 			TransactionRollbackRate     float64
 			TransactionCancelRate       float64
+			TransactionAwaitedRate      float64
+			TransactionDoneRate         float64
+			TransactionAwaitingRate     float64
 			TotalReads                  int64
 			TotalReadTime               time.Duration
 			AverageReadTime             time.Duration
@@ -133,6 +139,9 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 				totalTransactionsCommitted := varAs[int64](database.Get("totalTransactionsCommitted"))
 				totalTransactionsRolledBack := varAs[int64](database.Get("totalTransactionsRolledBack"))
 				totalTransactionsCancelled := varAs[int64](database.Get("totalTransactionsCancelled"))
+				totalTransactionsAwaited := varAs[int64](database.Get("totalTransactionsAwaited"))
+				totalTransactionsDone := varAs[int64](database.Get("totalTransactionsDone"))
+				totalTransactionsAwaiting := totalTransactionsAwaited - totalTransactionsDone
 				totalReads := varAs[int64](database.Get("totalReads"))
 				totalReadTime := varAs[int64](database.Get("totalReadTime"))
 				totalWrites := varAs[int64](database.Get("totalWrites"))
@@ -147,6 +156,9 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 				transactionCommitRate := float64(totalTransactionsCommitted) / float64(totalTransactionsBegun) * 100
 				transactionRollbackRate := float64(totalTransactionsRolledBack) / float64(totalTransactionsBegun) * 100
 				transactionCancelRate := float64(totalTransactionsCancelled) / float64(totalTransactionsBegun) * 100
+				transactionAwaitedRate := float64(totalTransactionsAwaited) / float64(totalTransactionsBegun) * 100
+				transactionDoneRate := float64(totalTransactionsDone) / float64(totalTransactionsBegun) * 100
+				transactionAwaitingRate := float64(totalTransactionsAwaiting) / float64(totalTransactionsBegun) * 100
 				averageReadTime := totalReadTime / max(1, totalReads)
 				averageWriteTime := totalWriteTime / max(1, totalWrites)
 				averageReadsPerWrite := float64(totalReads) / max(1, float64(totalWrites))
@@ -166,9 +178,15 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 					TotalTransactionsCommitted:  totalTransactionsCommitted,
 					TotalTransactionsRolledBack: totalTransactionsRolledBack,
 					TotalTransactionsCancelled:  totalTransactionsCancelled,
+					TotalTransactionsAwaited:    totalTransactionsAwaited,
+					TotalTransactionsDone:       totalTransactionsDone,
+					TotalTransactionsAwaiting:   totalTransactionsAwaiting,
 					TransactionCommitRate:       transactionCommitRate,
 					TransactionRollbackRate:     transactionRollbackRate,
 					TransactionCancelRate:       transactionCancelRate,
+					TransactionAwaitedRate:      transactionAwaitedRate,
+					TransactionDoneRate:         transactionDoneRate,
+					TransactionAwaitingRate:     transactionAwaitingRate,
 					TotalReads:                  totalReads,
 					TotalReadTime:               time.Duration(totalReadTime),
 					AverageReadTime:             time.Duration(averageReadTime),

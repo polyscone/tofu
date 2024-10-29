@@ -651,7 +651,7 @@ func (c *Conn) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 		c.metrics.Add("totalTransactionsBegun", 1)
 	}
 
-	_tx := &Tx{Tx: tx, ctx: ctx, now: time.Now(), metrics: c.metrics}
+	_tx := NewTx(ctx, tx, c.metrics)
 
 	go _tx.awaitDone()
 
@@ -679,10 +679,6 @@ func (c *Conn) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, 
 		return nil, err
 	}
 
-	if c.metrics != nil {
-		c.metrics.Add("totalTransactionsBegun", 1)
-	}
-
 	return tx, nil
 }
 
@@ -705,10 +701,6 @@ func (c *Conn) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, 
 	// "exclusive" one
 	if _, err := tx.ExecContext(ctx, "rollback; begin exclusive"); err != nil {
 		return nil, err
-	}
-
-	if c.metrics != nil {
-		c.metrics.Add("totalTransactionsBegun", 1)
 	}
 
 	return tx, nil
@@ -806,7 +798,7 @@ func (db *DB) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) {
 		db.metrics.Add("totalTransactionsBegun", 1)
 	}
 
-	_tx := &Tx{Tx: tx, ctx: ctx, now: time.Now(), metrics: db.metrics}
+	_tx := NewTx(ctx, tx, db.metrics)
 
 	go _tx.awaitDone()
 
@@ -834,10 +826,6 @@ func (db *DB) BeginImmediateTx(ctx context.Context, opts *sql.TxOptions) (*Tx, e
 		return nil, err
 	}
 
-	if db.metrics != nil {
-		db.metrics.Add("totalTransactionsBegun", 1)
-	}
-
 	return tx, nil
 }
 
@@ -860,10 +848,6 @@ func (db *DB) BeginExclusiveTx(ctx context.Context, opts *sql.TxOptions) (*Tx, e
 	// "exclusive" one
 	if _, err := tx.ExecContext(ctx, "rollback; begin exclusive"); err != nil {
 		return nil, err
-	}
-
-	if db.metrics != nil {
-		db.metrics.Add("totalTransactionsBegun", 1)
 	}
 
 	return tx, nil
@@ -1021,13 +1005,31 @@ func (stmt *Stmt) QueryRowContext(ctx context.Context, args ...any) *Row {
 	return row
 }
 
+var txID atomic.Int64
+
 type Tx struct {
 	*sql.Tx
 	ctx        context.Context
+	cancel     context.CancelFunc
+	id         int64
 	now        time.Time
 	metrics    *expvar.Map
 	recorded   atomic.Bool
 	maybeWrite bool
+}
+
+func NewTx(ctx context.Context, tx *sql.Tx, metrics *expvar.Map) *Tx {
+	id := txID.Add(1)
+	ctx, cancel := context.WithCancel(ctx)
+
+	return &Tx{
+		Tx:      tx,
+		ctx:     ctx,
+		cancel:  cancel,
+		id:      id,
+		now:     time.Now(),
+		metrics: metrics,
+	}
 }
 
 func (tx *Tx) awaitDone() {
@@ -1035,7 +1037,11 @@ func (tx *Tx) awaitDone() {
 		return
 	}
 
+	tx.metrics.Add("totalTransactionsAwaited", 1)
+
 	<-tx.ctx.Done()
+
+	tx.metrics.Add("totalTransactionsDone", 1)
 
 	tx.Rollback()
 
@@ -1049,6 +1055,8 @@ func (tx *Tx) Commit() error {
 	if err == nil && tx.metrics != nil && tx.recorded.CompareAndSwap(false, true) {
 		tx.metrics.Add("totalTransactionsCommitted", 1)
 	}
+
+	tx.cancel()
 
 	return err
 }
@@ -1073,6 +1081,8 @@ func (tx *Tx) Rollback() error {
 			tx.metrics.Add("totalTransactionsCommitted", 1)
 		}
 	}
+
+	tx.cancel()
 
 	return err
 }
