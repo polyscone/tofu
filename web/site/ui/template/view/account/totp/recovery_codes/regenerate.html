@@ -4,9 +4,9 @@
 
 <div class="center">
 	{{if .Vars.RecoveryCodes}}
-		<h1>Your new recovery codes</h1>
+		<h1>{{.T "site.account.totp.recovery_codes.regenerate.new_codes_title"}}</h1>
 	{{else}}
-		<h1>Generate new recovery codes</h1>
+		<h1>{{.T "site.account.totp.recovery_codes.regenerate.title"}}</h1>
 	{{end}}
 </div>
 
@@ -17,35 +17,23 @@
 <div class="center">
 	{{if .Vars.RecoveryCodes}}
 		<div class="warning-banner">
-			<p>Your previous recovery codes are no longer valid.</p>
-			<p>Please download, print, copy, or photograph your new recovery codes and store them in a safe place separate from your authentication device.</p>
-			<p>
-				If possible, we recommend storing them in a password manager, such as
-				<a href="https://1password.com/" target="_blank" rel="noopener noreferrer">1Password</a>,
-				<a href="https://www.lastpass.com/" target="_blank" rel="noopener noreferrer">LastPass</a>, or
-				<a href="https://www.keepersecurity.com" target="_blank" rel="noopener noreferrer">Keeper</a>.
-			</p>
+			{{.T "p" "site.account.totp.recovery_codes.regenerate.previous_no_longer_valid_warning"}}
 		</div>
 
 		{{template "com.recovery_codes" .WithProps "Codes" .Vars.RecoveryCodes}}
 	{{else}}
 		{{if ge (len .Vars.HashedRecoveryCodes) 1}}
-			{{if eq (len .Vars.HashedRecoveryCodes) 1}}
-				<p>You have {{len .Vars.HashedRecoveryCodes}} recovery code remaining.</p>
-			{{else}}
-				<p>You have {{len .Vars.HashedRecoveryCodes}} recovery codes remaining.</p>
-			{{end}}
-
-			<p>If you'd like to generate new recovery codes you'll need to verify your identity by entering a valid passcode in the form below.</p>
+			{{.T "p" "site.account.totp.recovery_codes.regenerate.you_have_n_remaining" "remaining_codes" (len .Vars.HashedRecoveryCodes)}}
+			{{.T "p" "site.account.totp.recovery_codes.regenerate.generate_new_instructions"}}
 		{{end}}
 
 		{{if eq (len .Vars.HashedRecoveryCodes) 0}}
 			<div class="error-banner">
-				<p>You do not have any recovery codes. Please use the form below to generate new ones.</p>
+				{{.T "p" "site.account.totp.recovery_codes.regenerate.none_remaining_warning"}}
 			</div>
 		{{else}}
 			<div class="warning-banner">
-				<p>If you choose to generate new recovery codes your previous ones will no longer be valid and you won't be able to use them.</p>
+				{{.T "p" "site.account.totp.recovery_codes.regenerate.generate_new_will_invalidate_warning"}}
 			</div>
 		{{end}}
 
@@ -53,7 +41,7 @@
 			{{template "com.form.csrf" .}}
 
 			{{template "com.form.passcode" .WithProps
-				"Label" "Passcode"
+				"Label" (.T "site.account.totp.recovery_codes.regenerate.passcode_label")
 				"Name" "totp"
 				"Required" true
 				"Autocomplete" "one-time-code"
@@ -61,13 +49,13 @@
 
 			<div class="bag reverse">
 				{{if eq (len .Vars.HashedRecoveryCodes) 0}}
-					<button>Generate Recovery Codes</button>
+					<button>{{.T "site.account.totp.recovery_codes.regenerate.generate_codes_button"}}</button>
 				{{else}}
-					<button>Replace Recovery Codes</button>
+					<button>{{.T "site.account.totp.recovery_codes.regenerate.replace_codes_button"}}</button>
 				{{end}}
 
 				{{if eq .Session.TOTPMethod "sms"}}
-					<button formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt">Send passcode SMS</button>
+					<button formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt">{{.T "site.account.totp.recovery_codes.regenerate.send_passcode_sms_button"}}</button>
 				{{end}}
 			</div>
 		</form>

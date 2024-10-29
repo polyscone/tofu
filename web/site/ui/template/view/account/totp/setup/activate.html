@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Recovery codes</h1>
+	<h1>{{.T "site.account.totp.setup.activate.title"}}</h1>
 </div>
 
 {{end}}
@@ -11,18 +11,10 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>Two-factor authentication has not been enabled yet.</p>
-	<p>Once two-factor authentication has been enabled you'll be required to provide a 6 digit passcode to verify your identity when logging in.</p>
-	<p>In the event that you lose access to your authentication device you can use the following recovery codes in place of a normal passcode.</p>
+	{{.T "p" "site.account.totp.setup.activate.text"}}
 
 	<div class="warning-banner">
-		<p>Before enabling two-factor authentication, please download, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.</p>
-		<p>
-			If possible, we recommend storing them in a password manager, such as
-			<a href="https://1password.com/" target="_blank" rel="noopener noreferrer">1Password</a>,
-			<a href="https://www.lastpass.com/" target="_blank" rel="noopener noreferrer">LastPass</a>, or
-			<a href="https://www.keepersecurity.com" target="_blank" rel="noopener noreferrer">Keeper</a>.
-		</p>
+		{{.T "p" "site.account.totp.setup.activate.save_recovery_codes_warning"}}
 	</div>
 
 	{{template "com.recovery_codes" .WithProps "Codes" .Vars.RecoveryCodes}}
@@ -30,7 +22,7 @@
 	<form action="{{Path "account.totp.setup.activate.post"}}" method="POST">
 		{{template "com.form.csrf" .}}
 
-		<button class="align-self-center">I have saved my recovery codes</button>
+		<button class="align-self-center">{{.T "site.account.totp.setup.activate.saved_recovery_codes_button"}}</button>
 	</form>
 </div>
 

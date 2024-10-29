@@ -1,12 +1,10 @@
 package account
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 const suspendedReasonMaxLength = 100
@@ -25,15 +23,15 @@ func NewSuspendedReason(reason string) (SuspendedReason, error) {
 
 	rc := utf8.RuneCountInString(reason)
 	if rc > suspendedReasonMaxLength {
-		return "", fmt.Errorf("cannot be a over %v characters in length", suspendedReasonMaxLength)
+		return "", i18n.M("account.suspend_reason.error.too_long", "max_length", suspendedReasonMaxLength)
 	}
 
 	if matches := invalidSuspendedReasonChars.FindAllString(reason, -1); len(matches) != 0 {
-		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
+		return "", i18n.M("account.suspend_reason.error.has_invalid_chars", "invalid_chars", matches)
 	}
 
 	if !validSuspendedReasonSeq.MatchString(reason) {
-		return "", errors.New("can only contain latin characters")
+		return "", i18n.M("account.suspend_reason.error.invalid")
 	}
 
 	return SuspendedReason(reason), nil

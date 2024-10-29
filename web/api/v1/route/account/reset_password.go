@@ -41,11 +41,11 @@ func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.Broker.Dispatch(event.PasswordResetRequested{
+		ctx := r.Context()
+
+		h.Broker.Dispatch(ctx, event.PasswordResetRequested{
 			Email: input.Email,
 		})
-
-		ctx := r.Context()
 
 		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 

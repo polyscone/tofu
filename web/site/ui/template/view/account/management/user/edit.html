@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Editing {{.Vars.User.Email}}</h1>
+	<h1>{{.T "site.account.user_management.edit.title" "user_email" .Vars.User.Email}}</h1>
 </div>
 
 {{end}}
@@ -20,26 +20,16 @@
 <div class="center">
 	{{if eq .Vars.User.ID .Session.UserID}}
 		<div class="warning-banner">
-			<p>You're currently editing yourself.</p>
-			<p>Any changes you make here may affect your current browsing session, so be careful to avoid making any changes you're unsure of.</p>
+			{{.T "p" "site.account.user_management.edit.editing_yourself_warning"}}
 		</div>
 	{{end}}
 
 	{{if not .Vars.User.IsVerified}}
-		<p class="text-italic text-bold">This account has not yet been verified.</p>
+		<p class="text-italic text-bold">{{.T "site.account.user_management.edit.not_verified"}}</p>
 	{{end}}
 
 	{{if .Vars.User.HasSignedIn}}
-		<p>
-			Last signed in
-			<time
-				datetime="{{FormatTime .Vars.User.LastSignedInAt "RFC3339"}}"
-				data-locale-date="full"
-				data-locale-time
-			>
-				{{FormatTime .Vars.User.LastSignedInAt "DateTime"}}
-			</time>
-		</p>
+		{{.T "p" "site.account.user_management.edit.last_signed_in_at" "last_signed_in_at" .Vars.User.LastSignedInAt}}
 	{{end}}
 
 	{{if or .Vars.User.IsSuspended $viewSuspend}}
@@ -49,56 +39,47 @@
 
 				<fieldset>
 					{{if .Vars.User.IsSuspended}}
-						<legend>Suspended user</legend>
+						<legend>{{.T "site.account.user_management.suspend.suspended_title"}}</legend>
 					{{else}}
-						<legend>Suspend user</legend>
+						<legend>{{.T "site.account.user_management.suspend.suspend_title"}}</legend>
 					{{end}}
 
 					{{if .Vars.User.IsSuspended}}
-						<p>
-							This user was suspended on
-							<time
-								datetime="{{FormatTime .Vars.User.SuspendedAt "RFC3339"}}"
-								data-locale-date="full"
-								data-locale-time
-							>
-								{{FormatTime .Vars.User.SuspendedAt "DateTime"}}
-							</time>.
-						</p>
+						{{.T "p" "site.account.user_management.suspend.suspended_at" "suspended_at" .Vars.User.SuspendedAt}}
 					{{else}}
 						<div class="warning-box">
-							<p>Once a user has been suspended they won't be able to sign in again, and if they're already signed in they'll be forcibly signed out.</p>
+							{{.T "p" "site.account.user_management.suspend.warning"}}
 						</div>
 					{{end}}
 
 					{{template "com.form.input" .WithProps
-						"Label" "Reason for suspension"
 						"Type" "text"
+						"Label" (.T "site.account.user_management.suspend.reason_label")
 						"Name" "suspended-reason"
 						"Value" (.Form.GetOr "suspended-reason" .Vars.User.SuspendedReason)
-						"Placeholder" "The reason for account suspension."
+						"Placeholder" (.T "site.account.user_management.suspend.reason_placeholder")
 						"Pattern" `^[ -~]*$`
 						"MaxLength" 100
 					}}
 
 					{{if $viewSuspend}}
-						<a href="{{or (.URL.Query.Replace "suspend" "") .URL.Path}}">Edit user</a>
+						<a href="{{or (.URL.Query.Replace "suspend" "") .URL.Path}}">{{.T "site.account.user_management.suspend.edit_button"}}</a>
 					{{end}}
 
 					<div class="bag reverse">
 						{{if .Vars.User.IsSuspended}}
-							<button>Update reason</button>
-							<button formnovalidate formaction="{{Path "account.management.user.unsuspend.post" "{userID}" .Vars.User.ID}}" class="btn--danger push-inline-end">Unsuspend user</button>
+							<button>{{.T "site.account.user_management.suspend.update_reason_button"}}</button>
+							<button formnovalidate formaction="{{Path "account.management.user.unsuspend.post" "{userID}" .Vars.User.ID}}" class="btn--danger push-inline-end">{{.T "site.account.user_management.suspend.unsuspend_button"}}</button>
 						{{else}}
-							<button class="btn--danger push-inline-end">Suspend user</button>
+							<button class="btn--danger push-inline-end">{{.T "site.account.user_management.suspend.suspend_button"}}</button>
 						{{end}}
 
-						<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+						<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">{{.T "site.account.user_management.suspend.cancel_button"}}</a>
 					</div>
 				</fieldset>
 			</form>
 		{{else}}
-			<p>You do not have permission to suspend users.</p>
+			{{.T "p" "site.account.user_management.suspend.no_permission"}}
 		{{end}}
 	{{else}}
 		{{if $canChangeRoles}}
@@ -110,7 +91,7 @@
 				{{end}}
 
 				<fieldset>
-					<legend>Roles</legend>
+					<legend>{{.T "site.account.user_management.edit.roles_title"}}</legend>
 
 					{{$roleIDs := .Form.GetAllOr "roles" .Vars.UserRoleIDs}}
 					{{if not $canChangeRoles}}
@@ -140,16 +121,15 @@
 
 					{{if and $canAssignSuperRole (not $isEditUserSuper)}}
 						<details>
-							<summary>I want to give this user the super role</summary>
+							<summary>{{.T "site.account.user_management.edit.give_super_title"}}</summary>
 
 							<div class="warning-box">
-								<p>Once a user has been given the super role it <i>can't be removed</i>.</p>
-								<p>Please think carefully about whether this is actually what you need to do, or whether another role would be more appropriate.</p>
+								{{.T "p" "site.account.user_management.edit.give_super_warning"}}
 
 								<p>
 									<label>
 										<input type="checkbox" name="roles" value="{{.Vars.SuperRole.ID}}">
-										I understand this <b>can't be undone</b>, give this user the super role
+										{{.T "site.account.user_management.edit.give_super_checkbox_label"}}
 									</label>
 								</p>
 							</div>
@@ -162,7 +142,7 @@
 
 					<div class="cols-halves">
 						<div>
-							<b>Grants</b>
+							<b>{{.T "site.account.user_management.edit.grants_title"}}</b>
 
 							{{$grants := .Form.GetAllOr "grants" .Vars.User.Grants}}
 							{{range .Vars.PermissionGroups}}
@@ -174,7 +154,7 @@
 								{{end}}
 
 								<details{{if $count}} open{{end}}>
-									<summary><b>{{.Name}}</b></summary>
+									<summary><b>{{$.T .Name}}</b></summary>
 
 									<fieldset>
 										{{range .Permissions}}
@@ -185,7 +165,7 @@
 													value="{{.Name}}"
 													{{if HasString $grants .Name}}checked{{end}}
 												>
-												{{.DisplayName}}
+												{{$.T .DisplayName}}
 											</label>
 										{{end}}
 									</fieldset>
@@ -194,7 +174,7 @@
 						</div>
 
 						<div>
-							<b>Denials</b>
+							<b>{{.T "site.account.user_management.edit.denials_title"}}</b>
 
 							{{$denials := .Form.GetAllOr "denials" .Vars.User.Denials}}
 							{{range .Vars.PermissionGroups}}
@@ -206,7 +186,7 @@
 								{{end}}
 
 								<details{{if $count}} open{{end}}>
-									<summary><b>{{.Name}}</b></summary>
+									<summary><b>{{$.T .Name}}</b></summary>
 
 									<fieldset>
 										{{range .Permissions}}
@@ -217,7 +197,7 @@
 													value="{{.Name}}"
 													{{if HasString $denials .Name}}checked{{end}}
 												>
-												{{.DisplayName}}
+												{{$.T .DisplayName}}
 											</label>
 										{{end}}
 									</fieldset>
@@ -261,21 +241,20 @@
 					</div>
 
 					<details>
-						<summary>What are grants and denials?</summary>
+						<summary>{{.T "site.account.user_management.edit.grant_denial_explanation_title"}}</summary>
 
-						<p>Grants and denials allow you to make fine-grained changes to a user's access level by overriding specific permissions after a user's roles have been applied.</p>
-						<p>Grants are used to give users additional permissions, and denials are used to take specific permissions away.</p>
+						{{.T "p" "site.account.user_management.edit.grant_denial_explanation"}}
 					</details>
 
 					<hr>
 
-					<a href="{{.URL.Query.Replace "suspend" "1"}}">Suspend user</a>
+					<a href="{{.URL.Query.Replace "suspend" "1"}}">{{.T "site.account.user_management.edit.suspend_button"}}</a>
 				{{end}}
 
 				<div class="bag reverse">
-					<button class="push-inline-end">Update user</button>
+					<button class="push-inline-end">{{.T "site.account.user_management.edit.update_button"}}</button>
 
-					<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+					<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">{{.T "site.account.user_management.edit.cancel_button"}}</a>
 				</div>
 			</form>
 		{{end}}

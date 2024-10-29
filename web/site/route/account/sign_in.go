@@ -14,7 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/handler"
@@ -106,13 +106,15 @@ func signInMagicLinkRequestPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
+		ctx := r.Context()
+
 		ttl := 10 * time.Minute
-		h.Broker.Dispatch(event.SignInMagicLinkRequested{
+		h.Broker.Dispatch(ctx, event.SignInMagicLinkRequested{
 			Email: input.Email,
 			TTL:   ttl,
 		})
 
-		qs := "?ttl=" + human.Duration(ttl)
+		qs := fmt.Sprintf("?ttl=%d", ttl)
 
 		http.Redirect(w, r, h.Path("account.sign_in.magic_link.request.email_sent")+qs, http.StatusSeeOther)
 	}
@@ -220,20 +222,10 @@ func signInTOTPPost(h *ui.Handler) http.HandlerFunc {
 
 		switch {
 		case len(user.HashedRecoveryCodes) == 0:
-			h.AddFlashImportantf(ctx, `
-				You've run out of recovery codes.<br>
-				We recommend
-				<a href="`+h.Path("account.totp.recovery_codes")+`">generating new ones</a>
-				as soon as you can.
-			`)
+			h.AddFlashImportantf(ctx, i18n.M("site.account.sign_in.flash.no_more_recovery_codes"))
 
 		case len(user.HashedRecoveryCodes) <= lowRecoveryCodes:
-			h.AddFlashImportantf(ctx, `
-				You're running low on recovery codes.<br>
-				We recommend
-				<a href="`+h.Path("account.totp.recovery_codes")+`">generating new ones</a>
-				as soon as you can.
-			`)
+			h.AddFlashImportantf(ctx, i18n.M("site.account.sign_in.flash.low_recovery_codes"))
 		}
 
 		signInSuccessRedirect(h, w, r)
@@ -277,7 +269,10 @@ func signInTOTPResetPost(h *ui.Handler) http.HandlerFunc {
 				return
 			}
 
-			vars := handler.Vars{"Token": tok}
+			vars := handler.Vars{
+				"Token":            tok,
+				"RequestReviewURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.sign_in.totp.reset.request"), tok),
+			}
 			if err := h.SendEmail(ctx, config.SystemEmail, email, "totp_reset_verify_email", vars); err != nil {
 				logger.Error("TOTP reset: send email", "error", err)
 			}
@@ -389,28 +384,14 @@ func signInRecoveryCodePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashImportantf(ctx, `
-			If you've lost your authentication device
-			<a href="`+h.Path("account.totp.disable")+`">disable two-factor authentication</a>
-			to avoid getting locked out of your account.
-		`)
+		h.AddFlashImportantf(ctx, i18n.M("site.account.sign_in.flash.totp_if_device_lost"))
 
 		switch {
 		case len(user.HashedRecoveryCodes) == 0:
-			h.AddFlashImportantf(ctx, `
-				You've run out of recovery codes.<br>
-				We recommend
-				<a href="`+h.Path("account.totp.recovery_codes")+`">generating new ones</a>
-				as soon as you can.
-			`)
+			h.AddFlashImportantf(ctx, i18n.M("site.account.sign_in.flash.no_more_recovery_codes"))
 
 		case len(user.HashedRecoveryCodes) <= lowRecoveryCodes:
-			h.AddFlashImportantf(ctx, `
-				You're running low on recovery codes.<br>
-				We recommend
-				<a href="`+h.Path("account.totp.recovery_codes")+`">generating new ones</a>
-				as soon as you can.
-			`)
+			h.AddFlashImportantf(ctx, i18n.M("site.account.sign_in.flash.low_recovery_codes"))
 		}
 
 		signInSuccessRedirect(h, w, r)
@@ -440,7 +421,7 @@ func signInGooglePost(h *ui.Handler) http.HandlerFunc {
 		signedIn, err := auth.SignInWithGoogle(ctx, h.Handler, jwt)
 		if err != nil {
 			if errors.Is(err, account.ErrGoogleSignUpDisabled) {
-				h.AddFlashErrorf(ctx, "Either your credentials are incorrect, or you're not authorised to access this application.")
+				h.AddFlashErrorf(ctx, i18n.M("site:flash.bad_sign_in"))
 
 				http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
 
@@ -478,7 +459,7 @@ func signInFacebookPost(h *ui.Handler) http.HandlerFunc {
 		signedIn, err := auth.SignInWithFacebook(ctx, h.Handler, input.UserID, input.AccessToken, input.Email)
 		if err != nil {
 			if errors.Is(err, account.ErrFacebookSignUpDisabled) {
-				h.AddFlashErrorf(ctx, "Either your credentials are incorrect, or you're not authorised to access this application.")
+				h.AddFlashErrorf(ctx, i18n.M("site:flash.bad_sign_in"))
 
 				http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
 
@@ -503,14 +484,12 @@ func signInWithPassword(ctx context.Context, h *ui.Handler, w http.ResponseWrite
 		h.HTML.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/web_form", func(data *handler.ViewData) error {
 			var throttle *account.SignInThrottleError
 			if errors.As(err, &throttle) {
-				wait := human.Duration(throttle.UnlockIn)
-				if wait != "" {
-					wait = " in " + wait
-				}
-
-				data.ErrorMessage = fmt.Sprintf("Too many failed sign in attempts in the last %v. Please try again%v.", human.Duration(throttle.InLast), wait)
+				data.ErrorMessage = h.T(ctx, i18n.M("site:account.sign_in.throttled.error",
+					"in_last", throttle.InLast,
+					"unlock_in", throttle.UnlockIn,
+				))
 			} else {
-				data.ErrorMessage = "Either your credentials are incorrect, or you're not authorised to access this application."
+				data.ErrorMessage = h.T(ctx, i18n.M("site:account.sign_in.error"))
 			}
 
 			return nil
@@ -541,11 +520,7 @@ func signInSuccessRedirect(h *ui.Handler, w http.ResponseWriter, r *http.Request
 	user := h.User(ctx)
 
 	if !config.TOTPRequired && !user.HasActivatedTOTP() {
-		h.AddFlashWarningf(ctx, `
-			Please consider
-			<a href="`+h.Path("account.totp.setup")+`">setting up two-factor authentication</a>
-			to help secure your account even further.
-		`)
+		h.AddFlashWarningf(ctx, i18n.M("site.account.sign_in.flash.consider_totp"))
 	}
 
 	if redirect := h.Session.PopRedirect(ctx); redirect != "" {

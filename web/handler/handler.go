@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/account"
@@ -19,6 +20,7 @@ import (
 	"github.com/polyscone/tofu/internal/csrf"
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/httpx/realip"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/internal/session"
 	"github.com/polyscone/tofu/internal/smtp"
 	"github.com/polyscone/tofu/internal/twilio"
@@ -35,6 +37,7 @@ const (
 	ctxConfig
 	ctxUser
 	ctxPassport
+	ctxLocale
 )
 
 type GuardPredicateFunc func(p guard.Passport) bool
@@ -141,9 +144,28 @@ func (h *Handler) AttachContext(next http.HandlerFunc) http.HandlerFunc {
 			ctx = context.WithValue(ctx, ctxLogger, logger)
 		}
 
+		var candidates []string
+		for _, value := range r.Header.Values("accept-language") {
+			locales := strings.Split(value, ",")
+			for _, locale := range locales {
+				locale, _, _ = strings.Cut(locale, ";")
+				if strings.ContainsFunc(locale, unicode.IsSpace) {
+					locale = strings.TrimSpace(locale)
+				}
+				if strings.Contains(locale, "_") {
+					locale = strings.ReplaceAll(locale, "_", "-")
+				}
+
+				candidates = append(candidates, locale)
+			}
+		}
+
+		locale, _ := i18n.ClosestLocale(candidates)
+
 		ctx = context.WithValue(ctx, ctxConfig, config)
 		ctx = context.WithValue(ctx, ctxUser, user)
 		ctx = context.WithValue(ctx, ctxPassport, passport)
+		ctx = context.WithValue(ctx, ctxLocale, locale)
 		r = r.WithContext(ctx)
 
 		// The redirect key in the session is supposed to be a one-time temporary
@@ -227,6 +249,20 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Pass
 	return p, nil
 }
 
+func (h *Handler) Locale(ctx context.Context) string {
+	value := ctx.Value(ctxLocale)
+	if value == nil {
+		return i18n.FallbackLocale
+	}
+
+	locale, ok := value.(string)
+	if !ok {
+		panic(fmt.Sprintf("could not assert locale as %T", locale))
+	}
+
+	return locale
+}
+
 func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 	if err := csrf.RenewToken(ctx); err != nil {
 		return nil, fmt.Errorf("renew CSRF token: %w", err)
@@ -237,6 +273,18 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 	}
 
 	return csrf.MaskedToken(ctx), nil
+}
+
+func (h *Handler) T(ctx context.Context, message i18n.Message) string {
+	locale := h.Locale(ctx)
+	res, err := i18n.T(i18n.DefaultHTMLRuntime, locale, message)
+	if err != nil {
+		logger := h.Logger(ctx)
+
+		logger.Error("flash errorf i18n T", "err", err)
+	}
+
+	return res.AsString().Value
 }
 
 func (h *Handler) template(files fs.FS, patterns TemplatePatternsFunc, funcs template.FuncMap, name string) *template.Template {
@@ -268,11 +316,11 @@ func (h *Handler) Template(files fs.FS, patterns TemplatePatternsFunc, funcs tem
 }
 
 func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePatterns TemplatePatternsFunc, funcs template.FuncMap, from, to, view string, vars Vars) error {
-	data := struct {
-		URL  URL
-		App  AppData
-		Vars Vars
-	}{
+	logger := h.Logger(ctx)
+
+	data := ViewData{
+		Locale: h.Locale(ctx),
+		Now:    time.Now(),
 		URL: URL{
 			Scheme: h.Scheme,
 			Host:   h.Host,
@@ -282,7 +330,9 @@ func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePa
 			ShortName:   app.ShortName,
 			Description: app.Description,
 			ThemeColour: app.ThemeColour,
+			BasePath:    app.BasePath,
 		},
+		Log:  Logger{logger: logger},
 		Vars: vars,
 	}
 
@@ -296,6 +346,12 @@ func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePa
 		}
 
 		buf.Reset()
+
+		if view == "html" {
+			data.I18nRuntime = i18n.DefaultHTMLRuntime
+		} else {
+			data.I18nRuntime = i18n.DefaultMarkdownRuntime
+		}
 
 		if err := tmpl.Execute(&buf, data); err != nil {
 			return fmt.Errorf("execute email template: %w", err)

@@ -82,7 +82,7 @@ func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck
 		return nil, fmt.Errorf("save user: %w", err)
 	}
 
-	s.broker.Flush(&user.Events)
+	s.broker.Flush(ctx, &user.Events)
 
 	return user, nil
 }

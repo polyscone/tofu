@@ -3,23 +3,17 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Email sent</h1>
+	<h1>{{.T "site.account.sign_in.magic_link_sent.title"}}</h1>
 </div>
 
 {{end}}
 
 {{define "view.body"}}
 
-{{$ttl := .URL.Query.Get "ttl"}}
+{{$ttl := Atoi (.URL.Query.Get "ttl")}}
 
 <div class="center">
-	<p>We've sent a magic link to your email address that you can use to access your account.</p>
-
-	{{if $ttl}}
-		<p>It will expire in {{$ttl}} and can only be used once.</p>
-	{{else}}
-		<p>It will expire shortly and can only be used once.</p>
-	{{end}}
+	{{.T "p" "site.account.sign_in.magic_link_sent.message" "ttl" $ttl}}
 </div>
 
 {{end}}

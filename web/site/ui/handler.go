@@ -13,9 +13,33 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/internal/httpx/middleware"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 )
+
+type I18nRuntime struct {
+	i18n.Runtime
+	h *Handler
+}
+
+func NewI18nRuntimeWrapper(h *Handler) handler.WrapI18nRuntimeFunc {
+	return func(rt i18n.Runtime) i18n.Runtime {
+		return I18nRuntime{
+			Runtime: rt,
+			h:       h,
+		}
+	}
+}
+
+func (r I18nRuntime) Link(label, href, target i18n.Value) i18n.RawString {
+	key := href.AsString().Value
+	if s, err := r.h.mux.TryPath(key); err == nil {
+		href = i18n.NewString(s)
+	}
+
+	return r.Runtime.Link(label, href, target)
+}
 
 type PredicateFunc func(p guard.Passport) bool
 
@@ -79,6 +103,7 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		TemplateFiles:    templateFiles,
 		TemplatePatterns: templatePatterns,
 		Funcs:            h.Funcs,
+		WrapI18nRuntime:  NewI18nRuntimeWrapper(h),
 		Process: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html; charset=utf-8")
 		},
@@ -127,34 +152,34 @@ func (h *Handler) PathQuery(r *http.Request, name string, paramArgPairs ...any) 
 	return h.Path(name, paramArgPairs...) + q
 }
 
-func (h *Handler) AddFlashf(ctx context.Context, format string, a ...any) {
+func (h *Handler) AddFlashf(ctx context.Context, message i18n.Message) {
 	flash := h.Session.Flash(ctx)
 
-	flash = append(flash, fmt.Sprintf(format, a...))
+	flash = append(flash, h.T(ctx, message))
 
 	h.Session.SetFlash(ctx, flash)
 }
 
-func (h *Handler) AddFlashWarningf(ctx context.Context, format string, a ...any) {
+func (h *Handler) AddFlashWarningf(ctx context.Context, message i18n.Message) {
 	flash := h.Session.FlashWarning(ctx)
 
-	flash = append(flash, fmt.Sprintf(format, a...))
+	flash = append(flash, h.T(ctx, message))
 
 	h.Session.SetFlashWarning(ctx, flash)
 }
 
-func (h *Handler) AddFlashImportantf(ctx context.Context, format string, a ...any) {
+func (h *Handler) AddFlashImportantf(ctx context.Context, message i18n.Message) {
 	flash := h.Session.FlashImportant(ctx)
 
-	flash = append(flash, fmt.Sprintf(format, a...))
+	flash = append(flash, h.T(ctx, message))
 
 	h.Session.SetFlashImportant(ctx, flash)
 }
 
-func (h *Handler) AddFlashErrorf(ctx context.Context, format string, a ...any) {
+func (h *Handler) AddFlashErrorf(ctx context.Context, message i18n.Message) {
 	flash := h.Session.FlashError(ctx)
 
-	flash = append(flash, fmt.Sprintf(format, a...))
+	flash = append(flash, h.T(ctx, message))
 
 	h.Session.SetFlashError(ctx, flash)
 }

@@ -1,8 +1,9 @@
 package system
 
 import (
-	"errors"
 	"regexp"
+
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 var validFacebookAppIDSeq = regexp.MustCompile(`^.+$`)
@@ -15,7 +16,7 @@ func NewFacebookAppID(id string) (FacebookAppID, error) {
 	}
 
 	if !validFacebookAppIDSeq.MatchString(id) {
-		return "", errors.New("invalid app id")
+		return "", i18n.M("facebook_app_id.error.invalid")
 	}
 
 	return FacebookAppID(id), nil

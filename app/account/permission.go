@@ -1,13 +1,11 @@
 package account
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 const (
@@ -16,38 +14,38 @@ const (
 )
 
 var (
-	invalidPermissionChars = regexp.MustCompile(`[^a-z0-9:_]`)
-	validPermissionSeq     = regexp.MustCompile(`^[a-z0-9:_]+$`)
+	invalidPermissionChars = regexp.MustCompile(`[^a-z0-9._]`)
+	validPermissionSeq     = regexp.MustCompile(`^[a-z0-9._]+$`)
 )
 
 type Permission string
 
 func NewPermission(name string) (Permission, error) {
 	if strings.TrimSpace(name) == "" {
-		return "", errors.New("cannot be empty")
+		return "", i18n.M("account.permission.error.empty")
 	}
 
 	if strings.ContainsAny(name, " \t\r\n") {
-		return "", errors.New("cannot contain whitespace")
+		return "", i18n.M("account.permission.error.has_whitespace")
 	}
 	if strings.ContainsAny(name, `"'`) {
-		return "", errors.New("cannot contain quotes")
+		return "", i18n.M("account.permission.error.has_quotes")
 	}
 
 	rc := utf8.RuneCountInString(name)
 	if rc < permissionMinLength {
-		return "", fmt.Errorf("must be at least %v characters", permissionMinLength)
+		return "", i18n.M("account.permission.error.too_short", "min_length", permissionMinLength)
 	}
 	if rc > permissionMaxLength {
-		return "", fmt.Errorf("cannot be a over %v characters in length", permissionMaxLength)
+		return "", i18n.M("account.permission.error.too_long", "max_length", permissionMaxLength)
 	}
 
 	if matches := invalidPermissionChars.FindAllString(name, -1); len(matches) != 0 {
-		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
+		return "", i18n.M("account.permission.error.has_invalid_chars", "invalid_chars", matches)
 	}
 
 	if !validPermissionSeq.MatchString(name) {
-		return "", errors.New("can only contain letters, numbers, underscores, and colons, e.g. abc_123:def_456")
+		return "", i18n.M("account.permission.error.invalid")
 	}
 
 	return Permission(name), nil

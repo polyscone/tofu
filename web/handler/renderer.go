@@ -11,6 +11,7 @@ import (
 	"mime"
 	"net/http"
 	"path"
+	"slices"
 	"strings"
 	texttemplate "text/template"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/polyscone/tofu/internal/cache"
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/httpx"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/guard"
 )
 
@@ -66,6 +68,8 @@ type ViewData struct {
 	Stream       string
 	Status       int
 	CSRF         CSRF
+	Locale       string
+	I18nRuntime  i18n.Runtime
 	ErrorMessage string
 	Errors       errsx.Map
 	Now          time.Time
@@ -80,6 +84,98 @@ type ViewData struct {
 	State        *State
 	Log          Logger
 	Vars         Vars
+}
+
+func (v ViewData) T(msg any, args ...any) (any, error) {
+	if msg == nil {
+		return nil, nil
+	}
+
+	var selectors []string
+	if len(args)%2 == 1 {
+		arg0 := args[0]
+		args = args[1:]
+		msg, arg0 = arg0, msg
+		selectors = strings.Fields(fmt.Sprintf("%v", arg0))
+	}
+
+	var res i18n.Value
+	switch msg := msg.(type) {
+	case nil:
+		return nil, nil
+
+	case i18n.Message:
+		var err error
+		res, err = i18n.T(v.I18nRuntime, v.Locale, msg)
+		switch {
+		case errors.Is(err, i18n.ErrNotFound):
+			v.Log.Warn("i18n key not found", "locale", v.Locale, "key", msg.Key)
+
+		case err != nil:
+			return "", fmt.Errorf("T: %w", err)
+		}
+
+	case string:
+		var err error
+		res, err = i18n.T(v.I18nRuntime, v.Locale, i18n.M(msg, args...))
+		switch {
+		case errors.Is(err, i18n.ErrNotFound):
+			v.Log.Warn("i18n key not found", "locale", v.Locale, "key", msg)
+
+		case err != nil:
+			return "", fmt.Errorf("T: %w", err)
+		}
+
+	case error:
+		var err error
+		res, err = i18n.T(v.I18nRuntime, v.Locale, i18n.M(msg.Error(), args...))
+		switch {
+		case errors.Is(err, i18n.ErrNotFound):
+			v.Log.Warn("i18n key not found", "locale", v.Locale, "key", msg.Error())
+
+		case err != nil:
+			return "", fmt.Errorf("T: %w", err)
+		}
+
+	default:
+		return "", fmt.Errorf("unsupported translation key type %T", msg)
+	}
+
+	after := func(res string) string {
+		if v.I18nRuntime.Kind() != "html" {
+			return res
+		}
+
+		if len(selectors) > 0 {
+			sections := strings.Split(res, "\n\n")
+			for i := range sections {
+				selector := selectors[min(len(selectors)-1, i)]
+				chain := strings.Split(selector, ">")
+
+				slices.Reverse(chain)
+
+				for _, selector := range chain {
+					classes := strings.Split(selector, ".")
+					tag, classes := classes[0], classes[1:]
+
+					var class string
+					if len(classes) > 0 {
+						class = fmt.Sprintf(" class=%q", strings.Join(classes, " "))
+					}
+
+					text := strings.ReplaceAll(sections[i], "\n", "<br>\n")
+
+					sections[i] = fmt.Sprintf("<%v%v>%v</%v>", tag, class, text, tag)
+				}
+			}
+
+			res = strings.Join(sections, "\n")
+		}
+
+		return res
+	}
+
+	return v.I18nRuntime.PostProcess(res, after), nil
 }
 
 func (v ViewData) WithProps(pairs ...any) (ViewData, error) {
@@ -116,6 +212,7 @@ type Templater interface {
 type ViewDataFunc func(data *ViewData) error
 type ViewVarsFunc func(r *http.Request) (Vars, error)
 type TemplateProcessFunc func(w http.ResponseWriter, r *http.Request)
+type WrapI18nRuntimeFunc func(rt i18n.Runtime) i18n.Runtime
 
 type RendererConfig struct {
 	Handler          *Handler
@@ -124,6 +221,7 @@ type RendererConfig struct {
 	TemplateFiles    fs.FS
 	TemplatePatterns TemplatePatternsFunc
 	Funcs            template.FuncMap
+	WrapI18nRuntime  WrapI18nRuntimeFunc
 	Process          TemplateProcessFunc
 }
 
@@ -134,6 +232,7 @@ type Renderer struct {
 	templateFiles    fs.FS
 	templatePatterns TemplatePatternsFunc
 	funcs            template.FuncMap
+	wrapI18nRuntime  WrapI18nRuntimeFunc
 	viewVarsFuncs    map[string]ViewVarsFunc
 	process          TemplateProcessFunc
 }
@@ -146,6 +245,7 @@ func NewRenderer(config RendererConfig) *Renderer {
 		templateFiles:    config.TemplateFiles,
 		templatePatterns: config.TemplatePatterns,
 		funcs:            config.Funcs,
+		wrapI18nRuntime:  config.WrapI18nRuntime,
 		viewVarsFuncs:    make(map[string]ViewVarsFunc),
 		process:          config.Process,
 	}
@@ -156,6 +256,7 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 	user := rn.h.User(ctx)
 	passport := rn.h.Passport(ctx)
 	logger := rn.h.Logger(ctx)
+	locale := rn.h.Locale(ctx)
 
 	if assetPipeline == nil {
 		assetPipeline = &AssetPipeline{
@@ -164,13 +265,30 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 		}
 	}
 
+	var i18nRuntime i18n.Runtime
+	switch path.Ext(r.URL.Path) {
+	case ".md":
+		i18nRuntime = i18n.DefaultMarkdownRuntime
+
+	case ".js":
+		i18nRuntime = i18n.DefaultJSRuntime
+
+	default:
+		i18nRuntime = i18n.DefaultHTMLRuntime
+	}
+	if rn.wrapI18nRuntime != nil {
+		i18nRuntime = rn.wrapI18nRuntime(i18nRuntime)
+	}
+
 	data := ViewData{
-		Asset:  assetPipeline,
-		View:   view,
-		Status: status,
-		CSRF:   CSRF{Ctx: ctx},
-		Now:    time.Now(),
-		Form:   Form{Values: r.PostForm},
+		Asset:       assetPipeline,
+		View:        view,
+		Status:      status,
+		CSRF:        CSRF{Ctx: ctx},
+		Locale:      locale,
+		I18nRuntime: i18nRuntime,
+		Now:         time.Now(),
+		Form:        Form{Values: r.PostForm},
 		URL: URL{
 			Scheme: rn.h.Tenant.Scheme,
 			Host:   rn.h.Tenant.Host,
@@ -434,7 +552,7 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 	}
 
 	rn.ViewFunc(w, r, status, view, func(data *ViewData) error {
-		data.ErrorMessage = ErrorMessage(err)
+		data.ErrorMessage = rn.h.T(ctx, ErrorMessage(err))
 
 		switch {
 		case errors.Is(err, app.ErrMalformedInput),

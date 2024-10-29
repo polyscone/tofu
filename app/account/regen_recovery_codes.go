@@ -60,7 +60,7 @@ func (s *Service) RegenerateRecoveryCodes(ctx context.Context, guard RegenerateR
 		return nil, nil, fmt.Errorf("save user: %w", err)
 	}
 
-	s.broker.Flush(&user.Events)
+	s.broker.Flush(ctx, &user.Events)
 
 	return user, codes, nil
 }

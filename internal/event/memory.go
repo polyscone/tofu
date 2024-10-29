@@ -1,6 +1,7 @@
 package event
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 )
@@ -8,6 +9,8 @@ import (
 const (
 	anyKey      = ".memorybroker.all.any"
 	fallbackKey = ".memorybroker.fallback.any"
+
+	handlerParamCount = 2
 )
 
 // MemoryBroker implements an in-memory event broker.
@@ -27,15 +30,17 @@ func NewMemoryBroker() *MemoryBroker {
 func (mb *MemoryBroker) Listen(handler Handler) {
 	listenerFuncType := reflect.TypeOf(handler)
 
-	if want, got := 1, listenerFuncType.NumIn(); want != got {
-		panic(fmt.Sprintf("handler must have %v parameters; got %v", want, got))
+	if got := listenerFuncType.NumIn(); handlerParamCount != got {
+		panic(fmt.Sprintf("handler must have %v parameters; got %v", handlerParamCount, got))
 	}
 
-	if want, got := 0, listenerFuncType.NumOut(); want != got {
-		panic(fmt.Sprintf("handler must have %v returns; got %v", want, got))
+	const handlerReturnCount = 0
+	if got := listenerFuncType.NumOut(); handlerReturnCount != got {
+		panic(fmt.Sprintf("handler must have %v returns; got %v", handlerReturnCount, got))
 	}
 
-	key := eventKey(listenerFuncType.In(0))
+	const handlerKeyParamIndex = 1
+	key := eventKey(listenerFuncType.In(handlerKeyParamIndex))
 	mb.handlers[key] = append(mb.handlers[key], reflect.ValueOf(handler))
 }
 
@@ -44,8 +49,8 @@ func (mb *MemoryBroker) Listen(handler Handler) {
 func (mb *MemoryBroker) ListenAny(handler AnyHandler) {
 	listenerFuncType := reflect.TypeOf(handler)
 
-	if want, got := 1, listenerFuncType.NumIn(); want != got {
-		panic(fmt.Sprintf("handler must have %v parameters; got %v", want, got))
+	if got := listenerFuncType.NumIn(); handlerParamCount != got {
+		panic(fmt.Sprintf("handler must have %v parameters; got %v", handlerParamCount, got))
 	}
 
 	mb.handlers[anyKey] = append(mb.handlers[anyKey], reflect.ValueOf(handler))
@@ -57,8 +62,8 @@ func (mb *MemoryBroker) ListenAny(handler AnyHandler) {
 func (mb *MemoryBroker) ListenFallback(handler FallbackHandler) {
 	listenerFuncType := reflect.TypeOf(handler)
 
-	if want, got := 1, listenerFuncType.NumIn(); want != got {
-		panic(fmt.Sprintf("handler must have %v parameters; got %v", want, got))
+	if got := listenerFuncType.NumIn(); handlerParamCount != got {
+		panic(fmt.Sprintf("handler must have %v parameters; got %v", handlerParamCount, got))
 	}
 
 	mb.handlers[fallbackKey] = append(mb.handlers[fallbackKey], reflect.ValueOf(handler))
@@ -74,8 +79,11 @@ func (mb *MemoryBroker) Clear() {
 // In the case where no specific handler for the event type is listening it will
 // dispatch the event to any fallback handlers.
 // If no fallback handlers are registered then the event is ignored.
-func (mb *MemoryBroker) Dispatch(evt Event) {
-	args := []reflect.Value{reflect.ValueOf(evt)}
+func (mb *MemoryBroker) Dispatch(ctx context.Context, evt Event) {
+	args := []reflect.Value{
+		reflect.ValueOf(ctx),
+		reflect.ValueOf(evt),
+	}
 
 	key := eventKey(reflect.TypeOf(evt))
 
@@ -94,10 +102,10 @@ func (mb *MemoryBroker) Dispatch(evt Event) {
 
 // Flush is a helper method that will flush all of the given queues
 // through itself.
-func (mb *MemoryBroker) Flush(queues ...Queue) int {
+func (mb *MemoryBroker) Flush(ctx context.Context, queues ...Queue) int {
 	var n int
 	for _, queue := range queues {
-		n += queue.Flush(mb)
+		n += queue.Flush(ctx, mb)
 	}
 
 	return n
@@ -124,10 +132,10 @@ func (q *MemoryQueue) Enqueue(evt Event) {
 }
 
 // Flush dispatches all of the queued events through the given event broker.
-func (q *MemoryQueue) Flush(broker Broker) int {
+func (q *MemoryQueue) Flush(ctx context.Context, broker Broker) int {
 	n := len(q.events)
 	for _, evt := range q.events {
-		broker.Dispatch(evt)
+		broker.Dispatch(ctx, evt)
 	}
 
 	q.events = q.events[:0]

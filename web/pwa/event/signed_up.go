@@ -10,7 +10,7 @@ import (
 )
 
 func SignedUpHandler(h *ui.Handler) any {
-	return func(evt account.SignedUp) {
+	return func(ctx context.Context, evt account.SignedUp) {
 		// Sign ups through magic links and third-party services like Google/Facebook are
 		// implicitly verified due to the fact they signed in with that service
 		// so we don't need to verify any email addresses
@@ -19,7 +19,7 @@ func SignedUpHandler(h *ui.Handler) any {
 			return
 		}
 
-		ctx := context.Background()
+		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
 		tok, err := h.Repo.Web.AddEmailVerificationToken(ctx, evt.Email, 2*time.Hour)

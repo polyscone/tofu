@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/polyscone/tofu/app"
@@ -10,6 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/csrf"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/internal/rate"
 )
 
@@ -70,66 +70,64 @@ func ErrorStatus(err error) int {
 	return http.StatusInternalServerError
 }
 
-func ErrorMessage(err error) string {
+func ErrorMessage(err error) i18n.Message {
 	switch {
 	case errors.Is(err, httpx.ErrNotFound),
 		errors.Is(err, app.ErrNotFound):
 
-		return "The resource you were looking for could not be found."
+		return i18n.M("web.error.not_found")
 
 	case errors.Is(err, httpx.ErrMethodNotAllowed):
-		return "Method not allowed."
+		return i18n.M("web.error.http_method_not_allowed")
 
 	case errors.Is(err, httpx.ErrForbidden),
 		errors.Is(err, app.ErrForbidden):
 
-		return "You do not have sufficient permissions to access this resource."
+		return i18n.M("web.error.forbidden")
 
 	case errors.Is(err, http.ErrHandlerTimeout):
-		return "The server took too long to respond."
+		return i18n.M("web.error.handler_timeout")
 
 	case errors.Is(err, account.ErrNotVerified):
-		return "This account is not verified."
+		return i18n.M("web.error.account_not_verified")
 
 	case errors.Is(err, account.ErrNotActivated):
-		return "This account is not activated."
+		return i18n.M("web.error.account_not_activated")
 
 	case errors.Is(err, account.ErrSuspended):
-		return "This account has been suspended."
+		return i18n.M("web.error.account_suspended")
 
 	case errors.Is(err, app.ErrUnauthorised):
-		return "You do not have permission to access this resource."
+		return i18n.M("web.error.unauthorised")
 
-	case errors.Is(err, app.ErrMalformedInput),
-		errors.Is(err, app.ErrInvalidInput),
+	case errors.Is(err, app.ErrMalformedInput):
+		return i18n.M("web.error.malformed_input")
+
+	case errors.Is(err, app.ErrInvalidInput),
 		errors.Is(err, app.ErrConflict):
 
-		if errors.Is(err, app.ErrMalformedInput) {
-			return "Malformed input."
-		} else {
-			return "Invalid input."
-		}
+		return i18n.M("web.error.invalid_input")
 
 	case errors.Is(err, csrf.ErrEmptyToken):
-		return "Empty CSRF token."
+		return i18n.M("web.error.empty_csrf_token")
 
 	case errors.Is(err, csrf.ErrInvalidToken):
-		return "Invalid CSRF token."
+		return i18n.M("web.error.invalid_csrf_token")
 
 	case errors.Is(err, rate.ErrInsufficientTokens),
 		errors.Is(err, account.ErrSignInThrottled):
 
-		return "You have made too many consecutive requests. Please try again later."
+		return i18n.M("web.error.too_many_requests")
 
 	case errors.Is(err, app.ErrRepoLogin):
-		return "Could not connect to the datasource."
+		return i18n.M("web.error.repo_login")
 
 	default:
 		var maxBytesError *http.MaxBytesError
 		if errors.As(err, &maxBytesError) {
-			return fmt.Sprintf("Your request must be no larger than %v.", human.SizeSI(uint64(maxBytesError.Limit)))
+			return i18n.M("web.error.request_too_large", "max_size", human.SizeSI(uint64(maxBytesError.Limit)))
 		}
 
-		return "An error has occurred."
+		return i18n.M("web.error.generic")
 	}
 }

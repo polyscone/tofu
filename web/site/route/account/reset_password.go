@@ -9,6 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/site/ui"
@@ -51,7 +52,9 @@ func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.Broker.Dispatch(event.PasswordResetRequested{
+		ctx := r.Context()
+
+		h.Broker.Dispatch(ctx, event.PasswordResetRequested{
 			Email: input.Email,
 		})
 
@@ -93,7 +96,7 @@ func resetPasswordNewPasswordPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "Your password has been successfully changed.")
+		h.AddFlashf(ctx, i18n.M("site.account.reset_password.flash.password_changed"))
 
 		signInWithPassword(ctx, h, w, r, email, input.NewPassword)
 	}

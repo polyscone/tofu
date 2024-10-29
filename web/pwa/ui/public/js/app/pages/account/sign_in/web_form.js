@@ -51,7 +51,6 @@ function SignInWithGoogle () {
 				const s = document.createElement("script")
 
 				s.src = "https://accounts.google.com/gsi/client"
-				s.async = true
 				s.defer = true
 				s.onload = function () {
 					google.accounts.id.initialize({
@@ -161,7 +160,6 @@ function SignInWithFacebook () {
 				s.src = `https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v18.0&appId=${platform.config.facebookSignInAppId}`
 				s.crossorigin = "anonymous"
 				s.nonce = "PewzUoD4"
-				s.async = true
 				s.defer = true
 				s.onload = function () {
 					m.redraw()
@@ -239,20 +237,20 @@ function SignInMagicLink () {
 		},
 		view () {
 			return [
-				m("h1", "Sign in"),
-				m("p", "Please enter the sign in code we've sent to your email address below."),
+				m("h1", "{{.T "pwa.account.sign_in.magic_link.title"}}"),
+				m("p", "{{.T "pwa.account.sign_in.magic_link.text"}}"),
 				m("form", { onsubmit: signIn }, [
 					state.error ? m(ErrorBanner, state.error) : null,
-					state.error ? m("p", "If your sign in code has expired you can try requesting a new one.") : null,
+					state.error ? m("p", "{{.T "pwa.account.sign_in.magic_link.code_expired_text"}}") : null,
 					m(TokenInput, {
-						label: "Sign in code",
+						label: "{{.T "pwa.account.sign_in.magic_link.code_label"}}",
 						name: "token",
 						required: true,
 						error: state.errors.token,
 						oninput (e) { state.token = e.target.value },
 					}),
-					m("button[type=submit]", "Sign in"),
-					state.error ? m(m.route.Link, { href: platform.routes.path("account.sign_in.magic_link.request"), class: "btn btn--alt" }, "Request a new code") : null,
+					m("button[type=submit]", "{{.T "pwa.account.sign_in.magic_link.sign_in_button"}}"),
+					state.error ? m(m.route.Link, { href: platform.routes.path("account.sign_in.magic_link.request"), class: "btn btn--alt" }, "{{.T "pwa.account.sign_in.magic_link.request_new_code_button"}}") : null,
 				]),
 			]
 		},
@@ -289,21 +287,21 @@ function SignInMagicLinkRequest () {
 		},
 		view () {
 			return [
-				m("h1", "Sign in"),
+				m("h1", "{{.T "pwa.account.sign_in.magic_link_request.title"}}"),
 				m("form", { onsubmit: signIn }, [
 					state.error ? m(ErrorBanner, state.error) : null,
 					m(EmailInput, {
-						label: "Email",
+						label: "{{.T "pwa.account.sign_in.magic_link_request.email_label"}}",
 						name: "email",
 						required: true,
 						autocomplete: "username",
 						error: state.errors.email,
 						oninput (e) { state.email = e.target.value },
 					}),
-					m("button[type=submit]", "Send sign in code"),
+					m("button[type=submit]", "{{.T "pwa.account.sign_in.magic_link_request.send_code_button"}}"),
 					m("div.sign-in-alt", [
-						m("p.sign-in-alt__title", "Or"),
-						m(m.route.Link, { href: platform.routes.path("account.sign_in"), class: "btn btn--alt btn--large" }, "Sign in with a password"),
+						m("p.sign-in-alt__title", "{{.T "pwa.account.sign_in.magic_link_request.alt_sign_in_title"}}"),
+						m(m.route.Link, { href: platform.routes.path("account.sign_in"), class: "btn btn--alt btn--large" }, "{{.T "pwa.account.sign_in.magic_link_request.sign_in_with_password_button"}}"),
 						m(SignInWithGoogle),
 						m(SignInWithFacebook),
 					]),
@@ -349,7 +347,7 @@ function SignIn () {
 					unlockIn = ` in ${unlockIn}`
 				}
 
-				state.error = `Too many failed sign in attempts in the last ${inLast}. Please try again${unlockIn}.`
+				state.error = `{{.T "pwa:account.sign_in.throttled.error"}}`
 			}
 		})
 	}
@@ -360,17 +358,17 @@ function SignIn () {
 				return [
 					m("p", "You're already signed in."),
 					m("form", { onsubmit: signOut }, m(".bag", [
-						m("button[type=submit].btn--link", "Click here to sign out."),
+						m("button[type=submit].btn--link", "{{.T "pwa.account.sign_in.already_signed_in.sign_out_button"}}"),
 					])),
 				]
 			}
 
 			return [
-				m("h1", "Sign in"),
+				m("h1", "{{.T "pwa.account.sign_in.form.title"}}"),
 				m("form", { onsubmit: signIn }, [
 					state.error ? m(ErrorBanner, state.error) : null,
 					m(EmailInput, {
-						label: "Email",
+						label: "{{.T "pwa.account.sign_in.form.email_label"}}",
 						name: "email",
 						required: true,
 						autocomplete: "username",
@@ -378,19 +376,19 @@ function SignIn () {
 						oninput (e) { state.email = e.target.value },
 					}),
 					m(PasswordInput, {
-						label: "Password",
+						label: "{{.T "pwa.account.sign_in.form.password_label"}}",
 						name: "password",
 						required: true,
 						autocomplete: "current-password",
 						error: state.errors.password,
 						oninput (e) { state.password = e.target.value },
 					}),
-					m("button[type=submit]", "Sign in"),
-					platform.config.signUpEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_up") }, "Sign up") : null,
-					m(m.route.Link, { href: platform.routes.path("account.reset_password") }, "Forgotten your password?"),
+					m("button[type=submit]", "{{.T "pwa.account.sign_in.form.sign_in_button"}}"),
+					platform.config.signUpEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_up") }, "{{.T "pwa.account.sign_in.form.sign_up_button"}}") : null,
+					m(m.route.Link, { href: platform.routes.path("account.reset_password") }, "{{.T "pwa.account.sign_in.form.reset_password_button"}}"),
 					m("div.sign-in-alt", [
-						m("p.sign-in-alt__title", "Or"),
-						platform.config.magicLinkSignInEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_in.magic_link.request"), class: "btn btn--alt btn--large" }, "Sign in with a magic link") : null,
+						m("p.sign-in-alt__title", "{{.T "pwa.account.sign_in.form.alt_sign_in_title"}}"),
+						platform.config.magicLinkSignInEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_in.magic_link.request"), class: "btn btn--alt btn--large" }, "{{.T "pwa.account.sign_in.form.sign_in_with_magic_link_button"}}") : null,
 						m(SignInWithGoogle),
 						m(SignInWithFacebook),
 					]),

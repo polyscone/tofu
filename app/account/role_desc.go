@@ -1,12 +1,10 @@
 package account
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 const roleDescMaxLength = 100
@@ -25,15 +23,15 @@ func NewRoleDesc(desc string) (RoleDesc, error) {
 
 	rc := utf8.RuneCountInString(desc)
 	if rc > roleDescMaxLength {
-		return "", fmt.Errorf("cannot be a over %v characters in length", roleDescMaxLength)
+		return "", i18n.M("account.role_description.error.too_long", "max_length", roleDescMaxLength)
 	}
 
 	if matches := invalidRoleDescChars.FindAllString(desc, -1); len(matches) != 0 {
-		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
+		return "", i18n.M("account.role_description.error.has_invalid_chars", "invalid_chars", matches)
 	}
 
 	if !validRoleDescSeq.MatchString(desc) {
-		return "", errors.New("can only contain latin characters")
+		return "", i18n.M("account.role_description.error.invalid")
 	}
 
 	return RoleDesc(desc), nil

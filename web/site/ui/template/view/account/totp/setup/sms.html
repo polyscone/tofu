@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Setup using SMS</h1>
+	<h1>{{.T "site.account.totp.setup.sms.title"}}</h1>
 </div>
 
 {{end}}
@@ -12,24 +12,23 @@
 
 <div class="center">
 	<div class="warning-banner">
-		<p>Using SMS for two-factor authentication is only recommended when you can't use an authenticator app on your phone.</p>
-		<p><a href="{{Path "account.totp.setup.app"}}">Don't want to use SMS? Click here to use an app.</a></p>
+		{{.T "p" "site.account.totp.setup.sms.warning_text"}}
 	</div>
 
-	<p>Enter the phone number that you'd like to use below and we'll send you a passcode to verify your phone number has been entered correctly.</p>
+	{{.T "p" "site.account.totp.setup.sms.instruction_text"}}
 
 	<form action="{{Path "account.totp.setup.sms.post"}}" method="POST">
 		{{template "com.form.csrf" .}}
 
 		{{template "com.form.sms_tel" .WithProps
-			"Label" "Phone number"
+			"Label" (.T "site.account.totp.setup.sms.tel_label")
 			"Name" "tel"
 			"Value" (.Form.GetOr "tel" .Vars.TOTPTel)
 			"Autocomplete" "tel"
 		}}
 
 		<div class="bag reverse">
-			<button>Use this phone number and send a passcode</button>
+			<button>{{.T "site.account.totp.setup.sms.send_passcode_button"}}</button>
 		</div>
 	</form>
 </div>

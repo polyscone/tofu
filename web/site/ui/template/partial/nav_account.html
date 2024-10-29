@@ -3,19 +3,19 @@
 <nav>
 	<ul>
 		{{if .User.HashedPassword}}
-			<li><a href="{{Path "account.change_password"}}">Change password</a></li>
+			<li><a href="{{Path "account.change_password"}}">{{.T "site.account.nav.change_password"}}</a></li>
 		{{else}}
-			<li><a href="{{Path "account.choose_password"}}">Choose a password</a></li>
+			<li><a href="{{Path "account.choose_password"}}">{{.T "site.account.nav.choose_password"}}</a></li>
 		{{end}}
 
 		{{if .Session.HasActivatedTOTP}}
-			<li><a href="{{Path "account.totp.recovery_codes"}}">Generate new recovery codes</a></li>
+			<li><a href="{{Path "account.totp.recovery_codes"}}">{{.T "site.account.nav.generate_new_recovery_codes"}}</a></li>
 
 			{{if not .Config.TOTPRequired}}
-				<li><a href="{{Path "account.totp.disable"}}">Disable two-factor authentication</a></li>
+				<li><a href="{{Path "account.totp.disable"}}">{{.T "site.account.nav.disable_totp"}}</a></li>
 			{{end}}
 		{{else}}
-			<li><a href="{{Path "account.totp.setup"}}">Setup two-factor authentication</a></li>
+			<li><a href="{{Path "account.totp.setup"}}">{{.T "site.account.nav.setup_totp"}}</a></li>
 		{{end}}
 	</ul>
 </nav>

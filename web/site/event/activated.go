@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/web/handler"
@@ -9,8 +10,8 @@ import (
 )
 
 func ActivatedHandler(h *ui.Handler) any {
-	return func(evt account.Activated) {
-		ctx := context.Background()
+	return func(ctx context.Context, evt account.Activated) {
+		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
 		config, err := h.Repo.System.FindConfig(ctx)
@@ -20,13 +21,11 @@ func ActivatedHandler(h *ui.Handler) any {
 			return
 		}
 
-		emailTemplate := "account_activated"
-		if evt.System == "pwa" {
-			emailTemplate = "account_activated"
+		vars := handler.Vars{
+			"HasPassword": evt.HasPassword,
+			"SignInURL":   fmt.Sprintf("%v://%v%v", h.Scheme, h.Host, h.Path("account.sign_in")),
 		}
-
-		vars := handler.Vars{"HasPassword": evt.HasPassword}
-		if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, emailTemplate, vars); err != nil {
+		if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "account_activated", vars); err != nil {
 			logger.Error("activated: send email", "error", err)
 		}
 	}

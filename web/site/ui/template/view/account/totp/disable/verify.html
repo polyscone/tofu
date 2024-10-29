@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Disable two-factor authentication</h1>
+	<h1>{{.T "site.account.totp.disable.verify.title"}}</h1>
 </div>
 
 {{end}}
@@ -12,22 +12,22 @@
 
 <div class="center">
 	{{if .Config.TOTPRequired}}
-		<p>Two-factor authentication is required and can't be disabled.</p>
+		{{.T "p" "site.account.totp.disable.verify.totp_required_message"}}
 	{{else}}
-		<p>Enter your password to verify your identity and disable two-factor authentication.</p>
+		{{.T "p" "site.account.totp.disable.verify.enter_password_to_disable_message"}}
 
 		<form action="{{Path "account.totp.disable.post"}}" method="POST">
 			{{template "com.form.csrf" .}}
 
 			{{template "com.form.password" .WithProps
-				"Label" "Password"
+				"Label" (.T "site.account.totp.disable.verify.password_label")
 				"Name" "password"
 				"Required" true
 				"Autocomplete" "current-password"
 			}}
 
 			<div class="bag reverse">
-				<button>Disable two-factor authentication</button>
+				<button>{{.T "site.account.totp.disable.verify.disable_totp_button"}}</button>
 			</div>
 		</form>
 	{{end}}

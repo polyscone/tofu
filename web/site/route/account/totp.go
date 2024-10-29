@@ -18,6 +18,7 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/internal/sms"
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/handler"
@@ -38,7 +39,7 @@ func RegisterTOTPHandlers(h *ui.Handler, mux *router.ServeMux) {
 				user := h.User(ctx)
 
 				if len(user.HashedPassword) == 0 {
-					h.AddFlashf(ctx, "You need to choose a password before you can setup two-factor authentication.")
+					h.AddFlashf(ctx, i18n.M("site.account.totp.flash.password_required"))
 
 					h.Session.SetRedirect(ctx, r.URL.String())
 
@@ -123,7 +124,7 @@ func totpResetPost(h *ui.Handler) http.HandlerFunc {
 		_, err = h.Svc.Account.ResetTOTP(ctx, passport.Account, user.ID, input.Password)
 		if err != nil {
 			h.HTML.ErrorViewFunc(w, r, "reset TOTP", err, "account/totp/reset/reset", func(data *handler.ViewData) error {
-				data.ErrorMessage = "Either your credentials are incorrect, or you're not authorised to access this application."
+				data.ErrorMessage = h.T(ctx, i18n.M("site:account.sign_in.error"))
 
 				return nil
 			})
@@ -138,7 +139,7 @@ func totpResetPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "Two-factor authentication has been disabled for your account.")
+		h.AddFlashf(ctx, i18n.M("site.account.totp.flash.disabled"))
 
 		signInWithPassword(ctx, h, w, r, email, input.Password)
 	}
@@ -444,12 +445,12 @@ func totpSendSMSPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		user := h.User(ctx)
 
-		h.Broker.Dispatch(event.TOTPSMSRequested{
+		h.Broker.Dispatch(ctx, event.TOTPSMSRequested{
 			Email: user.Email,
 			Tel:   user.TOTPTel,
 		})
 
-		h.AddFlashf(ctx, "A passcode has been sent to your registered phone number.")
+		h.AddFlashf(ctx, i18n.M("site.account.totp.flash.passcode_sms_sent"))
 
 		http.Redirect(w, r, r.Referer(), http.StatusSeeOther)
 	}

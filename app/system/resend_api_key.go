@@ -1,12 +1,10 @@
 package system
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 const resendAPIKeyLength = 36
@@ -24,15 +22,15 @@ func NewResendAPIKey(apiKey string) (ResendAPIKey, error) {
 	}
 
 	if rc := utf8.RuneCountInString(apiKey); rc != resendAPIKeyLength {
-		return "", fmt.Errorf("must be %v characters in length", resendAPIKeyLength)
+		return "", i18n.M("resend_api_key.error.incorrect_length", "required_length", resendAPIKeyLength)
 	}
 
 	if matches := invalidResendAPIKeyChars.FindAllString(apiKey, -1); len(matches) != 0 {
-		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
+		return "", i18n.M("resend_api_key.error.has_invalid_chars", "invalid_chars", matches)
 	}
 
 	if !validResendAPIKeySeq.MatchString(apiKey) {
-		return "", errors.New("must begin with AC and be followed by 32 hexadecimal characters")
+		return "", i18n.M("resend_api_key.error.invalid")
 	}
 
 	return ResendAPIKey(apiKey), nil

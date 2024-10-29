@@ -8,8 +8,8 @@ import (
 )
 
 func SignedInHandler(h *ui.Handler) any {
-	return func(evt account.SignedIn) {
-		ctx := context.Background()
+	return func(ctx context.Context, evt account.SignedIn) {
+		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
 		user, err := h.Repo.Account.FindUserByEmail(ctx, evt.Email)

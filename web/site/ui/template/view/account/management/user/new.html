@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Invite user</h1>
+	<h1>{{.T "site.account.user_management.new.title"}}</h1>
 </div>
 
 {{end}}
@@ -15,16 +15,16 @@
 		{{template "com.form.csrf" .}}
 
 		{{template "com.form.email" .WithProps
-			"Label" "Email"
+			"Label" (.T "site.account.user_management.new.email_label")
 			"Name" "email"
 			"Required" true
 			"Autocomplete" "off"
 		}}
 
 		<div class="bag reverse">
-			<button class="push-inline-end">Create user and send invite email</button>
+			<button class="push-inline-end">{{.T "site.account.user_management.new.invite_button"}}</button>
 
-			<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+			<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">{{.T "site.account.user_management.new.cancel_button"}}</a>
 		</div>
 	</form>
 </div>

@@ -177,7 +177,7 @@ func testRepoRoles(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 					t.Fatalf("want %T; got %T", conflict, tc.err)
 				}
 
-				if conflict.Get("name") == "" {
+				if conflict.GetString("name") == "" {
 					t.Error("want name conflict error; got empty string")
 				}
 			})
@@ -417,7 +417,7 @@ func testRepoUsers(ctx context.Context, t *testing.T, newRepo func() ReadWriter)
 					t.Fatalf("want %T; got %T", conflict, tc.err)
 				}
 
-				if conflict.Get("email") == "" {
+				if conflict.GetString("email") == "" {
 					t.Error("want email conflict error; got empty string")
 				}
 			})

@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Reviewing {{.Vars.User.Email}}</h1>
+	<h1>{{.T "site.account.user_management.review_totp_reset.title" "user_email" .Vars.User.Email}}</h1>
 </div>
 
 {{end}}
@@ -11,19 +11,17 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>This is a request to reset two-factor authentication for the account associated with {{.Vars.User.Email}}.</p>
-	<p>A user might make this request if they're locked out of their account; they might've lost their authentication device, for example.</p>
-	<p>Allowing the person making this request to reset two-factor authentication will leave the account less secure overall, but will allow them to sign in again.</p>
+	{{.T "p" "site.account.user_management.review_totp_reset.explanation" "user_email" .Vars.User.Email}}
 
 	<div class="warning-banner">
-		<p>Only approve this request if you're sure it's legitimate, otherwise deny it.</p>
+		{{.T "p" "site.account.user_management.review_totp_reset.explanation_warning"}}
 	</div>
 
 	<div class="bag reverse">
-		<a href="{{Path "account.management.user.totp_reset_approve" "{userID}" .Vars.User.ID}}" class="btn">Approve and send reset link</a>
-		<a href="{{Path "account.management.user.totp_reset_deny" "{userID}" .Vars.User.ID}}" class="btn btn--alt push-inline-end">Deny the request</a>
+		<a href="{{Path "account.management.user.totp_reset_approve" "{userID}" .Vars.User.ID}}" class="btn">{{.T "site.account.user_management.review_totp_reset.approve_button"}}</a>
+		<a href="{{Path "account.management.user.totp_reset_deny" "{userID}" .Vars.User.ID}}" class="btn btn--alt push-inline-end">{{.T "site.account.user_management.review_totp_reset.deny_button"}}</a>
 
-		<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+		<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">{{.T "site.account.user_management.review_totp_reset.cancel_button"}}</a>
 	</div>
 </div>
 

@@ -1,17 +1,17 @@
-{{define "subject"}}Two-factor authentication disabled{{end}}
+{{define "subject"}}{{.T "site.email.totp_disabled.subject"}}{{end}}
 
 {{define "plain" -}}
 
-Two-factor authentication has been disabled for your account.
-If you did not do this please contact an administrator as soon as possible.
+{{.T "site.email.totp_disabled.title"}}
+
+{{.T "site.email.totp_disabled.text"}}
 
 {{- end}}
 
 {{define "html" -}}
 
-<p>
-	Two-factor authentication has been disabled for your account.<br>
-	If you did not do this please contact an administrator as soon as possible.
-</p>
+<h1>{{.T "site.email.totp_disabled.title"}}</h1>
+
+{{.T "p" "site.email.totp_disabled.text"}}
 
 {{- end}}

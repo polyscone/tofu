@@ -1,24 +1,17 @@
-{{define "subject"}}Reset two-factor authentication on {{.URL.Host}}{{end}}
+{{define "subject"}}{{.T "site.email.totp_reset_verify_email.subject" "host" .URL.Host}}{{end}}
 
 {{define "plain" -}}
 
-Reset two-factor authentication
+{{.T "site.email.totp_reset_verify_email.title"}}
 
-To request a review to reset two-factor authentication for your account, paste the following URL into your browser:
-{{.URL.Scheme}}://{{.URL.Host}}{{Path "account.sign_in.totp.reset.request"}}?token={{.Vars.Token}}
+{{.T "site.email.totp_reset_verify_email.copy_url_to_verify" "request_review_url" .Vars.RequestReviewURL}}
 
 {{- end}}
 
 {{define "html" -}}
 
-<h1>Reset two-factor authentication</h1>
-<p>
-	<a href="{{.URL.Scheme}}://{{.URL.Host}}{{Path "account.sign_in.totp.reset.request"}}?token={{.Vars.Token}}">Click here</a>
-	to request a review to reset two-factor authentication for your account.
-</p>
-<p>
-	If the link above does not work paste the following URL into your browser:<br>
-	{{.URL.Scheme}}://{{.URL.Host}}{{Path "account.sign_in.totp.reset.request"}}?token={{.Vars.Token}}
-</p>
+<h1>{{.T "site.email.totp_reset_verify_email.title"}}</h1>
+
+{{.T "p" "site.email.totp_reset_verify_email.click_to_verify" "request_review_url" .Vars.RequestReviewURL}}
 
 {{- end}}

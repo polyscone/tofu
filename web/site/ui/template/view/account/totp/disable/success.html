@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Two-factor authentication disabled</h1>
+	<h1>{{.T "site.account.totp.disable.success.title"}}</h1>
 </div>
 
 {{end}}
@@ -11,8 +11,7 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>Two-factor authentication has been disabled for your account.</p>
-	<p>From now on you won't be required to provide any passcodes when logging in to your account.</p>
+	{{.T "p" "site.account.totp.disable.success.text"}}
 </div>
 
 {{end}}

@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/polyscone/tofu/app"
@@ -12,8 +13,8 @@ import (
 )
 
 func PasswordResetRequestedHandler(h *ui.Handler) any {
-	return func(evt event.PasswordResetRequested) {
-		ctx := context.Background()
+	return func(ctx context.Context, evt event.PasswordResetRequested) {
+		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
 		config, err := h.Repo.System.FindConfig(ctx)
@@ -33,14 +34,20 @@ func PasswordResetRequestedHandler(h *ui.Handler) any {
 				return
 			}
 
-			vars := handler.Vars{"Token": tok}
+			vars := handler.Vars{
+				"Token":    tok,
+				"ResetURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.reset_password.new_password"), tok),
+			}
 			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "reset_password", vars); err != nil {
 				logger.Error("reset password: send email", "error", err)
 			}
 
 		case errors.Is(err, app.ErrNotFound):
 			if config.SignUpEnabled {
-				if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "reset_password_sign_up", nil); err != nil {
+				vars := handler.Vars{
+					"SignUpURL": fmt.Sprintf("%v://%v%v", h.Scheme, h.Host, h.Path("account.sign_up")),
+				}
+				if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "reset_password_sign_up", vars); err != nil {
 					logger.Error("reset password: send email", "error", err)
 				}
 			}

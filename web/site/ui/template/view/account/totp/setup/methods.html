@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Setup two-factor authentication</h1>
+	<h1>{{.T "site.account.totp.setup.methods.title"}}</h1>
 </div>
 
 {{end}}
@@ -11,42 +11,42 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>Two-factor authentication adds an additional layer of security to your account by requiring more than just your password to sign in.</p>
+	{{.T "p" "site.account.totp.setup.methods.text"}}
 
 	{{if and .Config.TOTPSMSEnabled .Config.HasSMS}}
-		<p>You can either use two-factor authentication through an app on your phone or computer, or you can use SMS.</p>
+		{{.T "p" "site.account.totp.setup.methods.app_sms_choice_text"}}
 
 		<div class="cols-halves">
 			<div>
-				<p>Use an app on your phone or computer to get passcodes when prompted <b>(recommended)</b>.</p>
+				{{.T "p" "site.account.totp.setup.methods.app_choice_text"}}
 
 				<form action="{{Path "account.totp.setup.post"}}" method="POST">
 					{{template "com.form.csrf" .}}
 					<input type="hidden" name="method" value="app">
 
-					<button>Setup using an app</button>
+					<button>{{.T "site.account.totp.setup.methods.use_app_button"}}</button>
 				</form>
 			</div>
 
 			<div>
-				<p>We'll send you an SMS message with a passcode when prompted (only use this if you can't use an app).</p>
+				{{.T "p" "site.account.totp.setup.methods.sms_choice_text"}}
 
 				<form action="{{Path "account.totp.setup.post"}}" method="POST">
 					{{template "com.form.csrf" .}}
 					<input type="hidden" name="method" value="sms">
 
-					<button class="btn--alt">Setup using SMS</button>
+					<button class="btn--alt">{{.T "site.account.totp.setup.methods.use_sms_button"}}</button>
 				</form>
 			</div>
 		</div>
 	{{else}}
-		<p>You can use two-factor authentication through an app on your phone or computer.</p>
+		{{.T "p" "site.account.totp.setup.methods.app_only_text"}}
 
 		<form action="{{Path "account.totp.setup.post"}}" method="POST">
 			{{template "com.form.csrf" .}}
 			<input type="hidden" name="method" value="app">
 
-			<button>Start setup</button>
+			<button>{{.T "site.account.totp.setup.methods.start_setup_button"}}</button>
 		</form>
 	{{end}}
 </div>

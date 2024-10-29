@@ -1,13 +1,11 @@
 package account
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 const telMaxLength = 100
@@ -22,25 +20,25 @@ type Tel string
 func NewTel(tel string) (Tel, error) {
 	tel = strings.TrimSpace(tel)
 	if tel == "" {
-		return "", errors.New("cannot be empty")
+		return "", i18n.M("account.tel.error.empty")
 	}
 
 	tel = strings.Join(strings.Fields(tel), " ")
 
 	if rc := utf8.RuneCountInString(tel); rc > telMaxLength {
-		return "", fmt.Errorf("cannot be a over %v characters in length", telMaxLength)
+		return "", i18n.M("account.tel.error.too_long", "max_length", telMaxLength)
 	}
 
 	if strings.Contains(tel, "+") && tel[0] != '+' {
-		return "", errors.New("+ sign must come at the beginning")
+		return "", i18n.M("account.tel.error.incorrect_plus_position")
 	}
 
 	if matches := invalidTelChars.FindAllString(tel, -1); len(matches) != 0 {
-		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
+		return "", i18n.M("account.tel.error.has_invalid_chars", "invalid_chars", matches)
 	}
 
 	if !validTelSeq.MatchString(tel) {
-		return "", errors.New("must be in the format +12 3456 7890")
+		return "", i18n.M("account.tel.error.invalid")
 	}
 
 	return Tel(tel), nil

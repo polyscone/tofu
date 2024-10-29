@@ -59,7 +59,7 @@ func (s *Service) UpdateEmails(ctx context.Context, guard UpdateEmailsGuard, sys
 		return nil, fmt.Errorf("save config: %w", err)
 	}
 
-	s.broker.Flush(&config.Events)
+	s.broker.Flush(ctx, &config.Events)
 
 	return config, nil
 }

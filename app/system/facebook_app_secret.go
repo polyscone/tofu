@@ -1,8 +1,9 @@
 package system
 
 import (
-	"errors"
 	"regexp"
+
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 var validFacebookAppSecretSeq = regexp.MustCompile(`^.+$`)
@@ -15,7 +16,7 @@ func NewFacebookAppSecret(secret string) (FacebookAppSecret, error) {
 	}
 
 	if !validFacebookAppSecretSeq.MatchString(secret) {
-		return "", errors.New("invalid app secret")
+		return "", i18n.M("facebook_app_secret.error.invalid")
 	}
 
 	return FacebookAppSecret(secret), nil

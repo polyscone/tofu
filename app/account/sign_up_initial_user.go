@@ -79,7 +79,7 @@ func (s *Service) signUpInitialUser(ctx context.Context, email, password, passwo
 		return nil, fmt.Errorf("add user: %w", err)
 	}
 
-	s.broker.Flush(&user.Events)
+	s.broker.Flush(ctx, &user.Events)
 
 	return user, nil
 }

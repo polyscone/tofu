@@ -1,6 +1,6 @@
 {{define "com.form.sms_tel" -}}
 
-{{$hint := or .Props.Hint "full number and country code beginning with +"}}
+{{$hint := or .Props.Hint (.T "com.form.sms_tel.default_hint")}}
 {{$placeholder := or .Props.Placeholder "+00 00 0000 0000"}}
 
 {{template "com.form.input" .WithProps

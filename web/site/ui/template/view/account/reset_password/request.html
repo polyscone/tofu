@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Reset password</h1>
+	<h1>{{.T "site.account.reset_password.request.title"}}</h1>
 </div>
 
 {{end}}
@@ -15,14 +15,14 @@
 		{{template "com.form.csrf" .}}
 
 		{{template "com.form.email" .WithProps
-			"Label" "Email"
+			"Label" (.T "site.account.reset_password.request.email_label")
 			"Name" "email"
 			"Required" true
 			"Autocomplete" "username"
 		}}
 
 		<div class="bag reverse">
-			<button>Send reset password link</button>
+			<button>{{.T "site.account.reset_password.request.send_link_button"}}</button>
 		</div>
 	</form>
 </div>

@@ -6,6 +6,7 @@ import (
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/site/ui"
 )
@@ -59,7 +60,7 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "Your account has been successfully verified.")
+		h.AddFlashf(ctx, i18n.M("site.account.verify.flash.success"))
 
 		if behaviour == account.VerifyUserActivate {
 			signInWithPassword(ctx, h, w, r, email, input.Password)

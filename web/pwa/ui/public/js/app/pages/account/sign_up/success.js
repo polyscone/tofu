@@ -1,9 +1,9 @@
 function SignUpSuccess () {
 	return {
 		view: () => [
-			m("p", "Your account has been successfully verified and is now awaiting manual activation."),
-			m("p", "Once your account is activated you'll receive an email and will be able to sign in."),
-			m(m.route.Link, { href: platform.routes.path("account.sign_in") }, "Click here to go to the sign in page."),
+			m("p", "{{.T "pwa.account.sign_up.success.awaiting_activation"}}"),
+			m("p", "{{.T "pwa.account.sign_up.success.once_activated"}}"),
+			m(m.route.Link, { href: platform.routes.path("account.sign_in") }, "{{.T "pwa.account.sign_up.success.sign_in_link"}}"),
 		],
 	}
 }

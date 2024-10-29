@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/internal/csrf"
 	"github.com/polyscone/tofu/internal/errsx"
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/handler"
 )
 
@@ -80,7 +80,7 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 
 	detail := map[string]any{"error": strings.ToLower(http.StatusText(status))}
 	if isPublic && 400 <= status && status <= 499 {
-		detail["error"] = handler.ErrorMessage(err)
+		detail["error"] = h.T(ctx, handler.ErrorMessage(err))
 
 		var errs errsx.Map
 		if errors.As(err, &errs) {
@@ -89,8 +89,8 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 
 		var throttled *account.SignInThrottleError
 		if errors.As(err, &throttled) {
-			detail["inLast"] = human.Duration(throttled.InLast)
-			detail["unlockIn"] = human.Duration(throttled.UnlockIn)
+			detail["inLast"] = h.T(ctx, i18n.M("api:account.sign_in.throttled.in_last", "in_last", throttled.InLast))
+			detail["unlockIn"] = h.T(ctx, i18n.M("api:account.sign_in.throttled.unlock_in", "unlock_in", throttled.UnlockIn))
 		}
 
 		switch {

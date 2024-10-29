@@ -10,6 +10,7 @@ import (
 	"github.com/polyscone/tofu/internal/collection"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/site/ui"
@@ -141,7 +142,7 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "An invite to verify an account has been sent to %q.", user.Email)
+		h.AddFlashf(ctx, i18n.M("site.account.user_management.flash.invite_sent", "email", user.Email))
 
 		h.Session.SetSortTopID(ctx, user.ID)
 		h.Session.SetHighlightID(ctx, user.ID)
@@ -243,7 +244,7 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "User %v updated successfully.", user.Email)
+		h.AddFlashf(ctx, i18n.M("site.account.user_management.flash.updated", "email", user.Email))
 
 		h.Session.SetHighlightID(ctx, user.ID)
 
@@ -289,9 +290,9 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		if wasSuspended {
-			h.AddFlashf(ctx, "Updated suspended reason for %v.", user.Email)
+			h.AddFlashf(ctx, i18n.M("site.account.user_management.flash.suspended_reason_updated", "email", user.Email))
 		} else {
-			h.AddFlashf(ctx, "User %v was suspended.", user.Email)
+			h.AddFlashf(ctx, i18n.M("site.account.user_management.flash.suspended", "email", user.Email))
 		}
 
 		h.Session.SetHighlightID(ctx, user.ID)
@@ -319,7 +320,7 @@ func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "User %v was unsuspended.", user.Email)
+		h.AddFlashf(ctx, i18n.M("site.account.user_management.flash.unsuspended", "email", user.Email))
 
 		h.Session.SetHighlightID(ctx, user.ID)
 
@@ -360,7 +361,7 @@ func userActivatePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "User %v activated successfully.", user.Email)
+		h.AddFlashf(ctx, i18n.M("site.account.user_management.flash.activated", "email", user.Email))
 
 		h.Session.SetHighlightID(ctx, user.ID)
 
@@ -425,12 +426,15 @@ func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		vars := handler.Vars{"Token": tok}
+		vars := handler.Vars{
+			"Token":    tok,
+			"ResetURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.totp.reset"), tok),
+		}
 		if err := h.SendEmail(ctx, config.SystemEmail, user.Email, "totp_reset_approved", vars); err != nil {
 			logger.Error("reset TOTP: send email", "error", err)
 		}
 
-		h.AddFlashf(ctx, "Two-factor authentication reset request approved for %v.", user.Email)
+		h.AddFlashf(ctx, i18n.M("site.account.user_management.flash.totp_reset_request_approved", "email", user.Email))
 
 		http.Redirect(w, r, h.Path("account.management.user.list"), http.StatusSeeOther)
 	}
@@ -466,7 +470,7 @@ func userTOTPResetDenyPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "Two-factor authentication reset request denied for %v.", user.Email)
+		h.AddFlashf(ctx, i18n.M("site.account.user_management.flash.totp_reset_request_denied", "email", user.Email))
 
 		http.Redirect(w, r, h.Path("account.management.user.list"), http.StatusSeeOther)
 	}

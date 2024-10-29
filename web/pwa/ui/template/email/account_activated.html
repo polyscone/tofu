@@ -1,25 +1,17 @@
-{{define "subject"}}Account activated{{end}}
+{{define "subject"}}{{.T "pwa.email.account_activated.subject"}}{{end}}
 
 {{define "plain" -}}
 
-Your account has been activated
+{{.T "pwa.email.account_activated.title"}}
 
-{{if .Vars.HasPassword -}}
-	You can now sign in using the password you chose when you verified your email address.
-{{else -}}
-	You can now sign in to your account.
-{{end}}
+{{.T "pwa.email.account_activated.text" "has_password" .Vars.HasPassword}}
 
 {{- end}}
 
 {{define "html" -}}
 
-<h1>Your account has been activated</h1>
+<h1>{{.T "pwa.email.account_activated.title"}}</h1>
 
-{{if .Vars.HasPassword -}}
-	<p>You can now sign in using the password you chose when you verified your email address.</p>
-{{else -}}
-	<p>You can now sign in to your account.</p>
-{{end}}
+{{.T "p" "pwa.email.account_activated.text" "has_password" .Vars.HasPassword}}
 
 {{- end}}

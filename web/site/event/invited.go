@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/polyscone/tofu/app/account"
@@ -10,8 +11,8 @@ import (
 )
 
 func InvitedHandler(h *ui.Handler) any {
-	return func(evt account.Invited) {
-		ctx := context.Background()
+	return func(ctx context.Context, evt account.Invited) {
+		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
 		tok, err := h.Repo.Web.AddEmailVerificationToken(ctx, evt.Email, 48*time.Hour)
@@ -28,7 +29,10 @@ func InvitedHandler(h *ui.Handler) any {
 			return
 		}
 
-		vars := handler.Vars{"Token": tok}
+		vars := handler.Vars{
+			"Token":     tok,
+			"VerifyURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.verify"), tok),
+		}
 		if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "invite_verify_account", vars); err != nil {
 			logger.Error("invited: send email", "error", err)
 		}

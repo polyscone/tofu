@@ -7,7 +7,7 @@
 
 {{if or (not .Stream) (eq .Stream "begin") -}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{.Locale}}">
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,7 +28,7 @@
 			{{template "master.site.styles" .}}
 	{{- end}}
 
-	<a href="#main-content" class="skip-nav-link">Skip navigation</a>
+	<a href="#main-content" class="skip-nav-link">{{.T "site.nav.skip"}}</a>
 
 	<header class="header">
 		<p class="site-title">
@@ -37,24 +37,24 @@
 
 		<nav class="nav">
 			<ul>
-				<li><a href="{{Path "page.home"}}">Home</a></li>
+				<li><a href="{{Path "page.home"}}">{{.T "site.nav.home"}}</a></li>
 
 				{{if .Session.IsSignedIn}}
-					<li><a href="{{Path "account.dashboard"}}">Account</a></li>
+					<li><a href="{{Path "account.dashboard"}}">{{.T "site.nav.account_dashboard"}}</a></li>
 
 					{{if .Passport.CanAccessAdmin}}
-						<li><a href="{{Path "admin.dashboard"}}">Admin</a></li>
+						<li><a href="{{Path "admin.dashboard"}}">{{.T "site.nav.admin_dashboard"}}</a></li>
 					{{end}}
 
 					<li>
 						<form action="{{Path "account.sign_out.post"}}" method="POST">
 							{{template "com.form.csrf" .}}
 
-							<button class="btn--link">Sign out</button>
+							<button class="btn--link">{{.T "site.nav.sign_out"}}</button>
 						</form>
 					</li>
 				{{else}}
-					<li><a href="{{Path "account.sign_in"}}">Sign in</a></li>
+					<li><a href="{{Path "account.sign_in"}}">{{.T "site.nav.sign_in"}}</a></li>
 				{{end}}
 			</ul>
 		</nav>
@@ -81,7 +81,7 @@
 	</main>
 
 	<footer class="footer">
-		<p>Lorem ipsum dolor, sit amet, consectetur adipisicing elit...</p>
+		<p>Lorem ipsum dolor, sit amet...</p>
 	</footer>
 
 	{{.Asset.WriteCSSLinks}}

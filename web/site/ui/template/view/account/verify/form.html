@@ -3,11 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	{{if .ErrorMessage}}
-		<h1>Account verification error</h1>
-	{{else}}
-		<h1>Account verification</h1>
-	{{end}}
+	<h1>{{.T "site.account.verify.form.title"}}</h1>
 </div>
 
 {{end}}
@@ -16,35 +12,35 @@
 
 <div class="center">
 	{{if .ErrorMessage}}
-		<p>If your verification link has expired <a href="{{Path "account.sign_up"}}">sign up again</a> using the same email address and we'll send you a new one.</p>
+		{{.T "p" "site.account.verify.form.error_message"}}
 	{{else if .Session.IsSignedIn}}
-		<p>You're already signed in.</p>
+		{{.T "p" "site.account.verify.form.already_signed_in"}}
 
 		<form action="{{Path "account.sign_out.post"}}" method="POST">
 			{{template "com.form.csrf" .}}
 
 			<div class="bag">
-				<button class="btn--link">Click here to sign out.</button>
+				<button class="btn--link">{{.T "site.account.verify.form.sign_out_button"}}</button>
 			</div>
 		</form>
 	{{else if not (.URL.Query.Get "token")}}
-		<p>Create an account using the <a href="{{Path "account.sign_up"}}">sign up form</a> and we'll send you a link to verify your account.</p>
+		{{.T "p" "site.account.verify.form.no_token_message"}}
 	{{else}}
-		<p>Use the form below to choose a password and we can verify your account.</p>
+		{{.T "p" "site.account.verify.form.verify_message"}}
 
 		<form action="{{Path "account.verify.post"}}{{.URL.Query.String}}" method="POST">
 			{{template "com.form.csrf" .}}
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
 			{{template "com.form.password" .WithProps
-				"Label" "Choose a password"
+				"Label" (.T "site.account.verify.form.choose_password_label")
 				"Name" "password"
 				"Required" true
 				"Autocomplete" "new-password"
 			}}
 
 			<div class="bag reverse">
-				<button>Use this password and verify account</button>
+				<button>{{.T "site.account.verify.form.choose_password_button"}}</button>
 			</div>
 		</form>
 	{{end}}

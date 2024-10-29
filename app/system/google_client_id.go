@@ -1,8 +1,9 @@
 package system
 
 import (
-	"errors"
 	"regexp"
+
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 var validGoogleClientIDSeq = regexp.MustCompile(`^.+$`)
@@ -15,7 +16,7 @@ func NewGoogleClientID(id string) (GoogleClientID, error) {
 	}
 
 	if !validGoogleClientIDSeq.MatchString(id) {
-		return "", errors.New("invalid client id")
+		return "", i18n.M("google_client_id.error.invalid")
 	}
 
 	return GoogleClientID(id), nil

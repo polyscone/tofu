@@ -59,7 +59,7 @@ func (s *Service) ActivateUser(ctx context.Context, guard ActivateUsersGuard, us
 		return nil, fmt.Errorf("save user: %w", err)
 	}
 
-	s.broker.Flush(&user.Events)
+	s.broker.Flush(ctx, &user.Events)
 
 	return user, nil
 }

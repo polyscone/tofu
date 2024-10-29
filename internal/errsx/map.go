@@ -9,8 +9,11 @@ import (
 // Map represents a collection of errors keyed by name.
 type Map map[string]error
 
-// Get will return the error string for the given key.
-func (m Map) Get(key string) string {
+func (m Map) Get(key string) error {
+	return m[key]
+}
+
+func (m Map) GetString(key string) string {
 	if err := m[key]; err != nil {
 		return err.Error()
 	}

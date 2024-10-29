@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Thank you</h1>
+	<h1>{{.T "site.account.sign_up.thank_you.title"}}</h1>
 </div>
 
 {{end}}
@@ -11,7 +11,7 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>Your account details have been registered and an email containing an account verification link has been sent to {{or .Vars.Email "you"}}.</p>
+	{{.T "p" "site.account.sign_up.thank_you.message" "user_email" .Vars.Email}}
 </div>
 
 {{end}}

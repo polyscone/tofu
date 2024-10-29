@@ -56,33 +56,33 @@ function SignUpVerify () {
 		view () {
 			if (platform.session.isSignedIn) {
 				return [
-					m("p", "You're already signed in."),
+					m("p", "{{.T "pwa.account.sign_up.already_signed_in.text"}}"),
 					m("form", { onsubmit: signOut }, [
-						m("button[type=submit].btn--link", "Click here to sign out."),
+						m("button[type=submit].btn--link", "{{.T "pwa.account.sign_up.already_signed_in.sign_out_button"}}"),
 					]),
 				]
 			}
 
 			return [
-				m("h1", "Verify"),
+				m("h1", "{{.T "pwa.account.sign_up.verify.title"}}"),
 				m("form", { onsubmit: verify }, [
 					state.error ? m(ErrorBanner, state.error) : null,
 					m(TokenInput, {
-						label: "Verification code",
+						label: "{{.T "pwa.account.sign_up.verify.code_label"}}",
 						name: "token",
 						required: true,
 						error: state.errors.token,
 						oninput (e) { state.token = e.target.value },
 					}),
 					m(PasswordInput, {
-						label: "Choose a password",
+						label: "{{.T "pwa.account.sign_up.verify.choose_password_label"}}",
 						name: "password",
 						required: true,
 						autocomplete: "new-password",
 						error: state.errors.password,
 						oninput (e) { state.password = e.target.value },
 					}),
-					m("button[type=submit]", "Verify account"),
+					m("button[type=submit]", "{{.T "pwa.account.sign_up.verify.verify_button"}}"),
 				]),
 			]
 		},

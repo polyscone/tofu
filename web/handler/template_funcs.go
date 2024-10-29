@@ -35,6 +35,7 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 		"Maxf":               TmplMaxf,
 		"Minf":               TmplMinf,
 		"Ints":               TmplInts,
+		"Atoi":               TmplAtoi,
 		"StatusText":         TmplStatusText,
 		"QueryString":        TmplQueryString,
 		"QueryReplace":       TmplQueryReplace,
@@ -304,6 +305,12 @@ func TmplInts(start, end int) []int {
 	return ints
 }
 
+func TmplAtoi(a string) int {
+	i, _ := strconv.Atoi(a)
+
+	return i
+}
+
 func TmplStatusText(code int) string {
 	if code == httpx.StatusClientClosedRequest {
 		return "Client Closed Request"
@@ -532,6 +539,10 @@ func TmplSliceContains(haystack []any, needle any) bool {
 }
 
 func TmplMap(pairs ...any) (map[string]any, error) {
+	if len(pairs) == 0 {
+		return nil, nil
+	}
+
 	if len(pairs)%2 == 1 {
 		return nil, errors.New("Map: want key value pairs")
 	}

@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Choose a password</h1>
+	<h1>{{.T "site.account.choose_password.title"}}</h1>
 </div>
 
 {{end}}
@@ -11,21 +11,25 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>Choosing a password will enable you to sign in directly through the <a href="{{Path "account.sign_in"}}">sign in form</a>.</p>
-	<p>It's also a requirement for setting up two-factor authentication. This is because if you decide to disable two-factor authentication later on we'll need to verify your identity by asking you for your password.</p>
+	{{.T "p" "site.account.choose_password.allow_direct_sign_in_explanation"}}
+	{{.T "p" "site.account.choose_password.totp_requirement_explanation"}}
 
 	<form action="{{Path "account.choose_password.post"}}" method="POST">
 		{{template "com.form.csrf" .}}
 
 		{{template "com.form.password" .WithProps
-			"Label" "New password"
+			"Label" (.T "site.account.choose_password.new_password_label")
 			"Name" "new-password"
 			"Required" true
 			"Autocomplete" "new-password"
 		}}
 
 		<div class="bag reverse">
-			<button>Use this password{{if .Session.Redirect}} and continue{{end}}</button>
+			{{if .Session.Redirect}}
+				<button>{{.T "site.account.choose_password.use_password_and_continue_button"}}</button>
+			{{else}}
+				<button>{{.T "site.account.choose_password.use_password_button"}}</button>
+			{{end}}
 		</div>
 	</form>
 </div>

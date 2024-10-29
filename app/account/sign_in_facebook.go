@@ -93,7 +93,7 @@ func (s *Service) signInWithFacebook(ctx context.Context, email string, behaviou
 		return nil, false, fmt.Errorf("find user by email: %w", err)
 	}
 
-	s.broker.Flush(&user.Events)
+	s.broker.Flush(ctx, &user.Events)
 
 	return user, signedIn, nil
 }

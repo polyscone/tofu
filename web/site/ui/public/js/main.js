@@ -43,7 +43,7 @@ onMount("form", node => {
 		if (!event.submitter.classList.contains("btn--link")) {
 			event.submitter.classList.add("btn--loading")
 			event.submitter.dataset.originalTextContent = event.submitter.textContent
-			event.submitter.textContent = "Please wait..."
+			event.submitter.textContent = "{{.T "site.form.please_wait_button_text"}}"
 		}
 
 		const buttons = node.querySelectorAll(":is(button, .btn, input[type=button], input[type=submit]):not(.btn--link)")

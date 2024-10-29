@@ -1,12 +1,12 @@
 package system
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/internal/aggregate"
 	"github.com/polyscone/tofu/internal/errsx"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 type Config struct {
@@ -71,13 +71,13 @@ func (c *Config) EnableTOTPSMS() error {
 	var errs errsx.Map
 
 	if c.TwilioSID == "" {
-		errs.Set("twilio sid", "required when two-factor authentication SMS is enabled")
+		errs.Set("twilio sid", i18n.M("enable_totp_sms:system.config.error.twilio_sid_required"))
 	}
 	if c.TwilioToken == "" {
-		errs.Set("twilio token", "required when two-factor authentication SMS is enabled")
+		errs.Set("twilio token", i18n.M("enable_totp_sms:system.config.error.twilio_token_required"))
 	}
 	if c.TwilioFromTel == "" {
-		errs.Set("twilio from tel", "required when two-factor authentication SMS is enabled")
+		errs.Set("twilio token", i18n.M("enable_totp_sms:system.config.error.twilio_from_tel_required"))
 	}
 
 	if errs != nil {
@@ -108,7 +108,7 @@ func (c *Config) DisableMagicLinkSignIn() {
 func (c *Config) EnableGoogleSignIn() error {
 	if c.GoogleSignInClientID == "" {
 		return fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
-			"google sign in client id": errors.New("required when Google sign in is enabled"),
+			"google sign in client id": i18n.M("enable_google_sign_in:system.config.error.google_sign_in_client_id_required"),
 		})
 	}
 
@@ -133,10 +133,10 @@ func (c *Config) EnableFacebookSignIn() error {
 	var errs errsx.Map
 
 	if c.FacebookSignInAppID == "" {
-		errs.Set("facebook sign in app id", "required when Facebook sign in is enabled")
+		errs.Set("facebook sign in app id", i18n.M("enable_facebook_sign_in:system.config.error.facebook_sign_in_app_id_required"))
 	}
 	if c.FacebookSignInAppSecret == "" {
-		errs.Set("facebook sign in app secret", "required when Facebook sign in is enabled")
+		errs.Set("facebook sign in app secret", i18n.M("enable_facebook_sign_in:system.config.error.facebook_sign_in_app_secret_required"))
 	}
 	if errs != nil {
 		return fmt.Errorf("%w: %w", app.ErrInvalidInput, errs)

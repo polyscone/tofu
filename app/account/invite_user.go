@@ -66,7 +66,7 @@ func (s *Service) InviteUser(ctx context.Context, guard InviteUserGuard, email s
 		return nil, fmt.Errorf("find user by email: %w", err)
 	}
 
-	s.broker.Flush(&user.Events)
+	s.broker.Flush(ctx, &user.Events)
 
 	return user, nil
 }

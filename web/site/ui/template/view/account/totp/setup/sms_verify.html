@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Verify your setup</h1>
+	<h1>{{.T "site.account.totp.setup.sms_verify.title"}}</h1>
 </div>
 
 {{end}}
@@ -12,26 +12,25 @@
 
 <div class="center">
 	<div class="warning-banner">
-		<p>Using SMS for two-factor authentication is only recommended when you can't use an authenticator app on your phone.</p>
-		<p><a href="{{Path "account.totp.setup.app"}}">Don't want to use SMS? Click here to use an app.</a></p>
+		{{.T "p" "site.account.totp.setup.sms_verify.warning_text"}}
 	</div>
 
-	<p>Enter the 6 digit passcode you received via SMS to verify that phone number is setup correctly.</p>
+	{{.T "p" "site.account.totp.setup.sms_verify.instruction_text"}}
 
 	<form action="{{Path "account.totp.setup.sms.verify.post"}}" method="POST">
 		{{template "com.form.csrf" .}}
 
 		{{template "com.form.passcode" .WithProps
-			"Label" "Passcode"
+			"Label" (.T "site.account.totp.setup.sms_verify.passcode_label")"Passcode"
 			"Name" "totp"
 			"Required" true
 			"Autocomplete" "off"
 		}}
 
 		<div class="bag reverse">
-			<button>Verify setup</button>
-			<button formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt push-inline-end">Resend passcode SMS</button>
-			<a href="{{Path "account.totp.setup.sms"}}">Change phone number</a>
+			<button>{{.T "site.account.totp.setup.sms_verify.verify_setup_button"}}</button>
+			<button formnovalidate formaction="{{Path "account.totp.sms.send_passcode.post"}}" class="btn--alt push-inline-end">{{.T "site.account.totp.setup.sms_verify.resend_passcode_button"}}</button>
+			<a href="{{Path "account.totp.setup.sms"}}">{{.T "site.account.totp.setup.sms_verify.change_tel_button"}}</a>
 		</div>
 	</form>
 </div>

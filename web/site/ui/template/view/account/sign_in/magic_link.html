@@ -3,11 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	{{if .ErrorMessage}}
-		<h1>Sign in error</h1>
-	{{else}}
-		<h1>Sign in</h1>
-	{{end}}
+	<h1>{{.T "site.account.sign_in.magic_link.title"}}</h1>
 </div>
 
 {{end}}
@@ -16,28 +12,28 @@
 
 <div class="center">
 	{{if .ErrorMessage}}
-		<p>If your sign in link has expired <a href="{{Path "account.sign_in"}}">sign in again</a> using the same email address and we'll send you a new one.</p>
+		{{.T "p" "site.account.sign_in.magic_link.error_message"}}
 	{{else if .Session.IsSignedIn}}
-		<p>You're already signed in.</p>
+		{{.T "p" "site.account.sign_in.magic_link.already_signed_in"}}
 
 		<form action="{{Path "account.sign_out.post"}}" method="POST">
 			{{template "com.form.csrf" .}}
 
 			<div class="bag">
-				<button class="btn--link">Click here to sign out.</button>
+				<button class="btn--link">{{.T "site.account.sign_in.magic_link.sign_out_button"}}</button>
 			</div>
 		</form>
 	{{else if not (.URL.Query.Get "token")}}
-		<p>Sign in using the <a href="{{Path "account.sign_in"}}">sign in form</a> and we'll send you a link to verify your identity.</p>
+		{{.T "p" "site.account.sign_in.magic_link.no_token_message"}}
 	{{else}}
-		<p>Click on the sign in button below if you aren't automatically redirected.</p>
+		{{.T "p" "site.account.sign_in.magic_link.click_button_if_no_redirect"}}
 
 		<form action="{{Path "account.sign_in.magic_link.post"}}{{.URL.Query.String}}" method="POST" id="magic-link-sign-in-form">
 			{{template "com.form.csrf" .}}
 			<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
 			<div class="bag">
-				<button>Sign in</button>
+				<button>{{.T "site.account.sign_in.magic_link.sign_in_button"}}</button>
 			</div>
 		</form>
 

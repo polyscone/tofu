@@ -1,7 +1,7 @@
 {{define "master.pwa" -}}
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{.Locale}}">
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -25,7 +25,7 @@
 
 		<script>const __STATE__ = {{UnescapeJS (MarshalIndentJSON .Vars "" "\t")}}</script>
 		<noscript>
-			<p class="text-center">JavaScript is required to use this application.</p>
+			<p class="text-center">{{.T "pwa.js_required_text"}}</p>
 		</noscript>
 
 		{{.Asset.WriteCSSLinks}}

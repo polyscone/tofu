@@ -8,9 +8,9 @@
 	{{$isMagicLinkSignUp := and $isMagicLinkSignIn (eq (.URL.Query.Get "kind") "sign-up")}}
 
 	{{if $isMagicLinkSignUp}}
-		<h1>Sign up</h1>
+		<h1>{{.T "site.account.sign_in.form.sign_up_title"}}</h1>
 	{{else}}
-		<h1>Sign in</h1>
+		<h1>{{.T "site.account.sign_in.form.title"}}</h1>
 	{{end}}
 </div>
 
@@ -31,7 +31,7 @@
 		{{template "com.form.csrf" .}}
 
 		{{template "com.form.email" .WithProps
-			"Label" "Email"
+			"Label" (.T "site.account.sign_in.form.email_label")
 			"Name" "email"
 			"Required" true
 			"Autocomplete" "username"
@@ -40,7 +40,7 @@
 
 		{{if not $isMagicLinkSignIn}}
 			{{template "com.form.password" .WithProps
-				"Label" "Password"
+				"Label" (.T "site.account.sign_in.form.password_label")
 				"Name" "password"
 				"Required" true
 				"Autocomplete" "current-password"
@@ -49,9 +49,9 @@
 
 		<div class="bag reverse">
 			{{if $isMagicLinkSignIn}}
-				<button class="push-inline-end">Send magic link</button>
+				<button class="push-inline-end">{{.T "site.account.sign_in.form.send_magic_link_button"}}</button>
 			{{else}}
-				<button class="push-inline-end">Sign in</button>
+				<button class="push-inline-end">{{.T "site.account.sign_in.form.sign_in_button"}}</button>
 			{{end}}
 
 			<div class="stack">
@@ -62,16 +62,16 @@
 							{{$signUpLink = .URL.Query.Replace "kind" "sign-up"}}
 						{{end}}
 
-						<a href="{{$signUpLink}}">Sign up</a>
+						<a href="{{$signUpLink}}">{{.T "site.account.sign_in.form.sign_up_button"}}</a>
 					{{end}}
 				{{end}}
 
 				{{if $isMagicLinkSignUp}}
-					<a href="{{Path "account.sign_in"}}">Already have an account?</a>
+					<a href="{{Path "account.sign_in"}}">{{.T "site.account.sign_in.form.already_have_account_button"}}</a>
 				{{end}}
 
 				{{if not $isMagicLinkSignIn}}
-					<a href="{{Path "account.reset_password"}}">Forgotten your password?</a>
+					<a href="{{Path "account.reset_password"}}">{{.T "site.account.sign_in.form.reset_password_button"}}</a>
 				{{end}}
 			</div>
 		</div>
@@ -81,14 +81,14 @@
 	{{$isFacebookSignInEnabled := and .Config.FacebookSignInEnabled .Config.FacebookSignInAppID}}
 	{{if and (not $isMagicLinkSignUp) (or $isMagicLinkSignEnabled $isGoogleSignInEnabled $isFacebookSignInEnabled)}}
 		<div class="sign-in-alt text-center" style="display: none;">
-			<p class="sign-in-alt__title">Or</p>
+			<p class="sign-in-alt__title">{{.T "site.account.sign_in.form.alt_sign_in_title"}}</p>
 
 			{{if $isMagicLinkSignUp}}
-				<a href="{{Path "account.sign_up"}}{{.URL.Query.Replace "kind" "password"}}" class="btn btn--alt btn--large">Sign up with a password</a>
+				<a href="{{Path "account.sign_up"}}{{.URL.Query.Replace "kind" "password"}}" class="btn btn--alt btn--large">{{.T "site.account.sign_in.form.sign_up_with_password_button"}}</a>
 			{{else if $isMagicLinkSignIn}}
-				<a href="{{Path "account.sign_in"}}{{.URL.Query.Replace "kind" "password"}}" class="btn btn--alt btn--large">Sign in with a password</a>
+				<a href="{{Path "account.sign_in"}}{{.URL.Query.Replace "kind" "password"}}" class="btn btn--alt btn--large">{{.T "site.account.sign_in.form.sign_in_with_password_button"}}</a>
 			{{else if $isMagicLinkSignEnabled}}
-				<a href="{{Path "account.sign_in"}}{{.URL.Query.Replace "kind" ""}}" class="btn btn--alt btn--large">Sign in with a magic link</a>
+				<a href="{{Path "account.sign_in"}}{{.URL.Query.Replace "kind" ""}}" class="btn btn--alt btn--large">{{.T "site.account.sign_in.form.sign_in_with_magic_link_button"}}</a>
 			{{end}}
 
 			{{if $isGoogleSignInEnabled}}

@@ -20,7 +20,7 @@ function SignOut () {
 			}
 
 			return m("form", { onsubmit: signOut }, [
-				m("button[type=submit].btn--link", "Sign out"),
+				m("button[type=submit].btn--link", "{{.T "pwa.sign_out_button"}}"),
 			])
 		},
 	}
@@ -30,7 +30,7 @@ function Layout () {
 	return {
 		view: vnode => [
 			m("header.header", [
-				m("h1", "PWA"),
+				m("h1", "{{.T "pwa.header"}}"),
 				m(SignOut),
 			]),
 			m("main.main", vnode.children),

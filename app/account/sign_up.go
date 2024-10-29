@@ -57,7 +57,7 @@ func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 		return nil, fmt.Errorf("find user by email: %w", err)
 	}
 
-	s.broker.Flush(&user.Events)
+	s.broker.Flush(ctx, &user.Events)
 
 	return user, nil
 }

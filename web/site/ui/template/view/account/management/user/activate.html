@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Activate {{.Vars.User.Email}}</h1>
+	<h1>{{.T "site.account.user_management.activate.title" "user_email" .Vars.User.Email}}</h1>
 </div>
 
 {{end}}
@@ -11,15 +11,15 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>Are you sure you want to activate {{.Vars.User.Email}}?</p>
+	{{.T "p" "site.account.user_management.activate.are_you_sure" "user_email" .Vars.User.Email}}
 
 	<form action="{{Path "account.management.user.activate.post" "{userID}" .Vars.User.ID}}{{.URL.Query.String}}" method="POST">
 		{{template "com.form.csrf" .}}
 
 		<div class="bag reverse">
-			<button class="push-inline-end">Yes, activate {{.Vars.User.Email}}</button>
+			<button class="push-inline-end">{{.T "site.account.user_management.activate.yes_button" "user_email" .Vars.User.Email}}</button>
 
-			<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">Cancel</a>
+			<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">{{.T "site.account.user_management.activate.cancel_button"}}</a>
 		</div>
 	</form>
 </div>

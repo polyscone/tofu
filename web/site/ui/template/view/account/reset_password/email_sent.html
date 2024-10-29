@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Email sent</h1>
+	<h1>{{.T "site.account.reset_password.email_sent.title"}}</h1>
 </div>
 
 {{end}}
@@ -11,7 +11,7 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>Please check your email for a link to update your password.</p>
+	{{.T "p" "site.account.reset_password.email_sent.message"}}
 </div>
 
 {{end}}

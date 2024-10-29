@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Delete {{.Vars.Role.Name}}</h1>
+	<h1>{{.T "site.account.role_management.delete.title" "role_name" .Vars.Role.Name}}</h1>
 </div>
 
 {{end}}
@@ -13,23 +13,19 @@
 <div class="center">
 	{{if ge .Vars.UserCount 1}}
 		<div class="warning-banner">
-			{{if eq .Vars.UserCount 1}}
-				<p>{{.Vars.UserCount}} user currently has this role; deleting will remove it from them.</p>
-			{{else}}
-				<p>{{.Vars.UserCount}} users currently have this role; deleting will remove it from all of them.</p>
-			{{end}}
+			{{.T "p" "site.account.role_management.delete.users_have_role_warning" "user_count" .Vars.UserCount}}
 		</div>
 	{{end}}
 
-	<p>Are you sure you want to permanently delete the role {{printf "%q" .Vars.Role.Name}}?</p>
+	{{.T "p" "site.account.role_management.delete.are_you_sure" "role_name" .Vars.Role.Name}}
 
 	<form action="{{Path "account.management.role.delete.post" "{roleID}" .Vars.Role.ID}}{{.URL.Query.String}}" method="POST">
 		{{template "com.form.csrf" .}}
 
 		<div class="bag reverse">
-			<button class="btn--danger push-inline-end">Yes, delete {{printf "%q" .Vars.Role.Name}}</button>
+			<button class="btn--danger push-inline-end">{{.T "site.account.role_management.delete.delete_button" "role_name" .Vars.Role.Name}}</button>
 
-			<a href="{{Path "account.management.role.list"}}{{.URL.Query.String}}">Cancel</a>
+			<a href="{{Path "account.management.role.list"}}{{.URL.Query.String}}">{{.T "site.account.role_management.delete.cancel_button"}}</a>
 		</div>
 	</form>
 </div>

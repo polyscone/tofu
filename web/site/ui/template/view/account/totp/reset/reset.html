@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Reset two-factor authentication</h1>
+	<h1>{{.T "site.account.totp.reset.form.title"}}</h1>
 </div>
 
 {{end}}
@@ -11,21 +11,21 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>Enter your password in the form below to reset two-factor authentication for your account.</p>
+	{{.T "p" "site.account.totp.reset.form.text"}}
 
 	<form action="{{Path "account.totp.reset.post"}}{{.URL.Query.String}}" method="POST">
 		{{template "com.form.csrf" .}}
 		<input type="hidden" name="token" value="{{.URL.Query.Get "token"}}">
 
 		{{template "com.form.password" .WithProps
-			"Label" "Password"
+			"Label" (.T "site.account.totp.reset.form.password_label")
 			"Name" "password"
 			"Required" true
 			"Autocomplete" "current-password"
 		}}
 
 		<div class="bag reverse">
-			<button>Reset two-factor authentication</button>
+			<button>{{.T "site.account.totp.reset.form.reset_button"}}</button>
 		</div>
 	</form>
 </div>

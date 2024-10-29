@@ -107,7 +107,7 @@ export function PasswordInput () {
 		view: vnode => m(Input, {
 			...vnode.attrs,
 			type: "password",
-			placeholder: "password or passphrase",
+			placeholder: "{{.T "com.form.password.default_placeholder"}}",
 			pattern: "^.+$",
 			minlength: 8,
 			maxlength: 1000,

@@ -9,6 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/collection"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/site/ui"
@@ -105,7 +106,7 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "Role %q created successfully.", role.Name)
+		h.AddFlashf(ctx, i18n.M("site.account.role_management.flash.created", "name", role.Name))
 
 		h.Session.SetSortTopID(ctx, role.ID)
 		h.Session.SetHighlightID(ctx, role.ID)
@@ -171,7 +172,7 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "Role %q updated successfully.", role.Name)
+		h.AddFlashf(ctx, i18n.M("site.account.role_management.flash.updated", "name", role.Name))
 
 		h.Session.SetHighlightID(ctx, role.ID)
 
@@ -230,7 +231,7 @@ func roleDeletePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "Role %q deleted successfully.", role.Name)
+		h.AddFlashf(ctx, i18n.M("site.account.role_management.flash.deleted", "name", role.Name))
 
 		http.Redirect(w, r, h.PathQuery(r, "account.management.role.list"), http.StatusSeeOther)
 	}

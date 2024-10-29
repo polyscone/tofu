@@ -5,6 +5,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/site/ui"
 )
@@ -99,7 +100,7 @@ func systemSetupPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, "Setup completed successfully.")
+		h.AddFlashf(ctx, i18n.M("site:system.setup.flash.completed"))
 
 		http.Redirect(w, r, h.Path("system.config"), http.StatusSeeOther)
 	}

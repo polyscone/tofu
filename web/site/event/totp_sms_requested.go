@@ -8,8 +8,8 @@ import (
 )
 
 func TOTPSMSRequestedHandler(h *ui.Handler) any {
-	return func(evt event.TOTPSMSRequested) {
-		ctx := context.Background()
+	return func(ctx context.Context, evt event.TOTPSMSRequested) {
+		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
 		if err := h.SendTOTPSMS(evt.Email, evt.Tel); err != nil {

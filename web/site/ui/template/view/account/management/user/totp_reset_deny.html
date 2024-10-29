@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Deny {{.Vars.User.Email}}</h1>
+	<h1>{{.T "site.account.user_management.deny_totp_reset.title" "user_email" .Vars.User.Email}}</h1>
 </div>
 
 {{end}}
@@ -11,14 +11,14 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>Are you sure you want to deny this request?</p>
+	{{.T "p" "site.account.user_management.deny_totp_reset.are_you_sure" "user_email" .Vars.User.Email}}
 
 	<form action="{{Path "account.management.user.totp_reset_deny.post" "{userID}" .Vars.User.ID}}" method="POST">
 		{{template "com.form.csrf" .}}
 
 		<div class="bag reverse">
-			<button>Yes, deny this request</button>
-			<a href="{{Path "account.management.user.totp_reset_review" "{userID}" .Vars.User.ID}}" class="btn btn--alt push-inline-end">No, go back</a>
+			<button>{{.T "site.account.user_management.deny_totp_reset.yes_button"}}</button>
+			<a href="{{Path "account.management.user.totp_reset_review" "{userID}" .Vars.User.ID}}" class="btn btn--alt push-inline-end">{{.T "site.account.user_management.deny_totp_reset.no_button"}}</a>
 		</div>
 	</form>
 </div>

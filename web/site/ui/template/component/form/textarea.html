@@ -50,7 +50,7 @@
 <div class="bag">
 	<p class="error grow" data-locale-number>{{$error}}</p>
 	{{if and $showmaxcount $id $maxlength}}
-		<small data-char-count-for="{{$id}}" class="push-inline-end">Max. {{$maxlength}}</small>
+		<small data-char-count-for="{{$id}}" class="push-inline-end">{{.T "com.form.textarea.max_length_hint" "max_length" $maxlength}}</small>
 	{{end}}
 </div>
 

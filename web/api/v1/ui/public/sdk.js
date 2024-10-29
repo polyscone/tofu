@@ -369,18 +369,18 @@ function {{$factoryName | UnescapeJS}} (opts) {
 
 		switch (ret.status) {
 		case sdk.http.badGateway:
-			ret.body.error = "Request failed because the server was offline, please try again."
+			ret.body.error = "{{.T "api.sdk.bad_gateway"}}"
 
 			break
 
 		case sdk.http.gatewayTimeout:
-			ret.body.error = "The server could not process your request in time, please try again."
+			ret.body.error = "{{.T "api.sdk.gateway_timeout"}}"
 
 			break
 
 		default:
 			if (ret.networkError) {
-				ret.body.error = "Request failed because either the server was offline, or you have no internet connection, please try again."
+				ret.body.error = "{{.T "api.sdk.network_error"}}"
 			}
 		}
 

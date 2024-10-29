@@ -1,6 +1,7 @@
 package event_test
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -9,6 +10,8 @@ import (
 )
 
 func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event.Queue) {
+	ctx := context.Background()
+
 	t.Run("valid events and handlers", func(t *testing.T) {
 		type FooEvent int
 		type BarEvent int
@@ -20,7 +23,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		var wg sync.WaitGroup
 
 		var fooHandledCount atomic.Int64
-		broker.Listen(func(evt FooEvent) {
+		broker.Listen(func(ctx context.Context, evt FooEvent) {
 			defer wg.Done()
 
 			fooHandledCount.Add(1)
@@ -31,7 +34,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		})
 
 		var barHandledCount atomic.Int64
-		broker.Listen(func(evt BarEvent) {
+		broker.Listen(func(ctx context.Context, evt BarEvent) {
 			defer wg.Done()
 
 			barHandledCount.Add(1)
@@ -42,7 +45,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		})
 
 		var barPtrHandledCount atomic.Int64
-		broker.Listen(func(evt *BarEvent) {
+		broker.Listen(func(ctx context.Context, evt *BarEvent) {
 			defer wg.Done()
 
 			barPtrHandledCount.Add(1)
@@ -52,7 +55,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 			}
 		})
 
-		broker.ListenFallback(func(evt event.Event) {
+		broker.ListenFallback(func(ctx context.Context, evt event.Event) {
 			t.Errorf("unexpected %T was dispatched", evt)
 		})
 
@@ -64,7 +67,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 			queue1.Enqueue(BarEvent(2))
 			queue1.Enqueue(&barEvent)
 
-			if want, got := 3, queue1.Flush(broker); want != got {
+			if want, got := 3, queue1.Flush(ctx, broker); want != got {
 				t.Errorf("want %v events flushed; got %v", want, got)
 			}
 		}
@@ -86,7 +89,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		if want, got := 2, queue1.Clear(); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
-		if want, got := 0, queue1.Flush(broker); want != got {
+		if want, got := 0, queue1.Flush(ctx, broker); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 
@@ -96,7 +99,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 			queue1.Enqueue(BarEvent(2))
 			queue2.Enqueue(BarEvent(3))
 
-			if want, got := 3, broker.Flush(queue1, queue2); want != got {
+			if want, got := 3, broker.Flush(ctx, queue1, queue2); want != got {
 				t.Errorf("want %v; got %v", want, got)
 			}
 		}
@@ -107,14 +110,14 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		fooHandledCount.Store(0)
 		queue1.Enqueue(FooEvent(1))
 
-		if want, got := 1, broker.Flush(queue1); want != got {
+		if want, got := 1, broker.Flush(ctx, queue1); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 		if fooHandledCount.Load() != 0 {
 			t.Errorf("want %T to be unhandled", FooEvent(0))
 		}
 
-		broker.Listen(func(evt FooEvent) {
+		broker.Listen(func(ctx context.Context, evt FooEvent) {
 			defer wg.Done()
 
 			fooHandledCount.Add(1)
@@ -124,7 +127,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 			}
 		})
 
-		broker.ListenAny(func(evt event.Event) {
+		broker.ListenAny(func(ctx context.Context, evt event.Event) {
 			if evt, ok := evt.(FooEvent); ok {
 				defer wg.Done()
 
@@ -140,7 +143,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		{
 			queue1.Enqueue(FooEvent(1))
 
-			if want, got := 1, broker.Flush(queue1); want != got {
+			if want, got := 1, broker.Flush(ctx, queue1); want != got {
 				t.Errorf("want %v; got %v", want, got)
 			}
 		}
@@ -160,7 +163,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		}()
 
 		broker := newBroker()
-		broker.Listen(func() {})
+		broker.Listen(func(ctx context.Context) {})
 	})
 
 	t.Run("invalid handlers with too many paramters", func(t *testing.T) {
@@ -171,7 +174,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		}()
 
 		broker := newBroker()
-		broker.Listen(func(x, y int) {})
+		broker.Listen(func(ctx context.Context, x, y int) {})
 	})
 
 	t.Run("invalid handlers with returns", func(t *testing.T) {
@@ -182,6 +185,6 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		}()
 
 		broker := newBroker()
-		broker.Listen(func(i int) error { return nil })
+		broker.Listen(func(ctx context.Context, i int) error { return nil })
 	})
 }

@@ -4,19 +4,19 @@
 	<nav>
 		<ul>
 			{{if .Passport.Account.CanViewUsers}}
-				<li><a href="{{Path "account.management.user.list"}}">Users</a></li>
+				<li><a href="{{Path "account.management.user.list"}}">{{.T "site.admin.nav.user_management"}}</a></li>
 			{{end}}
 
 			{{if .Passport.Account.CanViewRoles}}
-				<li><a href="{{Path "account.management.role.list"}}">Roles</a></li>
+				<li><a href="{{Path "account.management.role.list"}}">{{.T "site.admin.nav.role_management"}}</a></li>
 			{{end}}
 
 			{{if .Passport.System.CanViewConfig}}
-				<li><a href="{{Path "system.config"}}">Config</a></li>
+				<li><a href="{{Path "system.config"}}">{{.T "site.admin.nav.system_config"}}</a></li>
 			{{end}}
 
 			{{if .Passport.System.CanViewMetrics}}
-				<li><a href="{{Path "system.metrics"}}">Metrics</a></li>
+				<li><a href="{{Path "system.metrics"}}">{{.T "site.admin.nav.system_metrics"}}</a></li>
 			{{end}}
 		</ul>
 	</nav>

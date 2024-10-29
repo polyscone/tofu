@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Sign in with recovery code</h1>
+	<h1>{{.T "site.account.sign_in.recovery_code.title"}}</h1>
 </div>
 
 {{end}}
@@ -11,16 +11,13 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>
-		Please verify your identity by entering one of your recovery codes.
-		Once a recovery code has been used it can't be used again.
-	</p>
+	{{.T "p" "site.account.sign_in.recovery_code.message"}}
 
 	<form action="{{Path "account.sign_in.recovery_code.post"}}" method="POST">
 		{{template "com.form.csrf" .}}
 
 		{{template "com.form.recovery_code" .WithProps
-			"Label" "Recovery code"
+			"Label" (.T "site.account.sign_in.recovery_code.recovery_code_label")
 			"Name" "recovery-code"
 			"Required" true
 			"Autocomplete" "off"
@@ -28,9 +25,9 @@
 		}}
 
 		<div class="bag reverse">
-			<button class="push-inline-end">Sign in</button>
+			<button class="push-inline-end">{{.T "site.account.sign_in.recovery_code.sign_in_button"}}</button>
 
-			<a href="{{Path "account.sign_in.totp"}}">Use a passcode</a>
+			<a href="{{Path "account.sign_in.totp"}}">{{.T "site.account.sign_in.recovery_code.use_passcode_button"}}</a>
 		</div>
 	</form>
 </div>

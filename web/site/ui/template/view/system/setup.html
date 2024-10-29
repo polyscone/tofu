@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Setup</h1>
+	<h1>{{.T "site.system.setup.title"}}</h1>
 </div>
 
 {{end}}
@@ -15,19 +15,19 @@
 		{{template "com.form.csrf" .}}
 
 		<fieldset>
-			<legend>Account</legend>
+			<legend>{{.T "site.system.setup.account_section_title"}}</legend>
 
-			<p>We'll create an admin account using the email and password you enter below.</p>
+			{{.T "p" "site.system.setup.account_section_description"}}
 
 			{{template "com.form.email" .WithProps
-				"Label" "Email"
+				"Label" (.T "site.system.setup.email_label")
 				"Name" "email"
 				"Required" true
 				"Autocomplete" "username"
 			}}
 
 			{{template "com.form.password" .WithProps
-				"Label" "Password"
+				"Label" (.T "site.system.setup.password_label")
 				"Name" "password"
 				"Required" true
 				"Autocomplete" "current-password"
@@ -35,11 +35,11 @@
 		</fieldset>
 
 		<fieldset>
-			<legend>Email</legend>
+			<legend>{{.T "site.system.setup.email_section_title"}}</legend>
 
 			{{template "com.form.email" .WithProps
-				"Label" "System email"
-				"Hint" "from address in system emails"
+				"Label" (.T "site.system.setup.system_email_label")
+				"Hint" (.T "site.system.setup.system_email_hint")
 				"Name" "system-email"
 				"Value" (.Form.GetOr "system-email" .Config.SystemEmail)
 				"Required" true
@@ -47,8 +47,8 @@
 			}}
 
 			{{template "com.form.email" .WithProps
-				"Label" "Security email"
-				"Hint" "for reporting security vulnerabilities"
+				"Label" (.T "site.system.setup.security_email_label")
+				"Hint" (.T "site.system.setup.security_email_hint")
 				"Name" "security-email"
 				"Value" (.Form.GetOr "security-email" .Config.SecurityEmail)
 				"Required" true
@@ -57,7 +57,7 @@
 		</fieldset>
 
 		<div class="bag reverse">
-			<button class="push-inline-end">Finish setup</button>
+			<button class="push-inline-end">{{.T "site.system.setup.setup_button"}}</button>
 		</div>
 	</form>
 </div>

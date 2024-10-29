@@ -1,5 +1,7 @@
 package event
 
+import "context"
+
 // Handler represents any function that is capable of handling
 // dispatched events.
 // The underlying type is set to any to allow for any signatures, but a handler
@@ -12,13 +14,13 @@ type Handler any
 type Event any
 
 // AnyHandler represents a handler that can be called for any event type.
-type AnyHandler func(evt Event)
+type AnyHandler func(ctx context.Context, evt Event)
 
 // FallbackHandler represents a handler that can be called when no specific
 // handler is listening for an event type.
 // That is, it can be used as a catch-all handler for any events that are not
 // handled by more explicit handlers.
-type FallbackHandler func(evt Event)
+type FallbackHandler func(ctx context.Context, evt Event)
 
 // Broker defines a type that can register listeners and dispatch/flush events.
 type Broker interface {
@@ -27,14 +29,14 @@ type Broker interface {
 	ListenFallback(handler FallbackHandler)
 
 	Clear()
-	Dispatch(evt Event)
-	Flush(queues ...Queue) (nFlushed int)
+	Dispatch(ctx context.Context, evt Event)
+	Flush(ctx context.Context, queues ...Queue) (nFlushed int)
 }
 
 // Queue defines a type that can queue up events, and then either flush them
 // using a broker, or clear them.
 type Queue interface {
 	Enqueue(evt Event)
-	Flush(broker Broker) (nFlushed int)
+	Flush(ctx context.Context, broker Broker) (nFlushed int)
 	Clear() (nCleared int)
 }

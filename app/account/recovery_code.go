@@ -5,14 +5,13 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base32"
-	"errors"
 	"fmt"
 	"io"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 const recoveryCodeLength = 13
@@ -26,26 +25,26 @@ type RecoveryCode string
 
 func NewRecoveryCode(code string) (RecoveryCode, error) {
 	if strings.TrimSpace(code) == "" {
-		return "", errors.New("cannot be empty")
+		return "", i18n.M("account.recovery_code.error.empty")
 	}
 
 	if strings.ContainsAny(code, " \t\r\n") {
-		return "", errors.New("cannot contain whitespace")
+		return "", i18n.M("account.recovery_code.error.has_whitespace")
 	}
 	if strings.ContainsAny(code, `"'`) {
-		return "", errors.New("cannot contain quotes")
+		return "", i18n.M("account.recovery_code.error.has_quotes")
 	}
 
 	if rc := utf8.RuneCountInString(code); rc != recoveryCodeLength {
-		return "", fmt.Errorf("must be %v characters in length", recoveryCodeLength)
+		return "", i18n.M("account.recovery_code.error.incorrect_length", "required_length", recoveryCodeLength)
 	}
 
 	if matches := invalidRecoveryCodeChars.FindAllString(code, -1); len(matches) != 0 {
-		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
+		return "", i18n.M("account.recovery_code.error.has_invalid_chars", "invalid_chars", matches)
 	}
 
 	if !validRecoveryCodeSeq.MatchString(code) {
-		return "", errors.New("can only contain uppercase characters between A-Z and 2-7")
+		return "", i18n.M("account.recovery_code.error.invalid")
 	}
 
 	return RecoveryCode(code), nil

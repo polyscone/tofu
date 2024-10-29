@@ -2,13 +2,13 @@
 
 {{define "view.head"}}
 
-<h1>Role management</h1>
+<h1>{{.T "site.account.role_management.list.title"}}</h1>
 
 <form class="bag">
 	{{template "com.form.query_params" .WithProps "Skip" (Slice "search" "page")}}
 
-	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="Search" class="grow"{{if .URL.Query.Has "search"}} autofocus{{end}}>
-	<button>Search</button>
+	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="{{.T "site.account.role_management.list.search_placeholder"}}" class="grow"{{if .URL.Query.Has "search"}} autofocus{{end}}>
+	<button>{{.T "site.account.role_management.list.search_button"}}</button>
 </form>
 
 {{end}}
@@ -18,11 +18,11 @@
 <table class="data-table">
 	<thead>
 		<tr>
-			<th>Name {{template "com.datatable.sort" .WithProps "Key" "name" "Direction" "desc"}}</th>
-			<th>Description</th>
+			<th>{{.T "site.account.role_management.list.name_heading"}} {{template "com.datatable.sort" .WithProps "Key" "name" "Direction" "desc"}}</th>
+			<th>{{.T "site.account.role_management.list.description_heading"}}</th>
 			<th class="text-right no-wrap">
 				{{if .Passport.Account.CanCreateRoles}}
-					<a href="{{Path "account.management.role.new"}}{{.URL.Query.String}}">Create role</a>
+					<a href="{{Path "account.management.role.new"}}{{.URL.Query.String}}">{{.T "site.account.role_management.list.create_button"}}</a>
 				{{end}}
 			</th>
 		</tr>
@@ -36,18 +36,18 @@
 				<td class="text-right no-wrap">
 					{{if not (eq .ID $.Vars.Super.ID)}}
 						{{if $.Passport.Account.CanUpdateRoles}}
-							<a href="{{Path "account.management.role.edit" "{roleID}" .ID}}{{$.URL.Query.String}}">Edit</a>
+							<a href="{{Path "account.management.role.edit" "{roleID}" .ID}}{{$.URL.Query.String}}">{{$.T "site.account.role_management.list.edit_button"}}</a>
 						{{end}}
 
 						{{if $.Passport.Account.CanDeleteRoles}}
-							<a href="{{Path "account.management.role.delete" "{roleID}" .ID}}{{$.URL.Query.String}}">Delete</a>
+							<a href="{{Path "account.management.role.delete" "{roleID}" .ID}}{{$.URL.Query.String}}">{{$.T "site.account.role_management.list.delete_button"}}</a>
 						{{end}}
 					{{end}}
 				</td>
 			</tr>
 		{{else}}
 			<tr class="data-table__empty">
-				<td colspan="3">No roles found</td>
+				<td colspan="3">{{$.T "site.account.role_management.list.no_results"}}</td>
 			</tr>
 		{{end}}
 	</tbody>

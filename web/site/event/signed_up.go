@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/polyscone/tofu/app/account"
@@ -10,7 +11,7 @@ import (
 )
 
 func SignedUpHandler(h *ui.Handler) any {
-	return func(evt account.SignedUp) {
+	return func(ctx context.Context, evt account.SignedUp) {
 		// Sign ups through magic links and third-party services like Google/Facebook are
 		// implicitly verified due to the fact they signed in with that service
 		// so we don't need to verify any email addresses
@@ -19,7 +20,7 @@ func SignedUpHandler(h *ui.Handler) any {
 			return
 		}
 
-		ctx := context.Background()
+		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
 		tok, err := h.Repo.Web.AddEmailVerificationToken(ctx, evt.Email, 2*time.Hour)
@@ -36,7 +37,10 @@ func SignedUpHandler(h *ui.Handler) any {
 			return
 		}
 
-		vars := handler.Vars{"Token": tok}
+		vars := handler.Vars{
+			"Token":     tok,
+			"VerifyURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.verify"), tok),
+		}
 		if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "verify_account", vars); err != nil {
 			logger.Error("signed up: send email", "error", err)
 		}

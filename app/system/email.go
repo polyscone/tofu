@@ -1,14 +1,12 @@
 package system
 
 import (
-	"errors"
-	"fmt"
 	"net/mail"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 const emailMaxLength = 100
@@ -22,18 +20,19 @@ type Email string
 
 func NewEmail(email string) (Email, error) {
 	if strings.TrimSpace(email) == "" {
-		return "", errors.New("cannot be empty")
+		return "", i18n.M("system.email.error.empty")
 	}
 
 	if strings.ContainsAny(email, " \t\r\n") {
-		return "", errors.New("cannot contain whitespace")
+		return "", i18n.M("system.email.error.contains_whitespace")
 	}
+
 	if strings.ContainsAny(email, `"'`) {
-		return "", errors.New("cannot contain quotes")
+		return "", i18n.M("system.email.error.contains_quotes")
 	}
 
 	if rc := utf8.RuneCountInString(email); rc > emailMaxLength {
-		return "", fmt.Errorf("cannot be a over %v characters in length", emailMaxLength)
+		return "", i18n.M("system.email.error.too_long", "max_length", emailMaxLength)
 	}
 
 	addr, err := mail.ParseAddress(email)
@@ -43,33 +42,33 @@ func NewEmail(email string) (Email, error) {
 
 		switch {
 		case strings.Contains(msg, "missing '@'"):
-			return "", errors.New("missing the @ sign")
+			return "", i18n.M("system.email.error.missing_at")
 
 		case strings.HasPrefix(email, "@"):
-			return "", errors.New("missing part before the @ sign")
+			return "", i18n.M("system.email.error.missing_local_part")
 
 		case strings.HasSuffix(email, "@"):
-			return "", errors.New("missing part after the @ sign")
+			return "", i18n.M("system.email.error.missing_domain")
 		}
 
-		return "", errors.New(msg)
+		return "", i18n.M("system.email.error.other", "error", msg)
 	}
 
 	if addr.Name != "" {
-		return "", errors.New("cannot not include a name")
+		return "", i18n.M("system.email.error.has_name")
 	}
 
 	if matches := invalidEmailChars.FindAllString(addr.Address, -1); len(matches) != 0 {
-		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
+		return "", i18n.M("system.email.error.has_invalid_chars", "invalid_chars", matches)
 	}
 
 	if !validEmailSeq.MatchString(addr.Address) {
 		_, end, _ := strings.Cut(addr.Address, "@")
 		if !strings.Contains(end, ".") {
-			return "", errors.New("missing top-level domain, e.g. .com, .co.uk, etc.")
+			return "", i18n.M("system.email.error.missing_tld")
 		}
 
-		return "", errors.New("must be an email address, e.g. email@example.com")
+		return "", i18n.M("system.email.error.not_an_email")
 	}
 
 	return Email(addr.Address), nil

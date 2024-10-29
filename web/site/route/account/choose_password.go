@@ -5,6 +5,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/internal/password/pwned"
 	"github.com/polyscone/tofu/web/site/ui"
 )
@@ -88,7 +89,7 @@ func choosePasswordPost(h *ui.Handler) http.HandlerFunc {
 			}
 		}
 
-		h.AddFlashf(ctx, "Your password has been successfully set.")
+		h.AddFlashf(ctx, i18n.M("site.account.choose_password.flash.password_chosen"))
 
 		var redirect string
 		if r := h.Session.PopRedirect(ctx); r != "" {

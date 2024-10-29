@@ -1,12 +1,10 @@
 package system
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 const twilioSIDLength = 34
@@ -24,15 +22,15 @@ func NewTwilioSID(sid string) (TwilioSID, error) {
 	}
 
 	if rc := utf8.RuneCountInString(sid); rc != twilioSIDLength {
-		return "", fmt.Errorf("must be %v characters in length", twilioSIDLength)
+		return "", i18n.M("twilio_sid.error.incorrect_length", "required_length", twilioSIDLength)
 	}
 
 	if matches := invalidTwilioSIDChars.FindAllString(sid, -1); len(matches) != 0 {
-		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
+		return "", i18n.M("twilio_sid.error.has_invalid_chars", "invalid_chars", matches)
 	}
 
 	if !validTwilioSIDSeq.MatchString(sid) {
-		return "", errors.New("must begin with AC and be followed by 32 hexadecimal characters")
+		return "", i18n.M("twilio_sid.error.invalid")
 	}
 
 	return TwilioSID(sid), nil

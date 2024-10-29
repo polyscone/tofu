@@ -1,6 +1,6 @@
 {{define "com.form.passcode" -}}
 
-{{$hint := or .Props.Hint "6 digits"}}
+{{$hint := or .Props.Hint (.T "com.form.passcode.default_hint")}}
 {{$placeholder := or .Props.Placeholder "123456"}}
 
 {{template "com.form.input" .WithProps

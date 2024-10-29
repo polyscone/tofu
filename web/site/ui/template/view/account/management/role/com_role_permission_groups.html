@@ -9,7 +9,7 @@
 
 {{range $groups}}
 	<div class="form">
-		<b>{{.Name}}</b>
+		<b>{{$.T .Name}}</b>
 
 		{{range .Permissions}}
 			<label>
@@ -19,7 +19,7 @@
 					value="{{.Name}}"
 					{{if HasString $selected .Name}}checked{{end}}
 				>
-				{{.DisplayName}}
+				{{$.T .DisplayName}}
 			</label>
 		{{end}}
 	</div>

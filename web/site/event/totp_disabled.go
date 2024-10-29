@@ -8,8 +8,8 @@ import (
 )
 
 func TOTPDisabledHandler(h *ui.Handler) any {
-	return func(evt account.TOTPDisabled) {
-		ctx := context.Background()
+	return func(ctx context.Context, evt account.TOTPDisabled) {
+		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
 		config, err := h.Repo.System.FindConfig(ctx)

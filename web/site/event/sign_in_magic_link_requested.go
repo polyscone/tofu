@@ -2,16 +2,16 @@ package event
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/polyscone/tofu/internal/human"
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
 func SignInMagicLinkRequestedHandler(h *ui.Handler) any {
-	return func(evt event.SignInMagicLinkRequested) {
-		ctx := context.Background()
+	return func(ctx context.Context, evt event.SignInMagicLinkRequested) {
+		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
 		config, err := h.Repo.System.FindConfig(ctx)
@@ -29,8 +29,9 @@ func SignInMagicLinkRequestedHandler(h *ui.Handler) any {
 		}
 
 		vars := handler.Vars{
-			"Token": tok,
-			"TTL":   human.Duration(evt.TTL),
+			"Token":     tok,
+			"TTL":       evt.TTL,
+			"SignInURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.sign_in.magic_link"), tok),
 		}
 		if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "sign_in_magic_link", vars); err != nil {
 			logger.Error("sign in magic link: send email", "error", err)

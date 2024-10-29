@@ -12,6 +12,7 @@ import (
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/middleware"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/api/v1/ui"
 	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/event"
@@ -45,7 +46,7 @@ func signInPost(h *ui.Handler) http.HandlerFunc {
 		if err := auth.SignInWithPassword(ctx, h.Handler, input.Email, input.Password); err != nil {
 			if errors.Is(err, app.ErrNotFound) || errors.Is(err, account.ErrInvalidPassword) {
 				h.JSON(w, r, http.StatusBadRequest, map[string]any{
-					"error": "Either your credentials are incorrect, or you're not authorised to access this application.",
+					"error": i18n.M("api:account.sign_in.error"),
 				})
 
 				return
@@ -83,12 +84,12 @@ func signInMagicLinkRequestPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.Broker.Dispatch(event.SignInMagicLinkRequested{
+		ctx := r.Context()
+
+		h.Broker.Dispatch(ctx, event.SignInMagicLinkRequested{
 			Email: input.Email,
 			TTL:   10 * time.Minute,
 		})
-
-		ctx := r.Context()
 
 		w.Header().Set(middleware.CSRFTokenHeaderName, httpx.MaskedCSRFToken(ctx))
 
@@ -151,7 +152,7 @@ func signInTOTPSendSMSPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		user := h.User(ctx)
 
-		h.Broker.Dispatch(event.TOTPSMSRequested{
+		h.Broker.Dispatch(ctx, event.TOTPSMSRequested{
 			Email: user.Email,
 			Tel:   user.TOTPTel,
 		})

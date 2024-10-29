@@ -2,95 +2,95 @@
 
 {{define "view.head"}}
 
-<h1>Metrics</h1>
+<h1>{{.T "site.system.metrics.title"}}</h1>
 
 {{end}}
 
 {{define "view.body"}}
 
-<p><time datetime="{{FormatTime .Vars.Now "RFC3339"}}" data-locale-date="full" data-locale-time>{{FormatTime .Vars.Now "DateTime"}}</time></p>
+{{.T "p" "site.system.metrics.current_date_time" "now" .Vars.Now}}
 
-<h2>Build</h2>
+<h2>{{.T "site.system.metrics.build_section_title"}}</h2>
 
 <table class="metrics">
 	<tbody>
 		<tr>
-			<td>Target</td>
+			<td>{{.T "site.system.metrics.build_target_label"}}</td>
 			<td>{{.Vars.Target}}</td>
 		</tr>
 		<tr>
-			<td>Revision</td>
+			<td>{{.T "site.system.metrics.build_revision_label"}}</td>
 			<td>{{.Vars.Revision}}</td>
 		</tr>
 		<tr>
-			<td>Tags</td>
+			<td>{{.T "site.system.metrics.build_tags_label"}}</td>
 			<td>{{.Vars.Tags}}</td>
 		</tr>
 		<tr>
-			<td>Go version</td>
+			<td>{{.T "site.system.metrics.build_go_version_label"}}</td>
 			<td>{{.Vars.Go}}</td>
 		</tr>
 		<tr>
-			<td>OS/Arch</td>
+			<td>{{.T "site.system.metrics.build_os_arch_label"}}</td>
 			<td>{{.Vars.OS}}/{{.Vars.Arch}}</td>
 		</tr>
 		<tr>
-			<td>Race detector</td>
+			<td>{{.T "site.system.metrics.build_race_detector_label"}}</td>
 			<td>{{.Vars.Race}}</td>
 		</tr>
 	</tbody>
 </table>
 
-<h2>Process and memory</h2>
+<h2>{{.T "site.system.metrics.process_memory_section_title"}}</h2>
 
 <table class="metrics">
 	<tbody>
 		<tr>
-			<td>Uptime</td>
-			<td>{{FormatDuration .Vars.Uptime}}</td>
+			<td>{{.T "site.system.metrics.process_uptime_label"}}</td>
+			<td>{{.T "site.system.metrics.process_uptime" "uptime" .Vars.Uptime}}</td>
 		</tr>
 		<tr>
-			<td>Cgo calls</td>
-			<td data-locale-number>{{.Vars.CgoCalls}}</td>
+			<td>{{.T "site.system.metrics.process_cgo_calls_label"}}</td>
+			<td>{{.T "number" "value" .Vars.CgoCalls}}</td>
 		</tr>
 		<tr>
-			<td>Logical CPUs</td>
-			<td data-locale-number>{{.Vars.CPUs}}</td>
+			<td>{{.T "site.system.metrics.process_logical_cpus_label"}}</td>
+			<td>{{.T "number" "value" .Vars.CPUs}}</td>
 		</tr>
 		<tr>
-			<td>Goroutines</td>
-			<td data-locale-number>{{.Vars.Goroutines}}</td>
+			<td>{{.T "site.system.metrics.process_goroutines_label"}}</td>
+			<td>{{.T "number" "value" .Vars.Goroutines}}</td>
 		</tr>
 		<tr>
-			<td>Reserved OS memory</td>
-			<td data-locale-number>{{FormatSizeSI .Vars.ReservedMemOS}}</td>
+			<td>{{.T "site.system.metrics.process_reserved_os_memory_label"}}</td>
+			<td>{{FormatSizeSI .Vars.ReservedMemOS}}</td>
 		</tr>
 		<tr>
-			<td>Tot. heap allocated</td>
-			<td data-locale-number>{{FormatSizeSI .Vars.TotalHeapAlloc}}</td>
+			<td>{{.T "site.system.metrics.process_total_heap_allocated_label"}}</td>
+			<td>{{FormatSizeSI .Vars.TotalHeapAlloc}}</td>
 		</tr>
 		<tr>
-			<td>Heap allocated</td>
-			<td data-locale-number>{{FormatSizeSI .Vars.HeapAlloc}}</td>
+			<td>{{.T "site.system.metrics.process_current_heap_allocated_label"}}</td>
+			<td>{{FormatSizeSI .Vars.HeapAlloc}}</td>
 		</tr>
 		<tr>
-			<td>Heap objects</td>
-			<td data-locale-number>{{.Vars.HeapObjects}}</td>
+			<td>{{.T "site.system.metrics.process_current_heap_objects_label"}}</td>
+			<td>{{.T "number" "value" .Vars.HeapObjects}}</td>
 		</tr>
 		<tr>
-			<td>Completed GC cycles</td>
-			<td data-locale-number>{{.Vars.GCCycles}}</td>
+			<td>{{.T "site.system.metrics.process_completed_gc_cycles_label"}}</td>
+			<td>{{.T "number" "value" .Vars.GCCycles}}</td>
 		</tr>
 		<tr>
-			<td>Next GC cycle target heap</td>
-			<td data-locale-number>{{FormatSizeSI .Vars.GCTargetHeapAlloc}}</td>
+			<td>{{.T "site.system.metrics.process_next_gc_cycle_target_heap_label"}}</td>
+			<td>{{FormatSizeSI .Vars.GCTargetHeapAlloc}}</td>
 		</tr>
 		<tr>
-			<td>Last GC cycle</td>
-			<td><time datetime="{{FormatTime .Vars.LastGC "RFC3339"}}" data-locale-date="full" data-locale-time>{{FormatTime .Vars.LastGC "DateTime"}}</time></td>
+			<td>{{.T "site.system.metrics.process_last_gc_cycle_label"}}</td>
+			<td>{{.T "site.system.metrics.process_last_gc_cycle_at" "last_gc_at" .Vars.LastGC}}</td>
 		</tr>
 		<tr>
-			<td>Tot. GC pauses</td>
+			<td>{{.T "site.system.metrics.process_total_gc_pauses_label"}}</td>
 			<td>{{FormatDurationStat .Vars.TotalGCPause}}</td>
 		</tr>
 	</tbody>
@@ -99,173 +99,173 @@
 <div class="cols-thirds">
 	{{range $database := .Vars.Databases}}
 		<div>
-			<h2>{{$database.Label}}</h2>
+			<h2>{{$.T "site.system.metrics.database_section_title" "label" $database.Label}}</h2>
 
 			<table class="metrics">
 				<tbody>
 					<tr>
-						<td>Max open conns.</td>
+						<td>{{$.T "site.system.metrics.database_max_open_conns_label"}}</td>
 						<td>
 							{{if $database.MaxOpenConns}}
-								<span data-locale-number>{{$database.MaxOpenConns}}</span>
+								<span>{{$.T "number" "value" $database.MaxOpenConns}}</span>
 							{{else}}
 								∞
 							{{end}}
 						</td>
 					</tr>
 					<tr>
-						<td>In use conns.</td>
-						<td data-locale-number>{{$database.InUseConns}}</td>
+						<td>{{$.T "site.system.metrics.database_in_use_conns_label"}}</td>
+						<td>{{$.T "number" "value" $database.InUseConns}}</td>
 					</tr>
 					<tr>
-						<td>Idle conns.</td>
-						<td data-locale-number>{{$database.IdleConns}}</td>
+						<td>{{$.T "site.system.metrics.database_idle_conns_label"}}</td>
+						<td>{{$.T "number" "value" $database.IdleConns}}</td>
 					</tr>
 					<tr>
-						<td>Conn. wait count</td>
-						<td data-locale-number>{{$database.ConnWaitCount}}</td>
+						<td>{{$.T "site.system.metrics.database_conn_wait_count_label"}}</td>
+						<td>{{$.T "number" "value" $database.ConnWaitCount}}</td>
 					</tr>
 					<tr>
-						<td>Tot. conn. wait time</td>
+						<td>{{$.T "site.system.metrics.database_total_conn_wait_time_label"}}</td>
 						<td>{{FormatDurationStat $database.TotalConnWaitTime}}</td>
 					</tr>
 					<tr>
-						<td>Avg. conn. wait time</td>
+						<td>{{$.T "site.system.metrics.database_avg_conn_wait_time_label"}}</td>
 						<td>{{FormatDurationStat $database.AverageConnWaitTime}}</td>
 					</tr>
 
 					{{if $database.TotalTransactionsBegun}}
 						<tr>
-							<td>Txs. begun</td>
-							<td data-locale-number>{{$database.TotalTransactionsBegun}}</td>
+							<td>{{$.T "site.system.metrics.database_txs_begun_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalTransactionsBegun}}</td>
 						</tr>
 						<tr>
-							<td>Txs. committed</td>
-							<td data-locale-number>{{$database.TotalTransactionsCommitted}} <small data-locale-number>({{printf "%.2f" $database.TransactionCommitRate}}&percnt;)</small></td>
+							<td>{{$.T "site.system.metrics.database_txs_committed_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalTransactionsCommitted}} <small>({{printf "%.2f" $database.TransactionCommitRate}}&percnt;)</small></td>
 						</tr>
 						<tr>
-							<td>Txs. rolled back</td>
-							<td data-locale-number>{{$database.TotalTransactionsRolledBack}} <small data-locale-number>({{printf "%.2f" $database.TransactionRollbackRate}}&percnt;)</small></td>
+							<td>{{$.T "site.system.metrics.database_txs_rolled_back_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalTransactionsRolledBack}} <small>({{printf "%.2f" $database.TransactionRollbackRate}}&percnt;)</small></td>
 						</tr>
 						<tr>
-							<td>Txs. cancelled</td>
-							<td data-locale-number>{{$database.TotalTransactionsCancelled}} <small data-locale-number>({{printf "%.2f" $database.TransactionCancelRate}}&percnt;)</small></td>
+							<td>{{$.T "site.system.metrics.database_txs_cancelled_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalTransactionsCancelled}} <small>({{printf "%.2f" $database.TransactionCancelRate}}&percnt;)</small></td>
 						</tr>
 						<tr>
-							<td>Txs. awaited</td>
-							<td data-locale-number>{{$database.TotalTransactionsAwaited}} <small data-locale-number>({{printf "%.2f" $database.TransactionAwaitedRate}}&percnt;)</small></td>
+							<td>{{$.T "site.system.metrics.database_txs_awaited_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalTransactionsAwaited}} <small>({{printf "%.2f" $database.TransactionAwaitedRate}}&percnt;)</small></td>
 						</tr>
 						<tr>
-							<td>Txs. done</td>
-							<td data-locale-number>{{$database.TotalTransactionsDone}} <small data-locale-number>({{printf "%.2f" $database.TransactionDoneRate}}&percnt;)</small></td>
+							<td>{{$.T "site.system.metrics.database_txs_done_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalTransactionsDone}} <small>({{printf "%.2f" $database.TransactionDoneRate}}&percnt;)</small></td>
 						</tr>
 						<tr>
-							<td>Txs. awaiting</td>
-							<td data-locale-number>{{$database.TotalTransactionsAwaiting}} <small data-locale-number>({{printf "%.2f" $database.TransactionAwaitingRate}}&percnt;)</small></td>
+							<td>{{$.T "site.system.metrics.database_txs_awaiting_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalTransactionsAwaiting}} <small>({{printf "%.2f" $database.TransactionAwaitingRate}}&percnt;)</small></td>
 						</tr>
 					{{end}}
 
 					{{if $database.TotalReads}}
 						<tr>
-							<td>Tot. reads</td>
-							<td data-locale-number>{{$database.TotalReads}}</td>
+							<td>{{$.T "site.system.metrics.database_total_reads_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalReads}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.TotalReadTime}}
 						<tr>
-							<td>Tot. read time</td>
+							<td>{{$.T "site.system.metrics.database_total_read_time_label"}}</td>
 							<td>{{FormatDurationStat $database.TotalReadTime}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.AverageReadTime}}
 						<tr>
-							<td>Avg. read time</td>
+							<td>{{$.T "site.system.metrics.database_avg_read_time_label"}}</td>
 							<td>{{FormatDurationStat $database.AverageReadTime}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.TotalWrites}}
 						<tr>
-							<td>Tot. writes</td>
-							<td data-locale-number>{{$database.TotalWrites}}</td>
+							<td>{{$.T "site.system.metrics.database_total_writes_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalWrites}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.TotalWriteTime}}
 						<tr>
-							<td>Tot. write time</td>
+							<td>{{$.T "site.system.metrics.database_total_write_time_label"}}</td>
 							<td>{{FormatDurationStat $database.TotalWriteTime}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.AverageWriteTime}}
 						<tr>
-							<td>Avg. write time</td>
+							<td>{{$.T "site.system.metrics.database_avg_write_time_label"}}</td>
 							<td>{{FormatDurationStat $database.AverageWriteTime}}</td>
 						</tr>
 					{{end}}
 
 					{{if and $database.TotalReads $database.TotalWrites $database.AverageReadsPerWrite}}
 						<tr>
-							<td>Avg. reads/write</td>
-							<td data-locale-number>{{printf "%.2f" $database.AverageReadsPerWrite}}</td>
+							<td>{{$.T "site.system.metrics.database_avg_reads_per_write_label"}}</td>
+							<td>{{printf "%.2f" $database.AverageReadsPerWrite}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.TotalQueries}}
 						<tr>
-							<td>Tot. queries</td>
-							<td data-locale-number>{{$database.TotalQueries}}</td>
+							<td>{{$.T "site.system.metrics.database_total_queries_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalQueries}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.TotalQueryTime}}
 						<tr>
-							<td>Tot. query time</td>
+							<td>{{$.T "site.system.metrics.database_total_query_time_label"}}</td>
 							<td>{{FormatDurationStat $database.TotalQueryTime}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.AverageQueryTime}}
 						<tr>
-							<td>Avg. query time</td>
+							<td>{{$.T "site.system.metrics.database_avg_query_time_label"}}</td>
 							<td>{{FormatDurationStat $database.AverageQueryTime}}</td>
 						</tr>
 					{{end}}
 
 					{{if and $database.TotalTransactionsBegun $database.AverageTransactionQueries}}
 						<tr>
-							<td>Avg. queries/tx.</td>
-							<td data-locale-number>{{printf "%.2f" $database.AverageTransactionQueries}}</td>
+							<td>{{$.T "site.system.metrics.database_avg_queries_per_tx_label"}}</td>
+							<td>{{printf "%.2f" $database.AverageTransactionQueries}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.TotalRowsOpened}}
 						<tr>
-							<td>Tot. rows opened</td>
-							<td data-locale-number>{{$database.TotalRowsOpened}}</td>
+							<td>{{$.T "site.system.metrics.database_total_rows_opened_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalRowsOpened}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.TotalRowsClosed}}
 						<tr>
-							<td>Tot. rows closed</td>
-							<td data-locale-number>{{$database.TotalRowsClosed}}</td>
+							<td>{{$.T "site.system.metrics.database_total_rows_closed_label"}}</td>
+							<td>{{$.T "number" "value" $database.TotalRowsClosed}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.TotalRowsTime}}
 						<tr>
-							<td>Tot. rows time</td>
+							<td>{{$.T "site.system.metrics.database_total_rows_time_label"}}</td>
 							<td>{{FormatDurationStat $database.TotalRowsTime}}</td>
 						</tr>
 					{{end}}
 
 					{{if $database.AverageRowsTime}}
 						<tr>
-							<td>Avg. rows time</td>
+							<td>{{$.T "site.system.metrics.database_avg_rows_time_label"}}</td>
 							<td>{{FormatDurationStat $database.AverageRowsTime}}</td>
 						</tr>
 					{{end}}
@@ -278,90 +278,90 @@
 <div class="cols-thirds">
 	{{range $metrics := .Vars.Requests}}
 		<div>
-			<h2>{{$metrics.Label}} reqs.</h2>
+			<h2>{{$.T "site.system.metrics.requests_section_title" "label" $metrics.Label}}</h2>
 
-			<h3>Totals</h3>
+			<h3>{{$.T "site.system.metrics.requests_totals_section_title"}}</h3>
 
 			<table class="metrics">
 				<tbody>
 					<tr>
-						<td>Requests received</td>
-						<td data-locale-number>{{$metrics.TotalRequestsReceived}}</td>
+						<td>{{$.T "site.system.metrics.total_requests_received_label"}}</td>
+						<td>{{$.T "number" "value" $metrics.TotalRequestsReceived}}</td>
 					</tr>
 					<tr>
-						<td>Requests in-flight</td>
-						<td data-locale-number>{{$metrics.TotalRequestsInFlight}}</td>
+						<td>{{$.T "site.system.metrics.total_requests_in_flight_label"}}</td>
+						<td>{{$.T "number" "value" $metrics.TotalRequestsInFlight}}</td>
 					</tr>
 					<tr>
-						<td>Responses sent</td>
-						<td data-locale-number>{{$metrics.TotalResponsesSent}}</td>
+						<td>{{$.T "site.system.metrics.total_responses_sent_label"}}</td>
+						<td>{{$.T "number" "value" $metrics.TotalResponsesSent}}</td>
 					</tr>
 					<tr>
-						<td>Conns. hijacked</td>
-						<td data-locale-number>{{$metrics.TotalConnectionsHijacked}}</td>
+						<td>{{$.T "site.system.metrics.total_conns_hijacked_label"}}</td>
+						<td>{{$.T "number" "value" $metrics.TotalConnectionsHijacked}}</td>
 					</tr>
 					<tr>
-						<td>Data read</td>
-						<td data-locale-number>{{FormatSizeSI $metrics.TotalBytesRead}}</td>
+						<td>{{$.T "site.system.metrics.total_request_bytes_read_label"}}</td>
+						<td>{{FormatSizeSI $metrics.TotalBytesRead}}</td>
 					</tr>
 					<tr>
-						<td>Data written</td>
-						<td data-locale-number>{{FormatSizeSI $metrics.TotalBytesWritten}}</td>
+						<td>{{$.T "site.system.metrics.total_response_bytes_written_label"}}</td>
+						<td>{{FormatSizeSI $metrics.TotalBytesWritten}}</td>
 					</tr>
 					<tr>
-						<td>Time until first write</td>
+						<td>{{$.T "site.system.metrics.total_time_until_first_write_label"}}</td>
 						<td>{{FormatDurationStat $metrics.TotalTimeUntilFirstWrite}}</td>
 					</tr>
 					<tr>
-						<td>Time in handlers</td>
+						<td>{{$.T "site.system.metrics.total_time_in_handlers_label"}}</td>
 						<td>{{FormatDurationStat $metrics.TotalTimeInHandlers}}</td>
 					</tr>
 					<tr>
-						<td>Time writing</td>
+						<td>{{$.T "site.system.metrics.total_time_writing_label"}}</td>
 						<td>{{FormatDurationStat $metrics.TotalTimeWriting}}</td>
 					</tr>
 				</tbody>
 			</table>
 
-			<h3>Averages per req.</h3>
+			<h3>{{$.T "site.system.metrics.requests_avg_per_req_section_title"}}</h3>
 
 			<table class="metrics">
 				<tbody>
 					<tr>
-						<td>Data read</td>
-						<td data-locale-number>{{FormatSizeSI $metrics.AverageBytesRead}}</td>
+						<td>{{$.T "site.system.metrics.avg_request_bytes_read_label"}}</td>
+						<td>{{FormatSizeSI $metrics.AverageBytesRead}}</td>
 					</tr>
 					<tr>
-						<td>Data written</td>
-						<td data-locale-number>{{FormatSizeSI $metrics.AverageBytesWritten}}</td>
+						<td>{{$.T "site.system.metrics.avg_response_bytes_written_label"}}</td>
+						<td>{{FormatSizeSI $metrics.AverageBytesWritten}}</td>
 					</tr>
 					<tr>
-						<td>Time until first write</td>
+						<td>{{$.T "site.system.metrics.avg_time_until_first_write_label"}}</td>
 						<td>{{FormatDurationStat $metrics.AverageTimeUntilFirstWrite}}</td>
 					</tr>
 					<tr>
-						<td>Time in handlers</td>
+						<td>{{$.T "site.system.metrics.avg_time_in_handlers_label"}}</td>
 						<td>{{FormatDurationStat $metrics.AverageTimeInHandlers}}</td>
 					</tr>
 					<tr>
-						<td>Time writing</td>
+						<td>{{$.T "site.system.metrics.avg_time_writing_label"}}</td>
 						<td>{{FormatDurationStat $metrics.AverageTimeWriting}}</td>
 					</tr>
 				</tbody>
 			</table>
 
-			<h3>Status codes</h3>
+			<h3>{{$.T "site.system.metrics.requests_status_codes_section_title"}}</h3>
 
 			<table class="metrics">
 				<tbody>
 					{{range $statusCode, $count := $metrics.TotalResponseStatusCodes}}
 						<tr>
 							<td>{{$statusCode}} {{StatusText $statusCode}}</td>
-							<td data-locale-number>{{$count}}</td>
+							<td>{{$.T "number" "value" $count}}</td>
 						</tr>
 					{{else}}
 						<tr>
-							<td>No responses sent</td>
+							<td>{{$.T "site.system.metrics.no_responses_sent_label"}}</td>
 						</tr>
 					{{end}}
 				</tbody>

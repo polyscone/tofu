@@ -1,6 +1,6 @@
 function NotFound () {
 	return {
-		view: () => m("p", "The page you were looking for could not be found."),
+		view: () => m("p", "{{.T "pwa.page.error.not_found"}}"),
 	}
 }
 

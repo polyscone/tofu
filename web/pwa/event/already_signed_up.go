@@ -10,8 +10,8 @@ import (
 )
 
 func AlreadySignedUpHandler(h *ui.Handler) any {
-	return func(evt account.AlreadySignedUp) {
-		ctx := context.Background()
+	return func(ctx context.Context, evt account.AlreadySignedUp) {
+		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
 		tok, err := h.Repo.Web.AddResetPasswordToken(ctx, evt.Email, 2*time.Hour)

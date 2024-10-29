@@ -1,12 +1,10 @@
 package system
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 const twilioTokenLength = 32
@@ -24,15 +22,15 @@ func NewTwilioToken(token string) (TwilioToken, error) {
 	}
 
 	if rc := utf8.RuneCountInString(token); rc != twilioTokenLength {
-		return "", fmt.Errorf("must be %v characters in length", twilioTokenLength)
+		return "", i18n.M("twilio_token.error.incorrect_length", "required_length", twilioTokenLength)
 	}
 
 	if matches := invalidTwilioTokenChars.FindAllString(token, -1); len(matches) != 0 {
-		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
+		return "", i18n.M("twilio_token.error.has_invalid_chars", "invalid_chars", matches)
 	}
 
 	if !validTwilioTokenSeq.MatchString(token) {
-		return "", errors.New("must be exactly 32 hexadecimal characters")
+		return "", i18n.M("twilio_token.error.invalid")
 	}
 
 	return TwilioToken(token), nil

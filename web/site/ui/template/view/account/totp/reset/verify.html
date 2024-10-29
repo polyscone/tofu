@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Reset two-factor authentication request</h1>
+	<h1>{{.T "site.account.totp.reset.verify.title"}}</h1>
 </div>
 
 {{end}}
@@ -11,15 +11,13 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>If you're locked out of your account because you've lost access to your authentication device you can use the form below to request two-factor authentication be reset for your account.</p>
-	<p>After verifying your email address your case will need to be manually reviewed.</p>
-	<p>If the person reviewing your case believes it to be a legitimate request you'll be sent another link by email to reset two-factor authentication.</p>
+	{{.T "p" "site.account.totp.reset.verify.text"}}
 
 	<form action="{{Path "account.sign_in.totp.reset.post"}}" method="POST">
 		{{template "com.form.csrf" .}}
 
 		<div class="bag reverse">
-			<button>I understand, send a verification link</button>
+			<button>{{.T "site.account.totp.reset.verify.send_verification_link_button"}}</button>
 		</div>
 	</form>
 </div>

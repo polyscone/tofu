@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>New role</h1>
+	<h1>{{.T "site.account.role_management.new.title"}}</h1>
 </div>
 
 {{end}}
@@ -15,13 +15,13 @@
 		{{template "com.form.csrf" .}}
 
 		{{template "com.view.form.role_name" .WithProps
-			"Label" "Name"
+			"Label" (.T "site.account.role_management.new.name_label")
 			"Name" "name"
 			"Required" true
 		}}
 
 		{{template "com.view.form.role_description" .WithProps
-			"Label" "Description"
+			"Label" (.T "site.account.role_management.new.description_label")
 			"Name" "description"
 		}}
 
@@ -34,9 +34,9 @@
 		</div>
 
 		<div class="bag reverse">
-			<button class="push-inline-end">Add role</button>
+			<button class="push-inline-end">{{.T "site.account.role_management.new.add_button"}}</button>
 
-			<a href="{{Path "account.management.role.list"}}{{.URL.Query.String}}">Cancel</a>
+			<a href="{{Path "account.management.role.list"}}{{.URL.Query.String}}">{{.T "site.account.role_management.new.cancel_button"}}</a>
 		</div>
 	</form>
 </div>

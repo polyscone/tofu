@@ -14,6 +14,7 @@ import (
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/internal/errsx"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 type AccountRepo struct {
@@ -693,7 +694,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 	if err != nil {
 		if errors.Is(err, app.ErrConflict) {
 			return fmt.Errorf("%w: %w", err, &app.ConflictError{
-				Map: errsx.Map{"email": errors.New("already in use")},
+				Map: errsx.Map{"email": i18n.M("user.email:repo.error.conflict", "value", user.Email)},
 			})
 		}
 
@@ -887,7 +888,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 	if err != nil {
 		if errors.Is(err, app.ErrConflict) {
 			return fmt.Errorf("%w: %w", err, &app.ConflictError{
-				Map: errsx.Map{"email": errors.New("already in use")},
+				Map: errsx.Map{"email": i18n.M("user.email:repo.error.conflict", "value", user.Email)},
 			})
 		}
 
@@ -1342,7 +1343,7 @@ func (r *AccountRepo) createRole(ctx context.Context, tx *Tx, role *account.Role
 	if err != nil {
 		if errors.Is(err, app.ErrConflict) {
 			return fmt.Errorf("%w: %w", err, &app.ConflictError{
-				Map: errsx.Map{"name": errors.New("already in use")},
+				Map: errsx.Map{"name": i18n.M("role.name:repo.error.conflict", "value", role.Name)},
 			})
 		}
 
@@ -1399,7 +1400,7 @@ func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role
 	)
 	if errors.Is(err, app.ErrConflict) {
 		return fmt.Errorf("%w: %w", err, &app.ConflictError{
-			Map: errsx.Map{"name": errors.New("already in use")},
+			Map: errsx.Map{"name": i18n.M("role.name:repo.error.conflict", "value", role.Name)},
 		})
 	}
 

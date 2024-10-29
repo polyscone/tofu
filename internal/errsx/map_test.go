@@ -25,10 +25,10 @@ func TestMap(t *testing.T) {
 		t.Errorf("want key %q to be set in error map", key)
 	}
 
-	if want, got := testErr.Error(), errs.Get(key); want != got {
+	if want, got := testErr.Error(), errs.GetString(key); want != got {
 		t.Errorf("want %q; got %q", want, got)
 	}
-	if want, got := "", errs.Get("does not exist"); want != got {
+	if want, got := "", errs.GetString("does not exist"); want != got {
 		t.Errorf("want %q; got %q", want, got)
 	}
 }

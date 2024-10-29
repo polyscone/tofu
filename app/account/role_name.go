@@ -1,13 +1,11 @@
 package account
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 	"strings"
 	"unicode/utf8"
 
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 const (
@@ -24,23 +22,23 @@ type RoleName string
 
 func NewRoleName(name string) (RoleName, error) {
 	if strings.TrimSpace(name) == "" {
-		return "", errors.New("cannot be empty")
+		return "", i18n.M("account.role_name.error.empty")
 	}
 
 	rc := utf8.RuneCountInString(name)
 	if rc < roleNameMinLength {
-		return "", fmt.Errorf("must be at least %v characters", roleNameMinLength)
+		return "", i18n.M("account.role_name.error.too_short", "min_length", roleNameMinLength)
 	}
 	if rc > roleNameMaxLength {
-		return "", fmt.Errorf("cannot be a over %v characters in length", roleNameMaxLength)
+		return "", i18n.M("account.role_name.error.too_long", "max_length", roleNameMaxLength)
 	}
 
 	if matches := invalidRoleNameChars.FindAllString(name, -1); len(matches) != 0 {
-		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
+		return "", i18n.M("account.role_name.error.has_invalid_chars", "invalid_chars", matches)
 	}
 
 	if !validRoleNameSeq.MatchString(name) {
-		return "", errors.New("can only contain latin characters")
+		return "", i18n.M("account.role_name.error.invalid")
 	}
 
 	return RoleName(name), nil

@@ -1,6 +1,7 @@
 package testx
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -17,7 +18,7 @@ func NewEventLog(broker event.Broker) *EventLog {
 	var log EventLog
 
 	broker.Clear()
-	broker.ListenAny(func(evt event.Event) {
+	broker.ListenAny(func(ctx context.Context, evt event.Event) {
 		log.push(evt)
 	})
 

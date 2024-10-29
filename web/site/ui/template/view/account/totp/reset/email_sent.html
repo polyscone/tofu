@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Email sent</h1>
+	<h1>{{.T "site.account.totp.reset.email_sent.title"}}</h1>
 </div>
 
 {{end}}
@@ -11,7 +11,7 @@
 {{define "view.body"}}
 
 <div class="center">
-	<p>Please check your email for a link to verify your email address and request a two-factor authentication reset.</p>
+	{{.T "p" "site.account.totp.reset.email_sent.text"}}
 </div>
 
 {{end}}

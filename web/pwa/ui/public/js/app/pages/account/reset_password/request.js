@@ -25,20 +25,20 @@ function ResetPassword () {
 
 	return {
 		view: () => [
-			m("h1", "Reset password"),
+			m("h1", "{{.T "pwa.account.reset_password.request.title"}}"),
 			m("form", { onsubmit: requestPasswordReset }, [
 				state.error ? m(ErrorBanner, state.error) : null,
 				m(EmailInput, {
-					label: "Email",
+					label: "{{.T "pwa.account.reset_password.request.email_label"}}",
 					name: "email",
 					required: true,
 					autocomplete: "username",
 					error: state.errors.email,
 					oninput (e) { state.email = e.target.value },
 				}),
-				m("button[type=submit]", "Send reset password code"),
-				platform.config.signUpEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_up") }, "No account? Sign up here.") : null,
-				m(m.route.Link, { href: platform.routes.path("account.sign_in") }, "Already have an account?"),
+				m("button[type=submit]", "{{.T "pwa.account.reset_password.request.send_code_button"}}"),
+				platform.config.signUpEnabled ? m(m.route.Link, { href: platform.routes.path("account.sign_up") }, "{{.T "pwa.account.reset_password.request.sign_up_button"}}") : null,
+				m(m.route.Link, { href: platform.routes.path("account.sign_in") }, "{{.T "pwa.account.reset_password.request.sign_in_button"}}"),
 			]),
 		],
 	}

@@ -33,27 +33,27 @@ function SignUp () {
 		view () {
 			if (platform.session.isSignedIn) {
 				return [
-					m("p", "You're already signed in."),
+					m("p", "{{.T "pwa.account.sign_up.already_signed_in.text"}}"),
 					m("form", { onsubmit: signOut }, [
-						m("button[type=submit].btn--link", "Click here to sign out."),
+						m("button[type=submit].btn--link", "{{.T "pwa.account.sign_up.already_signed_in.sign_out_button"}}"),
 					]),
 				]
 			}
 
 			return [
-				m("h1", "Sign up"),
+				m("h1", "{{.T "pwa.account.sign_up.form.title"}}"),
 				m("form", { onsubmit: signUp }, [
 					state.error ? m(ErrorBanner, state.error) : null,
 					m(EmailInput, {
-						label: "Email",
+						label: "{{.T "pwa.account.sign_up.form.email_label"}}",
 						name: "email",
 						required: true,
 						autocomplete: "username",
 						error: state.errors.email,
 						oninput (e) { state.email = e.target.value },
 					}),
-					m("button[type=submit]", "Sign up"),
-					m(m.route.Link, { href: platform.routes.path("account.sign_in") }, "Already have an account?"),
+					m("button[type=submit]", "{{.T "pwa.account.sign_up.form.sign_up_button"}}"),
+					m(m.route.Link, { href: platform.routes.path("account.sign_in") }, "{{.T "pwa.account.sign_up.form.sign_in_button"}}"),
 				]),
 			]
 		},

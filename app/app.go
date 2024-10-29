@@ -4,8 +4,13 @@ import (
 	"errors"
 	"time"
 
+	"github.com/polyscone/tofu/config"
 	"github.com/polyscone/tofu/internal/errsx"
 )
+
+func init() {
+	errsx.Must0(config.LoadI18nLocales())
+}
 
 const (
 	Name        = "App"

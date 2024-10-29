@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Change password</h1>
+	<h1>{{.T "site.account.change_password.title"}}</h1>
 </div>
 
 {{end}}
@@ -13,14 +13,10 @@
 <div class="center">
 	{{if .Session.KnownPasswordBreachCount}}
 		<div class="warning-banner">
-			<p>
-				The password you're currently using appears <span data-locale-number>{{.Session.KnownPasswordBreachCount}}</span> {{if gt .Session.KnownPasswordBreachCount 1}}times{{else}}time{{end}}
-				in a <a href="https://haveibeenpwned.com" target="_blank" rel="noopener noreferrer">database of security breaches</a> and isn't considered to be secure.
-			</p>
-			<p>We recommend that you change it to a more secure one as soon as possible.</p>
+			{{.T "p" "site.account.change_password.insecure_password_warning" "known_breach_count" .Session.KnownPasswordBreachCount}}
 
 			{{if and (not .Config.TOTPRequired) (not .User.HasActivatedTOTP)}}
-				<p>Also consider <a href="{{Path "account.totp.setup"}}">setting up two-factor authentication</a> to help secure your account even further.</p>
+				{{.T "p" "site.account.change_password.also_consider_totp_warning"}}
 			{{end}}
 		</div>
 	{{end}}
@@ -29,24 +25,28 @@
 		{{template "com.form.csrf" .}}
 
 		{{template "com.form.password" .WithProps
-			"Label" "Old password"
+			"Label" (.T "site.account.change_password.old_password_label")
 			"Name" "old-password"
 			"Required" true
 			"Autocomplete" "current-password"
 		}}
 
 		{{template "com.form.password" .WithProps
-			"Label" "New password"
+			"Label" (.T "site.account.change_password.new_password_label")
 			"Name" "new-password"
 			"Required" true
 			"Autocomplete" "new-password"
 		}}
 
 		<div class="bag reverse">
-			<button>Update password{{if .Session.Redirect}} and continue{{end}}</button>
+			{{if .Session.Redirect}}
+				<button>{{.T "site.account.change_password.update_password_and_continue_button"}}</button>
+			{{else}}
+				<button>{{.T "site.account.change_password.update_password_button"}}</button>
+			{{end}}
 
 			{{if .Session.Redirect}}
-				<a href="{{.Session.Redirect}}" class="btn btn--alt">Change later</a>
+				<a href="{{.Session.Redirect}}" class="btn btn--alt">{{.T "site.account.change_password.change_later_button"}}</a>
 			{{end}}
 		</div>
 	</form>

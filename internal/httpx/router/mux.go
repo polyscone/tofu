@@ -1,6 +1,7 @@
 package router
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"slices"
@@ -127,10 +128,10 @@ func (mux *ServeMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	mux.handler.ServeHTTP(w, r)
 }
 
-func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
+func (mux *ServeMux) TryPath(name string, paramArgPairs ...any) (string, error) {
 	pattern := mux.named[name]
 	if pattern == "" {
-		panic(fmt.Sprintf("named path %q does not exist", name))
+		return "", fmt.Errorf("named path %q does not exist", name)
 	}
 
 	pattern = strings.ReplaceAll(pattern, "{$}", "")
@@ -146,7 +147,7 @@ func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
 
 	if len(paramArgPairs) > 0 {
 		if len(paramArgPairs)%2 == 1 {
-			panic("named path pattern substitution expects an equal number of arguments")
+			return "", errors.New("named path pattern substitution expects an equal number of arguments")
 		}
 
 		args := make(map[string]string, len(paramArgPairs)/2)
@@ -155,10 +156,10 @@ func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
 			arg := fmt.Sprintf("%v", paramArgPairs[i+1])
 
 			if !strings.HasPrefix(param, paramStart) || !strings.HasSuffix(param, paramEnd) {
-				panic(fmt.Sprintf("want argument %v to be wrapped in curly braces", i))
+				return "", fmt.Errorf("want argument %v to be wrapped in curly braces", i)
 			}
 			if arg == "" {
-				panic(fmt.Sprintf("want argument %v to not be empty", i))
+				return "", fmt.Errorf("want argument %v to not be empty", i)
 			}
 
 			args[param] = arg
@@ -174,7 +175,7 @@ func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
 			if strings.HasPrefix(part, paramStart) {
 				arg, ok := args[part]
 				if !ok {
-					panic(fmt.Sprintf("want an argument for parameter %q in named path pattern to be provided", part))
+					return "", fmt.Errorf("want an argument for parameter %q in named path pattern to be provided", part)
 				}
 
 				seen[part] = struct{}{}
@@ -194,15 +195,24 @@ func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
 				unknowns = append(unknowns, param)
 			}
 
-			panic(fmt.Sprintf("unknown parameters: %q", unknowns))
+			return "", fmt.Errorf("unknown parameters: %q", unknowns)
 		}
 
 		pattern = sb.String()
 	}
 
 	if strings.Contains(pattern, "/"+paramStart) {
-		panic(fmt.Sprintf("named path %q requires parameters to be replaced", name))
+		return "", fmt.Errorf("named path %q requires parameters to be replaced", name)
 	}
 
-	return pattern
+	return pattern, nil
+}
+
+func (mux *ServeMux) Path(name string, paramArgPairs ...any) string {
+	p, err := mux.TryPath(name, paramArgPairs...)
+	if err != nil {
+		panic(err)
+	}
+
+	return p
 }

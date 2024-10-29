@@ -28,26 +28,26 @@ function ResetPasswordVerify () {
 
 	return {
 		view: () => [
-			m("h1", "Reset password"),
-			m("p", "We've sent a verification code to your email address which you can copy into the input below."),
+			m("h1", "{{.T "pwa.account.reset_password.new_password.title"}}"),
+			m("p", "{{.T "pwa.account.reset_password.new_password.sent_verification_code_text"}}"),
 			m("form", { onsubmit: resetPassword }, [
 				state.error ? m(ErrorBanner, state.error) : null,
 				m(TokenInput, {
-					label: "Verification code",
+					label: "{{.T "pwa.account.reset_password.new_password.verification_code_label"}}",
 					name: "token",
 					required: true,
 					error: state.errors.token,
 					oninput (e) { state.token = e.target.value },
 				}),
 				m(PasswordInput, {
-					label: "Choose a password",
+					label: "{{.T "pwa.account.reset_password.new_password.choose_password_label"}}",
 					name: "password",
 					required: true,
 					autocomplete: "new-password",
 					error: state.errors.password,
 					oninput (e) { state.password = e.target.value },
 				}),
-				m("button[type=submit]", "Update password"),
+				m("button[type=submit]", "{{.T "pwa.account.reset_password.new_password.update_password_button"}}"),
 			]),
 		],
 	}

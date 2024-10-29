@@ -9,7 +9,7 @@
 {{if not $key}}{{.Log.Warn "com.datatable.sort: missing required prop: Key"}}{{end}}
 
 {{$value := printf "%v.%v" $key $direction}}
-{{$arrow := "▼"}}
+{{$arrow := .T "com.datatable.down_arrow"}}
 {{$sort := .URL.Query.Get "sort"}}
 {{$isActive := HasPrefix $sort (printf "%v." $key)}}
 
@@ -21,7 +21,7 @@
 			{{$value = printf "%v.desc" $key}}
 		{{end}}
 
-		{{$arrow = "▼"}}
+		{{$arrow = .T "com.datatable.down_arrow"}}
 	{{else}}
 		{{if ne $direction "desc"}}
 			{{$value = ""}}
@@ -29,7 +29,7 @@
 			{{$value = printf "%v.asc" $key}}
 		{{end}}
 
-		{{$arrow = "▲"}}
+		{{$arrow = .T "com.datatable.up_arrow"}}
 	{{end}}
 {{end}}
 
@@ -38,6 +38,6 @@
 	{{$class = printf "%v data-table__sort--active" $class}}
 {{end}}
 
-<a href="{{or (.URL.Query.Replace "sort" $value) .URL.Path}}" aria-label="Sort by {{$key}}" class="{{$class}}">{{$arrow}}</a>
+<a href="{{or (.URL.Query.Replace "sort" $value) .URL.Path}}" aria-label="{{.T "com.datatable.sort_by_key" "key" $key}}" class="{{$class}}">{{$arrow}}</a>
 
 {{end}}

@@ -14,6 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/middleware"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/internal/size"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/site/event"
@@ -143,7 +144,7 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler
 				h.Session.Clear(ctx)
 				h.Session.Renew(ctx)
 
-				h.AddFlashErrorf(ctx, "You're not authorised to access this application.")
+				h.AddFlashErrorf(ctx, i18n.M("site:flash.unauthorised"))
 
 				http.Redirect(w, r, mux.Path("page.home"), http.StatusSeeOther)
 
@@ -191,7 +192,7 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler
 			isAllowedPath := isTOTPSection || isChoosePasswordSection || isSignOut
 			isSignedIn := h.Session.IsSignedIn(ctx)
 			if isSignedIn && config.TOTPRequired && !user.HasActivatedTOTP() && !isAllowedPath {
-				h.AddFlashf(ctx, "Two-factor authentication is required to use this application.")
+				h.AddFlashf(ctx, i18n.M("flash.totp_required"))
 
 				http.Redirect(w, r, mux.Path("account.totp.setup"), http.StatusSeeOther)
 
@@ -231,10 +232,11 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler
 	mux.Handle("/favicon.ico", httpx.RewriteHandler(mux, "/favicon.png"))
 
 	renderer := handler.NewRenderer(handler.RendererConfig{
-		Handler:    h.Handler,
-		AssetTags:  ui.AssetTags,
-		AssetFiles: ui.AssetFiles,
-		Funcs:      h.Funcs,
+		Handler:         h.Handler,
+		AssetTags:       ui.AssetTags,
+		AssetFiles:      ui.AssetFiles,
+		Funcs:           h.Funcs,
+		WrapI18nRuntime: ui.NewI18nRuntimeWrapper(h),
 	})
 	serveFile := handler.NewFileServer(mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		h.HTML.ErrorView(w, r, "static file", err, "error", nil)

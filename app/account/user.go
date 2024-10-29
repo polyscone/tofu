@@ -10,34 +10,35 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/internal/aggregate"
 	"github.com/polyscone/tofu/internal/errsx"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/internal/otp"
 )
 
 const (
 	SignInMethodNone      = ""
-	SignInMethodPassword  = "password"
-	SignInMethodMagicLink = "magic link"
-	SignInMethodGoogle    = "google"
-	SignInMethodFacebook  = "facebook"
+	SignInMethodPassword  = "account.user.sign_in_method.password"
+	SignInMethodMagicLink = "account.user.sign_in_method.magic_link"
+	SignInMethodGoogle    = "account.user.sign_in_method.google"
+	SignInMethodFacebook  = "account.user.sign_in_method.facebook"
 )
 
 const (
 	SignUpMethodNone        = ""
-	SignUpMethodSystemSetup = "system setup"
-	SignUpMethodWebForm     = "web form"
-	SignUpMethodMagicLink   = "magic link"
-	SignUpMethodGoogle      = "google"
-	SignUpMethodFacebook    = "facebook"
-	SignUpMethodInvite      = "invite"
+	SignUpMethodSystemSetup = "account.user.sign_up_method.system_setup"
+	SignUpMethodWebForm     = "account.user.sign_up_method.web_form"
+	SignUpMethodMagicLink   = "account.user.sign_up_method.magic_link"
+	SignUpMethodGoogle      = "account.user.sign_up_method.google"
+	SignUpMethodFacebook    = "account.user.sign_up_method.facebook"
+	SignUpMethodInvite      = "account.user.sign_up_method.invite"
 )
 
 var (
-	ErrNotVerified      = errors.New("account is not verified")
-	ErrAlreadyVerified  = errors.New("account is already verified")
-	ErrNotActivated     = errors.New("account is not activated")
-	ErrAlreadyActivated = errors.New("account is already activated")
-	ErrSuspended        = errors.New("account is suspended")
-	ErrInvalidPassword  = errors.New("invalid password")
+	ErrNotVerified      = i18n.M("account.user.error.not_verified")
+	ErrAlreadyVerified  = i18n.M("account.user.error.already_verified")
+	ErrNotActivated     = i18n.M("account.user.error.not_activated")
+	ErrAlreadyActivated = i18n.M("account.user.error.already_activated")
+	ErrSuspended        = i18n.M("account.user.error.is_suspended")
+	ErrInvalidPassword  = i18n.M("account.user.error.invalid_password")
 )
 
 type User struct {
@@ -156,7 +157,7 @@ func (u *User) HasSignedIn() bool {
 
 func (u *User) Invite(system string) error {
 	if !u.VerifiedAt.IsZero() {
-		return errors.New("cannot invite an already verified user")
+		return i18n.M("invite:account.user.error.already_verified")
 	}
 
 	if u.InvitedAt.IsZero() {
@@ -177,13 +178,13 @@ func (u *User) Invite(system string) error {
 
 func (u *User) SignUpAsInitialUser(system string, roles []*Role, password Password, hasher Hasher) error {
 	if !u.SignedUpAt.IsZero() {
-		return errors.New("initial user cannot already be signed up")
+		return i18n.M("initial_user_sign_up:account.user.error.already_signed_up")
 	}
 	if !u.VerifiedAt.IsZero() {
-		return errors.New("initial user cannot already be verified")
+		return i18n.M("initial_user_sign_up:account.user.error.already_verified")
 	}
 	if !u.ActivatedAt.IsZero() {
-		return errors.New("initial user cannot already be activated")
+		return i18n.M("initial_user_sign_up:account.user.error.already_activated")
 	}
 
 	if err := u.setPassword(password, hasher); err != nil {
@@ -317,7 +318,7 @@ func (u *User) SignUpWithFacebook(system string) {
 
 func (u *User) Verify(password Password, hasher Hasher) error {
 	if !u.VerifiedAt.IsZero() {
-		return ErrAlreadyVerified
+		return ErrAlreadyVerified.WithContext("verify")
 	}
 
 	if err := u.setPassword(password, hasher); err != nil {
@@ -333,11 +334,11 @@ func (u *User) Verify(password Password, hasher Hasher) error {
 
 func (u *User) Activate() error {
 	if u.VerifiedAt.IsZero() {
-		return ErrNotVerified
+		return ErrNotVerified.WithContext("activate")
 	}
 
 	if !u.ActivatedAt.IsZero() {
-		return ErrAlreadyActivated
+		return ErrAlreadyActivated.WithContext("activate")
 	}
 
 	u.ActivatedAt = time.Now().UTC()
@@ -365,7 +366,7 @@ func (u *User) setPassword(newPassword Password, hasher Hasher) error {
 
 func (u *User) ChangePassword(oldPassword, newPassword Password, hasher Hasher) error {
 	if u.VerifiedAt.IsZero() {
-		return errors.New("cannot change password until verified")
+		return i18n.M("change_password:account.user.error.not_verified")
 	}
 
 	if _, err := u.checkPassword(oldPassword, hasher); err != nil {
@@ -385,11 +386,11 @@ func (u *User) ChangePassword(oldPassword, newPassword Password, hasher Hasher) 
 
 func (u *User) ChoosePassword(newPassword Password, hasher Hasher) error {
 	if u.ActivatedAt.IsZero() {
-		return errors.New("cannot choose password until activated")
+		return i18n.M("choose_password:account.user.error.not_activated")
 	}
 
 	if len(u.HashedPassword) != 0 {
-		return fmt.Errorf("cannot replace an already chosen password")
+		return i18n.M("choose_password:account.user.error.already_has_password")
 	}
 
 	if err := u.setPassword(newPassword, hasher); err != nil {
@@ -403,7 +404,7 @@ func (u *User) ChoosePassword(newPassword Password, hasher Hasher) error {
 
 func (u *User) ResetPassword(newPassword Password, hasher Hasher) error {
 	if u.ActivatedAt.IsZero() {
-		return errors.New("cannot change password until activated")
+		return i18n.M("reset_password:account.user.error.not_activated")
 	}
 
 	if err := u.setPassword(newPassword, hasher); err != nil {
@@ -417,11 +418,11 @@ func (u *User) ResetPassword(newPassword Password, hasher Hasher) error {
 
 func (u *User) SetupTOTP() error {
 	if u.ActivatedAt.IsZero() {
-		return errors.New("cannot setup TOTP until activated")
+		return i18n.M("setup_totp:account.user.error.not_activated")
 	}
 
 	if u.HasActivatedTOTP() {
-		return errors.New("TOTP already setup and activated")
+		return i18n.M("setup_totp:account.user.error.totp_already_activated")
 	}
 
 	key, err := NewTOTPKey(otp.SHA1)
@@ -454,7 +455,7 @@ func (u *User) checkTOTP(totp TOTP) error {
 	if err != nil {
 		if errors.Is(err, otp.ErrPasswordUsed) {
 			return fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
-				"totp": errors.New("passcode already used"),
+				"totp": i18n.M("check_totp:account.user.error.totp_already_used"),
 			})
 		}
 
@@ -462,7 +463,7 @@ func (u *User) checkTOTP(totp TOTP) error {
 	}
 	if !ok {
 		return fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
-			"totp": errors.New("invalid passcode"),
+			"totp": i18n.M("check_totp:account.user.error.invalid_totp"),
 		})
 	}
 
@@ -471,7 +472,7 @@ func (u *User) checkTOTP(totp TOTP) error {
 
 func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) ([]string, error) {
 	if u.HasActivatedTOTP() {
-		return nil, errors.New("already verified and activated")
+		return nil, i18n.M("verify_totp:account.user.error.totp_already_activated")
 	}
 
 	if err := u.checkTOTP(totp); err != nil {
@@ -491,11 +492,11 @@ func (u *User) VerifyTOTP(totp TOTP, method TOTPMethod) ([]string, error) {
 
 func (u *User) ActivateTOTP() error {
 	if !u.HasVerifiedTOTP() {
-		return errors.New("unverified TOTP cannot be activated")
+		return i18n.M("activate_totp:account.user.error.totp_not_verified")
 	}
 
 	if u.HasActivatedTOTP() {
-		return errors.New("already activated")
+		return i18n.M("activate_totp:account.user.error.totp_already_activated")
 	}
 
 	u.TOTPActivatedAt = time.Now().UTC()
@@ -538,7 +539,7 @@ func (u *User) Unsuspend() {
 
 func (u *User) ChangeTOTPTel(newTel Tel) error {
 	if len(u.TOTPKey) == 0 {
-		return errors.New("cannot change TOTP phone without a key setup")
+		return i18n.M("change_totp_tel:account.user.error.no_totp_key")
 	}
 
 	if u.TOTPTel == newTel.String() {
@@ -560,7 +561,7 @@ func (u *User) ChangeTOTPTel(newTel Tel) error {
 
 func (u *User) GenerateTOTP() (string, error) {
 	if len(u.TOTPKey) == 0 {
-		return "", errors.New("cannot generate a TOTP without a key setup")
+		return "", i18n.M("generate_totp:account.user.error.no_totp_key")
 	}
 
 	alg, err := otp.NewAlgorithm(u.TOTPAlgorithm)
@@ -605,7 +606,7 @@ func (u *User) replaceRecoveryCodes() ([]string, error) {
 
 func (u *User) RegenerateRecoveryCodes(totp TOTP) ([]string, error) {
 	if !u.HasActivatedTOTP() {
-		return nil, errors.New("cannot regenerate recovery codes without an activated TOTP")
+		return nil, i18n.M("regenerate_recovery_codes:account.user.error.totp_not_activated")
 	}
 
 	if err := u.checkTOTP(totp); err != nil {
@@ -636,7 +637,7 @@ func (u *User) disableTOTP() {
 
 func (u *User) DisableTOTP(password Password, hasher Hasher) error {
 	if !u.HasActivatedTOTP() {
-		return errors.New("cannot disable an unactivated TOTP")
+		return i18n.M("disable_totp:account.user.error.totp_not_activated")
 	}
 
 	if _, err := u.checkPassword(password, hasher); err != nil {
@@ -652,11 +653,11 @@ func (u *User) DisableTOTP(password Password, hasher Hasher) error {
 
 func (u *User) ResetTOTP(password Password, hasher Hasher) error {
 	if !u.HasActivatedTOTP() {
-		return errors.New("cannot reset an unactivated TOTP")
+		return i18n.M("reset_totp:account.user.error.totp_not_activated")
 	}
 
 	if u.TOTPResetApprovedAt.IsZero() {
-		return errors.New("cannot approve a TOTP reset request that is still awaiting review")
+		return i18n.M("reset_totp:account.user.error.totp_reset_not_approved")
 	}
 
 	if _, err := u.checkPassword(password, hasher); err != nil {
@@ -674,7 +675,7 @@ func (u *User) ResetTOTP(password Password, hasher Hasher) error {
 
 func (u *User) RequestTOTPReset() error {
 	if !u.HasActivatedTOTP() {
-		return errors.New("cannot request a reset for an unactivated TOTP")
+		return i18n.M("request_totp_reset:account.user.error.totp_not_activated")
 	}
 
 	u.TOTPResetRequestedAt = time.Now().UTC()
@@ -686,7 +687,7 @@ func (u *User) RequestTOTPReset() error {
 
 func (u *User) ApproveTOTPResetRequest() error {
 	if !u.HasActivatedTOTP() {
-		return errors.New("cannot request a reset for an unactivated TOTP")
+		return i18n.M("approve_totp_reset_request:account.user.error.totp_not_activated")
 	}
 
 	u.TOTPResetRequestedAt = time.Time{}
@@ -699,7 +700,7 @@ func (u *User) ApproveTOTPResetRequest() error {
 
 func (u *User) DenyTOTPResetRequest() error {
 	if u.TOTPResetRequestedAt.IsZero() {
-		return errors.New("cannot deny a non-existent TOTP reset request")
+		return i18n.M("deny_totp_reset_request:account.user.error.totp_reset_not_requested")
 	}
 
 	u.TOTPResetRequestedAt = time.Time{}
@@ -737,18 +738,22 @@ func (u *User) SignInWithPassword(system string, password Password, hasher Hashe
 		}
 
 		if u.VerifiedAt.IsZero() {
-			return false, ErrNotVerified
+			return false, ErrNotVerified.WithContext("sign_in_with_password")
 		}
 
 		if u.ActivatedAt.IsZero() {
-			return false, ErrNotActivated
+			return false, ErrNotActivated.WithContext("sign_in_with_password")
 		}
 
-		return false, ErrSuspended
+		return false, ErrSuspended.WithContext("sign_in_with_password")
 	}
 
 	rehashed, err := u.checkPassword(password, hasher)
 	if err != nil {
+		if msg, ok := err.(i18n.Message); ok {
+			err = msg.WithContext("sign_in_with_password")
+		}
+
 		return false, fmt.Errorf("check password: %w", err)
 	}
 
@@ -773,15 +778,15 @@ func (u *User) SignInWithPassword(system string, password Password, hasher Hashe
 
 func (u *User) SignInWithMagicLink(system string) error {
 	if u.VerifiedAt.IsZero() {
-		return ErrNotVerified
+		return ErrNotVerified.WithContext("sign_in_with_magic_link")
 	}
 
 	if u.ActivatedAt.IsZero() {
-		return ErrNotActivated
+		return ErrNotActivated.WithContext("sign_in_with_magic_link")
 	}
 
 	if u.IsSuspended() {
-		return ErrSuspended
+		return ErrSuspended.WithContext("sign_in_with_magic_link")
 	}
 
 	u.LastSignInAttemptAt = time.Now().UTC()
@@ -805,11 +810,11 @@ func (u *User) SignInWithMagicLink(system string) error {
 
 func (u *User) SignInWithTOTP(system string, totp TOTP) error {
 	if u.ActivatedAt.IsZero() {
-		return ErrNotActivated
+		return ErrNotActivated.WithContext("sign_in_with_totp")
 	}
 
 	if !u.HasActivatedTOTP() {
-		return errors.New("account does not have TOTP")
+		return i18n.M("sign_in_with_totp:account.user.error.totp_not_activated")
 	}
 
 	if err := u.checkTOTP(totp); err != nil {
@@ -817,7 +822,7 @@ func (u *User) SignInWithTOTP(system string, totp TOTP) error {
 	}
 
 	if u.IsSuspended() {
-		return ErrSuspended
+		return ErrSuspended.WithContext("sign_in_with_totp")
 	}
 
 	u.LastSignInAttemptAt = time.Now().UTC()
@@ -857,20 +862,20 @@ func (u *User) useRecoveryCode(code RecoveryCode) error {
 
 func (u *User) SignInWithRecoveryCode(system string, code RecoveryCode) error {
 	if u.IsSuspended() {
-		return ErrSuspended
+		return ErrSuspended.WithContext("sign_in_with_recovery_code")
 	}
 
 	if u.ActivatedAt.IsZero() {
-		return ErrNotActivated
+		return ErrNotActivated.WithContext("sign_in_with_recovery_code")
 	}
 
 	if !u.HasActivatedTOTP() {
-		return errors.New("account cannot use recovery codes")
+		return i18n.M("sign_in_with_recovery_code:account.user.error.totp_not_activated")
 	}
 
 	if err := u.useRecoveryCode(code); err != nil {
 		return fmt.Errorf("%w: %w", app.ErrInvalidInput, errsx.Map{
-			"recovery code": errors.New("invalid recovery code"),
+			"recovery code": i18n.M("sign_in_with_recovery_code:account.user.error.invalid_recovery_code"),
 		})
 	}
 
@@ -890,15 +895,15 @@ func (u *User) SignInWithRecoveryCode(system string, code RecoveryCode) error {
 
 func (u *User) SignInWithGoogle(system string) error {
 	if u.VerifiedAt.IsZero() {
-		return ErrNotVerified
+		return ErrNotVerified.WithContext("sign_in_with_google")
 	}
 
 	if u.ActivatedAt.IsZero() {
-		return ErrNotActivated
+		return ErrNotActivated.WithContext("sign_in_with_google")
 	}
 
 	if u.IsSuspended() {
-		return ErrSuspended
+		return ErrSuspended.WithContext("sign_in_with_google")
 	}
 
 	u.LastSignInAttemptAt = time.Now().UTC()
@@ -922,15 +927,15 @@ func (u *User) SignInWithGoogle(system string) error {
 
 func (u *User) SignInWithFacebook(system string) error {
 	if u.VerifiedAt.IsZero() {
-		return ErrNotVerified
+		return ErrNotVerified.WithContext("sign_in_with_facebook")
 	}
 
 	if u.ActivatedAt.IsZero() {
-		return ErrNotActivated
+		return ErrNotActivated.WithContext("sign_in_with_facebook")
 	}
 
 	if u.IsSuspended() {
-		return ErrSuspended
+		return ErrSuspended.WithContext("sign_in_with_facebook")
 	}
 
 	u.LastSignInAttemptAt = time.Now().UTC()

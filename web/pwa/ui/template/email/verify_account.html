@@ -1,18 +1,17 @@
-{{define "subject"}}Verify your account{{end}}
+{{define "subject"}}{{.T "pwa.email.verify_account.subject"}}{{end}}
 
 {{define "plain" -}}
 
-Verify your account
+{{.T "pwa.email.verify_account.title"}}
 
-To verify your account paste the following verification code into the prompt in the app:
-{{.Vars.Token}}
+{{.T "pwa.email.verify_account.text" "token" .Vars.Token}}
 
 {{- end}}
 
 {{define "html" -}}
 
-<h1>Verify your account</h1>
-<p>To verify your account paste the following verification code into the prompt in the app:</p>
-<p>{{.Vars.Token}}</p>
+<h1>{{.T "pwa.email.verify_account.title"}}</h1>
+
+{{.T "p" "pwa.email.verify_account.text" "token" .Vars.Token}}
 
 {{- end}}

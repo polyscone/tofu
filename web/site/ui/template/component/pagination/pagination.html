@@ -7,17 +7,17 @@
 
 {{if not $book}}{{.Log.Warn "com.pagination: missing required prop: Book"}}{{end}}
 
-{{$startEntry := Add 1 (Mul $book.PageSize (Sub $book.Page.Number 1))}}
-{{$endEntry := Add (Sub $startEntry 1) (len $book.Page.Rows)}}
+{{$startRow := Add 1 (Mul $book.PageSize (Sub $book.Page.Number 1))}}
+{{$endRow := Add (Sub $startRow 1) (len $book.Page.Rows)}}
 
 <nav data-is="com.pagination" class="pagination">
 	<div class="pagination__info">
 		{{if len $book.Page.Rows}}
-			{{if eq $startEntry $endEntry}}
-				Showing entry <span data-locale-number>{{$startEntry}}</span> of <span data-locale-number>{{$book.TotalRows}}</span>
-			{{else}}
-				Showing entries <span data-locale-number>{{$startEntry}}</span>-<span data-locale-number>{{$endEntry}}</span> of <span data-locale-number>{{$book.TotalRows}}</span>
-			{{end}}
+			{{.T "com.pagination.showing_x_rows_of_y_total_rows"
+				"start_row" $startRow
+				"end_row" $endRow
+				"total_rows" $book.TotalRows
+			}}
 		{{end}}
 
 		<form class="bag inline-flex">
@@ -26,12 +26,12 @@
 			<select name="size">
 				{{range $i := Ints 1 11}}
 					{{$n := Mul $i 10}}
-					<option value="{{$n}}"{{if eq $n $book.PageSize}} selected{{end}}>{{$n}} / page</option>
+					<option value="{{$n}}"{{if eq $n $book.PageSize}} selected{{end}}>{{$.T "com.pagination.show_n_rows_per_page" "n" $n}}</option>
 				{{end}}
 			</select>
 
 			<noscript>
-				<button class="btn--alt">Update</button>
+				<button class="btn--alt">{{$.T "com.pagination.show_n_rows_per_page_update_button"}}</button>
 			</noscript>
 		</form>
 	</div>
@@ -39,8 +39,8 @@
 	<ul class="pagination__links">
 		{{if and (len $book.Page.Rows) (gt $book.TotalPages 1)}}
 			{{if gt $book.Page.Number 1}}
-				<li><a href="{{.URL.Query.Replace "page" "1"}}" aria-label="First page">&laquo; First</a></li>
-				<li><a href="{{.URL.Query.Replace "page" (Sub $book.Page.Number 1)}}" aria-label="Previous page">&lt; Prev</a></li>
+				<li><a href="{{.URL.Query.Replace "page" "1"}}" aria-label="{{$.T "com.pagination.first_page_description"}}">{{$.T "com.pagination.go_to_first_page"}}</a></li>
+				<li><a href="{{.URL.Query.Replace "page" (Sub $book.Page.Number 1)}}" aria-label="{{$.T "com.pagination.previous_page_description"}}">{{$.T "com.pagination.go_to_previous_page"}}</a></li>
 			{{end}}
 
 			{{range $i := Ints (Sub $book.Page.Number 2) (Add $book.Page.Number 3)}}
@@ -49,23 +49,22 @@
 					<li>
 						<a
 							href="{{$.URL.Query.Replace "page" $i}}"
-							aria-label="Page {{$i}}"
-							data-locale-number
+							aria-label="{{$.T "com.pagination.go_to_page_n_description" "n" $i}}"
 							class="pagination-link{{if $isActive}} pagination-link--active{{end}}"
 						>
-							{{$i}}
+							{{$.T "com.pagination.go_to_page_n" "n" $i}}
 						</a>
 					</li>
 				{{end}}
 			{{end}}
 
 			{{if lt $book.Page.Number $book.TotalPages}}
-				<li><a href="{{.URL.Query.Replace "page" (Add $book.Page.Number 1)}}" aria-label="Next page">Next &gt;</a></li>
-				<li><a href="{{.URL.Query.Replace "page" $book.TotalPages}}" aria-label="Last page">Last &raquo;</a></li>
+				<li><a href="{{.URL.Query.Replace "page" (Add $book.Page.Number 1)}}" aria-label="{{$.T "com.pagination.next_page_description"}}">{{$.T "com.pagination.go_to_next_page"}}</a></li>
+				<li><a href="{{.URL.Query.Replace "page" $book.TotalPages}}" aria-label="{{$.T "com.pagination.last_page_description"}}">{{$.T "com.pagination.go_to_last_page"}}</a></li>
 			{{end}}
 		{{else if not (eq $book.Page.Number 1)}}
-			<li><a href="{{.URL.Query.Replace "page" (Sub $book.Page.Number 1)}}" aria-label="Previous page">&lt; Prev</a></li>
-			<li><a href="{{.URL.Query.Replace "page" "1"}}">Go to the first page</a></li>
+			<li><a href="{{.URL.Query.Replace "page" "1"}}" aria-label="{{$.T "com.pagination.first_page_description"}}">{{$.T "com.pagination.go_to_first_page_no_rows"}}</a></li>
+			<li><a href="{{.URL.Query.Replace "page" (Sub $book.Page.Number 1)}}" aria-label="{{$.T "com.pagination.previous_page_description"}}">{{$.T "com.pagination.go_to_previous_page"}}</a></li>
 		{{end}}
 	</ul>
 </nav>

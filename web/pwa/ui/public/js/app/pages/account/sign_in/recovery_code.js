@@ -25,20 +25,20 @@ function SignInRecoveryCode () {
 
 	return {
 		view: () => [
-			m("h1", "Sign in"),
+			m("h1", "{{.T "pwa.account.sign_in.recovery_code.title"}}"),
 			m("form", { onsubmit: signIn }, [
 				state.error ? m(ErrorBanner, state.error) : null,
 				m(RecoveryCodeInput, {
-					label: "Recovery code",
+					label: "{{.T "pwa.account.sign_in.recovery_code.recovery_code_label"}}",
 					name: "code",
 					required: true,
 					autocomplete: "off",
 					error: state.errors.recoveryCode,
 					oninput (e) { state.recoveryCode = e.target.value },
 				}),
-				m("button[type=submit]", "Sign in"),
-				m(m.route.Link, { href: platform.routes.path("account.sign_in.totp") }, "Use a passcode"),
-				m(m.route.Link, { href: platform.routes.path("account.sign_in") }, "Switch account"),
+				m("button[type=submit]", "{{.T "pwa.account.sign_in.recovery_code.sign_in_button"}}"),
+				m(m.route.Link, { href: platform.routes.path("account.sign_in.totp") }, "{{.T "pwa.account.sign_in.recovery_code.use_passcode_button"}}"),
+				m(m.route.Link, { href: platform.routes.path("account.sign_in") }, "{{.T "pwa.account.sign_in.recovery_code.switch_account_button"}}"),
 			]),
 		],
 	}

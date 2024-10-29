@@ -1,6 +1,6 @@
 function SignInTOTPRequired () {
 	return {
-		view: () => m("p", "Two-factor authentication is required to use this application."),
+		view: () => m("p", "{{.T "pwa.account.sign_in.totp_required.text"}}"),
 	}
 }
 

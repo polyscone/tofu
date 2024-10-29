@@ -2,13 +2,13 @@
 
 {{define "view.head"}}
 
-<h1>User management</h1>
+<h1>{{.T "site.account.user_management.list.title"}}</h1>
 
 <form class="bag">
 	{{template "com.form.query_params" .WithProps "Skip" (Slice "search" "page")}}
 
-	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="Search" class="grow"{{if .URL.Query.Has "search"}} autofocus{{end}}>
-	<button>Search</button>
+	<input type="search" aria-label="Search" name="search" value="{{.URL.Query.Get "search"}}" placeholder="{{.T "site.account.user_management.list.search_placeholder"}}" class="grow"{{if .URL.Query.Has "search"}} autofocus{{end}}>
+	<button>{{.T "site.account.user_management.list.search_button"}}</button>
 </form>
 
 {{end}}
@@ -18,11 +18,11 @@
 <table class="data-table">
 	<thead>
 		<tr>
-			<th>Email {{template "com.datatable.sort" .WithProps "Key" "email" "Direction" "desc"}}</th>
-			<th>Last sign in {{template "com.datatable.sort" .WithProps "Key" "last-sign-in"}}</th>
+			<th>{{.T "site.account.user_management.list.email_heading"}} {{template "com.datatable.sort" .WithProps "Key" "email" "Direction" "desc"}}</th>
+			<th>{{.T "site.account.user_management.list.last_sign_in_heading"}} {{template "com.datatable.sort" .WithProps "Key" "last-sign-in"}}</th>
 			<th class="text-right no-wrap">
 				{{if .Passport.Account.CanInviteUsers}}
-					<a href="{{Path "account.management.user.new"}}{{.URL.Query.String}}">Invite user</a>
+					<a href="{{Path "account.management.user.new"}}{{.URL.Query.String}}">{{.T "site.account.user_management.list.invite_button"}}</a>
 				{{end}}
 			</th>
 		</tr>
@@ -34,13 +34,8 @@
 				<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
 				<td>
 					{{if .HasSignedIn}}
-						<time
-							title="{{FormatTime .LastSignedInAt "RFC1123"}}"
-							datetime="{{FormatTime .LastSignedInAt "RFC3339"}}"
-						>
-							{{FormatDuration (TimeSince .LastSignedInAt)}} ago
-						</time>
-						({{.LastSignedInMethod}})
+						{{$.T "site.account.user_management.list.last_signed_in_ago" "time_since_last_signed_in" (TimeSince .LastSignedInAt)}}
+						({{$.T .LastSignedInMethod}})
 					{{end}}
 				</td>
 				<td class="text-right">
@@ -49,27 +44,27 @@
 					{{end}}
 
 					{{if not .IsVerified}}
-						Unverified
+						{{$.T "site.account.user_management.list.unverified"}}
 					{{else if not .IsActivated}}
 						{{if $.Passport.Account.CanActivateUsers}}
-							<a href="{{Path "account.management.user.activate" "{userID}" .ID}}{{$.URL.Query.String}}">Activate</a>
+							<a href="{{Path "account.management.user.activate" "{userID}" .ID}}{{$.URL.Query.String}}">{{$.T "site.account.user_management.list.activate_button"}}</a>
 						{{else}}
-							Unactivated
+							{{$.T "site.account.user_management.list.unactivated"}}
 						{{end}}
 					{{end}}
 
 					{{if and (not .TOTPResetRequestedAt.IsZero) $.Passport.Account.CanReviewTOTPResets}}
-						<a href="{{Path "account.management.user.totp_reset_review" "{userID}" .ID}}{{$.URL.Query.String}}">Review 2FA reset request</a>
+						<a href="{{Path "account.management.user.totp_reset_review" "{userID}" .ID}}{{$.URL.Query.String}}">{{$.T "site.account.user_management.list.review_totp_request_button"}}</a>
 					{{end}}
 
 					{{if $.Passport.Account.CanChangeRoles .ID}}
-						<a href="{{Path "account.management.user.edit" "{userID}" .ID}}{{$.URL.Query.String}}">Edit</a>
+						<a href="{{Path "account.management.user.edit" "{userID}" .ID}}{{$.URL.Query.String}}">{{$.T "site.account.user_management.list.edit_button"}}</a>
 					{{end}}
 				</td>
 			</tr>
 		{{else}}
 			<tr class="data-table__empty">
-				<td colspan="3">No users found</td>
+				<td colspan="3">{{.T "site.account.user_management.list.no_results"}}</td>
 			</tr>
 		{{end}}
 	</tbody>

@@ -2,19 +2,16 @@ package account
 
 import (
 	"crypto/subtle"
-	"errors"
-	"fmt"
-	"regexp"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 const (
 	passwordMinLength = 8
 	passwordMaxLength = 1000
 )
-
-var validPasswordSeq = regexp.MustCompile(`^.+$`)
 
 type Password struct {
 	_ [0]func() // Disallow comparison
@@ -24,19 +21,15 @@ type Password struct {
 
 func NewPassword(password string) (zero Password, _ error) {
 	if strings.TrimSpace(password) == "" {
-		return zero, errors.New("cannot be empty")
+		return zero, i18n.M("account.password.error.empty")
 	}
 
 	rc := utf8.RuneCountInString(password)
 	if rc < passwordMinLength {
-		return zero, fmt.Errorf("must be at least %v characters in length", passwordMinLength)
+		return zero, i18n.M("account.password.error.too_short", "min_length", passwordMinLength)
 	}
 	if rc > passwordMaxLength {
-		return zero, fmt.Errorf("cannot be a over %v characters in length", passwordMaxLength)
-	}
-
-	if !validPasswordSeq.MatchString(password) {
-		return zero, fmt.Errorf("must be between %v and %v characters in length", passwordMinLength, passwordMaxLength)
+		return zero, i18n.M("account.password.error.too_long", "max_length", passwordMaxLength)
 	}
 
 	return Password{data: []byte(password)}, nil

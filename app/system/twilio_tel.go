@@ -1,11 +1,9 @@
 package system
 
 import (
-	"errors"
-	"fmt"
 	"regexp"
 
-	"github.com/polyscone/tofu/internal/human"
+	"github.com/polyscone/tofu/internal/i18n"
 )
 
 var (
@@ -21,11 +19,11 @@ func NewTwilioTel(tel string) (TwilioTel, error) {
 	}
 
 	if matches := invalidTwilioTelChars.FindAllString(tel, -1); len(matches) != 0 {
-		return "", fmt.Errorf("cannot contain: %v", human.OrList(matches))
+		return "", i18n.M("twilio_tel.error.has_invalid_chars", "invalid_chars", matches)
 	}
 
 	if !validTwilioTelSeq.MatchString(tel) {
-		return "", errors.New("must be in the format +12 3456 7890")
+		return "", i18n.M("twilio_tel.error.invalid")
 	}
 
 	return TwilioTel(tel), nil

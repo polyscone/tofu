@@ -12,8 +12,8 @@ import (
 )
 
 func PasswordResetRequestedHandler(h *ui.Handler) any {
-	return func(evt event.PasswordResetRequested) {
-		ctx := context.Background()
+	return func(ctx context.Context, evt event.PasswordResetRequested) {
+		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
 		config, err := h.Repo.System.FindConfig(ctx)

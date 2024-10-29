@@ -3,7 +3,7 @@
 {{template "com.form.input" .WithProps
 	"Props" .Props
 	"Type" "text"
-	"Placeholder" "A role description."
+	"Placeholder" (.T "com.view.form.role_description.default_placeholder")
 	"Pattern" `^[ -~]*$`
 	"MaxLength" 100
 }}

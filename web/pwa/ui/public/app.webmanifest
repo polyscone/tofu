@@ -7,7 +7,7 @@
 	"scope": "{{.App.BasePath}}/",
 	"orientation": "any",
 	"display": "standalone",
-	"lang": "en",
+	"lang": "{{.Locale}}",
 	"background_color": "{{.App.ThemeColour}}",
 	"theme_color": "{{.App.ThemeColour}}",
 	"icons": [

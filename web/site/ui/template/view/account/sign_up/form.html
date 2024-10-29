@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>Sign up</h1>
+	<h1>{{.T "site.account.sign_up.form.title"}}</h1>
 </div>
 
 {{end}}
@@ -12,26 +12,26 @@
 
 <div class="center">
 	{{if .Config.SignUpEnabled}}
-		<p>You'll be able to choose your password after verifying your email address.</p>
+		{{.T "p" "site.account.sign_up.form.choose_password_explanation"}}
 
 		<form action="{{Path "account.sign_up.post"}}" method="POST">
 			{{template "com.form.csrf" .}}
 
 			{{template "com.form.email" .WithProps
-				"Label" "Email"
+				"Label" (.T "site.account.sign_up.form.email_label")
 				"Name" "email"
 				"Required" true
 				"Autocomplete" "username"
 			}}
 
 			<div class="bag reverse">
-				<button class="push-inline-end">Sign up</button>
+				<button class="push-inline-end">{{.T "site.account.sign_up.form.sign_up_button"}}</button>
 
-				<a href="{{Path "account.sign_in"}}{{.URL.Query.String}}">Already have an account?</a>
+				<a href="{{Path "account.sign_in"}}{{.URL.Query.String}}">{{.T "site.account.sign_up.form.already_have_account_button"}}</a>
 			</div>
 		</form>
 	{{else}}
-		<p>Sign up is disabled for this application.</p>
+		{{.T "p" "site.account.sign_up.form.sign_up_disabled"}}
 	{{end}}
 </div>
 

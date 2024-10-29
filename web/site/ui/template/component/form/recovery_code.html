@@ -1,6 +1,7 @@
 {{define "com.form.recovery_code" -}}
 
-{{$hint := or .Props.Hint "13 alphanumeric characters"}}
+{{$requiredLength := 13}}
+{{$hint := or .Props.Hint (.T "com.form.recovery_code.default_hint" "required_length" $requiredLength)}}
 {{$placeholder := or .Props.Placeholder "ABCD234567XYZ"}}
 
 {{template "com.form.input" .WithProps
@@ -9,8 +10,8 @@
 	"Hint" $hint
 	"Placeholder" $placeholder
 	"Pattern" `^[A-Z2-7]+$`
-	"MinLength" 13
-	"MaxLength" 13
+	"MinLength" $requiredLength
+	"MaxLength" $requiredLength
 }}
 
 {{- end}}

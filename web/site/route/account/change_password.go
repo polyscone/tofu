@@ -5,6 +5,7 @@ import (
 
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/internal/password/pwned"
 	"github.com/polyscone/tofu/web/site/ui"
 )
@@ -91,7 +92,7 @@ func changePasswordPost(h *ui.Handler) http.HandlerFunc {
 			}
 		}
 
-		h.AddFlashf(ctx, "Your password has been successfully changed.")
+		h.AddFlashf(ctx, i18n.M("site.account.change_password.flash.password_changed"))
 
 		var redirect string
 		if r := h.Session.PopRedirect(ctx); r != "" {

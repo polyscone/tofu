@@ -13,7 +13,7 @@ onMount(`[data-is="com.recovery_codes"]`, node => {
 		actions.style.display = ""
 	}
 
-	const codes = codeList.querySelectorAll("li").map(li => li.innerText.trim()).filter(code => !!code)
+	const codes = Array.from(codeList.querySelectorAll("li")).map(li => li.innerText.trim()).filter(code => !!code)
 	const download = node.querySelector(".recovery-codes-download")
 	const print = node.querySelector(".recovery-codes-print")
 	const copy = node.querySelector(".recovery-codes-copy")
@@ -115,7 +115,7 @@ onMount(`[data-is="com.recovery_codes"]`, node => {
 
 			printContainer.innerHTML = `
 				<h1>
-					Two-factor authentication recovery codes<br>
+					{{.T "com.recovery_codes.list_title"}}<br>
 					<small>${window.location.hostname}</small>
 				</h1>
 				<ul>${data}</ul>
@@ -156,9 +156,9 @@ onMount(`[data-is="com.recovery_codes"]`, node => {
 			const result = document.execCommand("copy")
 
 			if (result) {
-				event.target.innerText = "Copied"
+				event.target.innerText = "{{.T "com.recovery_codes.copy_succeeded"}}"
 			} else {
-				event.target.innerText = "Failed"
+				event.target.innerText = "{{.T "com.recovery_codes.copy_failed"}}"
 			}
 
 			textarea.parentNode.removeChild(textarea)

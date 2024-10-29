@@ -3,7 +3,7 @@
 {{define "view.head"}}
 
 <div class="center">
-	<h1>System configuration</h1>
+	<h1>{{.T "site.system.config.title"}}</h1>
 </div>
 
 {{end}}
@@ -17,11 +17,11 @@
 		{{template "com.form.csrf" .}}
 
 		<fieldset>
-			<legend>Email</legend>
+			<legend>{{.T "site.system.config.email_section_title"}}</legend>
 
 			{{template "com.form.email" .WithProps
-				"Label" "System email"
-				"Hint" "from address in system emails"
+				"Label" (.T "site.system.config.system_email_label")
+				"Hint" (.T "site.system.config.system_email_hint")
 				"Name" "system-email"
 				"Value" (.Form.GetOr "system-email" .Config.SystemEmail)
 				"Required" true
@@ -30,8 +30,8 @@
 			}}
 
 			{{template "com.form.email" .WithProps
-				"Label" "Security email"
-				"Hint" "for reporting security vulnerabilities"
+				"Label" (.T "site.system.config.security_email_label")
+				"Hint" (.T "site.system.config.security_email_hint")
 				"Name" "security-email"
 				"Value" (.Form.GetOr "security-email" .Config.SecurityEmail)
 				"Required" true
@@ -41,79 +41,79 @@
 		</fieldset>
 
 		<fieldset>
-			<legend>Accounts</legend>
+			<legend>{{.T "site.system.config.account_section_title"}}</legend>
 
 			{{template "com.form.select" .WithProps
-				"Label" "Enable sign up"
+				"Label" (.T "site.system.config.enable_sign_up_label")
 				"Name" "sign-up-enabled"
 				"Value" (.Form.GetOr "sign-up-enabled" .Config.SignUpEnabled)
 				"Options" (Slice
-					(Map "Label" "No (invite only)" "Value" "false")
-					(Map "Label" "Yes" "Value" "true")
+					(Map "Label" (.T "site.system.config.enable_sign_up_no") "Value" "false")
+					(Map "Label" (.T "site.system.config.enable_sign_up_yes") "Value" "true")
 				)
 				"Disabled" $disabled
 			}}
 
 			{{template "com.form.select" .WithProps
-				"Label" "Enable automatic account activation on sign up"
+				"Label" (.T "site.system.config.enable_auto_account_activation_label")
 				"Name" "sign-up-auto-activate-enabled"
 				"Value" (.Form.GetOr "sign-up-auto-activate-enabled" .Config.SignUpAutoActivateEnabled)
 				"Options" (Slice
-					(Map "Label" "No (manual activation required)" "Value" "false")
-					(Map "Label" "Yes" "Value" "true")
+					(Map "Label" (.T "site.system.config.enable_auto_account_activation_no") "Value" "false")
+					(Map "Label" (.T "site.system.config.enable_auto_account_activation_yes") "Value" "true")
 				)
 				"Disabled" $disabled
 			}}
 
 			{{template "com.form.select" .WithProps
-				"Label" "Require two-factor authentication"
+				"Label" (.T "site.system.config.require_totp_label")
 				"Name" "totp-required"
 				"Value" (.Form.GetOr "totp-required" .Config.TOTPRequired)
 				"Options" (Slice
-					(Map "Label" "No" "Value" "false")
-					(Map "Label" "Yes" "Value" "true")
+					(Map "Label" (.T "site.system.config.require_totp_no") "Value" "false")
+					(Map "Label" (.T "site.system.config.require_totp_yes") "Value" "true")
 				)
 				"Disabled" $disabled
 			}}
 
 			{{template "com.form.select" .WithProps
-				"Label" "Enable SMS for two-factor authentication"
+				"Label" (.T "site.system.config.enable_totp_sms_label")
 				"Name" "totp-sms-enabled"
 				"Value" (.Form.GetOr "totp-sms-enabled" .Config.TOTPSMSEnabled)
 				"Options" (Slice
-					(Map "Label" "No" "Value" "false")
-					(Map "Label" "Yes (requires Twilio setup)" "Value" "true")
+					(Map "Label" (.T "site.system.config.enable_totp_sms_no") "Value" "false")
+					(Map "Label" (.T "site.system.config.enable_totp_sms_yes") "Value" "true")
 				)
 				"Disabled" $disabled
 			}}
 
 			{{template "com.form.select" .WithProps
-				"Label" "Enable magic link sign in"
-				"Hint" "allows magic link sign up when sign up is enabled"
+				"Label" (.T "site.system.config.enable_magic_link_sign_in_label")
+				"Hint" (.T "site.system.config.enable_magic_link_sign_in_hint")
 				"Name" "magic-link-sign-in-enabled"
 				"Value" (.Form.GetOr "magic-link-sign-in-enabled" .Config.MagicLinkSignInEnabled)
 				"Options" (Slice
-					(Map "Label" "No" "Value" "false")
-					(Map "Label" "Yes" "Value" "true")
+					(Map "Label" (.T "site.system.config.enable_magic_link_sign_in_no") "Value" "false")
+					(Map "Label" (.T "site.system.config.enable_magic_link_sign_in_yes") "Value" "true")
 				)
 				"Disabled" $disabled
 			}}
 
 			{{template "com.form.select" .WithProps
-				"Label" "Enable Google sign in"
-				"Hint" "allows Google sign up when sign up is enabled"
+				"Label" (.T "site.system.config.enable_google_sign_in_label")
+				"Hint" (.T "site.system.config.enable_google_sign_in_hint")
 				"Name" "google-sign-in-enabled"
 				"Value" (.Form.GetOr "google-sign-in-enabled" .Config.GoogleSignInEnabled)
 				"Options" (Slice
-					(Map "Label" "No" "Value" "false")
-					(Map "Label" "Yes (requires Google client id)" "Value" "true")
+					(Map "Label" (.T "site.system.config.enable_google_sign_in_no") "Value" "false")
+					(Map "Label" (.T "site.system.config.enable_google_sign_in_yes") "Value" "true")
 				)
 				"Disabled" $disabled
 			}}
 
 			{{template "com.form.input" .WithProps
-				"Label" "Google sign in client id"
 				"Type" "text"
+				"Label" (.T "site.system.config.google_sign_in_client_id_label")
 				"Name" "google-sign-in-client-id"
 				"Value" (.Form.GetOr "google-sign-in-client-id" .Config.GoogleSignInClientID)
 				"Placeholder" "ABCDEFG123456789"
@@ -123,20 +123,20 @@
 			}}
 
 			{{template "com.form.select" .WithProps
-				"Label" "Enable Facebook sign in"
-				"Hint" "allows Facebook sign up when sign up is enabled"
+				"Label" (.T "site.system.config.enable_facebook_sign_in_label")
+				"Hint" (.T "site.system.config.enable_facebook_sign_in_hint")
 				"Name" "facebook-sign-in-enabled"
 				"Value" (.Form.GetOr "facebook-sign-in-enabled" .Config.FacebookSignInEnabled)
 				"Options" (Slice
-					(Map "Label" "No" "Value" "false")
-					(Map "Label" "Yes (requires Facebook app id/secret)" "Value" "true")
+					(Map "Label" (.T "site.system.config.enable_facebook_sign_in_no") "Value" "false")
+					(Map "Label" (.T "site.system.config.enable_facebook_sign_in_yes") "Value" "true")
 				)
 				"Disabled" $disabled
 			}}
 
 			{{template "com.form.input" .WithProps
-				"Label" "Facebook sign in app id"
 				"Type" "text"
+				"Label" (.T "site.system.config.facebook_sign_in_app_id_label")
 				"Name" "facebook-sign-in-app-id"
 				"Value" (.Form.GetOr "facebook-sign-in-app-id" .Config.FacebookSignInAppID)
 				"Placeholder" "ABCDEFG123456789"
@@ -146,8 +146,8 @@
 			}}
 
 			{{template "com.form.input" .WithProps
-				"Label" "Facebook sign in app secret"
 				"Type" "text"
+				"Label" (.T "site.system.config.facebook_sign_in_secret_label")
 				"Name" "facebook-sign-in-app-secret"
 				"Value" (.Form.GetOr "facebook-sign-in-app-secret" .Config.FacebookSignInAppSecret)
 				"Placeholder" "ABCDEFG123456789"
@@ -158,12 +158,12 @@
 		</fieldset>
 
 		<fieldset>
-			<legend>Resend</legend>
+			<legend>{{.T "site.system.config.resend_section_title"}}</legend>
 
 			{{template "com.form.input" .WithProps
-				"Label" "API key"
 				"Type" "text"
-				"Hint" "36 character API key beginning with re_"
+				"Label" (.T "site.system.config.resend_api_key_label")
+				"Hint" (.T "site.system.config.resend_api_key_hint" "required_length" 36)
 				"Name" "resend-api-key"
 				"Value" (.Form.GetOr "resend-api-key" .Config.ResendAPIKey)
 				"Placeholder" "re_1234abcd_12345678abcdefghABCDEFGH"
@@ -175,12 +175,12 @@
 		</fieldset>
 
 		<fieldset>
-			<legend>Twilio</legend>
+			<legend>{{.T "site.system.config.twilio_section_title"}}</legend>
 
 			{{template "com.form.input" .WithProps
-				"Label" "SID"
 				"Type" "text"
-				"Hint" "34 character API SID beginning with AC"
+				"Label" (.T "site.system.config.twilio_sid_label")
+				"Hint" (.T "site.system.config.twilio_sid_hint" "required_length" 34)
 				"Name" "twilio-sid"
 				"Value" (.Form.GetOr "twilio-sid" .Config.TwilioSID)
 				"Placeholder" "AC0123456789abcdef0123456789abcdef"
@@ -191,9 +191,9 @@
 			}}
 
 			{{template "com.form.input" .WithProps
-				"Label" "Token"
 				"Type" "text"
-				"Hint" "32 character API token"
+				"Label" (.T "site.system.config.twilio_token_label")
+				"Hint" (.T "site.system.config.twilio_token_hint" "required_length" 32)
 				"Name" "twilio-token"
 				"Value" (.Form.GetOr "twilio-token" .Config.TwilioToken)
 				"Placeholder" "0123456789abcdef0123456789abcdef"
@@ -204,7 +204,7 @@
 			}}
 
 			{{template "com.form.sms_tel" .WithProps
-				"Label" "From phone number"
+				"Label" (.T "site.system.config.twilio_from_tel_label")
 				"Name" "twilio-from-tel"
 				"Value" (.Form.GetOr "twilio-from-tel" .Config.TwilioFromTel)
 				"Autocomplete" "tel"
@@ -213,7 +213,7 @@
 		</fieldset>
 
 		<div class="bag reverse">
-			<button class="push-inline-end"{{if $disabled}} disabled{{end}}>Update configuration</button>
+			<button class="push-inline-end"{{if $disabled}} disabled{{end}}>{{.T "site.system.config.update_button"}}</button>
 		</div>
 	</form>
 </div>
