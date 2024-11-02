@@ -235,7 +235,7 @@
 									}
 
 									const denial = node.value
-									const checkboxes = Array.from(document.querySelectorAll(`input[name="grants"][value="${denial}"]`))
+									const checkboxes = document.querySelectorAll(`input[name="grants"][value="${denial}"]`)
 
 									for (const checkbox of checkboxes) {
 										checkbox.checked = false
@@ -250,7 +250,7 @@
 									}
 
 									const grant = node.value
-									const checkboxes = Array.from(document.querySelectorAll(`input[name="denials"][value="${grant}"]`))
+									const checkboxes = document.querySelectorAll(`input[name="denials"][value="${grant}"]`)
 
 									for (const checkbox of checkboxes) {
 										checkbox.checked = false

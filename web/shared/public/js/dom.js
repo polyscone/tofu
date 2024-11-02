@@ -93,7 +93,7 @@ function flattenNodesUnique (node) {
 }
 
 export function onMount (selector, callback) {
-	const nodes = Array.from(document.querySelectorAll(selector))
+	const nodes = document.querySelectorAll(selector)
 
 	for (const node of nodes) {
 		const onUnmountCallback = callback(node)

@@ -13,7 +13,7 @@ onMount(`[data-is="com.recovery_codes"]`, node => {
 		actions.style.display = ""
 	}
 
-	const codes = Array.from(codeList.querySelectorAll("li")).map(li => li.innerText.trim()).filter(code => !!code)
+	const codes = codeList.querySelectorAll("li").map(li => li.innerText.trim()).filter(code => !!code)
 	const download = node.querySelector(".recovery-codes-download")
 	const print = node.querySelector(".recovery-codes-print")
 	const copy = node.querySelector(".recovery-codes-copy")
