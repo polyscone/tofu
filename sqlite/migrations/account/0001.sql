@@ -1,5 +1,5 @@
 create table account__users (
-	id                          integer primary key autoincrement,
+	id                          integer primary key,
 	email                       text not null unique collate nocase,
 	hashed_password             blob,
 	totp_method                 text not null,
@@ -45,7 +45,7 @@ create table account__sign_in_attempt_logs (
 ) strict;
 
 create table account__roles (
-	id          integer primary key autoincrement,
+	id          integer primary key,
 	name        text not null unique collate nocase,
 	description text not null collate nocase,
 	created_at  text not null,
@@ -53,7 +53,7 @@ create table account__roles (
 ) strict;
 
 create table account__permissions (
-	id         integer primary key autoincrement,
+	id         integer primary key,
 	name       text not null unique collate nocase,
 	created_at text not null,
 	updated_at text
