@@ -12,20 +12,37 @@ if (lang) {
 	langs.push(lang)
 }
 
-onMount("form", node => {
-	let submitting = false
+let submittingForm = false
 
+window.addEventListener("pageshow", () => {
+	onMount("[data-disable]", node => {
+		if (node.dataset.originalTextContent) {
+			node.textContent = node.dataset.originalTextContent
+
+			delete node.dataset.originalTextContent
+		}
+
+		node.classList.remove("btn--loading")
+
+		delete node.dataset.disable
+
+		submittingForm = false
+	})
+})
+
+onMount("form", node => {
 	node.addEventListener("submit", event => {
-		if (submitting) {
+		if (submittingForm) {
 			event.preventDefault()
 
 			return
 		}
 
-		submitting = true
+		submittingForm = true
 
 		if (!event.submitter.classList.contains("btn--link")) {
 			event.submitter.classList.add("btn--loading")
+			event.submitter.dataset.originalTextContent = event.submitter.textContent
 			event.submitter.textContent = "Please wait..."
 		}
 
