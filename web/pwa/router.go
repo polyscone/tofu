@@ -172,10 +172,12 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler
 	}
 
 	renderer := handler.NewRenderer(handler.RendererConfig{
-		Handler:    h.Handler,
-		AssetTags:  ui.AssetTags,
-		AssetFiles: ui.AssetFiles,
-		Funcs:      h.Funcs,
+		Handler:         h.Handler,
+		AssetTags:       ui.AssetTags,
+		AssetFiles:      ui.AssetFiles,
+		Funcs:           h.Funcs,
+		T:               h.T,
+		WrapI18nRuntime: handler.NewI18nRuntimeWrapper(mux),
 	})
 	serveFile := handler.NewFileServer(mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, fs.ErrInvalid) || errors.Is(err, handler.ErrNoIndex) {

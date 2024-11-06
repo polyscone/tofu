@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/internal/csrf"
 	"github.com/polyscone/tofu/internal/errsx"
+	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/handler"
 )
@@ -25,10 +27,28 @@ var publicErrors = []error{
 
 type Handler struct {
 	*handler.Handler
+	i18nRuntime i18n.Runtime
 }
 
-func NewHandler(base *handler.Handler) *Handler {
-	return &Handler{Handler: base}
+func NewHandler(base *handler.Handler, mux *router.ServeMux) *Handler {
+	i18nRuntimeWrapper := handler.NewI18nRuntimeWrapper(mux)
+
+	return &Handler{
+		Handler:     base,
+		i18nRuntime: i18nRuntimeWrapper(i18n.DefaultJSRuntime),
+	}
+}
+
+func (h *Handler) T(ctx context.Context, message i18n.Message) string {
+	locale := h.Locale(ctx)
+	res, err := i18n.T(h.i18nRuntime, locale, message)
+	if err != nil {
+		logger := h.Logger(ctx)
+
+		logger.Error("api v1 handler: i18n T", "err", err)
+	}
+
+	return res.AsString().Value
 }
 
 func (h *Handler) JSON(w http.ResponseWriter, r *http.Request, status int, data any) {

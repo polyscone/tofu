@@ -11,6 +11,7 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/internal/httpx/middleware"
 	"github.com/polyscone/tofu/internal/httpx/router"
+	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 )
@@ -19,17 +20,20 @@ type PredicateFunc func(p guard.Passport) bool
 
 type Handler struct {
 	*handler.Handler
-	signInPath func() string
-	mux        *router.ServeMux
-	Funcs      template.FuncMap
-	HTML       *handler.Renderer
+	signInPath  func() string
+	mux         *router.ServeMux
+	i18nRuntime i18n.Runtime
+	Funcs       template.FuncMap
+	HTML        *handler.Renderer
 }
 
 func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() string) *Handler {
+	i18nRuntimeWrapper := handler.NewI18nRuntimeWrapper(mux)
 	h := &Handler{
-		Handler:    base,
-		signInPath: signInPath,
-		mux:        mux,
+		Handler:     base,
+		signInPath:  signInPath,
+		mux:         mux,
+		i18nRuntime: i18nRuntimeWrapper(i18n.DefaultHTMLRuntime),
 	}
 
 	h.Funcs = handler.NewTemplateFuncs(template.FuncMap{
@@ -54,6 +58,8 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		TemplateFiles:    templateFiles,
 		TemplatePatterns: templatePatterns,
 		Funcs:            h.Funcs,
+		T:                h.T,
+		WrapI18nRuntime:  i18nRuntimeWrapper,
 		Process: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html; charset=utf-8")
 		},
@@ -72,6 +78,18 @@ func (h *Handler) tmplHasPathPrefix(value any, name string, paramArgPairs ...any
 	p = strings.TrimSuffix(p, "/")
 
 	return v == p || strings.HasPrefix(v, p+"/")
+}
+
+func (h *Handler) T(ctx context.Context, message i18n.Message) string {
+	locale := h.Locale(ctx)
+	res, err := i18n.T(h.i18nRuntime, locale, message)
+	if err != nil {
+		logger := h.Logger(ctx)
+
+		logger.Error("pwa handler: i18n T", "err", err)
+	}
+
+	return res.AsString().Value
 }
 
 func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, vars handler.Vars) error {

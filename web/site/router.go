@@ -236,7 +236,8 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler
 		AssetTags:       ui.AssetTags,
 		AssetFiles:      ui.AssetFiles,
 		Funcs:           h.Funcs,
-		WrapI18nRuntime: ui.NewI18nRuntimeWrapper(h),
+		T:               h.T,
+		WrapI18nRuntime: handler.NewI18nRuntimeWrapper(mux),
 	})
 	serveFile := handler.NewFileServer(mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		h.HTML.ErrorView(w, r, "static file", err, "error", nil)

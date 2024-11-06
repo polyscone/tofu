@@ -212,6 +212,7 @@ type Templater interface {
 type ViewDataFunc func(data *ViewData) error
 type ViewVarsFunc func(r *http.Request) (Vars, error)
 type TemplateProcessFunc func(w http.ResponseWriter, r *http.Request)
+type TFunc func(ctx context.Context, message i18n.Message) string
 type WrapI18nRuntimeFunc func(rt i18n.Runtime) i18n.Runtime
 
 type RendererConfig struct {
@@ -221,6 +222,7 @@ type RendererConfig struct {
 	TemplateFiles    fs.FS
 	TemplatePatterns TemplatePatternsFunc
 	Funcs            template.FuncMap
+	T                TFunc
 	WrapI18nRuntime  WrapI18nRuntimeFunc
 	Process          TemplateProcessFunc
 }
@@ -232,6 +234,7 @@ type Renderer struct {
 	templateFiles    fs.FS
 	templatePatterns TemplatePatternsFunc
 	funcs            template.FuncMap
+	t                TFunc
 	wrapI18nRuntime  WrapI18nRuntimeFunc
 	viewVarsFuncs    map[string]ViewVarsFunc
 	process          TemplateProcessFunc
@@ -245,6 +248,7 @@ func NewRenderer(config RendererConfig) *Renderer {
 		templateFiles:    config.TemplateFiles,
 		templatePatterns: config.TemplatePatterns,
 		funcs:            config.Funcs,
+		t:                config.T,
 		wrapI18nRuntime:  config.WrapI18nRuntime,
 		viewVarsFuncs:    make(map[string]ViewVarsFunc),
 		process:          config.Process,
@@ -558,7 +562,7 @@ func (rn *Renderer) ErrorViewFunc(w http.ResponseWriter, r *http.Request, msg st
 	}
 
 	rn.ViewFunc(w, r, status, view, func(data *ViewData) error {
-		data.ErrorMessage = rn.h.T(ctx, ErrorMessage(err))
+		data.ErrorMessage = rn.t(ctx, ErrorMessage(err))
 
 		switch {
 		case errors.Is(err, app.ErrMalformedInput),

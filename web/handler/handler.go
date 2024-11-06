@@ -42,6 +42,33 @@ const (
 	ctxLocale
 )
 
+type Mux interface {
+	TryPath(name string, paramArgPairs ...any) (string, error)
+}
+
+type I18nRuntime struct {
+	i18n.Runtime
+	mux Mux
+}
+
+func NewI18nRuntimeWrapper(mux Mux) WrapI18nRuntimeFunc {
+	return func(rt i18n.Runtime) i18n.Runtime {
+		return I18nRuntime{
+			Runtime: rt,
+			mux:     mux,
+		}
+	}
+}
+
+func (r I18nRuntime) Link(label, href, target i18n.Value) i18n.RawString {
+	key := href.AsString().Value
+	if s, err := r.mux.TryPath(key); err == nil {
+		href = i18n.NewString(s)
+	}
+
+	return r.Runtime.Link(label, href, target)
+}
+
 type GuardPredicateFunc func(p guard.Passport) bool
 type TemplatePatternsFunc func(view string) []string
 
@@ -275,18 +302,6 @@ func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
 	}
 
 	return csrf.MaskedToken(ctx), nil
-}
-
-func (h *Handler) T(ctx context.Context, message i18n.Message) string {
-	locale := h.Locale(ctx)
-	res, err := i18n.T(i18n.DefaultHTMLRuntime, locale, message)
-	if err != nil {
-		logger := h.Logger(ctx)
-
-		logger.Error("flash errorf i18n T", "err", err)
-	}
-
-	return res.AsString().Value
 }
 
 func (h *Handler) template(files fs.FS, patterns TemplatePatternsFunc, funcs template.FuncMap, name string) *template.Template {

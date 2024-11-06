@@ -28,7 +28,7 @@ func NewRouterV1(base *handler.Handler, handlerTimeout time.Duration) http.Handl
 
 	mux.BasePath = app.BasePath
 
-	h := ui.NewHandler(base)
+	h := ui.NewHandler(base, mux)
 
 	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		rc := http.NewResponseController(w)
@@ -137,10 +137,12 @@ func NewRouterV1(base *handler.Handler, handlerTimeout time.Duration) http.Handl
 	system.RegisterConfigHandlers(h, mux)
 
 	renderer := handler.NewRenderer(handler.RendererConfig{
-		Handler:    h.Handler,
-		AssetTags:  ui.AssetTagsV1,
-		AssetFiles: ui.AssetFilesV1,
-		Funcs:      handler.NewTemplateFuncs(nil),
+		Handler:         h.Handler,
+		AssetTags:       ui.AssetTagsV1,
+		AssetFiles:      ui.AssetFilesV1,
+		Funcs:           handler.NewTemplateFuncs(nil),
+		T:               h.T,
+		WrapI18nRuntime: handler.NewI18nRuntimeWrapper(mux),
 	})
 	serveFile := handler.NewFileServer(mux, renderer, func(w http.ResponseWriter, r *http.Request, err error) {
 		h.ErrorJSON(w, r, "static file", err)

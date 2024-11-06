@@ -18,44 +18,24 @@ import (
 	"github.com/polyscone/tofu/web/handler"
 )
 
-type I18nRuntime struct {
-	i18n.Runtime
-	h *Handler
-}
-
-func NewI18nRuntimeWrapper(h *Handler) handler.WrapI18nRuntimeFunc {
-	return func(rt i18n.Runtime) i18n.Runtime {
-		return I18nRuntime{
-			Runtime: rt,
-			h:       h,
-		}
-	}
-}
-
-func (r I18nRuntime) Link(label, href, target i18n.Value) i18n.RawString {
-	key := href.AsString().Value
-	if s, err := r.h.mux.TryPath(key); err == nil {
-		href = i18n.NewString(s)
-	}
-
-	return r.Runtime.Link(label, href, target)
-}
-
 type PredicateFunc func(p guard.Passport) bool
 
 type Handler struct {
 	*handler.Handler
-	signInPath func() string
-	mux        *router.ServeMux
-	Funcs      template.FuncMap
-	HTML       *handler.Renderer
+	signInPath  func() string
+	mux         *router.ServeMux
+	i18nRuntime i18n.Runtime
+	Funcs       template.FuncMap
+	HTML        *handler.Renderer
 }
 
 func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() string) *Handler {
+	i18nRuntimeWrapper := handler.NewI18nRuntimeWrapper(mux)
 	h := &Handler{
-		Handler:    base,
-		signInPath: signInPath,
-		mux:        mux,
+		Handler:     base,
+		signInPath:  signInPath,
+		mux:         mux,
+		i18nRuntime: i18nRuntimeWrapper(i18n.DefaultHTMLRuntime),
 	}
 
 	h.Funcs = handler.NewTemplateFuncs(template.FuncMap{
@@ -103,7 +83,8 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		TemplateFiles:    templateFiles,
 		TemplatePatterns: templatePatterns,
 		Funcs:            h.Funcs,
-		WrapI18nRuntime:  NewI18nRuntimeWrapper(h),
+		T:                h.T,
+		WrapI18nRuntime:  i18nRuntimeWrapper,
 		Process: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html; charset=utf-8")
 		},
@@ -122,6 +103,18 @@ func (h *Handler) tmplHasPathPrefix(value any, name string, paramArgPairs ...any
 	p = strings.TrimSuffix(p, "/")
 
 	return v == p || strings.HasPrefix(v, p+"/")
+}
+
+func (h *Handler) T(ctx context.Context, message i18n.Message) string {
+	locale := h.Locale(ctx)
+	res, err := i18n.T(h.i18nRuntime, locale, message)
+	if err != nil {
+		logger := h.Logger(ctx)
+
+		logger.Error("site handler: i18n T", "err", err)
+	}
+
+	return res.AsString().Value
 }
 
 func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, vars handler.Vars) error {
