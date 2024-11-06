@@ -8,7 +8,14 @@ import (
 )
 
 func RegisterSignOutHandlers(h *ui.Handler, mux *router.ServeMux) {
+	mux.HandleFunc("GET /account/sign-out", signOutGet(h))
 	mux.HandleFunc("POST /account/sign-out", signOutPost(h), "account.sign_out.post")
+}
+
+func signOutGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
+	}
 }
 
 func signOutPost(h *ui.Handler) http.HandlerFunc {

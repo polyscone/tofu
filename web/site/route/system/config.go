@@ -82,7 +82,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			input.TwilioFromTel,
 		)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "update config", err, "system/config", nil)
+			h.HTML.ErrorView(w, r, "update config", err, h.Session.LastView(ctx), nil)
 
 			return
 		}

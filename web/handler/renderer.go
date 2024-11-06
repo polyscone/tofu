@@ -280,7 +280,11 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 		i18nRuntime = rn.wrapI18nRuntime(i18nRuntime)
 	}
 
-	rn.h.Session.SetLastView(ctx, view)
+	if view == "text_template" && view == "html_template" {
+		rn.h.Session.SetLastView(ctx, "")
+	} else {
+		rn.h.Session.SetLastView(ctx, view)
+	}
 
 	data := ViewData{
 		Asset:       assetPipeline,

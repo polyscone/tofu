@@ -72,14 +72,15 @@ func roleListGet(h *ui.Handler) http.HandlerFunc {
 }
 
 func roleNewGet(h *ui.Handler) http.HandlerFunc {
-	h.HTML.SetViewVars("account/management/role/new", func(r *http.Request) (handler.Vars, error) {
+	const view = "account/management/role/new"
+	h.HTML.SetViewVars(view, func(r *http.Request) (handler.Vars, error) {
 		vars := handler.Vars{"PermissionGroups": guard.PermissionGroups}
 
 		return vars, nil
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.View(w, r, http.StatusOK, "account/management/role/new", nil)
+		h.HTML.View(w, r, http.StatusOK, view, nil)
 	}
 }
 
@@ -101,7 +102,7 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 
 		role, err := h.Svc.Account.CreateRole(ctx, passport.Account, input.Name, input.Description, input.Permissions)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "create role", err, "account/management/role/new", nil)
+			h.HTML.ErrorView(w, r, "create role", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
@@ -116,7 +117,8 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 }
 
 func roleEditGet(h *ui.Handler) http.HandlerFunc {
-	h.HTML.SetViewVars("account/management/role/edit", func(r *http.Request) (handler.Vars, error) {
+	const view = "account/management/role/edit"
+	h.HTML.SetViewVars(view, func(r *http.Request) (handler.Vars, error) {
 		roleID, _ := strconv.Atoi(r.PathValue("roleID"))
 		if roleID == h.SuperRole.ID {
 			return nil, fmt.Errorf("edit super role: %w", app.ErrForbidden)
@@ -138,7 +140,7 @@ func roleEditGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.View(w, r, http.StatusOK, "account/management/role/edit", nil)
+		h.HTML.View(w, r, http.StatusOK, view, nil)
 	}
 }
 
@@ -167,7 +169,7 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 
 		role, err := h.Svc.Account.UpdateRole(ctx, passport.Account, roleID, input.Name, input.Description, input.Permissions)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "update role", err, "account/management/role/edit", nil)
+			h.HTML.ErrorView(w, r, "update role", err, h.Session.LastView(ctx), nil)
 
 			return
 		}

@@ -1,6 +1,6 @@
 {
 	"number": [
-		["if: fraction(value)", "{t('number', integer(value))}.{trim_left(fraction(value, opt), '0.')} {fraction(value, 0.001)}"],
+		["if: fraction(value)", "{t('number', integer(value))}.{trim_left(fraction(value, opt), '0.')}"],
 		["if: value >= 1000", "{t('number', value / 1000)},{pad_left(value % 1000, 3, '0')}"],
 		"{value}"
 	],
@@ -162,6 +162,8 @@
 
 	"account": {
 		"sign_in": {
+			"error": "Either your credentials are incorrect, or you're not authorised to access this application.",
+
 			"throttled": {
 				"in_last": "{t('time.display_duration', in_last)}",
 				"unlock_in": "{t('time.display_duration', unlock_in)}",

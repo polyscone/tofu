@@ -26,11 +26,15 @@ const lowRecoveryCodes = 2
 func RegisterSignInHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("GET /account/sign-in", signInGet(h), "account.sign_in")
 
+	mux.HandleFunc("GET /account/sign-in/password", signInPasswordGet(h))
 	mux.HandleFunc("POST /account/sign-in/password", signInPasswordPost(h), "account.sign_in.password.post")
 
 	mux.HandleFunc("GET /account/sign-in/magic-link", signInMagicLinkGet(h), "account.sign_in.magic_link")
 	mux.HandleFunc("POST /account/sign-in/magic-link", signInMagicLinkPost(h), "account.sign_in.magic_link.post")
+
+	mux.HandleFunc("GET /account/sign-in/magic-link/request", signInMagicLinkRequestGet(h))
 	mux.HandleFunc("POST /account/sign-in/magic-link/request", signInMagicLinkRequestPost(h), "account.sign_in.magic_link.request.post")
+
 	mux.HandleFunc("GET /account/sign-in/magic-link/email-sent", signInMagicLinkEmailSentGet(h), "account.sign_in.magic_link.request.email_sent")
 
 	mux.HandleFunc("GET /account/sign-in/totp", signInTOTPGet(h), "account.sign_in.totp")
@@ -49,7 +53,10 @@ func RegisterSignInHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("GET /account/sign-in/recovery-code", signInRecoveryCodeGet(h), "account.sign_in.recovery_code")
 	mux.HandleFunc("POST /account/sign-in/recovery-code", signInRecoveryCodePost(h), "account.sign_in.recovery_code.post")
 
+	mux.HandleFunc("GET /account/sign-in/google", signInGoogleGet(h))
 	mux.HandleFunc("POST /account/sign-in/google", signInGooglePost(h), "account.sign_in.google.post")
+
+	mux.HandleFunc("GET /account/sign-in/facebook", signInFacebookGet(h))
 	mux.HandleFunc("POST /account/sign-in/facebook", signInFacebookPost(h), "account.sign_in.facebook.post")
 }
 
@@ -64,6 +71,12 @@ func signInGet(h *ui.Handler) http.HandlerFunc {
 		}
 
 		h.HTML.View(w, r, http.StatusOK, "account/sign_in/web_form", nil)
+	}
+}
+
+func signInPasswordGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, h.PathQuery(r, "account.sign_in"), http.StatusSeeOther)
 	}
 }
 
@@ -85,6 +98,12 @@ func signInPasswordPost(h *ui.Handler) http.HandlerFunc {
 	}
 }
 
+func signInMagicLinkRequestGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
+	}
+}
+
 func signInMagicLinkRequestPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
@@ -96,17 +115,17 @@ func signInMagicLinkRequestPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
+		ctx := r.Context()
+
 		if _, err := account.NewEmail(input.Email); err != nil {
 			err = fmt.Errorf("%w: %w", app.ErrMalformedInput, errsx.Map{
 				"email": err,
 			})
 
-			h.HTML.ErrorView(w, r, "new email", err, "account/sign_in/web_form", nil)
+			h.HTML.ErrorView(w, r, "new email", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
-
-		ctx := r.Context()
 
 		ttl := 10 * time.Minute
 		h.Broker.Dispatch(ctx, event.SignInMagicLinkRequested{
@@ -161,7 +180,7 @@ func signInMagicLinkPost(h *ui.Handler) http.HandlerFunc {
 
 		signedIn, err := auth.SignInWithMagicLink(ctx, h.Handler, input.Token)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "sign in with magic link", err, "account/sign_in/magic_link", nil)
+			h.HTML.ErrorView(w, r, "sign in with magic link", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
@@ -215,7 +234,7 @@ func signInTOTPPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		if err := auth.SignInWithTOTP(ctx, h.Handler, input.TOTP); err != nil {
-			h.HTML.ErrorView(w, r, "sign in with TOTP", err, "account/sign_in/totp", nil)
+			h.HTML.ErrorView(w, r, "sign in with TOTP", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
@@ -316,7 +335,7 @@ func signInTOTPResetRequestPost(h *ui.Handler) http.HandlerFunc {
 
 		_, err = h.Svc.Account.RequestTOTPReset(ctx, email)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "request TOTP reset", err, "account/totp/reset/request", nil)
+			h.HTML.ErrorView(w, r, "request TOTP reset", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
@@ -379,7 +398,7 @@ func signInRecoveryCodePost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		if err := auth.SignInWithRecoveryCode(ctx, h.Handler, input.RecoveryCode); err != nil {
-			h.HTML.ErrorView(w, r, "sign in with recovery code", err, "account/sign_in/recovery_code", nil)
+			h.HTML.ErrorView(w, r, "sign in with recovery code", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
@@ -395,6 +414,12 @@ func signInRecoveryCodePost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		signInSuccessRedirect(h, w, r)
+	}
+}
+
+func signInGoogleGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
 	}
 }
 
@@ -441,6 +466,12 @@ func signInGooglePost(h *ui.Handler) http.HandlerFunc {
 	}
 }
 
+func signInFacebookGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, h.Path("account.sign_in"), http.StatusSeeOther)
+	}
+}
+
 func signInFacebookPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var input struct {
@@ -481,7 +512,7 @@ func signInFacebookPost(h *ui.Handler) http.HandlerFunc {
 
 func signInWithPassword(ctx context.Context, h *ui.Handler, w http.ResponseWriter, r *http.Request, email, password string) {
 	if err := auth.SignInWithPassword(ctx, h.Handler, email, password); err != nil {
-		h.HTML.ErrorViewFunc(w, r, "sign in with password", err, "account/sign_in/web_form", func(data *handler.ViewData) error {
+		h.HTML.ErrorViewFunc(w, r, "sign in with password", err, h.Session.LastView(ctx), func(data *handler.ViewData) error {
 			var throttle *account.SignInThrottleError
 			if errors.As(err, &throttle) {
 				data.ErrorMessage = h.T(ctx, i18n.M("site:account.sign_in.throttled.error",

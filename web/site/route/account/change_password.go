@@ -68,7 +68,7 @@ func changePasswordPost(h *ui.Handler) http.HandlerFunc {
 			input.NewPasswordCheck,
 		)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "change password", err, "account/change_password/form", nil)
+			h.HTML.ErrorView(w, r, "change password", err, h.Session.LastView(ctx), nil)
 
 			return
 		}

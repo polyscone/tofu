@@ -57,7 +57,7 @@ func signUpPost(h *ui.Handler) http.HandlerFunc {
 			if errors.Is(err, app.ErrForbidden) {
 				h.HTML.ErrorView(w, r, "sign up", err, "error", nil)
 			} else {
-				h.HTML.ErrorView(w, r, "sign up", err, "account/sign_up/form", nil)
+				h.HTML.ErrorView(w, r, "sign up", err, h.Session.LastView(ctx), nil)
 			}
 
 			return

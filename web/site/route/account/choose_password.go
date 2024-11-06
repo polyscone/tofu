@@ -65,7 +65,7 @@ func choosePasswordPost(h *ui.Handler) http.HandlerFunc {
 			input.NewPasswordCheck,
 		)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "choose password", err, "account/choose_password/form", nil)
+			h.HTML.ErrorView(w, r, "choose password", err, h.Session.LastView(ctx), nil)
 
 			return
 		}

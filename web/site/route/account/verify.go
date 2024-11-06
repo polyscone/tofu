@@ -55,7 +55,7 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 
 		email, behaviour, err := auth.Verify(ctx, h.Handler, w, r, input.Token, input.Password, input.PasswordCheck)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "verify sign up", err, "account/verify/form", nil)
+			h.HTML.ErrorView(w, r, "verify sign up", err, h.Session.LastView(ctx), nil)
 
 			return
 		}

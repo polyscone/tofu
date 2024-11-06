@@ -48,8 +48,14 @@ func RegisterUserManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
 			})
 
 			mux.HandleFunc("GET /admin/account/users/{userID}", userEditGet(h), "account.management.user.edit")
+
+			mux.HandleFunc("GET /admin/account/users/{userID}/roles", userEditRolesGet(h))
 			mux.HandleFunc("POST /admin/account/users/{userID}/roles", userEditRolesPost(h), "account.management.user.roles.post")
+
+			mux.HandleFunc("GET /admin/account/users/{userID}/suspend", userSuspendGet(h))
 			mux.HandleFunc("POST /admin/account/users/{userID}/suspend", userSuspendPost(h), "account.management.user.suspend.post")
+
+			mux.HandleFunc("GET /admin/account/users/{userID}/unsuspend", userUnsuspendGet(h))
 			mux.HandleFunc("POST /admin/account/users/{userID}/unsuspend", userUnsuspendPost(h), "account.management.user.unsuspend.post")
 		})
 
@@ -99,7 +105,8 @@ func userListGet(h *ui.Handler) http.HandlerFunc {
 }
 
 func userNewGet(h *ui.Handler) http.HandlerFunc {
-	h.HTML.SetViewVars("account/management/user/new", func(r *http.Request) (handler.Vars, error) {
+	const view = "account/management/user/new"
+	h.HTML.SetViewVars(view, func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 
 		roles, _, err := h.Repo.Account.FindRoles(ctx, h.SuperRole.ID)
@@ -117,7 +124,7 @@ func userNewGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.View(w, r, http.StatusOK, "account/management/user/new", nil)
+		h.HTML.View(w, r, http.StatusOK, view, nil)
 	}
 }
 
@@ -137,7 +144,7 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 
 		user, err := h.Svc.Account.InviteUser(ctx, passport.Account, input.Email)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "invite", err, "account/management/user/new", nil)
+			h.HTML.ErrorView(w, r, "invite", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
@@ -152,7 +159,8 @@ func userNewPost(h *ui.Handler) http.HandlerFunc {
 }
 
 func userEditGet(h *ui.Handler) http.HandlerFunc {
-	h.HTML.SetViewVars("account/management/user/edit", func(r *http.Request) (handler.Vars, error) {
+	const view = "account/management/user/edit"
+	h.HTML.SetViewVars(view, func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 
 		userID, _ := strconv.Atoi(r.PathValue("userID"))
@@ -190,7 +198,13 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.View(w, r, http.StatusOK, "account/management/user/edit", nil)
+		h.HTML.View(w, r, http.StatusOK, view, nil)
+	}
+}
+
+func userEditRolesGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, h.Path("account.management.user.edit"), http.StatusSeeOther)
 	}
 }
 
@@ -217,7 +231,7 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 				containsSuper = true
 
 				if !passport.Account.CanAssignSuperRole(userID) {
-					h.HTML.ErrorView(w, r, "check role ids", app.ErrForbidden, "account/management/user/edit", nil)
+					h.HTML.ErrorView(w, r, "check role ids", app.ErrForbidden, h.Session.LastView(ctx), nil)
 
 					return
 				}
@@ -232,14 +246,14 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		if p := h.PassportByUser(ctx, user); p.IsSuper && !containsSuper {
-			h.HTML.ErrorView(w, r, "cannot remove super role", app.ErrForbidden, "account/management/user/edit", nil)
+			h.HTML.ErrorView(w, r, "cannot remove super role", app.ErrForbidden, h.Session.LastView(ctx), nil)
 
 			return
 		}
 
 		_, err = h.Svc.Account.ChangeRoles(ctx, passport.Account, userID, input.RoleIDs, input.Grants, input.Denials)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "change roles", err, "account/management/user/edit", nil)
+			h.HTML.ErrorView(w, r, "change roles", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
@@ -249,6 +263,12 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 		h.Session.SetHighlightID(ctx, user.ID)
 
 		http.Redirect(w, r, h.PathQuery(r, "account.management.user.list"), http.StatusSeeOther)
+	}
+}
+
+func userSuspendGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, h.Path("account.management.user.edit"), http.StatusSeeOther)
 	}
 }
 
@@ -275,7 +295,7 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		if p := h.PassportByUser(ctx, user); p.IsSuper {
-			h.HTML.ErrorView(w, r, "cannot suspend a user with the super role", app.ErrForbidden, "account/management/user/edit", nil)
+			h.HTML.ErrorView(w, r, "cannot suspend a user with the super role", app.ErrForbidden, h.Session.LastView(ctx), nil)
 
 			return
 		}
@@ -284,7 +304,7 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 
 		_, err = h.Svc.Account.SuspendUser(ctx, passport.Account, userID, input.SuspendedReason)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "suspend user", err, "account/management/user/edit", nil)
+			h.HTML.ErrorView(w, r, "suspend user", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
@@ -307,6 +327,12 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 	}
 }
 
+func userUnsuspendGet(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, h.Path("account.management.user.edit"), http.StatusSeeOther)
+	}
+}
+
 func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -315,7 +341,7 @@ func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 		userID, _ := strconv.Atoi(r.PathValue("userID"))
 		user, err := h.Svc.Account.UnsuspendUser(ctx, passport.Account, userID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "unsuspend user", err, "account/management/user/edit", nil)
+			h.HTML.ErrorView(w, r, "unsuspend user", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
@@ -329,7 +355,8 @@ func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 }
 
 func userActivateGet(h *ui.Handler) http.HandlerFunc {
-	h.HTML.SetViewVars("account/management/user/activate", func(r *http.Request) (handler.Vars, error) {
+	const view = "account/management/user/activate"
+	h.HTML.SetViewVars(view, func(r *http.Request) (handler.Vars, error) {
 		ctx := r.Context()
 
 		userID, _ := strconv.Atoi(r.PathValue("userID"))
@@ -344,7 +371,7 @@ func userActivateGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.View(w, r, http.StatusOK, "account/management/user/activate", nil)
+		h.HTML.View(w, r, http.StatusOK, view, nil)
 	}
 }
 
@@ -356,7 +383,7 @@ func userActivatePost(h *ui.Handler) http.HandlerFunc {
 		userID, _ := strconv.Atoi(r.PathValue("userID"))
 		user, err := h.Svc.Account.ActivateUser(ctx, passport.Account, userID)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "activate user", err, "account/management/user/activate", nil)
+			h.HTML.ErrorView(w, r, "activate user", err, h.Session.LastView(ctx), nil)
 
 			return
 		}

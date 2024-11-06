@@ -81,21 +81,21 @@ func systemSetupPost(h *ui.Handler) http.HandlerFunc {
 		g := updateEmailsGuard{canUpdateEmails: config.SetupRequired || userCount == 0}
 		_, err = h.Svc.System.UpdateEmails(ctx, g, input.SystemEmail, input.SecurityEmail)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "update emails", err, "system/setup", nil)
+			h.HTML.ErrorView(w, r, "update emails", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
 
 		_, err = h.Svc.Account.SignUpInitialUser(ctx, input.Email, input.Password, input.PasswordCheck, []int{h.SuperRole.ID})
 		if err != nil {
-			h.HTML.ErrorView(w, r, "sign up initial user", err, "system/setup", nil)
+			h.HTML.ErrorView(w, r, "sign up initial user", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
 
 		err = auth.SignInWithPassword(ctx, h.Handler, input.Email, input.Password)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "sign in with password", err, "system/setup", nil)
+			h.HTML.ErrorView(w, r, "sign in with password", err, h.Session.LastView(ctx), nil)
 
 			return
 		}

@@ -42,17 +42,17 @@ func resetPasswordPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
+		ctx := r.Context()
+
 		if _, err := account.NewEmail(input.Email); err != nil {
 			err = fmt.Errorf("%w: %w", app.ErrMalformedInput, errsx.Map{
 				"email": err,
 			})
 
-			h.HTML.ErrorView(w, r, "new email", err, "account/reset_password/request", nil)
+			h.HTML.ErrorView(w, r, "new email", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
-
-		ctx := r.Context()
 
 		h.Broker.Dispatch(ctx, event.PasswordResetRequested{
 			Email: input.Email,
@@ -91,7 +91,7 @@ func resetPasswordNewPasswordPost(h *ui.Handler) http.HandlerFunc {
 
 		email, err := auth.ResetPassword(ctx, h.Handler, w, r, input.Token, input.NewPassword, input.NewPasswordCheck)
 		if err != nil {
-			h.HTML.ErrorView(w, r, "reset password", err, "account/reset_password/new_password", nil)
+			h.HTML.ErrorView(w, r, "reset password", err, h.Session.LastView(ctx), nil)
 
 			return
 		}
