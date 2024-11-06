@@ -2,6 +2,8 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
+	"net/url"
 	"time"
 
 	"github.com/polyscone/tofu/internal/session"
@@ -16,6 +18,7 @@ const (
 	skeyRedirect       = "global.redirect"
 	skeySortTopID      = "global.sort_top_id"
 	skeyHighlightID    = "global.highlight_id"
+	skeyURLValues      = "global.url_values"
 
 	// Account session keys
 	skeyUserID                   = "account.user_id"
@@ -139,6 +142,28 @@ func (s *Session) SetHighlightID(ctx context.Context, value int) {
 
 func (s *Session) PopHighlightID(ctx context.Context) int {
 	return s.PopInt(ctx, skeyHighlightID)
+}
+
+func (s *Session) URLValues(ctx context.Context) url.Values {
+	var values url.Values
+	data := []byte(s.GetString(ctx, skeyURLValues))
+	json.Unmarshal(data, &values)
+
+	return values
+}
+
+func (s *Session) SetURLValues(ctx context.Context, value url.Values) {
+	b, _ := json.Marshal(value)
+
+	s.Set(ctx, skeyURLValues, string(b))
+}
+
+func (s *Session) PopURLValues(ctx context.Context) url.Values {
+	var values url.Values
+	data := []byte(s.PopString(ctx, skeyURLValues))
+	json.Unmarshal(data, &values)
+
+	return values
 }
 
 func (s *Session) DeleteHighlightID(ctx context.Context) {
