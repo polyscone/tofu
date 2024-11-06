@@ -1,0 +1,20 @@
+{{define "com.form.honeypot" -}}
+
+{{if .State.Once "com.form.honeypot.style"}}
+	<style>
+		.form-field-special {
+			display: none;
+		}
+	</style>
+{{end}}
+
+<div class="form-field-special" aria-hidden="true">
+	{{template "com.form.input" .WithProps
+		"Props" .Props
+		"Type" "text"
+		"TabIndex" -1
+		"Autocomplete" "off"
+	}}
+</div>
+
+{{- end}}

@@ -13,6 +13,7 @@
 {{$autofocus := .Props.Autofocus}}
 {{$accept := .Props.Accept}}
 {{$disabled := .Props.Disabled}}
+{{$tabindex := .Props.TabIndex}}
 {{$pattern := .Props.Pattern}}
 {{$minlength := .Props.MinLength}}
 {{$maxlength := .Props.MaxLength}}
@@ -44,6 +45,7 @@
 	{{if $placeholder}}placeholder="{{$placeholder}}"{{end}}
 	{{if $autocomplete}}autocomplete="{{$autocomplete}}"{{end}}
 	{{if $autofocus}}autofocus{{end}}
+	{{if $tabindex}}tabindex="{{$tabindex}}"{{end}}
 	{{if $pattern}}pattern="{{$pattern}}"{{end}}
 	{{if $minlength}}minlength="{{$minlength}}"{{end}}
 	{{if $maxlength}}maxlength="{{$maxlength}}"{{end}}
