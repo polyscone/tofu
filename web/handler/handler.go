@@ -28,6 +28,8 @@ import (
 	"github.com/polyscone/tofu/web/guard"
 )
 
+var emptyTmpl = errsx.Must(template.New("empty").Parse(`{{define "view.master"}}No view selected{{end}}`))
+
 var httpClient = http.Client{Timeout: 10 * time.Second}
 
 type ctxKey int
@@ -306,6 +308,10 @@ func (h *Handler) template(files fs.FS, patterns TemplatePatternsFunc, funcs tem
 }
 
 func (h *Handler) Template(files fs.FS, patterns TemplatePatternsFunc, funcs template.FuncMap, name string) *template.Template {
+	if name == "" {
+		return emptyTmpl
+	}
+
 	if h.Tenant.Dev {
 		return h.template(files, patterns, funcs, name)
 	}

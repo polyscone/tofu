@@ -11,6 +11,7 @@ import (
 
 const (
 	// Global session keys
+	skeyLastView       = "global.last_view"
 	skeyFlash          = "global.flash"
 	skeyFlashWarning   = "global.flash_warning"
 	skeyFlashImportant = "global.flash_important"
@@ -34,6 +35,18 @@ const (
 
 type Session struct {
 	*session.Manager
+}
+
+func (s *Session) LastView(ctx context.Context) string {
+	return s.GetString(ctx, skeyLastView)
+}
+
+func (s *Session) SetLastView(ctx context.Context, value string) {
+	s.Set(ctx, skeyLastView, value)
+}
+
+func (s *Session) PopLastView(ctx context.Context) string {
+	return s.PopString(ctx, skeyLastView)
 }
 
 func (s *Session) Flash(ctx context.Context) []string {
