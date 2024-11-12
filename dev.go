@@ -62,38 +62,40 @@ func main() {
 		opts.goarch = runtime.GOARCH
 	}
 
-	command := flag.Arg(0)
-	if command == "" {
-		command = "build"
+	commands := flag.Args()
+	if len(commands) == 0 {
+		commands = []string{"build"}
 	}
-	switch command {
-	case "build":
-		if err := build(); err != nil {
-			os.Exit(1)
-		}
+	for _, command := range commands {
+		switch command {
+		case "build":
+			if err := build(); err != nil {
+				os.Exit(1)
+			}
 
-	case "generate":
-		if err := generate(); err != nil {
-			os.Exit(1)
-		}
+		case "generate":
+			if err := generate(); err != nil {
+				os.Exit(1)
+			}
 
-	case "vet":
-		if err := vet(); err != nil {
-			os.Exit(1)
-		}
+		case "vet":
+			if err := vet(); err != nil {
+				os.Exit(1)
+			}
 
-	case "test":
-		if err := test(""); err != nil {
-			os.Exit(1)
-		}
+		case "test":
+			if err := test(""); err != nil {
+				os.Exit(1)
+			}
 
-	case "cover":
-		if err := cover(); err != nil {
-			os.Exit(1)
-		}
+		case "cover":
+			if err := cover(); err != nil {
+				os.Exit(1)
+			}
 
-	default:
-		fmt.Printf("Unknown command %q, please see help for details\n", command)
+		default:
+			fmt.Printf("Unknown command %q, please see help for details\n", command)
+		}
 	}
 }
 
@@ -160,7 +162,11 @@ func test(coverfile string) error {
 	if opts.verbose {
 		fmt.Printf("-> %v ... ", message)
 	} else {
-		fmt.Print("-> go test ... ")
+		if coverfile != "" {
+			fmt.Print("-> go test (cover profile) ... ")
+		} else {
+			fmt.Print("-> go test ... ")
+		}
 	}
 
 	if out, err := exec.Command(program, args...).CombinedOutput(); err != nil {
