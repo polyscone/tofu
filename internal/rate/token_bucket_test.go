@@ -12,9 +12,9 @@ import (
 
 func TestBucket(t *testing.T) {
 	t.Run("correctly take and replenish tokens", func(t *testing.T) {
-		now := time.Now().UTC()
 		capacity, replenish := 50.0, 1.0
 		bucket := rate.NewTokenBucket(capacity, replenish)
+		now := bucket.ReplenishedAt()
 
 		if want, got := 50, errsx.Must(bucket.Take(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
@@ -135,9 +135,9 @@ func TestBucket(t *testing.T) {
 	})
 
 	t.Run("replenish more than one token", func(t *testing.T) {
-		now := time.Now().UTC()
 		capacity, replenish := 50.0, 3.0
 		bucket := rate.NewTokenBucket(capacity, replenish)
+		now := bucket.ReplenishedAt()
 
 		if want, got := 50, errsx.Must(bucket.Take(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
@@ -154,9 +154,9 @@ func TestBucket(t *testing.T) {
 	})
 
 	t.Run("consume and replenish fractional tokens", func(t *testing.T) {
-		now := time.Now().UTC()
 		capacity, replenish := 50.0, 0.5
 		bucket := rate.NewTokenBucket(capacity, replenish)
+		now := bucket.ReplenishedAt()
 
 		if want, got := 50, errsx.Must(bucket.Take(0, now)); want != got {
 			t.Errorf("want %v; got %v", want, got)
@@ -193,9 +193,9 @@ func TestBucket(t *testing.T) {
 	t.Run("safe concurrent usage of take and replenish", func(t *testing.T) {
 		full := 1000.0
 		half, double := full/2, full*2
-		now := time.Now().UTC()
 		capacity, replenish := full, 1.0
 		bucket := rate.NewTokenBucket(capacity, replenish)
+		now := bucket.ReplenishedAt()
 
 		// We expect some inconsistencies with timing at the limits of the
 		// bucket capacity, so to avoid those inconsistencies for the test

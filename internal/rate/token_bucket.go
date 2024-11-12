@@ -70,3 +70,7 @@ func (tb *TokenBucket) Take(n float64, t time.Time) (int, error) {
 
 	return int(tb.tokens), nil
 }
+
+func (tb *TokenBucket) ReplenishedAt() time.Time {
+	return tb.replenishedAt
+}
