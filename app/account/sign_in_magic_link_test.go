@@ -158,10 +158,10 @@ func TestSignInWithMagicLink(t *testing.T) {
 		defer events.Check(t)
 
 		tt := []struct {
-			name      string
-			email     string
-			behaviour account.MagicLinkSignInBehaviour
-			want      error
+			name     string
+			email    string
+			behavior account.MagicLinkSignInBehavior
+			want     error
 		}{
 			{"empty email", "", account.MagicLinkSignInOnly, app.ErrMalformedInput},
 			{"email without @ sign", "joebloggs.com", account.MagicLinkSignInOnly, app.ErrMalformedInput},
@@ -174,7 +174,7 @@ func TestSignInWithMagicLink(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				_, signedIn, err := svc.SignInWithMagicLink(ctx, tc.email, tc.behaviour)
+				_, signedIn, err := svc.SignInWithMagicLink(ctx, tc.email, tc.behavior)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

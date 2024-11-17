@@ -36,7 +36,7 @@ type WebRepo struct {
 func NewWebRepo(ctx context.Context, db *DB, sessionTTL time.Duration) (*WebRepo, error) {
 	migrations, err := fs.Sub(migrations, "migrations/web")
 	if err != nil {
-		return nil, fmt.Errorf("initialise web migrations FS: %w", err)
+		return nil, fmt.Errorf("initialize web migrations FS: %w", err)
 	}
 
 	if err := migrateFS(ctx, db, "web", migrations); err != nil {

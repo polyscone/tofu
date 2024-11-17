@@ -24,7 +24,7 @@ type AccountRepo struct {
 func NewAccountRepo(ctx context.Context, db *DB, signInThrottleTTL time.Duration) (*AccountRepo, error) {
 	migrations, err := fs.Sub(migrations, "migrations/account")
 	if err != nil {
-		return nil, fmt.Errorf("initialise account migrations FS: %w", err)
+		return nil, fmt.Errorf("initialize account migrations FS: %w", err)
 	}
 
 	if err := migrateFS(ctx, db, "account", migrations); err != nil {

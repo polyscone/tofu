@@ -155,7 +155,7 @@
 	],
 
 	"flash": {
-		"unauthorised": "You're not authorised to access this application.",
+		"unauthorized": "You're not authorised to access this application.",
 		"bad_sign_in": "Either your credentials are incorrect, or you're not authorised to access this application.",
 		"totp_required": "Two-factor authentication is required to use this application."
 	},
@@ -1612,7 +1612,7 @@
 			"account_not_verified": "This account is not verified.",
 			"account_not_activated": "This account is not activated.",
 			"account_suspended": "This account has been suspended.",
-			"unauthorised": "You do not have permission to access this resource.",
+			"unauthorized": "You do not have permission to access this resource.",
 			"malformed_input": "Malformed input.",
 			"invalid_input": "Invalid input.",
 			"empty_csrf_token": "Empty CSRF token.",

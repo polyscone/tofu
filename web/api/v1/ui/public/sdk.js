@@ -337,7 +337,7 @@ function {{$factoryName | UnescapeJS}} (opts) {
 		}
 
 		const maybeSessionExpired = [
-			sdk.http.unauthorised,
+			sdk.http.unauthorized,
 			sdk.http.forbidden,
 			sdk.http.internalServerError,
 		].includes(ret.status)
@@ -404,7 +404,7 @@ function {{$factoryName | UnescapeJS}} (opts) {
 		http: {
 			noContent: 204,
 			badRequest: 400,
-			unauthorised: 401,
+			unauthorized: 401,
 			forbidden: 403,
 			tooManyRequests: 429,
 			internalServerError: 500,

@@ -18,7 +18,7 @@ type SystemRepo struct {
 func NewSystemRepo(ctx context.Context, db *DB) (*SystemRepo, error) {
 	migrations, err := fs.Sub(migrations, "migrations/system")
 	if err != nil {
-		return nil, fmt.Errorf("initialise system migrations FS: %w", err)
+		return nil, fmt.Errorf("initialize system migrations FS: %w", err)
 	}
 
 	if err := migrateFS(ctx, db, "system", migrations); err != nil {

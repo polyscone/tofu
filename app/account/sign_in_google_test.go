@@ -158,10 +158,10 @@ func TestSignInWithGoogle(t *testing.T) {
 		defer events.Check(t)
 
 		tt := []struct {
-			name      string
-			email     string
-			behaviour account.GoogleSignInBehaviour
-			want      error
+			name     string
+			email    string
+			behavior account.GoogleSignInBehavior
+			want     error
 		}{
 			{"empty email", "", account.GoogleSignInOnly, app.ErrMalformedInput},
 			{"email without @ sign", "joebloggs.com", account.GoogleSignInOnly, app.ErrMalformedInput},
@@ -174,7 +174,7 @@ func TestSignInWithGoogle(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				_, signedIn, err := svc.SignInWithGoogle(ctx, tc.email, tc.behaviour)
+				_, signedIn, err := svc.SignInWithGoogle(ctx, tc.email, tc.behavior)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

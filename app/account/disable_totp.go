@@ -54,7 +54,7 @@ func (s *Service) DisableTOTP(ctx context.Context, guard DisableTOTPGuard, userI
 
 	if err := user.DisableTOTP(input.Password, s.hasher); err != nil {
 		if errors.Is(err, ErrInvalidPassword) {
-			return nil, fmt.Errorf("%w: %w", app.ErrUnauthorised, err)
+			return nil, fmt.Errorf("%w: %w", app.ErrUnauthorized, err)
 		}
 
 		return nil, err

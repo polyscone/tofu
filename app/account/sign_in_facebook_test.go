@@ -158,10 +158,10 @@ func TestSignInWithFacebook(t *testing.T) {
 		defer events.Check(t)
 
 		tt := []struct {
-			name      string
-			email     string
-			behaviour account.FacebookSignInBehaviour
-			want      error
+			name     string
+			email    string
+			behavior account.FacebookSignInBehavior
+			want     error
 		}{
 			{"empty email", "", account.FacebookSignInOnly, app.ErrMalformedInput},
 			{"email without @ sign", "joebloggs.com", account.FacebookSignInOnly, app.ErrMalformedInput},
@@ -174,7 +174,7 @@ func TestSignInWithFacebook(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				_, signedIn, err := svc.SignInWithFacebook(ctx, tc.email, tc.behaviour)
+				_, signedIn, err := svc.SignInWithFacebook(ctx, tc.email, tc.behavior)
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

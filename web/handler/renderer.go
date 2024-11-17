@@ -309,7 +309,7 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 			Name:        app.Name,
 			ShortName:   app.ShortName,
 			Description: app.Description,
-			ThemeColour: app.ThemeColour,
+			ThemeColor:  app.ThemeColor,
 			BasePath:    app.BasePath,
 		},
 		Session: SessionData{

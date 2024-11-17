@@ -9,10 +9,10 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 )
 
-type MagicLinkSignInBehaviour byte
+type MagicLinkSignInBehavior byte
 
 const (
-	MagicLinkSignInOnly MagicLinkSignInBehaviour = iota
+	MagicLinkSignInOnly MagicLinkSignInBehavior = iota
 	MagicLinkAllowSignUp
 	MagicLinkAllowSignUpActivate
 )
@@ -40,7 +40,7 @@ func (s *Service) SignInWithMagicLinkValidate(email string) (SignInWithMagicLink
 	return input, nil
 }
 
-func (s *Service) signInWithMagicLink(ctx context.Context, email string, behaviour MagicLinkSignInBehaviour) (*User, bool, error) {
+func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavior MagicLinkSignInBehavior) (*User, bool, error) {
 	input, err := s.SignInWithMagicLinkValidate(email)
 	if err != nil {
 		return nil, false, err
@@ -61,7 +61,7 @@ func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavio
 		}
 
 	case errors.Is(err, app.ErrNotFound):
-		if behaviour == MagicLinkSignInOnly {
+		if behavior == MagicLinkSignInOnly {
 			return nil, false, ErrMagicLinkSignUpDisabled
 		}
 
@@ -69,7 +69,7 @@ func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavio
 
 		user.SignUpWithMagicLink(s.system)
 
-		if behaviour == MagicLinkAllowSignUpActivate {
+		if behavior == MagicLinkAllowSignUpActivate {
 			if err := user.Activate(); err != nil {
 				return nil, false, err
 			}
@@ -99,8 +99,8 @@ func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavio
 	return user, signedIn, nil
 }
 
-func (s *Service) SignInWithMagicLink(ctx context.Context, email string, behaviour MagicLinkSignInBehaviour) (*User, bool, error) {
-	user, signedIn, err := s.signInWithMagicLink(ctx, email, behaviour)
+func (s *Service) SignInWithMagicLink(ctx context.Context, email string, behavior MagicLinkSignInBehavior) (*User, bool, error) {
+	user, signedIn, err := s.signInWithMagicLink(ctx, email, behavior)
 	if err != nil {
 		return user, signedIn, fmt.Errorf("%w: %w", ErrAuth, err)
 	}

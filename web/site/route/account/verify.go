@@ -53,7 +53,7 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 
-		email, behaviour, err := auth.Verify(ctx, h.Handler, w, r, input.Token, input.Password, input.PasswordCheck)
+		email, behavior, err := auth.Verify(ctx, h.Handler, w, r, input.Token, input.Password, input.PasswordCheck)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "verify sign up", err, h.Session.LastView(ctx), nil)
 
@@ -62,7 +62,7 @@ func verifyPost(h *ui.Handler) http.HandlerFunc {
 
 		h.AddFlashf(ctx, i18n.M("site.account.verify.flash.success"))
 
-		if behaviour == account.VerifyUserActivate {
+		if behavior == account.VerifyUserActivate {
 			signInWithPassword(ctx, h, w, r, email, input.Password)
 		} else {
 			http.Redirect(w, r, h.Path("account.verify.success"), http.StatusSeeOther)

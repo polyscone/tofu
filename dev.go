@@ -26,7 +26,7 @@ var opts struct {
 	goarch      string
 	tags        string
 	testTags    string
-	unoptimised bool
+	unoptimized bool
 	debug       bool
 	race        bool
 	verbose     bool
@@ -38,8 +38,8 @@ func main() {
 	flag.StringVar(&opts.goarch, "goarch", "", "Sets the GOARCH environment variable for the build")
 	flag.StringVar(&opts.tags, "tags", "", "Additional build tags")
 	flag.StringVar(&opts.testTags, "test-tags", "", "Additional test build tags")
-	flag.BoolVar(&opts.unoptimised, "unoptimised", false, "Disable optimisations/inlining")
-	flag.BoolVar(&opts.debug, "debug", false, "Enable symbol table/DWARF generation and disable optimisations/inlining")
+	flag.BoolVar(&opts.unoptimized, "unoptimized", false, "Disable optimizations/inlining")
+	flag.BoolVar(&opts.debug, "debug", false, "Enable symbol table/DWARF generation and disable optimizations/inlining")
 	flag.BoolVar(&opts.race, "race", false, "Enable data race detection in the final binary")
 	flag.BoolVar(&opts.verbose, "verbose", false, "Print the commands that are being run along with all command output")
 	flag.Parse()
@@ -281,8 +281,8 @@ func build() error {
 		args = append(args, "-tags", tags.build)
 	}
 
-	if opts.debug || opts.unoptimised {
-		// -N disables all optimisations
+	if opts.debug || opts.unoptimized {
+		// -N disables all optimizations
 		// -l disables inlining
 		// See: go tool compile --help
 		gcflags = append(gcflags, "all=-N -l")

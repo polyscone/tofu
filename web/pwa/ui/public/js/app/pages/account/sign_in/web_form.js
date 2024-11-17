@@ -106,7 +106,7 @@ function SignInWithFacebook () {
 		platform.loading(new Promise(resolve => {
 			FB.getLoginStatus(response => {
 				if (response.status !== "connected") {
-					console.error("the user either did not sign in to Facebook or did not authorise the app", response)
+					console.error("the user either did not sign in to Facebook or did not authorize the app", response)
 
 					resolve()
 

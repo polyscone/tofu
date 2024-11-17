@@ -54,7 +54,7 @@ func (s *Service) ResetTOTP(ctx context.Context, guard ResetTOTPGuard, userID in
 
 	if err := user.ResetTOTP(input.Password, s.hasher); err != nil {
 		if errors.Is(err, ErrInvalidPassword) {
-			return nil, fmt.Errorf("%w: %w", app.ErrUnauthorised, err)
+			return nil, fmt.Errorf("%w: %w", app.ErrUnauthorized, err)
 		}
 
 		return nil, err

@@ -51,7 +51,7 @@ func ErrorStatus(err error) int {
 
 		return http.StatusForbidden
 
-	case errors.Is(err, app.ErrUnauthorised):
+	case errors.Is(err, app.ErrUnauthorized):
 		return http.StatusUnauthorized
 
 	case errors.Is(err, httpx.ErrMethodNotAllowed):
@@ -97,8 +97,8 @@ func ErrorMessage(err error) i18n.Message {
 	case errors.Is(err, account.ErrSuspended):
 		return i18n.M("web.error.account_suspended")
 
-	case errors.Is(err, app.ErrUnauthorised):
-		return i18n.M("web.error.unauthorised")
+	case errors.Is(err, app.ErrUnauthorized):
+		return i18n.M("web.error.unauthorized")
 
 	case errors.Is(err, app.ErrMalformedInput):
 		return i18n.M("web.error.malformed_input")

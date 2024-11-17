@@ -144,7 +144,7 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler
 				h.Session.Clear(ctx)
 				h.Session.Renew(ctx)
 
-				h.AddFlashErrorf(ctx, i18n.M("site:flash.unauthorised"))
+				h.AddFlashErrorf(ctx, i18n.M("site:flash.unauthorized"))
 
 				http.Redirect(w, r, mux.Path("page.home"), http.StatusSeeOther)
 

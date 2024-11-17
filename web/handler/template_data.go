@@ -440,7 +440,7 @@ type AppData struct {
 	Name        string
 	ShortName   string
 	Description string
-	ThemeColour string
+	ThemeColor  string
 	BasePath    string
 }
 

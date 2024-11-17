@@ -9,10 +9,10 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 )
 
-type GoogleSignInBehaviour byte
+type GoogleSignInBehavior byte
 
 const (
-	GoogleSignInOnly GoogleSignInBehaviour = iota
+	GoogleSignInOnly GoogleSignInBehavior = iota
 	GoogleAllowSignUp
 	GoogleAllowSignUpActivate
 )
@@ -39,7 +39,7 @@ func (s *Service) SignInWithGoogleValidate(email string) (SignInWithGoogleInput,
 	return input, nil
 }
 
-func (s *Service) signInWithGoogle(ctx context.Context, email string, behaviour GoogleSignInBehaviour) (*User, bool, error) {
+func (s *Service) signInWithGoogle(ctx context.Context, email string, behavior GoogleSignInBehavior) (*User, bool, error) {
 	input, err := s.SignInWithGoogleValidate(email)
 	if err != nil {
 		return nil, false, err
@@ -60,7 +60,7 @@ func (s *Service) signInWithGoogle(ctx context.Context, email string, behaviour 
 		}
 
 	case errors.Is(err, app.ErrNotFound):
-		if behaviour == GoogleSignInOnly {
+		if behavior == GoogleSignInOnly {
 			return nil, false, ErrGoogleSignUpDisabled
 		}
 
@@ -68,7 +68,7 @@ func (s *Service) signInWithGoogle(ctx context.Context, email string, behaviour 
 
 		user.SignUpWithGoogle(s.system)
 
-		if behaviour == GoogleAllowSignUpActivate {
+		if behavior == GoogleAllowSignUpActivate {
 			if err := user.Activate(); err != nil {
 				return nil, false, err
 			}
@@ -98,8 +98,8 @@ func (s *Service) signInWithGoogle(ctx context.Context, email string, behaviour 
 	return user, signedIn, nil
 }
 
-func (s *Service) SignInWithGoogle(ctx context.Context, email string, behaviour GoogleSignInBehaviour) (*User, bool, error) {
-	user, signedIn, err := s.signInWithGoogle(ctx, email, behaviour)
+func (s *Service) SignInWithGoogle(ctx context.Context, email string, behavior GoogleSignInBehavior) (*User, bool, error) {
+	user, signedIn, err := s.signInWithGoogle(ctx, email, behavior)
 	if err != nil {
 		return user, signedIn, fmt.Errorf("%w: %w", ErrAuth, err)
 	}

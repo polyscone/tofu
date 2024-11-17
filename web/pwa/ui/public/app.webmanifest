@@ -8,8 +8,8 @@
 	"orientation": "any",
 	"display": "standalone",
 	"lang": "{{.Locale}}",
-	"background_color": "{{.App.ThemeColour}}",
-	"theme_color": "{{.App.ThemeColour}}",
+	"background_color": "{{.App.ThemeColor}}",
+	"theme_color": "{{.App.ThemeColor}}",
 	"icons": [
 		{
 			"src": "{{.Asset.Tag "/img/icons/192x192.png"}}",

@@ -133,7 +133,7 @@ func (h *Handler) RequireSignIn(next http.HandlerFunc) http.HandlerFunc {
 		isSignedIn := h.Session.IsSignedIn(ctx)
 
 		if !isSignedIn {
-			h.ErrorJSON(w, r, "require sign in", app.ErrUnauthorised)
+			h.ErrorJSON(w, r, "require sign in", app.ErrUnauthorized)
 
 			return
 		}

@@ -283,14 +283,14 @@ func main() {
 	}
 
 	if err := initHasher(); err != nil {
-		slog.Error("initialise hasher", "error", err)
+		slog.Error("initialize hasher", "error", err)
 
 		os.Exit(1)
 	}
 
 	tenants := filepath.Join(opts.data, "tenants.json")
 	if err := initTenants(tenants); err != nil {
-		slog.Error("initialise tenants", "error", err)
+		slog.Error("initialize tenants", "error", err)
 	}
 
 	listener, err := opts.server.addr.Listener()

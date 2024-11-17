@@ -87,16 +87,16 @@ func SignInWithMagicLink(ctx context.Context, h *handler.Handler, token string) 
 		return false, fmt.Errorf("find sign in magic link token email: %w", err)
 	}
 
-	behaviour := account.MagicLinkSignInOnly
+	behavior := account.MagicLinkSignInOnly
 	if config.SignUpEnabled {
 		if config.SignUpAutoActivateEnabled {
-			behaviour = account.MagicLinkAllowSignUpActivate
+			behavior = account.MagicLinkAllowSignUpActivate
 		} else {
-			behaviour = account.MagicLinkAllowSignUp
+			behavior = account.MagicLinkAllowSignUp
 		}
 	}
 
-	_, signedIn, err := h.Svc.Account.SignInWithMagicLink(ctx, email, behaviour)
+	_, signedIn, err := h.Svc.Account.SignInWithMagicLink(ctx, email, behavior)
 	if err != nil {
 		return false, fmt.Errorf("sign in wih magic link: %w", err)
 	}
@@ -259,16 +259,16 @@ func SignInWithGoogle(ctx context.Context, h *handler.Handler, jwt string) (bool
 		return false, fmt.Errorf("JWT used too soon")
 	}
 
-	behaviour := account.GoogleSignInOnly
+	behavior := account.GoogleSignInOnly
 	if config.SignUpEnabled {
 		if config.SignUpAutoActivateEnabled {
-			behaviour = account.GoogleAllowSignUpActivate
+			behavior = account.GoogleAllowSignUpActivate
 		} else {
-			behaviour = account.GoogleAllowSignUp
+			behavior = account.GoogleAllowSignUp
 		}
 	}
 
-	_, signedIn, err := h.Svc.Account.SignInWithGoogle(ctx, claims.Email, behaviour)
+	_, signedIn, err := h.Svc.Account.SignInWithGoogle(ctx, claims.Email, behavior)
 	if err != nil {
 		return false, fmt.Errorf("sign in wih Google: %w", err)
 	}
@@ -353,16 +353,16 @@ func SignInWithFacebook(ctx context.Context, h *handler.Handler, userID string, 
 		return false, errors.New("user email from Facebook does not match the one given")
 	}
 
-	behaviour := account.FacebookSignInOnly
+	behavior := account.FacebookSignInOnly
 	if config.SignUpEnabled {
 		if config.SignUpAutoActivateEnabled {
-			behaviour = account.FacebookAllowSignUpActivate
+			behavior = account.FacebookAllowSignUpActivate
 		} else {
-			behaviour = account.FacebookAllowSignUp
+			behavior = account.FacebookAllowSignUp
 		}
 	}
 
-	_, signedIn, err := h.Svc.Account.SignInWithFacebook(ctx, me.Email, behaviour)
+	_, signedIn, err := h.Svc.Account.SignInWithFacebook(ctx, me.Email, behavior)
 	if err != nil {
 		return false, fmt.Errorf("sign in wih Facebook: %w", err)
 	}

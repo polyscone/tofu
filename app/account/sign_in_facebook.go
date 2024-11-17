@@ -9,10 +9,10 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 )
 
-type FacebookSignInBehaviour byte
+type FacebookSignInBehavior byte
 
 const (
-	FacebookSignInOnly FacebookSignInBehaviour = iota
+	FacebookSignInOnly FacebookSignInBehavior = iota
 	FacebookAllowSignUp
 	FacebookAllowSignUpActivate
 )
@@ -39,7 +39,7 @@ func (s *Service) SignInWithFacebookValidate(email string) (SignInWithFacebookIn
 	return input, nil
 }
 
-func (s *Service) signInWithFacebook(ctx context.Context, email string, behaviour FacebookSignInBehaviour) (*User, bool, error) {
+func (s *Service) signInWithFacebook(ctx context.Context, email string, behavior FacebookSignInBehavior) (*User, bool, error) {
 	input, err := s.SignInWithFacebookValidate(email)
 	if err != nil {
 		return nil, false, err
@@ -60,7 +60,7 @@ func (s *Service) signInWithFacebook(ctx context.Context, email string, behaviou
 		}
 
 	case errors.Is(err, app.ErrNotFound):
-		if behaviour == FacebookSignInOnly {
+		if behavior == FacebookSignInOnly {
 			return nil, false, ErrFacebookSignUpDisabled
 		}
 
@@ -68,7 +68,7 @@ func (s *Service) signInWithFacebook(ctx context.Context, email string, behaviou
 
 		user.SignUpWithFacebook(s.system)
 
-		if behaviour == FacebookAllowSignUpActivate {
+		if behavior == FacebookAllowSignUpActivate {
 			if err := user.Activate(); err != nil {
 				return nil, false, err
 			}
@@ -98,8 +98,8 @@ func (s *Service) signInWithFacebook(ctx context.Context, email string, behaviou
 	return user, signedIn, nil
 }
 
-func (s *Service) SignInWithFacebook(ctx context.Context, email string, behaviour FacebookSignInBehaviour) (*User, bool, error) {
-	user, signedIn, err := s.signInWithFacebook(ctx, email, behaviour)
+func (s *Service) SignInWithFacebook(ctx context.Context, email string, behavior FacebookSignInBehavior) (*User, bool, error) {
+	user, signedIn, err := s.signInWithFacebook(ctx, email, behavior)
 	if err != nil {
 		return user, signedIn, fmt.Errorf("%w: %w", ErrAuth, err)
 	}

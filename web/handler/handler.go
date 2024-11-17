@@ -350,7 +350,7 @@ func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePa
 			Name:        app.Name,
 			ShortName:   app.ShortName,
 			Description: app.Description,
-			ThemeColour: app.ThemeColour,
+			ThemeColor:  app.ThemeColor,
 			BasePath:    app.BasePath,
 		},
 		Log:  Logger{logger: logger},

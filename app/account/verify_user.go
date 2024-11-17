@@ -9,10 +9,10 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 )
 
-type VerifyUserBehaviour byte
+type VerifyUserBehavior byte
 
 const (
-	VerifyUserOnly VerifyUserBehaviour = iota
+	VerifyUserOnly VerifyUserBehavior = iota
 	VerifyUserActivate
 )
 
@@ -45,7 +45,7 @@ func (s *Service) VerifyUserValidate(email, password, passwordCheck string) (Ver
 	return input, nil
 }
 
-func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck string, behaviour VerifyUserBehaviour) (*User, error) {
+func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck string, behavior VerifyUserBehavior) (*User, error) {
 	input, err := s.VerifyUserValidate(email, password, passwordCheck)
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck
 		return nil, err
 	}
 
-	if isInvited := !user.InvitedAt.IsZero(); isInvited || behaviour == VerifyUserActivate {
+	if isInvited := !user.InvitedAt.IsZero(); isInvited || behavior == VerifyUserActivate {
 		if err := user.Activate(); err != nil {
 			return nil, err
 		}

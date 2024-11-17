@@ -38,7 +38,7 @@ func TestDeleteRole(t *testing.T) {
 			guard deleteRoleGuard
 			want  error
 		}{
-			{"authorised", validGuard, nil},
+			{"authorized", validGuard, nil},
 			{"invalid guard", invalidGuard, app.ErrForbidden},
 		}
 		for i, tc := range tt {

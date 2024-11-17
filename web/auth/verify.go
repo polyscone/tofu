@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/web/handler"
 )
 
-func Verify(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, token, password, passwordCheck string) (string, account.VerifyUserBehaviour, error) {
+func Verify(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *http.Request, token, password, passwordCheck string) (string, account.VerifyUserBehavior, error) {
 	config := h.Config(ctx)
 
 	email, err := h.Repo.Web.FindEmailVerificationTokenEmail(ctx, token)
@@ -23,12 +23,12 @@ func Verify(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *h
 		return "", 0, fmt.Errorf("find verification token email: %w", err)
 	}
 
-	behaviour := account.VerifyUserActivate
+	behavior := account.VerifyUserActivate
 	if !config.SignUpAutoActivateEnabled {
-		behaviour = account.VerifyUserOnly
+		behavior = account.VerifyUserOnly
 	}
 
-	_, err = h.Svc.Account.VerifyUser(ctx, email, password, passwordCheck, behaviour)
+	_, err = h.Svc.Account.VerifyUser(ctx, email, password, passwordCheck, behavior)
 	if err != nil {
 		return "", 0, fmt.Errorf("verify user: %w", err)
 	}
@@ -38,5 +38,5 @@ func Verify(ctx context.Context, h *handler.Handler, w http.ResponseWriter, r *h
 		return "", 0, fmt.Errorf("consume verification token: %w", err)
 	}
 
-	return email, behaviour, nil
+	return email, behavior, nil
 }
