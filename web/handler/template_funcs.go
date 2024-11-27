@@ -417,11 +417,11 @@ func TmplFormatDurationStat(d time.Duration) string {
 	return human.DurationStat(d)
 }
 
-func TmplFormatSizeSI(bytes uint64) string {
+func TmplFormatSizeSI(bytes int64) string {
 	return human.SizeSI(bytes)
 }
 
-func TmplFormatSizeIEC(bytes uint64) string {
+func TmplFormatSizeIEC(bytes int64) string {
 	return human.SizeIEC(bytes)
 }
 

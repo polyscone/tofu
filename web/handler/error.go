@@ -125,7 +125,7 @@ func ErrorMessage(err error) i18n.Message {
 	default:
 		var maxBytesError *http.MaxBytesError
 		if errors.As(err, &maxBytesError) {
-			return i18n.M("web.error.request_too_large", "max_size", human.SizeSI(uint64(maxBytesError.Limit)))
+			return i18n.M("web.error.request_too_large", "max_size", human.SizeSI(maxBytesError.Limit))
 		}
 
 		return i18n.M("web.error.generic")

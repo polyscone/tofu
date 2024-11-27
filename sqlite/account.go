@@ -1398,10 +1398,14 @@ func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role
 		sql.Named("description", role.Description),
 		sql.Named("updated_at", NullTime(tx.now.UTC())),
 	)
-	if errors.Is(err, app.ErrConflict) {
-		return fmt.Errorf("%w: %w", err, &app.ConflictError{
-			Map: errsx.Map{"name": i18n.M("role.name:repo.error.conflict", "value", role.Name)},
-		})
+	if err != nil {
+		if errors.Is(err, app.ErrConflict) {
+			return fmt.Errorf("%w: %w", err, &app.ConflictError{
+				Map: errsx.Map{"name": i18n.M("role.name:repo.error.conflict", "value", role.Name)},
+			})
+		}
+
+		return err
 	}
 
 	_, err = tx.ExecContext(ctx,

@@ -37,7 +37,6 @@ func RegisterRoleManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
 
 			mux.HandleFunc("GET /admin/account/roles/{roleID}", roleEditGet(h), "account.management.role.edit")
 			mux.HandleFunc("POST /admin/account/roles/{roleID}", roleEditPost(h), "account.management.role.edit.post")
-
 		})
 
 		mux.Group(func(mux *router.ServeMux) {

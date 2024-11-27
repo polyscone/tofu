@@ -8,9 +8,15 @@ import (
 
 var unitsSI = []string{"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
 
-func SizeSI(bytes uint64) string {
+func SizeSI(bytes int64) string {
+	var prefix string
+	if bytes < 0 {
+		prefix = "-"
+		bytes = -bytes
+	}
+
 	if bytes < 1000 {
-		return fmt.Sprintf("%v B", bytes)
+		return fmt.Sprintf("%v%v B", prefix, bytes)
 	}
 
 	const epsilon = 0.00000000000001
@@ -27,14 +33,20 @@ func SizeSI(bytes uint64) string {
 		str = strings.TrimSuffix(str, ".")
 	}
 
-	return fmt.Sprintf("%v %v", str, unit)
+	return fmt.Sprintf("%v%v %v", prefix, str, unit)
 }
 
 var unitsIEC = []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
 
-func SizeIEC(bytes uint64) string {
+func SizeIEC(bytes int64) string {
+	var prefix string
+	if bytes < 0 {
+		prefix = "-"
+		bytes = -bytes
+	}
+
 	if bytes < 1024 {
-		return fmt.Sprintf("%v B", bytes)
+		return fmt.Sprintf("%v%v B", prefix, bytes)
 	}
 
 	size := float64(bytes)
@@ -49,5 +61,5 @@ func SizeIEC(bytes uint64) string {
 		str = strings.TrimSuffix(str, ".")
 	}
 
-	return fmt.Sprintf("%v %v", str, unit)
+	return fmt.Sprintf("%v%v %v", prefix, str, unit)
 }
