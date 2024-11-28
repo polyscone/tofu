@@ -108,13 +108,13 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			TotalRequestsInFlight      int64
 			TotalResponsesSent         int64
 			TotalConnectionsHijacked   int64
-			TotalBytesRead             uint64
-			TotalBytesWritten          uint64
+			TotalBytesRead             int64
+			TotalBytesWritten          int64
 			TotalTimeUntilFirstWrite   time.Duration
 			TotalTimeInHandlers        time.Duration
 			TotalTimeWriting           time.Duration
-			AverageBytesRead           uint64
-			AverageBytesWritten        uint64
+			AverageBytesRead           int64
+			AverageBytesWritten        int64
 			AverageTimeUntilFirstWrite time.Duration
 			AverageTimeInHandlers      time.Duration
 			AverageTimeWriting         time.Duration
@@ -215,16 +215,16 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 				totalRequestsReceived := varAs[int64](group.Get("totalRequestsReceived"))
 				totalResponsesSent := varAs[int64](group.Get("totalResponsesSent"))
 				totalConnectionsHijacked := varAs[int64](group.Get("totalConnectionsHijacked"))
-				totalBytesRead := int(varAs[int64](group.Get("totalBytesRead")))
-				totalBytesWritten := int(varAs[int64](group.Get("totalBytesWritten")))
+				totalBytesRead := varAs[int64](group.Get("totalBytesRead"))
+				totalBytesWritten := varAs[int64](group.Get("totalBytesWritten"))
 				totalTimeUntilFirstWrite := varAs[int64](group.Get("totalTimeUntilFirstWrite"))
 				totalTimeInHandlers := varAs[int64](group.Get("totalTimeInHandlers"))
 				totalResponseStatusCodesVar := varAs[*expvar.Map](group.Get("totalResponseStatusCodes"))
 
 				totalRequestsInFlight := totalRequestsReceived - totalResponsesSent
 				totalTimeWriting := totalTimeInHandlers - totalTimeUntilFirstWrite
-				averageBytesRead := uint64(math.Round(float64(totalBytesRead) / max(1, float64(totalRequestsReceived))))
-				averageBytesWritten := uint64(math.Round(float64(totalBytesWritten) / max(1, float64(totalResponsesSent))))
+				averageBytesRead := int64(math.Round(float64(totalBytesRead) / max(1, float64(totalRequestsReceived))))
+				averageBytesWritten := int64(math.Round(float64(totalBytesWritten) / max(1, float64(totalResponsesSent))))
 				averageTimeUntilFirstWrite := totalTimeUntilFirstWrite / max(1, totalResponsesSent)
 				averageTimeInHandlers := totalTimeInHandlers / max(1, totalResponsesSent)
 				averageTimeWriting := totalTimeWriting / max(1, totalResponsesSent)
@@ -246,13 +246,13 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 					TotalRequestsInFlight:      totalRequestsInFlight,
 					TotalResponsesSent:         totalResponsesSent,
 					TotalConnectionsHijacked:   totalConnectionsHijacked,
-					TotalBytesRead:             uint64(totalBytesRead),
-					TotalBytesWritten:          uint64(totalBytesWritten),
+					TotalBytesRead:             totalBytesRead,
+					TotalBytesWritten:          totalBytesWritten,
 					TotalTimeUntilFirstWrite:   time.Duration(totalTimeUntilFirstWrite),
 					TotalTimeInHandlers:        time.Duration(totalTimeInHandlers),
 					TotalTimeWriting:           time.Duration(totalTimeWriting),
-					AverageBytesRead:           uint64(averageBytesRead),
-					AverageBytesWritten:        uint64(averageBytesWritten),
+					AverageBytesRead:           averageBytesRead,
+					AverageBytesWritten:        averageBytesWritten,
 					AverageTimeUntilFirstWrite: time.Duration(averageTimeUntilFirstWrite),
 					AverageTimeInHandlers:      time.Duration(averageTimeInHandlers),
 					AverageTimeWriting:         time.Duration(averageTimeWriting),
@@ -274,12 +274,12 @@ func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 			"CgoCalls":          cgoCalls,
 			"CPUs":              cpus,
 			"Goroutines":        goroutines,
-			"ReservedMemOS":     memstats.Sys,
-			"TotalHeapAlloc":    memstats.TotalAlloc,
-			"HeapAlloc":         memstats.HeapAlloc,
-			"HeapObjects":       memstats.HeapObjects,
-			"GCCycles":          memstats.NumGC,
-			"GCTargetHeapAlloc": memstats.NextGC,
+			"ReservedMemOS":     int64(memstats.Sys),
+			"TotalHeapAlloc":    int64(memstats.TotalAlloc),
+			"HeapAlloc":         int64(memstats.HeapAlloc),
+			"HeapObjects":       int64(memstats.HeapObjects),
+			"GCCycles":          int64(memstats.NumGC),
+			"GCTargetHeapAlloc": int64(memstats.NextGC),
 			"LastGC":            time.Unix(0, int64(memstats.LastGC)),
 			"TotalGCPause":      time.Duration(memstats.PauseTotalNs),
 			"Databases":         databases,
