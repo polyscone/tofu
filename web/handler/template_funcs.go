@@ -83,6 +83,18 @@ func toInts(values []any) (int, []int, error) {
 		case int:
 			nums[i] = v
 
+		case int16:
+			nums[i] = int(v)
+
+		case int32:
+			nums[i] = int(v)
+
+		case int64:
+			nums[i] = int(v)
+
+		case float32:
+			nums[i] = int(v)
+
 		case float64:
 			nums[i] = int(v)
 
@@ -417,12 +429,54 @@ func TmplFormatDurationStat(d time.Duration) string {
 	return human.DurationStat(d)
 }
 
-func TmplFormatSizeSI(bytes int64) string {
-	return human.SizeSI(bytes)
+func TmplFormatSizeSI(bytes any) (string, error) {
+	var i int64
+	switch v := bytes.(type) {
+	case int8:
+		i = int64(v)
+
+	case int16:
+		i = int64(v)
+
+	case int32:
+		i = int64(v)
+
+	case int64:
+		i = v
+
+	case int:
+		i = int64(v)
+
+	default:
+		return "", errors.New("expected an integer")
+	}
+
+	return human.SizeSI(i), nil
 }
 
-func TmplFormatSizeIEC(bytes int64) string {
-	return human.SizeIEC(bytes)
+func TmplFormatSizeIEC(bytes any) (string, error) {
+	var i int64
+	switch v := bytes.(type) {
+	case int8:
+		i = int64(v)
+
+	case int16:
+		i = int64(v)
+
+	case int32:
+		i = int64(v)
+
+	case int64:
+		i = v
+
+	case int:
+		i = int64(v)
+
+	default:
+		return "", errors.New("expected an integer")
+	}
+
+	return human.SizeIEC(i), nil
 }
 
 func TmplTrimPrefix(value, prefix any) string {
