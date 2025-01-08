@@ -357,15 +357,20 @@ func (f Form) GetOr(key string, fallback any) string {
 	return f.Get(key)
 }
 
+func (f Form) GetIndexOr(i int, key string, fallback any) string {
+	values := f.Values[key]
+	if values == nil || i < 0 || len(values)-1 < i {
+		return fmt.Sprintf("%v", fallback)
+	}
+
+	return values[i]
+}
+
 func (f Form) GetAll(key string) []string {
 	return f.Values[key]
 }
 
 func (f Form) GetAllOr(key string, fallback any) ([]string, error) {
-	if _, ok := f.Values[key]; !ok {
-		return TmplToStrings(fallback)
-	}
-
 	values := f.Values[key]
 	if values == nil {
 		return TmplToStrings(fallback)

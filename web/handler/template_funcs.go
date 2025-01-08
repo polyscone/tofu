@@ -635,7 +635,7 @@ func TmplGetOr(src any, key string, fallback any) any {
 			rv = rv.Elem()
 		}
 		if rv.Kind() != reflect.Struct {
-			return false
+			return fallback
 		}
 
 		if field := rv.FieldByName(key); field.IsValid() {
