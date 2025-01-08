@@ -87,7 +87,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, i18n.M("site:system.config.flash.updated"))
+		h.AddFlashf(ctx, i18n.M("site.system.config.flash.updated"))
 
 		var redirect string
 		if h.Session.IsSignedIn(ctx) {

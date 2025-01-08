@@ -100,7 +100,7 @@ func systemSetupPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, i18n.M("site:system.setup.flash.completed"))
+		h.AddFlashf(ctx, i18n.M("site.system.setup.flash.completed"))
 
 		http.Redirect(w, r, h.Path("system.config"), http.StatusSeeOther)
 	}
