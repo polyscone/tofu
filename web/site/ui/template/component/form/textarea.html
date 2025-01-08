@@ -2,11 +2,22 @@
 
 {{$name := .Props.Name}}
 {{$id := or .Props.ID (printf "form__%v" $name)}}
+{{$index := .Props.Index}}
+{{if ne $index nil}}
+	{{$id = printf "%v_%v" $id $index}}
+{{end}}
 {{$label := .Props.Label}}
 {{$hint := .Props.Hint}}
 {{$description := .Props.Description}}
 {{$placeholder := .Props.Placeholder}}
-{{$value := or .Props.Value (.Form.Get $name)}}
+{{$value := .Props.Value}}
+{{if not $value}}
+	{{if eq $index nil}}
+		{{$value = .Form.Get $name}}
+	{{else}}
+		{{$value = .Form.GetIndexOr $index $name ""}}
+	{{end}}
+{{end}}
 {{$required := .Props.Required}}
 {{$autocomplete := .Props.Autocomplete}}
 {{$autofocus := .Props.Autofocus}}
@@ -15,7 +26,11 @@
 {{$minlength := .Props.MinLength}}
 {{$maxlength := .Props.MaxLength}}
 {{$showmaxcount := .Props.ShowMaxCount}}
-{{$error := .Errors.Get (ReplaceAll $name "-" " ")}}
+{{$errorkey := ReplaceAll $name "-" " "}}
+{{if ne $index nil}}
+	{{$errorkey = printf "%v %v" $errorkey $index}}
+{{end}}
+{{$error := .Errors.Get $errorkey}}
 
 {{if not $name}}{{.Log.Warn "com.form.textarea: missing required prop: Name"}}{{end}}
 
@@ -48,7 +63,7 @@
 >{{$value}}</textarea>
 
 <div class="bag">
-	<p class="error grow" data-locale-number>{{$error}}</p>
+	<p class="error grow">{{$error}}</p>
 	{{if and $showmaxcount $id $maxlength}}
 		<small data-char-count-for="{{$id}}" class="push-inline-end">{{.T "com.form.textarea.max_length_hint" "max_length" $maxlength}}</small>
 	{{end}}

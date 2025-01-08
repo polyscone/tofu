@@ -2,10 +2,21 @@
 
 {{$name := .Props.Name}}
 {{$id := or .Props.ID (printf "form__%v" $name)}}
+{{$index := .Props.Index}}
+{{if ne $index nil}}
+	{{$id = printf "%v_%v" $id $index}}
+{{end}}
 {{$label := .Props.Label}}
 {{$hint := .Props.Hint}}
 {{$placeholder := .Props.Placeholder}}
-{{$value := or .Props.Value (.Form.Get $name)}}
+{{$value := .Props.Value}}
+{{if not $value}}
+	{{if eq $index nil}}
+		{{$value = .Form.Get $name}}
+	{{else}}
+		{{$value = .Form.GetIndexOr $index $name ""}}
+	{{end}}
+{{end}}
 {{$options := .Props.Options}}
 {{$multiple := .Props.Multiple}}
 {{$size := .Props.Size}}
@@ -13,7 +24,11 @@
 {{$autocomplete := .Props.Autocomplete}}
 {{$autofocus := .Props.Autofocus}}
 {{$disabled := .Props.Disabled}}
-{{$error := .Errors.Get (ReplaceAll $name "-" " ")}}
+{{$errorkey := ReplaceAll $name "-" " "}}
+{{if ne $index nil}}
+	{{$errorkey = printf "%v %v" $errorkey $index}}
+{{end}}
+{{$error := .Errors.Get $errorkey}}
 
 {{if not $name}}{{.Log.Warn "com.form.select: missing required prop: Name"}}{{end}}
 {{if not $options}}{{.Log.Warn "com.form.select: missing required prop: Options"}}{{end}}
@@ -41,7 +56,7 @@
 	{{if $error}}class="invalid"{{end}}
 >
 	{{if $placeholder}}
-		<option value="" hidden disabled{{if not $value}} selected{{end}}>{{$placeholder}}</option>
+		<option value="" hidden{{if not $value}} selected{{end}}>{{$placeholder}}</option>
 	{{end}}
 
 	{{range $option := $options}}
@@ -77,6 +92,6 @@
 	{{end}}
 </select>
 
-<p class="error" data-locale-number>{{$error}}</p>
+<p class="error">{{$error}}</p>
 
 {{- end}}
