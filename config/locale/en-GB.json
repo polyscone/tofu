@@ -394,10 +394,6 @@
 		},
 
 		"config": {
-			"flash": {
-				"updated": "System configuration successfully updated."
-			},
-
 			"error": {
 				"twilio_sid_required": [
 					["if: context == 'enable_totp_sms'", "required to enable two-factor authentication SMS"],
@@ -1071,10 +1067,14 @@
 				"email_label": "Email",
 				"password_label": "Password",
 
-				"setup_button": "Update configuration"
+				"setup_button": "Finish setup"
 			},
 
 			"config": {
+				"flash": {
+					"updated": "System configuration successfully updated."
+				},
+
 				"title": "System configuration",
 
 				"email_section_title": "Email",
