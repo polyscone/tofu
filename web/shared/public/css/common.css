@@ -200,7 +200,7 @@
 
 	:is(input, textarea, select).invalid:placeholder-shown,
 	:is(input, textarea, select).invalid:not(:placeholder-shown),
-	:is(input:not([type="time"], [type="file"]), textarea):invalid:not(:placeholder-shown),
+	:is(input:not([type="time"], [type="date"], [type="file"]), textarea):invalid:not(:placeholder-shown),
 	[data-invalid] :is(input, textarea, select):invalid {
 		background: var(--clr-invalid-100);
 		border-color: var(--clr-invalid-400);
@@ -208,7 +208,7 @@
 
 	:is(input, textarea, select).invalid:focus,
 	:is(input, textarea, select):invalid:focus,
-	:is(input:not([type="time"], [type="file"]), textarea):invalid:focus {
+	:is(input:not([type="time"], [type="date"], [type="file"]), textarea):invalid:focus {
 		background: var(--clr-focus-400);
 	}
 
