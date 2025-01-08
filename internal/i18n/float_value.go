@@ -1,8 +1,6 @@
 package i18n
 
-import (
-	"strconv"
-)
+import "strconv"
 
 var (
 	floatZero = Float{Value: 0}
