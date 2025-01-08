@@ -7,7 +7,17 @@
 *.so
 *~
 ._*
+
+# OS patterns
 .DS_Store
+desktop.ini
+Thumbs.db
+
+# Editor patterns
+.idea
+.settings
+.vs
+.vscode
 
 # Application patterns
 .data
