@@ -40,3 +40,18 @@ func NewRole(name RoleName, description RoleDesc, permissions []Permission) *Rol
 
 	return &role
 }
+
+func (r *Role) ChangeName(name RoleName) {
+	r.Name = name.String()
+}
+
+func (r *Role) ChangeDescription(description RoleDesc) {
+	r.Description = description.String()
+}
+
+func (r *Role) ChangePermissions(permissions []Permission) {
+	r.Permissions = nil
+	for _, permission := range permissions {
+		r.Permissions = append(r.Permissions, permission.String())
+	}
+}

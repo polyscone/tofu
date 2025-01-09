@@ -67,13 +67,9 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID 
 		return nil, fmt.Errorf("find role by id: %w", err)
 	}
 
-	role.Name = input.Name.String()
-	role.Description = input.Description.String()
-
-	role.Permissions = nil
-	for _, permission := range input.Permissions {
-		role.Permissions = append(role.Permissions, permission.String())
-	}
+	role.ChangeName(input.Name)
+	role.ChangeDescription(input.Description)
+	role.ChangePermissions(input.Permissions)
 
 	if err := s.repo.SaveRole(ctx, role); err != nil {
 		var conflict *app.ConflictError
