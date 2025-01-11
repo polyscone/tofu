@@ -938,7 +938,7 @@
 					"search_placeholder": "Search",
 					"search_button": "Search",
 					"email_heading": "Name",
-					"last_sign_in_heading": "Description",
+					"last_sign_in_heading": "Last signed in",
 					"invite_button": "Invite",
 					"last_signed_in_ago": "{t('time.rough_duration', time_since_last_signed_in)} ago",
 					"unverified": "Unverified",
