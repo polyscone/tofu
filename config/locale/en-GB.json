@@ -151,7 +151,7 @@
 	"repo.error.conflict": [
 		["if: context == 'role.name'", "a role with this name already exists"],
 		["if: context == 'user.email'", "a user with this email already exists"],
-		"already in use"
+		"{value} already in use"
 	],
 
 	"flash": {

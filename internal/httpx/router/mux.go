@@ -92,7 +92,7 @@ func (mux *ServeMux) Handle(pattern string, handler http.Handler, names ...strin
 		}
 
 		if rest == "/" {
-			// If the original pattern defined a catch-all slash then then
+			// If the original pattern defined a catch-all slash then the
 			// mux base path would turn it into a sub-tree
 			// The serve mux in Go's standard library redirects sub-trees without
 			// a trailing slash to add the trailing slash, which isn't what

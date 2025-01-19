@@ -1438,6 +1438,14 @@ func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role
 			sql.Named("created_at", Time(tx.now.UTC())),
 		)
 		if err != nil {
+			if errors.Is(err, app.ErrConflict) {
+				pair := fmt.Sprintf("(role id: %v, permission id: %v)", role.ID, permissionID)
+
+				return fmt.Errorf("%w: %w", err, &app.ConflictError{
+					Map: errsx.Map{"role permission": i18n.M("role.permission:repo.error.conflict", "value", pair)},
+				})
+			}
+
 			return err
 		}
 	}
