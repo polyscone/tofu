@@ -121,9 +121,7 @@ func (r MarkdownRuntime) Integer(value Value) Int {
 func (r MarkdownRuntime) Fraction(value, roundingUnit Value) Float {
 	_, frac := math.Modf(value.AsFloat().Value)
 	if unit := roundingUnit.AsFloat().Value; unit > 0 {
-		fmt.Println("A", value, frac)
 		frac = math.Round(frac/unit) * unit
-		fmt.Println("B", value, frac)
 	}
 
 	return NewFloat(frac)
