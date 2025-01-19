@@ -9,49 +9,49 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 )
 
-type SignUpInitialUserInput struct {
+type SignUpInitialUserData struct {
 	Email         Email
 	Password      Password
 	PasswordCheck Password
 	RoleIDs       []int
 }
 
-func (s *Service) SignUpInitialUserValidate(email, password, passwordCheck string, roleIDs []int) (SignUpInitialUserInput, error) {
-	var input SignUpInitialUserInput
+func (s *Service) SignUpInitialUserValidate(email, password, passwordCheck string, roleIDs []int) (SignUpInitialUserData, error) {
+	var data SignUpInitialUserData
 	var err error
 	var errs errsx.Map
 
-	input.PasswordCheck, _ = NewPassword(passwordCheck)
+	data.PasswordCheck, _ = NewPassword(passwordCheck)
 
-	input.RoleIDs = roleIDs
+	data.RoleIDs = roleIDs
 
-	if input.Email, err = NewEmail(email); err != nil {
+	if data.Email, err = NewEmail(email); err != nil {
 		errs.Set("email", err)
 	}
-	if input.Password, err = NewPassword(password); err != nil {
+	if data.Password, err = NewPassword(password); err != nil {
 		errs.Set("password", err)
-	} else if !input.Password.Equal(input.PasswordCheck) {
+	} else if !data.Password.Equal(data.PasswordCheck) {
 		errs.Set("password", "passwords do not match")
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) signUpInitialUser(ctx context.Context, email, password, passwordCheck string, roleIDs []int) (*User, error) {
-	input, err := s.SignUpInitialUserValidate(email, password, passwordCheck, roleIDs)
+	data, err := s.SignUpInitialUserValidate(email, password, passwordCheck, roleIDs)
 	if err != nil {
 		return nil, err
 	}
 
 	var roles []*Role
-	if input.RoleIDs != nil {
-		roles = make([]*Role, len(input.RoleIDs))
+	if data.RoleIDs != nil {
+		roles = make([]*Role, len(data.RoleIDs))
 
-		for i, roleID := range input.RoleIDs {
+		for i, roleID := range data.RoleIDs {
 			role, err := s.repo.FindRoleByID(ctx, roleID)
 			if err != nil {
 				return nil, fmt.Errorf("find role by id: %w", err)
@@ -69,9 +69,9 @@ func (s *Service) signUpInitialUser(ctx context.Context, email, password, passwo
 		return nil, errors.New("cannot sign up initial user when other users already exist")
 	}
 
-	user := NewUser(input.Email)
+	user := NewUser(data.Email)
 
-	if err := user.SignUpAsInitialUser(s.system, roles, input.Password, s.hasher); err != nil {
+	if err := user.SignUpAsInitialUser(s.system, roles, data.Password, s.hasher); err != nil {
 		return nil, fmt.Errorf("sign up: %w", err)
 	}
 

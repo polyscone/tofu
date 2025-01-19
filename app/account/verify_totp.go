@@ -14,48 +14,54 @@ type VerifyTOTPGuard interface {
 
 type VerifyTOTPInput struct {
 	UserID     int
+	TOTP       string
+	TOTPMethod string
+}
+
+type VerifyTOTPData struct {
+	UserID     int
 	TOTP       TOTP
 	TOTPMethod TOTPMethod
 }
 
-func (s *Service) VerifyTOTPValidate(guard VerifyTOTPGuard, userID int, totp, totpMethod string) (VerifyTOTPInput, error) {
-	var input VerifyTOTPInput
+func (s *Service) VerifyTOTPValidate(guard VerifyTOTPGuard, input VerifyTOTPInput) (VerifyTOTPData, error) {
+	var data VerifyTOTPData
 
-	if !guard.CanVerifyTOTP(userID) {
-		return input, app.ErrForbidden
+	if !guard.CanVerifyTOTP(input.UserID) {
+		return data, app.ErrForbidden
 	}
 
 	var err error
 	var errs errsx.Map
 
-	input.UserID = userID
+	data.UserID = input.UserID
 
-	if input.TOTP, err = NewTOTP(totp); err != nil {
+	if data.TOTP, err = NewTOTP(input.TOTP); err != nil {
 		errs.Set("totp", err)
 	}
-	if input.TOTPMethod, err = NewTOTPMethod(totpMethod); err != nil {
+	if data.TOTPMethod, err = NewTOTPMethod(input.TOTPMethod); err != nil {
 		errs.Set("totp kind", err)
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
-func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, userID int, totp, totpMethod string) (*User, []string, error) {
-	input, err := s.VerifyTOTPValidate(guard, userID, totp, totpMethod)
+func (s *Service) VerifyTOTP(ctx context.Context, guard VerifyTOTPGuard, input VerifyTOTPInput) (*User, []string, error) {
+	data, err := s.VerifyTOTPValidate(guard, input)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, nil, fmt.Errorf("find user by id: %w", err)
 	}
 
-	codes, err := user.VerifyTOTP(input.TOTP, input.TOTPMethod)
+	codes, err := user.VerifyTOTP(data.TOTP, data.TOTPMethod)
 	if err != nil {
 		return nil, nil, err
 	}

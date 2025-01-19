@@ -33,7 +33,13 @@ func TestActivateUser(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.VerifyUser(ctx, user1.Email, "password", "password", account.VerifyUserOnly); err != nil {
+		_, err := svc.VerifyUser(ctx, account.VerifyUserInput{
+			Email:         user1.Email,
+			Password:      "password",
+			PasswordCheck: "password",
+			Behavior:      account.VerifyUserOnly,
+		})
+		if err != nil {
 			t.Fatal(err)
 		}
 
@@ -65,7 +71,13 @@ func TestActivateUser(t *testing.T) {
 			Method: account.SignInMethodPassword,
 		})
 
-		if _, err := svc.VerifyUser(ctx, user2.Email, "password", "password", account.VerifyUserOnly); err != nil {
+		_, err = svc.VerifyUser(ctx, account.VerifyUserInput{
+			Email:         user2.Email,
+			Password:      "password",
+			PasswordCheck: "password",
+			Behavior:      account.VerifyUserOnly,
+		})
+		if err != nil {
 			t.Fatal(err)
 		}
 

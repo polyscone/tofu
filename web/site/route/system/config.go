@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/polyscone/tofu/app"
+	"github.com/polyscone/tofu/app/system"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/internal/i18n"
@@ -62,25 +63,7 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		_, err := h.Svc.System.UpdateConfig(ctx,
-			passport.System,
-			input.SystemEmail,
-			input.SecurityEmail,
-			input.SignUpEnabled,
-			input.SignUpAutoActivateEnabled,
-			input.TOTPRequired,
-			input.TOTPSMSEnabled,
-			input.MagicLinkSignInEnabled,
-			input.GoogleSignInEnabled,
-			input.GoogleSignInClientID,
-			input.FacebookSignInEnabled,
-			input.FacebookSignInAppID,
-			input.FacebookSignInAppSecret,
-			input.ResendAPIKey,
-			input.TwilioSID,
-			input.TwilioToken,
-			input.TwilioFromTel,
-		)
+		_, err := h.Svc.System.UpdateConfig(ctx, passport.System, system.UpdateConfigInput(input))
 		if err != nil {
 			h.HTML.ErrorView(w, r, "update config", err, h.Session.LastView(ctx), nil)
 

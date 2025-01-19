@@ -12,46 +12,46 @@ type ChangeTOTPTelGuard interface {
 	CanChangeTOTPTel(userID int) bool
 }
 
-type ChangeTOTPTelInput struct {
+type ChangeTOTPTelData struct {
 	UserID int
 	NewTel Tel
 }
 
-func (s *Service) ChangeTOTPTelValidate(guard ChangeTOTPTelGuard, userID int, newTel string) (ChangeTOTPTelInput, error) {
-	var input ChangeTOTPTelInput
+func (s *Service) ChangeTOTPTelValidate(guard ChangeTOTPTelGuard, userID int, newTel string) (ChangeTOTPTelData, error) {
+	var data ChangeTOTPTelData
 
 	if !guard.CanChangeTOTPTel(userID) {
-		return input, app.ErrForbidden
+		return data, app.ErrForbidden
 	}
 
 	var err error
 	var errs errsx.Map
 
-	input.UserID = userID
+	data.UserID = userID
 
-	if input.NewTel, err = NewTel(newTel); err != nil {
+	if data.NewTel, err = NewTel(newTel); err != nil {
 		errs.Set("new phone", err)
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) ChangeTOTPTel(ctx context.Context, guard ChangeTOTPTelGuard, userID int, newTel string) (*User, error) {
-	input, err := s.ChangeTOTPTelValidate(guard, userID, newTel)
+	data, err := s.ChangeTOTPTelValidate(guard, userID, newTel)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
-	if err := user.ChangeTOTPTel(input.NewTel); err != nil {
+	if err := user.ChangeTOTPTel(data.NewTel); err != nil {
 		return nil, err
 	}
 

@@ -12,46 +12,46 @@ type SuspendUsersGuard interface {
 	CanSuspendUsers() bool
 }
 
-type SuspendUserInput struct {
+type SuspendUserData struct {
 	UserID          int
 	SuspendedReason SuspendedReason
 }
 
-func (s *Service) SuspendUserValidate(guard SuspendUsersGuard, userID int, suspendedReason string) (SuspendUserInput, error) {
-	var input SuspendUserInput
+func (s *Service) SuspendUserValidate(guard SuspendUsersGuard, userID int, suspendedReason string) (SuspendUserData, error) {
+	var data SuspendUserData
 
 	if !guard.CanSuspendUsers() {
-		return input, app.ErrForbidden
+		return data, app.ErrForbidden
 	}
 
 	var err error
 	var errs errsx.Map
 
-	input.UserID = userID
+	data.UserID = userID
 
-	if input.SuspendedReason, err = NewSuspendedReason(suspendedReason); err != nil {
+	if data.SuspendedReason, err = NewSuspendedReason(suspendedReason); err != nil {
 		errs.Set("suspended reason", err)
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) SuspendUser(ctx context.Context, guard SuspendUsersGuard, userID int, suspendedReason string) (*User, error) {
-	input, err := s.SuspendUserValidate(guard, userID, suspendedReason)
+	data, err := s.SuspendUserValidate(guard, userID, suspendedReason)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
-	user.Suspend(input.SuspendedReason)
+	user.Suspend(data.SuspendedReason)
 
 	if err := s.repo.SaveUser(ctx, user); err != nil {
 		return nil, fmt.Errorf("save user: %w", err)

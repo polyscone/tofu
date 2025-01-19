@@ -19,35 +19,35 @@ const (
 
 var ErrMagicLinkSignUpDisabled = errors.New("magic link sign up disabled")
 
-type SignInWithMagicLinkInput struct {
+type SignInWithMagicLinkData struct {
 	Email Email
 }
 
-func (s *Service) SignInWithMagicLinkValidate(email string) (SignInWithMagicLinkInput, error) {
-	var input SignInWithMagicLinkInput
+func (s *Service) SignInWithMagicLinkValidate(email string) (SignInWithMagicLinkData, error) {
+	var data SignInWithMagicLinkData
 
 	var err error
 	var errs errsx.Map
 
-	if input.Email, err = NewEmail(email); err != nil {
+	if data.Email, err = NewEmail(email); err != nil {
 		errs.Set("email", err)
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavior MagicLinkSignInBehavior) (*User, bool, error) {
-	input, err := s.SignInWithMagicLinkValidate(email)
+	data, err := s.SignInWithMagicLinkValidate(email)
 	if err != nil {
 		return nil, false, err
 	}
 
 	var signedIn bool
-	user, err := s.repo.FindUserByEmail(ctx, input.Email.String())
+	user, err := s.repo.FindUserByEmail(ctx, data.Email.String())
 	switch {
 	case err == nil:
 		if err := user.SignInWithMagicLink(s.system); err != nil {
@@ -65,7 +65,7 @@ func (s *Service) signInWithMagicLink(ctx context.Context, email string, behavio
 			return nil, false, ErrMagicLinkSignUpDisabled
 		}
 
-		user = NewUser(input.Email)
+		user = NewUser(data.Email)
 
 		user.SignUpWithMagicLink(s.system)
 

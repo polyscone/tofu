@@ -11,29 +11,29 @@ type SetupTOTPGuard interface {
 	CanSetupTOTP(userID int) bool
 }
 
-type SetupTOTPInput struct {
+type SetupTOTPData struct {
 	UserID int
 }
 
-func (s *Service) SetupTOTPValidate(guard SetupTOTPGuard, userID int) (SetupTOTPInput, error) {
-	var input SetupTOTPInput
+func (s *Service) SetupTOTPValidate(guard SetupTOTPGuard, userID int) (SetupTOTPData, error) {
+	var data SetupTOTPData
 
 	if !guard.CanSetupTOTP(userID) {
-		return input, app.ErrForbidden
+		return data, app.ErrForbidden
 	}
 
-	input.UserID = userID
+	data.UserID = userID
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) SetupTOTP(ctx context.Context, guard SetupTOTPGuard, userID int) (*User, error) {
-	input, err := s.SetupTOTPValidate(guard, userID)
+	data, err := s.SetupTOTPValidate(guard, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}

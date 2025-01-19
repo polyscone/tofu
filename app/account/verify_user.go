@@ -17,55 +17,65 @@ const (
 )
 
 type VerifyUserInput struct {
+	Email         string
+	Password      string
+	PasswordCheck string
+	Behavior      VerifyUserBehavior
+}
+
+type VerifyUserData struct {
 	Email         Email
 	Password      Password
 	PasswordCheck Password
+	Behavior      VerifyUserBehavior
 }
 
-func (s *Service) VerifyUserValidate(email, password, passwordCheck string) (VerifyUserInput, error) {
-	var input VerifyUserInput
+func (s *Service) VerifyUserValidate(input VerifyUserInput) (VerifyUserData, error) {
+	var data VerifyUserData
 	var err error
 	var errs errsx.Map
 
-	input.PasswordCheck, _ = NewPassword(passwordCheck)
+	data.PasswordCheck, _ = NewPassword(input.PasswordCheck)
 
-	if input.Email, err = NewEmail(email); err != nil {
+	if data.Email, err = NewEmail(input.Email); err != nil {
 		errs.Set("email", err)
 	}
-	if input.Password, err = NewPassword(password); err != nil {
+	if data.Password, err = NewPassword(input.Password); err != nil {
 		errs.Set("password", err)
-	} else if !input.Password.Equal(input.PasswordCheck) {
+	} else if !data.Password.Equal(data.PasswordCheck) {
 		errs.Set("password", "passwords do not match")
 	}
 
+	data.Behavior = input.Behavior
+
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
-func (s *Service) VerifyUser(ctx context.Context, email, password, passwordCheck string, behavior VerifyUserBehavior) (*User, error) {
-	input, err := s.VerifyUserValidate(email, password, passwordCheck)
+func (s *Service) VerifyUser(ctx context.Context, input VerifyUserInput) (*User, error) {
+	data, err := s.VerifyUserValidate(input)
 	if err != nil {
 		return nil, err
 	}
 
-	log, err := s.repo.FindSignInAttemptLogByEmail(ctx, email)
+	log, err := s.repo.FindSignInAttemptLogByEmail(ctx, data.Email.String())
 	if err != nil {
 		return nil, fmt.Errorf("find sign in attempt log by email: %w", err)
 	}
 
-	user, err := s.repo.FindUserByEmail(ctx, input.Email.String())
+	user, err := s.repo.FindUserByEmail(ctx, data.Email.String())
 	if err != nil {
 		return nil, fmt.Errorf("find user by email: %w", err)
 	}
 
-	if err := user.Verify(input.Password, s.hasher); err != nil {
+	if err := user.Verify(data.Password, s.hasher); err != nil {
 		return nil, err
 	}
 
-	if isInvited := !user.InvitedAt.IsZero(); isInvited || behavior == VerifyUserActivate {
+	if isInvited := !user.InvitedAt.IsZero(); isInvited || data.Behavior == VerifyUserActivate {
 		if err := user.Activate(); err != nil {
 			return nil, err
 		}

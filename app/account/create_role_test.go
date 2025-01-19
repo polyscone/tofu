@@ -49,7 +49,11 @@ func TestCreateRole(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				role, err := svc.CreateRole(ctx, tc.guard, tc.role.Name, tc.role.Description, tc.role.Permissions)
+				role, err := svc.CreateRole(ctx, tc.guard, account.CreateRoleInput{
+					Name:        tc.role.Name,
+					Description: tc.role.Description,
+					Permissions: tc.role.Permissions,
+				})
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
 				}
@@ -111,7 +115,11 @@ func TestCreateRole(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := svc.CreateRole(ctx, validGuard, tc.roleName, tc.description, tc.permissions)
+				_, err := svc.CreateRole(ctx, validGuard, account.CreateRoleInput{
+					Name:        tc.roleName,
+					Description: tc.description,
+					Permissions: tc.permissions,
+				})
 				switch {
 				case tc.isValidInput && errors.Is(err, app.ErrMalformedInput):
 					t.Errorf("want any other error value; got %v", app.ErrMalformedInput)

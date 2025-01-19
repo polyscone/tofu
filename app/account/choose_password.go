@@ -14,49 +14,55 @@ type ChoosePasswordGuard interface {
 
 type ChoosePasswordInput struct {
 	UserID           int
+	NewPassword      string
+	NewPasswordCheck string
+}
+
+type ChoosePasswordData struct {
+	UserID           int
 	NewPassword      Password
 	NewPasswordCheck Password
 }
 
-func (s *Service) ChoosePasswordValidate(guard ChoosePasswordGuard, userID int, newPassword, newPasswordCheck string) (ChoosePasswordInput, error) {
-	var input ChoosePasswordInput
+func (s *Service) ChoosePasswordValidate(guard ChoosePasswordGuard, input ChoosePasswordInput) (ChoosePasswordData, error) {
+	var data ChoosePasswordData
 
-	if !guard.CanChoosePassword(userID) {
-		return input, app.ErrForbidden
+	if !guard.CanChoosePassword(input.UserID) {
+		return data, app.ErrForbidden
 	}
 
 	var err error
 	var errs errsx.Map
 
-	input.NewPasswordCheck, _ = NewPassword(newPasswordCheck)
+	data.NewPasswordCheck, _ = NewPassword(input.NewPasswordCheck)
 
-	input.UserID = userID
+	data.UserID = input.UserID
 
-	if input.NewPassword, err = NewPassword(newPassword); err != nil {
+	if data.NewPassword, err = NewPassword(input.NewPassword); err != nil {
 		errs.Set("new password", err)
-	} else if !input.NewPassword.Equal(input.NewPasswordCheck) {
+	} else if !data.NewPassword.Equal(data.NewPasswordCheck) {
 		errs.Set("new password", "passwords do not match")
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
-func (s *Service) ChoosePassword(ctx context.Context, guard ChoosePasswordGuard, userID int, newPassword, newPasswordCheck string) (*User, error) {
-	input, err := s.ChoosePasswordValidate(guard, userID, newPassword, newPasswordCheck)
+func (s *Service) ChoosePassword(ctx context.Context, guard ChoosePasswordGuard, input ChoosePasswordInput) (*User, error) {
+	data, err := s.ChoosePasswordValidate(guard, input)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
-	if err := user.ChoosePassword(input.NewPassword, s.hasher); err != nil {
+	if err := user.ChoosePassword(data.NewPassword, s.hasher); err != nil {
 		return nil, err
 	}
 

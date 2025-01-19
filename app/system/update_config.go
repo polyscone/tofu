@@ -13,6 +13,25 @@ type UpdateConfigGuard interface {
 }
 
 type UpdateConfigInput struct {
+	SystemEmail               string
+	SecurityEmail             string
+	SignUpEnabled             bool
+	SignUpAutoActivateEnabled bool
+	TOTPRequired              bool
+	TOTPSMSEnabled            bool
+	MagicLinkSignInEnabled    bool
+	GoogleSignInEnabled       bool
+	GoogleSignInClientID      string
+	FacebookSignInEnabled     bool
+	FacebookSignInAppID       string
+	FacebookSignInAppSecret   string
+	ResendAPIKey              string
+	TwilioSID                 string
+	TwilioToken               string
+	TwilioFromTel             string
+}
+
+type UpdateConfigData struct {
 	SystemEmail               Email
 	SecurityEmail             Email
 	SignUpEnabled             bool
@@ -31,95 +50,66 @@ type UpdateConfigInput struct {
 	TwilioFromTel             TwilioTel
 }
 
-func (s *Service) UpdateConfigValidate(
-	guard UpdateConfigGuard,
-	systemEmail, securityEmail string,
-	signUpEnabled, signUpAutoActivateEnabled bool,
-	totpRequired, totpSMSEnabled bool,
-	magicLinkSignInEnabled bool,
-	googleSignInEnabled bool, googleSignInClientID string,
-	facebookSignInEnabled bool, facebookSignInAppID, facebookSignInAppSecret string,
-	resendAPIKey string,
-	twilioSID, twilioToken, twilioFromTel string,
-) (UpdateConfigInput, error) {
-	var input UpdateConfigInput
+func (s *Service) UpdateConfigValidate(guard UpdateConfigGuard, input UpdateConfigInput) (UpdateConfigData, error) {
+	var data UpdateConfigData
 
 	if !guard.CanUpdateConfig() {
-		return input, app.ErrForbidden
+		return data, app.ErrForbidden
 	}
 
 	var err error
 	var errs errsx.Map
 
-	if input.SystemEmail, err = NewEmail(systemEmail); err != nil {
+	if data.SystemEmail, err = NewEmail(input.SystemEmail); err != nil {
 		errs.Set("system email", err)
 	}
-	if input.SecurityEmail, err = NewEmail(securityEmail); err != nil {
+	if data.SecurityEmail, err = NewEmail(input.SecurityEmail); err != nil {
 		errs.Set("security email", err)
 	}
 
-	input.SignUpEnabled = signUpEnabled
-	input.SignUpAutoActivateEnabled = signUpAutoActivateEnabled
-	input.TOTPRequired = totpRequired
-	input.TOTPSMSEnabled = totpSMSEnabled
-	input.MagicLinkSignInEnabled = magicLinkSignInEnabled
+	data.SignUpEnabled = input.SignUpEnabled
+	data.SignUpAutoActivateEnabled = input.SignUpAutoActivateEnabled
+	data.TOTPRequired = input.TOTPRequired
+	data.TOTPSMSEnabled = input.TOTPSMSEnabled
+	data.MagicLinkSignInEnabled = input.MagicLinkSignInEnabled
 
-	input.GoogleSignInEnabled = googleSignInEnabled
+	data.GoogleSignInEnabled = input.GoogleSignInEnabled
 
-	if input.GoogleSignInClientID, err = NewGoogleClientID(googleSignInClientID); err != nil {
+	if data.GoogleSignInClientID, err = NewGoogleClientID(input.GoogleSignInClientID); err != nil {
 		errs.Set("google sign in client id", err)
 	}
 
-	input.FacebookSignInEnabled = facebookSignInEnabled
+	data.FacebookSignInEnabled = input.FacebookSignInEnabled
 
-	if input.FacebookSignInAppID, err = NewFacebookAppID(facebookSignInAppID); err != nil {
+	if data.FacebookSignInAppID, err = NewFacebookAppID(input.FacebookSignInAppID); err != nil {
 		errs.Set("facebook sign in app id", err)
 	}
-	if input.FacebookSignInAppSecret, err = NewFacebookAppSecret(facebookSignInAppSecret); err != nil {
+	if data.FacebookSignInAppSecret, err = NewFacebookAppSecret(input.FacebookSignInAppSecret); err != nil {
 		errs.Set("facebook sign in app secret", err)
 	}
 
-	if input.ResendAPIKey, err = NewResendAPIKey(resendAPIKey); err != nil {
+	if data.ResendAPIKey, err = NewResendAPIKey(input.ResendAPIKey); err != nil {
 		errs.Set("resend API key", err)
 	}
-	if input.TwilioSID, err = NewTwilioSID(twilioSID); err != nil {
+	if data.TwilioSID, err = NewTwilioSID(input.TwilioSID); err != nil {
 		errs.Set("twilio sid", err)
 	}
-	if input.TwilioToken, err = NewTwilioToken(twilioToken); err != nil {
+	if data.TwilioToken, err = NewTwilioToken(input.TwilioToken); err != nil {
 		errs.Set("twilio token", err)
 	}
-	if input.TwilioFromTel, err = NewTwilioTel(twilioFromTel); err != nil {
+	if data.TwilioFromTel, err = NewTwilioTel(input.TwilioFromTel); err != nil {
 		errs.Set("twilio from tel", err)
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
-func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
-	systemEmail, securityEmail string,
-	signUpEnabled, signUpAutoActivateEnabled bool,
-	totpRequired, totpSMSEnabled bool,
-	magicLinkSignInEnabled bool,
-	googleSignInEnabled bool, googleSignInClientID string,
-	facebookSignInEnabled bool, facebookSignInAppID, facebookSignInAppSecret string,
-	resendAPIKey string,
-	twilioSID, twilioToken, twilioFromTel string,
-) (*Config, error) {
-	input, err := s.UpdateConfigValidate(
-		guard,
-		systemEmail, securityEmail,
-		signUpEnabled, signUpAutoActivateEnabled,
-		totpRequired, totpSMSEnabled,
-		magicLinkSignInEnabled,
-		googleSignInEnabled, googleSignInClientID,
-		facebookSignInEnabled, facebookSignInAppID, facebookSignInAppSecret,
-		resendAPIKey,
-		twilioSID, twilioToken, twilioFromTel,
-	)
+func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard, input UpdateConfigInput) (*Config, error) {
+	data, err := s.UpdateConfigValidate(guard, input)
 	if err != nil {
 		return nil, err
 	}
@@ -131,54 +121,54 @@ func (s *Service) UpdateConfig(ctx context.Context, guard UpdateConfigGuard,
 
 	var errs errsx.Slice
 
-	config.ChangeSystemEmail(input.SystemEmail)
-	config.ChangeSecurityEmail(input.SecurityEmail)
+	config.ChangeSystemEmail(data.SystemEmail)
+	config.ChangeSecurityEmail(data.SecurityEmail)
 
-	if input.SignUpEnabled {
+	if data.SignUpEnabled {
 		config.EnableSignUp()
 	} else {
 		config.DisableSignUp()
 	}
 
-	if input.SignUpAutoActivateEnabled {
+	if data.SignUpAutoActivateEnabled {
 		config.EnableSignUpAutoActivate()
 	} else {
 		config.DisableSignUpAutoActivate()
 	}
 
-	if input.TOTPRequired {
+	if data.TOTPRequired {
 		config.EnableTOTPRequired()
 	} else {
 		config.DisableTOTPRequired()
 	}
 
-	if input.MagicLinkSignInEnabled {
+	if data.MagicLinkSignInEnabled {
 		config.EnableMagicLinkSignIn()
 	} else {
 		config.DisableMagicLinkSignIn()
 	}
 
-	config.ChangeGoogleSignInClientID(input.GoogleSignInClientID)
+	config.ChangeGoogleSignInClientID(data.GoogleSignInClientID)
 
-	if input.GoogleSignInEnabled {
+	if data.GoogleSignInEnabled {
 		errs.Append(config.EnableGoogleSignIn())
 	} else {
 		config.DisableGoogleSignIn()
 	}
 
-	config.ChangeFacebookSignInAppID(input.FacebookSignInAppID)
-	config.ChangeFacebookSignInAppSecret(input.FacebookSignInAppSecret)
+	config.ChangeFacebookSignInAppID(data.FacebookSignInAppID)
+	config.ChangeFacebookSignInAppSecret(data.FacebookSignInAppSecret)
 
-	if input.FacebookSignInEnabled {
+	if data.FacebookSignInEnabled {
 		errs.Append(config.EnableFacebookSignIn())
 	} else {
 		config.DisableFacebookSignIn()
 	}
 
-	config.ChangeResendAPI(input.ResendAPIKey)
-	config.ChangeTwilioAPI(input.TwilioSID, input.TwilioToken, input.TwilioFromTel)
+	config.ChangeResendAPI(data.ResendAPIKey)
+	config.ChangeTwilioAPI(data.TwilioSID, data.TwilioToken, data.TwilioFromTel)
 
-	if input.TOTPSMSEnabled {
+	if data.TOTPSMSEnabled {
 		errs.Append(config.EnableTOTPSMS())
 	} else {
 		config.DisableTOTPSMS()

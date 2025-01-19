@@ -48,24 +48,24 @@ func TestUpdateConfig(t *testing.T) {
 		twilioToken := "0123456789abcdef0123456789abcdef"
 		twilioFromTel := "+00 00 0000 0000"
 
-		_, err := svc.UpdateConfig(ctx, validGuard,
-			systemEmail,
-			securityEmail,
-			signUpEnabled,
-			signUpAutoActivateEnabled,
-			totpRequired,
-			totpSMSEnabled,
-			magicLinkSignInEnabled,
-			googleSignInEnabled,
-			googleSignInClientID,
-			facebookSignInEnabled,
-			facebookSignInAppID,
-			facebookSignInAppSecret,
-			resendAPIKey,
-			twilioSID,
-			twilioToken,
-			twilioFromTel,
-		)
+		_, err := svc.UpdateConfig(ctx, validGuard, system.UpdateConfigInput{
+			SystemEmail:               systemEmail,
+			SecurityEmail:             securityEmail,
+			SignUpEnabled:             signUpEnabled,
+			SignUpAutoActivateEnabled: signUpAutoActivateEnabled,
+			TOTPRequired:              totpRequired,
+			TOTPSMSEnabled:            totpSMSEnabled,
+			MagicLinkSignInEnabled:    magicLinkSignInEnabled,
+			GoogleSignInEnabled:       googleSignInEnabled,
+			GoogleSignInClientID:      googleSignInClientID,
+			FacebookSignInEnabled:     facebookSignInEnabled,
+			FacebookSignInAppID:       facebookSignInAppID,
+			FacebookSignInAppSecret:   facebookSignInAppSecret,
+			ResendAPIKey:              resendAPIKey,
+			TwilioSID:                 twilioSID,
+			TwilioToken:               twilioToken,
+			TwilioFromTel:             twilioFromTel,
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -138,24 +138,24 @@ func TestUpdateConfig(t *testing.T) {
 		twilioToken = ""
 		twilioFromTel = ""
 
-		_, err = svc.UpdateConfig(ctx, validGuard,
-			systemEmail,
-			securityEmail,
-			signUpEnabled,
-			signUpAutoActivateEnabled,
-			totpRequired,
-			totpSMSEnabled,
-			magicLinkSignInEnabled,
-			googleSignInEnabled,
-			googleSignInClientID,
-			facebookSignInEnabled,
-			facebookSignInAppID,
-			facebookSignInAppSecret,
-			resendAPIKey,
-			twilioSID,
-			twilioToken,
-			twilioFromTel,
-		)
+		_, err = svc.UpdateConfig(ctx, validGuard, system.UpdateConfigInput{
+			SystemEmail:               systemEmail,
+			SecurityEmail:             securityEmail,
+			SignUpEnabled:             signUpEnabled,
+			SignUpAutoActivateEnabled: signUpAutoActivateEnabled,
+			TOTPRequired:              totpRequired,
+			TOTPSMSEnabled:            totpSMSEnabled,
+			MagicLinkSignInEnabled:    magicLinkSignInEnabled,
+			GoogleSignInEnabled:       googleSignInEnabled,
+			GoogleSignInClientID:      googleSignInClientID,
+			FacebookSignInEnabled:     facebookSignInEnabled,
+			FacebookSignInAppID:       facebookSignInAppID,
+			FacebookSignInAppSecret:   facebookSignInAppSecret,
+			ResendAPIKey:              resendAPIKey,
+			TwilioSID:                 twilioSID,
+			TwilioToken:               twilioToken,
+			TwilioFromTel:             twilioFromTel,
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -296,24 +296,24 @@ func TestUpdateConfig(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				config := c(tc.overrides)
 
-				_, err := svc.UpdateConfig(ctx, tc.guard,
-					config.SystemEmail,
-					config.SecurityEmail,
-					config.SignUpEnabled,
-					config.SignUpAutoActivateEnabled,
-					config.TOTPRequired,
-					config.TOTPSMSEnabled,
-					config.MagicLinkSignInEnabled,
-					config.GoogleSignInEnabled,
-					config.GoogleSignInClientID,
-					config.FacebookSignInEnabled,
-					config.FacebookSignInAppID,
-					config.FacebookSignInAppSecret,
-					config.ResendAPIKey,
-					config.TwilioSID,
-					config.TwilioToken,
-					config.TwilioFromTel,
-				)
+				_, err := svc.UpdateConfig(ctx, tc.guard, system.UpdateConfigInput{
+					SystemEmail:               config.SystemEmail,
+					SecurityEmail:             config.SecurityEmail,
+					SignUpEnabled:             config.SignUpEnabled,
+					SignUpAutoActivateEnabled: config.SignUpAutoActivateEnabled,
+					TOTPRequired:              config.TOTPRequired,
+					TOTPSMSEnabled:            config.TOTPSMSEnabled,
+					MagicLinkSignInEnabled:    config.MagicLinkSignInEnabled,
+					GoogleSignInEnabled:       config.GoogleSignInEnabled,
+					GoogleSignInClientID:      config.GoogleSignInClientID,
+					FacebookSignInEnabled:     config.FacebookSignInEnabled,
+					FacebookSignInAppID:       config.FacebookSignInAppID,
+					FacebookSignInAppSecret:   config.FacebookSignInAppSecret,
+					ResendAPIKey:              config.ResendAPIKey,
+					TwilioSID:                 config.TwilioSID,
+					TwilioToken:               config.TwilioToken,
+					TwilioFromTel:             config.TwilioFromTel,
+				})
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)

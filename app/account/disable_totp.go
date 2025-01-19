@@ -13,46 +13,46 @@ type DisableTOTPGuard interface {
 	CanDisableTOTP(userID int) bool
 }
 
-type DisableTOTPInput struct {
+type DisableTOTPData struct {
 	UserID   int
 	Password Password
 }
 
-func (s *Service) DisableTOTPValidate(guard DisableTOTPGuard, userID int, password string) (DisableTOTPInput, error) {
-	var input DisableTOTPInput
+func (s *Service) DisableTOTPValidate(guard DisableTOTPGuard, userID int, password string) (DisableTOTPData, error) {
+	var data DisableTOTPData
 
 	if !guard.CanDisableTOTP(userID) {
-		return input, app.ErrForbidden
+		return data, app.ErrForbidden
 	}
 
 	var err error
 	var errs errsx.Map
 
-	input.UserID = userID
+	data.UserID = userID
 
-	if input.Password, err = NewPassword(password); err != nil {
+	if data.Password, err = NewPassword(password); err != nil {
 		errs.Set("password", err)
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) DisableTOTP(ctx context.Context, guard DisableTOTPGuard, userID int, password string) (*User, error) {
-	input, err := s.DisableTOTPValidate(guard, userID, password)
+	data, err := s.DisableTOTPValidate(guard, userID, password)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
-	if err := user.DisableTOTP(input.Password, s.hasher); err != nil {
+	if err := user.DisableTOTP(data.Password, s.hasher); err != nil {
 		if errors.Is(err, ErrInvalidPassword) {
 			return nil, fmt.Errorf("%w: %w", app.ErrUnauthorized, err)
 		}

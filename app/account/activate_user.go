@@ -12,29 +12,29 @@ type ActivateUsersGuard interface {
 	CanActivateUsers() bool
 }
 
-type ActivateUserInput struct {
+type ActivateUserData struct {
 	UserID int
 }
 
-func (s *Service) ActivateUserValidate(guard ActivateUsersGuard, userID int) (ActivateUserInput, error) {
-	var input ActivateUserInput
+func (s *Service) ActivateUserValidate(guard ActivateUsersGuard, userID int) (ActivateUserData, error) {
+	var data ActivateUserData
 
 	if !guard.CanActivateUsers() {
-		return input, app.ErrForbidden
+		return data, app.ErrForbidden
 	}
 
-	input.UserID = userID
+	data.UserID = userID
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) ActivateUser(ctx context.Context, guard ActivateUsersGuard, userID int) (*User, error) {
-	input, err := s.ActivateUserValidate(guard, userID)
+	data, err := s.ActivateUserValidate(guard, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by email: %w", err)
 	}

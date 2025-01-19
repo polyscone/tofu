@@ -52,32 +52,32 @@ func (s *Service) CheckSignInThrottle(attempts int, lastAttemptAt time.Time) err
 	return nil
 }
 
-type SignInWithPasswordInput struct {
+type SignInWithPasswordData struct {
 	Email    Email
 	Password Password
 }
 
-func (s *Service) SignInWithPasswordValidate(email, password string) (SignInWithPasswordInput, error) {
-	var input SignInWithPasswordInput
+func (s *Service) SignInWithPasswordValidate(email, password string) (SignInWithPasswordData, error) {
+	var data SignInWithPasswordData
 	var err error
 	var errs errsx.Map
 
-	if input.Email, err = NewEmail(email); err != nil {
+	if data.Email, err = NewEmail(email); err != nil {
 		errs.Set("email", err)
 	}
-	if input.Password, err = NewPassword(password); err != nil {
+	if data.Password, err = NewPassword(password); err != nil {
 		errs.Set("password", err)
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) signInWithPassword(ctx context.Context, email, password string) (*User, error) {
-	input, err := s.SignInWithPasswordValidate(email, password)
+	data, err := s.SignInWithPasswordValidate(email, password)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (s *Service) signInWithPassword(ctx context.Context, email, password string
 	log.Attempts++
 	log.LastAttemptAt = time.Now()
 
-	user, err := s.repo.FindUserByEmail(ctx, input.Email.String())
+	user, err := s.repo.FindUserByEmail(ctx, data.Email.String())
 	if err != nil {
 		if err := s.repo.SaveSignInAttemptLog(ctx, log); err != nil {
 			return nil, fmt.Errorf("save sign in attempt log: %w", err)
@@ -115,7 +115,7 @@ func (s *Service) signInWithPassword(ctx context.Context, email, password string
 		return nil, fmt.Errorf("find user by email: %w", err)
 	}
 
-	if _, err := user.SignInWithPassword(s.system, input.Password, s.hasher); err != nil {
+	if _, err := user.SignInWithPassword(s.system, data.Password, s.hasher); err != nil {
 		switch {
 		case errors.Is(err, ErrNotVerified),
 			errors.Is(err, ErrNotActivated),

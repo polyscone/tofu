@@ -66,12 +66,21 @@ func TestUpdateRole(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				role, err := svc.CreateRole(ctx, tc.guard, tc.before.Name, tc.before.Description, tc.before.Permissions)
+				role, err := svc.CreateRole(ctx, tc.guard, account.CreateRoleInput{
+					Name:        tc.before.Name,
+					Description: tc.before.Description,
+					Permissions: tc.before.Permissions,
+				})
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				_, err = svc.UpdateRole(ctx, tc.guard, role.ID, tc.after.Name, tc.after.Description, tc.after.Permissions)
+				_, err = svc.UpdateRole(ctx, tc.guard, account.UpdateRoleInput{
+					RoleID:      role.ID,
+					Name:        tc.after.Name,
+					Description: tc.after.Description,
+					Permissions: tc.after.Permissions,
+				})
 				if tc.want == nil && err != nil || tc.want != nil && !errors.Is(err, tc.want) {
 					t.Fatalf("want error: %v; got %v", tc.want, err)
 				}

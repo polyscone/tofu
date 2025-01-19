@@ -279,7 +279,11 @@ func totpSetupAppPost(h *ui.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		_, codes, err := h.Svc.Account.VerifyTOTP(ctx, passport.Account, user.ID, input.TOTP, "app")
+		_, codes, err := h.Svc.Account.VerifyTOTP(ctx, passport.Account, account.VerifyTOTPInput{
+			UserID:     user.ID,
+			TOTP:       input.TOTP,
+			TOTPMethod: "app",
+		})
 		if err != nil {
 			h.HTML.ErrorView(w, r, "verify TOTP", err, h.Session.LastView(ctx), nil)
 
@@ -430,7 +434,11 @@ func totpSetupSMSVerifyPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		_, codes, err := h.Svc.Account.VerifyTOTP(ctx, passport.Account, user.ID, input.TOTP, "sms")
+		_, codes, err := h.Svc.Account.VerifyTOTP(ctx, passport.Account, account.VerifyTOTPInput{
+			UserID:     user.ID,
+			TOTP:       input.TOTP,
+			TOTPMethod: "sms",
+		})
 		if err != nil {
 			h.HTML.ErrorView(w, r, "verify TOTP", err, h.Session.LastView(ctx), nil)
 

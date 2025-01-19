@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/polyscone/tofu/app"
+	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/internal/collection"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
@@ -99,7 +100,7 @@ func roleNewPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		role, err := h.Svc.Account.CreateRole(ctx, passport.Account, input.Name, input.Description, input.Permissions)
+		role, err := h.Svc.Account.CreateRole(ctx, passport.Account, account.CreateRoleInput(input))
 		if err != nil {
 			h.HTML.ErrorView(w, r, "create role", err, h.Session.LastView(ctx), nil)
 
@@ -166,7 +167,12 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		role, err := h.Svc.Account.UpdateRole(ctx, passport.Account, roleID, input.Name, input.Description, input.Permissions)
+		role, err := h.Svc.Account.UpdateRole(ctx, passport.Account, account.UpdateRoleInput{
+			RoleID:      roleID,
+			Name:        input.Name,
+			Description: input.Description,
+			Permissions: input.Permissions,
+		})
 		if err != nil {
 			h.HTML.ErrorView(w, r, "update role", err, h.Session.LastView(ctx), nil)
 

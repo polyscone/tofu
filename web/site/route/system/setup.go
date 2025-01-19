@@ -3,6 +3,7 @@ package system
 import (
 	"net/http"
 
+	"github.com/polyscone/tofu/app/system"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/internal/i18n"
@@ -79,7 +80,10 @@ func systemSetupPost(h *ui.Handler) http.HandlerFunc {
 		}
 
 		g := updateEmailsGuard{canUpdateEmails: config.SetupRequired || userCount == 0}
-		_, err = h.Svc.System.UpdateEmails(ctx, g, input.SystemEmail, input.SecurityEmail)
+		_, err = h.Svc.System.UpdateEmails(ctx, g, system.UpdateEmailsInput{
+			SystemEmail:   input.SystemEmail,
+			SecurityEmail: input.SecurityEmail,
+		})
 		if err != nil {
 			h.HTML.ErrorView(w, r, "update emails", err, h.Session.LastView(ctx), nil)
 

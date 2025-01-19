@@ -22,7 +22,13 @@ func TestVerifyUser(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.VerifyUser(ctx, user.Email, "password", "password", account.VerifyUserOnly); err != nil {
+		_, err := svc.VerifyUser(ctx, account.VerifyUserInput{
+			Email:         user.Email,
+			Password:      "password",
+			PasswordCheck: "password",
+			Behavior:      account.VerifyUserOnly,
+		})
+		if err != nil {
 			t.Fatal(err)
 		}
 
@@ -48,7 +54,13 @@ func TestVerifyUser(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.VerifyUser(ctx, user.Email, "password", "password", account.VerifyUserActivate); err != nil {
+		_, err := svc.VerifyUser(ctx, account.VerifyUserInput{
+			Email:         user.Email,
+			Password:      "password",
+			PasswordCheck: "password",
+			Behavior:      account.VerifyUserActivate,
+		})
+		if err != nil {
 			t.Fatal(err)
 		}
 
@@ -79,7 +91,13 @@ func TestVerifyUser(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.VerifyUser(ctx, user.Email, "password", "password", account.VerifyUserOnly); err != nil {
+		_, err := svc.VerifyUser(ctx, account.VerifyUserInput{
+			Email:         user.Email,
+			Password:      "password",
+			PasswordCheck: "password",
+			Behavior:      account.VerifyUserOnly,
+		})
+		if err != nil {
 			t.Fatal(err)
 		}
 
@@ -110,7 +128,13 @@ func TestVerifyUser(t *testing.T) {
 		events := testx.NewEventLog(broker)
 		defer events.Check(t)
 
-		if _, err := svc.VerifyUser(ctx, user.Email, "password", "password", account.VerifyUserOnly); err == nil {
+		_, err := svc.VerifyUser(ctx, account.VerifyUserInput{
+			Email:         user.Email,
+			Password:      "password",
+			PasswordCheck: "password",
+			Behavior:      account.VerifyUserOnly,
+		})
+		if err == nil {
 			t.Error("want error; got <nil>")
 		}
 	})
@@ -147,7 +171,12 @@ func TestVerifyUser(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := svc.VerifyUser(ctx, tc.email, tc.password, tc.passwordCheck, account.VerifyUserOnly)
+				_, err := svc.VerifyUser(ctx, account.VerifyUserInput{
+					Email:         tc.email,
+					Password:      tc.password,
+					PasswordCheck: tc.passwordCheck,
+					Behavior:      account.VerifyUserOnly,
+				})
 				switch {
 				case err == nil:
 					events.Expect(account.Verified{Email: tc.email})

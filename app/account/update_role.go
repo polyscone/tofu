@@ -15,34 +15,41 @@ type UpdateRoleGuard interface {
 
 type UpdateRoleInput struct {
 	RoleID      int
+	Name        string
+	Description string
+	Permissions []string
+}
+
+type UpdateRoleData struct {
+	RoleID      int
 	Name        RoleName
 	Description RoleDesc
 	Permissions []Permission
 }
 
-func (s *Service) UpdateRoleValidate(guard UpdateRoleGuard, roleID int, name, description string, permissions []string) (UpdateRoleInput, error) {
-	var input UpdateRoleInput
+func (s *Service) UpdateRoleValidate(guard UpdateRoleGuard, input UpdateRoleInput) (UpdateRoleData, error) {
+	var data UpdateRoleData
 
 	if !guard.CanUpdateRoles() {
-		return input, app.ErrForbidden
+		return data, app.ErrForbidden
 	}
 
 	var err error
 	var errs errsx.Map
 
-	input.RoleID = roleID
+	data.RoleID = input.RoleID
 
-	if input.Name, err = NewRoleName(name); err != nil {
+	if data.Name, err = NewRoleName(input.Name); err != nil {
 		errs.Set("name", err)
 	}
-	if input.Description, err = NewRoleDesc(description); err != nil {
+	if data.Description, err = NewRoleDesc(input.Description); err != nil {
 		errs.Set("description", err)
 	}
-	if permissions != nil {
-		input.Permissions = make([]Permission, len(permissions))
+	if input.Permissions != nil {
+		data.Permissions = make([]Permission, len(input.Permissions))
 
-		for i, permission := range permissions {
-			input.Permissions[i], err = NewPermission(permission)
+		for i, permission := range input.Permissions {
+			data.Permissions[i], err = NewPermission(permission)
 			if err != nil {
 				errs.Set("permissions", err)
 			}
@@ -50,26 +57,26 @@ func (s *Service) UpdateRoleValidate(guard UpdateRoleGuard, roleID int, name, de
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
-func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, roleID int, name, description string, permissions []string) (*Role, error) {
-	input, err := s.UpdateRoleValidate(guard, roleID, name, description, permissions)
+func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, input UpdateRoleInput) (*Role, error) {
+	data, err := s.UpdateRoleValidate(guard, input)
 	if err != nil {
 		return nil, err
 	}
 
-	role, err := s.repo.FindRoleByID(ctx, roleID)
+	role, err := s.repo.FindRoleByID(ctx, data.RoleID)
 	if err != nil {
 		return nil, fmt.Errorf("find role by id: %w", err)
 	}
 
-	role.ChangeName(input.Name)
-	role.ChangeDescription(input.Description)
-	role.ChangePermissions(input.Permissions)
+	role.ChangeName(data.Name)
+	role.ChangeDescription(data.Description)
+	role.ChangePermissions(data.Permissions)
 
 	if err := s.repo.SaveRole(ctx, role); err != nil {
 		var conflict *app.ConflictError

@@ -14,49 +14,55 @@ type ResetPasswordGuard interface {
 
 type ResetPasswordInput struct {
 	UserID           int
+	NewPassword      string
+	NewPasswordCheck string
+}
+
+type ResetPasswordData struct {
+	UserID           int
 	NewPassword      Password
 	NewPasswordCheck Password
 }
 
-func (s *Service) ResetPasswordValidate(guard ResetPasswordGuard, userID int, newPassword, newPasswordCheck string) (ResetPasswordInput, error) {
-	var input ResetPasswordInput
+func (s *Service) ResetPasswordValidate(guard ResetPasswordGuard, input ResetPasswordInput) (ResetPasswordData, error) {
+	var data ResetPasswordData
 
-	if !guard.CanResetPassword(userID) {
-		return input, app.ErrForbidden
+	if !guard.CanResetPassword(input.UserID) {
+		return data, app.ErrForbidden
 	}
 
 	var err error
 	var errs errsx.Map
 
-	input.NewPasswordCheck, _ = NewPassword(newPasswordCheck)
+	data.NewPasswordCheck, _ = NewPassword(input.NewPasswordCheck)
 
-	input.UserID = userID
+	data.UserID = input.UserID
 
-	if input.NewPassword, err = NewPassword(newPassword); err != nil {
+	if data.NewPassword, err = NewPassword(input.NewPassword); err != nil {
 		errs.Set("new password", err)
-	} else if !input.NewPassword.Equal(input.NewPasswordCheck) {
+	} else if !data.NewPassword.Equal(data.NewPasswordCheck) {
 		errs.Set("new password", "passwords do not match")
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
-func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, userID int, newPassword, newPasswordCheck string) (*User, error) {
-	input, err := s.ResetPasswordValidate(guard, userID, newPassword, newPasswordCheck)
+func (s *Service) ResetPassword(ctx context.Context, guard ResetPasswordGuard, input ResetPasswordInput) (*User, error) {
+	data, err := s.ResetPasswordValidate(guard, input)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
-	if err := user.ResetPassword(input.NewPassword, s.hasher); err != nil {
+	if err := user.ResetPassword(data.NewPassword, s.hasher); err != nil {
 		return nil, err
 	}
 

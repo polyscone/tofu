@@ -13,46 +13,46 @@ type ResetTOTPGuard interface {
 	CanResetTOTP(userID int) bool
 }
 
-type ResetTOTPInput struct {
+type ResetTOTPData struct {
 	UserID   int
 	Password Password
 }
 
-func (s *Service) ResetTOTPValidate(guard ResetTOTPGuard, userID int, password string) (ResetTOTPInput, error) {
-	var input ResetTOTPInput
+func (s *Service) ResetTOTPValidate(guard ResetTOTPGuard, userID int, password string) (ResetTOTPData, error) {
+	var data ResetTOTPData
 
 	if !guard.CanResetTOTP(userID) {
-		return input, app.ErrForbidden
+		return data, app.ErrForbidden
 	}
 
 	var err error
 	var errs errsx.Map
 
-	input.UserID = userID
+	data.UserID = userID
 
-	if input.Password, err = NewPassword(password); err != nil {
+	if data.Password, err = NewPassword(password); err != nil {
 		errs.Set("password", err)
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) ResetTOTP(ctx context.Context, guard ResetTOTPGuard, userID int, password string) (*User, error) {
-	input, err := s.ResetTOTPValidate(guard, userID, password)
+	data, err := s.ResetTOTPValidate(guard, userID, password)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by email: %w", err)
 	}
 
-	if err := user.ResetTOTP(input.Password, s.hasher); err != nil {
+	if err := user.ResetTOTP(data.Password, s.hasher); err != nil {
 		if errors.Is(err, ErrInvalidPassword) {
 			return nil, fmt.Errorf("%w: %w", app.ErrUnauthorized, err)
 		}

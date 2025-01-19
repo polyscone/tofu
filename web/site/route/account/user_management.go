@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app"
+	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/internal/collection"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
@@ -251,7 +252,12 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		_, err = h.Svc.Account.ChangeRoles(ctx, passport.Account, userID, input.RoleIDs, input.Grants, input.Denials)
+		_, err = h.Svc.Account.ChangeRoles(ctx, passport.Account, account.ChangeRolesInput{
+			UserID:  userID,
+			RoleIDs: input.RoleIDs,
+			Grants:  input.Grants,
+			Denials: input.Denials,
+		})
 		if err != nil {
 			h.HTML.ErrorView(w, r, "change roles", err, h.Session.LastView(ctx), nil)
 

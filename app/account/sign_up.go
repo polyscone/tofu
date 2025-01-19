@@ -9,33 +9,33 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 )
 
-type SignUpInput struct {
+type SignUpData struct {
 	Email Email
 }
 
-func (s *Service) SignUpValidate(email string) (SignUpInput, error) {
-	var input SignUpInput
+func (s *Service) SignUpValidate(email string) (SignUpData, error) {
+	var data SignUpData
 	var err error
 	var errs errsx.Map
 
-	if input.Email, err = NewEmail(email); err != nil {
+	if data.Email, err = NewEmail(email); err != nil {
 		errs.Set("email", err)
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
-	input, err := s.SignUpValidate(email)
+	data, err := s.SignUpValidate(email)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByEmail(ctx, input.Email.String())
+	user, err := s.repo.FindUserByEmail(ctx, data.Email.String())
 	switch {
 	case err == nil:
 		user.SignUp(s.system)
@@ -45,7 +45,7 @@ func (s *Service) SignUp(ctx context.Context, email string) (*User, error) {
 		}
 
 	case errors.Is(err, app.ErrNotFound):
-		user = NewUser(input.Email)
+		user = NewUser(data.Email)
 
 		user.SignUp(s.system)
 

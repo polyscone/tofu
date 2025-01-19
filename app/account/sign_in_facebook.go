@@ -19,34 +19,34 @@ const (
 
 var ErrFacebookSignUpDisabled = errors.New("Facebook sign up disabled")
 
-type SignInWithFacebookInput struct {
+type SignInWithFacebookData struct {
 	Email Email
 }
 
-func (s *Service) SignInWithFacebookValidate(email string) (SignInWithFacebookInput, error) {
-	var input SignInWithFacebookInput
+func (s *Service) SignInWithFacebookValidate(email string) (SignInWithFacebookData, error) {
+	var data SignInWithFacebookData
 	var err error
 	var errs errsx.Map
 
-	if input.Email, err = NewEmail(email); err != nil {
+	if data.Email, err = NewEmail(email); err != nil {
 		errs.Set("email", err)
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) signInWithFacebook(ctx context.Context, email string, behavior FacebookSignInBehavior) (*User, bool, error) {
-	input, err := s.SignInWithFacebookValidate(email)
+	data, err := s.SignInWithFacebookValidate(email)
 	if err != nil {
 		return nil, false, err
 	}
 
 	var signedIn bool
-	user, err := s.repo.FindUserByEmail(ctx, input.Email.String())
+	user, err := s.repo.FindUserByEmail(ctx, data.Email.String())
 	switch {
 	case err == nil:
 		if err := user.SignInWithFacebook(s.system); err != nil {
@@ -64,7 +64,7 @@ func (s *Service) signInWithFacebook(ctx context.Context, email string, behavior
 			return nil, false, ErrFacebookSignUpDisabled
 		}
 
-		user = NewUser(input.Email)
+		user = NewUser(data.Email)
 
 		user.SignUpWithFacebook(s.system)
 

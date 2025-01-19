@@ -3,6 +3,7 @@ package account
 import (
 	"net/http"
 
+	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/internal/i18n"
@@ -58,12 +59,11 @@ func choosePasswordPost(h *ui.Handler) http.HandlerFunc {
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
 
-		_, err := h.Svc.Account.ChoosePassword(ctx,
-			passport.Account,
-			user.ID,
-			input.NewPassword,
-			input.NewPasswordCheck,
-		)
+		_, err := h.Svc.Account.ChoosePassword(ctx, passport.Account, account.ChoosePasswordInput{
+			UserID:           user.ID,
+			NewPassword:      input.NewPassword,
+			NewPasswordCheck: input.NewPasswordCheck,
+		})
 		if err != nil {
 			h.HTML.ErrorView(w, r, "choose password", err, h.Session.LastView(ctx), nil)
 

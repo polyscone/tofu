@@ -8,41 +8,41 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 )
 
-type SignInWithTOTPInput struct {
+type SignInWithTOTPData struct {
 	UserID int
 	TOTP   TOTP
 }
 
-func (s *Service) SignInWithTOTPValidate(userID int, totp string) (SignInWithTOTPInput, error) {
-	var input SignInWithTOTPInput
+func (s *Service) SignInWithTOTPValidate(userID int, totp string) (SignInWithTOTPData, error) {
+	var data SignInWithTOTPData
 	var err error
 	var errs errsx.Map
 
-	input.UserID = userID
+	data.UserID = userID
 
-	if input.TOTP, err = NewTOTP(totp); err != nil {
+	if data.TOTP, err = NewTOTP(totp); err != nil {
 		errs.Set("totp", err)
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) signInWithTOTP(ctx context.Context, userID int, totp string) (*User, error) {
-	input, err := s.SignInWithTOTPValidate(userID, totp)
+	data, err := s.SignInWithTOTPValidate(userID, totp)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
-	if err := user.SignInWithTOTP(s.system, input.TOTP); err != nil {
+	if err := user.SignInWithTOTP(s.system, data.TOTP); err != nil {
 		return nil, err
 	}
 

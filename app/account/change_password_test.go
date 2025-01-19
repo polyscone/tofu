@@ -35,7 +35,12 @@ func TestChangePassword(t *testing.T) {
 		defer events.Check(t)
 
 		newPassword := errsx.Must(account.NewPassword("password123"))
-		_, err := svc.ChangePassword(ctx, validGuard, user.ID, "password", newPassword.String(), newPassword.String())
+		_, err := svc.ChangePassword(ctx, validGuard, account.ChangePasswordInput{
+			UserID:           user.ID,
+			OldPassword:      "password",
+			NewPassword:      newPassword.String(),
+			NewPasswordCheck: newPassword.String(),
+		})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -77,7 +82,12 @@ func TestChangePassword(t *testing.T) {
 		}
 		for _, tc := range tt {
 			t.Run(tc.name, func(t *testing.T) {
-				_, err := svc.ChangePassword(ctx, tc.guard, tc.userID, tc.oldPassword, tc.newPassword, tc.newPassword)
+				_, err := svc.ChangePassword(ctx, tc.guard, account.ChangePasswordInput{
+					UserID:           tc.userID,
+					OldPassword:      tc.oldPassword,
+					NewPassword:      tc.newPassword,
+					NewPasswordCheck: tc.newPassword,
+				})
 				switch {
 				case tc.want != nil && !errors.Is(err, tc.want):
 					t.Errorf("want error: %v; got: %v", tc.want, err)
@@ -121,7 +131,12 @@ func TestChangePassword(t *testing.T) {
 			t.Run(tc.name, func(t *testing.T) {
 				user := MustAddUser(t, ctx, repo, TestUser{Email: strconv.Itoa(i) + "foo@example.com", Activate: true})
 
-				_, err := svc.ChangePassword(ctx, validGuard, user.ID, tc.oldPassword, tc.newPassword, tc.newPasswordCheck)
+				_, err := svc.ChangePassword(ctx, validGuard, account.ChangePasswordInput{
+					UserID:           user.ID,
+					OldPassword:      tc.oldPassword,
+					NewPassword:      tc.newPassword,
+					NewPasswordCheck: tc.newPasswordCheck,
+				})
 				switch {
 				case err == nil:
 					events.Expect(account.PasswordChanged{Email: user.Email})

@@ -11,29 +11,29 @@ type UnsuspendUsersGuard interface {
 	CanUnsuspendUsers() bool
 }
 
-type UnsuspendUserInput struct {
+type UnsuspendUserData struct {
 	UserID int
 }
 
-func (s *Service) UnsuspendUserValidate(guard UnsuspendUsersGuard, userID int) (UnsuspendUserInput, error) {
-	var input UnsuspendUserInput
+func (s *Service) UnsuspendUserValidate(guard UnsuspendUsersGuard, userID int) (UnsuspendUserData, error) {
+	var data UnsuspendUserData
 
 	if !guard.CanUnsuspendUsers() {
-		return input, app.ErrForbidden
+		return data, app.ErrForbidden
 	}
 
-	input.UserID = userID
+	data.UserID = userID
 
-	return input, nil
+	return data, nil
 }
 
 func (s *Service) UnsuspendUser(ctx context.Context, guard UnsuspendUsersGuard, userID int) (*User, error) {
-	input, err := s.UnsuspendUserValidate(guard, userID)
+	data, err := s.UnsuspendUserValidate(guard, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}

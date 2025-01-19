@@ -14,53 +14,60 @@ type ChangePasswordGuard interface {
 
 type ChangePasswordInput struct {
 	UserID           int
+	OldPassword      string
+	NewPassword      string
+	NewPasswordCheck string
+}
+
+type ChangePasswordData struct {
+	UserID           int
 	OldPassword      Password
 	NewPassword      Password
 	NewPasswordCheck Password
 }
 
-func (s *Service) ChangePasswordValidate(guard ChangePasswordGuard, userID int, oldPassword, newPassword, newPasswordCheck string) (ChangePasswordInput, error) {
-	var input ChangePasswordInput
+func (s *Service) ChangePasswordValidate(guard ChangePasswordGuard, input ChangePasswordInput) (ChangePasswordData, error) {
+	var data ChangePasswordData
 
-	if !guard.CanChangePassword(userID) {
-		return input, app.ErrForbidden
+	if !guard.CanChangePassword(input.UserID) {
+		return data, app.ErrForbidden
 	}
 
 	var err error
 	var errs errsx.Map
 
-	input.NewPasswordCheck, _ = NewPassword(newPasswordCheck)
+	data.NewPasswordCheck, _ = NewPassword(input.NewPasswordCheck)
 
-	input.UserID = userID
+	data.UserID = input.UserID
 
-	if input.OldPassword, err = NewPassword(oldPassword); err != nil {
+	if data.OldPassword, err = NewPassword(input.OldPassword); err != nil {
 		errs.Set("old password", err)
 	}
-	if input.NewPassword, err = NewPassword(newPassword); err != nil {
+	if data.NewPassword, err = NewPassword(input.NewPassword); err != nil {
 		errs.Set("new password", err)
-	} else if !input.NewPassword.Equal(input.NewPasswordCheck) {
+	} else if !data.NewPassword.Equal(data.NewPasswordCheck) {
 		errs.Set("new password", "passwords do not match")
 	}
 
 	if errs != nil {
-		return input, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
+		return data, fmt.Errorf("%w: %w", app.ErrMalformedInput, errs)
 	}
 
-	return input, nil
+	return data, nil
 }
 
-func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard, userID int, oldPassword, newPassword, newPasswordCheck string) (*User, error) {
-	input, err := s.ChangePasswordValidate(guard, userID, oldPassword, newPassword, newPasswordCheck)
+func (s *Service) ChangePassword(ctx context.Context, guard ChangePasswordGuard, input ChangePasswordInput) (*User, error) {
+	data, err := s.ChangePasswordValidate(guard, input)
 	if err != nil {
 		return nil, err
 	}
 
-	user, err := s.repo.FindUserByID(ctx, input.UserID)
+	user, err := s.repo.FindUserByID(ctx, data.UserID)
 	if err != nil {
 		return nil, fmt.Errorf("find user by id: %w", err)
 	}
 
-	if err := user.ChangePassword(input.OldPassword, input.NewPassword, s.hasher); err != nil {
+	if err := user.ChangePassword(data.OldPassword, data.NewPassword, s.hasher); err != nil {
 		return nil, err
 	}
 
