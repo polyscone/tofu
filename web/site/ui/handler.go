@@ -22,20 +22,22 @@ type PredicateFunc func(p guard.Passport) bool
 
 type Handler struct {
 	*handler.Handler
-	signInPath  func() string
-	mux         *router.ServeMux
-	i18nRuntime i18n.Runtime
-	Funcs       template.FuncMap
-	HTML        *handler.Renderer
+	signInPath         func() string
+	mux                *router.ServeMux
+	i18nRuntime        i18n.Runtime
+	i18nRuntimeWrapper handler.WrapI18nRuntimeFunc
+	Funcs              template.FuncMap
+	HTML               *handler.Renderer
 }
 
 func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() string) *Handler {
 	i18nRuntimeWrapper := handler.NewI18nRuntimeWrapper(mux)
 	h := &Handler{
-		Handler:     base,
-		signInPath:  signInPath,
-		mux:         mux,
-		i18nRuntime: i18nRuntimeWrapper(i18n.DefaultHTMLRuntime),
+		Handler:            base,
+		signInPath:         signInPath,
+		mux:                mux,
+		i18nRuntime:        i18nRuntimeWrapper(i18n.DefaultHTMLRuntime),
+		i18nRuntimeWrapper: i18nRuntimeWrapper,
 	}
 
 	h.Funcs = handler.NewTemplateFuncs(template.FuncMap{
@@ -122,7 +124,7 @@ func (h *Handler) SendEmail(ctx context.Context, from, to string, view string, v
 		return []string{"email/" + view + ".html"}
 	}
 
-	return h.Handler.SendEmail(ctx, templateFiles, templatePatterns, h.Funcs, from, to, view, vars)
+	return h.Handler.SendEmail(ctx, templateFiles, templatePatterns, h.Funcs, h.i18nRuntimeWrapper, from, to, view, vars)
 }
 
 func (h *Handler) HasPathPrefix(value string, name string, paramArgPairs ...any) bool {

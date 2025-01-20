@@ -336,7 +336,7 @@ func (h *Handler) Template(files fs.FS, patterns TemplatePatternsFunc, funcs tem
 	})
 }
 
-func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePatterns TemplatePatternsFunc, funcs template.FuncMap, from, to, view string, vars Vars) error {
+func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePatterns TemplatePatternsFunc, funcs template.FuncMap, wrapI18nRuntime WrapI18nRuntimeFunc, from, to, view string, vars Vars) error {
 	logger := h.Logger(ctx)
 
 	data := ViewData{
@@ -372,6 +372,9 @@ func (h *Handler) SendEmail(ctx context.Context, templateFiles fs.FS, templatePa
 			data.I18nRuntime = i18n.DefaultHTMLRuntime
 		} else {
 			data.I18nRuntime = i18n.DefaultMarkdownRuntime
+		}
+		if wrapI18nRuntime != nil {
+			data.I18nRuntime = wrapI18nRuntime(data.I18nRuntime)
 		}
 
 		if err := tmpl.Execute(&buf, data); err != nil {
