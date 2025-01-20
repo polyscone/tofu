@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/polyscone/tofu/web/event"
-	"github.com/polyscone/tofu/web/site/ui"
+	"github.com/polyscone/tofu/web/pwa/ui"
 )
 
-func TOTPSMSRequestedHandler(h *ui.Handler) any {
+func WebTOTPSMSRequestedHandler(h *ui.Handler) any {
 	return func(ctx context.Context, evt event.TOTPSMSRequested) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)

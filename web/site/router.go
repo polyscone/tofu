@@ -34,15 +34,16 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler
 		return mux.Path("account.sign_in")
 	})
 
-	h.Broker.Listen(event.ActivatedHandler(h))
-	h.Broker.Listen(event.AlreadySignedUpHandler(h))
-	h.Broker.Listen(event.InvitedHandler(h))
-	h.Broker.Listen(event.PasswordResetRequestedHandler(h))
-	h.Broker.Listen(event.SignInMagicLinkRequestedHandler(h))
-	h.Broker.Listen(event.SignedInHandler(h))
-	h.Broker.Listen(event.SignedUpHandler(h))
-	h.Broker.Listen(event.TOTPDisabledHandler(h))
-	h.Broker.Listen(event.TOTPSMSRequestedHandler(h))
+	h.Broker.Listen(event.AccountActivatedHandler(h))
+	h.Broker.Listen(event.AccountAlreadySignedUpHandler(h))
+	h.Broker.Listen(event.AccountInvitedHandler(h))
+	h.Broker.Listen(event.AccountSignedInHandler(h))
+	h.Broker.Listen(event.AccountSignedUpHandler(h))
+	h.Broker.Listen(event.AccountTOTPDisabledHandler(h))
+
+	h.Broker.Listen(event.WebPasswordResetRequestedHandler(h))
+	h.Broker.Listen(event.WebSignInMagicLinkRequestedHandler(h))
+	h.Broker.Listen(event.WebTOTPSMSRequestedHandler(h))
 
 	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {
 		rc := http.NewResponseController(w)

@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
-func InvitedHandler(h *ui.Handler) any {
+func AccountInvitedHandler(h *ui.Handler) any {
 	return func(ctx context.Context, evt account.Invited) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)

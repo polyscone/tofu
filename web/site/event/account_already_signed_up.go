@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
-func AlreadySignedUpHandler(h *ui.Handler) any {
+func AccountAlreadySignedUpHandler(h *ui.Handler) any {
 	return func(ctx context.Context, evt account.AlreadySignedUp) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)

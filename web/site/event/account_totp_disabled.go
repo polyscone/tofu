@@ -7,7 +7,7 @@ import (
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
-func TOTPDisabledHandler(h *ui.Handler) any {
+func AccountTOTPDisabledHandler(h *ui.Handler) any {
 	return func(ctx context.Context, evt account.TOTPDisabled) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)

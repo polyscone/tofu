@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
-func ActivatedHandler(h *ui.Handler) any {
+func AccountActivatedHandler(h *ui.Handler) any {
 	return func(ctx context.Context, evt account.Activated) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)

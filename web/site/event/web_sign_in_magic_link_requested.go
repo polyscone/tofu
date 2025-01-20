@@ -9,7 +9,7 @@ import (
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
-func SignInMagicLinkRequestedHandler(h *ui.Handler) any {
+func WebSignInMagicLinkRequestedHandler(h *ui.Handler) any {
 	return func(ctx context.Context, evt event.SignInMagicLinkRequested) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)

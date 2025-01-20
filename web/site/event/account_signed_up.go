@@ -10,7 +10,7 @@ import (
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
-func SignedUpHandler(h *ui.Handler) any {
+func AccountSignedUpHandler(h *ui.Handler) any {
 	return func(ctx context.Context, evt account.SignedUp) {
 		// Sign ups through magic links and third-party services like Google/Facebook are
 		// implicitly verified due to the fact they signed in with that service

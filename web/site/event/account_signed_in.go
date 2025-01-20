@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/polyscone/tofu/app/account"
-	"github.com/polyscone/tofu/web/pwa/ui"
+	"github.com/polyscone/tofu/web/site/ui"
 )
 
-func SignedInHandler(h *ui.Handler) any {
+func AccountSignedInHandler(h *ui.Handler) any {
 	return func(ctx context.Context, evt account.SignedIn) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
