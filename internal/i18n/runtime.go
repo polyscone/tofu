@@ -182,7 +182,7 @@ func NewValue(v any) (Value, error) {
 		return NewValues(v)
 
 	default:
-		return nil, fmt.Errorf("could not convert %T to i18n.Value", v)
+		return NewString(fmt.Sprintf("%v", v)), nil
 	}
 }
 
