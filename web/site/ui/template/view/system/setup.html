@@ -19,6 +19,13 @@
 
 			{{.T "p" "site.system.setup.account_section_description"}}
 
+			<label>{{.T "site.system.config.smtp_envelope_from_label"}}</label>
+			{{if .Vars.SMTPEnvelopeFrom}}
+				<input type="text" value="{{.Vars.SMTPEnvelopeFrom}}" disabled>
+			{{else}}
+				<input type="text" value="{{.T "site.system.config.smtp_envelope_from_unset"}}" disabled>
+			{{end}}
+
 			{{template "com.form.email" .WithProps
 				"Label" (.T "site.system.setup.email_label")
 				"Name" "email"

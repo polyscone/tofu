@@ -1057,6 +1057,8 @@
 				"title": "Setup",
 
 				"email_section_title": "Email",
+				"smtp_envelope_from_label": "SMTP envelope from email",
+				"smtp_envelope_from_unset": "Unset (dynamic)",
 				"system_email_label": "System email",
 				"system_email_hint": "from address in system emails",
 				"security_email_label": "Security email",
@@ -1078,6 +1080,8 @@
 				"title": "System configuration",
 
 				"email_section_title": "Email",
+				"smtp_envelope_from_label": "SMTP envelope from email",
+				"smtp_envelope_from_unset": "Unset (dynamic)",
 				"system_email_label": "System email",
 				"system_email_hint": "from address in system emails",
 				"security_email_label": "Security email",

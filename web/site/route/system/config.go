@@ -9,6 +9,7 @@ import (
 	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/guard"
+	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
@@ -24,7 +25,9 @@ func RegisterConfigHandlers(h *ui.Handler, mux *router.ServeMux) {
 
 func systemConfigGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.View(w, r, http.StatusOK, "system/config", nil)
+		h.HTML.View(w, r, http.StatusOK, "system/config", handler.Vars{
+			"SMTPEnvelopeFrom": h.SMTPEnvelopeFrom,
+		})
 	}
 }
 
