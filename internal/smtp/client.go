@@ -17,6 +17,7 @@ import (
 var client = http.Client{Timeout: 10 * time.Second}
 
 type ClientConfig struct {
+	EnvelopeFrom string
 	ResendAPIKey string
 }
 
@@ -49,7 +50,7 @@ func NewClient(logger *slog.Logger, config ClientConfigReader) (*Client, error) 
 	return c, nil
 }
 
-func (c *Client) send(ctx context.Context, msgs []Msg) error {
+func (c *Client) send(ctx context.Context, msgs []Msg, envelopeFrom string) error {
 	var errs errsx.Slice
 SendLoop:
 	for _, msg := range msgs {
@@ -120,7 +121,8 @@ SendLoop:
 			}
 		}
 
-		if err := email.Send("localhost:25", nil); err != nil {
+		config := Config{EnvelopeFrom: envelopeFrom}
+		if err := email.Send("localhost:25", &config); err != nil {
 			errs.Append(fmt.Errorf("send: %w", err))
 		}
 	}
@@ -265,7 +267,7 @@ func (c *Client) SendEmail(ctx context.Context, msgs ...Msg) error {
 	}
 
 	attempts++
-	if err := c.send(ctx, msgs); err != nil {
+	if err := c.send(ctx, msgs, config.EnvelopeFrom); err != nil {
 		errs.Append(fmt.Errorf("email message: %w", err))
 	}
 

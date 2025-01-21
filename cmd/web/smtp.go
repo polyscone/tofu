@@ -18,5 +18,10 @@ func (c *smtpConfig) Read(ctx context.Context) (*smtp.ClientConfig, error) {
 		return nil, fmt.Errorf("find config: %w", err)
 	}
 
-	return &smtp.ClientConfig{ResendAPIKey: config.ResendAPIKey}, nil
+	smtpClientConfig := smtp.ClientConfig{
+		EnvelopeFrom: opts.smtp.envelopeFrom,
+		ResendAPIKey: config.ResendAPIKey,
+	}
+
+	return &smtpClientConfig, nil
 }
