@@ -34,7 +34,9 @@
 				<td><a href="mailto:{{.Email}}">{{.Email}}</a></td>
 				<td>
 					{{if .HasSignedIn}}
-						{{$.T "site.account.user_management.list.last_signed_in_ago" "time_since_last_signed_in" (TimeSince .LastSignedInAt)}}
+						<time datetime="{{FormatTime .LastSignedInAt "RFC3339"}}" title="{{FormatTime .LastSignedInAt "2006-01-02 15:04 -07:00"}}">
+							{{$.T "site.account.user_management.list.last_signed_in_ago" "time_since_last_signed_in" (TimeSince .LastSignedInAt)}}
+						</time>
 						({{$.T .LastSignedInMethod}})
 					{{end}}
 				</td>
