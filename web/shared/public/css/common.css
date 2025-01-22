@@ -40,6 +40,8 @@
 
 	--clr-focus-400: hsl(59, 100%, 95%);
 
+	--clr-disabled-400: hsl(0, 0%, 93%);
+
 	--clr-invalid-100: hsl(0, 100%, 95%);
 	--clr-invalid-400: hsl(0, 100%, 50%);
 
@@ -214,6 +216,11 @@
 
 	:is(input, textarea):placeholder-shown {
 		background: var(--clr-white-400);
+	}
+
+	[disabled] :is(input, textarea, select),
+	input[disabled], textarea[disabled], select[disabled] {
+		background: var(--clr-disabled-400);
 	}
 
 	label.required::after {
