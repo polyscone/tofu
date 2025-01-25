@@ -8,6 +8,7 @@ import (
 	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/auth"
+	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
@@ -50,7 +51,9 @@ func (g updateEmailsGuard) CanUpdateEmails() bool {
 
 func systemSetupGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		h.HTML.View(w, r, http.StatusOK, "system/setup", nil)
+		h.HTML.View(w, r, http.StatusOK, "system/setup", handler.Vars{
+			"SMTPEnvelopeFrom": h.SMTPEnvelopeFrom,
+		})
 	}
 }
 
