@@ -21,7 +21,7 @@
 		{{end}}
 
 		<form class="bag inline-flex">
-			{{template "com.form.query_params" .WithProps "Skip" (Slice "size")}}
+			{{template "com.form.query_params" .WithProps "Skip" (Slice "size" "page")}}
 
 			<select name="size">
 				{{range $i := Ints 1 11}}
