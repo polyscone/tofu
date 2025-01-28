@@ -122,34 +122,34 @@ func (h *Handler) PathQuery(r *http.Request, name string, paramArgPairs ...any) 
 	return h.Path(name, paramArgPairs...) + q
 }
 
-func (h *Handler) AddFlashf(ctx context.Context, format string, a ...any) {
+func (h *Handler) AddFlashf(ctx context.Context, message i18n.Message) {
 	flash := h.Session.Flash(ctx)
 
-	flash = append(flash, fmt.Sprintf(format, a...))
+	flash = append(flash, h.T(ctx, message))
 
 	h.Session.SetFlash(ctx, flash)
 }
 
-func (h *Handler) AddFlashWarningf(ctx context.Context, format string, a ...any) {
+func (h *Handler) AddFlashWarningf(ctx context.Context, message i18n.Message) {
 	flash := h.Session.FlashWarning(ctx)
 
-	flash = append(flash, fmt.Sprintf(format, a...))
+	flash = append(flash, h.T(ctx, message))
 
 	h.Session.SetFlashWarning(ctx, flash)
 }
 
-func (h *Handler) AddFlashImportantf(ctx context.Context, format string, a ...any) {
+func (h *Handler) AddFlashImportantf(ctx context.Context, message i18n.Message) {
 	flash := h.Session.FlashImportant(ctx)
 
-	flash = append(flash, fmt.Sprintf(format, a...))
+	flash = append(flash, h.T(ctx, message))
 
 	h.Session.SetFlashImportant(ctx, flash)
 }
 
-func (h *Handler) AddFlashErrorf(ctx context.Context, format string, a ...any) {
+func (h *Handler) AddFlashErrorf(ctx context.Context, message i18n.Message) {
 	flash := h.Session.FlashError(ctx)
 
-	flash = append(flash, fmt.Sprintf(format, a...))
+	flash = append(flash, h.T(ctx, message))
 
 	h.Session.SetFlashError(ctx, flash)
 }
