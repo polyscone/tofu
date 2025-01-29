@@ -81,11 +81,6 @@ func (s *Service) signInWithGoogle(ctx context.Context, email string, behavior G
 		}
 
 		if err := s.repo.AddUser(ctx, user); err != nil {
-			var conflict *app.ConflictError
-			if errors.As(err, &conflict) {
-				return nil, false, fmt.Errorf("add user: %w: %w", app.ErrConflict, conflict)
-			}
-
 			return nil, false, fmt.Errorf("add user: %w", err)
 		}
 

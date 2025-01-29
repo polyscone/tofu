@@ -2,7 +2,6 @@ package account
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/polyscone/tofu/app"
@@ -79,11 +78,6 @@ func (s *Service) UpdateRole(ctx context.Context, guard UpdateRoleGuard, input U
 	role.ChangePermissions(data.Permissions)
 
 	if err := s.repo.SaveRole(ctx, role); err != nil {
-		var conflict *app.ConflictError
-		if errors.As(err, &conflict) {
-			return nil, fmt.Errorf("save role: %w: %w", app.ErrConflict, conflict)
-		}
-
 		return nil, fmt.Errorf("save role: %w", err)
 	}
 
