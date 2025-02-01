@@ -34,7 +34,7 @@ func NewAccountRepo(ctx context.Context, db *DB, signInThrottleTTL time.Duration
 	r := AccountRepo{db: db}
 
 	// Background goroutine to clean up stale sign in attempt logs
-	background.Go(func() {
+	background.GoUnawaited(func() {
 		ctx := context.Background()
 
 		for range time.Tick(5 * time.Minute) {

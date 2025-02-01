@@ -49,7 +49,7 @@ func NewWebRepo(ctx context.Context, db *DB, sessionTTL time.Duration) (*WebRepo
 	}
 
 	// Background goroutine to clean up expired sessions
-	background.Go(func() {
+	background.GoUnawaited(func() {
 		ctx := context.Background()
 
 		for range time.Tick(5 * time.Minute) {
@@ -61,7 +61,7 @@ func NewWebRepo(ctx context.Context, db *DB, sessionTTL time.Duration) (*WebRepo
 	})
 
 	// Background goroutine to clean up expired tokens
-	background.Go(func() {
+	background.GoUnawaited(func() {
 		ctx := context.Background()
 
 		for range time.Tick(5 * time.Minute) {
@@ -73,7 +73,7 @@ func NewWebRepo(ctx context.Context, db *DB, sessionTTL time.Duration) (*WebRepo
 	})
 
 	// Background goroutine to clean up old domain events
-	background.Go(func() {
+	background.GoUnawaited(func() {
 		ctx := context.Background()
 
 		for range time.Tick(1 * time.Hour) {

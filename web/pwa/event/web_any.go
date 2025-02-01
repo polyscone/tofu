@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/internal/event"
 	"github.com/polyscone/tofu/web/pwa/ui"
 )
@@ -22,7 +23,7 @@ func WebAnyHandler(h *ui.Handler) event.AnyHandler {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
-		go func() {
+		background.Go(func() {
 			b, err := json.Marshal(data)
 			if err == nil {
 				const kind = "pwa"
@@ -35,7 +36,7 @@ func WebAnyHandler(h *ui.Handler) event.AnyHandler {
 					logger.Error("web any: add domain event", "error", err)
 				}
 			}
-		}()
+		})
 	}
 }
 

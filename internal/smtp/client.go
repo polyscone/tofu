@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/internal/errsx"
 )
 
@@ -211,11 +212,12 @@ func (c *Client) processResendAPIQueue() {
 	for resendMsg := range c.resend {
 		<-throttle.C
 
-		go func() {
+		background.Go(func() {
 			resendMsg.errs <- c.sendResendAPI(context.Background(), resendMsg.msg, resendMsg.apiKey)
 
 			resendMsg.wg.Done()
-		}()
+		})
+
 	}
 }
 
@@ -233,11 +235,11 @@ func (c *Client) enqueueResendAPI(ctx context.Context, msgs []Msg, apiKey string
 		}
 	}
 
-	go func() {
+	background.Go(func() {
 		wg.Wait()
 
 		close(errs)
-	}()
+	})
 
 	var joined errsx.Slice
 	for err := range errs {

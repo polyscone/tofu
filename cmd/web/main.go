@@ -22,6 +22,7 @@ import (
 	_ "time/tzdata"
 
 	"github.com/polyscone/tofu/app"
+	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/internal/size"
 	"github.com/polyscone/tofu/web"
 )
@@ -380,6 +381,8 @@ func main() {
 	if err := srv.Shutdown(ctxShutdown); err != nil {
 		slog.Error("shut down", "error", err)
 	}
+
+	background.Wait()
 
 	closeCache()
 }
