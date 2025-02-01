@@ -4,14 +4,35 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 )
 
 const (
 	anyKey      = ".memorybroker.all.any"
 	fallbackKey = ".memorybroker.fallback.any"
 
-	handlerParamCount = 2
+	handlerParamCount = 3 // (_ context.Context, data any, createdAt time.Time)
 )
+
+type MemoryEvent struct {
+	data      any
+	createdAt time.Time
+}
+
+func NewMemoryEvent(data any) MemoryEvent {
+	return MemoryEvent{
+		data:      data,
+		createdAt: time.Now(),
+	}
+}
+
+func (e MemoryEvent) Data() any {
+	return e.data
+}
+
+func (e MemoryEvent) CreatedAt() time.Time {
+	return e.createdAt
+}
 
 // MemoryBroker implements an in-memory event broker.
 type MemoryBroker struct {
@@ -39,6 +60,14 @@ func (mb *MemoryBroker) Listen(handler Handler) {
 		panic(fmt.Sprintf("handler must have %v returns; got %v", handlerReturnCount, got))
 	}
 
+	if want, got := "context.Context", listenerFuncType.In(0).String(); want != got {
+		panic(fmt.Sprintf("handler's [0] parameter must be %q; got %q", want, got))
+	}
+
+	if want, got := "time.Time", listenerFuncType.In(2).String(); want != got {
+		panic(fmt.Sprintf("handler's [2] parameter must be %q; got %q", want, got))
+	}
+
 	const handlerKeyParamIndex = 1
 	key := eventKey(listenerFuncType.In(handlerKeyParamIndex))
 	mb.handlers[key] = append(mb.handlers[key], reflect.ValueOf(handler))
@@ -51,6 +80,14 @@ func (mb *MemoryBroker) ListenAny(handler AnyHandler) {
 
 	if got := listenerFuncType.NumIn(); handlerParamCount != got {
 		panic(fmt.Sprintf("handler must have %v parameters; got %v", handlerParamCount, got))
+	}
+
+	if want, got := "context.Context", listenerFuncType.In(0).String(); want != got {
+		panic(fmt.Sprintf("handler's [0] parameter must be %q; got %q", want, got))
+	}
+
+	if want, got := "time.Time", listenerFuncType.In(2).String(); want != got {
+		panic(fmt.Sprintf("handler's [2] parameter must be %q; got %q", want, got))
 	}
 
 	mb.handlers[anyKey] = append(mb.handlers[anyKey], reflect.ValueOf(handler))
@@ -66,6 +103,14 @@ func (mb *MemoryBroker) ListenFallback(handler FallbackHandler) {
 		panic(fmt.Sprintf("handler must have %v parameters; got %v", handlerParamCount, got))
 	}
 
+	if want, got := "context.Context", listenerFuncType.In(0).String(); want != got {
+		panic(fmt.Sprintf("handler's [0] parameter must be %q; got %q", want, got))
+	}
+
+	if want, got := "time.Time", listenerFuncType.In(2).String(); want != got {
+		panic(fmt.Sprintf("handler's [2] parameter must be %q; got %q", want, got))
+	}
+
 	mb.handlers[fallbackKey] = append(mb.handlers[fallbackKey], reflect.ValueOf(handler))
 }
 
@@ -79,13 +124,19 @@ func (mb *MemoryBroker) Clear() {
 // In the case where no specific handler for the event type is listening it will
 // dispatch the event to any fallback handlers.
 // If no fallback handlers are registered then the event is ignored.
-func (mb *MemoryBroker) Dispatch(ctx context.Context, evt Event) {
-	args := []reflect.Value{
-		reflect.ValueOf(ctx),
-		reflect.ValueOf(evt),
+func (mb *MemoryBroker) Dispatch(ctx context.Context, data any) {
+	evt, ok := data.(Event)
+	if !ok {
+		evt = NewMemoryEvent(data)
 	}
 
-	key := eventKey(reflect.TypeOf(evt))
+	data = evt.Data()
+	key := eventKey(reflect.TypeOf(data))
+	args := []reflect.Value{
+		reflect.ValueOf(ctx),
+		reflect.ValueOf(data),
+		reflect.ValueOf(evt.CreatedAt()),
+	}
 
 	if len(mb.handlers[key]) == 0 {
 		key = fallbackKey
@@ -127,7 +178,12 @@ type MemoryQueue struct {
 }
 
 // Enqueue adds a new event to the end of the event queue.
-func (q *MemoryQueue) Enqueue(evt Event) {
+func (q *MemoryQueue) Enqueue(data any) {
+	evt, ok := data.(Event)
+	if !ok {
+		evt = NewMemoryEvent(data)
+	}
+
 	q.events = append(q.events, evt)
 }
 

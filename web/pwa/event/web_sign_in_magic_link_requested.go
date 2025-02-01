@@ -2,6 +2,7 @@ package event
 
 import (
 	"context"
+	"time"
 
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/handler"
@@ -9,7 +10,7 @@ import (
 )
 
 func WebSignInMagicLinkRequestedHandler(h *ui.Handler) any {
-	return func(ctx context.Context, evt event.SignInMagicLinkRequested) {
+	return func(ctx context.Context, data event.SignInMagicLinkRequested, createdAt time.Time) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
@@ -20,7 +21,7 @@ func WebSignInMagicLinkRequestedHandler(h *ui.Handler) any {
 			return
 		}
 
-		tok, err := h.Repo.Web.AddSignInMagicLinkToken(ctx, evt.Email, evt.TTL)
+		tok, err := h.Repo.Web.AddSignInMagicLinkToken(ctx, data.Email, data.TTL)
 		if err != nil {
 			logger.Error("sign in magic link: add sign in magic link token", "error", err)
 
@@ -29,9 +30,9 @@ func WebSignInMagicLinkRequestedHandler(h *ui.Handler) any {
 
 		vars := handler.Vars{
 			"Token": tok,
-			"TTL":   evt.TTL,
+			"TTL":   data.TTL,
 		}
-		if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "sign_in_magic_link", vars); err != nil {
+		if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "sign_in_magic_link", vars); err != nil {
 			logger.Error("sign in magic link: send email", "error", err)
 		}
 	}

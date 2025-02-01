@@ -5,32 +5,33 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/polyscone/tofu/internal/event"
 )
 
 type EventLog struct {
-	got  []event.Event
-	want []event.Event
+	got  []any
+	want []any
 }
 
 func NewEventLog(broker event.Broker) *EventLog {
 	var log EventLog
 
 	broker.Clear()
-	broker.ListenAny(func(ctx context.Context, evt event.Event) {
-		log.push(evt)
+	broker.ListenAny(func(ctx context.Context, data any, createdAt time.Time) {
+		log.push(data)
 	})
 
 	return &log
 }
 
-func (e *EventLog) push(evt event.Event) {
-	e.got = append(e.got, evt)
+func (e *EventLog) push(data any) {
+	e.got = append(e.got, data)
 }
 
-func (e *EventLog) Expect(evt event.Event) {
-	e.want = append(e.want, evt)
+func (e *EventLog) Expect(data any) {
+	e.want = append(e.want, data)
 }
 
 func (e *EventLog) Check(t *testing.T) bool {
@@ -38,8 +39,8 @@ func (e *EventLog) Check(t *testing.T) bool {
 
 	if want, got := len(e.want), len(e.got); want != got {
 		var events string
-		for _, evt := range e.got {
-			events += fmt.Sprintf("  %#v\n", evt)
+		for _, data := range e.got {
+			events += fmt.Sprintf("  %#v\n", data)
 		}
 
 		events = strings.TrimSuffix(events, "\n")
@@ -62,13 +63,13 @@ func (e *EventLog) Check(t *testing.T) bool {
 	return true
 }
 
-func CheckEvents(t *testing.T, wantEvents, gotEvents []event.Event) bool {
+func CheckEvents(t *testing.T, wantEventData, gotEventData []event.Event) bool {
 	t.Helper()
 
-	if want, got := len(wantEvents), len(gotEvents); want != got {
+	if want, got := len(wantEventData), len(gotEventData); want != got {
 		var events string
-		for _, evt := range gotEvents {
-			events += fmt.Sprintf("  %#v\n", evt)
+		for _, data := range gotEventData {
+			events += fmt.Sprintf("  %#v\n", data)
 		}
 
 		events = strings.TrimSuffix(events, "\n")
@@ -78,8 +79,8 @@ func CheckEvents(t *testing.T, wantEvents, gotEvents []event.Event) bool {
 		return false
 	}
 
-	for i, want := range wantEvents {
-		got := gotEvents[i]
+	for i, want := range wantEventData {
+		got := gotEventData[i]
 
 		if want != got {
 			t.Errorf("\nfor event %v:\nwant %#v\ngot  %#v", i, want, got)

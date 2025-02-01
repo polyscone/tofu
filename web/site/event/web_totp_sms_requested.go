@@ -2,17 +2,18 @@ package event
 
 import (
 	"context"
+	"time"
 
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
 func WebTOTPSMSRequestedHandler(h *ui.Handler) any {
-	return func(ctx context.Context, evt event.TOTPSMSRequested) {
+	return func(ctx context.Context, data event.TOTPSMSRequested, createdAt time.Time) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
-		if err := h.SendTOTPSMS(evt.Email, evt.Tel); err != nil {
+		if err := h.SendTOTPSMS(data.Email, data.Tel); err != nil {
 			logger.Error("TOTP SMS requested: send TOTP SMS", "error", err)
 		}
 	}

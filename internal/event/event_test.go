@@ -5,6 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/polyscone/tofu/internal/event"
 )
@@ -23,40 +24,40 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		var wg sync.WaitGroup
 
 		var fooHandledCount atomic.Int64
-		broker.Listen(func(ctx context.Context, evt FooEvent) {
+		broker.Listen(func(ctx context.Context, data FooEvent, createdAt time.Time) {
 			defer wg.Done()
 
 			fooHandledCount.Add(1)
 
-			if got := evt; got == FooEvent(0) {
+			if got := data; got == FooEvent(0) {
 				t.Errorf("want non-zero event value; got %v", got)
 			}
 		})
 
 		var barHandledCount atomic.Int64
-		broker.Listen(func(ctx context.Context, evt BarEvent) {
+		broker.Listen(func(ctx context.Context, data BarEvent, createdAt time.Time) {
 			defer wg.Done()
 
 			barHandledCount.Add(1)
 
-			if got := evt; got == BarEvent(0) {
+			if got := data; got == BarEvent(0) {
 				t.Errorf("want non-zero event value; got %v", got)
 			}
 		})
 
 		var barPtrHandledCount atomic.Int64
-		broker.Listen(func(ctx context.Context, evt *BarEvent) {
+		broker.Listen(func(ctx context.Context, data *BarEvent, createdAt time.Time) {
 			defer wg.Done()
 
 			barPtrHandledCount.Add(1)
 
-			if got := *evt; got == BarEvent(0) {
+			if got := *data; got == BarEvent(0) {
 				t.Errorf("want non-zero event value; got %v", got)
 			}
 		})
 
-		broker.ListenFallback(func(ctx context.Context, evt event.Event) {
-			t.Errorf("unexpected %T was dispatched", evt)
+		broker.ListenFallback(func(ctx context.Context, data any, createdAt time.Time) {
+			t.Errorf("unexpected %T was dispatched", data)
 		})
 
 		barEvent := BarEvent(3)
@@ -117,23 +118,23 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 			t.Errorf("want %T to be unhandled", FooEvent(0))
 		}
 
-		broker.Listen(func(ctx context.Context, evt FooEvent) {
+		broker.Listen(func(ctx context.Context, data FooEvent, createdAt time.Time) {
 			defer wg.Done()
 
 			fooHandledCount.Add(1)
 
-			if got := evt; got == FooEvent(0) {
+			if got := data; got == FooEvent(0) {
 				t.Errorf("want non-zero event value; got %v", got)
 			}
 		})
 
-		broker.ListenAny(func(ctx context.Context, evt event.Event) {
-			if evt, ok := evt.(FooEvent); ok {
+		broker.ListenAny(func(ctx context.Context, data any, createdAt time.Time) {
+			if data, ok := data.(FooEvent); ok {
 				defer wg.Done()
 
 				fooHandledCount.Add(1)
 
-				if got := evt; got == FooEvent(0) {
+				if got := data; got == FooEvent(0) {
 					t.Errorf("want non-zero event value; got %v", got)
 				}
 			}
@@ -163,7 +164,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		}()
 
 		broker := newBroker()
-		broker.Listen(func(ctx context.Context) {})
+		broker.Listen(func(ctx context.Context, createdAt time.Time) {})
 	})
 
 	t.Run("invalid handlers with too many paramters", func(t *testing.T) {
@@ -174,7 +175,7 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		}()
 
 		broker := newBroker()
-		broker.Listen(func(ctx context.Context, x, y int) {})
+		broker.Listen(func(ctx context.Context, x, y int, createdAt time.Time) {})
 	})
 
 	t.Run("invalid handlers with returns", func(t *testing.T) {
@@ -185,6 +186,6 @@ func runTests(t *testing.T, newBroker func() event.Broker, newQueue func() event
 		}()
 
 		broker := newBroker()
-		broker.Listen(func(ctx context.Context, i int) error { return nil })
+		broker.Listen(func(ctx context.Context, i int, createdAt time.Time) error { return nil })
 	})
 }

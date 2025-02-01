@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/web/handler"
@@ -10,7 +11,7 @@ import (
 )
 
 func AccountActivatedHandler(h *ui.Handler) any {
-	return func(ctx context.Context, evt account.Activated) {
+	return func(ctx context.Context, data account.Activated, createdAt time.Time) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
@@ -22,10 +23,10 @@ func AccountActivatedHandler(h *ui.Handler) any {
 		}
 
 		vars := handler.Vars{
-			"HasPassword": evt.HasPassword,
+			"HasPassword": data.HasPassword,
 			"SignInURL":   fmt.Sprintf("%v://%v%v", h.Scheme, h.Host, h.Path("account.sign_in")),
 		}
-		if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "account_activated", vars); err != nil {
+		if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "account_activated", vars); err != nil {
 			logger.Error("activated: send email", "error", err)
 		}
 	}

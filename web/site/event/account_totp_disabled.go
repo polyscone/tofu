@@ -2,13 +2,14 @@ package event
 
 import (
 	"context"
+	"time"
 
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
 func AccountTOTPDisabledHandler(h *ui.Handler) any {
-	return func(ctx context.Context, evt account.TOTPDisabled) {
+	return func(ctx context.Context, data account.TOTPDisabled, createdAt time.Time) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
@@ -19,7 +20,7 @@ func AccountTOTPDisabledHandler(h *ui.Handler) any {
 			return
 		}
 
-		if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "totp_disabled", nil); err != nil {
+		if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "totp_disabled", nil); err != nil {
 			logger.Error("disabled TOTP: send email", "error", err)
 		}
 	}

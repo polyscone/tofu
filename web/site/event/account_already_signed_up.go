@@ -11,11 +11,11 @@ import (
 )
 
 func AccountAlreadySignedUpHandler(h *ui.Handler) any {
-	return func(ctx context.Context, evt account.AlreadySignedUp) {
+	return func(ctx context.Context, data account.AlreadySignedUp, createdAt time.Time) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
-		tok, err := h.Repo.Web.AddResetPasswordToken(ctx, evt.Email, 2*time.Hour)
+		tok, err := h.Repo.Web.AddResetPasswordToken(ctx, data.Email, 2*time.Hour)
 		if err != nil {
 			logger.Error("already signed up: add reset password token", "error", err)
 
@@ -31,11 +31,11 @@ func AccountAlreadySignedUpHandler(h *ui.Handler) any {
 
 		vars := handler.Vars{
 			"Token":          tok,
-			"HasPassword":    evt.HasPassword,
+			"HasPassword":    data.HasPassword,
 			"NewPasswordURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.reset_password.new_password"), tok),
 			"SignInURL":      fmt.Sprintf("%v://%v%v", h.Scheme, h.Host, h.Path("account.sign_in")),
 		}
-		if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "sign_up_reset_password", vars); err != nil {
+		if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "sign_up_reset_password", vars); err != nil {
 			logger.Error("already signed up: send email", "error", err)
 		}
 	}

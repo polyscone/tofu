@@ -2,17 +2,18 @@ package event
 
 import (
 	"context"
+	"time"
 
 	"github.com/polyscone/tofu/app/account"
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
 func AccountSignedInHandler(h *ui.Handler) any {
-	return func(ctx context.Context, evt account.SignedIn) {
+	return func(ctx context.Context, data account.SignedIn, createdAt time.Time) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
-		user, err := h.Repo.Account.FindUserByEmail(ctx, evt.Email)
+		user, err := h.Repo.Account.FindUserByEmail(ctx, data.Email)
 		if err != nil {
 			logger.Error("signed in: find user by email", "error", err)
 

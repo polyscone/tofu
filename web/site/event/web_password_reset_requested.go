@@ -13,7 +13,7 @@ import (
 )
 
 func WebPasswordResetRequestedHandler(h *ui.Handler) any {
-	return func(ctx context.Context, evt event.PasswordResetRequested) {
+	return func(ctx context.Context, data event.PasswordResetRequested, createdAt time.Time) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
@@ -24,10 +24,10 @@ func WebPasswordResetRequestedHandler(h *ui.Handler) any {
 			return
 		}
 
-		_, err = h.Repo.Account.FindUserByEmail(ctx, evt.Email)
+		_, err = h.Repo.Account.FindUserByEmail(ctx, data.Email)
 		switch {
 		case err == nil:
-			tok, err := h.Repo.Web.AddResetPasswordToken(ctx, evt.Email, 2*time.Hour)
+			tok, err := h.Repo.Web.AddResetPasswordToken(ctx, data.Email, 2*time.Hour)
 			if err != nil {
 				logger.Error("reset password: add reset password token", "error", err)
 
@@ -38,7 +38,7 @@ func WebPasswordResetRequestedHandler(h *ui.Handler) any {
 				"Token":    tok,
 				"ResetURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.reset_password.new_password"), tok),
 			}
-			if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "reset_password", vars); err != nil {
+			if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "reset_password", vars); err != nil {
 				logger.Error("reset password: send email", "error", err)
 			}
 
@@ -47,7 +47,7 @@ func WebPasswordResetRequestedHandler(h *ui.Handler) any {
 				vars := handler.Vars{
 					"SignUpURL": fmt.Sprintf("%v://%v%v", h.Scheme, h.Host, h.Path("account.sign_up")),
 				}
-				if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "reset_password_sign_up", vars); err != nil {
+				if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "reset_password_sign_up", vars); err != nil {
 					logger.Error("reset password: send email", "error", err)
 				}
 			}

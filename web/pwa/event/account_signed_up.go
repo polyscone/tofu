@@ -10,11 +10,11 @@ import (
 )
 
 func AccountSignedUpHandler(h *ui.Handler) any {
-	return func(ctx context.Context, evt account.SignedUp) {
+	return func(ctx context.Context, data account.SignedUp, createdAt time.Time) {
 		// Sign ups through magic links and third-party services like Google/Facebook are
 		// implicitly verified due to the fact they signed in with that service
 		// so we don't need to verify any email addresses
-		switch evt.Method {
+		switch data.Method {
 		case account.SignUpMethodMagicLink, account.SignUpMethodGoogle, account.SignUpMethodFacebook:
 			return
 		}
@@ -22,7 +22,7 @@ func AccountSignedUpHandler(h *ui.Handler) any {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
-		tok, err := h.Repo.Web.AddEmailVerificationToken(ctx, evt.Email, 2*time.Hour)
+		tok, err := h.Repo.Web.AddEmailVerificationToken(ctx, data.Email, 2*time.Hour)
 		if err != nil {
 			logger.Error("signed up: add verification token", "error", err)
 
@@ -37,7 +37,7 @@ func AccountSignedUpHandler(h *ui.Handler) any {
 		}
 
 		vars := handler.Vars{"Token": tok}
-		if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "verify_account", vars); err != nil {
+		if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "verify_account", vars); err != nil {
 			logger.Error("signed up: send email", "error", err)
 		}
 	}

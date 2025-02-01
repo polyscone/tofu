@@ -11,11 +11,11 @@ import (
 )
 
 func AccountInvitedHandler(h *ui.Handler) any {
-	return func(ctx context.Context, evt account.Invited) {
+	return func(ctx context.Context, data account.Invited, createdAt time.Time) {
 		ctx = context.WithoutCancel(ctx)
 		logger := h.Logger(ctx)
 
-		tok, err := h.Repo.Web.AddEmailVerificationToken(ctx, evt.Email, 48*time.Hour)
+		tok, err := h.Repo.Web.AddEmailVerificationToken(ctx, data.Email, 48*time.Hour)
 		if err != nil {
 			logger.Error("invited: add verification token", "error", err)
 
@@ -33,7 +33,7 @@ func AccountInvitedHandler(h *ui.Handler) any {
 			"Token":     tok,
 			"VerifyURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.verify"), tok),
 		}
-		if err := h.SendEmail(ctx, config.SystemEmail, evt.Email, "invite_verify_account", vars); err != nil {
+		if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "invite_verify_account", vars); err != nil {
 			logger.Error("invited: send email", "error", err)
 		}
 	}
