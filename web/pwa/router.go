@@ -37,6 +37,7 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler
 	h.Broker.Listen(event.WebPasswordResetRequestedHandler(h))
 	h.Broker.Listen(event.WebSignInMagicLinkRequestedHandler(h))
 	h.Broker.Listen(event.WebTOTPSMSRequestedHandler(h))
+	h.Broker.ListenAny(event.WebAnyHandler(h))
 
 	routePrefix := mux.BasePath
 	timeoutErrorHandler := func(w http.ResponseWriter, r *http.Request, err error) {

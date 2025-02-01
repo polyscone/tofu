@@ -48,6 +48,8 @@ type WebReadWriter interface {
 	AddResetTOTPToken(ctx context.Context, email string, ttl time.Duration) (string, error)
 	FindResetTOTPTokenEmail(ctx context.Context, token string) (string, error)
 	ConsumeResetTOTPToken(ctx context.Context, token string) error
+
+	LogDomainEvent(ctx context.Context, kind, name, data string) error
 }
 
 type Svc struct {

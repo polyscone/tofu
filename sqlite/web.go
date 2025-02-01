@@ -72,6 +72,19 @@ func NewWebRepo(ctx context.Context, db *DB, sessionTTL time.Duration) (*WebRepo
 		}
 	})
 
+	// Background goroutine to clean up old domain events
+	background.Go(func() {
+		ctx := context.Background()
+
+		for range time.Tick(1 * time.Hour) {
+			const ttl = 60 * 24 * time.Hour
+			validWindowStart := time.Now().Add(-ttl).UTC()
+			if err := r.ClearOldDomainEvents(ctx, validWindowStart); err != nil {
+				slog.Error("web repo: clear old domain events", "error", err)
+			}
+		}
+	})
+
 	return &r, nil
 }
 
@@ -461,6 +474,42 @@ func (r *WebRepo) DeleteExpiredTokens(ctx context.Context, now time.Time) error 
 	return nil
 }
 
+func (r *WebRepo) LogDomainEvent(ctx context.Context, kind, name, data string) error {
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := r.createDomainEvent(ctx, tx, kind, name, data); err != nil {
+		return fmt.Errorf("create domain event: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
+}
+
+func (r *WebRepo) ClearOldDomainEvents(ctx context.Context, validWindowStart time.Time) error {
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := r.clearOldDomainEvents(ctx, tx, validWindowStart); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
+}
+
 func (r *WebRepo) findSessionDataByID(ctx context.Context, tx *Tx, id string) (session.Data, error) {
 	var data []byte
 	err := tx.QueryRowContext(ctx, `
@@ -679,6 +728,40 @@ func (r *WebRepo) deleteExpiredTokens(ctx context.Context, tx *Tx, now time.Time
 		where expires_at <= :now
 	`,
 		sql.Named("now", Time(now)),
+	)
+
+	return err
+}
+
+func (r *WebRepo) createDomainEvent(ctx context.Context, tx *Tx, kind, name, data string) error {
+	_, err := tx.ExecContext(ctx, `
+		insert into web__domain_events (
+			kind,
+			name,
+			data,
+			created_at
+		) values (
+			:kind,
+			:name,
+			:data,
+			:created_at
+		)
+	`,
+		sql.Named("kind", kind),
+		sql.Named("name", name),
+		sql.Named("data", data),
+		sql.Named("created_at", Time(tx.now.UTC())),
+	)
+
+	return err
+}
+
+func (r *WebRepo) clearOldDomainEvents(ctx context.Context, tx *Tx, validWindowStart time.Time) error {
+	_, err := tx.ExecContext(ctx, `
+		delete from web__domain_events
+		where created_at <= :valid_window_start
+	`,
+		sql.Named("valid_window_start", Time(validWindowStart)),
 	)
 
 	return err
