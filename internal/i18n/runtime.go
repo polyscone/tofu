@@ -214,13 +214,23 @@ func NewVars(pairs []any) (Vars, error) {
 	vars := make(Vars, len(pairs)/2)
 	for i := 0; i < len(pairs); i += 2 {
 		key := fmt.Sprintf("%v", pairs[i])
-		value, err := NewValue(pairs[i+1])
-		if err != nil {
+		value := pairs[i+1]
+
+		if err := vars.Set(key, value); err != nil {
 			return nil, fmt.Errorf("translation key %q: %w", key, err)
 		}
-
-		vars[key] = value
 	}
 
 	return vars, nil
+}
+
+func (v Vars) Set(key string, value any) error {
+	_value, err := NewValue(value)
+	if err != nil {
+		return fmt.Errorf("translation key %q: %w", key, err)
+	}
+
+	v[key] = _value
+
+	return nil
 }

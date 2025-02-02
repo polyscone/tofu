@@ -155,9 +155,18 @@ func (m Message) Error() string {
 }
 
 func (m Message) WithContext(context string) Message {
+	var vars Vars
+	if m.Vars != nil {
+		vars = maps.Clone(m.Vars)
+	} else {
+		vars = make(Vars)
+	}
+
+	vars.Set("context", context)
+
 	return Message{
 		Key:  m.Key,
-		Vars: maps.Clone(m.Vars),
+		Vars: vars,
 	}
 }
 
