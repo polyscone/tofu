@@ -32,7 +32,7 @@ func WebAnyHandler(h *ui.Handler) event.AnyHandler {
 				ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 				defer cancel()
 
-				if err := h.Repo.Web.LogDomainEvent(ctx, kind, name, string(b)); err != nil {
+				if err := h.Repo.Web.LogDomainEvent(ctx, kind, name, string(b), createdAt); err != nil {
 					logger.Error("web any: add domain event", "error", err)
 				}
 			}

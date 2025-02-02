@@ -474,14 +474,14 @@ func (r *WebRepo) DeleteExpiredTokens(ctx context.Context, now time.Time) error 
 	return nil
 }
 
-func (r *WebRepo) LogDomainEvent(ctx context.Context, kind, name, data string) error {
+func (r *WebRepo) LogDomainEvent(ctx context.Context, kind, name, data string, createdAt time.Time) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	if err := r.createDomainEvent(ctx, tx, kind, name, data); err != nil {
+	if err := r.createDomainEvent(ctx, tx, kind, name, data, createdAt); err != nil {
 		return fmt.Errorf("create domain event: %w", err)
 	}
 
@@ -733,7 +733,11 @@ func (r *WebRepo) deleteExpiredTokens(ctx context.Context, tx *Tx, now time.Time
 	return err
 }
 
-func (r *WebRepo) createDomainEvent(ctx context.Context, tx *Tx, kind, name, data string) error {
+func (r *WebRepo) createDomainEvent(ctx context.Context, tx *Tx, kind, name, data string, createdAt time.Time) error {
+	if createdAt.IsZero() {
+		createdAt = tx.now
+	}
+
 	_, err := tx.ExecContext(ctx, `
 		insert into web__domain_events (
 			kind,
@@ -750,7 +754,7 @@ func (r *WebRepo) createDomainEvent(ctx context.Context, tx *Tx, kind, name, dat
 		sql.Named("kind", kind),
 		sql.Named("name", name),
 		sql.Named("data", data),
-		sql.Named("created_at", Time(tx.now.UTC())),
+		sql.Named("created_at", Time(createdAt.UTC())),
 	)
 
 	return err
