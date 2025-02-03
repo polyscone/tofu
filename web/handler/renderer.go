@@ -211,6 +211,7 @@ type Templater interface {
 
 type ViewDataFunc func(data *ViewData) error
 type ViewVarsFunc func(r *http.Request) (Vars, error)
+type ViewErrorFunc func(w http.ResponseWriter, r *http.Request, message string, err error)
 type TemplateProcessFunc func(w http.ResponseWriter, r *http.Request)
 type TFunc func(ctx context.Context, message i18n.Message) string
 type WrapI18nRuntimeFunc func(rt i18n.Runtime) i18n.Runtime
@@ -225,6 +226,7 @@ type RendererConfig struct {
 	T                TFunc
 	WrapI18nRuntime  WrapI18nRuntimeFunc
 	Process          TemplateProcessFunc
+	ViewErrorFunc    ViewErrorFunc
 }
 
 type Renderer struct {
@@ -237,6 +239,7 @@ type Renderer struct {
 	t                TFunc
 	wrapI18nRuntime  WrapI18nRuntimeFunc
 	viewVarsFuncs    map[string]ViewVarsFunc
+	viewErrorFunc    ViewErrorFunc
 	process          TemplateProcessFunc
 }
 
@@ -251,6 +254,7 @@ func NewRenderer(config RendererConfig) *Renderer {
 		t:                config.T,
 		wrapI18nRuntime:  config.WrapI18nRuntime,
 		viewVarsFuncs:    make(map[string]ViewVarsFunc),
+		viewErrorFunc:    config.ViewErrorFunc,
 		process:          config.Process,
 	}
 }
@@ -338,7 +342,7 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 	if vars, ok := rn.viewVarsFuncs[view]; ok {
 		defaults, err := vars(r)
 		if err != nil {
-			return data, fmt.Errorf("vars: %w", err)
+			return data, fmt.Errorf("view vars func: %w", err)
 		}
 
 		data.Vars = data.Vars.Merge(defaults)
@@ -356,7 +360,15 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 
 	data, err := rn.data(ctx, r, status, view, nil)
 	if err != nil {
-		rn.h.Logger(ctx).Error("view data", "error", err)
+		const message = "view data"
+
+		if rn.viewErrorFunc != nil {
+			rn.viewErrorFunc(w, r, message, err)
+
+			return
+		}
+
+		rn.h.Logger(ctx).Error(message, "error", err)
 
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 
@@ -365,7 +377,15 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 
 	if dataFunc != nil {
 		if err := dataFunc(&data); err != nil {
-			rn.h.Logger(ctx).Error("execute view data func", "error", err)
+			const message = "execute view data func"
+
+			if rn.viewErrorFunc != nil {
+				rn.viewErrorFunc(w, r, message, err)
+
+				return
+			}
+
+			rn.h.Logger(ctx).Error(message, "error", err)
 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 
@@ -375,7 +395,15 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 
 	var buf bytes.Buffer
 	if err := tmpl.ExecuteTemplate(&buf, "view.master", data); err != nil {
-		rn.h.Logger(ctx).Error("execute view template", "error", err)
+		const message = "execute view template"
+
+		if rn.viewErrorFunc != nil {
+			rn.viewErrorFunc(w, r, message, err)
+
+			return
+		}
+
+		rn.h.Logger(ctx).Error(message, "error", err)
 
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 

@@ -65,6 +65,9 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		Process: func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("content-type", "text/html; charset=utf-8")
 		},
+		ViewErrorFunc: func(w http.ResponseWriter, r *http.Request, message string, err error) {
+			h.HTML.ErrorView(w, r, message, err, "error", nil)
+		},
 	})
 
 	return h
