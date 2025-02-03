@@ -1,8 +1,7 @@
 {{define "com.view.form.role_name" -}}
 
-{{template "com.form.input" .WithProps
+{{template "com.form.text" .WithProps
 	"Props" .Props
-	"Type" "text"
 	"Placeholder" (.T "com.view.form.role_name.default_placeholder")
 	"Pattern" `^[ -~]+$`
 	"MinLength" 1

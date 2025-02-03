@@ -1,0 +1,11 @@
+{{define "com.form.text" -}}
+
+{{$placeholder := or .Props.Placeholder .Props.Label}}
+
+{{template "com.form.input" .WithProps
+	"Props" .Props
+	"Type" "text"
+	"Placeholder" $placeholder
+}}
+
+{{- end}}

@@ -3,9 +3,8 @@
 {{$hint := or .Props.Hint (.T "com.form.passcode.default_hint")}}
 {{$placeholder := or .Props.Placeholder "123456"}}
 
-{{template "com.form.input" .WithProps
+{{template "com.form.text" .WithProps
 	"Props" .Props
-	"Type" "text"
 	"Hint" $hint
 	"Placeholder" $placeholder
 	"Pattern" `^\d+$`

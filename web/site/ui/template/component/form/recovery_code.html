@@ -4,9 +4,8 @@
 {{$hint := or .Props.Hint (.T "com.form.recovery_code.default_hint" "required_length" $requiredLength)}}
 {{$placeholder := or .Props.Placeholder "ABCD234567XYZ"}}
 
-{{template "com.form.input" .WithProps
+{{template "com.form.text" .WithProps
 	"Props" .Props
-	"Type" "text"
 	"Hint" $hint
 	"Placeholder" $placeholder
 	"Pattern" `^[A-Z2-7]+$`

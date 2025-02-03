@@ -52,8 +52,7 @@
 						</div>
 					{{end}}
 
-					{{template "com.form.input" .WithProps
-						"Type" "text"
+					{{template "com.form.text" .WithProps
 						"Label" (.T "site.account.user_management.suspend.reason_label")
 						"Name" "suspended-reason"
 						"Value" (.Form.GetOr "suspended-reason" .Vars.User.SuspendedReason)

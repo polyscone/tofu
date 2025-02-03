@@ -118,8 +118,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com.form.input" .WithProps
-				"Type" "text"
+			{{template "com.form.text" .WithProps
 				"Label" (.T "site.system.config.google_sign_in_client_id_label")
 				"Name" "google-sign-in-client-id"
 				"Value" (.Form.GetOr "google-sign-in-client-id" .Config.GoogleSignInClientID)
@@ -141,8 +140,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com.form.input" .WithProps
-				"Type" "text"
+			{{template "com.form.text" .WithProps
 				"Label" (.T "site.system.config.facebook_sign_in_app_id_label")
 				"Name" "facebook-sign-in-app-id"
 				"Value" (.Form.GetOr "facebook-sign-in-app-id" .Config.FacebookSignInAppID)
@@ -152,8 +150,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com.form.input" .WithProps
-				"Type" "text"
+			{{template "com.form.text" .WithProps
 				"Label" (.T "site.system.config.facebook_sign_in_secret_label")
 				"Name" "facebook-sign-in-app-secret"
 				"Value" (.Form.GetOr "facebook-sign-in-app-secret" .Config.FacebookSignInAppSecret)
@@ -167,8 +164,7 @@
 		<fieldset>
 			<legend>{{.T "site.system.config.resend_section_title"}}</legend>
 
-			{{template "com.form.input" .WithProps
-				"Type" "text"
+			{{template "com.form.text" .WithProps
 				"Label" (.T "site.system.config.resend_api_key_label")
 				"Hint" (.T "site.system.config.resend_api_key_hint" "required_length" 36)
 				"Name" "resend-api-key"
@@ -184,8 +180,7 @@
 		<fieldset>
 			<legend>{{.T "site.system.config.twilio_section_title"}}</legend>
 
-			{{template "com.form.input" .WithProps
-				"Type" "text"
+			{{template "com.form.text" .WithProps
 				"Label" (.T "site.system.config.twilio_sid_label")
 				"Hint" (.T "site.system.config.twilio_sid_hint" "required_length" 34)
 				"Name" "twilio-sid"
@@ -197,8 +192,7 @@
 				"Disabled" $disabled
 			}}
 
-			{{template "com.form.input" .WithProps
-				"Type" "text"
+			{{template "com.form.text" .WithProps
 				"Label" (.T "site.system.config.twilio_token_label")
 				"Hint" (.T "site.system.config.twilio_token_hint" "required_length" 32)
 				"Name" "twilio-token"

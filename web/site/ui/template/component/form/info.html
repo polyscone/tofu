@@ -1,0 +1,23 @@
+{{define "com.form.info" -}}
+
+{{$label := .Props.Label}}
+{{$hint := .Props.Hint}}
+{{$description := .Props.Description}}
+{{$placeholder := .Props.Placeholder}}
+{{$value := or .Props.Value $placeholder}}
+{{$required := .Props.Required}}
+
+{{if $label}}
+	<label{{if $required}} class="required"{{end}}>
+		{{$label}}
+		{{- if $hint}} <small>{{$hint}}</small>{{end -}}
+	</label>
+{{end}}
+
+{{range $paragraph := $description}}
+	<p>{{$paragraph}}</p>
+{{end}}
+
+<p>{{$value}}</p>
+
+{{- end}}
