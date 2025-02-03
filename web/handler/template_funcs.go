@@ -58,6 +58,7 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 		"MarshalJSON":        TmplMarshalJSON,
 		"MarshalIndentJSON":  TmplMarshalIndentJSON,
 		"UnescapeHTML":       TmplUnescapeHTML,
+		"UnescapeHTMLAttr":   TmplUnescapeHTMLAttr,
 		"UnescapeJS":         TmplUnescapeJS,
 		"Slice":              TmplSlice,
 		"SliceContains":      TmplSliceContains,
@@ -578,6 +579,10 @@ func TmplMarshalIndentJSON(value any, prefix, indent string) (string, error) {
 
 func TmplUnescapeHTML(s string) template.HTML {
 	return template.HTML(s)
+}
+
+func TmplUnescapeHTMLAttr(s string) template.HTMLAttr {
+	return template.HTMLAttr(s)
 }
 
 func TmplUnescapeJS(s string) template.JS {

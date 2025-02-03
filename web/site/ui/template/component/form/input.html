@@ -31,6 +31,7 @@
 {{$minlength := .Props.MinLength}}
 {{$maxlength := .Props.MaxLength}}
 {{$showmaxcount := .Props.ShowMaxCount}}
+{{$data := .Props.Data}}
 {{$errorkey := ReplaceAll $name "-" " "}}
 {{if ne $index nil}}
 	{{$errorkey = printf "%v %v" $errorkey $index}}
@@ -72,6 +73,9 @@
 	{{if $disabled}}disabled{{end}}
 	{{if $accept}}accept="{{$accept}}"{{end}}
 	{{if $error}}class="invalid"{{end}}
+	{{range $key, $value := $data -}}
+		data-{{UnescapeHTMLAttr $key}}="{{$value}}"
+	{{end}}
 >
 
 <div class="bag">
