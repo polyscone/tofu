@@ -18,8 +18,8 @@
 <table class="data-table">
 	<thead>
 		<tr>
-			<th>{{.T "site.account.user_management.list.email_heading"}} {{template "com.datatable.sort" .WithProps "Key" "email" "Direction" "desc"}}</th>
-			<th>{{.T "site.account.user_management.list.last_sign_in_heading"}} {{template "com.datatable.sort" .WithProps "Key" "last-sign-in"}}</th>
+			<th>{{.T "site.account.user_management.list.email_heading"}} {{template "com.datatable.sort" .WithProps "Key" "email" "Direction" "asc"}}</th>
+			<th>{{.T "site.account.user_management.list.last_sign_in_heading"}} {{template "com.datatable.sort" .WithProps "Key" "last-sign-in" "Direction" "desc"}}</th>
 			<th class="text-right no-wrap">
 				{{if .Passport.Account.CanInviteUsers}}
 					<a href="{{Path "account.management.user.new"}}{{.URL.Query.String}}">{{.T "site.account.user_management.list.invite_button"}}</a>

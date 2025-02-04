@@ -18,7 +18,7 @@
 <table class="data-table">
 	<thead>
 		<tr>
-			<th>{{.T "site.account.role_management.list.name_heading"}} {{template "com.datatable.sort" .WithProps "Key" "name" "Direction" "desc"}}</th>
+			<th>{{.T "site.account.role_management.list.name_heading"}} {{template "com.datatable.sort" .WithProps "Key" "name" "Direction" "asc"}}</th>
 			<th>{{.T "site.account.role_management.list.description_heading"}}</th>
 			<th class="text-right no-wrap">
 				{{if .Passport.Account.CanCreateRoles}}
