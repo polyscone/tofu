@@ -1,8 +1,9 @@
-package sqlite
+package repo
 
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -15,23 +16,27 @@ import (
 	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/i18n"
+	"github.com/polyscone/tofu/repo/sqlite"
 )
 
-type AccountRepo struct {
-	db *DB
+//go:embed "all:sqlite/migrations/account"
+var sqliteAccountMigrations embed.FS
+
+type Account struct {
+	db *sqlite.DB
 }
 
-func NewAccountRepo(ctx context.Context, db *DB, signInThrottleTTL time.Duration) (*AccountRepo, error) {
-	migrations, err := fs.Sub(migrations, "migrations/account")
+func NewAccount(ctx context.Context, db *sqlite.DB, signInThrottleTTL time.Duration) (*Account, error) {
+	migrations, err := fs.Sub(sqliteAccountMigrations, "sqlite/migrations/account")
 	if err != nil {
 		return nil, fmt.Errorf("initialize account migrations FS: %w", err)
 	}
 
-	if err := migrateFS(ctx, db, "account", migrations); err != nil {
+	if err := sqlite.MigrateFS(ctx, db, "account", migrations); err != nil {
 		return nil, fmt.Errorf("migrate account: %w", err)
 	}
 
-	r := AccountRepo{db: db}
+	r := Account{db: db}
 
 	// Background goroutine to clean up stale sign in attempt logs
 	background.GoUnawaited(func() {
@@ -48,7 +53,7 @@ func NewAccountRepo(ctx context.Context, db *DB, signInThrottleTTL time.Duration
 	return &r, nil
 }
 
-func (r *AccountRepo) FindUserByID(ctx context.Context, id int) (*account.User, error) {
+func (r *Account) FindUserByID(ctx context.Context, id int) (*account.User, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -89,7 +94,7 @@ func (r *AccountRepo) FindUserByID(ctx context.Context, id int) (*account.User, 
 	return user, nil
 }
 
-func (r *AccountRepo) FindUserByEmail(ctx context.Context, email string) (*account.User, error) {
+func (r *Account) FindUserByEmail(ctx context.Context, email string) (*account.User, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -130,7 +135,7 @@ func (r *AccountRepo) FindUserByEmail(ctx context.Context, email string) (*accou
 	return user, nil
 }
 
-func (r *AccountRepo) CountUsers(ctx context.Context) (int, error) {
+func (r *Account) CountUsers(ctx context.Context) (int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, fmt.Errorf("begin tx: %w", err)
@@ -142,7 +147,7 @@ func (r *AccountRepo) CountUsers(ctx context.Context) (int, error) {
 	return total, err
 }
 
-func (r *AccountRepo) CountUsersByRoleID(ctx context.Context, roleID int) (int, error) {
+func (r *Account) CountUsersByRoleID(ctx context.Context, roleID int) (int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, fmt.Errorf("begin tx: %w", err)
@@ -154,7 +159,7 @@ func (r *AccountRepo) CountUsersByRoleID(ctx context.Context, roleID int) (int, 
 	return total, err
 }
 
-func (r *AccountRepo) AddUser(ctx context.Context, user *account.User) error {
+func (r *Account) AddUser(ctx context.Context, user *account.User) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -172,14 +177,14 @@ func (r *AccountRepo) AddUser(ctx context.Context, user *account.User) error {
 	return nil
 }
 
-func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, page, size, sortTopID int, sorts []string, search string) ([]*account.User, int, error) {
+func (r *Account) FindUsersPageBySearch(ctx context.Context, page, size, sortTopID int, sorts []string, search string) ([]*account.User, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	limit, offset := pageLimitOffset(page, size)
+	limit, offset := sqlite.PageLimitOffset(page, size)
 
 	return r.findUsers(ctx, tx, account.UserFilter{
 		Search:    &search,
@@ -190,7 +195,7 @@ func (r *AccountRepo) FindUsersPageBySearch(ctx context.Context, page, size, sor
 	})
 }
 
-func (r *AccountRepo) SaveUser(ctx context.Context, user *account.User) error {
+func (r *Account) SaveUser(ctx context.Context, user *account.User) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -208,7 +213,7 @@ func (r *AccountRepo) SaveUser(ctx context.Context, user *account.User) error {
 	return nil
 }
 
-func (r *AccountRepo) FindSignInAttemptLogByEmail(ctx context.Context, email string) (*account.SignInAttemptLog, error) {
+func (r *Account) FindSignInAttemptLogByEmail(ctx context.Context, email string) (*account.SignInAttemptLog, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -218,7 +223,7 @@ func (r *AccountRepo) FindSignInAttemptLogByEmail(ctx context.Context, email str
 	return r.findSignInAttemptLog(ctx, tx, email)
 }
 
-func (r *AccountRepo) SaveSignInAttemptLog(ctx context.Context, log *account.SignInAttemptLog) error {
+func (r *Account) SaveSignInAttemptLog(ctx context.Context, log *account.SignInAttemptLog) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -242,7 +247,7 @@ func (r *AccountRepo) SaveSignInAttemptLog(ctx context.Context, log *account.Sig
 	return nil
 }
 
-func (r *AccountRepo) CountStaleSignInAttemptLogs(ctx context.Context, validWindowStart time.Time) (int, error) {
+func (r *Account) CountStaleSignInAttemptLogs(ctx context.Context, validWindowStart time.Time) (int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, fmt.Errorf("begin tx: %w", err)
@@ -254,7 +259,7 @@ func (r *AccountRepo) CountStaleSignInAttemptLogs(ctx context.Context, validWind
 	return total, err
 }
 
-func (r *AccountRepo) DeleteStaleSignInAttemptLogs(ctx context.Context, validWindowStart time.Time) error {
+func (r *Account) DeleteStaleSignInAttemptLogs(ctx context.Context, validWindowStart time.Time) error {
 	total, err := r.CountStaleSignInAttemptLogs(ctx, validWindowStart)
 	if err != nil {
 		return fmt.Errorf("count stale sign in attempt logs: %w", err)
@@ -280,7 +285,7 @@ func (r *AccountRepo) DeleteStaleSignInAttemptLogs(ctx context.Context, validWin
 	return nil
 }
 
-func (r *AccountRepo) FindRoleByID(ctx context.Context, roleID int) (*account.Role, error) {
+func (r *Account) FindRoleByID(ctx context.Context, roleID int) (*account.Role, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -304,7 +309,7 @@ func (r *AccountRepo) FindRoleByID(ctx context.Context, roleID int) (*account.Ro
 	return role, nil
 }
 
-func (r *AccountRepo) FindRoleByName(ctx context.Context, name string) (*account.Role, error) {
+func (r *Account) FindRoleByName(ctx context.Context, name string) (*account.Role, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -328,7 +333,7 @@ func (r *AccountRepo) FindRoleByName(ctx context.Context, name string) (*account
 	return role, nil
 }
 
-func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID int) ([]*account.Role, error) {
+func (r *Account) FindRolesByUserID(ctx context.Context, userID int) ([]*account.Role, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -340,7 +345,7 @@ func (r *AccountRepo) FindRolesByUserID(ctx context.Context, userID int) ([]*acc
 	return roles, err
 }
 
-func (r *AccountRepo) FindRoles(ctx context.Context, sortTopID int) ([]*account.Role, int, error) {
+func (r *Account) FindRoles(ctx context.Context, sortTopID int) ([]*account.Role, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, fmt.Errorf("begin tx: %w", err)
@@ -350,14 +355,14 @@ func (r *AccountRepo) FindRoles(ctx context.Context, sortTopID int) ([]*account.
 	return r.findRoles(ctx, tx, account.RoleFilter{SortTopID: sortTopID})
 }
 
-func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, page, size, sortTopID int, sorts []string, search string) ([]*account.Role, int, error) {
+func (r *Account) FindRolesPageBySearch(ctx context.Context, page, size, sortTopID int, sorts []string, search string) ([]*account.Role, int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, 0, fmt.Errorf("begin tx: %w", err)
 	}
 	defer tx.Rollback()
 
-	limit, offset := pageLimitOffset(page, size)
+	limit, offset := sqlite.PageLimitOffset(page, size)
 
 	return r.findRoles(ctx, tx, account.RoleFilter{
 		Search:    &search,
@@ -368,7 +373,7 @@ func (r *AccountRepo) FindRolesPageBySearch(ctx context.Context, page, size, sor
 	})
 }
 
-func (r *AccountRepo) AddRole(ctx context.Context, role *account.Role) error {
+func (r *Account) AddRole(ctx context.Context, role *account.Role) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -386,7 +391,7 @@ func (r *AccountRepo) AddRole(ctx context.Context, role *account.Role) error {
 	return nil
 }
 
-func (r *AccountRepo) SaveRole(ctx context.Context, role *account.Role) error {
+func (r *Account) SaveRole(ctx context.Context, role *account.Role) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -404,7 +409,7 @@ func (r *AccountRepo) SaveRole(ctx context.Context, role *account.Role) error {
 	return nil
 }
 
-func (r *AccountRepo) RemoveRole(ctx context.Context, roleID int) error {
+func (r *Account) RemoveRole(ctx context.Context, roleID int) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -422,7 +427,7 @@ func (r *AccountRepo) RemoveRole(ctx context.Context, roleID int) error {
 	return nil
 }
 
-func (r *AccountRepo) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([][]byte, error) {
+func (r *Account) FindRecoveryCodesByUserID(ctx context.Context, userID int) ([][]byte, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -439,7 +444,7 @@ var findUserSortKeyCols = map[string]string{
 	"last-sign-in": "u.last_signed_in_at",
 }
 
-func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.UserFilter) ([]*account.User, int, error) {
+func (r *Account) findUsers(ctx context.Context, tx *sqlite.Tx, filter account.UserFilter) ([]*account.User, int, error) {
 	var joins []string
 	var where []string
 	var args []any
@@ -465,7 +470,7 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 		sorts, args = append(sorts, "case u.id when ? then 0 else 1 end asc"), append(args, filter.SortTopID)
 	}
 
-	if s := newSorts(filter.Sorts, findUserSortKeyCols); len(s) > 0 {
+	if s := sqlite.NewSorts(filter.Sorts, findUserSortKeyCols); len(s) > 0 {
 		sorts = append(sorts, s...)
 	} else {
 		sorts = append(sorts, "tr.requested_at desc, u.email asc")
@@ -503,9 +508,9 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			count(*) over () as total
 		from account__users as u
 		`+strings.Join(joins, "\n")+`
-		`+whereSQL(where)+`
-		`+orderBySQL(sorts)+`
-		`+limitOffsetSQL(filter.Limit, filter.Offset),
+		`+sqlite.WhereSQL(where)+`
+		`+sqlite.OrderBySQL(sorts)+`
+		`+sqlite.LimitOffsetSQL(filter.Limit, filter.Offset),
 		args...,
 	)
 	if err != nil {
@@ -527,25 +532,25 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 			&user.TOTPKey,
 			&user.TOTPAlgorithm,
 			&user.TOTPDigits,
-			(*Duration)(&user.TOTPPeriod),
-			(*NullTime)(&user.TOTPVerifiedAt),
-			(*NullTime)(&user.TOTPActivatedAt),
-			(*NullTime)(&user.InvitedAt),
-			(*NullTime)(&user.SignedUpAt),
+			(*sqlite.Duration)(&user.TOTPPeriod),
+			(*sqlite.NullTime)(&user.TOTPVerifiedAt),
+			(*sqlite.NullTime)(&user.TOTPActivatedAt),
+			(*sqlite.NullTime)(&user.InvitedAt),
+			(*sqlite.NullTime)(&user.SignedUpAt),
 			&user.SignedUpSystem,
 			&user.SignedUpMethod,
-			(*NullTime)(&user.VerifiedAt),
-			(*NullTime)(&user.ActivatedAt),
-			(*NullTime)(&user.LastSignInAttemptAt),
+			(*sqlite.NullTime)(&user.VerifiedAt),
+			(*sqlite.NullTime)(&user.ActivatedAt),
+			(*sqlite.NullTime)(&user.LastSignInAttemptAt),
 			&user.LastSignInAttemptSystem,
 			&user.LastSignInAttemptMethod,
-			(*NullTime)(&user.LastSignedInAt),
+			(*sqlite.NullTime)(&user.LastSignedInAt),
 			&user.LastSignedInSystem,
 			&user.LastSignedInMethod,
-			(*NullTime)(&user.SuspendedAt),
+			(*sqlite.NullTime)(&user.SuspendedAt),
 			&user.SuspendedReason,
-			(*NullTime)(&user.TOTPResetRequestedAt),
-			(*NullTime)(&user.TOTPResetApprovedAt),
+			(*sqlite.NullTime)(&user.TOTPResetRequestedAt),
+			(*sqlite.NullTime)(&user.TOTPResetApprovedAt),
 			&total,
 		)
 		if err != nil {
@@ -561,7 +566,7 @@ func (r *AccountRepo) findUsers(ctx context.Context, tx *Tx, filter account.User
 	return users, total, nil
 }
 
-func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user *account.User) error {
+func (r *Account) attachUserRecoveryCodes(ctx context.Context, tx *sqlite.Tx, user *account.User) error {
 	hashedCodes, _, err := r.findHashedRecoveryCodes(ctx, tx, user.ID)
 	if err != nil {
 		return fmt.Errorf("find hashed recovery codes: %w", err)
@@ -576,7 +581,7 @@ func (r *AccountRepo) attachUserRecoveryCodes(ctx context.Context, tx *Tx, user 
 	return nil
 }
 
-func (r *AccountRepo) attachUserRoles(ctx context.Context, tx *Tx, user *account.User) error {
+func (r *Account) attachUserRoles(ctx context.Context, tx *sqlite.Tx, user *account.User) error {
 	roles, _, err := r.findRoles(ctx, tx, account.RoleFilter{UserID: &user.ID})
 	if err != nil {
 		return fmt.Errorf("find roles: %w", err)
@@ -587,7 +592,7 @@ func (r *AccountRepo) attachUserRoles(ctx context.Context, tx *Tx, user *account
 	return nil
 }
 
-func (r *AccountRepo) attachUserGrants(ctx context.Context, tx *Tx, user *account.User) error {
+func (r *Account) attachUserGrants(ctx context.Context, tx *sqlite.Tx, user *account.User) error {
 	grants, _, err := r.findPermissions(ctx, tx, permissionFilter{grantsUserID: &user.ID})
 	if err != nil {
 		return fmt.Errorf("find permissions: %w", err)
@@ -598,7 +603,7 @@ func (r *AccountRepo) attachUserGrants(ctx context.Context, tx *Tx, user *accoun
 	return nil
 }
 
-func (r *AccountRepo) attachUserDenials(ctx context.Context, tx *Tx, user *account.User) error {
+func (r *Account) attachUserDenials(ctx context.Context, tx *sqlite.Tx, user *account.User) error {
 	denials, _, err := r.findPermissions(ctx, tx, permissionFilter{denialsUserID: &user.ID})
 	if err != nil {
 		return fmt.Errorf("find permissions: %w", err)
@@ -609,7 +614,7 @@ func (r *AccountRepo) attachUserDenials(ctx context.Context, tx *Tx, user *accou
 	return nil
 }
 
-func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User) error {
+func (r *Account) createUser(ctx context.Context, tx *sqlite.Tx, user *account.User) error {
 	res, err := tx.ExecContext(ctx, `
 		insert into account__users (
 			email,
@@ -672,24 +677,24 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 		sql.Named("totp_key", user.TOTPKey),
 		sql.Named("totp_algorithm", user.TOTPAlgorithm),
 		sql.Named("totp_digits", user.TOTPDigits),
-		sql.Named("totp_period", Duration(user.TOTPPeriod)),
-		sql.Named("totp_verified_at", NullTime(user.TOTPVerifiedAt)),
-		sql.Named("totp_activated_at", NullTime(user.TOTPActivatedAt)),
-		sql.Named("invited_at", NullTime(user.InvitedAt)),
-		sql.Named("signed_up_at", NullTime(user.SignedUpAt)),
+		sql.Named("totp_period", sqlite.Duration(user.TOTPPeriod)),
+		sql.Named("totp_verified_at", sqlite.NullTime(user.TOTPVerifiedAt)),
+		sql.Named("totp_activated_at", sqlite.NullTime(user.TOTPActivatedAt)),
+		sql.Named("invited_at", sqlite.NullTime(user.InvitedAt)),
+		sql.Named("signed_up_at", sqlite.NullTime(user.SignedUpAt)),
 		sql.Named("signed_up_system", user.SignedUpSystem),
 		sql.Named("signed_up_method", user.SignedUpMethod),
-		sql.Named("verified_at", NullTime(user.VerifiedAt)),
-		sql.Named("activated_at", NullTime(user.ActivatedAt)),
-		sql.Named("last_sign_in_attempt_at", NullTime(user.LastSignInAttemptAt)),
+		sql.Named("verified_at", sqlite.NullTime(user.VerifiedAt)),
+		sql.Named("activated_at", sqlite.NullTime(user.ActivatedAt)),
+		sql.Named("last_sign_in_attempt_at", sqlite.NullTime(user.LastSignInAttemptAt)),
 		sql.Named("last_sign_in_attempt_system", user.LastSignInAttemptSystem),
 		sql.Named("last_sign_in_attempt_method", user.LastSignInAttemptMethod),
-		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
+		sql.Named("last_signed_in_at", sqlite.NullTime(user.LastSignedInAt)),
 		sql.Named("last_signed_in_system", user.LastSignedInSystem),
 		sql.Named("last_signed_in_method", user.LastSignedInMethod),
-		sql.Named("suspended_at", NullTime(user.SuspendedAt)),
+		sql.Named("suspended_at", sqlite.NullTime(user.SuspendedAt)),
 		sql.Named("suspended_reason", user.SuspendedReason),
-		sql.Named("created_at", Time(tx.now.UTC())),
+		sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrConflict) {
@@ -722,9 +727,9 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 			)
 		`,
 			sql.Named("user_id", user.ID),
-			sql.Named("requested_at", NullTime(user.TOTPResetRequestedAt)),
-			sql.Named("approved_at", NullTime(user.TOTPResetApprovedAt)),
-			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("requested_at", sqlite.NullTime(user.TOTPResetRequestedAt)),
+			sql.Named("approved_at", sqlite.NullTime(user.TOTPResetApprovedAt)),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 		)
 		if err != nil {
 			return err
@@ -745,7 +750,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 		`,
 			sql.Named("user_id", user.ID),
 			sql.Named("hashed_code", rc),
-			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 		)
 		if err != nil {
 			return err
@@ -766,7 +771,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 		`,
 			sql.Named("user_id", user.ID),
 			sql.Named("role_id", role.ID),
-			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 		)
 		if err != nil {
 			return err
@@ -792,7 +797,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 		`,
 			sql.Named("user_id", user.ID),
 			sql.Named("permission_id", permissionID),
-			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 		)
 		if err != nil {
 			return err
@@ -818,7 +823,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 		`,
 			sql.Named("user_id", user.ID),
 			sql.Named("permission_id", permissionID),
-			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 		)
 		if err != nil {
 			return err
@@ -828,7 +833,7 @@ func (r *AccountRepo) createUser(ctx context.Context, tx *Tx, user *account.User
 	return nil
 }
 
-func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User) error {
+func (r *Account) updateUser(ctx context.Context, tx *sqlite.Tx, user *account.User) error {
 	_, err := tx.ExecContext(ctx, `
 		update account__users set
 			email = :email,
@@ -866,24 +871,24 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		sql.Named("totp_key", user.TOTPKey),
 		sql.Named("totp_algorithm", user.TOTPAlgorithm),
 		sql.Named("totp_digits", user.TOTPDigits),
-		sql.Named("totp_period", Duration(user.TOTPPeriod)),
-		sql.Named("totp_verified_at", NullTime(user.TOTPVerifiedAt)),
-		sql.Named("totp_activated_at", NullTime(user.TOTPActivatedAt)),
-		sql.Named("invited_at", NullTime(user.InvitedAt)),
-		sql.Named("signed_up_at", NullTime(user.SignedUpAt)),
+		sql.Named("totp_period", sqlite.Duration(user.TOTPPeriod)),
+		sql.Named("totp_verified_at", sqlite.NullTime(user.TOTPVerifiedAt)),
+		sql.Named("totp_activated_at", sqlite.NullTime(user.TOTPActivatedAt)),
+		sql.Named("invited_at", sqlite.NullTime(user.InvitedAt)),
+		sql.Named("signed_up_at", sqlite.NullTime(user.SignedUpAt)),
 		sql.Named("signed_up_system", user.SignedUpSystem),
 		sql.Named("signed_up_method", user.SignedUpMethod),
-		sql.Named("verified_at", NullTime(user.VerifiedAt)),
-		sql.Named("activated_at", NullTime(user.ActivatedAt)),
-		sql.Named("last_sign_in_attempt_at", NullTime(user.LastSignInAttemptAt)),
+		sql.Named("verified_at", sqlite.NullTime(user.VerifiedAt)),
+		sql.Named("activated_at", sqlite.NullTime(user.ActivatedAt)),
+		sql.Named("last_sign_in_attempt_at", sqlite.NullTime(user.LastSignInAttemptAt)),
 		sql.Named("last_sign_in_attempt_system", user.LastSignInAttemptSystem),
 		sql.Named("last_sign_in_attempt_method", user.LastSignInAttemptMethod),
-		sql.Named("last_signed_in_at", NullTime(user.LastSignedInAt)),
+		sql.Named("last_signed_in_at", sqlite.NullTime(user.LastSignedInAt)),
 		sql.Named("last_signed_in_system", user.LastSignedInSystem),
 		sql.Named("last_signed_in_method", user.LastSignedInMethod),
-		sql.Named("suspended_at", NullTime(user.SuspendedAt)),
+		sql.Named("suspended_at", sqlite.NullTime(user.SuspendedAt)),
 		sql.Named("suspended_reason", user.SuspendedReason),
-		sql.Named("updated_at", NullTime(tx.now.UTC())),
+		sql.Named("updated_at", sqlite.NullTime(tx.Now.UTC())),
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrConflict) {
@@ -926,10 +931,10 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 					ifnull(approved_at, '') != ifnull(excluded.approved_at, '')
 		`,
 			sql.Named("user_id", user.ID),
-			sql.Named("requested_at", NullTime(user.TOTPResetRequestedAt)),
-			sql.Named("approved_at", NullTime(user.TOTPResetApprovedAt)),
-			sql.Named("created_at", Time(tx.now.UTC())),
-			sql.Named("updated_at", NullTime(tx.now.UTC())),
+			sql.Named("requested_at", sqlite.NullTime(user.TOTPResetRequestedAt)),
+			sql.Named("approved_at", sqlite.NullTime(user.TOTPResetApprovedAt)),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
+			sql.Named("updated_at", sqlite.NullTime(tx.Now.UTC())),
 		)
 		if err != nil {
 			return err
@@ -958,7 +963,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		`,
 			sql.Named("user_id", user.ID),
 			sql.Named("hashed_code", rc),
-			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 		)
 		if err != nil {
 			return err
@@ -987,7 +992,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		`,
 			sql.Named("user_id", user.ID),
 			sql.Named("role_id", role.ID),
-			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 		)
 		if err != nil {
 			return err
@@ -1021,7 +1026,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		`,
 			sql.Named("user_id", user.ID),
 			sql.Named("permission_id", permissionID),
-			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 		)
 		if err != nil {
 			return err
@@ -1055,7 +1060,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 		`,
 			sql.Named("user_id", user.ID),
 			sql.Named("permission_id", permissionID),
-			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 		)
 		if err != nil {
 			return err
@@ -1065,7 +1070,7 @@ func (r *AccountRepo) updateUser(ctx context.Context, tx *Tx, user *account.User
 	return nil
 }
 
-func (r *AccountRepo) findSignInAttemptLog(ctx context.Context, tx *Tx, email string) (*account.SignInAttemptLog, error) {
+func (r *Account) findSignInAttemptLog(ctx context.Context, tx *sqlite.Tx, email string) (*account.SignInAttemptLog, error) {
 	log := account.SignInAttemptLog{Email: email}
 
 	err := tx.QueryRowContext(ctx, `
@@ -1078,7 +1083,7 @@ func (r *AccountRepo) findSignInAttemptLog(ctx context.Context, tx *Tx, email st
 		sql.Named("email", email),
 	).Scan(
 		&log.Attempts,
-		(*Time)(&log.LastAttemptAt),
+		(*sqlite.Time)(&log.LastAttemptAt),
 	)
 	if errors.Is(err, app.ErrNotFound) {
 		err = nil
@@ -1087,7 +1092,7 @@ func (r *AccountRepo) findSignInAttemptLog(ctx context.Context, tx *Tx, email st
 	return &log, err
 }
 
-func (r *AccountRepo) upsertSignInAttemptLog(ctx context.Context, tx *Tx, log *account.SignInAttemptLog) error {
+func (r *Account) upsertSignInAttemptLog(ctx context.Context, tx *sqlite.Tx, log *account.SignInAttemptLog) error {
 	_, err := tx.ExecContext(ctx, `
 		insert into account__sign_in_attempt_logs (
 			email,
@@ -1111,15 +1116,15 @@ func (r *AccountRepo) upsertSignInAttemptLog(ctx context.Context, tx *Tx, log *a
 	`,
 		sql.Named("email", log.Email),
 		sql.Named("attempts", log.Attempts),
-		sql.Named("last_attempt_at", Time(log.LastAttemptAt.UTC())),
-		sql.Named("created_at", Time(tx.now.UTC())),
-		sql.Named("updated_at", NullTime(tx.now.UTC())),
+		sql.Named("last_attempt_at", sqlite.Time(log.LastAttemptAt.UTC())),
+		sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
+		sql.Named("updated_at", sqlite.NullTime(tx.Now.UTC())),
 	)
 
 	return err
 }
 
-func (r *AccountRepo) deleteSignInAttemptLog(ctx context.Context, tx *Tx, email string) error {
+func (r *Account) deleteSignInAttemptLog(ctx context.Context, tx *sqlite.Tx, email string) error {
 	_, err := tx.ExecContext(ctx, `
 		delete from account__sign_in_attempt_logs
 		where email = :email
@@ -1130,24 +1135,24 @@ func (r *AccountRepo) deleteSignInAttemptLog(ctx context.Context, tx *Tx, email 
 	return err
 }
 
-func (r *AccountRepo) countStaleSignInAttemptLogs(ctx context.Context, tx *Tx, validWindowStart time.Time) (int, error) {
+func (r *Account) countStaleSignInAttemptLogs(ctx context.Context, tx *sqlite.Tx, validWindowStart time.Time) (int, error) {
 	var count int
 	err := tx.QueryRowContext(ctx, `
 		select count(*) from account__sign_in_attempt_logs
 		where last_attempt_at <= :valid_window_start
 	`,
-		sql.Named("valid_window_start", Time(validWindowStart)),
+		sql.Named("valid_window_start", sqlite.Time(validWindowStart)),
 	).Scan(&count)
 
 	return count, err
 }
 
-func (r *AccountRepo) deleteStaleSignInAttemptLogs(ctx context.Context, tx *Tx, validWindowStart time.Time) error {
+func (r *Account) deleteStaleSignInAttemptLogs(ctx context.Context, tx *sqlite.Tx, validWindowStart time.Time) error {
 	_, err := tx.ExecContext(ctx, `
 		delete from account__sign_in_attempt_logs
 		where last_attempt_at <= :valid_window_start
 	`,
-		sql.Named("valid_window_start", Time(validWindowStart)),
+		sql.Named("valid_window_start", sqlite.Time(validWindowStart)),
 	)
 
 	return err
@@ -1159,7 +1164,7 @@ type permissionFilter struct {
 	denialsUserID *int
 }
 
-func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter permissionFilter) ([]string, int, error) {
+func (r *Account) findPermissions(ctx context.Context, tx *sqlite.Tx, filter permissionFilter) ([]string, int, error) {
 	var joins []string
 	var where []string
 	var args []any
@@ -1183,7 +1188,7 @@ func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter permis
 			count(*) over () as total
 		from account__permissions as p
 		`+strings.Join(joins, "\n")+`
-		`+whereSQL(where),
+		`+sqlite.WhereSQL(where),
 		args...,
 	)
 	if err != nil {
@@ -1213,7 +1218,7 @@ func (r *AccountRepo) findPermissions(ctx context.Context, tx *Tx, filter permis
 	return permissions, total, nil
 }
 
-func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string) (int, error) {
+func (r *Account) upsertPermission(ctx context.Context, tx *sqlite.Tx, name string) (int, error) {
 	var id int
 	err := tx.QueryRowContext(ctx, `
 		insert into account__permissions (
@@ -1230,8 +1235,8 @@ func (r *AccountRepo) upsertPermission(ctx context.Context, tx *Tx, name string)
 		returning id
 	`,
 		sql.Named("name", name),
-		sql.Named("created_at", Time(tx.now.UTC())),
-		sql.Named("updated_at", NullTime(tx.now.UTC())),
+		sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
+		sql.Named("updated_at", sqlite.NullTime(tx.Now.UTC())),
 	).Scan(&id)
 
 	return id, err
@@ -1241,7 +1246,7 @@ var findRolesSortKeyCols = map[string]string{
 	"name": "r.name",
 }
 
-func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.RoleFilter) ([]*account.Role, int, error) {
+func (r *Account) findRoles(ctx context.Context, tx *sqlite.Tx, filter account.RoleFilter) ([]*account.Role, int, error) {
 	var joins []string
 	var where []string
 	var args []any
@@ -1265,7 +1270,7 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 		sorts, args = append(sorts, "case r.id when ? then 0 else 1 end asc"), append(args, filter.SortTopID)
 	}
 
-	if s := newSorts(filter.Sorts, findRolesSortKeyCols); len(s) > 0 {
+	if s := sqlite.NewSorts(filter.Sorts, findRolesSortKeyCols); len(s) > 0 {
 		sorts = append(sorts, s...)
 	} else {
 		sorts = append(sorts, "r.name asc")
@@ -1279,9 +1284,9 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 			count(*) over () as total
 		from account__roles as r
 		`+strings.Join(joins, "\n")+`
-		`+whereSQL(where)+`
-		`+orderBySQL(sorts)+`
-		`+limitOffsetSQL(filter.Limit, filter.Offset),
+		`+sqlite.WhereSQL(where)+`
+		`+sqlite.OrderBySQL(sorts)+`
+		`+sqlite.LimitOffsetSQL(filter.Limit, filter.Offset),
 		args...,
 	)
 	if err != nil {
@@ -1313,7 +1318,7 @@ func (r *AccountRepo) findRoles(ctx context.Context, tx *Tx, filter account.Role
 	return roles, total, nil
 }
 
-func (r *AccountRepo) attachRolePermissions(ctx context.Context, tx *Tx, role *account.Role) error {
+func (r *Account) attachRolePermissions(ctx context.Context, tx *sqlite.Tx, role *account.Role) error {
 	permissions, _, err := r.findPermissions(ctx, tx, permissionFilter{roleID: &role.ID})
 	if err != nil {
 		return fmt.Errorf("find permissions: %w", err)
@@ -1324,7 +1329,7 @@ func (r *AccountRepo) attachRolePermissions(ctx context.Context, tx *Tx, role *a
 	return nil
 }
 
-func (r *AccountRepo) createRole(ctx context.Context, tx *Tx, role *account.Role) error {
+func (r *Account) createRole(ctx context.Context, tx *sqlite.Tx, role *account.Role) error {
 	res, err := tx.ExecContext(ctx, `
 		insert into account__roles (
 			name,
@@ -1338,7 +1343,7 @@ func (r *AccountRepo) createRole(ctx context.Context, tx *Tx, role *account.Role
 	`,
 		sql.Named("name", role.Name),
 		sql.Named("description", role.Description),
-		sql.Named("created_at", Time(tx.now.UTC())),
+		sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrConflict) {
@@ -1375,7 +1380,7 @@ func (r *AccountRepo) createRole(ctx context.Context, tx *Tx, role *account.Role
 		`,
 			sql.Named("role_id", role.ID),
 			sql.Named("permission_id", permissionID),
-			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 		)
 		if err != nil {
 			return err
@@ -1385,7 +1390,7 @@ func (r *AccountRepo) createRole(ctx context.Context, tx *Tx, role *account.Role
 	return nil
 }
 
-func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role) error {
+func (r *Account) updateRole(ctx context.Context, tx *sqlite.Tx, role *account.Role) error {
 	_, err := tx.ExecContext(ctx, `
 		update account__roles set
 			name = :name,
@@ -1396,7 +1401,7 @@ func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role
 		sql.Named("id", role.ID),
 		sql.Named("name", role.Name),
 		sql.Named("description", role.Description),
-		sql.Named("updated_at", NullTime(tx.now.UTC())),
+		sql.Named("updated_at", sqlite.NullTime(tx.Now.UTC())),
 	)
 	if err != nil {
 		if errors.Is(err, app.ErrConflict) {
@@ -1435,7 +1440,7 @@ func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role
 		`,
 			sql.Named("role_id", role.ID),
 			sql.Named("permission_id", permissionID),
-			sql.Named("created_at", Time(tx.now.UTC())),
+			sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 		)
 		if err != nil {
 			if errors.Is(err, app.ErrConflict) {
@@ -1453,7 +1458,7 @@ func (r *AccountRepo) updateRole(ctx context.Context, tx *Tx, role *account.Role
 	return nil
 }
 
-func (r *AccountRepo) deleteRole(ctx context.Context, tx *Tx, roleID int) error {
+func (r *Account) deleteRole(ctx context.Context, tx *sqlite.Tx, roleID int) error {
 	_, err := tx.ExecContext(ctx,
 		"delete from account__roles where id = :id",
 		sql.Named("id", roleID),
@@ -1462,7 +1467,7 @@ func (r *AccountRepo) deleteRole(ctx context.Context, tx *Tx, roleID int) error 
 	return err
 }
 
-func (r *AccountRepo) findHashedRecoveryCodes(ctx context.Context, tx *Tx, userID int) ([][]byte, int, error) {
+func (r *Account) findHashedRecoveryCodes(ctx context.Context, tx *sqlite.Tx, userID int) ([][]byte, int, error) {
 	rows, err := tx.QueryContext(ctx, `
 		select
 			hashed_code,

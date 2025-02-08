@@ -18,7 +18,8 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/event"
 	"github.com/polyscone/tofu/internal/smtp"
-	"github.com/polyscone/tofu/sqlite"
+	"github.com/polyscone/tofu/repo"
+	"github.com/polyscone/tofu/repo/sqlite"
 	"github.com/polyscone/tofu/web"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
@@ -26,21 +27,21 @@ import (
 
 var tenants = make(map[string]Tenant)
 
-type repo struct {
-	account *sqlite.AccountRepo
-	system  *sqlite.SystemRepo
-	web     *sqlite.WebRepo
+type repos struct {
+	account *repo.Account
+	system  *repo.System
+	web     *repo.Web
 }
 
 var cache = struct {
 	mu      sync.Mutex
-	repos   map[string]repo
+	repos   map[string]repos
 	sqlite  map[string]*sqlite.DB
 	mailers map[string]smtp.Mailer
 	loggers map[string]*slog.Logger
 	metrics map[string]*expvar.Map
 }{
-	repos:   make(map[string]repo),
+	repos:   make(map[string]repos),
 	sqlite:  make(map[string]*sqlite.DB),
 	mailers: make(map[string]smtp.Mailer),
 	loggers: make(map[string]*slog.Logger),
@@ -106,7 +107,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 		cache.loggers[data.Name] = logger
 	}
 
-	repo, ok := cache.repos[data.Name]
+	repos, ok := cache.repos[data.Name]
 	if !ok {
 		var err error
 
@@ -137,28 +138,28 @@ func newTenant(host string) (*handler.Tenant, error) {
 			cache.sqlite[data.Name] = sqliteDB
 		}
 
-		repo.account, err = sqlite.NewAccountRepo(ctx, sqliteDB, app.SignInThrottleTTL)
+		repos.account, err = repo.NewAccount(ctx, sqliteDB, app.SignInThrottleTTL)
 		if err != nil {
 			return nil, fmt.Errorf("new account repo: %w", err)
 		}
 
-		repo.system, err = sqlite.NewSystemRepo(ctx, sqliteDB)
+		repos.system, err = repo.NewSystem(ctx, sqliteDB)
 		if err != nil {
 			return nil, fmt.Errorf("new system repo: %w", err)
 		}
 
-		repo.web, err = sqlite.NewWebRepo(ctx, sqliteDB, app.SessionTTL)
+		repos.web, err = repo.NewWeb(ctx, sqliteDB, app.SessionTTL)
 		if err != nil {
 			return nil, fmt.Errorf("new web repo: %w", err)
 		}
 
-		cache.repos[data.Name] = repo
+		cache.repos[data.Name] = repos
 	}
 
 	mailer, ok := cache.mailers[data.Name]
 	if !ok {
 		var err error
-		mailer, err = smtp.NewClient(logger, &smtpConfig{system: repo.system})
+		mailer, err = smtp.NewClient(logger, &smtpConfig{system: repos.system})
 		if err != nil {
 			return nil, fmt.Errorf("new dynamic SMTP client: %w", err)
 		}
@@ -171,12 +172,12 @@ func newTenant(host string) (*handler.Tenant, error) {
 
 	broker := event.NewMemoryBroker()
 
-	svc.Account, err = account.NewService(broker, repo.account, hasher, data.Kind)
+	svc.Account, err = account.NewService(broker, repos.account, hasher, data.Kind)
 	if err != nil {
 		return nil, fmt.Errorf("new account service: %w", err)
 	}
 
-	svc.System, err = system.NewService(broker, repo.system)
+	svc.System, err = system.NewService(broker, repos.system)
 	if err != nil {
 		return nil, fmt.Errorf("new system service: %w", err)
 	}
@@ -195,17 +196,17 @@ func newTenant(host string) (*handler.Tenant, error) {
 
 	superRole := account.NewRole("Super", "Has full access to the system; can't be edited or deleted.", permissions)
 
-	role, err := repo.account.FindRoleByName(ctx, superRole.Name)
+	role, err := repos.account.FindRoleByName(ctx, superRole.Name)
 	switch {
 	case err == nil:
 		superRole.ID = role.ID
 
-		if err := repo.account.SaveRole(ctx, superRole); err != nil {
+		if err := repos.account.SaveRole(ctx, superRole); err != nil {
 			return nil, fmt.Errorf("save super role: %w", err)
 		}
 
 	case errors.Is(err, app.ErrNotFound):
-		if err := repo.account.AddRole(ctx, superRole); err != nil {
+		if err := repos.account.AddRole(ctx, superRole); err != nil {
 			return nil, fmt.Errorf("add super role: %w", err)
 		}
 
@@ -228,9 +229,9 @@ func newTenant(host string) (*handler.Tenant, error) {
 		Metrics:          metrics,
 		Svc:              svc,
 		Repo: handler.Repo{
-			Account: repo.account,
-			System:  repo.system,
-			Web:     repo.web,
+			Account: repos.account,
+			System:  repos.system,
+			Web:     repos.web,
 		},
 		SuperRole: superRole,
 	}

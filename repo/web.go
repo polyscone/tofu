@@ -1,4 +1,4 @@
-package sqlite
+package repo
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
+	"embed"
 	"encoding/base32"
 	"encoding/json"
 	"errors"
@@ -18,7 +19,11 @@ import (
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/internal/session"
+	"github.com/polyscone/tofu/repo/sqlite"
 )
+
+//go:embed "all:sqlite/migrations/web"
+var sqliteWebMigrations embed.FS
 
 const (
 	webTokenKindEmailVerification = "email_verification"
@@ -28,22 +33,22 @@ const (
 	webTokenKindTOTPReset         = "totp_reset"
 )
 
-type WebRepo struct {
-	db         *DB
+type Web struct {
+	db         *sqlite.DB
 	sessionTTL time.Duration
 }
 
-func NewWebRepo(ctx context.Context, db *DB, sessionTTL time.Duration) (*WebRepo, error) {
-	migrations, err := fs.Sub(migrations, "migrations/web")
+func NewWeb(ctx context.Context, db *sqlite.DB, sessionTTL time.Duration) (*Web, error) {
+	migrations, err := fs.Sub(sqliteWebMigrations, "sqlite/migrations/web")
 	if err != nil {
 		return nil, fmt.Errorf("initialize web migrations FS: %w", err)
 	}
 
-	if err := migrateFS(ctx, db, "web", migrations); err != nil {
+	if err := sqlite.MigrateFS(ctx, db, "web", migrations); err != nil {
 		return nil, fmt.Errorf("migrate web: %w", err)
 	}
 
-	r := WebRepo{
+	r := Web{
 		db:         db,
 		sessionTTL: sessionTTL,
 	}
@@ -88,7 +93,7 @@ func NewWebRepo(ctx context.Context, db *DB, sessionTTL time.Duration) (*WebRepo
 	return &r, nil
 }
 
-func (r *WebRepo) FindSessionDataByID(ctx context.Context, id string) (session.Data, error) {
+func (r *Web) FindSessionDataByID(ctx context.Context, id string) (session.Data, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -98,7 +103,7 @@ func (r *WebRepo) FindSessionDataByID(ctx context.Context, id string) (session.D
 	return r.findSessionDataByID(ctx, tx, id)
 }
 
-func (r *WebRepo) SaveSession(ctx context.Context, sess session.Session) error {
+func (r *Web) SaveSession(ctx context.Context, sess session.Session) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -116,7 +121,7 @@ func (r *WebRepo) SaveSession(ctx context.Context, sess session.Session) error {
 	return nil
 }
 
-func (r *WebRepo) DestroySession(ctx context.Context, id string) error {
+func (r *Web) DestroySession(ctx context.Context, id string) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -134,7 +139,7 @@ func (r *WebRepo) DestroySession(ctx context.Context, id string) error {
 	return nil
 }
 
-func (r *WebRepo) CountExpiredSessions(ctx context.Context, validWindowStart time.Time) (int, error) {
+func (r *Web) CountExpiredSessions(ctx context.Context, validWindowStart time.Time) (int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, fmt.Errorf("begin tx: %w", err)
@@ -146,7 +151,7 @@ func (r *WebRepo) CountExpiredSessions(ctx context.Context, validWindowStart tim
 	return total, err
 }
 
-func (r *WebRepo) DestroyExpiredSessions(ctx context.Context, validWindowStart time.Time) error {
+func (r *Web) DestroyExpiredSessions(ctx context.Context, validWindowStart time.Time) error {
 	total, err := r.CountExpiredSessions(ctx, validWindowStart)
 	if err != nil {
 		return fmt.Errorf("count expired sessions: %w", err)
@@ -172,7 +177,7 @@ func (r *WebRepo) DestroyExpiredSessions(ctx context.Context, validWindowStart t
 	return nil
 }
 
-func (r *WebRepo) FindEmailVerificationTokenEmail(ctx context.Context, token string) (string, error) {
+func (r *Web) FindEmailVerificationTokenEmail(ctx context.Context, token string) (string, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
@@ -182,7 +187,7 @@ func (r *WebRepo) FindEmailVerificationTokenEmail(ctx context.Context, token str
 	return r.findToken(ctx, tx, token, webTokenKindEmailVerification)
 }
 
-func (r *WebRepo) AddEmailVerificationToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+func (r *Web) AddEmailVerificationToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
@@ -201,7 +206,7 @@ func (r *WebRepo) AddEmailVerificationToken(ctx context.Context, email string, t
 	return token, nil
 }
 
-func (r *WebRepo) ConsumeEmailVerificationToken(ctx context.Context, token string) error {
+func (r *Web) ConsumeEmailVerificationToken(ctx context.Context, token string) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -224,7 +229,7 @@ func (r *WebRepo) ConsumeEmailVerificationToken(ctx context.Context, token strin
 	return nil
 }
 
-func (r *WebRepo) FindResetPasswordTokenEmail(ctx context.Context, token string) (string, error) {
+func (r *Web) FindResetPasswordTokenEmail(ctx context.Context, token string) (string, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
@@ -234,7 +239,7 @@ func (r *WebRepo) FindResetPasswordTokenEmail(ctx context.Context, token string)
 	return r.findToken(ctx, tx, token, webTokenKindResetPassword)
 }
 
-func (r *WebRepo) AddResetPasswordToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+func (r *Web) AddResetPasswordToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
@@ -253,7 +258,7 @@ func (r *WebRepo) AddResetPasswordToken(ctx context.Context, email string, ttl t
 	return token, nil
 }
 
-func (r *WebRepo) ConsumeResetPasswordToken(ctx context.Context, token string) error {
+func (r *Web) ConsumeResetPasswordToken(ctx context.Context, token string) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -276,7 +281,7 @@ func (r *WebRepo) ConsumeResetPasswordToken(ctx context.Context, token string) e
 	return nil
 }
 
-func (r *WebRepo) FindSignInMagicLinkTokenEmail(ctx context.Context, token string) (string, error) {
+func (r *Web) FindSignInMagicLinkTokenEmail(ctx context.Context, token string) (string, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
@@ -286,7 +291,7 @@ func (r *WebRepo) FindSignInMagicLinkTokenEmail(ctx context.Context, token strin
 	return r.findToken(ctx, tx, token, webTokenKindSignInMagicLink)
 }
 
-func (r *WebRepo) AddSignInMagicLinkToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+func (r *Web) AddSignInMagicLinkToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
@@ -309,7 +314,7 @@ func (r *WebRepo) AddSignInMagicLinkToken(ctx context.Context, email string, ttl
 	return token, nil
 }
 
-func (r *WebRepo) ConsumeSignInMagicLinkToken(ctx context.Context, token string) error {
+func (r *Web) ConsumeSignInMagicLinkToken(ctx context.Context, token string) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -332,7 +337,7 @@ func (r *WebRepo) ConsumeSignInMagicLinkToken(ctx context.Context, token string)
 	return nil
 }
 
-func (r *WebRepo) FindTOTPResetVerifyTokenEmail(ctx context.Context, token string) (string, error) {
+func (r *Web) FindTOTPResetVerifyTokenEmail(ctx context.Context, token string) (string, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
@@ -342,7 +347,7 @@ func (r *WebRepo) FindTOTPResetVerifyTokenEmail(ctx context.Context, token strin
 	return r.findToken(ctx, tx, token, webTokenKindTOTPResetVerify)
 }
 
-func (r *WebRepo) AddTOTPResetVerifyToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+func (r *Web) AddTOTPResetVerifyToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
@@ -361,7 +366,7 @@ func (r *WebRepo) AddTOTPResetVerifyToken(ctx context.Context, email string, ttl
 	return token, nil
 }
 
-func (r *WebRepo) ConsumeTOTPResetVerifyToken(ctx context.Context, token string) error {
+func (r *Web) ConsumeTOTPResetVerifyToken(ctx context.Context, token string) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -384,7 +389,7 @@ func (r *WebRepo) ConsumeTOTPResetVerifyToken(ctx context.Context, token string)
 	return nil
 }
 
-func (r *WebRepo) FindResetTOTPTokenEmail(ctx context.Context, token string) (string, error) {
+func (r *Web) FindResetTOTPTokenEmail(ctx context.Context, token string) (string, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
@@ -394,7 +399,7 @@ func (r *WebRepo) FindResetTOTPTokenEmail(ctx context.Context, token string) (st
 	return r.findToken(ctx, tx, token, webTokenKindTOTPReset)
 }
 
-func (r *WebRepo) AddResetTOTPToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
+func (r *Web) AddResetTOTPToken(ctx context.Context, email string, ttl time.Duration) (string, error) {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return "", fmt.Errorf("begin tx: %w", err)
@@ -413,7 +418,7 @@ func (r *WebRepo) AddResetTOTPToken(ctx context.Context, email string, ttl time.
 	return token, nil
 }
 
-func (r *WebRepo) ConsumeResetTOTPToken(ctx context.Context, token string) error {
+func (r *Web) ConsumeResetTOTPToken(ctx context.Context, token string) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -436,7 +441,7 @@ func (r *WebRepo) ConsumeResetTOTPToken(ctx context.Context, token string) error
 	return nil
 }
 
-func (r *WebRepo) CountExpiredTokens(ctx context.Context, now time.Time) (int, error) {
+func (r *Web) CountExpiredTokens(ctx context.Context, now time.Time) (int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return 0, fmt.Errorf("begin tx: %w", err)
@@ -448,7 +453,7 @@ func (r *WebRepo) CountExpiredTokens(ctx context.Context, now time.Time) (int, e
 	return total, err
 }
 
-func (r *WebRepo) DeleteExpiredTokens(ctx context.Context, now time.Time) error {
+func (r *Web) DeleteExpiredTokens(ctx context.Context, now time.Time) error {
 	total, err := r.CountExpiredTokens(ctx, now)
 	if err != nil {
 		return fmt.Errorf("count expired tokens: %w", err)
@@ -474,7 +479,7 @@ func (r *WebRepo) DeleteExpiredTokens(ctx context.Context, now time.Time) error 
 	return nil
 }
 
-func (r *WebRepo) LogDomainEvent(ctx context.Context, kind, name, data string, createdAt time.Time) error {
+func (r *Web) LogDomainEvent(ctx context.Context, kind, name, data string, createdAt time.Time) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -492,7 +497,7 @@ func (r *WebRepo) LogDomainEvent(ctx context.Context, kind, name, data string, c
 	return nil
 }
 
-func (r *WebRepo) ClearOldDomainEvents(ctx context.Context, validWindowStart time.Time) error {
+func (r *Web) ClearOldDomainEvents(ctx context.Context, validWindowStart time.Time) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -510,7 +515,7 @@ func (r *WebRepo) ClearOldDomainEvents(ctx context.Context, validWindowStart tim
 	return nil
 }
 
-func (r *WebRepo) findSessionDataByID(ctx context.Context, tx *Tx, id string) (session.Data, error) {
+func (r *Web) findSessionDataByID(ctx context.Context, tx *sqlite.Tx, id string) (session.Data, error) {
 	var data []byte
 	err := tx.QueryRowContext(ctx, `
 		select data
@@ -520,7 +525,7 @@ func (r *WebRepo) findSessionDataByID(ctx context.Context, tx *Tx, id string) (s
 			updated_at > :valid_window_start
 	`,
 		sql.Named("id", id),
-		sql.Named("valid_window_start", Time(tx.now.Add(-r.sessionTTL).UTC())),
+		sql.Named("valid_window_start", sqlite.Time(tx.Now.Add(-r.sessionTTL).UTC())),
 	).Scan(&data)
 	if err != nil {
 		if errors.Is(err, app.ErrNotFound) {
@@ -542,7 +547,7 @@ func (r *WebRepo) findSessionDataByID(ctx context.Context, tx *Tx, id string) (s
 	return res, nil
 }
 
-func (r *WebRepo) upsertSession(ctx context.Context, tx *Tx, sess session.Session) error {
+func (r *Web) upsertSession(ctx context.Context, tx *sqlite.Tx, sess session.Session) error {
 	b, err := json.Marshal(sess.Data)
 	if err != nil {
 		return fmt.Errorf("marshal session data JSON: %w", err)
@@ -567,14 +572,14 @@ func (r *WebRepo) upsertSession(ctx context.Context, tx *Tx, sess session.Sessio
 	`,
 		sql.Named("id", sess.ID),
 		sql.Named("data", b),
-		sql.Named("created_at", Time(tx.now.UTC())),
-		sql.Named("updated_at", Time(tx.now.UTC())),
+		sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
+		sql.Named("updated_at", sqlite.Time(tx.Now.UTC())),
 	)
 
 	return err
 }
 
-func (r *WebRepo) destroySession(ctx context.Context, tx *Tx, id string) error {
+func (r *Web) destroySession(ctx context.Context, tx *sqlite.Tx, id string) error {
 	_, err := tx.ExecContext(ctx, `
 		delete from web__sessions
 		where id = :id
@@ -585,30 +590,30 @@ func (r *WebRepo) destroySession(ctx context.Context, tx *Tx, id string) error {
 	return err
 }
 
-func (r *WebRepo) countExpiredSessions(ctx context.Context, tx *Tx, validWindowStart time.Time) (int, error) {
+func (r *Web) countExpiredSessions(ctx context.Context, tx *sqlite.Tx, validWindowStart time.Time) (int, error) {
 	var count int
 	err := tx.QueryRowContext(ctx, `
 		select count(*) from web__sessions
 		where updated_at <= :valid_window_start
 	`,
-		sql.Named("valid_window_start", Time(validWindowStart)),
+		sql.Named("valid_window_start", sqlite.Time(validWindowStart)),
 	).Scan(&count)
 
 	return count, err
 }
 
-func (r *WebRepo) destroyExpiredSessions(ctx context.Context, tx *Tx, validWindowStart time.Time) error {
+func (r *Web) destroyExpiredSessions(ctx context.Context, tx *sqlite.Tx, validWindowStart time.Time) error {
 	_, err := tx.ExecContext(ctx, `
 		delete from web__sessions
 		where updated_at <= :valid_window_start
 	`,
-		sql.Named("valid_window_start", Time(validWindowStart)),
+		sql.Named("valid_window_start", sqlite.Time(validWindowStart)),
 	)
 
 	return err
 }
 
-func (r *WebRepo) findToken(ctx context.Context, tx *Tx, token, kind string) (string, error) {
+func (r *Web) findToken(ctx context.Context, tx *sqlite.Tx, token, kind string) (string, error) {
 	sum := sha256.Sum256([]byte(token))
 	hash := sum[:]
 
@@ -623,13 +628,13 @@ func (r *WebRepo) findToken(ctx context.Context, tx *Tx, token, kind string) (st
 	`,
 		sql.Named("hash", hash),
 		sql.Named("kind", kind),
-		sql.Named("expires_at", Time(tx.now.UTC())),
+		sql.Named("expires_at", sqlite.Time(tx.Now.UTC())),
 	).Scan(&value)
 
 	return value, err
 }
 
-func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) (string, error) {
+func (r *Web) consumeToken(ctx context.Context, tx *sqlite.Tx, token, kind string) (string, error) {
 	sum := sha256.Sum256([]byte(token))
 	hash := sum[:]
 
@@ -644,7 +649,7 @@ func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) 
 	`,
 		sql.Named("hash", hash),
 		sql.Named("kind", kind),
-		sql.Named("expires_at", Time(tx.now.UTC())),
+		sql.Named("expires_at", sqlite.Time(tx.Now.UTC())),
 	).Scan(&value)
 	if err != nil {
 		return "", err
@@ -656,7 +661,7 @@ func (r *WebRepo) consumeToken(ctx context.Context, tx *Tx, token, kind string) 
 	return value, nil
 }
 
-func (r *WebRepo) createToken(ctx context.Context, tx *Tx, value string, ttl time.Duration, kind string) (string, error) {
+func (r *Web) createToken(ctx context.Context, tx *sqlite.Tx, value string, ttl time.Duration, kind string) (string, error) {
 	b := make([]byte, 8)
 	if _, err := io.ReadFull(rand.Reader, b); err != nil {
 		return "", fmt.Errorf("read random bytes: %w", err)
@@ -669,7 +674,7 @@ func (r *WebRepo) createToken(ctx context.Context, tx *Tx, value string, ttl tim
 	sum := sha256.Sum256(token)
 	hash := sum[:]
 
-	expiresAt := Time(tx.now.Add(ttl).UTC())
+	expiresAt := sqlite.Time(tx.Now.Add(ttl).UTC())
 
 	_, err := tx.ExecContext(ctx, `
 		insert into web__tokens (
@@ -690,13 +695,13 @@ func (r *WebRepo) createToken(ctx context.Context, tx *Tx, value string, ttl tim
 		sql.Named("value", value),
 		sql.Named("kind", kind),
 		sql.Named("expires_at", expiresAt),
-		sql.Named("created_at", Time(tx.now.UTC())),
+		sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
 	)
 
 	return string(token), err
 }
 
-func (r *WebRepo) deleteTokensByKind(ctx context.Context, tx *Tx, value string, kind Kind) error {
+func (r *Web) deleteTokensByKind(ctx context.Context, tx *sqlite.Tx, value, kind string) error {
 	_, err := tx.ExecContext(ctx, `
 		delete from web__tokens
 		where
@@ -710,32 +715,32 @@ func (r *WebRepo) deleteTokensByKind(ctx context.Context, tx *Tx, value string, 
 	return err
 }
 
-func (r *WebRepo) countExpiredTokens(ctx context.Context, tx *Tx, now time.Time) (int, error) {
+func (r *Web) countExpiredTokens(ctx context.Context, tx *sqlite.Tx, now time.Time) (int, error) {
 	var count int
 	err := tx.QueryRowContext(ctx, `
 		select count(*) from web__tokens
 		where expires_at <= :now
 	`,
-		sql.Named("now", Time(now)),
+		sql.Named("now", sqlite.Time(now)),
 	).Scan(&count)
 
 	return count, err
 }
 
-func (r *WebRepo) deleteExpiredTokens(ctx context.Context, tx *Tx, now time.Time) error {
+func (r *Web) deleteExpiredTokens(ctx context.Context, tx *sqlite.Tx, now time.Time) error {
 	_, err := tx.ExecContext(ctx, `
 		delete from web__tokens
 		where expires_at <= :now
 	`,
-		sql.Named("now", Time(now)),
+		sql.Named("now", sqlite.Time(now)),
 	)
 
 	return err
 }
 
-func (r *WebRepo) createDomainEvent(ctx context.Context, tx *Tx, kind, name, data string, createdAt time.Time) error {
+func (r *Web) createDomainEvent(ctx context.Context, tx *sqlite.Tx, kind, name, data string, createdAt time.Time) error {
 	if createdAt.IsZero() {
-		createdAt = tx.now
+		createdAt = tx.Now
 	}
 
 	_, err := tx.ExecContext(ctx, `
@@ -754,18 +759,18 @@ func (r *WebRepo) createDomainEvent(ctx context.Context, tx *Tx, kind, name, dat
 		sql.Named("kind", kind),
 		sql.Named("name", name),
 		sql.Named("data", data),
-		sql.Named("created_at", Time(createdAt.UTC())),
+		sql.Named("created_at", sqlite.Time(createdAt.UTC())),
 	)
 
 	return err
 }
 
-func (r *WebRepo) clearOldDomainEvents(ctx context.Context, tx *Tx, validWindowStart time.Time) error {
+func (r *Web) clearOldDomainEvents(ctx context.Context, tx *sqlite.Tx, validWindowStart time.Time) error {
 	_, err := tx.ExecContext(ctx, `
 		delete from web__domain_events
 		where created_at <= :valid_window_start
 	`,
-		sql.Named("valid_window_start", Time(validWindowStart)),
+		sql.Named("valid_window_start", sqlite.Time(validWindowStart)),
 	)
 
 	return err

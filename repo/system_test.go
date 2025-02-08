@@ -1,4 +1,4 @@
-package sqlite_test
+package repo_test
 
 import (
 	"context"
@@ -6,7 +6,8 @@ import (
 
 	"github.com/polyscone/tofu/app/system"
 	"github.com/polyscone/tofu/internal/errsx"
-	"github.com/polyscone/tofu/sqlite"
+	"github.com/polyscone/tofu/repo"
+	"github.com/polyscone/tofu/repo/sqlite"
 )
 
 func TestSystem(t *testing.T) {
@@ -15,7 +16,7 @@ func TestSystem(t *testing.T) {
 
 		system.TestRepo(ctx, t, func() system.ReadWriter {
 			db := sqlite.OpenInMemoryTestDatabase(ctx)
-			repo := errsx.Must(sqlite.NewSystemRepo(ctx, db))
+			repo := errsx.Must(repo.NewSystem(ctx, db))
 
 			return repo
 		})

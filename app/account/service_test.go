@@ -10,7 +10,8 @@ import (
 	"github.com/polyscone/tofu/internal/event"
 	"github.com/polyscone/tofu/internal/otp"
 	"github.com/polyscone/tofu/internal/testx"
-	"github.com/polyscone/tofu/sqlite"
+	"github.com/polyscone/tofu/repo"
+	"github.com/polyscone/tofu/repo/sqlite"
 )
 
 var hasher = testx.NewPasswordHasher()
@@ -18,7 +19,7 @@ var hasher = testx.NewPasswordHasher()
 func NewTestEnvWithSystem(ctx context.Context, system string) (*account.Service, event.Broker, account.ReadWriter) {
 	broker := event.NewMemoryBroker()
 	db := sqlite.OpenInMemoryTestDatabase(ctx)
-	repo := errsx.Must(sqlite.NewAccountRepo(ctx, db, 1*time.Minute))
+	repo := errsx.Must(repo.NewAccount(ctx, db, 1*time.Minute))
 	svc := errsx.Must(account.NewService(broker, repo, hasher, system))
 
 	return svc, broker, repo

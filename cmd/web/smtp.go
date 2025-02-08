@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/polyscone/tofu/internal/smtp"
-	"github.com/polyscone/tofu/sqlite"
+	"github.com/polyscone/tofu/repo"
 )
 
 type smtpConfig struct {
-	system *sqlite.SystemRepo
+	system *repo.System
 }
 
 func (c *smtpConfig) Read(ctx context.Context) (*smtp.ClientConfig, error) {

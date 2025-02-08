@@ -1,4 +1,4 @@
-package sqlite_test
+package repo_test
 
 import (
 	"context"
@@ -7,7 +7,8 @@ import (
 
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/session"
-	"github.com/polyscone/tofu/sqlite"
+	"github.com/polyscone/tofu/repo"
+	"github.com/polyscone/tofu/repo/sqlite"
 )
 
 func TestWebSession(t *testing.T) {
@@ -16,7 +17,7 @@ func TestWebSession(t *testing.T) {
 
 		session.TestManager(t, func() session.ReadWriter {
 			db := sqlite.OpenInMemoryTestDatabase(ctx)
-			repo := errsx.Must(sqlite.NewWebRepo(ctx, db, 10*time.Minute))
+			repo := errsx.Must(repo.NewWeb(ctx, db, 10*time.Minute))
 
 			return repo
 		})

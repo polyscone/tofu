@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"embed"
 	"errors"
 	"expvar"
 	"fmt"
@@ -21,9 +20,6 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/uuid"
 )
-
-//go:embed "all:migrations"
-var migrations embed.FS
 
 const driverName = "sqlite3_custom"
 
@@ -163,7 +159,7 @@ func OpenInMemoryTestDatabase(ctx context.Context) *DB {
 	return errsx.Must(Open(ctx, KindMemory, randomName, nil))
 }
 
-func migrate(ctx context.Context, tx *Tx, name string, migrations []string) error {
+func Migrate(ctx context.Context, tx *Tx, name string, migrations []string) error {
 	if len(migrations) == 0 {
 		return nil
 	}
@@ -247,7 +243,7 @@ func migrate(ctx context.Context, tx *Tx, name string, migrations []string) erro
 	return nil
 }
 
-func migrateFS(ctx context.Context, db *DB, name string, fsys fs.FS) error {
+func MigrateFS(ctx context.Context, db *DB, name string, fsys fs.FS) error {
 	// We get a connection from the pool directly here so we can make
 	// sure that pragmas run on this connection will be in effect for the
 	// transaction we use for migrations
@@ -297,7 +293,7 @@ func migrateFS(ctx context.Context, db *DB, name string, fsys fs.FS) error {
 		queries[i] = string(b)
 	}
 
-	if err := migrate(ctx, tx, name, queries); err != nil {
+	if err := Migrate(ctx, tx, name, queries); err != nil {
 		return err
 	}
 
@@ -368,7 +364,7 @@ func repoerr(err error) error {
 	return err
 }
 
-func whereSQL(where []string) string {
+func WhereSQL(where []string) string {
 	if len(where) == 0 {
 		return ""
 	}
@@ -376,7 +372,7 @@ func whereSQL(where []string) string {
 	return "where (" + strings.Join(where, ") and (") + ")"
 }
 
-func orderBySQL(sorts []string) string {
+func OrderBySQL(sorts []string) string {
 	if len(sorts) == 0 {
 		return ""
 	}
@@ -384,14 +380,7 @@ func orderBySQL(sorts []string) string {
 	return "order by " + strings.Join(sorts, ", ")
 }
 
-func pageLimitOffset(page, size int) (int, int) {
-	limit := size
-	offset := (page - 1) * size
-
-	return limit, offset
-}
-
-func limitOffsetSQL(limit, offset int) string {
+func LimitOffsetSQL(limit, offset int) string {
 	switch {
 	case limit > 0 && offset > 0:
 		return fmt.Sprintf("limit %v offset %v", limit, offset)
@@ -406,7 +395,7 @@ func limitOffsetSQL(limit, offset int) string {
 	return ""
 }
 
-func inSQL[T any](args []T) (string, []any) {
+func InSQL[T any](args []T) (string, []any) {
 	placeholders := strings.Join(strings.Split(strings.Repeat("?", len(args)), ""), ", ")
 
 	values := make([]any, len(args))
@@ -1009,10 +998,11 @@ var txID atomic.Int64
 
 type Tx struct {
 	*sql.Tx
+	Now time.Time
+
 	ctx        context.Context
 	cancel     context.CancelFunc
 	id         int64
-	now        time.Time
 	metrics    *expvar.Map
 	recorded   atomic.Bool
 	maybeWrite bool
@@ -1024,10 +1014,10 @@ func NewTx(ctx context.Context, tx *sql.Tx, metrics *expvar.Map) *Tx {
 
 	return &Tx{
 		Tx:      tx,
+		Now:     time.Now(),
 		ctx:     ctx,
 		cancel:  cancel,
 		id:      id,
-		now:     time.Now(),
 		metrics: metrics,
 	}
 }
@@ -1277,7 +1267,14 @@ func (rs *Rows) Scan(dst ...any) error {
 	return repoerr(rs.Rows.Scan(dst...))
 }
 
-func newSorts(sorts []string, keysToCols map[string]string) []string {
+func PageLimitOffset(page, size int) (int, int) {
+	limit := size
+	offset := (page - 1) * size
+
+	return limit, offset
+}
+
+func NewSorts(sorts []string, keysToCols map[string]string) []string {
 	if len(sorts) == 0 || len(keysToCols) == 0 {
 		return nil
 	}

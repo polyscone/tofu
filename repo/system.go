@@ -1,36 +1,41 @@
-package sqlite
+package repo
 
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"errors"
 	"fmt"
 	"io/fs"
 
 	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/system"
+	"github.com/polyscone/tofu/repo/sqlite"
 )
 
-type SystemRepo struct {
-	db *DB
+//go:embed "all:sqlite/migrations/system"
+var sqliteSystemMigrations embed.FS
+
+type System struct {
+	db *sqlite.DB
 }
 
-func NewSystemRepo(ctx context.Context, db *DB) (*SystemRepo, error) {
-	migrations, err := fs.Sub(migrations, "migrations/system")
+func NewSystem(ctx context.Context, db *sqlite.DB) (*System, error) {
+	migrations, err := fs.Sub(sqliteSystemMigrations, "sqlite/migrations/system")
 	if err != nil {
 		return nil, fmt.Errorf("initialize system migrations FS: %w", err)
 	}
 
-	if err := migrateFS(ctx, db, "system", migrations); err != nil {
+	if err := sqlite.MigrateFS(ctx, db, "system", migrations); err != nil {
 		return nil, fmt.Errorf("migrate system: %w", err)
 	}
 
-	r := SystemRepo{db: db}
+	r := System{db: db}
 
 	return &r, nil
 }
 
-func (r *SystemRepo) FindConfig(ctx context.Context) (*system.Config, error) {
+func (r *System) FindConfig(ctx context.Context) (*system.Config, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
@@ -40,7 +45,7 @@ func (r *SystemRepo) FindConfig(ctx context.Context) (*system.Config, error) {
 	return r.findConfig(ctx, tx)
 }
 
-func (r *SystemRepo) SaveConfig(ctx context.Context, config *system.Config) error {
+func (r *System) SaveConfig(ctx context.Context, config *system.Config) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -58,7 +63,7 @@ func (r *SystemRepo) SaveConfig(ctx context.Context, config *system.Config) erro
 	return nil
 }
 
-func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, error) {
+func (r *System) findConfig(ctx context.Context, tx *sqlite.Tx) (*system.Config, error) {
 	var config system.Config
 	err := tx.QueryRowContext(ctx, `
 		select
@@ -110,7 +115,7 @@ func (r *SystemRepo) findConfig(ctx context.Context, tx *Tx) (*system.Config, er
 	return &config, nil
 }
 
-func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Config) error {
+func (r *System) upsertConfig(ctx context.Context, tx *sqlite.Tx, config *system.Config) error {
 	_, err := tx.ExecContext(ctx, `
 		insert into system__config (
 			id,
@@ -205,8 +210,8 @@ func (r *SystemRepo) upsertConfig(ctx context.Context, tx *Tx, config *system.Co
 		sql.Named("twilio_sid", config.TwilioSID),
 		sql.Named("twilio_token", config.TwilioToken),
 		sql.Named("twilio_from_tel", config.TwilioFromTel),
-		sql.Named("created_at", Time(tx.now.UTC())),
-		sql.Named("updated_at", Time(tx.now.UTC())),
+		sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
+		sql.Named("updated_at", sqlite.Time(tx.Now.UTC())),
 	)
 
 	return err
