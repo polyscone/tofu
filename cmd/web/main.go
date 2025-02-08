@@ -64,8 +64,8 @@ var opts struct {
 
 func main() {
 	defer func() {
-		// If we recover from a panic we want to log it using whatever
-		// handler was setup as the default in the slog package, rather than
+		// If we panic we want to log it using whatever handler was
+		// setup as the default in the slog package, rather than
 		// just having the stack trace dumped without any structure
 		if err := recover(); err != nil {
 			const size = 64 << 10
@@ -81,6 +81,12 @@ func main() {
 		}
 	}()
 
+	res := run()
+
+	os.Exit(res)
+}
+
+func run() int {
 	requiredFlags := []string{"addr"}
 
 	flag.Usage = func() {
@@ -113,7 +119,7 @@ func main() {
 		fmt.Fprintf(flag.CommandLine.Output(), "Unknown command %q\n", flag.Arg(0))
 		flag.Usage()
 
-		os.Exit(2)
+		return 2
 	}
 
 	// Version data
@@ -163,7 +169,7 @@ func main() {
 
 			fmt.Print(version)
 
-			return
+			return 0
 		}
 
 		newString := func(value string) expvar.Var {
@@ -214,14 +220,14 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 
-		os.Exit(2)
+		return 2
 	}
 
 	logger, err := opts.log.style.NewLogger(nil)
 	if err != nil {
 		fmt.Println(err)
 
-		os.Exit(2)
+		return 2
 	}
 
 	slog.SetDefault(logger)
@@ -257,7 +263,7 @@ func main() {
 		fmt.Println(strings.Join(requiredMessages, "\n"))
 		flag.Usage()
 
-		os.Exit(2)
+		return 2
 	}
 
 	if opts.basePath != "" {
@@ -267,7 +273,7 @@ func main() {
 	if err := os.MkdirAll(opts.data, 0755); err != nil {
 		slog.Error("make data directory", "error", err)
 
-		os.Exit(1)
+		return 1
 	}
 
 	if len(opts.server.ipWhitelist) > 0 {
@@ -291,7 +297,7 @@ func main() {
 	if err := initHasher(); err != nil {
 		slog.Error("initialize hasher", "error", err)
 
-		os.Exit(1)
+		return 1
 	}
 
 	tenants := filepath.Join(opts.data, "tenants.json")
@@ -303,7 +309,7 @@ func main() {
 	if err != nil {
 		slog.Error("get listener", "error", err)
 
-		os.Exit(1)
+		return 1
 	}
 
 	baseCtx, baseCtxCancel := context.WithCancel(context.Background())
@@ -385,4 +391,6 @@ func main() {
 	background.Wait()
 
 	closeCache()
+
+	return 0
 }
