@@ -17,6 +17,8 @@ func TestNew(t *testing.T) {
 	}{
 		{"min int64", "-9223372036854775808"},
 		{"max int64", "9223372036854775807"},
+		{"min int64 overflow", "-109223372036854775808"},
+		{"max int64 overflow", "109223372036854775807"},
 		{"negative", "-123"},
 		{"negative with unit", "-123 kg"},
 		{"positive", "+123"},
@@ -45,6 +47,7 @@ func TestArithmetic(t *testing.T) {
 		{"100.020", "+", "0", "100.02"},
 		{"100.000", "+", "200.123", "300.123"},
 		{"0005.000", "+", "0000002.000000", "7"},
+		{"10000000000000000000.000000001", "+", "10000000000000000000.000000001", "20000000000000000000.000000002"},
 
 		{"0.1", "-", "0.2", "-0.1"},
 		{"-0.1", "-", "0.2", "-0.3"},
@@ -55,6 +58,7 @@ func TestArithmetic(t *testing.T) {
 		{"100.020", "-", "0", "100.02"},
 		{"100.000", "-", "200.123", "-100.123"},
 		{"0005.000", "-", "0000002.000000", "3"},
+		{"10000000000000000000.000000001", "-", "10000000000000000000.000000001", "0"},
 
 		{"0.1", "*", "0.2", "0.02"},
 		{"-0.1", "*", "0.2", "-0.02"},
@@ -66,6 +70,11 @@ func TestArithmetic(t *testing.T) {
 		{"100.000", "*", "200.123", "20012.3"},
 		{"0005.000", "*", "0000002.000000", "10"},
 		{"1.10", "*", "0.5227", "0.57497"},
+		{"10000000000000000000.000000001", "*", "10000000000000000000.000000001", "100000000000000000000000000020000000000.000000000000000001"},
+
+		{"1.10", "abs", "", "1.10"},
+		{"-1.10", "abs", "", "1.10"},
+		{"-10000000000000000000.000000001", "abs", "", "10000000000000000000.000000001"},
 	}
 	for i, tc := range tt {
 		t.Run("test["+strconv.Itoa(i)+"]", func(t *testing.T) {
@@ -83,6 +92,9 @@ func TestArithmetic(t *testing.T) {
 
 			case "*":
 				got = a.Mul(b)
+
+			case "abs":
+				got = a.Abs()
 			}
 
 			if !got.Equal(want) {
@@ -231,9 +243,9 @@ func TestString(t *testing.T) {
 		{"0.1", "0.1"},
 		{"+0.1", "0.1"},
 		{"100", "100"},
-		{"100.000", "100"},
-		{"100.020", "100.02"},
-		{"00003240.0001000", "3240.0001"},
+		{"100.000", "100.000"},
+		{"100.020", "100.020"},
+		{"00003240.0001000", "3240.0001000"},
 	}
 	for i, tc := range tt {
 		t.Run("test["+strconv.Itoa(i)+"]", func(t *testing.T) {
@@ -276,20 +288,6 @@ func TestPanics(t *testing.T) {
 		op   string
 		b    string
 	}{
-		{"overflow: min int64", "-9223372036854775809", "", ""},
-		{"overflow: max int64", "9223372036854775808", "", ""},
-
-		{"overflow: add positive", "9223372036854775807", "+", "1"},
-		{"overflow: add negative", "-9223372036854775808", "+", "-1"},
-
-		{"overflow: sub positive", "-9223372036854775808", "-", "1"},
-		{"overflow: sub negative", "9223372036854775807", "-", "-1"},
-
-		{"overflow: mul positive", "4611686018427387904", "*", "2"},
-		{"overflow: mul negative", "-4611686018427387905", "*", "2"},
-
-		{"overflow: abs negative", "-9223372036854775808", "abs", ""},
-
 		{"different units: add", "1 a", "+", "1 b"},
 		{"different units: sub", "1 a", "-", "1 b"},
 		{"different units: mul", "1 a", "*", "1 b"},
@@ -316,9 +314,6 @@ func TestPanics(t *testing.T) {
 
 				case "*":
 					a.Mul(b)
-
-				case "abs":
-					a.Abs()
 				}
 			}
 		})
@@ -367,7 +362,7 @@ func TestValuer(t *testing.T) {
 	}{
 		{"empty", "", "0", 0},
 		{"zero", "0", "0", 0},
-		{"zero normalized", "0.00", "0", 0},
+		{"zero normalized", "0.00", "0.00", 2},
 		{"valid decimal point", "13.453 kg", "13.453 kg", 3},
 		{"valid negative decimal point", "-13.453", "-13.453", 3},
 	}
@@ -410,7 +405,7 @@ func TestMarshaler(t *testing.T) {
 	}{
 		{"empty", "", `{"amount":"0"}`},
 		{"zero", "0", `{"amount":"0"}`},
-		{"zero with places", "0.00", `{"amount":"0"}`},
+		{"zero with places", "0.00", `{"amount":"0.00"}`},
 		{"valid decimal point", "13.453 kg", `{"amount":"13.453 kg"}`},
 		{"valid negative decimal point", "-13.453", `{"amount":"-13.453"}`},
 	}
@@ -445,7 +440,7 @@ func TestUnmarshaler(t *testing.T) {
 	}{
 		{"empty", "0", `{"amount":""}`},
 		{"zero", "0", `{"amount":"0"}`},
-		{"zero with places", "0", `{"amount":"0.00"}`},
+		{"zero with places", "0.00", `{"amount":"0.00"}`},
 		{"valid decimal point", "13.453 kg", `{"amount":"13.453 kg"}`},
 		{"valid negative decimal point", "-13.453", `{"amount":"-13.453"}`},
 	}

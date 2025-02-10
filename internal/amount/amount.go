@@ -6,8 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"strconv"
+	"math/big"
 	"strings"
+)
+
+var (
+	int0  = big.NewInt(0)
+	int10 = big.NewInt(10)
 )
 
 // RoundingMode indicates which rounding mode should be used when rounding an amount.
@@ -32,14 +37,14 @@ const (
 )
 
 type Amount struct {
-	value  int64
+	value  *big.Int
 	places int
 	unit   string
 }
 
 func NewFromInt64(value int64, places int, unit string) Amount {
 	return Amount{
-		value:  value,
+		value:  big.NewInt(value),
 		places: places,
 		unit:   unit,
 	}
@@ -78,12 +83,9 @@ func New(str string) (Amount, error) {
 				digit = -digit
 			}
 
-			result := amt.value*10 + digit
-			if negate && result > amt.value || !negate && result < amt.value {
-				return amt, fmt.Errorf("%v overflows 64-bit integer", str)
-			}
+			ones := big.NewInt(digit)
 
-			amt.value = result
+			amt.value.Mul(amt.value, int10).Add(amt.value, ones)
 
 			if mode == "frac" {
 				amt.places++
@@ -113,29 +115,42 @@ func New(str string) (Amount, error) {
 		}
 	}
 
-	return amt.normalize(), nil
+	return amt, nil
 }
 
 func (amt Amount) parts() (string, string) {
-	divisor := int64(math.Pow10(amt.places))
-	i := strconv.FormatInt(amt.value/divisor, 10)
-	if amt.value < 0 && !strings.HasPrefix(i, "-") {
-		i = "-" + i
+	if amt.value == nil {
+		return "0", ""
 	}
 
-	if amt.places == 0 {
-		return i, ""
+	d := fmt.Sprintf("%+d", amt.value)
+
+	d = strings.TrimPrefix(d, "+")
+
+	if len(d) < amt.places {
+		d = strings.Repeat("0", amt.places-len(d)) + d
 	}
 
-	f := strconv.FormatInt(int64(math.Abs(float64(amt.value%divisor))), 10)
-	if n := len(f); n < amt.places {
-		f = strings.Repeat("0", amt.places-n) + f
+	p := len(d) - amt.places
+	i := d[:p]
+	f := d[p:]
+
+	switch i {
+	case "":
+		i = "0"
+
+	case "-":
+		i = "-0"
 	}
 
 	return i, f
 }
 
 func (amt Amount) Format(minPlaces int) string {
+	if minPlaces > 0 {
+		amt = amt.normalize()
+	}
+
 	places := max(minPlaces, amt.places)
 	i, f := amt.parts()
 	if places == 0 {
@@ -161,9 +176,34 @@ func (amt Amount) String() string {
 	return amt.Format(0)
 }
 
+func (amt Amount) Places() int {
+	return amt.places
+}
+
+func (amt Amount) Unit() string {
+	return amt.unit
+}
+
+func (amt Amount) Int64() (int64, int, bool) {
+	if !amt.value.IsInt64() {
+		return 0, 0, false
+	}
+
+	return amt.value.Int64(), amt.Places(), true
+}
+
+func (amt Amount) copy() Amount {
+	return Amount{
+		value:  big.NewInt(0).Set(amt.value),
+		places: amt.places,
+		unit:   amt.unit,
+	}
+}
+
 func (amt Amount) truncate(places int) Amount {
+	amt = amt.copy()
 	for amt.places > places {
-		amt.value /= 10
+		amt.value.Quo(amt.value, int10)
 		amt.places--
 	}
 
@@ -171,16 +211,13 @@ func (amt Amount) truncate(places int) Amount {
 }
 
 func (amt Amount) grow(places int) Amount {
+	amt = amt.copy()
 	if places > amt.places {
 		n := places - amt.places
-		factor := int64(math.Pow10(n))
-		result := amt.value * factor
+		factor := big.NewInt(int64(math.Pow10(n)))
 
-		if factor != 0 && result/factor != amt.value {
-			panic(fmt.Sprintf("overflow caused by truncating by a factor of %v on %#v", factor, amt))
-		}
+		amt.value.Mul(amt.value, factor)
 
-		amt.value = result
 		amt.places += n
 	}
 
@@ -188,16 +225,18 @@ func (amt Amount) grow(places int) Amount {
 }
 
 func (amt Amount) normalize() Amount {
-	for amt.places > 0 && amt.value%10 == 0 {
-		amt.value /= 10
+	amt = amt.copy()
+	for amt.places > 0 {
+		x := big.NewInt(0).Set(amt.value)
+		if x.Rem(x, int10).Cmp(int0) != 0 {
+			break
+		}
+
+		amt.value.Quo(amt.value, int10)
 		amt.places--
 	}
 
 	return amt
-}
-
-func (amt Amount) Places() int {
-	return amt.places
 }
 
 func (lhs Amount) Equal(rhs Amount) bool {
@@ -208,7 +247,7 @@ func (lhs Amount) Equal(rhs Amount) bool {
 	lhs = lhs.grow(rhs.places)
 	rhs = rhs.grow(lhs.places)
 
-	return lhs.value == rhs.value
+	return lhs.value.Cmp(rhs.value) == 0
 }
 
 func (lhs Amount) Add(rhs Amount) Amount {
@@ -219,14 +258,9 @@ func (lhs Amount) Add(rhs Amount) Amount {
 	lhs = lhs.grow(rhs.places)
 	rhs = rhs.grow(lhs.places)
 
-	result := lhs.value + rhs.value
-	if (result <= lhs.value) == (rhs.value > 0) {
-		panic(fmt.Sprintf("overflow caused by addition: %v + %v", lhs, rhs))
-	}
+	lhs.value.Add(lhs.value, rhs.value)
 
-	lhs.value = result
-
-	return lhs.normalize()
+	return lhs
 }
 
 func (lhs Amount) Sub(rhs Amount) Amount {
@@ -237,14 +271,9 @@ func (lhs Amount) Sub(rhs Amount) Amount {
 	lhs = lhs.grow(rhs.places)
 	rhs = rhs.grow(lhs.places)
 
-	result := lhs.value - rhs.value
-	if (result >= lhs.value) == (rhs.value > 0) {
-		panic(fmt.Sprintf("overflow caused by subtraction: %v - %v", lhs, rhs))
-	}
+	lhs.value.Sub(lhs.value, rhs.value)
 
-	lhs.value = result
-
-	return lhs.normalize()
+	return lhs
 }
 
 func (lhs Amount) Mul(rhs Amount) Amount {
@@ -256,25 +285,17 @@ func (lhs Amount) Mul(rhs Amount) Amount {
 	lhs = lhs.grow(places)
 	rhs = rhs.grow(places)
 
-	result := lhs.value * rhs.value
-	if rhs.value != 0 && result/rhs.value != lhs.value {
-		panic(fmt.Sprintf("overflow caused by multiplication: %v * %v", lhs, rhs))
-	}
+	divisor := big.NewInt(int64(math.Pow10(places)))
+	lhs.value.Mul(lhs.value, rhs.value)
+	lhs.value.Quo(lhs.value, divisor)
 
-	divisor := int64(math.Pow10(places))
-	lhs.value = result / divisor
-
-	return lhs.normalize()
+	return lhs
 }
 
 func (amt Amount) Abs() Amount {
-	if amt.value < 0 {
-		if amt.value == math.MinInt64 {
-			panic(fmt.Sprintf("overflow caused by taking the absolute value of the minimum integer"))
-		}
+	amt = amt.copy()
 
-		amt.value = -amt.value
-	}
+	amt.value.Abs(amt.value)
 
 	return amt
 }
@@ -283,6 +304,8 @@ func (amt Amount) Abs() Amount {
 // If the places given is larger than the current amount's places then it's ignored.
 // If the places is negative then it will be treated as 0.
 func (amt Amount) Round(places int, mode RoundingMode) Amount {
+	amt = amt.copy()
+
 	// If the places we want to round to is the same as the current places then we have nothing to do
 	if places < 0 {
 		places = 0
@@ -299,13 +322,14 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 	// For the rest of the modes we need to know what the last digit is one place ahead of the places we want to round
 	// to, which is why we add 1 to the places, and we need an Amount value set to 5 with the same number of places
 	// which we can use to add or subtract before truncation
-	last := amt.truncate(places+1).value % 10
+	trunc := amt.truncate(places + 1)
+	last := big.NewInt(0).Set(trunc.value).Rem(trunc.value, int10).Int64()
 	adjust := NewFromInt64(5, places+1, "")
 
 	switch mode {
 	case RoundHalfAwayFromZero:
 		// If the last integer is +5 or more, then we need to add 5 before truncating
-		// The truncate will truncate the final digit leaving us with the nearest result away from zero
+		// The truncate will remove the final digit leaving us with the nearest result away from zero
 		// Otherwise we always subtract 5 before truncating
 		// For example, rounding to a places of 1:
 		//    0.06 ->  0.11 ->  0.1
@@ -360,7 +384,7 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 		//   -0.05 ->       ->  0.0
 		//   -0.15 -> -0.20 -> -0.2
 		//   -0.04 -> -0.09 ->  0.0
-		roundedIsEven := amt.truncate(places).value%2 == 0
+		roundedIsEven := amt.copy().truncate(places).value.Bit(0) == 0
 		if (last == 5 || last == -5) && roundedIsEven {
 			return amt.truncate(places)
 		}
@@ -386,7 +410,7 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 		//   -0.05 -> -0.10 -> -0.1
 		//   -0.15 ->       -> -0.1
 		//   -0.04 -> -0.09 ->  0.0
-		roundedIsOdd := amt.truncate(places).value%2 != 0
+		roundedIsOdd := amt.copy().truncate(places).value.Bit(0) == 1
 		if (last == 5 || last == -5) && roundedIsOdd {
 			return amt.truncate(places)
 		}
@@ -404,7 +428,6 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 
 // Scan implements the SQL Scanner interface for Amount.
 func (amt *Amount) Scan(src any) error {
-	amt.value = 0
 	amt.places = 0
 	amt.unit = ""
 
