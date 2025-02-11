@@ -35,7 +35,7 @@ func SignInWithPassword(ctx context.Context, h *handler.Handler, email, password
 	}
 
 	if err := h.Svc.Account.CheckSignInThrottle(attempts, lastAttemptAt); err != nil {
-		return fmt.Errorf("check session sign in throttle: %w", err)
+		return fmt.Errorf("check sign in throttle: %w", err)
 	}
 
 	_, err := h.Svc.Account.SignInWithPassword(ctx, email, password)
