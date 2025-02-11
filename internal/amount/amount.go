@@ -192,7 +192,25 @@ func (amt Amount) Int64() (int64, int, bool) {
 	return amt.value.Int64(), amt.Places(), true
 }
 
+func (amt Amount) Int() (int, int, bool) {
+	i64, places, ok := amt.Int64()
+	if !ok {
+		return 0, 0, false
+	}
+
+	i := int(i64)
+	if int64(i) != i64 {
+		return 0, 0, false
+	}
+
+	return i, places, true
+}
+
 func (amt Amount) copy() Amount {
+	if amt.value == nil {
+		amt.value = big.NewInt(0)
+	}
+
 	return Amount{
 		value:  big.NewInt(0).Set(amt.value),
 		places: amt.places,
