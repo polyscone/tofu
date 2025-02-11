@@ -260,7 +260,7 @@ func NewRenderer(config RendererConfig) *Renderer {
 }
 
 func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view string, assetPipeline *AssetPipeline) (ViewData, error) {
-	config := rn.h.Config(ctx)
+	config := rn.h.Config(ctx).WithoutSecrets()
 	user := rn.h.User(ctx)
 	passport := rn.h.Passport(ctx)
 	logger := rn.h.Logger(ctx)
