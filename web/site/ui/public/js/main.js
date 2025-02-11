@@ -12,9 +12,11 @@ if (lang) {
 	langs.push(lang)
 }
 
-let submittingForm = false
-
 window.addEventListener("pageshow", () => {
+	onMount("[data-submitting]", node => {
+		delete node.dataset.submitting
+	})
+
 	onMount("[data-disable]", node => {
 		if (node.dataset.originalTextContent) {
 			node.textContent = node.dataset.originalTextContent
@@ -25,20 +27,18 @@ window.addEventListener("pageshow", () => {
 		node.classList.remove("btn--loading")
 
 		delete node.dataset.disable
-
-		submittingForm = false
 	})
 })
 
 onMount("form", node => {
 	node.addEventListener("submit", event => {
-		if (submittingForm) {
+		if (event.target.dataset.submitting) {
 			event.preventDefault()
 
 			return
 		}
 
-		submittingForm = true
+		event.target.dataset.submitting = true
 
 		if (!event.submitter.classList.contains("btn--link")) {
 			event.submitter.classList.add("btn--loading")
