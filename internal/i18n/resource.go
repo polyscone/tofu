@@ -116,6 +116,12 @@ func T(rt Runtime, locale string, message Message) (Value, error) {
 	return rsc.T(rt, locale, message)
 }
 
+func TString(rt Runtime, locale string, message Message) string {
+	value, _ := T(rt, locale, message)
+
+	return value.AsString().Value
+}
+
 type Message struct {
 	Key  string
 	Vars Vars
