@@ -49,21 +49,21 @@ func (otp HMACBased) Generate(key []byte, count uint64) (string, error) {
 		return "", fmt.Errorf("key must be at least %d bytes; got %d", otp.minKeyLen, key)
 	}
 
-	h := hmac.New(otp.newHash, key)
-	if err := binary.Write(h, binary.BigEndian, count); err != nil {
+	mac := hmac.New(otp.newHash, key)
+	if err := binary.Write(mac, binary.BigEndian, count); err != nil {
 		return "", fmt.Errorf("write binary: %w", err)
 	}
 
-	hs := h.Sum(nil)
+	sum := mac.Sum(nil)
 
-	truncated := otp.truncate(hs)
+	truncated := otp.truncate(sum)
 	zeroPadded := fmt.Sprintf("%0*d", otp.digits, truncated)
 
 	return zeroPadded, nil
 }
 
-func (otp HMACBased) truncate(hs []byte) uint {
-	sbits := dt(hs)
+func (otp HMACBased) truncate(sum []byte) uint {
+	sbits := dt(sum)
 
 	var snum uint
 	snum |= uint(sbits[0]) << 24
@@ -74,15 +74,15 @@ func (otp HMACBased) truncate(hs []byte) uint {
 	return snum % uint(math.Pow(10, float64(otp.digits)))
 }
 
-func dt(hs []byte) []byte {
-	// The offset is always the 4 lest significant bits of the lest significant
+func dt(sum []byte) []byte {
+	// The offset is always the 4 least significant bits of the least significant
 	// byte, assuming little endian
-	offset := hs[len(hs)-1] & 0b0000_1111
+	offset := sum[len(sum)-1] & 0b0000_1111
 
 	// p is made up of the 4 bytes starting at offset
-	p := hs[offset : offset+4]
+	p := sum[offset : offset+4]
 
-	// We need to return the lest significant 31 bits of p, so we'll just mask
+	// We need to return the least significant 31 bits of p, so we'll just mask
 	// out the most significant bit
 	p[0] &= 0b0111_1111
 
