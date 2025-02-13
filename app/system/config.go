@@ -31,14 +31,6 @@ type Config struct {
 	SetupRequired             bool
 }
 
-func (c *Config) WithoutSecrets() *Config {
-	config := *c
-
-	config.FacebookSignInAppSecret = ""
-
-	return &config
-}
-
 func (c *Config) HasSMS() bool {
 	return c.TwilioSID != "" && c.TwilioToken != "" && c.TwilioFromTel != ""
 }
