@@ -15,6 +15,8 @@ var (
 	int10 = big.NewInt(10)
 )
 
+var Zero = NewFromInt64(0, 0, "")
+
 // RoundingMode indicates which rounding mode should be used when rounding an amount.
 type RoundingMode uint8
 
