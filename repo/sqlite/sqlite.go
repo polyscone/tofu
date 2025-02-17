@@ -406,6 +406,20 @@ func InSQL[T any](args []T) (string, []any) {
 	return placeholders, values
 }
 
+func NewNullable[T comparable](value T) (null sql.Null[T]) {
+	if value, ok := any(value).(interface{ IsZero() bool }); ok {
+		if value.IsZero() {
+			return null
+		}
+	}
+
+	if value == null.V {
+		return null
+	}
+
+	return sql.Null[T]{V: value, Valid: true}
+}
+
 const RFC3339NanoZero = "2006-01-02 15:04:05.000000000Z07:00"
 
 var decodeTimeFormats = []string{
