@@ -178,6 +178,10 @@ func (amt Amount) String() string {
 	return amt.Format(0)
 }
 
+func (amt Amount) IsZero() bool {
+	return amt.Equal(Zero)
+}
+
 func (amt Amount) Places() int {
 	return amt.places
 }
@@ -268,6 +272,16 @@ func (lhs Amount) Equal(rhs Amount) bool {
 	rhs = rhs.grow(lhs.places)
 
 	return lhs.value.Cmp(rhs.value) == 0
+}
+
+func (amt Amount) WithMinPlaces(places int) Amount {
+	if places < 0 {
+		places = 0
+	}
+
+	amt = amt.grow(places)
+
+	return amt
 }
 
 func (lhs Amount) Add(rhs Amount) Amount {
