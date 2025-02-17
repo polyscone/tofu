@@ -19,6 +19,7 @@ const (
 )
 
 var funcNames = map[string]Value{
+	"len":        NewString("len"),
 	"join":       NewString("join"),
 	"split":      NewString("split"),
 	"bold":       NewString("bold"),
@@ -55,6 +56,7 @@ type AfterPostProcessFunc func(res string) string
 
 type Runtime interface {
 	Kind() string
+	Len(value Value) Int
 	Join(s, sep Value) String
 	Split(s, sep Value) Slice
 	Bold(value Value) RawString

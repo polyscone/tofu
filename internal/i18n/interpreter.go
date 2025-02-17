@@ -259,6 +259,12 @@ func Eval(node Node, rt Runtime, locale string, vars Vars) (Value, error) {
 		}
 
 		switch lhs.AsString().Value {
+		case "len":
+			arg0 := arg(node.Args, 0, rt, locale, vars)
+			res := rt.Len(arg0)
+
+			return res, nil
+
 		case "join":
 			arg0 := arg(node.Args, 0, rt, locale, vars)
 			arg1 := arg(node.Args, 1, rt, locale, vars)

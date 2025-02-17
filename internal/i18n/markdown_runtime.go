@@ -15,6 +15,12 @@ func (r MarkdownRuntime) Kind() string {
 	return "markdown"
 }
 
+func (r MarkdownRuntime) Len(value Value) Int {
+	slice := value.AsSlice()
+
+	return NewInt(int64(len(slice)))
+}
+
 func (r MarkdownRuntime) Join(s, sep Value) String {
 	slice := s.AsSlice()
 	strs := make([]string, len(slice))

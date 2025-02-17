@@ -1,4 +1,18 @@
 {
+	"and_list": [
+		["if: len(value) == 0", ""],
+		["if: len(value) == 1", "{value}"],
+		["if: len(value) == 2", "{join(value, ' and ')}"],
+		"{join(value[:-1], ', ')}, and {value[-1]}"
+	],
+
+	"or_list": [
+		["if: len(value) == 0", ""],
+		["if: len(value) == 1", "{value}"],
+		["if: len(value) == 2", "{join(value, ' or ')}"],
+		"{join(value[:-1], ', ')}, or {value[-1]}"
+	],
+
 	"number": [
 		["if: fraction(value)", "{t('number', integer(value))}.{trim_left(fraction(value, opt), '0.')}"],
 		["if: value >= 1000", "{t('number', value / 1000)},{pad_left(value % 1000, 3, '0')}"],
@@ -187,7 +201,7 @@
 			"missing_local_part": "missing part before the @ sign",
 			"missing_domain": "missing part after the @ sign",
 			"has_name": "cannot not include a name",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"missing_tld": "missing top-level domain (.com, .co.uk, etc.)",
 			"not_an_email": "must be an email address, e.g. email@example.com",
 			"other": "invalid input: {error}"
@@ -197,13 +211,13 @@
 			"empty": "cannot be empty",
 			"too_long": "cannot be a over {max_length} characters in length",
 			"incorrect_plus_position": "+ sign must come at the beginning",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"invalid": "must be in the format +12 3456 7890"
 		},
 
 		"suspend_reason.error": {
 			"too_long": "cannot be a over {max_length} characters in length",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"invalid": "can only contain latin characters"
 		},
 
@@ -211,13 +225,13 @@
 			"empty": "cannot be empty",
 			"too_short": "must be at least {min_length} characters in length",
 			"too_long": "cannot be a over {max_length} characters in length",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"invalid": "can only contain latin characters"
 		},
 
 		"role_description.error": {
 			"too_long": "cannot be a over {max_length} characters in length",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"invalid": "can only contain latin characters"
 		},
 
@@ -226,7 +240,7 @@
 			"has_whitespace": "cannot contain whitespace",
 			"has_quotes": "cannot contain quotes",
 			"incorrect_length": "must be {required_length} characters in length",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"invalid": "can only contain uppercase characters between A-Z and 2-7"
 		},
 
@@ -236,7 +250,7 @@
 			"has_quotes": "cannot contain quotes",
 			"too_short": "must be at least {min_length} characters in length",
 			"too_long": "cannot be a over {max_length} characters in length",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"invalid": "can only contain letters, numbers, underscores, and colons, e.g. abc_123:def_456"
 		},
 
@@ -248,7 +262,7 @@
 
 		"totp.error": {
 			"incorrect_length": "must be {required_length} characters in length",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"invalid": "must be {required_length} digits"
 		},
 
@@ -359,7 +373,7 @@
 			"missing_local_part": "missing part before the @ sign",
 			"missing_domain": "missing part after the @ sign",
 			"has_name": "cannot not include a name",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"missing_tld": "missing top-level domain (.com, .co.uk, etc.)",
 			"not_an_email": "must be an email address, e.g. email@example.com",
 			"other": "invalid input: {error}"
@@ -372,24 +386,24 @@
 
 		"resend_api_key.error": {
 			"incorrect_length": "must be {required_length} characters in length",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"invalid": "must begin with re_"
 		},
 
 		"twilio_sid.error": {
 			"incorrect_length": "must be {required_length} characters in length",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"invalid": "must begin with AC and be followed by 32 hexadecimal characters"
 		},
 
 		"twilio_token.error": {
 			"incorrect_length": "must be {required_length} characters in length",
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"invalid": "must be exactly 32 hexadecimal characters"
 		},
 
 		"twilio_tel.error": {
-			"has_invalid_chars": "cannot contain: {join(invalid_chars[:-1], ', ')}, or {invalid_chars[-1]}",
+			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
 			"invalid": "must be in the format +12 3456 7890"
 		},
 
