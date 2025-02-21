@@ -139,6 +139,7 @@ func Open(ctx context.Context, kind Kind, filename string, metrics *expvar.Map) 
 	db := &DB{
 		DB:      sqlDB,
 		metrics: metrics,
+		DSN:     dsn,
 	}
 
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
@@ -776,6 +777,7 @@ func (c *Conn) QueryRowContext(ctx context.Context, query string, args ...any) *
 type DB struct {
 	*sql.DB
 	metrics *expvar.Map
+	DSN     string
 }
 
 func (db *DB) Conn(ctx context.Context) (*Conn, error) {
