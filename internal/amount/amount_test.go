@@ -2,6 +2,7 @@ package amount_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
@@ -104,26 +105,113 @@ func TestArithmetic(t *testing.T) {
 	}
 }
 
+func TestAllocateBetween(t *testing.T) {
+	tt := []struct {
+		value    string
+		portions int
+		want     []string
+		split    int
+	}{
+		{"0.567", -1, []string{}, 0},
+		{"0.567", 0, []string{}, 0},
+		{"0.567", 1, []string{"0.567"}, 0},
+		{"0.567", 2, []string{"0.284", "0.283"}, 1},
+		{"0.567", 3, []string{"0.189", "0.189", "0.189"}, 0},
+		{"0.567", 4, []string{"0.142", "0.142", "0.142", "0.141"}, 3},
+		{"0.567", 5, []string{"0.114", "0.114", "0.113", "0.113", "0.113"}, 2},
+		{"0.567", 6, []string{"0.095", "0.095", "0.095", "0.094", "0.094", "0.094"}, 3},
+		{"0.567", 7, []string{"0.081", "0.081", "0.081", "0.081", "0.081", "0.081", "0.081"}, 0},
+		{"0.567", 8, []string{"0.071", "0.071", "0.071", "0.071", "0.071", "0.071", "0.071", "0.070"}, 7},
+		{"0.567", 9, []string{"0.063", "0.063", "0.063", "0.063", "0.063", "0.063", "0.063", "0.063", "0.063"}, 0},
+		{"0.567", 10, []string{"0.057", "0.057", "0.057", "0.057", "0.057", "0.057", "0.057", "0.056", "0.056", "0.056"}, 7},
+
+		{"3", -1, []string{}, 0},
+		{"3", 0, []string{}, 0},
+		{"3", 1, []string{"3"}, 0},
+		{"3", 2, []string{"2", "1"}, 1},
+		{"3", 3, []string{"1", "1", "1"}, 0},
+		{"3", 4, []string{"1", "1", "1", "0"}, 3},
+		{"3", 5, []string{"1", "1", "1", "0", "0"}, 3},
+		{"3", 6, []string{"1", "1", "1", "0", "0", "0"}, 3},
+		{"3", 7, []string{"1", "1", "1", "0", "0", "0", "0"}, 3},
+		{"3", 8, []string{"1", "1", "1", "0", "0", "0", "0", "0"}, 3},
+		{"3", 9, []string{"1", "1", "1", "0", "0", "0", "0", "0", "0"}, 3},
+		{"3", 10, []string{"1", "1", "1", "0", "0", "0", "0", "0", "0", "0"}, 3},
+
+		{"10.00", -1, []string{}, 0},
+		{"10.00", 0, []string{}, 0},
+		{"10.00", 1, []string{"10.00"}, 0},
+		{"10.00", 2, []string{"5.00", "5.00"}, 0},
+		{"10.00", 3, []string{"3.34", "3.33", "3.33"}, 1},
+		{"10.00", 4, []string{"2.50", "2.50", "2.50", "2.50"}, 0},
+		{"10.00", 5, []string{"2.00", "2.00", "2.00", "2.00", "2.00"}, 0},
+		{"10.00", 6, []string{"1.67", "1.67", "1.67", "1.67", "1.66", "1.66"}, 4},
+		{"10.00", 7, []string{"1.43", "1.43", "1.43", "1.43", "1.43", "1.43", "1.42"}, 6},
+		{"10.00", 8, []string{"1.25", "1.25", "1.25", "1.25", "1.25", "1.25", "1.25", "1.25"}, 0},
+		{"10.00", 9, []string{"1.12", "1.11", "1.11", "1.11", "1.11", "1.11", "1.11", "1.11", "1.11"}, 1},
+		{"10.00", 10, []string{"1.00", "1.00", "1.00", "1.00", "1.00", "1.00", "1.00", "1.00", "1.00", "1.00"}, 0},
+
+		{"105.25", -1, []string{}, 0},
+		{"105.25", 0, []string{}, 0},
+		{"105.25", 1, []string{"105.25"}, 0},
+		{"105.25", 2, []string{"52.63", "52.62"}, 1},
+		{"105.25", 3, []string{"35.09", "35.08", "35.08"}, 1},
+		{"105.25", 4, []string{"26.32", "26.31", "26.31", "26.31"}, 1},
+		{"105.25", 5, []string{"21.05", "21.05", "21.05", "21.05", "21.05"}, 0},
+		{"105.25", 6, []string{"17.55", "17.54", "17.54", "17.54", "17.54", "17.54"}, 1},
+		{"105.25", 7, []string{"15.04", "15.04", "15.04", "15.04", "15.03", "15.03", "15.03"}, 4},
+		{"105.25", 8, []string{"13.16", "13.16", "13.16", "13.16", "13.16", "13.15", "13.15", "13.15"}, 5},
+		{"105.25", 9, []string{"11.70", "11.70", "11.70", "11.70", "11.69", "11.69", "11.69", "11.69", "11.69"}, 4},
+		{"105.25", 10, []string{"10.53", "10.53", "10.53", "10.53", "10.53", "10.52", "10.52", "10.52", "10.52", "10.52"}, 5},
+	}
+	for _, tc := range tt {
+		name := fmt.Sprintf("%v portions of %v", tc.portions, tc.value)
+
+		t.Run(name, func(t *testing.T) {
+			if tc.portions >= 0 && tc.portions != len(tc.want) {
+				t.Fatalf("test wants %v portions but describes %v expectations", tc.portions, len(tc.want))
+			}
+
+			amts, split := errsx.Must(amount.New(tc.value)).AllocateBetween(tc.portions)
+
+			if len(amts) != len(tc.want) {
+				t.Errorf("want %v amounts, got %v", len(tc.want), len(amts))
+			} else {
+				var total amount.Amount
+				for i, got := range amts {
+					if got.String() != tc.want[i] {
+						t.Errorf("want portion[%v] to be %v, got %v", i, tc.want[i], got)
+					}
+
+					total = total.Add(got)
+				}
+
+				if tc.portions > 0 && total.String() != tc.value {
+					t.Errorf("want total of portions to be %v, got %v", tc.value, total)
+				}
+			}
+
+			if split != tc.split {
+				t.Errorf("want split index to be %v, got %v", tc.split, split)
+			}
+		})
+	}
+}
+
 func TestAbs(t *testing.T) {
 	tt := []struct {
-		name   string
-		value  string
-		result string
+		name  string
+		value string
+		want  string
 	}{
 		{"positive", "1.075 kg", "1.075 kg"},
 		{"negative", "-1.075 kg", "1.075 kg"},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			amt, err := amount.New(tc.value)
-			if err != nil {
-				t.Errorf("want nil, got error %q", err)
-				return
-			}
-
-			result := amt.Abs()
-			if result.String() != tc.result {
-				t.Errorf("want abs value of %v, got %v", tc.result, result)
+			got := errsx.Must(amount.New(tc.value)).Abs()
+			if got.String() != tc.want {
+				t.Errorf("want abs value of %v, got %v", tc.want, got)
 			}
 		})
 	}
@@ -371,10 +459,7 @@ func TestValuer(t *testing.T) {
 			var amt amount.Amount
 			var err error
 			if tc.amount != "" {
-				amt, err = amount.New(tc.amount)
-				if err != nil {
-					t.Fatal(err)
-				}
+				amt = errsx.Must(amount.New(tc.amount))
 			}
 
 			value, err := amt.Value()
@@ -416,10 +501,7 @@ func TestMarshaler(t *testing.T) {
 			if tc.value == "" {
 				amt = amount.Amount{}
 			} else {
-				amt, err = amount.New(tc.value)
-				if err != nil {
-					t.Fatal(err)
-				}
+				amt = errsx.Must(amount.New(tc.value))
 			}
 			j, err := json.Marshal(map[string]amount.Amount{"amount": amt})
 			if err != nil {

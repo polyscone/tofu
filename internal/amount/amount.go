@@ -12,6 +12,7 @@ import (
 
 var (
 	int0  = big.NewInt(0)
+	int1  = big.NewInt(1)
 	int10 = big.NewInt(10)
 )
 
@@ -324,6 +325,42 @@ func (lhs Amount) Mul(rhs Amount) Amount {
 	lhs.value.Quo(lhs.value, divisor)
 
 	return lhs
+}
+
+// AllocateBetween will split the given amount into the number of portions provided.
+//
+// It returns a slice of amounts which sum to the original amount and a split index.
+// The split index points to the amount in the returned slice that allocation stopped
+// at, and describes the index in the slice where the amounts change in value.
+//
+// For example, if 10.00 is allocated between 3 portions the returned slice will
+// be {3.34, 3.33, 3.33} and the split index will be 1. This means that index 0 was the
+// last index to receive allocation and the split index of 1 shows where the amounts
+// change from 3.34 to 3.33. A split index of 0 means that all amounts in the returned
+// slice have the same value.
+func (amt Amount) AllocateBetween(portions int) ([]Amount, int) {
+	if portions <= 0 {
+		return nil, 0
+	}
+
+	amt = amt.copy()
+
+	var i int
+	amounts := make([]Amount, portions)
+	for i := range len(amounts) {
+		amounts[i] = NewFromInt64(0, amt.Places(), "")
+	}
+	for amt.value.Cmp(int0) != 0 {
+		amounts[i%portions].value.Add(amounts[i%portions].value, int1)
+
+		amt.value.Sub(amt.value, int1)
+
+		i++
+	}
+
+	split := i % portions
+
+	return amounts, split
 }
 
 func (amt Amount) Abs() Amount {
