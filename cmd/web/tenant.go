@@ -130,7 +130,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 			}
 
 			p := filepath.Join(opts.data, data.Name, "main.sqlite")
-			sqliteDB, err = sqlite.Open(ctx, sqlite.KindFile, p, dbMetrics)
+			sqliteDB, err = sqlite.Open(ctx, sqlite.KindFile, p, dbMetrics, nil)
 			if err != nil {
 				return nil, fmt.Errorf("open SQLite database: %w", err)
 			}

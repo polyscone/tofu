@@ -21,10 +21,30 @@ import (
 	"github.com/polyscone/tofu/internal/uuid"
 )
 
-const driverName = "sqlite3_custom"
+const defaultDriverName = "sqlite3_custom"
 
 func init() {
-	sql.Register(driverName, &sqlite3.SQLiteDriver{
+	register(defaultDriverName, nil)
+}
+
+var drivers = struct {
+	mu   sync.Mutex
+	data map[string]*sqlite3.SQLiteDriver
+}{data: make(map[string]*sqlite3.SQLiteDriver)}
+
+type Kind string
+
+type OnConnectFunc func(conn *sqlite3.SQLiteConn) error
+
+func register(name string, onConnect OnConnectFunc) {
+	drivers.mu.Lock()
+	defer drivers.mu.Unlock()
+
+	if _, ok := drivers.data[name]; ok {
+		return
+	}
+
+	driver := &sqlite3.SQLiteDriver{
 		ConnectHook: func(conn *sqlite3.SQLiteConn) error {
 			_, err := conn.Exec(`
 				pragma encoding = 'UTF-8';
@@ -36,13 +56,24 @@ func init() {
 				pragma secure_delete = on;
 				pragma synchronous = normal;
 			`, nil)
+			if err != nil {
+				return err
+			}
 
-			return err
+			if onConnect != nil {
+				if err := onConnect(conn); err != nil {
+					return err
+				}
+			}
+
+			return nil
 		},
-	})
-}
+	}
 
-type Kind string
+	drivers.data[name] = driver
+
+	sql.Register(name, driver)
+}
 
 const (
 	KindFile   Kind = "file"
@@ -54,7 +85,7 @@ var databases = struct {
 	data map[string]*DB
 }{data: make(map[string]*DB)}
 
-func Open(ctx context.Context, kind Kind, filename string, metrics *expvar.Map) (*DB, error) {
+func Open(ctx context.Context, kind Kind, filename string, metrics *expvar.Map, onConnect OnConnectFunc) (*DB, error) {
 	var dsn string
 	switch kind {
 	case KindFile:
@@ -131,6 +162,13 @@ func Open(ctx context.Context, kind Kind, filename string, metrics *expvar.Map) 
 		db.Close()
 	}
 
+	driverName := defaultDriverName
+	if onConnect != nil {
+		driverName = "sqlite3_custom_" + dsn
+
+		register(driverName, onConnect)
+	}
+
 	sqlDB, err := sql.Open(driverName, dsn)
 	if err != nil {
 		return nil, repoerr(err)
@@ -157,7 +195,7 @@ func Open(ctx context.Context, kind Kind, filename string, metrics *expvar.Map) 
 func OpenInMemoryTestDatabase(ctx context.Context) *DB {
 	randomName := errsx.Must(uuid.NewV4()).String() + ".sqlite"
 
-	return errsx.Must(Open(ctx, KindMemory, randomName, nil))
+	return errsx.Must(Open(ctx, KindMemory, randomName, nil, nil))
 }
 
 func Migrate(ctx context.Context, tx *Tx, name string, migrations []string) error {
@@ -379,6 +417,13 @@ func OrderBySQL(sorts []string) string {
 	}
 
 	return "order by " + strings.Join(sorts, ", ")
+}
+
+func PageLimitOffset(page, size int) (int, int) {
+	limit := size
+	offset := (page - 1) * size
+
+	return limit, offset
 }
 
 func LimitOffsetSQL(limit, offset int) string {
@@ -1281,13 +1326,6 @@ func (rs *Rows) Next() bool {
 
 func (rs *Rows) Scan(dst ...any) error {
 	return repoerr(rs.Rows.Scan(dst...))
-}
-
-func PageLimitOffset(page, size int) (int, int) {
-	limit := size
-	offset := (page - 1) * size
-
-	return limit, offset
 }
 
 func NewSorts(sorts []string, keysToCols map[string]string) []string {
