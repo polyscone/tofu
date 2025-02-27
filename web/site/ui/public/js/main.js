@@ -12,6 +12,43 @@ if (lang) {
 	langs.push(lang)
 }
 
+window.sdk ||= {}
+window.sdk.browser = {
+	form: {
+		async enable (form, p) {
+			try {
+				if (typeof p === "function") {
+					p = p()
+				}
+
+				return await p
+			} catch (error) {
+				console.error(error)
+			} finally {
+				if (!form) {
+					return
+				}
+
+				delete form.dataset.submitting
+
+				const disabled = form.querySelectorAll("[data-disable]")
+
+				for (const node of disabled) {
+					if (node.dataset.originalTextContent) {
+						node.textContent = node.dataset.originalTextContent
+
+						delete node.dataset.originalTextContent
+					}
+
+					node.classList.remove("btn--loading")
+
+					delete node.dataset.disable
+				}
+			}
+		}
+	}
+}
+
 window.addEventListener("pageshow", () => {
 	onMount("[data-submitting]", node => {
 		delete node.dataset.submitting
