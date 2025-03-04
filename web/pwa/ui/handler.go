@@ -91,7 +91,7 @@ func (h *Handler) T(ctx context.Context, message i18n.Message) string {
 	if err != nil {
 		logger := h.Logger(ctx)
 
-		logger.Error("pwa handler: i18n T", "err", err)
+		logger.Error("pwa handler: i18n T", "error", err)
 	}
 
 	return res.AsString().Value

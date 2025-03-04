@@ -116,7 +116,7 @@ func (h *Handler) T(ctx context.Context, message i18n.Message) string {
 	if err != nil {
 		logger := h.Logger(ctx)
 
-		logger.Error("site handler: i18n T", "err", err)
+		logger.Error("site handler: i18n T", "error", err)
 	}
 
 	return res.AsString().Value
