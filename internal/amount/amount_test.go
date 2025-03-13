@@ -105,6 +105,91 @@ func TestArithmetic(t *testing.T) {
 	}
 }
 
+func TestComparison(t *testing.T) {
+	tt := []struct {
+		a    string
+		op   string
+		b    string
+		want bool
+	}{
+		{"1", "==", "1", true},
+		{"0.1", "==", "0.1", true},
+		{"1", "==", "2", false},
+		{"2", "==", "1", false},
+		{"0.1", "==", "0.2", false},
+		{"0.2", "==", "0.1", false},
+		{"0.1", "==", "0.01", false},
+		{"0.01", "==", "0.1", false},
+
+		{"1", "<", "1", false},
+		{"0.1", "<", "0.1", false},
+		{"1", "<", "2", true},
+		{"2", "<", "1", false},
+		{"0.1", "<", "0.2", true},
+		{"0.2", "<", "0.1", false},
+		{"0.1", "<", "0.01", false},
+		{"0.01", "<", "0.1", true},
+
+		{"1", "<=", "1", true},
+		{"0.1", "<=", "0.1", true},
+		{"1", "<=", "2", true},
+		{"2", "<=", "1", false},
+		{"0.1", "<=", "0.2", true},
+		{"0.2", "<=", "0.1", false},
+		{"0.1", "<=", "0.01", false},
+		{"0.01", "<=", "0.1", true},
+
+		{"1", ">", "1", false},
+		{"0.1", ">", "0.1", false},
+		{"1", ">", "2", false},
+		{"2", ">", "1", true},
+		{"0.1", ">", "0.2", false},
+		{"0.2", ">", "0.1", true},
+		{"0.1", ">", "0.01", true},
+		{"0.01", ">", "0.1", false},
+
+		{"1", ">=", "1", true},
+		{"0.1", ">=", "0.1", true},
+		{"1", ">=", "2", false},
+		{"2", ">=", "1", true},
+		{"0.1", ">=", "0.2", false},
+		{"0.2", ">=", "0.1", true},
+		{"0.1", ">=", "0.01", true},
+		{"0.01", ">=", "0.1", false},
+	}
+	for i, tc := range tt {
+		t.Run("test["+strconv.Itoa(i)+"]", func(t *testing.T) {
+			a := errsx.Must(amount.New(tc.a))
+			b := errsx.Must(amount.New(tc.b))
+
+			var got bool
+			switch tc.op {
+			case "==":
+				got = a.Equal(b)
+
+			case "<":
+				got = a.Less(b)
+
+			case "<=":
+				got = a.LessEqual(b)
+
+			case ">":
+				got = a.Greater(b)
+
+			case ">=":
+				got = a.GreaterEqual(b)
+
+			default:
+				t.Fatalf("unknown operator: %v", tc.op)
+			}
+
+			if got != tc.want {
+				t.Errorf("want %v %v %v = %v; got %v", tc.a, tc.op, tc.b, tc.want, got)
+			}
+		})
+	}
+}
+
 func TestAllocateBetween(t *testing.T) {
 	tt := []struct {
 		value    string

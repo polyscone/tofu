@@ -192,6 +192,10 @@ func (amt Amount) Unit() string {
 }
 
 func (amt Amount) Int64() (int64, int, bool) {
+	if amt.value == nil {
+		return 0, amt.Places(), true
+	}
+
 	if !amt.value.IsInt64() {
 		return 0, 0, false
 	}
@@ -273,6 +277,36 @@ func (lhs Amount) Equal(rhs Amount) bool {
 	rhs = rhs.grow(lhs.places)
 
 	return lhs.value.Cmp(rhs.value) == 0
+}
+
+func (lhs Amount) Less(rhs Amount) bool {
+	if lhs.unit != "" && rhs.unit != "" && lhs.unit != rhs.unit {
+		return false
+	}
+
+	lhs = lhs.grow(rhs.places)
+	rhs = rhs.grow(lhs.places)
+
+	return lhs.value.Cmp(rhs.value) < 0
+}
+
+func (lhs Amount) LessEqual(rhs Amount) bool {
+	return lhs.Less(rhs) || lhs.Equal(rhs)
+}
+
+func (lhs Amount) Greater(rhs Amount) bool {
+	if lhs.unit != "" && rhs.unit != "" && lhs.unit != rhs.unit {
+		return false
+	}
+
+	lhs = lhs.grow(rhs.places)
+	rhs = rhs.grow(lhs.places)
+
+	return lhs.value.Cmp(rhs.value) > 0
+}
+
+func (lhs Amount) GreaterEqual(rhs Amount) bool {
+	return lhs.Greater(rhs) || lhs.Equal(rhs)
 }
 
 func (amt Amount) WithMinPlaces(places int) Amount {
