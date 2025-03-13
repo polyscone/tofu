@@ -3,6 +3,7 @@ package i18n
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"time"
 )
 
@@ -99,6 +100,9 @@ func NewValue(v any) (Value, error) {
 	case Value:
 		return v, nil
 
+	case nil:
+		return NewString(""), nil
+
 	case bool:
 		return NewBool(v), nil
 
@@ -150,6 +154,9 @@ func NewValue(v any) (Value, error) {
 	case time.Duration:
 		return NewDuration(v), nil
 
+	case fmt.Stringer:
+		return NewString(v.String()), nil
+
 	case []bool:
 		return NewValues(v)
 
@@ -184,6 +191,24 @@ func NewValue(v any) (Value, error) {
 		return NewValues(v)
 
 	default:
+		value := reflect.ValueOf(v)
+		if value.Kind() == reflect.Slice {
+			if value.Len() == 0 {
+				return NewSlice(nil), nil
+			} else {
+				_, ok := value.Index(0).Interface().(fmt.Stringer)
+				if ok {
+					l := value.Len()
+					values := make([]fmt.Stringer, l)
+					for i := range l {
+						values[i], _ = value.Index(i).Interface().(fmt.Stringer)
+					}
+
+					return NewValues(values)
+				}
+			}
+		}
+
 		return NewString(fmt.Sprintf("%v", v)), nil
 	}
 }
