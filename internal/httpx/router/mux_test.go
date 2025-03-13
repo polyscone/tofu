@@ -11,7 +11,7 @@ import (
 	"github.com/polyscone/tofu/internal/testx"
 )
 
-func TestMux2(t *testing.T) {
+func TestMux(t *testing.T) {
 	mux := router.NewServeMux()
 
 	ts := testx.NewServer(t, mux)
