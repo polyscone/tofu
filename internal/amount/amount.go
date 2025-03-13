@@ -23,20 +23,20 @@ type RoundingMode uint8
 
 // Rounding modes to be used with any rounding methods.
 const (
-	// RoundTruncate will just discard any numbers after the desired places.
-	RoundTruncate RoundingMode = iota
+	// Truncate will just discard any numbers after the desired places.
+	Truncate RoundingMode = iota
 
-	// RoundHalfAwayFromZero will round up when x is positive and down when x is negative.
-	RoundHalfAwayFromZero
+	// HalfAwayFromZero will round up when x is positive and down when x is negative.
+	HalfAwayFromZero
 
-	// RoundHalfTowardsZero will round down x is positive and up when x is negative.
-	RoundHalfTowardsZero
+	// HalfTowardsZero will round down x is positive and up when x is negative.
+	HalfTowardsZero
 
-	// RoundHalfToEven (aka "Banker's Rounding") will always round to the closest even number.
-	RoundHalfToEven
+	// HalfToEven (aka "Banker's Rounding") will always round to the closest even number.
+	HalfToEven
 
-	// RoundHalfToOdd will always round to the closest odd number number.
-	RoundHalfToOdd
+	// HalfToOdd will always round to the closest odd number number.
+	HalfToOdd
 )
 
 type Amount struct {
@@ -420,7 +420,7 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 	}
 
 	// If the mode is set to truncate we can just truncate without doing anything else
-	if mode == RoundTruncate {
+	if mode == Truncate {
 		return amt.truncate(places)
 	}
 
@@ -432,7 +432,7 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 	adjust := NewFromInt64(5, places+1, "")
 
 	switch mode {
-	case RoundHalfAwayFromZero:
+	case HalfAwayFromZero:
 		// If the last integer is +5 or more, then we need to add 5 before truncating
 		// The truncate will remove the final digit leaving us with the nearest result away from zero
 		// Otherwise we always subtract 5 before truncating
@@ -452,7 +452,7 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 
 		return amt.truncate(places)
 
-	case RoundHalfTowardsZero:
+	case HalfTowardsZero:
 		// If the number is positive then we subtract 5 before truncating if the last digits is less than or equal to 5,
 		// otherwise we add 5 before truncating
 		// If the number is negative then we add 5 before truncating if the last digits is greater than or equal to -5,
@@ -474,7 +474,7 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 
 		return amt.truncate(places)
 
-	case RoundHalfToEven:
+	case HalfToEven:
 		// If the last digit is +5 or -5 and the digit before the last one is even then we can just truncate, because
 		// in that case the number that comes before the last digit will always be the closest even number
 		// Otherwise, in the case of a positive number, we can add 5 and then truncate
@@ -500,7 +500,7 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 
 		return amt.Sub(adjust).truncate(places)
 
-	case RoundHalfToOdd:
+	case HalfToOdd:
 		// If the last digit is +5 or -5 and the digit before the last one is odd then we can just truncate, because
 		// in that case the number that comes before the last digit will always be the closest odd number
 		// Otherwise, in the case of a positive number, we can add 5 and then truncate
