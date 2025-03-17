@@ -427,6 +427,10 @@
 		color: var(--clr-danger-400);
 	}
 
+	.btn--loading.btn--alt {
+		--clr-btn-loading-spinner: var(--clr-accent-800);
+	}
+
 	.btn--loading::before {
 		content: "";
 		display: block;
