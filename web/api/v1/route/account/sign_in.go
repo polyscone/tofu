@@ -46,7 +46,7 @@ func signInPost(h *ui.Handler) http.HandlerFunc {
 		if err := auth.SignInWithPassword(ctx, h.Handler, input.Email, input.Password); err != nil {
 			if errors.Is(err, app.ErrNotFound) || errors.Is(err, account.ErrInvalidPassword) {
 				h.JSON(w, r, http.StatusBadRequest, map[string]any{
-					"error": i18n.M("api:account.sign_in.error"),
+					"error": h.T(ctx, i18n.M("api:account.sign_in.error")),
 				})
 
 				return
