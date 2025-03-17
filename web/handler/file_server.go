@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"net/url"
 	"path"
 	"strings"
 	"time"
@@ -36,11 +37,18 @@ func NewFileServer(mux *router.ServeMux, renderer *Renderer, errorHandler FileSe
 			tagged += "?" + q
 		}
 		if asset, ok := renderer.FindAssetByTagged(tagged); ok {
+			u, err := url.Parse(asset)
+			if err != nil {
+				errorHandler(w, r, err)
+
+				return
+			}
+
 			maxAge := int((365 * 24 * time.Hour).Seconds())
 			cacheControl := fmt.Sprintf("public, max-age=%v, immutable", maxAge)
 			w.Header().Set("cache-control", cacheControl)
 
-			upath = asset
+			upath = u.Path
 		}
 
 		name, modtime, b, err := renderer.Asset(r, nil, upath)

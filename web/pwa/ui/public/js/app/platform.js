@@ -1,4 +1,4 @@
-import sdk from "{{.Asset.TagJSImport "/api/v1/sdk.js?type=module"}}"
+import sdk from "{{.Asset.TagJSImport "/js/api/v1/sdk.js?type=module"}}"
 import { show as showLoading, hide as hideLoading } from "{{.Asset.TagJSImport "./components/loading.js"}}"
 import { open as openModal, close as closeModal } from "{{.Asset.TagJSImport "./components/modal.js"}}"
 

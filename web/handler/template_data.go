@@ -43,10 +43,10 @@ func (a *AssetPipeline) resolve(asset string) string {
 	return asset
 }
 
-func (a *AssetPipeline) data(asset string) ([]byte, string, error) {
+func (a *AssetPipeline) data(asset string) ([]byte, error) {
 	u, err := url.Parse(asset)
 	if err != nil {
-		return nil, "", fmt.Errorf("URL parse: %w", err)
+		return nil, fmt.Errorf("URL parse: %w", err)
 	}
 
 	ctx := context.Background()
@@ -55,19 +55,19 @@ func (a *AssetPipeline) data(asset string) ([]byte, string, error) {
 	r.URL.Path = u.Path
 	r.URL.RawQuery = u.RawQuery
 
-	_, _, b, err := a.rn.Asset(r, a, asset)
+	_, _, b, err := a.rn.Asset(r, a, u.Path)
 	if err != nil {
-		return b, u.Path, fmt.Errorf("renderer asset: %w", err)
+		return b, fmt.Errorf("renderer asset: %w", err)
 	}
 
-	return b, u.Path, nil
+	return b, nil
 }
 
 func (a *AssetPipeline) tag(asset string) (string, string, string) {
 	key := asset
 	tagged := asset
 
-	b, upath, err := a.data(asset)
+	b, err := a.data(asset)
 	if err != nil {
 		return key, asset, tagged
 	}
@@ -80,10 +80,6 @@ func (a *AssetPipeline) tag(asset string) (string, string, string) {
 	hashsum := hex.EncodeToString(hash.Sum(nil))
 	ext := path.Ext(asset)
 	tagged = strings.TrimSuffix(asset, ext) + "." + hashsum + ext
-
-	// We only set the asset to the path without query string here because
-	// we want to make sure the tagged itself preserved the query string
-	asset = upath
 
 	return key, asset, tagged
 }
@@ -155,7 +151,7 @@ func (a *AssetPipeline) Load(asset string, args ...string) any {
 		id := args[0]
 		asset = a.resolve(asset)
 
-		b, _, err := a.data(asset)
+		b, err := a.data(asset)
 		if err != nil {
 			break
 		}

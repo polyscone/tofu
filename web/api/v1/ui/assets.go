@@ -13,12 +13,12 @@ import (
 //go:embed "all:public"
 var publicFilesV1 embed.FS
 
-const publicDirV1 = "public"
+const publicDir = "public"
 
-var AssetFilesV1 = fsx.NewStack(
-	fsx.RelDirFS(publicDirV1),
-	errsx.Must(fs.Sub(publicFilesV1, publicDirV1)),
+var AssetFiles = fsx.NewStack(
+	fsx.RelDirFS(publicDir),
+	errsx.Must(fs.Sub(publicFilesV1, publicDir)),
 	shared.AssetFiles,
 )
 
-var AssetTagsV1 = cache.New[string, string]()
+var AssetTags = cache.New[string, string]()

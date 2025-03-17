@@ -23,6 +23,8 @@ import (
 	"github.com/polyscone/tofu/web/handler"
 )
 
+var AssetFilesV1 = ui.AssetFiles
+
 func NewRouterV1(base *handler.Handler, handlerTimeout time.Duration) http.Handler {
 	mux := router.NewServeMux()
 
@@ -138,8 +140,8 @@ func NewRouterV1(base *handler.Handler, handlerTimeout time.Duration) http.Handl
 
 	renderer := handler.NewRenderer(handler.RendererConfig{
 		Handler:         h.Handler,
-		AssetTags:       ui.AssetTagsV1,
-		AssetFiles:      ui.AssetFilesV1,
+		AssetTags:       ui.AssetTags,
+		AssetFiles:      ui.AssetFiles,
 		Funcs:           handler.NewTemplateFuncs(nil),
 		T:               h.T,
 		WrapI18nRuntime: handler.NewI18nRuntimeWrapper(mux),
