@@ -14,9 +14,16 @@
 	],
 
 	"number": [
-		["if: fraction(value)", "{t('number', integer(value))}.{trim_left(fraction(value, opt), '0.')}"],
-		["if: value >= 1000", "{t('number', value / 1000)},{pad_left(value % 1000, 3, '0')}"],
-		"{value}"
+		["if: value < 0", "-{t('number', abs(value))}"],
+		["if: fraction(value)", "{t('number', integer(value))}.{fraction(value)}"],
+		["if: integer(value) >= 1000", "{t('number', integer(value) / 1000)},{pad_left(integer(value) % 1000, 3, '0')}"],
+		"{integer(value)}"
+	],
+
+	"money": [
+		["if: value < 0", "-{t('money', abs(value), context)}"],
+		["if: integer(value) >= 1000", "{context}{t('number', integer(value))}.{pad_right(fraction(value), 2, '0')}"],
+		"{context}{integer(value)}.{pad_right(fraction(value), 2, '0')}"
 	],
 
 	"time": {

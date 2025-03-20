@@ -31,6 +31,7 @@ var funcNames = map[string]Value{
 	"trim_left":  NewString("trim_left"),
 	"trim_right": NewString("trim_right"),
 	"integer":    NewString("integer"),
+	"abs":        NewString("abs"),
 	"fraction":   NewString("fraction"),
 	"t":          NewString("t"),
 }
@@ -67,9 +68,10 @@ type Runtime interface {
 	PadRight(value, length, padding Value) String
 	TrimLeft(value, trim Value) String
 	TrimRight(value, trim Value) String
+	Abs(value Value) Value
 	Integer(value Value) Int
-	Fraction(value, roundingUnit Value) Float
-	T(key Value, locale string, value, opt Value) String
+	Fraction(value Value) Int
+	T(key Value, locale string, value, context Value) String
 	PostProcess(value Value, after AfterPostProcessFunc) any
 }
 

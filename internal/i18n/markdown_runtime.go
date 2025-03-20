@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -118,25 +119,44 @@ func (r MarkdownRuntime) TrimRight(value, trim Value) String {
 	return NewString(strings.TrimSuffix(_value, _trim))
 }
 
-func (r MarkdownRuntime) Integer(value Value) Int {
-	integer, _ := math.Modf(value.AsFloat().Value)
+func (r MarkdownRuntime) Abs(value Value) Value {
+	switch value.Type() {
+	case TypeInt:
+		return NewInt(int64(math.Abs(float64(value.AsInt().Value))))
 
-	return NewInt(int64(integer))
+	case TypeFloat:
+		return NewFloat(math.Abs(value.AsFloat().Value))
+
+	case TypeString:
+		return NewString(strings.TrimLeft(value.AsString().Value, "-"))
+
+	default:
+		return value
+	}
 }
 
-func (r MarkdownRuntime) Fraction(value, roundingUnit Value) Float {
-	_, frac := math.Modf(value.AsFloat().Value)
-	if unit := roundingUnit.AsFloat().Value; unit > 0 {
-		frac = math.Round(frac/unit) * unit
+func (r MarkdownRuntime) Integer(value Value) Int {
+	i, _ := math.Modf(value.AsFloat().Value)
+
+	return NewInt(int64(i))
+}
+
+func (r MarkdownRuntime) Fraction(value Value) Int {
+	str := value.AsString().Value
+	_, frac, _ := strings.Cut(str, ".")
+	if frac == "" {
+		return NewInt(0)
 	}
 
-	return NewFloat(frac)
+	i, _ := strconv.Atoi(frac)
+
+	return NewInt(int64(i))
 }
 
-func (r MarkdownRuntime) T(key Value, locale string, value, opt Value) String {
+func (r MarkdownRuntime) T(key Value, locale string, value, context Value) String {
 	vars := Vars{
-		"value": value,
-		"opt":   opt,
+		"value":   value,
+		"context": context,
 	}
 	switch value := value.(type) {
 	case Time:

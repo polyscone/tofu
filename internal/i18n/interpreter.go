@@ -329,6 +329,12 @@ func Eval(node Node, rt Runtime, locale string, vars Vars) (Value, error) {
 
 			return res, nil
 
+		case "abs":
+			arg0 := arg(node.Args, 0, rt, locale, vars)
+			res := rt.Abs(arg0)
+
+			return res, nil
+
 		case "integer":
 			arg0 := arg(node.Args, 0, rt, locale, vars)
 			res := rt.Integer(arg0)
@@ -337,8 +343,7 @@ func Eval(node Node, rt Runtime, locale string, vars Vars) (Value, error) {
 
 		case "fraction":
 			arg0 := arg(node.Args, 0, rt, locale, vars)
-			arg1 := arg(node.Args, 1, rt, locale, vars)
-			res := rt.Fraction(arg0, arg1)
+			res := rt.Fraction(arg0)
 
 			return res, nil
 
