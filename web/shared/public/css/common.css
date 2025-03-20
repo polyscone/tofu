@@ -237,6 +237,10 @@
 		gap: 0.4rem;
 	}
 
+	:is(.form, form, fieldset) + :is(.form, form, fieldset) {
+		margin-top: 0.8rem;
+	}
+
 	fieldset {
 		padding: 0;
 		border: none;
