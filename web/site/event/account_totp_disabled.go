@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app/account"
+	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
@@ -20,8 +21,10 @@ func AccountTOTPDisabledHandler(h *ui.Handler) any {
 			return
 		}
 
-		if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "totp_disabled", nil); err != nil {
-			logger.Error("disabled TOTP: send email", "error", err)
-		}
+		background.Go(func() {
+			if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "totp_disabled", nil); err != nil {
+				logger.Error("disabled TOTP: send email", "error", err)
+			}
+		})
 	}
 }

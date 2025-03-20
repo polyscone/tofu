@@ -288,13 +288,15 @@ func signInTOTPResetPost(h *ui.Handler) http.HandlerFunc {
 				return
 			}
 
-			vars := handler.Vars{
-				"Token":            tok,
-				"RequestReviewURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.sign_in.totp.reset.request"), tok),
-			}
-			if err := h.SendEmail(ctx, config.SystemEmail, email, "totp_reset_verify_email", vars); err != nil {
-				logger.Error("TOTP reset: send email", "error", err)
-			}
+			background.Go(func() {
+				vars := handler.Vars{
+					"Token":            tok,
+					"RequestReviewURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.sign_in.totp.reset.request"), tok),
+				}
+				if err := h.SendEmail(ctx, config.SystemEmail, email, "totp_reset_verify_email", vars); err != nil {
+					logger.Error("TOTP reset: send email", "error", err)
+				}
+			})
 		})
 
 		http.Redirect(w, r, h.Path("account.sign_in.totp.reset.email_sent"), http.StatusSeeOther)

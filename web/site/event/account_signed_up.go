@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app/account"
+	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/site/ui"
 )
@@ -37,12 +38,14 @@ func AccountSignedUpHandler(h *ui.Handler) any {
 			return
 		}
 
-		vars := handler.Vars{
-			"Token":     tok,
-			"VerifyURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.verify"), tok),
-		}
-		if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "verify_account", vars); err != nil {
-			logger.Error("signed up: send email", "error", err)
-		}
+		background.Go(func() {
+			vars := handler.Vars{
+				"Token":     tok,
+				"VerifyURL": fmt.Sprintf("%v://%v%v?token=%v", h.Scheme, h.Host, h.Path("account.verify"), tok),
+			}
+			if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "verify_account", vars); err != nil {
+				logger.Error("signed up: send email", "error", err)
+			}
+		})
 	}
 }

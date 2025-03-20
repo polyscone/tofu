@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app"
+	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/web/event"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/pwa/ui"
@@ -33,16 +34,20 @@ func WebPasswordResetRequestedHandler(h *ui.Handler) any {
 				return
 			}
 
-			vars := handler.Vars{"Token": tok}
-			if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "reset_password", vars); err != nil {
-				logger.Error("reset password: send email", "error", err)
-			}
+			background.Go(func() {
+				vars := handler.Vars{"Token": tok}
+				if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "reset_password", vars); err != nil {
+					logger.Error("reset password: send email", "error", err)
+				}
+			})
 
 		case errors.Is(err, app.ErrNotFound):
 			if config.SignUpEnabled {
-				if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "reset_password_sign_up", nil); err != nil {
-					logger.Error("reset password: send email", "error", err)
-				}
+				background.Go(func() {
+					if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "reset_password_sign_up", nil); err != nil {
+						logger.Error("reset password: send email", "error", err)
+					}
+				})
 			}
 
 		default:

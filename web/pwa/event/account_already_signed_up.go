@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app/account"
+	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/pwa/ui"
 )
@@ -28,12 +29,14 @@ func AccountAlreadySignedUpHandler(h *ui.Handler) any {
 			return
 		}
 
-		vars := handler.Vars{
-			"Token":       tok,
-			"HasPassword": data.HasPassword,
-		}
-		if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "sign_up_reset_password", vars); err != nil {
-			logger.Error("already signed up: send email", "error", err)
-		}
+		background.Go(func() {
+			vars := handler.Vars{
+				"Token":       tok,
+				"HasPassword": data.HasPassword,
+			}
+			if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "sign_up_reset_password", vars); err != nil {
+				logger.Error("already signed up: send email", "error", err)
+			}
+		})
 	}
 }

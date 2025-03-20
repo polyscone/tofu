@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/app/account"
+	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/site/ui"
 )
@@ -22,12 +23,14 @@ func AccountActivatedHandler(h *ui.Handler) any {
 			return
 		}
 
-		vars := handler.Vars{
-			"HasPassword": data.HasPassword,
-			"SignInURL":   fmt.Sprintf("%v://%v%v", h.Scheme, h.Host, h.Path("account.sign_in")),
-		}
-		if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "account_activated", vars); err != nil {
-			logger.Error("activated: send email", "error", err)
-		}
+		background.Go(func() {
+			vars := handler.Vars{
+				"HasPassword": data.HasPassword,
+				"SignInURL":   fmt.Sprintf("%v://%v%v", h.Scheme, h.Host, h.Path("account.sign_in")),
+			}
+			if err := h.SendEmail(ctx, config.SystemEmail, data.Email, "account_activated", vars); err != nil {
+				logger.Error("activated: send email", "error", err)
+			}
+		})
 	}
 }
