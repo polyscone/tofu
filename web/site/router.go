@@ -25,7 +25,7 @@ import (
 	"github.com/polyscone/tofu/web/site/ui"
 )
 
-func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler {
+func NewRouter(base *handler.Handler, handlerTimeout time.Duration, config handler.RouterConfig) http.Handler {
 	mux := router.NewServeMux()
 
 	mux.BasePath = app.BasePath
@@ -93,7 +93,7 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration) http.Handler
 	mux.Use(h.AttachContextLogger)
 	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
 	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
-	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
+	mux.Use(middleware.RateLimit(config.RateLimit.Capacity, config.RateLimit.Replenish, &middleware.RateLimitConfig{
 		Consume: func(r *http.Request) bool {
 			whitelist := []string{".css", ".gif", ".ico", ".jpeg", ".jpg", ".js", ".png", ".webp"}
 

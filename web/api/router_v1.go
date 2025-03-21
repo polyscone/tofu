@@ -25,7 +25,7 @@ import (
 
 var AssetFilesV1 = ui.AssetFiles
 
-func NewRouterV1(base *handler.Handler, handlerTimeout time.Duration) http.Handler {
+func NewRouterV1(base *handler.Handler, handlerTimeout time.Duration, config handler.RouterConfig) http.Handler {
 	mux := router.NewServeMux()
 
 	mux.BasePath = app.BasePath
@@ -78,7 +78,7 @@ func NewRouterV1(base *handler.Handler, handlerTimeout time.Duration) http.Handl
 	mux.Use(h.AttachContextLogger)
 	mux.Use(middleware.SecurityHeaders(&middleware.SecurityHeadersConfig{Logger: logger}))
 	mux.Use(middleware.ETag(&middleware.ETagConfig{Logger: logger}))
-	mux.Use(middleware.RateLimit(50, 1, &middleware.RateLimitConfig{
+	mux.Use(middleware.RateLimit(config.RateLimit.Capacity, config.RateLimit.Replenish, &middleware.RateLimitConfig{
 		Consume: func(r *http.Request) bool {
 			whitelist := []string{".js"}
 

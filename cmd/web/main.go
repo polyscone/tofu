@@ -25,6 +25,7 @@ import (
 	"github.com/polyscone/tofu/internal/background"
 	"github.com/polyscone/tofu/internal/size"
 	"github.com/polyscone/tofu/web"
+	"github.com/polyscone/tofu/web/handler"
 )
 
 // Set through ldflags at build time
@@ -87,6 +88,7 @@ func main() {
 }
 
 func run() int {
+	var config handler.Config
 	requiredFlags := []string{"addr"}
 
 	flag.Usage = func() {
@@ -103,16 +105,31 @@ func run() int {
 	flag.StringVar(&opts.basePath, "base-path", "", "A prefix path to add to all routes")
 	flag.BoolVar(&opts.dev, "dev", false, "Whether to run in development mode")
 	flag.BoolVar(&opts.version, "version", false, "Display binary version information")
+
 	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json|dev)")
+
 	flag.StringVar(&opts.smtp.envelopeFrom, "smtp-envelope-from", "", "The email address to use as the from in SMTP email envelopes")
+
 	flag.Var(&opts.server.addr, "addr", "The address to run the server on, for example :8080; random if empty")
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")
 	flag.Var(&opts.server.ipWhitelist, "ip-whitelist", "A space separated list of whitelisted ip addresses")
 	flag.Var(&opts.server.proxies, "trusted-proxies", "A space separated list of trusted proxy addresses")
+
 	flag.Var(&opts.debug.addr, "debug-addr", "The address to run the private debug server on, for example :8081; random if empty")
+
 	flag.DurationVar(&opts.password.duration, "password-hash-duration", 1*time.Second, "The target duration of a password hash")
 	flag.IntVar(&opts.password.memory, "password-hash-memory", 64*size.Kibibyte, "The amount of memory (KiB) to use when hashing a password")
 	flag.IntVar(&opts.password.parallelism, "password-hash-parallelism", max(1, runtime.NumCPU()/2), "The number of threads to use when hashing a password")
+
+	flag.Float64Var(&config.Site.RateLimit.Capacity, "site-ratelimit-cap", 50, "The token bucket capacity for the site rate limiter")
+	flag.Float64Var(&config.Site.RateLimit.Replenish, "site-ratelimit-rep", 1, "The number of tokens to replenish every second for the site rate limiter")
+
+	flag.Float64Var(&config.PWA.RateLimit.Capacity, "pwa-ratelimit-cap", 50, "The token bucket capacity for the PWA rate limiter")
+	flag.Float64Var(&config.PWA.RateLimit.Replenish, "pwa-ratelimit-rep", 1, "The number of tokens to replenish every second for the PWA rate limiter")
+
+	flag.Float64Var(&config.APIv1.RateLimit.Capacity, "api-v1-ratelimit-cap", 50, "The token bucket capacity for the v1 API rate limiter")
+	flag.Float64Var(&config.APIv1.RateLimit.Replenish, "api-v1-ratelimit-rep", 1, "The number of tokens to replenish every second for the v1 API rate limiter")
+
 	flag.Parse()
 
 	if flag.NArg() > 0 && flag.Arg(0) != "version" {
@@ -216,7 +233,7 @@ func run() int {
 		opts.log.style = "json"
 	}
 
-	handler, err := opts.log.style.NewHandler(nil)
+	logHandler, err := opts.log.style.NewHandler(nil)
 	if err != nil {
 		fmt.Println(err)
 
@@ -316,13 +333,13 @@ func run() int {
 	spill := 500 * time.Millisecond
 	readHeaderTimeout := 5 * time.Second
 	srv := http.Server{
-		ErrorLog:          slog.NewLogLogger(handler, slog.LevelError),
+		ErrorLog:          slog.NewLogLogger(logHandler, slog.LevelError),
 		Addr:              opts.server.addr.value,
 		IdleTimeout:       1 * time.Minute,
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       web.HandlerTimeout + readHeaderTimeout + spill,
 		WriteTimeout:      web.HandlerTimeout + spill,
-		Handler:           web.NewMultiTenantHandler(logger, newTenant),
+		Handler:           web.NewMultiTenantHandler(logger, newTenant, config),
 		BaseContext: func(_ net.Listener) context.Context {
 			return baseCtx
 		},

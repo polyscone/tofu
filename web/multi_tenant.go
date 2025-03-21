@@ -31,21 +31,23 @@ type NewTenantFunc func(hostname string) (*handler.Tenant, error)
 type MultiTenantHandler struct {
 	logger    *slog.Logger
 	newTenant NewTenantFunc
+	config    handler.Config
 	muxesMu   sync.RWMutex
 	muxes     *cache.Cache[string, http.Handler]
 }
 
-func NewMultiTenantHandler(logger *slog.Logger, newTenant NewTenantFunc) *MultiTenantHandler {
+func NewMultiTenantHandler(logger *slog.Logger, newTenant NewTenantFunc, config handler.Config) *MultiTenantHandler {
 	return &MultiTenantHandler{
 		logger:    logger,
 		newTenant: newTenant,
+		config:    config,
 		muxes:     cache.New[string, http.Handler](),
 	}
 }
 
-func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
-	return h.muxes.LoadOrMaybeStore(r.Host, func() (http.Handler, error) {
-		tenant, err := h.newTenant(r.Host)
+func (mh *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
+	return mh.muxes.LoadOrMaybeStore(r.Host, func() (http.Handler, error) {
+		tenant, err := mh.newTenant(r.Host)
 		if err != nil {
 			return nil, fmt.Errorf("new tenant: %w", err)
 		}
@@ -68,14 +70,14 @@ func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 			var router http.Handler
 			switch tenant.Kind {
 			case "site":
-				router = site.NewRouter(h, HandlerTimeout)
+				router = site.NewRouter(h, HandlerTimeout, mh.config.Site)
 
 			case "pwa":
-				router = pwa.NewRouter(h, HandlerTimeout)
+				router = pwa.NewRouter(h, HandlerTimeout, mh.config.PWA)
 			}
 
 			if router != nil {
-				apiV1 := api.NewRouterV1(h, HandlerTimeout)
+				apiV1 := api.NewRouterV1(h, HandlerTimeout, mh.config.APIv1)
 
 				mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 					if strings.HasPrefix(r.URL.Path, app.BasePath+"/api/") {
@@ -95,10 +97,10 @@ func (h *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 	})
 }
 
-func (h *MultiTenantHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	mux, err := h.mux(r)
+func (mh *MultiTenantHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	mux, err := mh.mux(r)
 	if err != nil {
-		h.logger.Error("serve HTTP", "error", err, "url", r.URL.String())
+		mh.logger.Error("serve HTTP", "error", err, "url", r.URL.String())
 
 		if errors.Is(err, ErrTenantNotFound) {
 			http.Error(w, "Site not served on this interface", http.StatusNotFound)
