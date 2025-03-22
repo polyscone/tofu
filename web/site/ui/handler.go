@@ -46,7 +46,10 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 	})
 
 	templatePatterns := func(view string) []string {
-		paths := []string{"partial/*.html"}
+		paths := []string{
+			"master/*.html",
+			"partial/*.html",
+		}
 		fs.WalkDir(templateFiles, ".", func(p string, entry fs.DirEntry, err error) error {
 			if err != nil {
 				return err
@@ -72,7 +75,6 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		paths = append(paths,
 			"view/"+dir+"/com_*.html",
 			"view/"+view+".html",
-			"master/*.html",
 		)
 
 		return paths

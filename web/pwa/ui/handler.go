@@ -47,9 +47,9 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		dir := path.Dir(view)
 
 		return []string{
+			"master/*.html",
 			"view/" + dir + "/com_*.html",
 			"view/" + view + ".html",
-			"master/*.html",
 		}
 	}
 
