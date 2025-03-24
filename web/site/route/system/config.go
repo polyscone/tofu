@@ -75,13 +75,6 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 
 		h.AddFlashf(ctx, i18n.M("site.system.config.flash.updated"))
 
-		var redirect string
-		if h.Session.IsSignedIn(ctx) {
-			redirect = h.Path("system.config")
-		} else {
-			redirect = h.Path("account.sign_up")
-		}
-
-		http.Redirect(w, r, redirect, http.StatusSeeOther)
+		http.Redirect(w, r, h.Path("system.config"), http.StatusSeeOther)
 	}
 }
