@@ -71,6 +71,7 @@ func (r I18nRuntime) Link(label, href, target i18n.Value) i18n.RawString {
 
 type GuardPredicateFunc func(p guard.Passport) bool
 type TemplatePatternsFunc func(view string) []string
+type TemplateNameFunc func(view string) string
 
 type Handler struct {
 	*Tenant

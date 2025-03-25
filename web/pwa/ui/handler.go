@@ -59,6 +59,7 @@ func NewHandler(base *handler.Handler, mux *router.ServeMux, signInPath func() s
 		AssetFiles:       AssetFiles,
 		TemplateFiles:    templateFiles,
 		TemplatePatterns: templatePatterns,
+		TemplateName:     func(view string) string { return "view.master" },
 		Funcs:            h.Funcs,
 		T:                h.T,
 		WrapI18nRuntime:  i18nRuntimeWrapper,

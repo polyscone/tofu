@@ -12,15 +12,12 @@ import (
 	"github.com/polyscone/tofu/web/shared"
 )
 
-//go:embed "all:template"
+//go:embed "all:email"
+//go:embed "all:master"
+//go:embed "all:view"
 var files embed.FS
 
-const templateDir = "template"
-
-var templateFiles = fsx.NewStack(
-	fsx.RelDirFS(templateDir),
-	errsx.Must(fs.Sub(files, templateDir)),
-)
+var templateFiles = fsx.NewStack(fsx.RelDirFS(""), files)
 
 //go:embed "all:public"
 var publicFiles embed.FS

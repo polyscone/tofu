@@ -222,6 +222,7 @@ type RendererConfig struct {
 	AssetFiles       fs.FS
 	TemplateFiles    fs.FS
 	TemplatePatterns TemplatePatternsFunc
+	TemplateName     TemplateNameFunc
 	Funcs            template.FuncMap
 	T                TFunc
 	WrapI18nRuntime  WrapI18nRuntimeFunc
@@ -235,6 +236,7 @@ type Renderer struct {
 	assetFiles       fs.FS
 	templateFiles    fs.FS
 	templatePatterns TemplatePatternsFunc
+	templateName     TemplateNameFunc
 	funcs            template.FuncMap
 	t                TFunc
 	wrapI18nRuntime  WrapI18nRuntimeFunc
@@ -250,6 +252,7 @@ func NewRenderer(config RendererConfig) *Renderer {
 		assetFiles:       config.AssetFiles,
 		templateFiles:    config.TemplateFiles,
 		templatePatterns: config.TemplatePatterns,
+		templateName:     config.TemplateName,
 		funcs:            config.Funcs,
 		t:                config.T,
 		wrapI18nRuntime:  config.WrapI18nRuntime,
@@ -394,7 +397,7 @@ func (rn *Renderer) ViewFunc(w http.ResponseWriter, r *http.Request, status int,
 	}
 
 	var buf bytes.Buffer
-	if err := tmpl.ExecuteTemplate(&buf, "view.master", data); err != nil {
+	if err := tmpl.ExecuteTemplate(&buf, rn.templateName(view), data); err != nil {
 		const message = "execute view template"
 
 		if rn.viewErrorFunc != nil {
