@@ -33,6 +33,7 @@ var (
 	ErrInvalidInput   = errors.New("invalid input")
 	ErrConflict       = errors.New("conflict")
 	ErrRepoLogin      = errors.New("login")
+	ErrLoopDetected   = errors.New("loop detected")
 )
 
 type ConflictError struct {

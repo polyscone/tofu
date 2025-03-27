@@ -54,6 +54,9 @@ func ErrorStatus(err error) int {
 	case errors.Is(err, app.ErrUnauthorized):
 		return http.StatusUnauthorized
 
+	case errors.Is(err, app.ErrLoopDetected):
+		return http.StatusLoopDetected
+
 	case errors.Is(err, httpx.ErrMethodNotAllowed):
 		return http.StatusMethodNotAllowed
 
@@ -99,6 +102,9 @@ func ErrorMessage(err error) i18n.Message {
 
 	case errors.Is(err, app.ErrUnauthorized):
 		return i18n.M("web.error.unauthorized")
+
+	case errors.Is(err, app.ErrLoopDetected):
+		return i18n.M("web.error.loop_detected")
 
 	case errors.Is(err, app.ErrMalformedInput):
 		return i18n.M("web.error.malformed_input")

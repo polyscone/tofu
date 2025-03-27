@@ -1638,6 +1638,7 @@
 			"account_not_activated": "This account is not activated.",
 			"account_suspended": "This account has been suspended.",
 			"unauthorized": "You do not have permission to access this resource.",
+			"loop_detected": "Loop detected.",
 			"malformed_input": "Malformed input.",
 			"invalid_input": "Invalid input.",
 			"empty_csrf_token": "Empty CSRF token.",
