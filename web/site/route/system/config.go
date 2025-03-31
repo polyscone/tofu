@@ -26,7 +26,7 @@ func RegisterConfigHandlers(h *ui.Handler, mux *router.ServeMux) {
 func systemConfigGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		h.HTML.View(w, r, http.StatusOK, "system/config", handler.Vars{
-			"SMTPEnvelopeFrom": h.SMTPEnvelopeFrom,
+			"SMTPEnvelopeEmail": h.SMTPEnvelopeEmail,
 		})
 	}
 }

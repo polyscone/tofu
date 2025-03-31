@@ -41,10 +41,6 @@ var opts struct {
 		style LogStyle
 	}
 
-	smtp struct {
-		envelopeFrom string
-	}
-
 	server struct {
 		addr        Addr
 		insecure    bool
@@ -107,8 +103,6 @@ func run() int {
 	flag.BoolVar(&opts.version, "version", false, "Display binary version information")
 
 	flag.Var(&opts.log.style, "log-style", "The output style for log messages (text|json|dev)")
-
-	flag.StringVar(&opts.smtp.envelopeFrom, "smtp-envelope-from", "", "The email address to use as the from in SMTP email envelopes")
 
 	flag.Var(&opts.server.addr, "addr", "The address to run the server on, for example :8080; random if empty")
 	flag.BoolVar(&opts.server.insecure, "insecure", false, "Run in insecure mode without HTTPS")

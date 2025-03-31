@@ -31,7 +31,7 @@ type Body struct {
 }
 
 type Config struct {
-	EnvelopeFrom          string
+	EnvelopeEmail         string
 	Auth                  smtp.Auth
 	StartTLS              bool
 	TLSInsecureSkipVerify bool
@@ -253,10 +253,10 @@ func (e *Email) Send(addr string, config *Config) error {
 	}
 	defer c.Close()
 
-	envelopeFrom := e.from
+	envelopeEmail := e.from
 	if config != nil {
-		if from := config.EnvelopeFrom; from != "" {
-			envelopeFrom = from
+		if from := config.EnvelopeEmail; from != "" {
+			envelopeEmail = from
 		}
 
 		if config.StartTLS {
@@ -283,7 +283,7 @@ func (e *Email) Send(addr string, config *Config) error {
 		}
 	}
 
-	if err := c.Mail(envelopeFrom); err != nil {
+	if err := c.Mail(envelopeEmail); err != nil {
 		return fmt.Errorf("mail: %w", err)
 	}
 

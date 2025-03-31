@@ -159,7 +159,10 @@ func newTenant(host string) (*handler.Tenant, error) {
 	mailer, ok := cache.mailers[data.Name]
 	if !ok {
 		var err error
-		mailer, err = smtp.NewClient(logger, &smtpConfig{system: repos.system})
+		mailer, err = smtp.NewClient(logger, &smtpConfig{
+			envelopeEmail: data.SMTPEnvelopeEmail,
+			system:        repos.system,
+		})
 		if err != nil {
 			return nil, fmt.Errorf("new dynamic SMTP client: %w", err)
 		}
@@ -215,19 +218,19 @@ func newTenant(host string) (*handler.Tenant, error) {
 	}
 
 	tenant := handler.Tenant{
-		Key:              host + "." + data.Name,
-		Kind:             data.Kind,
-		Hosts:            data.Hosts,
-		Data:             filepath.Join(opts.data, data.Name),
-		Dev:              opts.dev,
-		IPWhitelist:      opts.server.ipWhitelist,
-		Proxies:          opts.server.proxies,
-		SMTPEnvelopeFrom: opts.smtp.envelopeFrom,
-		Broker:           broker,
-		Email:            mailer,
-		Logger:           logger,
-		Metrics:          metrics,
-		Svc:              svc,
+		Key:               host + "." + data.Name,
+		Kind:              data.Kind,
+		Hosts:             data.Hosts,
+		Data:              filepath.Join(opts.data, data.Name),
+		Dev:               opts.dev,
+		IPWhitelist:       opts.server.ipWhitelist,
+		Proxies:           opts.server.proxies,
+		SMTPEnvelopeEmail: data.SMTPEnvelopeEmail,
+		Broker:            broker,
+		Email:             mailer,
+		Logger:            logger,
+		Metrics:           metrics,
+		Svc:               svc,
 		Repo: handler.Repo{
 			Account: repos.account,
 			System:  repos.system,
@@ -240,11 +243,12 @@ func newTenant(host string) (*handler.Tenant, error) {
 }
 
 type Tenant struct {
-	Name       string              `json:"-"`
-	Kind       string              `json:"-"`
-	Hosts      map[string]string   `json:"hosts"`
-	Aliases    map[string][]string `json:"aliases"`
-	IsDisabled bool                `json:"isDisabled"`
+	Name              string              `json:"-"`
+	Kind              string              `json:"-"`
+	Hosts             map[string]string   `json:"hosts"`
+	Aliases           map[string][]string `json:"aliases"`
+	SMTPEnvelopeEmail string              `json:"smtpEnvelopeEmail"`
+	IsDisabled        bool                `json:"isDisabled"`
 }
 
 func initTenants(tenantsPath string) error {
@@ -272,7 +276,8 @@ func initTenants(tenantsPath string) error {
 					Aliases: map[string][]string{
 						"site": {"localhost", "localhost:8080"},
 					},
-					IsDisabled: true,
+					SMTPEnvelopeEmail: "",
+					IsDisabled:        true,
 				},
 			}
 

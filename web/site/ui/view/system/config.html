@@ -13,17 +13,32 @@
 {{$disabled := not .Passport.System.CanUpdateConfig}}
 
 <div class="center">
+	{{if .Vars.SMTPEnvelopeEmail}}
+		{{$envelopeParts := Split .Vars.SMTPEnvelopeEmail "@"}}
+		{{$systemParts := Split .Config.SystemEmail "@"}}
+
+		{{if and
+			(eq (len $envelopeParts) 2)
+			(eq (len $systemParts) 2)
+			(ne (index $envelopeParts 1) (index $systemParts 1))
+		}}
+			<div class="warning-banner">
+				{{.T "p" "site.system.config.dmarc_spf_misaligned_warning"}}
+			</div>
+		{{end}}
+	{{end}}
+
 	<form action="{{Path "system.config.post"}}" method="POST">
 		{{template "com.form.csrf" .}}
 
 		<fieldset>
 			<legend>{{.T "site.system.config.email_section_title"}}</legend>
 
-			<label>{{.T "site.system.config.smtp_envelope_from_label"}}</label>
-			{{if .Vars.SMTPEnvelopeFrom}}
-				<input type="text" value="{{.Vars.SMTPEnvelopeFrom}}" disabled>
+			<label>{{.T "site.system.config.smtp_envelope_email_label"}} <small>{{.T "site.system.config.smtp_envelope_email_hint"}}</small></label>
+			{{if .Vars.SMTPEnvelopeEmail}}
+				<input type="text" value="{{.Vars.SMTPEnvelopeEmail}}" disabled>
 			{{else}}
-				<input type="text" value="{{.T "site.system.config.smtp_envelope_from_unset"}}" disabled>
+				<input type="text" value="{{.T "site.system.config.smtp_envelope_email_unset"}}" disabled>
 			{{end}}
 
 			{{template "com.form.email" .WithProps

@@ -52,7 +52,7 @@ func (g updateEmailsGuard) CanUpdateEmails() bool {
 func systemSetupGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		h.HTML.View(w, r, http.StatusOK, "system/setup", handler.Vars{
-			"SMTPEnvelopeFrom": h.SMTPEnvelopeFrom,
+			"SMTPEnvelopeEmail": h.SMTPEnvelopeEmail,
 		})
 	}
 }

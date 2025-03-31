@@ -19,13 +19,6 @@
 
 			{{.T "p" "site.system.setup.account_section_description"}}
 
-			<label>{{.T "site.system.config.smtp_envelope_from_label"}}</label>
-			{{if .Vars.SMTPEnvelopeFrom}}
-				<input type="text" value="{{.Vars.SMTPEnvelopeFrom}}" disabled>
-			{{else}}
-				<input type="text" value="{{.T "site.system.config.smtp_envelope_from_unset"}}" disabled>
-			{{end}}
-
 			{{template "com.form.email" .WithProps
 				"Label" (.T "site.system.setup.email_label")
 				"Name" "email"
@@ -43,6 +36,13 @@
 
 		<fieldset>
 			<legend>{{.T "site.system.setup.email_section_title"}}</legend>
+
+			<label>{{.T "site.system.setup.smtp_envelope_email_label"}} <small>{{.T "site.system.setup.smtp_envelope_email_hint"}}</small></label>
+			{{if .Vars.SMTPEnvelopeEmail}}
+				<input type="text" value="{{.Vars.SMTPEnvelopeEmail}}" disabled>
+			{{else}}
+				<input type="text" value="{{.T "site.system.setup.smtp_envelope_email_unset"}}" disabled>
+			{{end}}
 
 			{{template "com.form.email" .WithProps
 				"Label" (.T "site.system.setup.system_email_label")

@@ -9,7 +9,8 @@ import (
 )
 
 type smtpConfig struct {
-	system *repo.System
+	envelopeEmail string
+	system        *repo.System
 }
 
 func (c *smtpConfig) Read(ctx context.Context) (*smtp.ClientConfig, error) {
@@ -19,8 +20,8 @@ func (c *smtpConfig) Read(ctx context.Context) (*smtp.ClientConfig, error) {
 	}
 
 	smtpClientConfig := smtp.ClientConfig{
-		EnvelopeFrom: opts.smtp.envelopeFrom,
-		ResendAPIKey: config.ResendAPIKey,
+		EnvelopeEmail: c.envelopeEmail,
+		ResendAPIKey:  config.ResendAPIKey,
 	}
 
 	return &smtpClientConfig, nil
