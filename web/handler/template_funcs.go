@@ -59,6 +59,7 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 		"MarshalIndentJSON":  TmplMarshalIndentJSON,
 		"UnescapeHTML":       TmplUnescapeHTML,
 		"UnescapeHTMLAttr":   TmplUnescapeHTMLAttr,
+		"UnescapeCSS":        TmplUnescapeCSS,
 		"UnescapeJS":         TmplUnescapeJS,
 		"Slice":              TmplSlice,
 		"SliceContains":      TmplSliceContains,
@@ -583,6 +584,10 @@ func TmplUnescapeHTML(s string) template.HTML {
 
 func TmplUnescapeHTMLAttr(s string) template.HTMLAttr {
 	return template.HTMLAttr(s)
+}
+
+func TmplUnescapeCSS(s string) template.CSS {
+	return template.CSS(s)
 }
 
 func TmplUnescapeJS(s string) template.JS {
