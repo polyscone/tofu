@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/polyscone/tofu/app"
@@ -32,7 +31,6 @@ type MultiTenantHandler struct {
 	logger    *slog.Logger
 	newTenant NewTenantFunc
 	config    handler.Config
-	muxesMu   sync.RWMutex
 	muxes     *cache.Cache[string, http.Handler]
 }
 
