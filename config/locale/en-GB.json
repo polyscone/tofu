@@ -26,148 +26,124 @@
 		"{context}{integer(value)}.{pad_right(fraction(value), 2, '0')}"
 	],
 
-	"time": {
-		"weekday_full": [
-			["if: value == 'monday'", "Monday"],
-			["if: value == 'tuesday'", "Tuesday"],
-			["if: value == 'wednesday'", "Wednesday"],
-			["if: value == 'thursday'", "Thursday"],
-			["if: value == 'friday'", "Friday"],
-			["if: value == 'saturday'", "Saturday"],
-			["if: value == 'sunday'", "Sunday"]
-		],
-		"month_full": [
-			["if: value == 1", "January"],
-			["if: value == 2", "February"],
-			["if: value == 3", "March"],
-			["if: value == 4", "April"],
-			["if: value == 5", "May"],
-			["if: value == 6", "June"],
-			["if: value == 7", "July"],
-			["if: value == 8", "August"],
-			["if: value == 9", "September"],
-			["if: value == 10", "October"],
-			["if: value == 11", "November"],
-			["if: value == 12", "December"]
-		],
-		"display_date_time": "{t('time.weekday_full', weekday)}, {day} {t('time.month_full', month)} {year} at {pad_left(hour, 2, '0')}:{pad_left(minute, 2, '0')}:{pad_left(second, 2, '0')} {zone_name_short}",
+	"time.weekday_full": [
+		["if: value == 'monday'", "Monday"],
+		["if: value == 'tuesday'", "Tuesday"],
+		["if: value == 'wednesday'", "Wednesday"],
+		["if: value == 'thursday'", "Thursday"],
+		["if: value == 'friday'", "Friday"],
+		["if: value == 'saturday'", "Saturday"],
+		["if: value == 'sunday'", "Sunday"],
+		"{value}"
+	],
 
-		"display_duration": [
-			["if: years", [
-				["if: days", "{years} {years => (1 = 'year', _ = 'years')} and {days} {days => (1 = 'day', _ = 'days')}"],
-				"{years} {years => (1 = 'year', _ = 'years')}"
-			]],
-			["if: days", [
-				["if: hours and minutes", "{days} {days => (1 = 'day', _ = 'days')}, {hours} {hours => (1 = 'hour', _ = 'hours')}, and {minutes} {minutes => (1 = 'minute', _ = 'minutes')}"],
-				["if: hours", "{days} {days => (1 = 'day', _ = 'days')} and {hours} {hours => (1 = 'hour', _ = 'hours')}"],
-				"{days} {days => (1 = 'day', _ = 'days')}"
-			]],
-			["if: hours", [
-				["if: minutes and seconds", "{hours} {hours => (1 = 'hour', _ = 'hours')}, {minutes} {minutes => (1 = 'minute', _ = 'minutes')}, and {seconds} {seconds => (1 = 'second', _ = 'seconds')}"],
-				["if: minutes", "{hours} {hours => (1 = 'hour', _ = 'hours')} and {minutes} {minutes => (1 = 'minute', _ = 'minutes')}"],
-				"{hours} {hours => (1 = 'hour', _ = 'hours')}"
-			]],
-			["if: minutes", [
-				["if: seconds", "{minutes} {minutes => (1 = 'minute', _ = 'minutes')} and {seconds} {seconds => (1 = 'second', _ = 'seconds')}"],
-				"{minutes} {minutes => (1 = 'minute', _ = 'minutes')}"
-			]],
-			"{seconds} {seconds => (1 = 'second', _ = 'seconds')}"
-		],
+	"time.month_full": [
+		["if: value == 1", "January"],
+		["if: value == 2", "February"],
+		["if: value == 3", "March"],
+		["if: value == 4", "April"],
+		["if: value == 5", "May"],
+		["if: value == 6", "June"],
+		["if: value == 7", "July"],
+		["if: value == 8", "August"],
+		["if: value == 9", "September"],
+		["if: value == 10", "October"],
+		["if: value == 11", "November"],
+		["if: value == 12", "December"],
+		"{value}"
+	],
 
-		"rough_duration": [
-			["if: years", [
-				["if: days", "{years} {years => (1 = 'year', _ = 'years')} and {days} {days => (1 = 'day', _ = 'days')}"],
-				"{years} {years => (1 = 'year', _ = 'years')}"
-			]],
-			["if: days", [
-				["if: hours", "{days} {days => (1 = 'day', _ = 'days')} and {hours} {hours => (1 = 'hour', _ = 'hours')}"],
-				"{days} {days => (1 = 'day', _ = 'days')}"
-			]],
-			["if: hours", [
-				["if: minutes", "{hours} {hours => (1 = 'hour', _ = 'hours')} and {minutes} {minutes => (1 = 'minute', _ = 'minutes')}"],
-				"{hours} {hours => (1 = 'hour', _ = 'hours')}"
-			]],
-			["if: minutes", [
-				["if: seconds", "{minutes} {minutes => (1 = 'minute', _ = 'minutes')} and {seconds} {seconds => (1 = 'second', _ = 'seconds')}"],
-				"{minutes} {minutes => (1 = 'minute', _ = 'minutes')}"
-			]],
-			"{seconds} {seconds => (1 = 'second', _ = 'seconds')}"
-		]
-	},
+	"time.display_date_time": "{t('time.weekday_full', weekday)}, {day} {t('time.month_full', month)} {year} at {pad_left(hour, 2, '0')}:{pad_left(minute, 2, '0')}:{pad_left(second, 2, '0')} {zone_name_short}",
 
-	"com": {
-		"form": {
-			"input": {
-				"max_length_hint": "Max. {max_length}"
-			},
+	"time.display_duration": [
+		["if: years", [
+			["if: days", "{years} {years => (1 = 'year', _ = 'years')} and {days} {days => (1 = 'day', _ = 'days')}"],
+			"{years} {years => (1 = 'year', _ = 'years')}"
+		]],
+		["if: days", [
+			["if: hours and minutes", "{days} {days => (1 = 'day', _ = 'days')}, {hours} {hours => (1 = 'hour', _ = 'hours')}, and {minutes} {minutes => (1 = 'minute', _ = 'minutes')}"],
+			["if: hours", "{days} {days => (1 = 'day', _ = 'days')} and {hours} {hours => (1 = 'hour', _ = 'hours')}"],
+			"{days} {days => (1 = 'day', _ = 'days')}"
+		]],
+		["if: hours", [
+			["if: minutes and seconds", "{hours} {hours => (1 = 'hour', _ = 'hours')}, {minutes} {minutes => (1 = 'minute', _ = 'minutes')}, and {seconds} {seconds => (1 = 'second', _ = 'seconds')}"],
+			["if: minutes", "{hours} {hours => (1 = 'hour', _ = 'hours')} and {minutes} {minutes => (1 = 'minute', _ = 'minutes')}"],
+			"{hours} {hours => (1 = 'hour', _ = 'hours')}"
+		]],
+		["if: minutes", [
+			["if: seconds", "{minutes} {minutes => (1 = 'minute', _ = 'minutes')} and {seconds} {seconds => (1 = 'second', _ = 'seconds')}"],
+			"{minutes} {minutes => (1 = 'minute', _ = 'minutes')}"
+		]],
+		"{seconds} {seconds => (1 = 'second', _ = 'seconds')}"
+	],
 
-			"passcode": {
-				"default_hint": "6 digits"
-			},
+	"time.rough_duration": [
+		["if: years", [
+			["if: days", "{years} {years => (1 = 'year', _ = 'years')} and {days} {days => (1 = 'day', _ = 'days')}"],
+			"{years} {years => (1 = 'year', _ = 'years')}"
+		]],
+		["if: days", [
+			["if: hours", "{days} {days => (1 = 'day', _ = 'days')} and {hours} {hours => (1 = 'hour', _ = 'hours')}"],
+			"{days} {days => (1 = 'day', _ = 'days')}"
+		]],
+		["if: hours", [
+			["if: minutes", "{hours} {hours => (1 = 'hour', _ = 'hours')} and {minutes} {minutes => (1 = 'minute', _ = 'minutes')}"],
+			"{hours} {hours => (1 = 'hour', _ = 'hours')}"
+		]],
+		["if: minutes", [
+			["if: seconds", "{minutes} {minutes => (1 = 'minute', _ = 'minutes')} and {seconds} {seconds => (1 = 'second', _ = 'seconds')}"],
+			"{minutes} {minutes => (1 = 'minute', _ = 'minutes')}"
+		]],
+		"{seconds} {seconds => (1 = 'second', _ = 'seconds')}"
+	],
 
-			"password": {
-				"default_hint": "at least {min_length} characters",
-				"default_placeholder": "password or passphrase"
-			},
+	"com.form.input.max_length_hint": "Max. {max_length}",
 
-			"recovery_code": {
-				"default_hint": "{required_length} alphanumeric characters"
-			},
+	"com.form.passcode.default_hint": "6 digits",
 
-			"sms_tel": {
-				"default_hint": "full number and country code beginning with +"
-			},
+	"com.form.password.default_hint": "at least {min_length} characters",
+	"com.form.password.default_placeholder": "password or passphrase",
 
-			"textarea": {
-				"max_length_hint": "Max. {max_length}"
-			}
-		},
+	"com.form.recovery_code.default_hint": "{required_length} alphanumeric characters",
 
-		"datatable": {
-			"up_arrow": "▲",
-			"down_arrow": "▼",
-			"sort_by_key": "Sort by {key}"
-		},
+	"com.form.sms_tel.default_hint": "full number and country code beginning with +",
 
-		"pagination": {
-			"showing_x_rows_of_y_total_rows": [
-				["if: start_row == end_row", "Showing entry {start_row} of {total_rows}"],
-				"Showing entries {start_row}-{end_row} of {total_rows}"
-			],
+	"com.form.textarea.max_length_hint": "Max. {max_length}",
 
-			"show_n_rows_per_page": "{n} / page",
-			"show_n_rows_per_page_update_button": "Update",
+	"com.datatable.up_arrow": "▲",
+	"com.datatable.down_arrow": "▼",
+	"com.datatable.sort_by_key": "Sort by {key}",
 
-			"first_page_description": "First page",
-			"previous_page_description": "Previous page",
-			"go_to_page_n_description": "Page {n}",
-			"next_page_description": "Next page",
-			"last_page_description": "Last page",
+	"com.pagination.showing_x_rows_of_y_total_rows": [
+		["if: start_row == end_row", "Showing entry {start_row} of {total_rows}"],
+		"Showing entries {start_row}-{end_row} of {total_rows}"
+	],
 
-			"go_to_first_page_no_rows": "Go to first page",
-			"go_to_first_page": "« First",
-			"go_to_previous_page": "< Prev",
-			"go_to_page_n": "{t('number', n)}",
-			"go_to_next_page": "Next >",
-			"go_to_last_page": "Last »"
-		},
+	"com.pagination.show_n_rows_per_page": "{n} / page",
+	"com.pagination.show_n_rows_per_page_update_button": "Update",
 
-		"recovery_codes": {
-			"list_title": "Two-factor authentication recovery codes",
-			"download": "Download",
-			"print": "Print",
-			"copy": "Copy",
-			"copy_succeeded": "Copied",
-			"copy_failed": "Failed"
-		},
+	"com.pagination.first_page_description": "First page",
+	"com.pagination.previous_page_description": "Previous page",
+	"com.pagination.go_to_page_n_description": "Page {n}",
+	"com.pagination.next_page_description": "Next page",
+	"com.pagination.last_page_description": "Last page",
 
-		"view": {
-			"form": {
-				"role_name.default_placeholder": "Role name",
-				"role_description.default_placeholder": "A role description."
-			}
-		}
-	},
+	"com.pagination.go_to_first_page_no_rows": "Go to first page",
+	"com.pagination.go_to_first_page": "« First",
+	"com.pagination.go_to_previous_page": "< Prev",
+	"com.pagination.go_to_page_n": "{t('number', n)}",
+	"com.pagination.go_to_next_page": "Next >",
+	"com.pagination.go_to_last_page": "Last »",
+
+	"com.recovery_codes.list_title": "Two-factor authentication recovery codes",
+	"com.recovery_codes.download": "Download",
+	"com.recovery_codes.print": "Print",
+	"com.recovery_codes.copy": "Copy",
+	"com.recovery_codes.copy_succeeded": "Copied",
+	"com.recovery_codes.copy_failed": "Failed",
+
+	"com.view.form.role_name.default_placeholder": "Role name",
+	"com.view.form.role_description.default_placeholder": "A role description.",
 
 	"repo.error.conflict": [
 		["if: context == 'role.name'", "a role with this name already exists"],
@@ -175,1521 +151,1217 @@
 		"{value} already in use"
 	],
 
-	"flash": {
-		"unauthorized": "You're not authorised to access this application.",
-		"bad_sign_in": "Either your credentials are incorrect, or you're not authorised to access this application.",
-		"totp_required": "Two-factor authentication is required to use this application."
-	},
-
-	"account": {
-		"sign_in": {
-			"error": "Either your credentials are incorrect, or you're not authorised to access this application.",
-
-			"throttled": {
-				"in_last": "{t('time.display_duration', in_last)}",
-				"unlock_in": "{t('time.display_duration', unlock_in)}",
-				"error": [
-					["if: context == 'pwa'", [
-						["if: unlock_in", "Too many failed sign in attempts in the last {in_last}. Please try again {unlock_in}."],
-						"Too many failed sign in attempts in the last {in_last}. Please try again."
-					]],
-					["if: unlock_in", "Too many failed sign in attempts in the last {t('time.display_duration', in_last)}. Please try again in {t('time.display_duration', unlock_in)}."],
-					"Too many failed sign in attempts in the last {t('time.display_duration', in_last)}. Please try again."
-				]
-			}
-		},
-
-		"email.error": {
-			"empty": "cannot be empty",
-			"contains_whitespace": "cannot contain whitespace",
-			"contains_quotes": "cannot contain quotes",
-			"too_long": "cannot be a over {max_length} characters in length",
-			"missing_at": "missing the @ sign",
-			"missing_local_part": "missing part before the @ sign",
-			"missing_domain": "missing part after the @ sign",
-			"has_name": "cannot not include a name",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"missing_tld": "missing top-level domain (.com, .co.uk, etc.)",
-			"not_an_email": "must be an email address, e.g. email@example.com",
-			"other": "invalid input: {error}"
-		},
-
-		"tel.error": {
-			"empty": "cannot be empty",
-			"too_long": "cannot be a over {max_length} characters in length",
-			"incorrect_plus_position": "+ sign must come at the beginning",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"invalid": "must be in the format +12 3456 7890"
-		},
-
-		"suspend_reason.error": {
-			"too_long": "cannot be a over {max_length} characters in length",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"invalid": "can only contain latin characters"
-		},
-
-		"role_name.error": {
-			"empty": "cannot be empty",
-			"too_short": "must be at least {min_length} characters in length",
-			"too_long": "cannot be a over {max_length} characters in length",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"invalid": "can only contain latin characters"
-		},
-
-		"role_description.error": {
-			"too_long": "cannot be a over {max_length} characters in length",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"invalid": "can only contain latin characters"
-		},
-
-		"recovery_code.error": {
-			"empty": "cannot be empty",
-			"has_whitespace": "cannot contain whitespace",
-			"has_quotes": "cannot contain quotes",
-			"incorrect_length": "must be {required_length} characters in length",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"invalid": "can only contain uppercase characters between A-Z and 2-7"
-		},
-
-		"permission.error": {
-			"empty": "cannot be empty",
-			"has_whitespace": "cannot contain whitespace",
-			"has_quotes": "cannot contain quotes",
-			"too_short": "must be at least {min_length} characters in length",
-			"too_long": "cannot be a over {max_length} characters in length",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"invalid": "can only contain letters, numbers, underscores, and colons, e.g. abc_123:def_456"
-		},
-
-		"password.error": {
-			"empty": "cannot be empty",
-			"too_short": "must be at least {min_length} characters in length",
-			"too_long": "cannot be a over {max_length} characters in length"
-		},
-
-		"totp.error": {
-			"incorrect_length": "must be {required_length} characters in length",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"invalid": "must be {required_length} digits"
-		},
-
-		"totp_method.error.invalid": "invalid TOTP method \"{invalid_method}\"",
-
-		"user": {
-			"sign_in_method": {
-				"password": "password",
-				"magic_link": "magic link",
-				"google": "google",
-				"facebook": "facebook"
-			},
-
-			"sign_up_method": {
-				"system_setup": "system setup",
-				"web_form": "web form",
-				"magic_link": "magic link",
-				"google": "google",
-				"facebook": "facebook",
-				"invite": "invite"
-			},
-
-			"error": {
-				"already_signed_up": [
-					["if: context == 'initial_user_sign_up'", "initial user cannot already be signed up"],
-					"already signed up"
-				],
-
-				"already_verified": [
-					["if: context == 'initial_user_sign_up'", "initial user cannot already be verified"],
-					["if: context == 'invite'", "cannot invite an already verified user"],
-					"already verified"
-				],
-
-				"already_activated": [
-					["if: context == 'initial_user_sign_up'", "initial user cannot already be activated"],
-					"already activated"
-				],
-
-				"not_verified": [
-					["if: context == 'change_password'", "cannot change password until verified"],
-					"not verified"
-				],
-
-				"not_activated": [
-					["if: context == 'choose_password'", "cannot choose password until activated"],
-					["if: context == 'reset_password'", "cannot reset password until activated"],
-					["if: context == 'setup_totp'", "cannot setup TOTP until activated"],
-					"not activated"
-				],
-
-				"is_suspended": "is suspended",
-				"invalid_password": "invalid password",
-
-				"already_has_password": [
-					["if: context == 'choose_password'", "cannot replace an already chosen password"],
-					"already has password"
-				],
-
-				"totp_already_activated": "TOTP already setup and activated",
-
-				"totp_not_activated": [
-					["if: context == 'regenerate_recovery_codes'", "cannot regenerate recovery codes without an activated TOTP"],
-					["if: context == 'disable_totp'", "cannot disable an unactivated TOTP"],
-					["if: context == 'reset_totp'", "cannot reset an unactivated TOTP"],
-					["if: context == 'request_totp_reset'", "cannot request a reset for an unactivated TOTP"],
-					["if: context == 'approve_totp_reset_request'", "cannot approve a reset request for an unactivated TOTP"],
-					["if: context == 'sign_in_with_totp'", "account does not have TOTP"],
-					["if: context == 'sign_in_with_recovery_code'", "account cannot use recovery codes"],
-					"TOTP not activated"
-				],
-
-				"totp_not_verified": [
-					["if: context == 'activate_totp'", "unverified TOTP cannot be activated"],
-					"TOTP not verified"
-				],
-
-				"totp_reset_not_approved": [
-					["if: context == 'reset_totp'", "cannot reset a TOTP for a request that is still awaiting review"],
-					"TOTP reset not approved"
-				],
-
-				"totp_reset_not_requested": [
-					["if: context == 'deny_totp_reset_request'", "cannot deny a non-existent TOTP reset request"],
-					"TOTP reset not requested"
-				],
-
-				"no_totp_key": [
-					["if: context == 'change_totp_tel'", "cannot change TOTP phone without a key setup"],
-					["if: context == 'generate_totp'", "cannot generate a TOTP without a key setup"],
-					"TOTP key has not been setup"
-				],
-
-				"totp_already_used": "passcode already used",
-				"invalid_totp": "invalid passcode",
-				"invalid_recovery_code": "invalid recovery code"
-			}
-		}
-	},
-
-	"system": {
-		"email.error": {
-			"empty": "cannot be empty",
-			"contains_whitespace": "cannot contain whitespace",
-			"contains_quotes": "cannot contain quotes",
-			"too_long": "cannot be a over {max_length} characters in length",
-			"missing_at": "missing the @ sign",
-			"missing_local_part": "missing part before the @ sign",
-			"missing_domain": "missing part after the @ sign",
-			"has_name": "cannot not include a name",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"missing_tld": "missing top-level domain (.com, .co.uk, etc.)",
-			"not_an_email": "must be an email address, e.g. email@example.com",
-			"other": "invalid input: {error}"
-		},
-
-		"facebook_app_id.error.invalid": "invalid app id",
-		"facebook_app_secret.error.invalid": "invalid app secret",
-
-		"google_client_id.error.invalid": "invalid client id",
-
-		"resend_api_key.error": {
-			"incorrect_length": "must be {required_length} characters in length",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"invalid": "must begin with re_"
-		},
-
-		"twilio_sid.error": {
-			"incorrect_length": "must be {required_length} characters in length",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"invalid": "must begin with AC and be followed by 32 hexadecimal characters"
-		},
-
-		"twilio_token.error": {
-			"incorrect_length": "must be {required_length} characters in length",
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"invalid": "must be exactly 32 hexadecimal characters"
-		},
-
-		"twilio_tel.error": {
-			"has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
-			"invalid": "must be in the format +12 3456 7890"
-		},
-
-		"config": {
-			"error": {
-				"twilio_sid_required": [
-					["if: context == 'enable_totp_sms'", "required to enable two-factor authentication SMS"],
-					"Twilio SID is required"
-				],
-
-				"twilio_token_required": [
-					["if: context == 'enable_totp_sms'", "required to enable two-factor authentication SMS"],
-					"Twilio token is required"
-				],
-
-				"twilio_from_tel_required": [
-					["if: context == 'enable_totp_sms'", "required to enable two-factor authentication SMS"],
-					"Twilio from number is required"
-				],
-
-				"google_sign_in_client_id_required": [
-					["if: context == 'enable_google_sign_in'", "required to enable Google sign in"],
-					"Google sign in client id is required"
-				],
-
-				"facebook_sign_in_app_id_required": [
-					["if: context == 'enable_facebook_sign_in'", "required to enable Facebook sign in"],
-					"Facebook sign in app id is required"
-				],
-
-				"facebook_sign_in_app_secret_required": [
-					["if: context == 'enable_facebook_sign_in'", "required to enable Facebook sign in"],
-					"Facebook sign in app secret is required"
-				]
-			}
-		}
-	},
-
-	"api": {
-		"sdk": {
-			"bad_gateway": "Request failed because the server was offline, please try again.",
-			"gateway_timeout": "The server could not process your request in time, please try again.",
-			"network_error": "Request failed because either the server was offline, or you have no internet connection, please try again."
-		}
-	},
-
-	"site": {
-		"form": {
-			"please_wait_button_text": "Please wait..."
-		},
-
-		"nav": {
-			"skip": "Skip navigation",
-			"home": "Home",
-			"account_dashboard": "Account",
-			"admin_dashboard": "Admin",
-			"sign_out": "Sign out",
-			"sign_in": "Sign in"
-		},
-
-		"admin": {
-			"nav": {
-				"user_management": "Users",
-				"role_management": "Roles",
-				"system_config": "Config",
-				"system_metrics": "Metrics"
-			},
-
-			"dashboard": {
-				"title": "Admin"
-			}
-		},
-
-		"account": {
-			"nav": {
-				"change_password": "Change password",
-				"choose_password": "Choose a password",
-				"generate_new_recovery_codes": "Generate new recovery codes",
-				"disable_totp": "Disable two-factor authentication",
-				"setup_totp": "Setup two-factor authentication"
-			},
-
-			"dashboard": {
-				"title": "Account"
-			},
-
-			"sign_up": {
-				"form": {
-					"title": "Sign up",
-					"choose_password_explanation": "You'll be able to choose your password after verifying your email address.",
-					"email_label": "Email",
-					"sign_up_button": "Sign up",
-					"already_have_account_button": "Already have an account?",
-					"sign_up_disabled": "Sign up is disabled for this application."
-				},
-
-				"thank_you": {
-					"title": "Thank you",
-					"message": [
-						["if: user_email", "Your account details have been registered and an email containing an account verification link has been sent to {user_email}."],
-						"Your account details have been registered and an email containing an account verification link has been sent to you."
-					]
-				}
-			},
-
-			"verify": {
-				"flash": {
-					"success": "Your account has been successfully verified."
-				},
-
-				"form": {
-					"title": "Account verification",
-					"error_message": "If your verification link has expired {link('sign up again', 'account.sign_up')} using the same email address and we'll send you a new one.",
-					"already_signed_in": "You're already signed in.",
-					"sign_out_button": "Click here to sign out.",
-					"no_token_message": "Create an account using the {link('sign up form', 'account.sign_up')} and we'll send you a link to verify your account.",
-					"verify_message": "Use the form below to choose a password and we can verify your account.",
-					"choose_password_label": "Choose a password",
-					"choose_password_button": "Use this password and verify account"
-				},
-
-				"success": {
-					"title": "Account verified",
-					"message": [
-						"Your account has been successfully verified and is now awaiting manual activation.",
-						"",
-						"Once your account is activated you'll receive an email and will be able to sign in."
-					]
-				}
-			},
-
-			"sign_in": {
-				"flash": {
-					"no_more_recovery_codes": [
-						"You've run out of recovery codes.",
-						"We recommend {link('generating new ones', 'account.totp.recovery_codes')} as soon as you can."
-					],
-					"low_recovery_codes": [
-						"You're running low on recovery codes.",
-						"We recommend {link('generating new ones', 'account.totp.recovery_codes')} as soon as you can."
-					],
-					"totp_if_device_lost": "If you've lost your authentication device {link('disable two-factor authentication', 'account.totp.disable')} to avoid getting locked out of your account.",
-					"consider_totp": "Please consider {link('setting up two-factor authentication', 'account.totp.setup')} to help secure your account even further."
-				},
-
-				"already_signed_in": {
-					"title": "Sign out",
-					"message": "You're already signed in.",
-					"sign_out_button": "Click here to sign out."
-				},
-
-				"form": {
-					"title": "Sign in",
-					"sign_up_title": "Sign up",
-					"email_label": "Email",
-					"password_label": "Password",
-					"send_magic_link_button": "Send magic link",
-					"sign_in_button": "Sign in",
-					"sign_up_button": "Sign up",
-					"already_have_account_button": "Already have an account?",
-					"reset_password_button": "Forgotten your password?",
-					"alt_sign_in_title": "Or",
-					"sign_up_with_password_button": "Sign up with a password",
-					"sign_in_with_password_button": "Sign in with a password",
-					"sign_in_with_magic_link_button": "Sign in with a magic link"
-				},
-
-				"magic_link": {
-					"title": "Sign in",
-					"error_message": "If your sign in link has expired {link('sign in again', 'account.sign_in')} using the same email address and we'll send you a new one.",
-					"already_signed_in": "You're already signed in.",
-					"sign_out_button": "Click here to sign out.",
-					"no_token_message": "Sign in using the {link('sign in form', 'account.sign_in')} and we'll send you a link to verify your identity.",
-					"click_button_if_no_redirect": "Click on the sign in button below if you aren't automatically redirected.",
-					"sign_in_button": "Sign in"
-				},
-
-				"magic_link_sent": {
-					"title": "Email sent",
-					"message": [
-						["if: ttl", [
-							"We've sent a magic link to your email address that you can use to access your account.",
-							"",
-							"It will expire in {t('time.display_duration', ttl)} and can only be used once."
-						]],
-						[
-							"We've sent a magic link to your email address that you can use to access your account.",
-							"",
-							"It will expire shortly and can only be used once."
-						]
-					]
-				},
-
-				"recovery_code": {
-					"title": "Sign in with recovery code",
-					"message": "Please verify your identity by entering one of your recovery codes. Once a recovery code has been used it can't be used again.",
-					"recovery_code_label": "Recovery code",
-					"sign_in_button": "Sign in",
-					"use_passcode_button": "Use a passcode"
-				},
-
-				"passcode": {
-					"title": "Sign in with passcode",
-					"sms_instructions": "Please verify your identity by entering the 6 digit passcode that has been generated and sent to your registered phone number.",
-					"app_instructions": "Please verify your identity by entering a 6 digit passcode that has been generated by your authenticator app.",
-					"passcode_label": "Passcode",
-					"sign_in_button": "Sign in",
-					"resend_passcode_sms_button": "Resend passcode SMS",
-					"use_recovery_code_button": "Use a recovery code",
-					"totp_reset_button": "Locked out?"
-				}
-			},
-
-			"reset_password": {
-				"flash": {
-					"password_changed": "Your password has been successfully changed."
-				},
-
-				"request": {
-					"title": "Reset password",
-					"email_label": "Email",
-					"send_link_button": "Send reset password link"
-				},
-
-				"email_sent": {
-					"title": "Email sent",
-					"message": "Please check your email for a link to update your password."
-				},
-
-				"new_password": {
-					"title": "Choose a new password",
-					"new_password_label": "New password",
-					"update_button": "Update password"
-				}
-			},
-
-			"change_password": {
-				"flash": {
-					"password_changed": "Your password has been successfully changed."
-				},
-				"title": "Change password",
-				"insecure_password_warning": [
-					"The password you're currently using appears {t('number', known_breach_count)} times in a {link('database of security breaches', 'https://haveibeenpwned.com')} and isn't considered to be secure.",
-					"",
-					"We recommend that you change it to a more secure one as soon as possible."
-				],
-				"also_consider_totp_warning": "Also consider {link('setting up two-factor authentication', 'account.totp.setup')} to help secure your account even further.",
-				"old_password_label": "Old password",
-				"new_password_label": "New password",
-				"update_password_button": "Update password",
-				"update_password_and_continue_button": "Update password and continue",
-				"change_later_button": "Change later"
-			},
-
-			"choose_password": {
-				"flash": {
-					"password_chosen": "Your password has been successfully set."
-				},
-				"title": "Choose password",
-				"allow_direct_sign_in_explanation": "Choosing a password will allow you to sign in directly through the {link('sign in form', 'account.sign_in')}.",
-				"totp_requirement_explanation": "It's also a requirement for setting up two-factor authentication. This is because if you decide to disable two-factor authentication later on we'll need to verify your identity by asking you for your password.",
-				"new_password_label": "New password",
-				"use_password_and_continue_button": "Use this password and continue",
-				"use_password_button": "Use this password"
-			},
-
-			"totp": {
-				"flash": {
-					"password_required": "You need to choose a password before you can setup two-factor authentication.",
-					"disabled": "Two-factor authentication has been disabled for your account.",
-					"passcode_sms_sent": "A passcode has been sent to your registered phone number."
-				},
-
-				"disable": {
-					"verify": {
-						"title": "Disable two-factor authentication",
-						"totp_required_message": "Two-factor authentication is required and can't be disabled.",
-						"enter_password_to_disable_message": "Enter your password to verify your identity and disable two-factor authentication.",
-						"password_label": "Password",
-						"disable_totp_button": "Disable two-factor authentication"
-					},
-
-					"success": {
-						"title": "Two-factor authentication disabled",
-						"text": [
-							"Two-factor authentication has been disabled for your account.",
-							"",
-							"From now on you won't be required to provide any passcodes when logging in to your account."
-						]
-					},
-
-					"already_disabled": {
-						"title": "Two-factor authentication disabled",
-						"text": [
-							"Two-factor authentication is already disabled for your account.",
-							"",
-							"{link('Setup two-factor authentication.', 'account.totp.setup')}"
-						]
-					}
-				},
-
-				"recovery_codes": {
-					"regenerate": {
-						"title": "Generate new recovery codes",
-						"new_codes_title": "Your new recovery codes",
-
-						"previous_no_longer_valid_warning": [
-							"Your previous recovery codes are no longer valid.",
-							"",
-							"Please download, print, copy, or photograph your new recovery codes and store them in a safe place separate from your authentication device.",
-							"",
-							"If possible, we recommend storing them in a password manager, such as {link('1Password', 'https://1password.com/')}, {link('LastPass', 'https://www.lastpass.com/')}, or {link('Keeper', 'https://www.keepersecurity.com')}."
-						],
-
-						"you_have_n_remaining": "You have {remaining_codes} recovery {remaining_codes => (1 = 'code', _ = 'codes')} remaining.",
-						"generate_new_instructions": "If you'd like to generate new recovery codes you'll need to verify your identity by entering a valid passcode in the form below.",
-						"none_remaining_warning": "You do not have any recovery codes. Please use the form below to generate new ones.",
-						"generate_new_will_invalidate_warning": "If you choose to generate new recovery codes your previous ones will no longer be valid and you won't be able to use them.",
-						"passcode_label": "Passcode",
-						"generate_codes_button": "Generate recovery codes",
-						"replace_codes_button": "Replace recovery codes",
-						"send_passcode_sms_button": "Send passcode SMS"
-					},
-
-					"setup_required": {
-						"title": "Two-factor authentication not setup",
-						"text": [
-							"Two-factor authentication has not been setup for your account, so you do not have any recovery codes.",
-							"",
-							"{link('Setup two-factor authentication.', 'account.totp.setup')}"
-						]
-					}
-				},
-
-				"reset": {
-					"form": {
-						"title": "Reset two-factor authentication",
-						"text": "Enter your password in the form below to reset two-factor authentication for your account.",
-						"password_label": "Password",
-						"reset_button": "Reset two-factor authentication"
-					},
-
-					"verify": {
-						"title": "Reset two-factor authentication request",
-						"text": [
-							"If you're locked out of your account because you've lost access to your authentication device you can use the form below to request two-factor authentication be reset for your account.",
-							"",
-							"After verifying your email address your case will need to be manually reviewed.",
-							"",
-							"If the person reviewing your case believes it to be a legitimate request you'll be sent another link by email to reset two-factor authentication."
-						],
-						"send_verification_link_button": "I understand, send a verification link"
-					},
-
-					"request": {
-						"title": "Reset two-factor authentication request",
-						"text": [
-							"Requesting a two-factor authentication reset requires a manual review of your case, and could take a while to complete.",
-							"",
-							"If the person reviewing your case believes it to be legitimate you will receive another email with a link to reset two-factor authentication for your account."
-						],
-						"reset_button": "I understand, request a two-factor authentication reset"
-					},
-
-					"request_sent": {
-						"title": "Reset two-factor authentication request sent",
-						"text": [
-							"A request for two-factor authentication to be reset for your account has been sent.",
-							"",
-							"Please be patient as your request will have to be manually reviewed.",
-							"",
-							"If the person reviewing your case believes it to be a legitimate request you'll be sent another link by email to reset two-factor authentication."
-						]
-					},
-
-					"email_sent": {
-						"title": "Email sent",
-						"text": "Please check your email for a link to verify your email address and request a two-factor authentication reset."
-					}
-				},
-
-				"setup": {
-					"already_enabled": {
-						"title": "Two-factor authentication already enabled",
-						"text": [
-							"Two-factor authentication has already been enabled for your account.",
-							"",
-							"{link('Disable two-factor authentication.', 'account.totp.disable')}"
-						]
-					},
-
-					"methods": {
-						"title": "Setup two-factor authentication",
-						"text": "Two-factor authentication adds an additional layer of security to your account by requiring more than just your password to sign in.",
-						"app_sms_choice_text": "You can either use two-factor authentication through an app on your phone or computer, or you can use SMS.",
-						"app_choice_text": "Use an app on your phone or computer to get passcodes when prompted {bold('(recommended)')}.",
-						"use_app_button": "Setup using an app",
-						"sms_choice_text": "We'll send you an SMS message with a passcode when prompted (only use this if you can't use an app).",
-						"use_sms_button": "Setup using SMS",
-						"app_only_text": "You can use two-factor authentication through an app on your phone or computer.",
-						"start_setup_button": "Start setup"
-					},
-
-					"app": {
-						"title": "Setup using an app",
-						"recommendations_text": [
-							"If you don't already have an authenticator app installed on your phone or computer then you'll need to download and install one to setup two-factor authentication.",
-							"",
-							"We recommend using one of the following:"
-						],
-						"recommendations_list": [
-							"Authy ({link('Android, iOS, Windows, Mac, Linux', 'https://authy.com/download/')})",
-							"",
-							"Google Authenticator ({link('Android', 'https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2')}, {link('iOS', 'https://apps.apple.com/us/app/google-authenticator/id388497605')})",
-							"",
-							"LastPass Authenticator ({link('Android, iOS, Windows mobile', 'https://support.logmeininc.com/lastpass/help/lastpass-authenticator-lp030014')})",
-							"",
-							"1Password ({link('Android, iOS, Windows, Mac', 'https://support.1password.com/one-time-passwords/')})"
-						],
-						"cannot_use_app_sms_suggestion": "{link(`Can't install an authenticator app? Click here to use SMS.`, 'account.totp.setup.sms')}",
-						"scan_qr_code_instructions": "Use your authenticator app to scan the QR code below. If you can't scan the QR code then you can manually enter the secret key below instead.",
-						"scan_on_multiple_devices_suggestion": "Consider scanning the QR code on multiple devices if you can. If you setup two-factor authentication on multiple devices you'll be less likely to get locked out of your account if you lose a device.",
-						"secret_key_label": "Secret Key:",
-						"enter_verification_passcode_instructions": "After scanning the QR code, or manually entering the secret key, your app will display a 6 digit passcode that you can enter below to verify your authenticator app is setup correctly.",
-						"passcode_label": "Passcode",
-						"verify_setup_button": "Verify setup"
-					},
-
-					"sms": {
-						"title": "Setup using SMS",
-						"warning_text": [
-							"Using SMS for two-factor authentication is only recommended when you can't use an authenticator app on your phone.",
-							"",
-							"{link(`Don't want to use SMS? Click here to use an app.`, 'account.totp.setup.app')}"
-						],
-						"instruction_text": "Enter the phone number that you'd like to use below and we'll send you a passcode to verify your phone number has been entered correctly.",
-						"tel_label": "Phone number",
-						"send_passcode_button": "Use this phone number and send a passcode"
-					},
-
-					"sms_verify": {
-						"title": "Verify your setup",
-						"warning_text": [
-							"Using SMS for two-factor authentication is only recommended when you can't use an authenticator app on your phone.",
-							"",
-							"{link(`Don't want to use SMS? Click here to use an app.`, 'account.totp.setup.app')}"
-						],
-						"instruction_text": "Enter the 6 digit passcode you received via SMS to verify that phone number is setup correctly.",
-						"passcode_label": "Passcode",
-						"verify_setup_button": "Verify setup",
-						"resend_passcode_button": "Resend passcode SMS",
-						"change_tel_button": "Change phone number"
-					},
-
-					"activate": {
-						"title": "Recovery codes",
-						"text": [
-							"Two-factor authentication has not been enabled yet.",
-							"",
-							"Once two-factor authentication has been enabled you'll be required to provide a 6 digit passcode to verify your identity when logging in.",
-							"",
-							"In the event that you lose access to your authentication device you can use the following recovery codes in place of a normal passcode."
-						],
-						"save_recovery_codes_warning": [
-							"Before enabling two-factor authentication, please download, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.",
-							"",
-							"If possible, we recommend storing them in a password manager, such as {link('1Password', 'https://1password.com/')}, {link('LastPass', 'https://www.lastpass.com/')}, or {link('Keeper', 'https://www.keepersecurity.com')}."
-						],
-						"saved_recovery_codes_button": "I have saved my recovery codes"
-					},
-
-					"success": {
-						"title": "Two-factor authentication enabled",
-						"text": [
-							"Two-factor authentication has been enabled for your account.",
-							"",
-							"From now on when logging in you'll be required to provide a 6 digit passcode to verify your identity."
-						]
-					}
-				}
-			},
-
-			"role_management": {
-				"flash": {
-					"created": "Role {name} created successfully.",
-					"updated": "Role {name} updated successfully.",
-					"deleted": "Role {name} deleted successfully."
-				},
-
-				"list": {
-					"title": "Role management",
-					"search_placeholder": "Search",
-					"search_button": "Search",
-					"name_heading": "Name",
-					"description_heading": "Description",
-					"create_button": "Create role",
-					"edit_button": "Edit",
-					"delete_button": "Delete",
-					"no_results": "No roles found"
-				},
-
-				"new": {
-					"title": "Add role",
-					"name_label": "Name",
-					"description_label": "Description",
-					"add_button": "Add role",
-					"cancel_button": "Cancel"
-				},
-
-				"edit": {
-					"title": "Editing {role_name}",
-					"name_label": "Name",
-					"description_label": "Description",
-					"update_button": "Update role",
-					"cancel_button": "Cancel"
-				},
-
-				"delete": {
-					"title": "Delete {role_name}",
-
-					"users_have_role_warning": [
-						["if: user_count > 1", "{user_count} users currently have this role; deleting will remove it from all of them."],
-						"{user_count} user currently has this role; deleting will remove it from them."
-					],
-
-					"are_you_sure": "Are you sure you want to permanently delete the role {role_name}?",
-					"delete_button": "Yes, delete {role_name}",
-					"cancel_button": "Cancel"
-				}
-			},
-
-			"user_management": {
-				"flash": {
-					"invite_sent": "An invite to verify an account has been sent to {email}.",
-					"updated": "User {email} updated successfully.",
-					"suspended_reason_updated": "Updated suspended reason for {email}.",
-					"suspended": "User {email} was suspended.",
-					"unsuspended": "User {email} was unsuspended.",
-					"activated": "User {email} activated successfully.",
-					"totp_reset_request_approved": "Two-factor authentication reset request approved for {email}.",
-					"totp_reset_request_denied": "Two-factor authentication reset request denied for {email}."
-				},
-
-				"list": {
-					"title": "User management",
-					"search_placeholder": "Search",
-					"search_button": "Search",
-					"email_heading": "Name",
-					"last_sign_in_heading": "Last signed in",
-					"invite_button": "Invite",
-					"last_signed_in_ago": "{t('time.rough_duration', time_since_last_signed_in)} ago",
-					"unverified": "Unverified",
-					"activate_button": "Activate",
-					"unactivated": "Unactivated",
-					"review_totp_request_button": "Review 2FA reset request",
-					"edit_button": "Edit",
-					"no_results": "No users found"
-				},
-
-				"activate": {
-					"title": "Activate {user_email}",
-					"are_you_sure": "Are you sure you want to activate {user_email}?",
-					"yes_button": "Yes, activate {user_email}",
-					"cancel_button": "Cancel"
-				},
-
-				"review_totp_reset": {
-					"title": "Reviewing {user_email}",
-
-					"explanation": [
-						"This is a request to reset two-factor authentication for the account associated with {user_email}.",
-						"",
-						"A user might make this request if they're locked out of their account; they might've lost their authentication device, for example.",
-						"",
-						"Allowing the person making this request to reset two-factor authentication will leave the account less secure overall, but will allow them to sign in again."
-					],
-
-					"explanation_warning": "Only approve this request if you're sure it's legitimate, otherwise deny it.",
-
-					"approve_button": "Approve and send reset link",
-					"deny_button": "Deny the request",
-					"cancel_button": "Cancel"
-				},
-
-				"approve_totp_reset": {
-					"title": "Approve {user_email}",
-					"are_you_sure": "Are you sure you want to send a link to {user_email} that would allow them to reset two-factor authentication?",
-					"yes_button": "Yes, send a reset link",
-					"no_button": "No, go back"
-				},
-
-				"deny_totp_reset": {
-					"title": "Deny {user_email}",
-					"are_you_sure": "Are you sure you want to deny this request?",
-					"yes_button": "Yes, deny this request",
-					"no_button": "No, go back"
-				},
-
-				"new": {
-					"title": "Invite user",
-					"email_label": "Email",
-					"invite_button": "Create user and send invite email",
-					"cancel_button": "Cancel"
-				},
-
-				"edit": {
-					"title": "Editing {user_email}",
-
-					"editing_yourself_warning": [
-						"You're currently editing yourself.",
-						"",
-						"Any changes you make here may affect your current browsing session, so be careful to avoid making any changes you're unsure of."
-					],
-
-					"not_verified": "This account has not yet been verified.",
-					"last_signed_in_at": "Last signed in {t('time.display_date_time', last_signed_in_at)}",
-					"roles_title": "Roles",
-					"give_super_title": "I want to give this user the super role",
-
-					"give_super_warning": [
-						"Once a user has been given the super role it {italic(`can't be removed`)}.",
-						"",
-						"Please think carefully about whether this is actually what you need to do, or whether another role would be more appropriate."
-					],
-
-					"give_super_checkbox_label": "I understand this {bold(`can't be undone`)}, give this user the super role",
-					"grants_title": "Grants",
-					"denials_title": "Denials",
-					"grant_denial_explanation_title": "What are grants and denials?",
-
-					"grant_denial_explanation": [
-						"Grants and denials allow you to make fine-grained changes to a user's access level by overriding specific permissions after a user's roles have been applied.",
-						"",
-						"Grants are used to give users additional permissions, and denials are used to take specific permissions away."
-					],
-
-					"suspend_button": "Suspend user",
-					"update_button": "Update user",
-					"cancel_button": "Cancel"
-				},
-
-				"suspend": {
-					"suspended_title": "Suspended user",
-					"suspend_title": "Suspend user",
-					"suspended_at": "This user was suspended on {t('time.display_date_time', suspended_at)}",
-					"warning": "Once a user has been suspended they won't be able to sign in again, and if they're already signed in they'll be forcibly signed out.",
-					"reason_label": "Reason for suspension",
-					"reason_placeholder": "The reason for account suspension.",
-					"edit_button": "Edit user",
-					"update_reason_button": "Update reason",
-					"unsuspend_button": "Unsuspend user",
-					"suspend_button": "Suspend user",
-					"cancel_button": "Cancel",
-					"no_permission": "You do not have permission to suspend users."
-				}
-			}
-		},
-
-		"system": {
-			"setup": {
-				"flash": {
-					"completed": "Setup completed successfully."
-				},
-
-				"title": "Setup",
-
-				"email_section_title": "Email",
-				"smtp_envelope_email_label": "SMTP envelope email",
-				"smtp_envelope_email_hint": "used in SPF checks",
-				"smtp_envelope_email_unset": "Unset (dynamic)",
-				"system_email_label": "System email",
-				"system_email_hint": "from address in system emails",
-				"security_email_label": "Security email",
-				"security_email_hint": "for reporting security vulnerabilities",
-
-				"account_section_title": "Account",
-				"account_section_description": "We'll create an admin account using the email and password you enter below.",
-				"email_label": "Email",
-				"password_label": "Password",
-
-				"setup_button": "Finish setup"
-			},
-
-			"config": {
-				"flash": {
-					"updated": "System configuration successfully updated."
-				},
-
-				"title": "System configuration",
-
-				"email_section_title": "Email",
-				"dmarc_spf_misaligned_warning": [
-					"Your SMTP envelope email and system email domains do not match and may cause DMARC check failures.",
-					"",
-					"This could result in emails sent from the system to be marked as unverified, and depending on the DMARC policy, rejected, or quarantined."
-				],
-				"smtp_envelope_email_label": "SMTP envelope email",
-				"smtp_envelope_email_hint": "used in SPF checks",
-				"smtp_envelope_email_unset": "Unset (dynamic)",
-				"system_email_label": "System email",
-				"system_email_hint": "from address in system emails",
-				"security_email_label": "Security email",
-				"security_email_hint": "for reporting security vulnerabilities",
-
-				"account_section_title": "Account",
-				"enable_sign_up_label": "Enable sign up",
-				"enable_sign_up_no": "No (invite only)",
-				"enable_sign_up_yes": "Yes",
-				"enable_auto_account_activation_label": "Enable automatic account activation on sign up",
-				"enable_auto_account_activation_no": "No (manual activation required)",
-				"enable_auto_account_activation_yes": "Yes",
-				"require_totp_label": "Require two-factor authentication",
-				"require_totp_no": "No",
-				"require_totp_yes": "Yes",
-				"enable_totp_sms_label": "Enable SMS for two-factor authentication",
-				"enable_totp_sms_no": "No",
-				"enable_totp_sms_yes": "Yes (requires Twilio setup)",
-				"enable_magic_link_sign_in_label": "Enable magic link sign in",
-				"enable_magic_link_sign_in_hint": "allows magic link sign up when sign up is enabled",
-				"enable_magic_link_sign_in_no": "No",
-				"enable_magic_link_sign_in_yes": "Yes",
-				"enable_google_sign_in_label": "Enable Google sign in",
-				"enable_google_sign_in_hint": "allows Google sign up when sign up is enabled",
-				"enable_google_sign_in_no": "No",
-				"enable_google_sign_in_yes": "Yes (requires Google client id)",
-				"google_sign_in_client_id_label": "Google sign in client id",
-				"enable_facebook_sign_in_label": "Enable Facebook sign in",
-				"enable_facebook_sign_in_hint": "allows Facebook sign up when sign up is enabled",
-				"enable_facebook_sign_in_no": "No",
-				"enable_facebook_sign_in_yes": "Yes (requires Facebook app id/secret)",
-				"facebook_sign_in_app_id_label": "Facebook sign in app id",
-				"facebook_sign_in_secret_label": "Facebook sign in app secret",
-
-				"resend_section_title": "Resend",
-				"resend_api_key_label": "API key",
-				"resend_api_key_hint": "{required_length} character API key beginning with re_",
-
-				"twilio_section_title": "Twilio",
-				"twilio_sid_label": "SID",
-				"twilio_sid_hint": "{required_length} character API SID beginning with AC",
-				"twilio_token_label": "Token",
-				"twilio_token_hint": "{required_length} character API token",
-				"twilio_from_tel_label": "From phone number",
-
-				"update_button": "Update configuration"
-			},
-
-			"metrics": {
-				"title": "Metrics",
-				"current_date_time": "{t('time.display_date_time', now)}",
-
-				"build_section_title": "Build",
-				"build_target_label": "Target",
-				"build_revision_label": "Revision",
-				"build_tags_label": "Tags",
-				"build_go_version_label": "Go version",
-				"build_os_arch_label": "OS/Arch",
-				"build_race_detector_label": "Race detector",
-
-				"process_memory_section_title": "Process and memory",
-				"process_uptime_label": "Uptime",
-				"process_uptime": "{t('time.display_duration', uptime)}",
-				"process_cgo_calls_label": "Cgo calls",
-				"process_logical_cpus_label": "Logical CPUs",
-				"process_goroutines_label": "Goroutines",
-				"process_reserved_os_memory_label": "Reserved OS memory",
-				"process_total_heap_allocated_label": "Tot. heap allocated",
-				"process_current_heap_allocated_label": "Cur. heap allocated",
-				"process_current_heap_objects_label": "Cur. heap objects",
-				"process_completed_gc_cycles_label": "Completed GC cycles",
-				"process_next_gc_cycle_target_heap_label": "Next GC cycle target heap",
-				"process_last_gc_cycle_label": "Last GC cycle",
-				"process_last_gc_cycle_at": "{t('time.display_date_time', last_gc_at)}",
-				"process_total_gc_pauses_label": "Tot. GC pauses",
-
-				"database_section_title": "{label}",
-				"database_max_open_conns_label": "Max open conns.",
-				"database_in_use_conns_label": "In use conns.",
-				"database_idle_conns_label": "Idle conns.",
-				"database_conn_wait_count_label": "Conn. wait count",
-				"database_total_conn_wait_time_label": "Tot. conn. wait time",
-				"database_avg_conn_wait_time_label": "Avg. conn. wait time",
-				"database_txs_begun_label": "Txs. begun",
-				"database_txs_committed_label": "Txs. committed",
-				"database_txs_rolled_back_label": "Txs. rolled back",
-				"database_txs_cancelled_label": "Txs. cancelled",
-				"database_txs_awaited_label": "Txs. awaited",
-				"database_txs_done_label": "Txs. done",
-				"database_txs_awaiting_label": "Txs. awaiting",
-				"database_total_reads_label": "Tot. reads",
-				"database_total_read_time_label": "Tot. read time",
-				"database_avg_read_time_label": "Avg. read time",
-				"database_total_writes_label": "Tot. writes",
-				"database_total_write_time_label": "Tot. write time",
-				"database_avg_write_time_label": "Avg. write time",
-				"database_avg_reads_per_write_label": "Avg. reads/write",
-				"database_total_queries_label": "Tot. queries",
-				"database_total_query_time_label": "Tot. query time",
-				"database_avg_query_time_label": "Avg. query time",
-				"database_avg_queries_per_tx_label": "Avg. queries/tx.",
-				"database_total_rows_opened_label": "Tot. rows opened",
-				"database_total_rows_closed_label": "Tot. rows closed",
-				"database_total_rows_time_label": "Tot. rows time",
-				"database_avg_rows_time_label": "Avg. rows time",
-
-				"requests_section_title": "{label} reqs.",
-
-				"requests_totals_section_title": "Totals",
-				"total_requests_received_label": "Requests received",
-				"total_requests_in_flight_label": "Requests in-flight",
-				"total_responses_sent_label": "Responses sent",
-				"total_conns_hijacked_label": "Conns. hijacked",
-				"total_request_bytes_read_label": "Data read",
-				"total_response_bytes_written_label": "Data written",
-				"total_time_until_first_write_label": "Time until first write",
-				"total_time_in_handlers_label": "Time in handlers",
-				"total_time_writing_label": "Time writing",
-
-				"requests_avg_per_req_section_title": "Averages per req.",
-				"avg_request_bytes_read_label": "Data read",
-				"avg_response_bytes_written_label": "Data written",
-				"avg_time_until_first_write_label": "Time until first write",
-				"avg_time_in_handlers_label": "Time in handlers",
-				"avg_time_writing_label": "Time writing",
-
-				"requests_status_codes_section_title": "Status codes",
-				"no_responses_sent_label": "No responses sent"
-			}
-		},
-
-		"email": {
-			"account_activated": {
-				"subject": "Account activated",
-				"title": "Your account has been activated",
-				"text": [
-					["if: has_password", "You can now sign in using the password you chose when you verified your email address."],
-					"You can now sign in to your account."
-				],
-				"copy_url_to_sign_in": [
-					"To sign in paste the following URL into your browser:",
-					"{sign_in_url}"
-				],
-				"click_to_sign_in": [
-					"{link('Click here', sign_in_url)} to sign in to your account.",
-					"",
-					"If the link above does not work paste the following URL into your browser:",
-					"{sign_in_url}"
-				]
-			},
-
-			"invite_verify_account": {
-				"subject": "You've been invited to verify your account at {host}",
-				"title": "Verify your account",
-				"text": "You've been invited to choose a password and verify an account at {host}.",
-				"copy_url_to_verify": [
-					"To verify your account paste the following URL into your browser:",
-					"{verify_url}"
-				],
-				"click_to_verify": [
-					"{link('Click here', verify_url)} to verify your account.",
-					"",
-					"If the link above does not work paste the following URL into your browser:",
-					"{verify_url}"
-				]
-			},
-
-			"reset_password": {
-				"subject": "Reset password request from {host}",
-				"title": "Reset your password",
-				"copy_url_to_reset": [
-					"To reset your password paste the following URL into your browser:",
-					"{reset_url}"
-				],
-				"click_to_reset": [
-					"{link('Click here', reset_url)} to reset your password.",
-					"",
-					"If the link above does not work paste the following URL into your browser:",
-					"{reset_url}"
-				]
-			},
-
-			"reset_password_sign_up": {
-				"subject": "Reset password attempt at {host}",
-				"title": "Reset password attempt",
-				"text": "A password reset was requested at {host}, but you don't seem to have an account with us.",
-				"copy_url_to_sign_up": [
-					"If you didn't request this password reset yourself you can ignore this email.",
-					"",
-					"Otherwise, you can sign up with us by pasting the following URL into your browser:",
-					"{sign_up_url}"
-				],
-				"click_to_sign_up": [
-					"If you didn't request this password reset yourself you can ignore this email.",
-					"",
-					"Otherwise, you can {link('sign up with us here', sign_up_url)}.",
-					"",
-					"If the link above does not work paste the following URL into your browser:",
-					"{sign_up_url}"
-				]
-			},
-
-			"sign_in_magic_link": {
-				"subject": "Sign in to {host}",
-				"title": "Sign in",
-				"copy_url_to_reset": [
-					"To sign in paste the following URL into your browser (expires in {t('time.display_duration', ttl)}):",
-					"{sign_in_url}"
-				],
-				"click_to_reset": [
-					"{link('Click here', sign_in_url)} to sign in to your account.",
-					"",
-					"It expires in {t('time.display_duration', ttl)}.",
-					"",
-					"If the link above does not work paste the following URL into your browser:",
-					"{sign_in_url}"
-				]
-			},
-
-			"sign_up_reset_password": {
-				"subject": "Sign up attempt at {host}",
-				"title": "Sign up attempt",
-				"text": "It looks like you're trying to sign up to {host}, but you already have an account.",
-				"copy_url_to_reset": [
-					["if: has_password", [
-						"If you've forgotten your password you can reset it by pasting the following URL into your browser:",
-						"{new_password_url}",
-						"",
-						"To sign in paste the following URL into your browser:",
-						"{sign_in_url}"
-					]],
-					[
-						"If you'd like to set up a password for your account paste the following URL into your browser:",
-						"{new_password_url}",
-						"",
-						"To sign in paste the following URL into your browser:",
-						"{sign_in_url}"
-					]
-				],
-				"click_to_reset": [
-					["if: has_password", [
-						"If you've forgotten your password you can {link('reset it here', new_password_url)}.",
-						"",
-						"If the link above does not work paste the following URL into your browser:",
-						"{new_password_url}",
-						"",
-						"{link('Click here', sign_in_url)} to sign in to your account.",
-						"",
-						"If the link above does not work paste the following URL into your browser:",
-						"{sign_in_url}"
-					]],
-					[
-						"If you'd like you can {link('set up a password for your account here', new_password_url)}.",
-						"",
-						"If the link above does not work paste the following URL into your browser:",
-						"{new_password_url}",
-						"",
-						"{link('Click here', sign_in_url)} to sign in to your account.",
-						"",
-						"If the link above does not work paste the following URL into your browser:",
-						"{sign_in_url}"
-					]
-				]
-			},
-
-			"totp_disabled": {
-				"subject": "Two-factor authentication disabled",
-				"title": "Two-factor authentication has been disabled",
-				"text": [
-					"Two-factor authentication has been disabled for your account.",
-					"If you did not do this please contact an administrator as soon as possible."
-				]
-			},
-
-			"totp_reset_approved": {
-				"subject": "Reset two-factor authentication request approved",
-				"title": "Reset two-factor authentication",
-				"copy_url_to_reset": [
-					"To reset two-factor authentication for your account paste the following URL into your browser:",
-					"{reset_url}"
-				],
-				"click_to_reset": [
-					"{link('Click here', reset_url)} to reset two-factor authentication.",
-					"",
-					"If the link above does not work paste the following URL into your browser:",
-					"{reset_url}"
-				]
-			},
-
-			"totp_reset_verify_email": {
-				"subject": "Reset two-factor authentication on {host}",
-				"title": "Reset two-factor authentication",
-				"copy_url_to_verify": [
-					"To request a review to reset two-factor authentication for your account, paste the following URL into your browser:",
-					"{request_review_url}"
-				],
-				"click_to_verify": [
-					"{link('Click here', request_review_url)} to request a review to reset two-factor authentication for your account.",
-					"",
-					"If the link above does not work paste the following URL into your browser:",
-					"{request_review_url}"
-				]
-			},
-
-			"verify_account": {
-				"subject": "Verify your account",
-				"title": "Verify your account",
-				"copy_url_to_verify": [
-					"To verify your account paste the following URL into your browser:",
-					"{verify_url}"
-				],
-				"click_to_verify": [
-					"{link('Click here', verify_url)} to verify your account.",
-					"",
-					"If the link above does not work paste the following URL into your browser:",
-					"{verify_url}"
-				]
-			}
-		}
-	},
-
-	"pwa": {
-		"js_required_text": "JavaScript is required to use this application.",
-
-		"header": "PWA",
-
-		"sign_out_button": "Sign out",
-
-		"page": {
-			"error": {
-				"not_found": "The page you were looking for could not be found."
-			}
-		},
-
-		"account": {
-			"sign_up": {
-				"form": {
-					"title": "Sign up",
-					"email_label": "Email",
-					"sign_up_button": "Sign up",
-					"sign_in_button": "Already have an account?"
-				},
-
-				"verify": {
-					"title": "Verify",
-					"code_label": "Verification code",
-					"choose_password_label": "Choose a password",
-					"verify_button": "Verify account"
-				},
-
-				"success": {
-					"awaiting_activation": "Your account has been successfully verified and is now awaiting manual activation.",
-					"once_activated": "Once your account is activated you'll receive an email and will be able to sign in.",
-					"sign_in_link": "Click here to go to the sign in page."
-				},
-
-				"already_signed_in": {
-					"text": "You're already signed in.",
-					"sign_out_button": "Click here to sign out."
-				}
-			},
-
-			"sign_in": {
-				"form": {
-					"title": "Sign in",
-					"email_label": "Email",
-					"password_label": "Password",
-					"sign_in_button": "Sign in",
-					"sign_up_button": "Sign up",
-					"reset_password_button": "Forgotten your password?",
-					"alt_sign_in_title": "Or",
-					"sign_in_with_magic_link_button": "Sign in with a magic link"
-				},
-
-				"magic_link": {
-					"title": "Sign in",
-					"text": "Please enter the sign in code we've sent to your email address below.",
-					"code_expired_text": "If your sign in code has expired you can try requesting a new one.",
-					"code_label": "Sign in code",
-					"sign_in_button": "Sign in",
-					"request_new_code_button": "Request a new code"
-				},
-
-				"magic_link_request": {
-					"title": "Sign in",
-					"email_label": "Email",
-					"send_code_button": "Send sign in code",
-					"alt_sign_in_title": "Or",
-					"sign_in_with_password_button": "Sign in with a password"
-				},
-
-				"recovery_code": {
-					"title": "Sign in",
-					"recovery_code_label": "Recovery code",
-					"sign_in_button": "Sign in",
-					"use_passcode_button": "Use a passcode",
-					"switch_account_button": "Switch account"
-				},
-
-				"totp": {
-					"title": "Sign in",
-					"instruction_text": [
-						["if: context == 'sms'", "Please verify your identity by entering the 6 digit passcode that has been generated and sent to your registered phone number."],
-						"Please verify your identity by entering a 6 digit passcode that has been generated by your authenticator app."
-					],
-					"passcode_label": "Passcode",
-					"sign_in_button": "Sign in",
-					"use_recovery_code_button": "Use a recovery code",
-					"switch_account_button": "Switch account",
-					"resend_passcode_button": "Resend passcode SMS",
-					"resend_passcode_button_please_wait": "Please wait...",
-					"resend_passcode_button_sent": "Passcode SMS sent"
-				},
-
-				"totp_required": {
-					"text": "Two-factor authentication is required to use this application."
-				},
-
-				"already_signed_in": {
-					"sign_out_button": "Click here to sign out."
-				}
-			},
-
-			"reset_password": {
-				"request": {
-					"title": "Reset password",
-					"email_label": "Email",
-					"send_code_button": "Send reset password code",
-					"sign_up_button": "No account? Sign up here.",
-					"sign_in_button": "Already have an account?"
-				},
-
-				"new_password": {
-					"title": "Reset password",
-					"sent_verification_code_text": "We've sent a verification code to your email address which you can copy into the input below.",
-					"verification_code_label": "Verification code",
-					"choose_password_label": "Choose a password",
-					"update_password_button": "Update password"
-				}
-			}
-		},
-
-		"email": {
-			"account_activated": {
-				"subject": "Account activated",
-				"title": "Your account has been activated",
-				"text": [
-					["if: has_password", "You can now sign in using the password you chose when you verified your email address."],
-					"You can now sign in to your account."
-				]
-			},
-
-			"reset_password": {
-				"subject": "Reset password request from {host}",
-				"title": "Reset your password",
-				"text": [
-					"To reset your password paste the following verification code into the prompt in the app:",
-					"{token}"
-				]
-			},
-
-			"reset_password_sign_up": {
-				"subject": "Reset password attempt at {host}",
-				"title": "Reset password attempt",
-				"text_plain": [
-					"A password reset was requested at {host}, but you don't seem to have an account with us.",
-					"",
-					"If you didn't request this password reset yourself you can ignore this email.",
-					"",
-					"Otherwise, you can sign up with us by pasting the following URL into your browser:",
-					"{scheme}://{host}"
-				],
-				"text_html": [
-					"A password reset was requested at {host}, but you don't seem to have an account with us.",
-					"",
-					"If you didn't request this password reset yourself you can ignore this email.",
-					"",
-					"Otherwise, you can {link('sign up with us here', scheme + '://' + host)}.",
-					"",
-					"If the link above does not work paste the following URL into your browser:",
-					"{scheme}://{host}"
-				]
-			},
-
-			"sign_in_magic_link": {
-				"subject": "Sign in to {host}",
-				"title": "Sign in",
-				"text": [
-					"To sign in paste the following code into the prompt in the app:",
-					"{token}",
-					"",
-					"It will expire in {t('time.display_duration', ttl)}."
-				]
-			},
-
-			"sign_up_reset_password": {
-				"subject": "Sign up attempt at {host}",
-				"title": "Sign up attempt",
-				"text": [
-					["if: has_password", [
-						"It looks like you're trying to sign up to {host}, but you already have an account.",
-						"",
-						"If you've forgotten your password you can reset it by pasting the following code into the verification code prompt and then choosing a new password:",
-						"{token}"
-					]],
-					[
-						"It looks like you're trying to sign up to {host}, but you already have an account.",
-						"",
-						"If you'd like to set up a password for your account paste the following code into the verification code prompt and then choose a new password:",
-						"{token}"
-					]
-				]
-			},
-
-			"verify_account": {
-				"subject": "Verify your account",
-				"title": "Verify your account",
-				"text": [
-					"To verify your account paste the following verification code into the prompt in the app:",
-					"{token}"
-				]
-			}
-		}
-	},
-
-	"web": {
-		"error": {
-			"not_found": "The resource you were looking for could not be found.",
-			"http_method_not_allowed": "Method not allowed.",
-			"forbidden": "You do not have sufficient permissions to access this resource.",
-			"handler_timeout": "The server took too long to respond.",
-			"account_not_verified": "This account is not verified.",
-			"account_not_activated": "This account is not activated.",
-			"account_suspended": "This account has been suspended.",
-			"unauthorized": "You do not have permission to access this resource.",
-			"loop_detected": "Loop detected.",
-			"malformed_input": "Malformed input.",
-			"invalid_input": "Invalid input.",
-			"empty_csrf_token": "Empty CSRF token.",
-			"invalid_csrf_token": "Invalid CSRF token.",
-			"too_many_requests": "You have made too many consecutive requests. Please try again later.",
-			"repo_login": "Could not connect to the datasource.",
-			"request_too_large": "Your request must be no larger than {max_size}.",
-			"generic": "An error has occurred."
-		},
-
-		"guard.permission": {
-			"account": {
-				"role": {
-					"group_name": "Account roles",
-					"view": "View roles",
-					"create": "Create roles",
-					"edit": "Edit roles",
-					"delete": "Delete roles"
-				},
-
-				"user": {
-					"group_name": "Account users",
-					"view": "View users",
-					"invite": "Invite users",
-					"activate": "Activate users",
-					"change_roles": "Change user roles",
-					"review_totp_reset_requests": "Review 2FA resets",
-					"suspend": "Suspend users",
-					"unsuspend": "Unsuspend users"
-				}
-			},
-
-			"system": {
-				"group_name": "System",
-
-				"config": {
-					"view": "View system config",
-					"edit": "Edit system config"
-				},
-
-				"metrics": {
-					"view": "View system metrics"
-				}
-			}
-		}
-	}
+	"flash.unauthorized": "You're not authorised to access this application.",
+	"flash.bad_sign_in": "Either your credentials are incorrect, or you're not authorised to access this application.",
+	"flash.totp_required": "Two-factor authentication is required to use this application.",
+
+	"account.sign_in.error": "Either your credentials are incorrect, or you're not authorised to access this application.",
+
+	"account.sign_in.throttled.in_last": "{t('time.display_duration', in_last)}",
+	"account.sign_in.throttled.unlock_in": "{t('time.display_duration', unlock_in)}",
+	"account.sign_in.throttled.error": [
+		["if: context == 'pwa'", [
+			["if: unlock_in", "Too many failed sign in attempts in the last {in_last}. Please try again {unlock_in}."],
+			"Too many failed sign in attempts in the last {in_last}. Please try again."
+		]],
+		["if: unlock_in", "Too many failed sign in attempts in the last {t('time.display_duration', in_last)}. Please try again in {t('time.display_duration', unlock_in)}."],
+		"Too many failed sign in attempts in the last {t('time.display_duration', in_last)}. Please try again."
+	],
+
+	"account.email.error.empty": "cannot be empty",
+	"account.email.error.contains_whitespace": "cannot contain whitespace",
+	"account.email.error.contains_quotes": "cannot contain quotes",
+	"account.email.error.too_long": "cannot be a over {max_length} characters in length",
+	"account.email.error.missing_at": "missing the @ sign",
+	"account.email.error.missing_local_part": "missing part before the @ sign",
+	"account.email.error.missing_domain": "missing part after the @ sign",
+	"account.email.error.has_name": "cannot not include a name",
+	"account.email.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"account.email.error.missing_tld": "missing top-level domain (.com, .co.uk, etc.)",
+	"account.email.error.not_an_email": "must be an email address, e.g. email@example.com",
+	"account.email.error.other": "invalid input: {error}",
+
+	"account.tel.error.empty": "cannot be empty",
+	"account.tel.error.too_long": "cannot be a over {max_length} characters in length",
+	"account.tel.error.incorrect_plus_position": "+ sign must come at the beginning",
+	"account.tel.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"account.tel.error.invalid": "must be in the format +12 3456 7890",
+
+	"account.suspend_reason.error.too_long": "cannot be a over {max_length} characters in length",
+	"account.suspend_reason.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"account.suspend_reason.error.invalid": "can only contain latin characters",
+
+	"account.role_name.error.empty": "cannot be empty",
+	"account.role_name.error.too_short": "must be at least {min_length} characters in length",
+	"account.role_name.error.too_long": "cannot be a over {max_length} characters in length",
+	"account.role_name.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"account.role_name.error.invalid": "can only contain latin characters",
+
+	"account.role_description.error.too_long": "cannot be a over {max_length} characters in length",
+	"account.role_description.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"account.role_description.error.invalid": "can only contain latin characters",
+
+	"account.recovery_code.error.empty": "cannot be empty",
+	"account.recovery_code.error.has_whitespace": "cannot contain whitespace",
+	"account.recovery_code.error.has_quotes": "cannot contain quotes",
+	"account.recovery_code.error.incorrect_length": "must be {required_length} characters in length",
+	"account.recovery_code.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"account.recovery_code.error.invalid": "can only contain uppercase characters between A-Z and 2-7",
+
+	"account.permission.error.empty": "cannot be empty",
+	"account.permission.error.has_whitespace": "cannot contain whitespace",
+	"account.permission.error.has_quotes": "cannot contain quotes",
+	"account.permission.error.too_short": "must be at least {min_length} characters in length",
+	"account.permission.error.too_long": "cannot be a over {max_length} characters in length",
+	"account.permission.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"account.permission.error.invalid": "can only contain letters, numbers, underscores, and colons, e.g. abc_123:def_456",
+
+	"account.password.error.empty": "cannot be empty",
+	"account.password.error.too_short": "must be at least {min_length} characters in length",
+	"account.password.error.too_long": "cannot be a over {max_length} characters in length",
+
+	"account.totp.error.incorrect_length": "must be {required_length} characters in length",
+	"account.totp.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"account.totp.error.invalid": "must be {required_length} digits",
+
+	"account.totp_method.error.invalid": "invalid TOTP method \"{invalid_method}\"",
+
+	"account.user.sign_in_method.password": "password",
+	"account.user.sign_in_method.magic_link": "magic link",
+	"account.user.sign_in_method.google": "google",
+	"account.user.sign_in_method.facebook": "facebook",
+
+	"account.user.sign_up_method.system_setup": "system setup",
+	"account.user.sign_up_method.web_form": "web form",
+	"account.user.sign_up_method.magic_link": "magic link",
+	"account.user.sign_up_method.google": "google",
+	"account.user.sign_up_method.facebook": "facebook",
+	"account.user.sign_up_method.invite": "invite",
+
+	"account.user.error.already_signed_up": [
+		["if: context == 'initial_user_sign_up'", "initial user cannot already be signed up"],
+		"already signed up"
+	],
+
+	"account.user.error.already_verified": [
+		["if: context == 'initial_user_sign_up'", "initial user cannot already be verified"],
+		["if: context == 'invite'", "cannot invite an already verified user"],
+		"already verified"
+	],
+
+	"account.user.error.already_activated": [
+		["if: context == 'initial_user_sign_up'", "initial user cannot already be activated"],
+		"already activated"
+	],
+
+	"account.user.error.not_verified": [
+		["if: context == 'change_password'", "cannot change password until verified"],
+		"not verified"
+	],
+
+	"account.user.error.not_activated": [
+		["if: context == 'choose_password'", "cannot choose password until activated"],
+		["if: context == 'reset_password'", "cannot reset password until activated"],
+		["if: context == 'setup_totp'", "cannot setup TOTP until activated"],
+		"not activated"
+	],
+
+	"account.user.error.is_suspended": "is suspended",
+	"account.user.error.invalid_password": "invalid password",
+
+	"account.user.error.already_has_password": [
+		["if: context == 'choose_password'", "cannot replace an already chosen password"],
+		"already has password"
+	],
+
+	"account.user.error.totp_already_activated": "TOTP already setup and activated",
+
+	"account.user.error.totp_not_activated": [
+		["if: context == 'regenerate_recovery_codes'", "cannot regenerate recovery codes without an activated TOTP"],
+		["if: context == 'disable_totp'", "cannot disable an unactivated TOTP"],
+		["if: context == 'reset_totp'", "cannot reset an unactivated TOTP"],
+		["if: context == 'request_totp_reset'", "cannot request a reset for an unactivated TOTP"],
+		["if: context == 'approve_totp_reset_request'", "cannot approve a reset request for an unactivated TOTP"],
+		["if: context == 'sign_in_with_totp'", "account does not have TOTP"],
+		["if: context == 'sign_in_with_recovery_code'", "account cannot use recovery codes"],
+		"TOTP not activated"
+	],
+
+	"account.user.error.totp_not_verified": [
+		["if: context == 'activate_totp'", "unverified TOTP cannot be activated"],
+		"TOTP not verified"
+	],
+
+	"account.user.error.totp_reset_not_approved": [
+		["if: context == 'reset_totp'", "cannot reset a TOTP for a request that is still awaiting review"],
+		"TOTP reset not approved"
+	],
+
+	"account.user.error.totp_reset_not_requested": [
+		["if: context == 'deny_totp_reset_request'", "cannot deny a non-existent TOTP reset request"],
+		"TOTP reset not requested"
+	],
+
+	"account.user.error.no_totp_key": [
+		["if: context == 'change_totp_tel'", "cannot change TOTP phone without a key setup"],
+		["if: context == 'generate_totp'", "cannot generate a TOTP without a key setup"],
+		"TOTP key has not been setup"
+	],
+
+	"account.user.error.totp_already_used": "passcode already used",
+	"account.user.error.invalid_totp": "invalid passcode",
+	"account.user.error.invalid_recovery_code": "invalid recovery code",
+
+	"system.email.error.empty": "cannot be empty",
+	"system.email.error.contains_whitespace": "cannot contain whitespace",
+	"system.email.error.contains_quotes": "cannot contain quotes",
+	"system.email.error.too_long": "cannot be a over {max_length} characters in length",
+	"system.email.error.missing_at": "missing the @ sign",
+	"system.email.error.missing_local_part": "missing part before the @ sign",
+	"system.email.error.missing_domain": "missing part after the @ sign",
+	"system.email.error.has_name": "cannot not include a name",
+	"system.email.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"system.email.error.missing_tld": "missing top-level domain (.com, .co.uk, etc.)",
+	"system.email.error.not_an_email": "must be an email address, e.g. email@example.com",
+	"system.email.error.other": "invalid input: {error}",
+
+	"system.facebook_app_id.error.invalid": "invalid app id",
+	"system.facebook_app_secret.error.invalid": "invalid app secret",
+
+	"system.google_client_id.error.invalid": "invalid client id",
+
+	"system.resend_api_key.error.incorrect_length": "must be {required_length} characters in length",
+	"system.resend_api_key.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"system.resend_api_key.error.invalid": "must begin with re_",
+
+	"system.twilio_sid.error.incorrect_length": "must be {required_length} characters in length",
+	"system.twilio_sid.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"system.twilio_sid.error.invalid": "must begin with AC and be followed by 32 hexadecimal characters",
+
+	"system.twilio_token.error.incorrect_length": "must be {required_length} characters in length",
+	"system.twilio_token.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"system.twilio_token.error.invalid": "must be exactly 32 hexadecimal characters",
+
+	"system.twilio_tel.error.has_invalid_chars": "cannot contain: {t('or_list', invalid_chars)}",
+	"system.twilio_tel.error.invalid": "must be in the format +12 3456 7890",
+
+	"system.config.error.twilio_sid_required": [
+		["if: context == 'enable_totp_sms'", "required to enable two-factor authentication SMS"],
+		"Twilio SID is required"
+	],
+
+	"system.config.error.twilio_token_required": [
+		["if: context == 'enable_totp_sms'", "required to enable two-factor authentication SMS"],
+		"Twilio token is required"
+	],
+
+	"system.config.error.twilio_from_tel_required": [
+		["if: context == 'enable_totp_sms'", "required to enable two-factor authentication SMS"],
+		"Twilio from number is required"
+	],
+
+	"system.config.error.google_sign_in_client_id_required": [
+		["if: context == 'enable_google_sign_in'", "required to enable Google sign in"],
+		"Google sign in client id is required"
+	],
+
+	"system.config.error.facebook_sign_in_app_id_required": [
+		["if: context == 'enable_facebook_sign_in'", "required to enable Facebook sign in"],
+		"Facebook sign in app id is required"
+	],
+
+	"system.config.error.facebook_sign_in_app_secret_required": [
+		["if: context == 'enable_facebook_sign_in'", "required to enable Facebook sign in"],
+		"Facebook sign in app secret is required"
+	],
+
+	"api.sdk.bad_gateway": "Request failed because the server was offline, please try again.",
+	"api.sdk.gateway_timeout": "The server could not process your request in time, please try again.",
+	"api.sdk.network_error": "Request failed because either the server was offline, or you have no internet connection, please try again.",
+
+	"site.form.please_wait_button_text": "Please wait...",
+
+	"site.nav.skip": "Skip navigation",
+	"site.nav.home": "Home",
+	"site.nav.account_dashboard": "Account",
+	"site.nav.admin_dashboard": "Admin",
+	"site.nav.sign_out": "Sign out",
+	"site.nav.sign_in": "Sign in",
+
+	"site.admin.nav.user_management": "Users",
+	"site.admin.nav.role_management": "Roles",
+	"site.admin.nav.system_config": "Config",
+	"site.admin.nav.system_metrics": "Metrics",
+
+	"site.admin.dashboard.title": "Admin",
+
+	"site.account.nav.change_password": "Change password",
+	"site.account.nav.choose_password": "Choose a password",
+	"site.account.nav.generate_new_recovery_codes": "Generate new recovery codes",
+	"site.account.nav.disable_totp": "Disable two-factor authentication",
+	"site.account.nav.setup_totp": "Setup two-factor authentication",
+
+	"site.account.dashboard.title": "Account",
+
+	"site.account.sign_up.form.title": "Sign up",
+	"site.account.sign_up.form.choose_password_explanation": "You'll be able to choose your password after verifying your email address.",
+	"site.account.sign_up.form.email_label": "Email",
+	"site.account.sign_up.form.sign_up_button": "Sign up",
+	"site.account.sign_up.form.already_have_account_button": "Already have an account?",
+	"site.account.sign_up.form.sign_up_disabled": "Sign up is disabled for this application.",
+
+	"site.account.sign_up.thank_you.title": "Thank you",
+	"site.account.sign_up.thank_you.message": [
+		["if: user_email", "Your account details have been registered and an email containing an account verification link has been sent to {user_email}."],
+		"Your account details have been registered and an email containing an account verification link has been sent to you."
+	],
+
+	"site.account.verify.flash.success": "Your account has been successfully verified.",
+
+	"site.account.verify.form.title": "Account verification",
+	"site.account.verify.form.error_message": "If your verification link has expired {link('sign up again', 'account.sign_up')} using the same email address and we'll send you a new one.",
+	"site.account.verify.form.already_signed_in": "You're already signed in.",
+	"site.account.verify.form.sign_out_button": "Click here to sign out.",
+	"site.account.verify.form.no_token_message": "Create an account using the {link('sign up form', 'account.sign_up')} and we'll send you a link to verify your account.",
+	"site.account.verify.form.verify_message": "Use the form below to choose a password and we can verify your account.",
+	"site.account.verify.form.choose_password_label": "Choose a password",
+	"site.account.verify.form.choose_password_button": "Use this password and verify account",
+
+	"site.account.verify.success.title": "Account verified",
+	"site.account.verify.success.message": [
+		"Your account has been successfully verified and is now awaiting manual activation.",
+		"",
+		"Once your account is activated you'll receive an email and will be able to sign in."
+	],
+
+	"site.account.sign_in.flash.no_more_recovery_codes": [
+		"You've run out of recovery codes.",
+		"We recommend {link('generating new ones', 'account.totp.recovery_codes')} as soon as you can."
+	],
+	"site.account.sign_in.flash.low_recovery_codes": [
+		"You're running low on recovery codes.",
+		"We recommend {link('generating new ones', 'account.totp.recovery_codes')} as soon as you can."
+	],
+	"site.account.sign_in.flash.totp_if_device_lost": "If you've lost your authentication device {link('disable two-factor authentication', 'account.totp.disable')} to avoid getting locked out of your account.",
+	"site.account.sign_in.flash.consider_totp": "Please consider {link('setting up two-factor authentication', 'account.totp.setup')} to help secure your account even further.",
+
+	"site.account.sign_in.already_signed_in.title": "Sign out",
+	"site.account.sign_in.already_signed_in.message": "You're already signed in.",
+	"site.account.sign_in.already_signed_in.sign_out_button": "Click here to sign out.",
+
+	"site.account.sign_in.form.title": "Sign in",
+	"site.account.sign_in.form.sign_up_title": "Sign up",
+	"site.account.sign_in.form.email_label": "Email",
+	"site.account.sign_in.form.password_label": "Password",
+	"site.account.sign_in.form.send_magic_link_button": "Send magic link",
+	"site.account.sign_in.form.sign_in_button": "Sign in",
+	"site.account.sign_in.form.sign_up_button": "Sign up",
+	"site.account.sign_in.form.already_have_account_button": "Already have an account?",
+	"site.account.sign_in.form.reset_password_button": "Forgotten your password?",
+	"site.account.sign_in.form.alt_sign_in_title": "Or",
+	"site.account.sign_in.form.sign_up_with_password_button": "Sign up with a password",
+	"site.account.sign_in.form.sign_in_with_password_button": "Sign in with a password",
+	"site.account.sign_in.form.sign_in_with_magic_link_button": "Sign in with a magic link",
+
+	"site.account.sign_in.magic_link.title": "Sign in",
+	"site.account.sign_in.magic_link.error_message": "If your sign in link has expired {link('sign in again', 'account.sign_in')} using the same email address and we'll send you a new one.",
+	"site.account.sign_in.magic_link.already_signed_in": "You're already signed in.",
+	"site.account.sign_in.magic_link.sign_out_button": "Click here to sign out.",
+	"site.account.sign_in.magic_link.no_token_message": "Sign in using the {link('sign in form', 'account.sign_in')} and we'll send you a link to verify your identity.",
+	"site.account.sign_in.magic_link.click_button_if_no_redirect": "Click on the sign in button below if you aren't automatically redirected.",
+	"site.account.sign_in.magic_link.sign_in_button": "Sign in",
+
+	"site.account.sign_in.magic_link_sent.title": "Email sent",
+	"site.account.sign_in.magic_link_sent.message": [
+		["if: ttl", [
+			"We've sent a magic link to your email address that you can use to access your account.",
+			"",
+			"It will expire in {t('time.display_duration', ttl)} and can only be used once."
+		]],
+		[
+			"We've sent a magic link to your email address that you can use to access your account.",
+			"",
+			"It will expire shortly and can only be used once."
+		]
+	],
+
+	"site.account.sign_in.recovery_code.title": "Sign in with recovery code",
+	"site.account.sign_in.recovery_code.message": "Please verify your identity by entering one of your recovery codes. Once a recovery code has been used it can't be used again.",
+	"site.account.sign_in.recovery_code.recovery_code_label": "Recovery code",
+	"site.account.sign_in.recovery_code.sign_in_button": "Sign in",
+	"site.account.sign_in.recovery_code.use_passcode_button": "Use a passcode",
+
+	"site.account.sign_in.passcode.title": "Sign in with passcode",
+	"site.account.sign_in.passcode.sms_instructions": "Please verify your identity by entering the 6 digit passcode that has been generated and sent to your registered phone number.",
+	"site.account.sign_in.passcode.app_instructions": "Please verify your identity by entering a 6 digit passcode that has been generated by your authenticator app.",
+	"site.account.sign_in.passcode.passcode_label": "Passcode",
+	"site.account.sign_in.passcode.sign_in_button": "Sign in",
+	"site.account.sign_in.passcode.resend_passcode_sms_button": "Resend passcode SMS",
+	"site.account.sign_in.passcode.use_recovery_code_button": "Use a recovery code",
+	"site.account.sign_in.passcode.totp_reset_button": "Locked out?",
+
+	"site.account.reset_password.flash.password_changed": "Your password has been successfully changed.",
+
+	"site.account.reset_password.request.title": "Reset password",
+	"site.account.reset_password.request.email_label": "Email",
+	"site.account.reset_password.request.send_link_button": "Send reset password link",
+
+	"site.account.reset_password.email_sent.title": "Email sent",
+	"site.account.reset_password.email_sent.message": "Please check your email for a link to update your password.",
+
+	"site.account.reset_password.new_password.title": "Choose a new password",
+	"site.account.reset_password.new_password.new_password_label": "New password",
+	"site.account.reset_password.new_password.update_button": "Update password",
+
+	"site.account.change_password.flash.password_changed": "Your password has been successfully changed.",
+	"site.account.change_password.title": "Change password",
+	"site.account.change_password.insecure_password_warning": [
+		"The password you're currently using appears {t('number', known_breach_count)} times in a {link('database of security breaches', 'https://haveibeenpwned.com')} and isn't considered to be secure.",
+		"",
+		"We recommend that you change it to a more secure one as soon as possible."
+	],
+	"site.account.change_password.also_consider_totp_warning": "Also consider {link('setting up two-factor authentication', 'account.totp.setup')} to help secure your account even further.",
+	"site.account.change_password.old_password_label": "Old password",
+	"site.account.change_password.new_password_label": "New password",
+	"site.account.change_password.update_password_button": "Update password",
+	"site.account.change_password.update_password_and_continue_button": "Update password and continue",
+	"site.account.change_password.change_later_button": "Change later",
+
+	"site.account.choose_password.flash.password_chosen": "Your password has been successfully set.",
+	"site.account.choose_password.title": "Choose password",
+	"site.account.choose_password.allow_direct_sign_in_explanation": "Choosing a password will allow you to sign in directly through the {link('sign in form', 'account.sign_in')}.",
+	"site.account.choose_password.totp_requirement_explanation": "It's also a requirement for setting up two-factor authentication. This is because if you decide to disable two-factor authentication later on we'll need to verify your identity by asking you for your password.",
+	"site.account.choose_password.new_password_label": "New password",
+	"site.account.choose_password.use_password_and_continue_button": "Use this password and continue",
+	"site.account.choose_password.use_password_button": "Use this password",
+
+	"site.account.totp.flash.password_required": "You need to choose a password before you can setup two-factor authentication.",
+	"site.account.totp.flash.disabled": "Two-factor authentication has been disabled for your account.",
+	"site.account.totp.flash.passcode_sms_sent": "A passcode has been sent to your registered phone number.",
+
+	"site.account.totp.disable.verify.title": "Disable two-factor authentication",
+	"site.account.totp.disable.verify.totp_required_message": "Two-factor authentication is required and can't be disabled.",
+	"site.account.totp.disable.verify.enter_password_to_disable_message": "Enter your password to verify your identity and disable two-factor authentication.",
+	"site.account.totp.disable.verify.password_label": "Password",
+	"site.account.totp.disable.verify.disable_totp_button": "Disable two-factor authentication",
+
+	"site.account.totp.disable.success.title": "Two-factor authentication disabled",
+	"site.account.totp.disable.success.text": [
+		"Two-factor authentication has been disabled for your account.",
+		"",
+		"From now on you won't be required to provide any passcodes when logging in to your account."
+	],
+
+	"site.account.totp.disable.already_disabled.title": "Two-factor authentication disabled",
+	"site.account.totp.disable.already_disabled.text": [
+		"Two-factor authentication is already disabled for your account.",
+		"",
+		"{link('Setup two-factor authentication.', 'account.totp.setup')}"
+	],
+
+	"site.account.totp.recovery_codes.regenerate.title": "Generate new recovery codes",
+	"site.account.totp.recovery_codes.regenerate.new_codes_title": "Your new recovery codes",
+
+	"site.account.totp.recovery_codes.regenerate.previous_no_longer_valid_warning": [
+		"Your previous recovery codes are no longer valid.",
+		"",
+		"Please download, print, copy, or photograph your new recovery codes and store them in a safe place separate from your authentication device.",
+		"",
+		"If possible, we recommend storing them in a password manager, such as {link('1Password', 'https://1password.com/')}, {link('LastPass', 'https://www.lastpass.com/')}, or {link('Keeper', 'https://www.keepersecurity.com')}."
+	],
+
+	"site.account.totp.recovery_codes.regenerate.you_have_n_remaining": "You have {remaining_codes} recovery {remaining_codes => (1 = 'code', _ = 'codes')} remaining.",
+	"site.account.totp.recovery_codes.regenerate.generate_new_instructions": "If you'd like to generate new recovery codes you'll need to verify your identity by entering a valid passcode in the form below.",
+	"site.account.totp.recovery_codes.regenerate.none_remaining_warning": "You do not have any recovery codes. Please use the form below to generate new ones.",
+	"site.account.totp.recovery_codes.regenerate.generate_new_will_invalidate_warning": "If you choose to generate new recovery codes your previous ones will no longer be valid and you won't be able to use them.",
+	"site.account.totp.recovery_codes.regenerate.passcode_label": "Passcode",
+	"site.account.totp.recovery_codes.regenerate.generate_codes_button": "Generate recovery codes",
+	"site.account.totp.recovery_codes.regenerate.replace_codes_button": "Replace recovery codes",
+	"site.account.totp.recovery_codes.regenerate.send_passcode_sms_button": "Send passcode SMS",
+
+	"site.account.totp.recovery_codes.setup_required.title": "Two-factor authentication not setup",
+	"site.account.totp.recovery_codes.setup_required.text": [
+		"Two-factor authentication has not been setup for your account, so you do not have any recovery codes.",
+		"",
+		"{link('Setup two-factor authentication.', 'account.totp.setup')}"
+	],
+
+	"site.account.totp.reset.form.title": "Reset two-factor authentication",
+	"site.account.totp.reset.form.text": "Enter your password in the form below to reset two-factor authentication for your account.",
+	"site.account.totp.reset.form.password_label": "Password",
+	"site.account.totp.reset.form.reset_button": "Reset two-factor authentication",
+
+	"site.account.totp.reset.verify.title": "Reset two-factor authentication request",
+	"site.account.totp.reset.verify.text": [
+		"If you're locked out of your account because you've lost access to your authentication device you can use the form below to request two-factor authentication be reset for your account.",
+		"",
+		"After verifying your email address your case will need to be manually reviewed.",
+		"",
+		"If the person reviewing your case believes it to be a legitimate request you'll be sent another link by email to reset two-factor authentication."
+	],
+	"site.account.totp.reset.verify.send_verification_link_button": "I understand, send a verification link",
+
+	"site.account.totp.reset.request.title": "Reset two-factor authentication request",
+	"site.account.totp.reset.request.text": [
+		"Requesting a two-factor authentication reset requires a manual review of your case, and could take a while to complete.",
+		"",
+		"If the person reviewing your case believes it to be legitimate you will receive another email with a link to reset two-factor authentication for your account."
+	],
+	"site.account.totp.reset.request.reset_button": "I understand, request a two-factor authentication reset",
+
+	"site.account.totp.reset.request_sent.title": "Reset two-factor authentication request sent",
+	"site.account.totp.reset.request_sent.text": [
+		"A request for two-factor authentication to be reset for your account has been sent.",
+		"",
+		"Please be patient as your request will have to be manually reviewed.",
+		"",
+		"If the person reviewing your case believes it to be a legitimate request you'll be sent another link by email to reset two-factor authentication."
+	],
+
+	"site.account.totp.reset.email_sent.title": "Email sent",
+	"site.account.totp.reset.email_sent.text": "Please check your email for a link to verify your email address and request a two-factor authentication reset.",
+
+	"site.account.totp.setup.already_enabled.title": "Two-factor authentication already enabled",
+	"site.account.totp.setup.already_enabled.text": [
+		"Two-factor authentication has already been enabled for your account.",
+		"",
+		"{link('Disable two-factor authentication.', 'account.totp.disable')}"
+	],
+
+	"site.account.totp.setup.methods.title": "Setup two-factor authentication",
+	"site.account.totp.setup.methods.text": "Two-factor authentication adds an additional layer of security to your account by requiring more than just your password to sign in.",
+	"site.account.totp.setup.methods.app_sms_choice_text": "You can either use two-factor authentication through an app on your phone or computer, or you can use SMS.",
+	"site.account.totp.setup.methods.app_choice_text": "Use an app on your phone or computer to get passcodes when prompted {bold('(recommended)')}.",
+	"site.account.totp.setup.methods.use_app_button": "Setup using an app",
+	"site.account.totp.setup.methods.sms_choice_text": "We'll send you an SMS message with a passcode when prompted (only use this if you can't use an app).",
+	"site.account.totp.setup.methods.use_sms_button": "Setup using SMS",
+	"site.account.totp.setup.methods.app_only_text": "You can use two-factor authentication through an app on your phone or computer.",
+	"site.account.totp.setup.methods.start_setup_button": "Start setup",
+
+	"site.account.totp.setup.app.title": "Setup using an app",
+	"site.account.totp.setup.app.recommendations_text": [
+		"If you don't already have an authenticator app installed on your phone or computer then you'll need to download and install one to setup two-factor authentication.",
+		"",
+		"We recommend using one of the following:"
+	],
+	"site.account.totp.setup.app.recommendations_list": [
+		"Authy ({link('Android, iOS, Windows, Mac, Linux', 'https://authy.com/download/')})",
+		"",
+		"Google Authenticator ({link('Android', 'https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2')}, {link('iOS', 'https://apps.apple.com/us/app/google-authenticator/id388497605')})",
+		"",
+		"LastPass Authenticator ({link('Android, iOS, Windows mobile', 'https://support.logmeininc.com/lastpass/help/lastpass-authenticator-lp030014')})",
+		"",
+		"1Password ({link('Android, iOS, Windows, Mac', 'https://support.1password.com/one-time-passwords/')})"
+	],
+	"site.account.totp.setup.app.cannot_use_app_sms_suggestion": "{link(`Can't install an authenticator app? Click here to use SMS.`, 'account.totp.setup.sms')}",
+	"site.account.totp.setup.app.scan_qr_code_instructions": "Use your authenticator app to scan the QR code below. If you can't scan the QR code then you can manually enter the secret key below instead.",
+	"site.account.totp.setup.app.scan_on_multiple_devices_suggestion": "Consider scanning the QR code on multiple devices if you can. If you setup two-factor authentication on multiple devices you'll be less likely to get locked out of your account if you lose a device.",
+	"site.account.totp.setup.app.secret_key_label": "Secret Key:",
+	"site.account.totp.setup.app.enter_verification_passcode_instructions": "After scanning the QR code, or manually entering the secret key, your app will display a 6 digit passcode that you can enter below to verify your authenticator app is setup correctly.",
+	"site.account.totp.setup.app.passcode_label": "Passcode",
+	"site.account.totp.setup.app.verify_setup_button": "Verify setup",
+
+	"site.account.totp.setup.sms.title": "Setup using SMS",
+	"site.account.totp.setup.sms.warning_text": [
+		"Using SMS for two-factor authentication is only recommended when you can't use an authenticator app on your phone.",
+		"",
+		"{link(`Don't want to use SMS? Click here to use an app.`, 'account.totp.setup.app')}"
+	],
+	"site.account.totp.setup.sms.instruction_text": "Enter the phone number that you'd like to use below and we'll send you a passcode to verify your phone number has been entered correctly.",
+	"site.account.totp.setup.sms.tel_label": "Phone number",
+	"site.account.totp.setup.sms.send_passcode_button": "Use this phone number and send a passcode",
+
+	"site.account.totp.setup.sms_verify.title": "Verify your setup",
+	"site.account.totp.setup.sms_verify.warning_text": [
+		"Using SMS for two-factor authentication is only recommended when you can't use an authenticator app on your phone.",
+		"",
+		"{link(`Don't want to use SMS? Click here to use an app.`, 'account.totp.setup.app')}"
+	],
+	"site.account.totp.setup.sms_verify.instruction_text": "Enter the 6 digit passcode you received via SMS to verify that phone number is setup correctly.",
+	"site.account.totp.setup.sms_verify.passcode_label": "Passcode",
+	"site.account.totp.setup.sms_verify.verify_setup_button": "Verify setup",
+	"site.account.totp.setup.sms_verify.resend_passcode_button": "Resend passcode SMS",
+	"site.account.totp.setup.sms_verify.change_tel_button": "Change phone number",
+
+	"site.account.totp.setup.activate.title": "Recovery codes",
+	"site.account.totp.setup.activate.text": [
+		"Two-factor authentication has not been enabled yet.",
+		"",
+		"Once two-factor authentication has been enabled you'll be required to provide a 6 digit passcode to verify your identity when logging in.",
+		"",
+		"In the event that you lose access to your authentication device you can use the following recovery codes in place of a normal passcode."
+	],
+	"site.account.totp.setup.activate.save_recovery_codes_warning": [
+		"Before enabling two-factor authentication, please download, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.",
+		"",
+		"If possible, we recommend storing them in a password manager, such as {link('1Password', 'https://1password.com/')}, {link('LastPass', 'https://www.lastpass.com/')}, or {link('Keeper', 'https://www.keepersecurity.com')}."
+	],
+	"site.account.totp.setup.activate.saved_recovery_codes_button": "I have saved my recovery codes",
+
+	"site.account.totp.setup.success.title": "Two-factor authentication enabled",
+	"site.account.totp.setup.success.text": [
+		"Two-factor authentication has been enabled for your account.",
+		"",
+		"From now on when logging in you'll be required to provide a 6 digit passcode to verify your identity."
+	],
+
+	"site.account.role_management.flash.created": "Role {name} created successfully.",
+	"site.account.role_management.flash.updated": "Role {name} updated successfully.",
+	"site.account.role_management.flash.deleted": "Role {name} deleted successfully.",
+
+	"site.account.role_management.list.title": "Role management",
+	"site.account.role_management.list.search_placeholder": "Search",
+	"site.account.role_management.list.search_button": "Search",
+	"site.account.role_management.list.name_heading": "Name",
+	"site.account.role_management.list.description_heading": "Description",
+	"site.account.role_management.list.create_button": "Create role",
+	"site.account.role_management.list.edit_button": "Edit",
+	"site.account.role_management.list.delete_button": "Delete",
+	"site.account.role_management.list.no_results": "No roles found",
+
+	"site.account.role_management.new.title": "Add role",
+	"site.account.role_management.new.name_label": "Name",
+	"site.account.role_management.new.description_label": "Description",
+	"site.account.role_management.new.add_button": "Add role",
+	"site.account.role_management.new.cancel_button": "Cancel",
+
+	"site.account.role_management.edit.title": "Editing {role_name}",
+	"site.account.role_management.edit.name_label": "Name",
+	"site.account.role_management.edit.description_label": "Description",
+	"site.account.role_management.edit.update_button": "Update role",
+	"site.account.role_management.edit.cancel_button": "Cancel",
+
+	"site.account.role_management.delete.title": "Delete {role_name}",
+
+	"site.account.role_management.delete.users_have_role_warning": [
+		["if: user_count > 1", "{user_count} users currently have this role; deleting will remove it from all of them."],
+		"{user_count} user currently has this role; deleting will remove it from them."
+	],
+
+	"site.account.role_management.delete.are_you_sure": "Are you sure you want to permanently delete the role {role_name}?",
+	"site.account.role_management.delete.delete_button": "Yes, delete {role_name}",
+	"site.account.role_management.delete.cancel_button": "Cancel",
+
+	"site.account.user_management.flash.invite_sent": "An invite to verify an account has been sent to {email}.",
+	"site.account.user_management.flash.updated": "User {email} updated successfully.",
+	"site.account.user_management.flash.suspended_reason_updated": "Updated suspended reason for {email}.",
+	"site.account.user_management.flash.suspended": "User {email} was suspended.",
+	"site.account.user_management.flash.unsuspended": "User {email} was unsuspended.",
+	"site.account.user_management.flash.activated": "User {email} activated successfully.",
+	"site.account.user_management.flash.totp_reset_request_approved": "Two-factor authentication reset request approved for {email}.",
+	"site.account.user_management.flash.totp_reset_request_denied": "Two-factor authentication reset request denied for {email}.",
+
+	"site.account.user_management.list.title": "User management",
+	"site.account.user_management.list.search_placeholder": "Search",
+	"site.account.user_management.list.search_button": "Search",
+	"site.account.user_management.list.email_heading": "Name",
+	"site.account.user_management.list.last_sign_in_heading": "Last signed in",
+	"site.account.user_management.list.invite_button": "Invite",
+	"site.account.user_management.list.last_signed_in_ago": "{t('time.rough_duration', time_since_last_signed_in)} ago",
+	"site.account.user_management.list.unverified": "Unverified",
+	"site.account.user_management.list.activate_button": "Activate",
+	"site.account.user_management.list.unactivated": "Unactivated",
+	"site.account.user_management.list.review_totp_request_button": "Review 2FA reset request",
+	"site.account.user_management.list.edit_button": "Edit",
+	"site.account.user_management.list.no_results": "No users found",
+
+	"site.account.user_management.activate.title": "Activate {user_email}",
+	"site.account.user_management.activate.are_you_sure": "Are you sure you want to activate {user_email}?",
+	"site.account.user_management.activate.yes_button": "Yes, activate {user_email}",
+	"site.account.user_management.activate.cancel_button": "Cancel",
+
+	"site.account.user_management.review_totp_reset.title": "Reviewing {user_email}",
+
+	"site.account.user_management.review_totp_reset.explanation": [
+		"This is a request to reset two-factor authentication for the account associated with {user_email}.",
+		"",
+		"A user might make this request if they're locked out of their account; they might've lost their authentication device, for example.",
+		"",
+		"Allowing the person making this request to reset two-factor authentication will leave the account less secure overall, but will allow them to sign in again."
+	],
+
+	"site.account.user_management.review_totp_reset.explanation_warning": "Only approve this request if you're sure it's legitimate, otherwise deny it.",
+
+	"site.account.user_management.review_totp_reset.approve_button": "Approve and send reset link",
+	"site.account.user_management.review_totp_reset.deny_button": "Deny the request",
+	"site.account.user_management.review_totp_reset.cancel_button": "Cancel",
+
+	"site.account.user_management.approve_totp_reset.title": "Approve {user_email}",
+	"site.account.user_management.approve_totp_reset.are_you_sure": "Are you sure you want to send a link to {user_email} that would allow them to reset two-factor authentication?",
+	"site.account.user_management.approve_totp_reset.yes_button": "Yes, send a reset link",
+	"site.account.user_management.approve_totp_reset.no_button": "No, go back",
+
+	"site.account.user_management.deny_totp_reset.title": "Deny {user_email}",
+	"site.account.user_management.deny_totp_reset.are_you_sure": "Are you sure you want to deny this request?",
+	"site.account.user_management.deny_totp_reset.yes_button": "Yes, deny this request",
+	"site.account.user_management.deny_totp_reset.no_button": "No, go back",
+
+	"site.account.user_management.new.title": "Invite user",
+	"site.account.user_management.new.email_label": "Email",
+	"site.account.user_management.new.invite_button": "Create user and send invite email",
+	"site.account.user_management.new.cancel_button": "Cancel",
+
+	"site.account.user_management.edit.title": "Editing {user_email}",
+
+	"site.account.user_management.edit.editing_yourself_warning": [
+		"You're currently editing yourself.",
+		"",
+		"Any changes you make here may affect your current browsing session, so be careful to avoid making any changes you're unsure of."
+	],
+
+	"site.account.user_management.edit.not_verified": "This account has not yet been verified.",
+	"site.account.user_management.edit.last_signed_in_at": "Last signed in {t('time.display_date_time', last_signed_in_at)}",
+	"site.account.user_management.edit.roles_title": "Roles",
+	"site.account.user_management.edit.give_super_title": "I want to give this user the super role",
+
+	"site.account.user_management.edit.give_super_warning": [
+		"Once a user has been given the super role it {italic(`can't be removed`)}.",
+		"",
+		"Please think carefully about whether this is actually what you need to do, or whether another role would be more appropriate."
+	],
+
+	"site.account.user_management.edit.give_super_checkbox_label": "I understand this {bold(`can't be undone`)}, give this user the super role",
+	"site.account.user_management.edit.grants_title": "Grants",
+	"site.account.user_management.edit.denials_title": "Denials",
+	"site.account.user_management.edit.grant_denial_explanation_title": "What are grants and denials?",
+
+	"site.account.user_management.edit.grant_denial_explanation": [
+		"Grants and denials allow you to make fine-grained changes to a user's access level by overriding specific permissions after a user's roles have been applied.",
+		"",
+		"Grants are used to give users additional permissions, and denials are used to take specific permissions away."
+	],
+
+	"site.account.user_management.edit.suspend_button": "Suspend user",
+	"site.account.user_management.edit.update_button": "Update user",
+	"site.account.user_management.edit.cancel_button": "Cancel",
+
+	"site.account.user_management.suspend.suspended_title": "Suspended user",
+	"site.account.user_management.suspend.suspend_title": "Suspend user",
+	"site.account.user_management.suspend.suspended_at": "This user was suspended on {t('time.display_date_time', suspended_at)}",
+	"site.account.user_management.suspend.warning": "Once a user has been suspended they won't be able to sign in again, and if they're already signed in they'll be forcibly signed out.",
+	"site.account.user_management.suspend.reason_label": "Reason for suspension",
+	"site.account.user_management.suspend.reason_placeholder": "The reason for account suspension.",
+	"site.account.user_management.suspend.edit_button": "Edit user",
+	"site.account.user_management.suspend.update_reason_button": "Update reason",
+	"site.account.user_management.suspend.unsuspend_button": "Unsuspend user",
+	"site.account.user_management.suspend.suspend_button": "Suspend user",
+	"site.account.user_management.suspend.cancel_button": "Cancel",
+	"site.account.user_management.suspend.no_permission": "You do not have permission to suspend users.",
+
+	"site.system.setup.flash.completed": "Setup completed successfully.",
+
+	"site.system.setup.title": "Setup",
+
+	"site.system.setup.email_section_title": "Email",
+	"site.system.setup.smtp_envelope_email_label": "SMTP envelope email",
+	"site.system.setup.smtp_envelope_email_hint": "used in SPF checks",
+	"site.system.setup.smtp_envelope_email_unset": "Unset (dynamic)",
+	"site.system.setup.system_email_label": "System email",
+	"site.system.setup.system_email_hint": "from address in system emails",
+	"site.system.setup.security_email_label": "Security email",
+	"site.system.setup.security_email_hint": "for reporting security vulnerabilities",
+
+	"site.system.setup.account_section_title": "Account",
+	"site.system.setup.account_section_description": "We'll create an admin account using the email and password you enter below.",
+	"site.system.setup.email_label": "Email",
+	"site.system.setup.password_label": "Password",
+
+	"site.system.setup.setup_button": "Finish setup",
+
+	"site.system.config.flash.updated": "System configuration successfully updated.",
+
+	"site.system.config.title": "System configuration",
+
+	"site.system.config.email_section_title": "Email",
+	"site.system.config.dmarc_spf_misaligned_warning": [
+		"Your SMTP envelope email and system email domains do not match and may cause DMARC check failures.",
+		"",
+		"This could result in emails sent from the system to be marked as unverified, and depending on the DMARC policy, rejected, or quarantined."
+	],
+	"site.system.config.smtp_envelope_email_label": "SMTP envelope email",
+	"site.system.config.smtp_envelope_email_hint": "used in SPF checks",
+	"site.system.config.smtp_envelope_email_unset": "Unset (dynamic)",
+	"site.system.config.system_email_label": "System email",
+	"site.system.config.system_email_hint": "from address in system emails",
+	"site.system.config.security_email_label": "Security email",
+	"site.system.config.security_email_hint": "for reporting security vulnerabilities",
+
+	"site.system.config.account_section_title": "Account",
+	"site.system.config.enable_sign_up_label": "Enable sign up",
+	"site.system.config.enable_sign_up_no": "No (invite only)",
+	"site.system.config.enable_sign_up_yes": "Yes",
+	"site.system.config.enable_auto_account_activation_label": "Enable automatic account activation on sign up",
+	"site.system.config.enable_auto_account_activation_no": "No (manual activation required)",
+	"site.system.config.enable_auto_account_activation_yes": "Yes",
+	"site.system.config.require_totp_label": "Require two-factor authentication",
+	"site.system.config.require_totp_no": "No",
+	"site.system.config.require_totp_yes": "Yes",
+	"site.system.config.enable_totp_sms_label": "Enable SMS for two-factor authentication",
+	"site.system.config.enable_totp_sms_no": "No",
+	"site.system.config.enable_totp_sms_yes": "Yes (requires Twilio setup)",
+	"site.system.config.enable_magic_link_sign_in_label": "Enable magic link sign in",
+	"site.system.config.enable_magic_link_sign_in_hint": "allows magic link sign up when sign up is enabled",
+	"site.system.config.enable_magic_link_sign_in_no": "No",
+	"site.system.config.enable_magic_link_sign_in_yes": "Yes",
+	"site.system.config.enable_google_sign_in_label": "Enable Google sign in",
+	"site.system.config.enable_google_sign_in_hint": "allows Google sign up when sign up is enabled",
+	"site.system.config.enable_google_sign_in_no": "No",
+	"site.system.config.enable_google_sign_in_yes": "Yes (requires Google client id)",
+	"site.system.config.google_sign_in_client_id_label": "Google sign in client id",
+	"site.system.config.enable_facebook_sign_in_label": "Enable Facebook sign in",
+	"site.system.config.enable_facebook_sign_in_hint": "allows Facebook sign up when sign up is enabled",
+	"site.system.config.enable_facebook_sign_in_no": "No",
+	"site.system.config.enable_facebook_sign_in_yes": "Yes (requires Facebook app id/secret)",
+	"site.system.config.facebook_sign_in_app_id_label": "Facebook sign in app id",
+	"site.system.config.facebook_sign_in_secret_label": "Facebook sign in app secret",
+
+	"site.system.config.resend_section_title": "Resend",
+	"site.system.config.resend_api_key_label": "API key",
+	"site.system.config.resend_api_key_hint": "{required_length} character API key beginning with re_",
+
+	"site.system.config.twilio_section_title": "Twilio",
+	"site.system.config.twilio_sid_label": "SID",
+	"site.system.config.twilio_sid_hint": "{required_length} character API SID beginning with AC",
+	"site.system.config.twilio_token_label": "Token",
+	"site.system.config.twilio_token_hint": "{required_length} character API token",
+	"site.system.config.twilio_from_tel_label": "From phone number",
+
+	"site.system.config.update_button": "Update configuration",
+
+	"site.system.metrics.title": "Metrics",
+	"site.system.metrics.current_date_time": "{t('time.display_date_time', now)}",
+
+	"site.system.metrics.build_section_title": "Build",
+	"site.system.metrics.build_target_label": "Target",
+	"site.system.metrics.build_revision_label": "Revision",
+	"site.system.metrics.build_tags_label": "Tags",
+	"site.system.metrics.build_go_version_label": "Go version",
+	"site.system.metrics.build_os_arch_label": "OS/Arch",
+	"site.system.metrics.build_race_detector_label": "Race detector",
+
+	"site.system.metrics.process_memory_section_title": "Process and memory",
+	"site.system.metrics.process_uptime_label": "Uptime",
+	"site.system.metrics.process_uptime": "{t('time.display_duration', uptime)}",
+	"site.system.metrics.process_cgo_calls_label": "Cgo calls",
+	"site.system.metrics.process_logical_cpus_label": "Logical CPUs",
+	"site.system.metrics.process_goroutines_label": "Goroutines",
+	"site.system.metrics.process_reserved_os_memory_label": "Reserved OS memory",
+	"site.system.metrics.process_total_heap_allocated_label": "Tot. heap allocated",
+	"site.system.metrics.process_current_heap_allocated_label": "Cur. heap allocated",
+	"site.system.metrics.process_current_heap_objects_label": "Cur. heap objects",
+	"site.system.metrics.process_completed_gc_cycles_label": "Completed GC cycles",
+	"site.system.metrics.process_next_gc_cycle_target_heap_label": "Next GC cycle target heap",
+	"site.system.metrics.process_last_gc_cycle_label": "Last GC cycle",
+	"site.system.metrics.process_last_gc_cycle_at": "{t('time.display_date_time', last_gc_at)}",
+	"site.system.metrics.process_total_gc_pauses_label": "Tot. GC pauses",
+
+	"site.system.metrics.database_section_title": "{label}",
+	"site.system.metrics.database_max_open_conns_label": "Max open conns.",
+	"site.system.metrics.database_in_use_conns_label": "In use conns.",
+	"site.system.metrics.database_idle_conns_label": "Idle conns.",
+	"site.system.metrics.database_conn_wait_count_label": "Conn. wait count",
+	"site.system.metrics.database_total_conn_wait_time_label": "Tot. conn. wait time",
+	"site.system.metrics.database_avg_conn_wait_time_label": "Avg. conn. wait time",
+	"site.system.metrics.database_txs_begun_label": "Txs. begun",
+	"site.system.metrics.database_txs_committed_label": "Txs. committed",
+	"site.system.metrics.database_txs_rolled_back_label": "Txs. rolled back",
+	"site.system.metrics.database_txs_cancelled_label": "Txs. cancelled",
+	"site.system.metrics.database_txs_awaited_label": "Txs. awaited",
+	"site.system.metrics.database_txs_done_label": "Txs. done",
+	"site.system.metrics.database_txs_awaiting_label": "Txs. awaiting",
+	"site.system.metrics.database_total_reads_label": "Tot. reads",
+	"site.system.metrics.database_total_read_time_label": "Tot. read time",
+	"site.system.metrics.database_avg_read_time_label": "Avg. read time",
+	"site.system.metrics.database_total_writes_label": "Tot. writes",
+	"site.system.metrics.database_total_write_time_label": "Tot. write time",
+	"site.system.metrics.database_avg_write_time_label": "Avg. write time",
+	"site.system.metrics.database_avg_reads_per_write_label": "Avg. reads/write",
+	"site.system.metrics.database_total_queries_label": "Tot. queries",
+	"site.system.metrics.database_total_query_time_label": "Tot. query time",
+	"site.system.metrics.database_avg_query_time_label": "Avg. query time",
+	"site.system.metrics.database_avg_queries_per_tx_label": "Avg. queries/tx.",
+	"site.system.metrics.database_total_rows_opened_label": "Tot. rows opened",
+	"site.system.metrics.database_total_rows_closed_label": "Tot. rows closed",
+	"site.system.metrics.database_total_rows_time_label": "Tot. rows time",
+	"site.system.metrics.database_avg_rows_time_label": "Avg. rows time",
+
+	"site.system.metrics.requests_section_title": "{label} reqs.",
+
+	"site.system.metrics.requests_totals_section_title": "Totals",
+	"site.system.metrics.total_requests_received_label": "Requests received",
+	"site.system.metrics.total_requests_in_flight_label": "Requests in-flight",
+	"site.system.metrics.total_responses_sent_label": "Responses sent",
+	"site.system.metrics.total_conns_hijacked_label": "Conns. hijacked",
+	"site.system.metrics.total_request_bytes_read_label": "Data read",
+	"site.system.metrics.total_response_bytes_written_label": "Data written",
+	"site.system.metrics.total_time_until_first_write_label": "Time until first write",
+	"site.system.metrics.total_time_in_handlers_label": "Time in handlers",
+	"site.system.metrics.total_time_writing_label": "Time writing",
+
+	"site.system.metrics.requests_avg_per_req_section_title": "Averages per req.",
+	"site.system.metrics.avg_request_bytes_read_label": "Data read",
+	"site.system.metrics.avg_response_bytes_written_label": "Data written",
+	"site.system.metrics.avg_time_until_first_write_label": "Time until first write",
+	"site.system.metrics.avg_time_in_handlers_label": "Time in handlers",
+	"site.system.metrics.avg_time_writing_label": "Time writing",
+
+	"site.system.metrics.requests_status_codes_section_title": "Status codes",
+	"site.system.metrics.no_responses_sent_label": "No responses sent",
+
+	"site.email.account_activated.subject": "Account activated",
+	"site.email.account_activated.title": "Your account has been activated",
+	"site.email.account_activated.text": [
+		["if: has_password", "You can now sign in using the password you chose when you verified your email address."],
+		"You can now sign in to your account."
+	],
+	"site.email.account_activated.copy_url_to_sign_in": [
+		"To sign in paste the following URL into your browser:",
+		"{sign_in_url}"
+	],
+	"site.email.account_activated.click_to_sign_in": [
+		"{link('Click here', sign_in_url)} to sign in to your account.",
+		"",
+		"If the link above does not work paste the following URL into your browser:",
+		"{sign_in_url}"
+	],
+
+	"site.email.invite_verify_account.subject": "You've been invited to verify your account at {host}",
+	"site.email.invite_verify_account.title": "Verify your account",
+	"site.email.invite_verify_account.text": "You've been invited to choose a password and verify an account at {host}.",
+	"site.email.invite_verify_account.copy_url_to_verify": [
+		"To verify your account paste the following URL into your browser:",
+		"{verify_url}"
+	],
+	"site.email.invite_verify_account.click_to_verify": [
+		"{link('Click here', verify_url)} to verify your account.",
+		"",
+		"If the link above does not work paste the following URL into your browser:",
+		"{verify_url}"
+	],
+
+	"site.email.reset_password.subject": "Reset password request from {host}",
+	"site.email.reset_password.title": "Reset your password",
+	"site.email.reset_password.copy_url_to_reset": [
+		"To reset your password paste the following URL into your browser:",
+		"{reset_url}"
+	],
+	"site.email.reset_password.click_to_reset": [
+		"{link('Click here', reset_url)} to reset your password.",
+		"",
+		"If the link above does not work paste the following URL into your browser:",
+		"{reset_url}"
+	],
+
+	"site.email.reset_password_sign_up.subject": "Reset password attempt at {host}",
+	"site.email.reset_password_sign_up.title": "Reset password attempt",
+	"site.email.reset_password_sign_up.text": "A password reset was requested at {host}, but you don't seem to have an account with us.",
+	"site.email.reset_password_sign_up.copy_url_to_sign_up": [
+		"If you didn't request this password reset yourself you can ignore this email.",
+		"",
+		"Otherwise, you can sign up with us by pasting the following URL into your browser:",
+		"{sign_up_url}"
+	],
+	"site.email.reset_password_sign_up.click_to_sign_up": [
+		"If you didn't request this password reset yourself you can ignore this email.",
+		"",
+		"Otherwise, you can {link('sign up with us here', sign_up_url)}.",
+		"",
+		"If the link above does not work paste the following URL into your browser:",
+		"{sign_up_url}"
+	],
+
+	"site.email.sign_in_magic_link.subject": "Sign in to {host}",
+	"site.email.sign_in_magic_link.title": "Sign in",
+	"site.email.sign_in_magic_link.copy_url_to_reset": [
+		"To sign in paste the following URL into your browser (expires in {t('time.display_duration', ttl)}):",
+		"{sign_in_url}"
+	],
+	"site.email.sign_in_magic_link.click_to_reset": [
+		"{link('Click here', sign_in_url)} to sign in to your account.",
+		"",
+		"It expires in {t('time.display_duration', ttl)}.",
+		"",
+		"If the link above does not work paste the following URL into your browser:",
+		"{sign_in_url}"
+	],
+
+	"site.email.sign_up_reset_password.subject": "Sign up attempt at {host}",
+	"site.email.sign_up_reset_password.title": "Sign up attempt",
+	"site.email.sign_up_reset_password.text": "It looks like you're trying to sign up to {host}, but you already have an account.",
+	"site.email.sign_up_reset_password.copy_url_to_reset": [
+		["if: has_password", [
+			"If you've forgotten your password you can reset it by pasting the following URL into your browser:",
+			"{new_password_url}",
+			"",
+			"To sign in paste the following URL into your browser:",
+			"{sign_in_url}"
+		]],
+		[
+			"If you'd like to set up a password for your account paste the following URL into your browser:",
+			"{new_password_url}",
+			"",
+			"To sign in paste the following URL into your browser:",
+			"{sign_in_url}"
+		]
+	],
+	"site.email.sign_up_reset_password.click_to_reset": [
+		["if: has_password", [
+			"If you've forgotten your password you can {link('reset it here', new_password_url)}.",
+			"",
+			"If the link above does not work paste the following URL into your browser:",
+			"{new_password_url}",
+			"",
+			"{link('Click here', sign_in_url)} to sign in to your account.",
+			"",
+			"If the link above does not work paste the following URL into your browser:",
+			"{sign_in_url}"
+		]],
+		[
+			"If you'd like you can {link('set up a password for your account here', new_password_url)}.",
+			"",
+			"If the link above does not work paste the following URL into your browser:",
+			"{new_password_url}",
+			"",
+			"{link('Click here', sign_in_url)} to sign in to your account.",
+			"",
+			"If the link above does not work paste the following URL into your browser:",
+			"{sign_in_url}"
+		]
+	],
+
+	"site.email.totp_disabled.subject": "Two-factor authentication disabled",
+	"site.email.totp_disabled.title": "Two-factor authentication has been disabled",
+	"site.email.totp_disabled.text": [
+		"Two-factor authentication has been disabled for your account.",
+		"If you did not do this please contact an administrator as soon as possible."
+	],
+
+	"site.email.totp_reset_approved.subject": "Reset two-factor authentication request approved",
+	"site.email.totp_reset_approved.title": "Reset two-factor authentication",
+	"site.email.totp_reset_approved.copy_url_to_reset": [
+		"To reset two-factor authentication for your account paste the following URL into your browser:",
+		"{reset_url}"
+	],
+	"site.email.totp_reset_approved.click_to_reset": [
+		"{link('Click here', reset_url)} to reset two-factor authentication.",
+		"",
+		"If the link above does not work paste the following URL into your browser:",
+		"{reset_url}"
+	],
+
+	"site.email.totp_reset_verify_email.subject": "Reset two-factor authentication on {host}",
+	"site.email.totp_reset_verify_email.title": "Reset two-factor authentication",
+	"site.email.totp_reset_verify_email.copy_url_to_verify": [
+		"To request a review to reset two-factor authentication for your account, paste the following URL into your browser:",
+		"{request_review_url}"
+	],
+	"site.email.totp_reset_verify_email.click_to_verify": [
+		"{link('Click here', request_review_url)} to request a review to reset two-factor authentication for your account.",
+		"",
+		"If the link above does not work paste the following URL into your browser:",
+		"{request_review_url}"
+	],
+
+	"site.email.verify_account.subject": "Verify your account",
+	"site.email.verify_account.title": "Verify your account",
+	"site.email.verify_account.copy_url_to_verify": [
+		"To verify your account paste the following URL into your browser:",
+		"{verify_url}"
+	],
+	"site.email.verify_account.click_to_verify": [
+		"{link('Click here', verify_url)} to verify your account.",
+		"",
+		"If the link above does not work paste the following URL into your browser:",
+		"{verify_url}"
+	],
+
+	"pwa.js_required_text": "JavaScript is required to use this application.",
+
+	"pwa.header": "PWA",
+
+	"pwa.sign_out_button": "Sign out",
+
+	"pwa.page.error.not_found": "The page you were looking for could not be found.",
+
+	"pwa.account.sign_up.form.title": "Sign up",
+	"pwa.account.sign_up.form.email_label": "Email",
+	"pwa.account.sign_up.form.sign_up_button": "Sign up",
+	"pwa.account.sign_up.form.sign_in_button": "Already have an account?",
+
+	"pwa.account.sign_up.verify.title": "Verify",
+	"pwa.account.sign_up.verify.code_label": "Verification code",
+	"pwa.account.sign_up.verify.choose_password_label": "Choose a password",
+	"pwa.account.sign_up.verify.verify_button": "Verify account",
+
+	"pwa.account.sign_up.success.awaiting_activation": "Your account has been successfully verified and is now awaiting manual activation.",
+	"pwa.account.sign_up.success.once_activated": "Once your account is activated you'll receive an email and will be able to sign in.",
+	"pwa.account.sign_up.success.sign_in_link": "Click here to go to the sign in page.",
+
+	"pwa.account.sign_up.already_signed_in.text": "You're already signed in.",
+	"pwa.account.sign_up.already_signed_in.sign_out_button": "Click here to sign out.",
+
+	"pwa.account.sign_in.form.title": "Sign in",
+	"pwa.account.sign_in.form.email_label": "Email",
+	"pwa.account.sign_in.form.password_label": "Password",
+	"pwa.account.sign_in.form.sign_in_button": "Sign in",
+	"pwa.account.sign_in.form.sign_up_button": "Sign up",
+	"pwa.account.sign_in.form.reset_password_button": "Forgotten your password?",
+	"pwa.account.sign_in.form.alt_sign_in_title": "Or",
+	"pwa.account.sign_in.form.sign_in_with_magic_link_button": "Sign in with a magic link",
+
+	"pwa.account.sign_in.magic_link.title": "Sign in",
+	"pwa.account.sign_in.magic_link.text": "Please enter the sign in code we've sent to your email address below.",
+	"pwa.account.sign_in.magic_link.code_expired_text": "If your sign in code has expired you can try requesting a new one.",
+	"pwa.account.sign_in.magic_link.code_label": "Sign in code",
+	"pwa.account.sign_in.magic_link.sign_in_button": "Sign in",
+	"pwa.account.sign_in.magic_link.request_new_code_button": "Request a new code",
+
+	"pwa.account.sign_in.magic_link_request.title": "Sign in",
+	"pwa.account.sign_in.magic_link_request.email_label": "Email",
+	"pwa.account.sign_in.magic_link_request.send_code_button": "Send sign in code",
+	"pwa.account.sign_in.magic_link_request.alt_sign_in_title": "Or",
+	"pwa.account.sign_in.magic_link_request.sign_in_with_password_button": "Sign in with a password",
+
+	"pwa.account.sign_in.recovery_code.title": "Sign in",
+	"pwa.account.sign_in.recovery_code.recovery_code_label": "Recovery code",
+	"pwa.account.sign_in.recovery_code.sign_in_button": "Sign in",
+	"pwa.account.sign_in.recovery_code.use_passcode_button": "Use a passcode",
+	"pwa.account.sign_in.recovery_code.switch_account_button": "Switch account",
+
+	"pwa.account.sign_in.totp.title": "Sign in",
+	"pwa.account.sign_in.totp.instruction_text": [
+		["if: context == 'sms'", "Please verify your identity by entering the 6 digit passcode that has been generated and sent to your registered phone number."],
+		"Please verify your identity by entering a 6 digit passcode that has been generated by your authenticator app."
+	],
+	"pwa.account.sign_in.totp.passcode_label": "Passcode",
+	"pwa.account.sign_in.totp.sign_in_button": "Sign in",
+	"pwa.account.sign_in.totp.use_recovery_code_button": "Use a recovery code",
+	"pwa.account.sign_in.totp.switch_account_button": "Switch account",
+	"pwa.account.sign_in.totp.resend_passcode_button": "Resend passcode SMS",
+	"pwa.account.sign_in.totp.resend_passcode_button_please_wait": "Please wait...",
+	"pwa.account.sign_in.totp.resend_passcode_button_sent": "Passcode SMS sent",
+
+	"pwa.account.sign_in.totp_required.text": "Two-factor authentication is required to use this application.",
+
+	"pwa.account.sign_in.already_signed_in.sign_out_button": "Click here to sign out.",
+
+	"pwa.account.reset_password.request.title": "Reset password",
+	"pwa.account.reset_password.request.email_label": "Email",
+	"pwa.account.reset_password.request.send_code_button": "Send reset password code",
+	"pwa.account.reset_password.request.sign_up_button": "No account? Sign up here.",
+	"pwa.account.reset_password.request.sign_in_button": "Already have an account?",
+
+	"pwa.account.reset_password.new_password.title": "Reset password",
+	"pwa.account.reset_password.new_password.sent_verification_code_text": "We've sent a verification code to your email address which you can copy into the input below.",
+	"pwa.account.reset_password.new_password.verification_code_label": "Verification code",
+	"pwa.account.reset_password.new_password.choose_password_label": "Choose a password",
+	"pwa.account.reset_password.new_password.update_password_button": "Update password",
+
+	"pwa.email.account_activated.subject": "Account activated",
+	"pwa.email.account_activated.title": "Your account has been activated",
+	"pwa.email.account_activated.text": [
+		["if: has_password", "You can now sign in using the password you chose when you verified your email address."],
+		"You can now sign in to your account."
+	],
+
+	"pwa.email.reset_password.subject": "Reset password request from {host}",
+	"pwa.email.reset_password.title": "Reset your password",
+	"pwa.email.reset_password.text": [
+		"To reset your password paste the following verification code into the prompt in the app:",
+		"{token}"
+	],
+
+	"pwa.email.reset_password_sign_up.subject": "Reset password attempt at {host}",
+	"pwa.email.reset_password_sign_up.title": "Reset password attempt",
+	"pwa.email.reset_password_sign_up.text_plain": [
+		"A password reset was requested at {host}, but you don't seem to have an account with us.",
+		"",
+		"If you didn't request this password reset yourself you can ignore this email.",
+		"",
+		"Otherwise, you can sign up with us by pasting the following URL into your browser:",
+		"{scheme}://{host}"
+	],
+	"pwa.email.reset_password_sign_up.text_html": [
+		"A password reset was requested at {host}, but you don't seem to have an account with us.",
+		"",
+		"If you didn't request this password reset yourself you can ignore this email.",
+		"",
+		"Otherwise, you can {link('sign up with us here', scheme + '://' + host)}.",
+		"",
+		"If the link above does not work paste the following URL into your browser:",
+		"{scheme}://{host}"
+	],
+
+	"pwa.email.sign_in_magic_link.subject": "Sign in to {host}",
+	"pwa.email.sign_in_magic_link.title": "Sign in",
+	"pwa.email.sign_in_magic_link.text": [
+		"To sign in paste the following code into the prompt in the app:",
+		"{token}",
+		"",
+		"It will expire in {t('time.display_duration', ttl)}."
+	],
+
+	"pwa.email.sign_up_reset_password.subject": "Sign up attempt at {host}",
+	"pwa.email.sign_up_reset_password.title": "Sign up attempt",
+	"pwa.email.sign_up_reset_password.text": [
+		["if: has_password", [
+			"It looks like you're trying to sign up to {host}, but you already have an account.",
+			"",
+			"If you've forgotten your password you can reset it by pasting the following code into the verification code prompt and then choosing a new password:",
+			"{token}"
+		]],
+		[
+			"It looks like you're trying to sign up to {host}, but you already have an account.",
+			"",
+			"If you'd like to set up a password for your account paste the following code into the verification code prompt and then choose a new password:",
+			"{token}"
+		]
+	],
+
+	"pwa.email.verify_account.subject": "Verify your account",
+	"pwa.email.verify_account.title": "Verify your account",
+	"pwa.email.verify_account.text": [
+		"To verify your account paste the following verification code into the prompt in the app:",
+		"{token}"
+	],
+
+	"web.error.not_found": "The resource you were looking for could not be found.",
+	"web.error.http_method_not_allowed": "Method not allowed.",
+	"web.error.forbidden": "You do not have sufficient permissions to access this resource.",
+	"web.error.handler_timeout": "The server took too long to respond.",
+	"web.error.account_not_verified": "This account is not verified.",
+	"web.error.account_not_activated": "This account is not activated.",
+	"web.error.account_suspended": "This account has been suspended.",
+	"web.error.unauthorized": "You do not have permission to access this resource.",
+	"web.error.loop_detected": "Loop detected.",
+	"web.error.malformed_input": "Malformed input.",
+	"web.error.invalid_input": "Invalid input.",
+	"web.error.empty_csrf_token": "Empty CSRF token.",
+	"web.error.invalid_csrf_token": "Invalid CSRF token.",
+	"web.error.too_many_requests": "You have made too many consecutive requests. Please try again later.",
+	"web.error.repo_login": "Could not connect to the datasource.",
+	"web.error.request_too_large": "Your request must be no larger than {max_size}.",
+	"web.error.generic": "An error has occurred.",
+
+	"web.guard.permission.account.role.group_name": "Account roles",
+	"web.guard.permission.account.role.view": "View roles",
+	"web.guard.permission.account.role.create": "Create roles",
+	"web.guard.permission.account.role.edit": "Edit roles",
+	"web.guard.permission.account.role.delete": "Delete roles",
+
+	"web.guard.permission.account.user.group_name": "Account users",
+	"web.guard.permission.account.user.view": "View users",
+	"web.guard.permission.account.user.invite": "Invite users",
+	"web.guard.permission.account.user.activate": "Activate users",
+	"web.guard.permission.account.user.change_roles": "Change user roles",
+	"web.guard.permission.account.user.review_totp_reset_requests": "Review 2FA resets",
+	"web.guard.permission.account.user.suspend": "Suspend users",
+	"web.guard.permission.account.user.unsuspend": "Unsuspend users",
+
+	"web.guard.permission.system.group_name": "System",
+
+	"web.guard.permission.system.config.view": "View system config",
+	"web.guard.permission.system.config.edit": "Edit system config",
+
+	"web.guard.permission.system.metrics.view": "View system metrics"
 }
