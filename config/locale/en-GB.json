@@ -754,7 +754,7 @@
 	"site.account.user_management.list.title": "User management",
 	"site.account.user_management.list.search_placeholder": "Search",
 	"site.account.user_management.list.search_button": "Search",
-	"site.account.user_management.list.email_heading": "Name",
+	"site.account.user_management.list.email_heading": "Email",
 	"site.account.user_management.list.last_sign_in_heading": "Last signed in",
 	"site.account.user_management.list.invite_button": "Invite",
 	"site.account.user_management.list.last_signed_in_ago": "{t('time.rough_duration', time_since_last_signed_in)} ago",
