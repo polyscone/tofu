@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"html/template"
 	"math"
-	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -141,16 +140,11 @@ func (r MarkdownRuntime) Integer(value Value) Int {
 	return NewInt(int64(i))
 }
 
-func (r MarkdownRuntime) Fraction(value Value) Int {
+func (r MarkdownRuntime) Fraction(value Value) String {
 	str := value.AsString().Value
 	_, frac, _ := strings.Cut(str, ".")
-	if frac == "" {
-		return NewInt(0)
-	}
 
-	i, _ := strconv.Atoi(frac)
-
-	return NewInt(int64(i))
+	return NewString(frac)
 }
 
 func (r MarkdownRuntime) T(key Value, locale string, value, context Value) String {

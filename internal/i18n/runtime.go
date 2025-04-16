@@ -70,7 +70,7 @@ type Runtime interface {
 	TrimRight(value, trim Value) String
 	Abs(value Value) Value
 	Integer(value Value) Int
-	Fraction(value Value) Int
+	Fraction(value Value) String
 	T(key Value, locale string, value, context Value) String
 	PostProcess(value Value, after AfterPostProcessFunc) any
 }
