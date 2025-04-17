@@ -241,7 +241,7 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 						if t, err := time.ParseInLocation(format, str, time.UTC); err == nil {
 							field.Set(reflect.ValueOf(t))
 
-							return nil
+							goto Decoded
 						}
 					}
 
@@ -264,10 +264,13 @@ func DecodeRequest(dst any, r *http.Request, tagName string, fn DecodeValueFunc)
 
 						field.Set(reflect.ValueOf(t))
 
-						return nil
+						break
 					}
 
 					return fmt.Errorf("parse time.Time: string value %q is an invalid time format", str)
+
+				Decoded:
+					break
 				}
 
 			default:
