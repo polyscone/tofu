@@ -1,5 +1,5 @@
 create table account__users (
-	id                          integer primary key,
+	id                          integer not null primary key,
 	email                       text not null unique collate nocase,
 	hashed_password             blob,
 	totp_method                 text not null,
@@ -29,7 +29,7 @@ create table account__users (
 ) strict;
 
 create table account__totp_reset_requests (
-	user_id      integer primary key references account__users(id) on delete cascade on update cascade,
+	user_id      integer not null primary key references account__users(id) on delete cascade on update cascade,
 	requested_at text,
 	approved_at  text,
 	created_at   text not null,
@@ -45,7 +45,7 @@ create table account__sign_in_attempt_logs (
 ) strict;
 
 create table account__roles (
-	id          integer primary key,
+	id          integer not null primary key,
 	name        text not null unique collate nocase,
 	description text not null collate nocase,
 	created_at  text not null,
@@ -53,7 +53,7 @@ create table account__roles (
 ) strict;
 
 create table account__permissions (
-	id         integer primary key,
+	id         integer not null primary key,
 	name       text not null unique collate nocase,
 	created_at text not null,
 	updated_at text

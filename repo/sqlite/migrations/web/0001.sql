@@ -1,5 +1,5 @@
 create table web__domain_events (
-	id         integer primary key,
+	id         integer not null primary key,
 	kind       text not null,
 	name       text not null,
 	data       text not null,

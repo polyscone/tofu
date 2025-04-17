@@ -205,7 +205,7 @@ func Migrate(ctx context.Context, tx *Tx, name string, migrations []string) erro
 
 	stmt := `
 		create table if not exists _migrations (
-			name       text primary key not null,
+			name       text not null primary key,
 			version    integer not null,
 			created_at text not null default (strftime('%Y-%m-%d %H:%M:%SZ', current_timestamp)),
 			updated_at text
