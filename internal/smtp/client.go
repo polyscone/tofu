@@ -203,11 +203,11 @@ func (c *Client) sendResendAPI(ctx context.Context, msg Msg, apiKey string) erro
 }
 
 func (c *Client) processResendAPIQueue() {
-	// Resend rate limits at 10 req/s, so we just do half of that to be safe
+	// Resend rate limits at 2 req/s
 	//
 	// Throttling is per client and not per API key because we assume a
 	// stable single API key for the majority of the time
-	throttle := time.NewTicker(time.Second / 5)
+	throttle := time.NewTicker(time.Second / 2)
 
 	for resendMsg := range c.resend {
 		<-throttle.C
