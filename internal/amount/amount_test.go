@@ -302,6 +302,25 @@ func TestAbs(t *testing.T) {
 	}
 }
 
+func TestNeg(t *testing.T) {
+	tt := []struct {
+		name  string
+		value string
+		want  string
+	}{
+		{"positive", "1.075 kg", "-1.075 kg"},
+		{"negative", "-1.075 kg", "1.075 kg"},
+	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			got := errsx.Must(amount.New(tc.value)).Neg()
+			if got.String() != tc.want {
+				t.Errorf("want abs value of %v, got %v", tc.want, got)
+			}
+		})
+	}
+}
+
 func TestRounding(t *testing.T) {
 	tt := []struct {
 		name   string

@@ -405,6 +405,14 @@ func (amt Amount) Abs() Amount {
 	return amt
 }
 
+func (amt Amount) Neg() Amount {
+	amt = amt.copy()
+
+	amt.value.Neg(amt.value)
+
+	return amt
+}
+
 // Round will round the amount to the given places using the given rounding mode.
 // If the places given is larger than the current amount's places then it's ignored.
 // If the places is negative then it will be treated as 0.
