@@ -103,7 +103,7 @@ func (r *Web) FindSessionDataByID(ctx context.Context, id string) (session.Data,
 	return r.findSessionDataByID(ctx, tx, id)
 }
 
-func (r *Web) SaveSession(ctx context.Context, sess session.Session) error {
+func (r *Web) SaveSession(ctx context.Context, sess *session.Session) error {
 	tx, err := r.db.BeginExclusiveTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
@@ -547,8 +547,8 @@ func (r *Web) findSessionDataByID(ctx context.Context, tx *sqlite.Tx, id string)
 	return res, nil
 }
 
-func (r *Web) upsertSession(ctx context.Context, tx *sqlite.Tx, sess session.Session) error {
-	b, err := json.Marshal(sess.Data)
+func (r *Web) upsertSession(ctx context.Context, tx *sqlite.Tx, sess *session.Session) error {
+	b, err := json.Marshal(sess.Data())
 	if err != nil {
 		return fmt.Errorf("marshal session data JSON: %w", err)
 	}

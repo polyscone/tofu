@@ -12,9 +12,6 @@ type ctxKey int
 
 const ctxSession ctxKey = iota
 
-// Data represents a sessions data as key/value pairs.
-type Data map[string]any
-
 var ErrNotFound = errors.New("not found")
 
 // Reader defines the interface for reading session data.
@@ -24,7 +21,7 @@ type Reader interface {
 
 // Reader defines the interface for writing session data.
 type Writer interface {
-	SaveSession(ctx context.Context, s Session) error
+	SaveSession(ctx context.Context, s *Session) error
 	DestroySession(ctx context.Context, id string) error
 }
 
@@ -52,7 +49,7 @@ func NewManager(repo ReadWriter) *Manager {
 //
 // After a session has been loaded or created it is set on the returned context.
 func (m *Manager) Load(ctx context.Context, id string) (context.Context, error) {
-	s := Session{ID: id}
+	s := &Session{ID: id}
 
 	data, err := m.repo.FindSessionDataByID(ctx, id)
 	switch {
@@ -68,11 +65,10 @@ func (m *Manager) Load(ctx context.Context, id string) (context.Context, error) 
 		return ctx, fmt.Errorf("find session data by id: %w", err)
 	}
 
-	s.Data = data
-
+	s.setData(data)
 	s.setStatus(Unchanged)
 
-	ctx = context.WithValue(ctx, ctxSession, &s)
+	ctx = context.WithValue(ctx, ctxSession, s)
 
 	return ctx, nil
 }
@@ -92,7 +88,7 @@ func (m *Manager) Commit(ctx context.Context) (string, error) {
 
 	switch s.Status {
 	case Unchanged, Accessed, Modified:
-		if err := m.repo.SaveSession(ctx, *s); err != nil {
+		if err := m.repo.SaveSession(ctx, s); err != nil {
 			return "", fmt.Errorf("save session: %w", err)
 		}
 
@@ -109,8 +105,7 @@ func (m *Manager) Commit(ctx context.Context) (string, error) {
 func (m *Manager) Clear(ctx context.Context) {
 	s := getSession(ctx)
 
-	clear(s.Data)
-
+	s.clear()
 	s.setStatus(Modified)
 }
 
@@ -166,17 +161,13 @@ func (m *Manager) Status(ctx context.Context) Status {
 // given context.
 // Setting a value will also change the session's state to modified.
 func (m *Manager) Set(ctx context.Context, key string, value any) {
-	s := getSession(ctx)
-	if s.Data == nil {
-		s.Data = make(Data)
-	}
-
 	if t, ok := value.(time.Time); ok {
 		value = t.Format(time.RFC3339Nano)
 	}
 
-	s.Data[key] = value
+	s := getSession(ctx)
 
+	s.set(key, value)
 	s.setStatus(Modified)
 }
 
@@ -188,7 +179,7 @@ func (m *Manager) Get(ctx context.Context, key string) any {
 
 	s.setStatus(Accessed)
 
-	return s.Data[key]
+	return s.get(key)
 }
 
 // Delete will delete the session value at the given key.
@@ -196,8 +187,7 @@ func (m *Manager) Get(ctx context.Context, key string) any {
 func (m *Manager) Delete(ctx context.Context, key string) {
 	s := getSession(ctx)
 
-	delete(s.Data, key)
-
+	s.delete(key)
 	s.setStatus(Modified)
 }
 
@@ -205,9 +195,7 @@ func (m *Manager) Delete(ctx context.Context, key string) {
 func (m *Manager) Has(ctx context.Context, key string) bool {
 	s := getSession(ctx)
 
-	_, ok := s.Data[key]
-
-	return ok
+	return s.has(key)
 }
 
 // GetBool fetches a bool from the session's data.

@@ -45,8 +45,8 @@ func (r *JSONMemoryRepo) FindSessionDataByID(ctx context.Context, id string) (Da
 }
 
 // Save persists the given session in-memory.
-func (r *JSONMemoryRepo) SaveSession(ctx context.Context, s Session) error {
-	b, err := json.Marshal(s.Data)
+func (r *JSONMemoryRepo) SaveSession(ctx context.Context, s *Session) error {
+	b, err := json.Marshal(s.Data())
 	if err != nil {
 		return fmt.Errorf("marshal session data: %w", err)
 	}
