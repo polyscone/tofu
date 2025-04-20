@@ -107,10 +107,8 @@ func (mux *ServeMux) Handle(pattern string, handler http.Handler, names ...strin
 		}
 	}
 
-	if len(names) > 0 {
-		for _, name := range names {
-			mux.Named(name, pattern)
-		}
+	for _, name := range names {
+		mux.Named(name, pattern)
 	}
 
 	if len(mux.befores) > 0 {
