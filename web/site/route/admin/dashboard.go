@@ -8,15 +8,15 @@ import (
 )
 
 func RegisterDashboardHandlers(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group(func(mux *router.ServeMux) {
-		mux.Before(h.RequireSignIn)
-
-		mux.HandleFunc("GET /admin", dashboardGet(h), "admin.dashboard")
-	})
+	mux.HandleFunc("GET /admin", dashboardGet(h), "admin.dashboard")
 }
 
 func dashboardGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		h.HTML.View(w, r, http.StatusOK, "admin/dashboard", nil)
 	}
 }

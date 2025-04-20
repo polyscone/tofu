@@ -17,40 +17,25 @@ import (
 )
 
 func RegisterRoleManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group(func(mux *router.ServeMux) {
-		mux.Before(h.RequireSignIn)
+	mux.HandleFunc("GET /admin/account/roles", roleListGet(h), "account.management.role.list")
 
-		mux.Group(func(mux *router.ServeMux) {
-			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewRoles() }))
+	mux.HandleFunc("GET /admin/account/roles/new", roleNewGet(h), "account.management.role.new")
+	mux.HandleFunc("POST /admin/account/roles/new", roleNewPost(h), "account.management.role.new.post")
 
-			mux.HandleFunc("GET /admin/account/roles", roleListGet(h), "account.management.role.list")
-		})
+	mux.HandleFunc("GET /admin/account/roles/{roleID}", roleEditGet(h), "account.management.role.edit")
+	mux.HandleFunc("POST /admin/account/roles/{roleID}", roleEditPost(h), "account.management.role.edit.post")
 
-		mux.Group(func(mux *router.ServeMux) {
-			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanCreateRoles() }))
-
-			mux.HandleFunc("GET /admin/account/roles/new", roleNewGet(h), "account.management.role.new")
-			mux.HandleFunc("POST /admin/account/roles/new", roleNewPost(h), "account.management.role.new.post")
-		})
-
-		mux.Group(func(mux *router.ServeMux) {
-			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanUpdateRoles() }))
-
-			mux.HandleFunc("GET /admin/account/roles/{roleID}", roleEditGet(h), "account.management.role.edit")
-			mux.HandleFunc("POST /admin/account/roles/{roleID}", roleEditPost(h), "account.management.role.edit.post")
-		})
-
-		mux.Group(func(mux *router.ServeMux) {
-			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanDeleteRoles() }))
-
-			mux.HandleFunc("GET /admin/account/roles/{roleID}/delete", roleDeleteGet(h), "account.management.role.delete")
-			mux.HandleFunc("POST /admin/account/roles/{roleID}/delete", roleDeletePost(h), "account.management.role.delete.post")
-		})
-	})
+	mux.HandleFunc("GET /admin/account/roles/{roleID}/delete", roleDeleteGet(h), "account.management.role.delete")
+	mux.HandleFunc("POST /admin/account/roles/{roleID}/delete", roleDeletePost(h), "account.management.role.delete.post")
 }
 
 func roleListGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanViewRoles() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		ctx := r.Context()
 
 		sortTopID := h.Session.PopSortTopID(ctx)
@@ -80,12 +65,22 @@ func roleNewGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanCreateRoles() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		h.HTML.View(w, r, http.StatusOK, view, nil)
 	}
 }
 
 func roleNewPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanCreateRoles() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		var input struct {
 			Name        string   `form:"name"`
 			Description string   `form:"description"`
@@ -140,12 +135,22 @@ func roleEditGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanUpdateRoles() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		h.HTML.View(w, r, http.StatusOK, view, nil)
 	}
 }
 
 func roleEditPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanUpdateRoles() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		var input struct {
 			Name        string   `form:"name"`
 			Description string   `form:"description"`
@@ -189,6 +194,11 @@ func roleEditPost(h *ui.Handler) http.HandlerFunc {
 
 func roleDeleteGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanDeleteRoles() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		roleID, _ := strconv.Atoi(r.PathValue("roleID"))
 		if roleID == h.SuperRole.ID {
 			h.HTML.ErrorView(w, r, "delete super role", app.ErrForbidden, "error", nil)
@@ -221,6 +231,11 @@ func roleDeleteGet(h *ui.Handler) http.HandlerFunc {
 
 func roleDeletePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanDeleteRoles() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		roleID, _ := strconv.Atoi(r.PathValue("roleID"))
 		if roleID == h.SuperRole.ID {
 			h.HTML.ErrorView(w, r, "delete super role", app.ErrForbidden, "error", nil)

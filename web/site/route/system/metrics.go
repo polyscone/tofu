@@ -17,12 +17,7 @@ import (
 )
 
 func RegisterMetricsHandlers(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group(func(mux *router.ServeMux) {
-		mux.Before(h.RequireSignIn)
-		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewMetrics() }))
-
-		mux.HandleFunc("GET /admin/system/metrics", systemMetricsGet(h), "system.metrics")
-	})
+	mux.HandleFunc("GET /admin/system/metrics", systemMetricsGet(h), "system.metrics")
 }
 
 func varAs[T any](v expvar.Var) T {
@@ -47,6 +42,11 @@ func varAs[T any](v expvar.Var) T {
 
 func systemMetricsGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.System.CanViewMetrics() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		version := expvar.Get("version").(*expvar.Map)
 
 		target := varAs[string](version.Get("target"))

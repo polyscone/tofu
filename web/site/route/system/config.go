@@ -3,7 +3,6 @@ package system
 import (
 	"net/http"
 
-	"github.com/polyscone/tofu/app"
 	"github.com/polyscone/tofu/app/system"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
@@ -14,17 +13,17 @@ import (
 )
 
 func RegisterConfigHandlers(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group(func(mux *router.ServeMux) {
-		mux.Before(h.RequireSignIn)
-		mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.System.CanViewConfig() }))
-
-		mux.HandleFunc("GET /admin/system/config", systemConfigGet(h), "system.config")
-		mux.HandleFunc("POST /admin/system/config", systemConfigPost(h), "system.config.post")
-	})
+	mux.HandleFunc("GET /admin/system/config", systemConfigGet(h), "system.config")
+	mux.HandleFunc("POST /admin/system/config", systemConfigPost(h), "system.config.post")
 }
 
 func systemConfigGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.System.CanViewConfig() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		h.HTML.View(w, r, http.StatusOK, "system/config", handler.Vars{
 			"SMTPEnvelopeEmail": h.SMTPEnvelopeEmail,
 		})
@@ -33,6 +32,11 @@ func systemConfigGet(h *ui.Handler) http.HandlerFunc {
 
 func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.System.CanUpdateConfig() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		var input struct {
 			SystemEmail               string `form:"system-email"`
 			SecurityEmail             string `form:"security-email"`
@@ -59,12 +63,6 @@ func systemConfigPost(h *ui.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 		passport := h.Passport(ctx)
-
-		if !passport.System.CanUpdateConfig() {
-			h.HTML.ErrorView(w, r, "can update config", app.ErrForbidden, "error", nil)
-
-			return
-		}
 
 		_, err := h.Svc.System.UpdateConfig(ctx, passport.System, system.UpdateConfigInput(input))
 		if err != nil {

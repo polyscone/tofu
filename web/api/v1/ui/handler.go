@@ -126,18 +126,3 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 		logger.Error("write error JSON response", "error", err)
 	}
 }
-
-func (h *Handler) RequireSignIn(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		isSignedIn := h.Session.IsSignedIn(ctx)
-
-		if !isSignedIn {
-			h.ErrorJSON(w, r, "require sign in", app.ErrUnauthorized)
-
-			return
-		}
-
-		next(w, r)
-	}
-}

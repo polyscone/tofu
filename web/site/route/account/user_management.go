@@ -19,71 +19,41 @@ import (
 )
 
 func RegisterUserManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
-	mux.Group(func(mux *router.ServeMux) {
-		mux.Before(h.RequireSignIn)
+	mux.HandleFunc("GET /admin/account/users", userListGet(h), "account.management.user.list")
 
-		mux.Group(func(mux *router.ServeMux) {
-			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanViewUsers() }))
+	mux.HandleFunc("GET /admin/account/users/new", userNewGet(h), "account.management.user.new")
+	mux.HandleFunc("POST /admin/account/users/new", userNewPost(h), "account.management.user.new.post")
 
-			mux.HandleFunc("GET /admin/account/users", userListGet(h), "account.management.user.list")
+	mux.HandleFunc("GET /admin/account/users/{userID}", userEditGet(h), "account.management.user.edit")
 
-		})
+	mux.HandleFunc("GET /admin/account/users/{userID}/roles", userEditRolesGet(h))
+	mux.HandleFunc("POST /admin/account/users/{userID}/roles", userEditRolesPost(h), "account.management.user.roles.post")
 
-		mux.Group(func(mux *router.ServeMux) {
-			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanInviteUsers() }))
+	mux.HandleFunc("GET /admin/account/users/{userID}/suspend", userSuspendGet(h))
+	mux.HandleFunc("POST /admin/account/users/{userID}/suspend", userSuspendPost(h), "account.management.user.suspend.post")
 
-			mux.HandleFunc("GET /admin/account/users/new", userNewGet(h), "account.management.user.new")
-			mux.HandleFunc("POST /admin/account/users/new", userNewPost(h), "account.management.user.new.post")
-		})
+	mux.HandleFunc("GET /admin/account/users/{userID}/unsuspend", userUnsuspendGet(h))
+	mux.HandleFunc("POST /admin/account/users/{userID}/unsuspend", userUnsuspendPost(h), "account.management.user.unsuspend.post")
 
-		mux.Group(func(mux *router.ServeMux) {
-			mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
-				return func(w http.ResponseWriter, r *http.Request) {
-					userID, _ := strconv.Atoi(r.PathValue("userID"))
-					canAccess := h.CanAccess(func(p guard.Passport) bool {
-						return p.Account.CanChangeRoles(userID) ||
-							p.Account.CanSuspendUsers()
-					})
+	mux.HandleFunc("GET /admin/account/users/{userID}/activate", userActivateGet(h), "account.management.user.activate")
+	mux.HandleFunc("POST /admin/account/users/{userID}/activate", userActivatePost(h), "account.management.user.activate.post")
 
-					canAccess(next)(w, r)
-				}
-			})
+	mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review", userTOTPResetReviewGet(h), "account.management.user.totp_reset_review")
 
-			mux.HandleFunc("GET /admin/account/users/{userID}", userEditGet(h), "account.management.user.edit")
+	mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review/approve", userTOTPResetApproveGet(h), "account.management.user.totp_reset_approve")
+	mux.HandleFunc("POST /admin/account/users/{userID}/totp-reset-review/approve", userTOTPResetApprovePost(h), "account.management.user.totp_reset_approve.post")
 
-			mux.HandleFunc("GET /admin/account/users/{userID}/roles", userEditRolesGet(h))
-			mux.HandleFunc("POST /admin/account/users/{userID}/roles", userEditRolesPost(h), "account.management.user.roles.post")
-
-			mux.HandleFunc("GET /admin/account/users/{userID}/suspend", userSuspendGet(h))
-			mux.HandleFunc("POST /admin/account/users/{userID}/suspend", userSuspendPost(h), "account.management.user.suspend.post")
-
-			mux.HandleFunc("GET /admin/account/users/{userID}/unsuspend", userUnsuspendGet(h))
-			mux.HandleFunc("POST /admin/account/users/{userID}/unsuspend", userUnsuspendPost(h), "account.management.user.unsuspend.post")
-		})
-
-		mux.Group(func(mux *router.ServeMux) {
-			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanActivateUsers() }))
-
-			mux.HandleFunc("GET /admin/account/users/{userID}/activate", userActivateGet(h), "account.management.user.activate")
-			mux.HandleFunc("POST /admin/account/users/{userID}/activate", userActivatePost(h), "account.management.user.activate.post")
-		})
-
-		mux.Group(func(mux *router.ServeMux) {
-			mux.Before(h.CanAccess(func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }))
-
-			mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review", userTOTPResetReviewGet(h), "account.management.user.totp_reset_review")
-
-			mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review/approve", userTOTPResetApproveGet(h), "account.management.user.totp_reset_approve")
-			mux.HandleFunc("POST /admin/account/users/{userID}/totp-reset-review/approve", userTOTPResetApprovePost(h), "account.management.user.totp_reset_approve.post")
-
-			mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review/deny", userTOTPResetDenyGet(h), "account.management.user.totp_reset_deny")
-			mux.HandleFunc("POST /admin/account/users/{userID}/totp-reset-review/deny", userTOTPResetDenyPost(h), "account.management.user.totp_reset_deny.post")
-		})
-	})
+	mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review/deny", userTOTPResetDenyGet(h), "account.management.user.totp_reset_deny")
+	mux.HandleFunc("POST /admin/account/users/{userID}/totp-reset-review/deny", userTOTPResetDenyPost(h), "account.management.user.totp_reset_deny.post")
 }
 
 func userListGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanViewUsers() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		ctx := r.Context()
 
 		sortTopID := h.Session.PopSortTopID(ctx)
@@ -126,12 +96,22 @@ func userNewGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanInviteUsers() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		h.HTML.View(w, r, http.StatusOK, view, nil)
 	}
 }
 
 func userNewPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanInviteUsers() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		var input struct {
 			Email string `form:"email"`
 		}
@@ -200,18 +180,38 @@ func userEditGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := strconv.Atoi(r.PathValue("userID"))
+		allowed := func(p guard.Passport) bool {
+			return p.Account.CanChangeRoles(userID) || p.Account.CanSuspendUsers()
+		}
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		h.HTML.View(w, r, http.StatusOK, view, nil)
 	}
 }
 
 func userEditRolesGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := strconv.Atoi(r.PathValue("userID"))
+		allowed := func(p guard.Passport) bool { return p.Account.CanChangeRoles(userID) }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		http.Redirect(w, r, h.Path("account.management.user.edit"), http.StatusSeeOther)
 	}
 }
 
 func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := strconv.Atoi(r.PathValue("userID"))
+		allowed := func(p guard.Passport) bool { return p.Account.CanChangeRoles(userID) }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		var input struct {
 			RoleIDs []int    `form:"roles"`
 			Grants  []string `form:"grants"`
@@ -225,7 +225,6 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 
 		ctx := r.Context()
 		passport := h.Passport(ctx)
-		userID, _ := strconv.Atoi(r.PathValue("userID"))
 
 		var containsSuper bool
 		for _, roleID := range input.RoleIDs {
@@ -275,12 +274,23 @@ func userEditRolesPost(h *ui.Handler) http.HandlerFunc {
 
 func userSuspendGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanSuspendUsers() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		http.Redirect(w, r, h.Path("account.management.user.edit"), http.StatusSeeOther)
 	}
 }
 
 func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := strconv.Atoi(r.PathValue("userID"))
+		allowed := func(p guard.Passport) bool { return p.Account.CanSuspendUsers() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		var input struct {
 			SuspendedReason string `form:"suspended-reason"`
 		}
@@ -293,7 +303,6 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		userID, _ := strconv.Atoi(r.PathValue("userID"))
 		user, err := h.Repo.Account.FindUserByID(ctx, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "find user by id", err, "error", nil)
@@ -336,16 +345,26 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 
 func userUnsuspendGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanSuspendUsers() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		http.Redirect(w, r, h.Path("account.management.user.edit"), http.StatusSeeOther)
 	}
 }
 
 func userUnsuspendPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := strconv.Atoi(r.PathValue("userID"))
+		allowed := func(p guard.Passport) bool { return p.Account.CanSuspendUsers() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
-		userID, _ := strconv.Atoi(r.PathValue("userID"))
 		user, err := h.Svc.Account.UnsuspendUser(ctx, passport.Account, userID)
 		if err != nil {
 			h.HTML.ErrorView(w, r, "unsuspend user", err, h.Session.LastView(ctx), nil)
@@ -378,12 +397,22 @@ func userActivateGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanActivateUsers() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		h.HTML.View(w, r, http.StatusOK, view, nil)
 	}
 }
 
 func userActivatePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanActivateUsers() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		ctx := r.Context()
 		passport := h.Passport(ctx)
 
@@ -405,6 +434,11 @@ func userActivatePost(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetReviewGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		ctx := r.Context()
 
 		userID, _ := strconv.Atoi(r.PathValue("userID"))
@@ -423,6 +457,11 @@ func userTOTPResetReviewGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetApproveGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		ctx := r.Context()
 
 		userID, _ := strconv.Atoi(r.PathValue("userID"))
@@ -441,6 +480,11 @@ func userTOTPResetApproveGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		ctx := r.Context()
 		logger := h.Logger(ctx)
 		config := h.Config(ctx)
@@ -478,6 +522,11 @@ func userTOTPResetApprovePost(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetDenyGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		ctx := r.Context()
 
 		userID, _ := strconv.Atoi(r.PathValue("userID"))
@@ -496,6 +545,11 @@ func userTOTPResetDenyGet(h *ui.Handler) http.HandlerFunc {
 
 func userTOTPResetDenyPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		allowed := func(p guard.Passport) bool { return p.Account.CanReviewTOTPResets() }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
 		ctx := r.Context()
 
 		userID, _ := strconv.Atoi(r.PathValue("userID"))

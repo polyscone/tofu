@@ -15,13 +15,12 @@ func RegisterChoosePasswordHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.Named("account.choose_password.section", "/account/choose-password")
 
 	mux.Group(func(mux *router.ServeMux) {
-		mux.Before(h.RequireSignIn)
 		mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				ctx := r.Context()
 				user := h.User(ctx)
 
-				if len(user.HashedPassword) > 0 {
+				if h.Session.IsSignedIn(ctx) && len(user.HashedPassword) > 0 {
 					http.Redirect(w, r, h.Path("account.change_password"), http.StatusSeeOther)
 
 					return
@@ -38,12 +37,20 @@ func RegisterChoosePasswordHandlers(h *ui.Handler, mux *router.ServeMux) {
 
 func choosePasswordGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		h.HTML.View(w, r, http.StatusOK, "account/choose_password/form", nil)
 	}
 }
 
 func choosePasswordPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		var input struct {
 			NewPassword      string `form:"new-password"`
 			NewPasswordCheck string `form:"new-password"` // The UI doesn't include a check field

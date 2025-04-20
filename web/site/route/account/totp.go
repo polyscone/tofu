@@ -32,13 +32,12 @@ func RegisterTOTPHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.HandleFunc("POST /account/totp/reset", totpResetPost(h), "account.totp.reset.post")
 
 	mux.Group(func(mux *router.ServeMux) {
-		mux.Before(h.RequireSignIn)
 		mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				ctx := r.Context()
 				user := h.User(ctx)
 
-				if len(user.HashedPassword) == 0 {
+				if h.Session.IsSignedIn(ctx) && len(user.HashedPassword) == 0 {
 					h.AddFlashf(ctx, i18n.M("site.account.totp.flash.password_required"))
 
 					h.Session.SetRedirect(ctx, r.URL.String())
@@ -148,6 +147,10 @@ func totpResetPost(h *ui.Handler) http.HandlerFunc {
 
 func totpSetupGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		ctx := r.Context()
 
 		if h.Session.HasActivatedTOTP(ctx) {
@@ -162,6 +165,10 @@ func totpSetupGet(h *ui.Handler) http.HandlerFunc {
 
 func totpSetupPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		var input struct {
 			Method string `form:"method"`
 		}
@@ -245,6 +252,10 @@ func totpSetupAppGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		ctx := r.Context()
 		user := h.User(ctx)
 
@@ -266,6 +277,10 @@ func totpSetupAppGet(h *ui.Handler) http.HandlerFunc {
 
 func totpSetupAppPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		var input struct {
 			TOTP string `form:"totp"`
 		}
@@ -310,6 +325,10 @@ func totpSetupSMSGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		ctx := r.Context()
 		config := h.Config(ctx)
 		user := h.User(ctx)
@@ -338,6 +357,10 @@ func totpSetupSMSGet(h *ui.Handler) http.HandlerFunc {
 
 func totpSetupSMSPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		var input struct {
 			Tel string `form:"tel"`
 		}
@@ -386,6 +409,10 @@ func totpSetupSMSPost(h *ui.Handler) http.HandlerFunc {
 
 func totpSetupSMSVerifyGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		ctx := r.Context()
 		config := h.Config(ctx)
 		user := h.User(ctx)
@@ -414,6 +441,10 @@ func totpSetupSMSVerifyGet(h *ui.Handler) http.HandlerFunc {
 
 func totpSetupSMSVerifyPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		var input struct {
 			TOTP string `form:"totp"`
 		}
@@ -453,6 +484,10 @@ func totpSetupSMSVerifyPost(h *ui.Handler) http.HandlerFunc {
 
 func totpSendSMSPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		ctx := r.Context()
 		user := h.User(ctx)
 
@@ -469,12 +504,20 @@ func totpSendSMSPost(h *ui.Handler) http.HandlerFunc {
 
 func totpSetupActivateGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		http.Redirect(w, r, h.Path("account.totp.setup"), http.StatusSeeOther)
 	}
 }
 
 func totpSetupActivatePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		ctx := r.Context()
 		user := h.User(ctx)
 		passport := h.Passport(ctx)
@@ -495,12 +538,20 @@ func totpSetupActivatePost(h *ui.Handler) http.HandlerFunc {
 
 func totpSetupSuccessGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		h.HTML.View(w, r, http.StatusOK, "account/totp/setup/success", nil)
 	}
 }
 
 func totpDisableGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		ctx := r.Context()
 
 		if !h.Session.HasActivatedTOTP(ctx) {
@@ -515,6 +566,10 @@ func totpDisableGet(h *ui.Handler) http.HandlerFunc {
 
 func totpDisablePost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		var input struct {
 			Password string `form:"password"`
 		}
@@ -563,6 +618,10 @@ func totpDisablePost(h *ui.Handler) http.HandlerFunc {
 
 func totpDisableSuccessGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		h.HTML.View(w, r, http.StatusOK, "account/totp/disable/success", nil)
 	}
 }
@@ -582,6 +641,10 @@ func totpRecoveryCodesGet(h *ui.Handler) http.HandlerFunc {
 	})
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		ctx := r.Context()
 
 		if !h.Session.HasActivatedTOTP(ctx) {
@@ -596,6 +659,10 @@ func totpRecoveryCodesGet(h *ui.Handler) http.HandlerFunc {
 
 func totpRecoveryCodesPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		var input struct {
 			TOTP string `form:"totp"`
 		}

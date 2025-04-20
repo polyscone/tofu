@@ -13,13 +13,12 @@ import (
 
 func RegisterChangePasswordHandlers(h *ui.Handler, mux *router.ServeMux) {
 	mux.Group(func(mux *router.ServeMux) {
-		mux.Before(h.RequireSignIn)
 		mux.Before(func(next http.HandlerFunc) http.HandlerFunc {
 			return func(w http.ResponseWriter, r *http.Request) {
 				ctx := r.Context()
 				user := h.User(ctx)
 
-				if len(user.HashedPassword) == 0 {
+				if h.Session.IsSignedIn(ctx) && len(user.HashedPassword) == 0 {
 					http.Redirect(w, r, h.Path("account.choose_password"), http.StatusSeeOther)
 
 					return
@@ -39,12 +38,20 @@ func RegisterChangePasswordHandlers(h *ui.Handler, mux *router.ServeMux) {
 
 func changePasswordGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		h.HTML.View(w, r, http.StatusOK, "account/change_password/form", nil)
 	}
 }
 
 func changePasswordPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if h.RequireSignIn(w, r) {
+			return
+		}
+
 		var input struct {
 			OldPassword      string `form:"old-password"`
 			NewPassword      string `form:"new-password"`

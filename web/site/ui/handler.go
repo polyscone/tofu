@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/polyscone/tofu/app"
-	"github.com/polyscone/tofu/internal/httpx/middleware"
 	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/guard"
@@ -185,56 +184,28 @@ func (h *Handler) AddFlashErrorf(ctx context.Context, message i18n.Message) {
 	h.Session.SetFlashError(ctx, flash)
 }
 
-func (h *Handler) RequireSignIn(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		isSignedIn := h.Session.IsSignedIn(ctx)
-
-		if !isSignedIn {
-			h.Session.SetRedirect(ctx, r.URL.String())
-
-			http.Redirect(w, r, h.signInPath(), http.StatusSeeOther)
-
-			return
-		}
-
-		next(w, r)
+func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
+	ctx := r.Context()
+	if h.Session.IsSignedIn(ctx) {
+		return false
 	}
+
+	h.Session.SetRedirect(ctx, r.URL.String())
+
+	http.Redirect(w, r, h.signInPath(), http.StatusSeeOther)
+
+	return true
 }
 
-func (h *Handler) RequireSignInIf(check PredicateFunc) middleware.Middleware {
-	return func(next http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			isSignedIn := h.Session.IsSignedIn(ctx)
-			passport := h.Passport(ctx)
+func (h *Handler) Forbidden(w http.ResponseWriter, r *http.Request, allowed PredicateFunc) bool {
+	ctx := r.Context()
+	passport := h.Passport(ctx)
 
-			if !isSignedIn && check(passport) {
-				h.Session.SetRedirect(ctx, r.URL.String())
-
-				http.Redirect(w, r, h.signInPath(), http.StatusSeeOther)
-
-				return
-			}
-
-			next(w, r)
-		}
+	if allowed(passport) {
+		return false
 	}
-}
 
-func (h *Handler) CanAccess(check PredicateFunc) middleware.Middleware {
-	return func(next http.HandlerFunc) http.HandlerFunc {
-		return func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-			passport := h.Passport(ctx)
+	h.HTML.ErrorView(w, r, "forbidden", app.ErrForbidden, "error", nil)
 
-			if !check(passport) {
-				h.HTML.ErrorView(w, r, "require auth", app.ErrForbidden, "error", nil)
-
-				return
-			}
-
-			next(w, r)
-		}
-	}
+	return true
 }
