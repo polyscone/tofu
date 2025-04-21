@@ -10,11 +10,8 @@ import (
 
 	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/internal/i18n"
-	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 )
-
-type PredicateFunc func(p guard.Passport) bool
 
 type Handler struct {
 	*handler.Handler

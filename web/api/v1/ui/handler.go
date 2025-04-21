@@ -14,6 +14,7 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/internal/i18n"
+	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 )
 
@@ -24,6 +25,8 @@ var publicErrors = []error{
 	csrf.ErrEmptyToken,
 	csrf.ErrInvalidToken,
 }
+
+type PredicateFunc func(p guard.Passport) bool
 
 type Handler struct {
 	*handler.Handler
@@ -125,4 +128,28 @@ func (h *Handler) ErrorJSON(w http.ResponseWriter, r *http.Request, msg string, 
 	if err := json.NewEncoder(w).Encode(detail); err != nil {
 		logger.Error("write error JSON response", "error", err)
 	}
+}
+
+func (h *Handler) RequireSignIn(w http.ResponseWriter, r *http.Request) bool {
+	ctx := r.Context()
+	if h.Session.IsSignedIn(ctx) {
+		return false
+	}
+
+	h.ErrorJSON(w, r, "require sign in", app.ErrUnauthorized)
+
+	return true
+}
+
+func (h *Handler) Forbidden(w http.ResponseWriter, r *http.Request, allowed PredicateFunc) bool {
+	ctx := r.Context()
+	passport := h.Passport(ctx)
+
+	if allowed(passport) {
+		return false
+	}
+
+	h.ErrorJSON(w, r, "forbidden", app.ErrForbidden)
+
+	return true
 }
