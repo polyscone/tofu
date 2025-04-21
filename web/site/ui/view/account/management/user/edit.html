@@ -15,7 +15,7 @@
 {{$canChangeRoles := .Passport.Account.CanChangeRoles .Vars.User.ID}}
 {{$canSuspendUser := and .Passport.Account.CanSuspendUsers (not .Vars.User.IsSuspended) (not $isEditUserSuper)}}
 {{$canUnsuspendUser := and .Passport.Account.CanUnsuspendUsers .Vars.User.IsSuspended}}
-{{$viewSuspend := .URL.Query.Has "suspend"}}
+{{$viewSuspend := eq (.URL.Query.Get "view") "suspend"}}
 
 <div class="center">
 	{{if eq .Vars.User.ID .Session.UserID}}
@@ -62,7 +62,7 @@
 					}}
 
 					{{if $viewSuspend}}
-						<a href="{{or (.URL.Query.Replace "suspend" "") .URL.Path}}">{{.T "site.account.user_management.suspend.edit_button"}}</a>
+						<a href="{{or (.URL.Query.Replace "view" "") .URL.Path}}">{{.T "site.account.user_management.suspend.edit_button"}}</a>
 					{{end}}
 
 					<div class="bag reverse">
@@ -247,7 +247,7 @@
 
 					<hr>
 
-					<a href="{{.URL.Query.Replace "suspend" "1"}}">{{.T "site.account.user_management.edit.suspend_button"}}</a>
+					<a href="{{.URL.Query.Replace "view" "suspend"}}">{{.T "site.account.user_management.edit.suspend_button"}}</a>
 				{{end}}
 
 				<div class="bag reverse">

@@ -339,7 +339,7 @@ func userSuspendPost(h *ui.Handler) http.HandlerFunc {
 
 		q := r.URL.Query()
 
-		q.Del("suspend")
+		q.Del("view")
 
 		r.URL.RawQuery = q.Encode()
 

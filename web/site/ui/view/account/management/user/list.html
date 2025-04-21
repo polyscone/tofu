@@ -60,7 +60,7 @@
 					{{end}}
 
 					{{if $.Passport.Account.CanChangeRoles .ID}}
-						<a href="{{Path "account.management.user.edit" "{userID}" .ID}}{{$.URL.Query.String}}">{{$.T "site.account.user_management.list.edit_button"}}</a>
+						<a href="{{Path "account.management.user.edit" "{userID}" .ID}}{{$.URL.Query.Replace "view" ""}}">{{$.T "site.account.user_management.list.edit_button"}}</a>
 					{{end}}
 				</td>
 			</tr>
