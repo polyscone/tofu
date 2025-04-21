@@ -4,6 +4,10 @@ type Account struct {
 	*Passport
 }
 
+func (a Account) CanImpersonateUser(userID int) bool {
+	return a.can(canImpersonateUsers) && a.UserID != userID
+}
+
 func (a Account) CanChangePassword(userID int) bool {
 	return a.UserID == userID
 }

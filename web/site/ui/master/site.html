@@ -39,6 +39,16 @@
 			<ul>
 				<li><a href="{{Path "page.home"}}">{{.T "site.nav.home"}}</a></li>
 
+				{{if .Session.ImposterUserID}}
+					<li>
+						<form action="{{Path "account.management.user.impersonate.stop.post"}}" method="POST">
+							{{template "com.form.csrf" .}}
+
+							<button class="btn--link">{{.T "site.nav.stop_impersonating_button"}}</button>
+						</form>
+					</li>
+				{{end}}
+
 				{{if .Session.IsSignedIn}}
 					<li><a href="{{Path "account.dashboard"}}">{{.T "site.nav.account_dashboard"}}</a></li>
 

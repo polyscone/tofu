@@ -13,6 +13,7 @@ import (
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/internal/i18n"
+	"github.com/polyscone/tofu/web/auth"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/site/ui"
@@ -37,6 +38,9 @@ func RegisterUserManagementHandlers(h *ui.Handler, mux *router.ServeMux) {
 
 	mux.HandleFunc("GET /admin/account/users/{userID}/activate", userActivateGet(h), "account.management.user.activate")
 	mux.HandleFunc("POST /admin/account/users/{userID}/activate", userActivatePost(h), "account.management.user.activate.post")
+
+	mux.HandleFunc("POST /admin/account/users/{userID}/impersonate/start", userStartImpersonatePost(h), "account.management.user.impersonate.start.post")
+	mux.HandleFunc("POST /admin/account/users/impersonate/stop", userStopImpersonatePost(h), "account.management.user.impersonate.stop.post")
 
 	mux.HandleFunc("GET /admin/account/users/{userID}/totp-reset-review", userTOTPResetReviewGet(h), "account.management.user.totp_reset_review")
 
@@ -429,6 +433,42 @@ func userActivatePost(h *ui.Handler) http.HandlerFunc {
 		h.Session.SetHighlightID(ctx, user.ID)
 
 		http.Redirect(w, r, h.PathQuery(r, "account.management.user.list"), http.StatusSeeOther)
+	}
+}
+
+func userStartImpersonatePost(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, _ := strconv.Atoi(r.PathValue("userID"))
+		allowed := func(p guard.Passport) bool { return p.Account.CanImpersonateUser(userID) }
+		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
+			return
+		}
+
+		ctx := r.Context()
+
+		err := auth.StartImpersonatingUser(ctx, h.Handler, userID)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "start impersonating user", err, "error", nil)
+
+			return
+		}
+
+		http.Redirect(w, r, h.PathQuery(r, "account.dashboard"), http.StatusSeeOther)
+	}
+}
+
+func userStopImpersonatePost(h *ui.Handler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		err := auth.StopImpersonatingUser(ctx, h.Handler)
+		if err != nil {
+			h.HTML.ErrorView(w, r, "stop impersonating user", err, "error", nil)
+
+			return
+		}
+
+		http.Redirect(w, r, h.PathQuery(r, "account.dashboard"), http.StatusSeeOther)
 	}
 }
 

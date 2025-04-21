@@ -251,7 +251,13 @@
 				{{end}}
 
 				<div class="bag reverse">
-					<button class="push-inline-end">{{.T "site.account.user_management.edit.update_button"}}</button>
+					<button>{{.T "site.account.user_management.edit.update_button"}}</button>
+
+					{{if .Passport.Account.CanImpersonateUser .Vars.User.ID}}
+						<button formnovalidate formaction="{{Path "account.management.user.impersonate.start.post" "{userID}" .Vars.User.ID}}" class="btn--alt push-inline-end">
+							{{.T "site.account.user_management.edit.start_impersonating_button"}}
+						</button>
+					{{end}}
 
 					<a href="{{Path "account.management.user.list"}}{{.URL.Query.String}}">{{.T "site.account.user_management.edit.cancel_button"}}</a>
 				</div>

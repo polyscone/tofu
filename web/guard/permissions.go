@@ -8,13 +8,14 @@ const (
 	updateRoles = "account.roles.update"
 	deleteRoles = "account.roles.delete"
 
-	viewUsers        = "account.users.view"
-	inviteUsers      = "account.users.invite"
-	activateUsers    = "account.users.activate"
-	changeRoles      = "account.users.update.roles"
-	reviewTOTPResets = "account.users.review_totp_reset"
-	suspendUsers     = "account.users.suspend"
-	unsuspendUsers   = "account.users.unsuspend"
+	viewUsers           = "account.users.view"
+	inviteUsers         = "account.users.invite"
+	activateUsers       = "account.users.activate"
+	canImpersonateUsers = "account.users.impersonate"
+	changeRoles         = "account.users.update.roles"
+	reviewTOTPResets    = "account.users.review_totp_reset"
+	suspendUsers        = "account.users.suspend"
+	unsuspendUsers      = "account.users.unsuspend"
 
 	viewConfig   = "system.config.view"
 	updateConfig = "system.config.update"
@@ -37,6 +38,7 @@ var PermissionGroups = []PermissionGroup{
 			{DisplayName: i18n.M("web.guard.permission.account.user.view"), Name: viewUsers},
 			{DisplayName: i18n.M("web.guard.permission.account.user.invite"), Name: inviteUsers},
 			{DisplayName: i18n.M("web.guard.permission.account.user.activate"), Name: activateUsers},
+			{DisplayName: i18n.M("web.guard.permission.account.user.impersonate"), Name: canImpersonateUsers},
 			{DisplayName: i18n.M("web.guard.permission.account.user.change_roles"), Name: changeRoles},
 			{DisplayName: i18n.M("web.guard.permission.account.user.review_totp_reset_requests"), Name: reviewTOTPResets},
 			{DisplayName: i18n.M("web.guard.permission.account.user.suspend"), Name: suspendUsers},

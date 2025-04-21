@@ -2,6 +2,16 @@ package event
 
 import "time"
 
+type UserImpersonationStarted struct {
+	ImposterEmail string
+	UserEmail     string
+}
+
+type UserImpersonationStopped struct {
+	ImposterEmail string
+	UserEmail     string
+}
+
 type PasswordResetRequested struct {
 	Email string
 }

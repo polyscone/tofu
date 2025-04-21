@@ -455,6 +455,7 @@ type SessionData struct {
 	HighlightID    int
 
 	// Account session keys
+	ImposterUserID           int
 	UserID                   int
 	Email                    string
 	TOTPMethod               string

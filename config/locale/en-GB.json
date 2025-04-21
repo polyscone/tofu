@@ -383,6 +383,7 @@
 
 	"site.nav.skip": "Skip navigation",
 	"site.nav.home": "Home",
+	"site.nav.stop_impersonating_button": "Stop impersonating",
 	"site.nav.account_dashboard": "Account",
 	"site.nav.admin_dashboard": "Admin",
 	"site.nav.sign_out": "Sign out",
@@ -832,6 +833,7 @@
 	],
 
 	"site.account.user_management.edit.suspend_button": "Suspend user",
+	"site.account.user_management.edit.start_impersonating_button": "Impersonate",
 	"site.account.user_management.edit.update_button": "Update user",
 	"site.account.user_management.edit.cancel_button": "Cancel",
 
@@ -1353,6 +1355,7 @@
 	"web.guard.permission.account.user.view": "View users",
 	"web.guard.permission.account.user.invite": "Invite users",
 	"web.guard.permission.account.user.activate": "Activate users",
+	"web.guard.permission.account.user.impersonate": "Impersonate users",
 	"web.guard.permission.account.user.change_roles": "Change user roles",
 	"web.guard.permission.account.user.review_totp_reset_requests": "Review 2FA resets",
 	"web.guard.permission.account.user.suspend": "Suspend users",

@@ -23,6 +23,7 @@ const (
 
 	// Account session keys
 	skeyUserID                   = "account.user_id"
+	skeyImposterUserID           = "account.imposter_user_id"
 	skeyEmail                    = "account.email"
 	skeyTOTPMethod               = "account.totp_method"
 	skeyHasActivatedTOTP         = "account.has_verified_totp"
@@ -181,6 +182,22 @@ func (s *Session) PopURLValues(ctx context.Context) url.Values {
 
 func (s *Session) DeleteHighlightID(ctx context.Context) {
 	s.Delete(ctx, skeyHighlightID)
+}
+
+func (s *Session) ImposterUserID(ctx context.Context) int {
+	return s.GetInt(ctx, skeyImposterUserID)
+}
+
+func (s *Session) SetImposterUserID(ctx context.Context, value int) {
+	s.Set(ctx, skeyImposterUserID, value)
+}
+
+func (s *Session) PopImposterUserID(ctx context.Context) int {
+	return s.PopInt(ctx, skeyImposterUserID)
+}
+
+func (s *Session) DeleteImposterUserID(ctx context.Context) {
+	s.Delete(ctx, skeyImposterUserID)
 }
 
 func (s *Session) UserID(ctx context.Context) int {

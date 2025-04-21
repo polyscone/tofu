@@ -327,6 +327,7 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 			HighlightID:    rn.h.Session.PopHighlightID(ctx),
 
 			// Account session keys
+			ImposterUserID:           rn.h.Session.ImposterUserID(ctx),
 			UserID:                   rn.h.Session.UserID(ctx),
 			Email:                    rn.h.Session.Email(ctx),
 			TOTPMethod:               rn.h.Session.TOTPMethod(ctx),
