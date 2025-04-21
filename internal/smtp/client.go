@@ -217,7 +217,6 @@ func (c *Client) processResendAPIQueue() {
 
 			resendMsg.wg.Done()
 		})
-
 	}
 }
 
