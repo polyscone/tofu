@@ -106,7 +106,7 @@ func Timeout(ttl time.Duration, config *TimeoutConfig) Middleware {
 				// give error handlers a chance to extend it if they want to write
 				// anything in the response writer
 				const spill = 10 * time.Millisecond
-				if d := time.Until(rw.deadline) - spill; d > 0 {
+				if d := time.Until(rw.deadline) - spill; !rw.deadline.IsZero() && d > 0 {
 					timeout.Reset(d)
 
 					rw.mu.Unlock()
