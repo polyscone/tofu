@@ -69,7 +69,7 @@ type Tenant struct {
 	Scheme            string
 	Host              string
 	Hosts             map[string]string
-	Data              string
+	DataDir           string
 	Dev               bool
 	Insecure          bool
 	IPWhitelist       []string

@@ -34,7 +34,7 @@ func (h *Hasher) CheckDummyPasswordHash() error {
 func initHasher() error {
 	var params argon2.Params
 
-	paramsCache := filepath.Join(opts.data, "argon2_params.json")
+	paramsCache := filepath.Join(opts.dataDir, "argon2_params.json")
 	cachedParams, err := os.ReadFile(paramsCache)
 	if err != nil && !os.IsNotExist(err) {
 		return fmt.Errorf("read argon2 params: %w", err)

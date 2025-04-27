@@ -34,7 +34,7 @@ var target string
 var opts struct {
 	version  bool
 	dev      bool
-	data     string
+	dataDir  string
 	basePath string
 
 	log struct {
@@ -97,7 +97,7 @@ func run() int {
 		flag.PrintDefaults()
 	}
 
-	flag.StringVar(&opts.data, "data", "./.data", "The directory to use for storing application data")
+	flag.StringVar(&opts.dataDir, "data-dir", "./.data", "The directory to use for storing application data")
 	flag.StringVar(&opts.basePath, "base-path", "", "A prefix path to add to all routes")
 	flag.BoolVar(&opts.dev, "dev", false, "Whether to run in development mode")
 	flag.BoolVar(&opts.version, "version", false, "Display binary version information")
@@ -281,7 +281,7 @@ func run() int {
 		app.BasePath = opts.basePath
 	}
 
-	if err := os.MkdirAll(opts.data, 0755); err != nil {
+	if err := os.MkdirAll(opts.dataDir, 0755); err != nil {
 		slog.Error("make data directory", "error", err)
 
 		return 1
@@ -311,7 +311,7 @@ func run() int {
 		return 1
 	}
 
-	tenants := filepath.Join(opts.data, "tenants.json")
+	tenants := filepath.Join(opts.dataDir, "tenants.json")
 	if err := initTenants(tenants); err != nil {
 		slog.Error("initialize tenants", "error", err)
 	}
@@ -348,8 +348,8 @@ func run() int {
 				slog.Error("serve over HTTP", "error", err)
 			}
 		} else {
-			cert := filepath.Join(opts.data, "cert.pem")
-			key := filepath.Join(opts.data, "key.pem")
+			cert := filepath.Join(opts.dataDir, "cert.pem")
+			key := filepath.Join(opts.dataDir, "key.pem")
 
 			err := srv.ServeTLS(listener, cert, key)
 			if err != nil && !errors.Is(err, http.ErrServerClosed) {

@@ -86,6 +86,8 @@ func newTenant(host string) (*handler.Tenant, error) {
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 
+	dataDir := filepath.Join(opts.dataDir, data.Name)
+
 	metrics, ok := cache.metrics[data.Name]
 	if !ok {
 		metrics = expvar.NewMap("tenant." + data.Name)
@@ -109,6 +111,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 
 	repos, ok := cache.repos[data.Name]
 	if !ok {
+		const filename = "main.sqlite"
 		var err error
 
 		sqliteDB := cache.sqlite[data.Name]
@@ -129,7 +132,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 				metrics.Set(metricsKey, dbMetrics)
 			}
 
-			p := filepath.Join(opts.data, data.Name, "main.sqlite")
+			p := filepath.Join(dataDir, filename)
 			sqliteDB, err = sqlite.Open(ctx, sqlite.KindFile, p, dbMetrics, nil)
 			if err != nil {
 				return nil, fmt.Errorf("open SQLite database: %w", err)
@@ -221,7 +224,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 		Key:               host + "." + data.Name,
 		Kind:              data.Kind,
 		Hosts:             data.Hosts,
-		Data:              filepath.Join(opts.data, data.Name),
+		DataDir:           dataDir,
 		Dev:               opts.dev,
 		IPWhitelist:       opts.server.ipWhitelist,
 		Proxies:           opts.server.proxies,
