@@ -403,6 +403,15 @@ func repoerr(err error) error {
 	return err
 }
 
+func IsBusyOrLocked(err error) bool {
+	var sqliteErr sqlite3.Error
+	if errors.As(err, &sqliteErr) {
+		return sqliteErr.Code == sqlite3.ErrBusy || sqliteErr.Code == sqlite3.ErrLocked
+	}
+
+	return false
+}
+
 func WhereSQL(where []string) string {
 	if len(where) == 0 {
 		return ""
