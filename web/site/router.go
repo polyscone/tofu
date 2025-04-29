@@ -227,6 +227,7 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration, config handl
 
 	system.RegisterConfigHandlers(h, mux)
 	system.RegisterMetricsHandlers(h, mux)
+	system.RegisterRecoveryHandlers(h, mux)
 	system.RegisterSetupHandlers(h, mux)
 
 	mux.Handle("/security.txt", http.RedirectHandler("/.well-known/security.txt", http.StatusMovedPermanently))

@@ -1,0 +1,44 @@
+{{define "view.master"}}{{template "master.site" .}}{{end}}
+
+{{define "view.head"}}
+
+<div class="center">
+	<h1>{{.T "site.system.recovery.title"}}</h1>
+</div>
+
+{{end}}
+
+{{define "view.body"}}
+
+<div class="center">
+	{{if .Passport.System.CanRestore}}
+		<div class="warning-banner">
+			{{.T "p" "site.system.recovery.restore_warning"}}
+		</div>
+	{{end}}
+
+	<form action="{{Path "system.recovery.restore.post"}}?_csrf={{.CSRF.Token}}" method="POST" enctype="multipart/form-data">
+		{{template "com.form.csrf" .}}
+
+		{{if .Passport.System.CanRestore}}
+			{{template "com.form.file" .WithProps
+				"Label" (.T "site.system.recovery.restore_archive_label")
+				"Name" "restore-archive"
+				"Required" true
+				"Accept" ".zip,application/zip,application/x-zip-compressed"
+			}}
+		{{end}}
+
+		<div class="bag reverse">
+			{{if .Passport.System.CanRestore}}
+				<button class="push-inline-end">{{.T "site.system.recovery.restore_button"}}</button>
+			{{end}}
+
+			{{if .Passport.System.CanBackup}}
+				<a href="{{Path "system.recovery.backup"}}" class="btn">{{.T "site.system.recovery.backup_button"}}</a>
+			{{end}}
+		</div>
+	</form>
+</div>
+
+{{end}}

@@ -392,6 +392,7 @@
 	"site.admin.nav.user_management": "Users",
 	"site.admin.nav.role_management": "Roles",
 	"site.admin.nav.system_config": "Config",
+	"site.admin.nav.system_recovery": "Recovery",
 	"site.admin.nav.system_metrics": "Metrics",
 
 	"site.admin.dashboard.title": "Admin",
@@ -930,6 +931,17 @@
 
 	"site.system.config.update_button": "Update configuration",
 
+	"site.system.recovery.title": "Recovery",
+	"site.system.recovery.restore_warning": [
+		"Restoring the system from a zip archive will replace all data in the system and automatically sign you out.",
+		"This could result in you not being able to sign back in again if you don't have an account in the restored system data.",
+		"",
+		"If you're planning on restoring system data we recommend {link('taking a precautionary backup', 'system.recovery.backup')} of the system first."
+	],
+	"site.system.recovery.restore_archive_label": "Zip archive to restore from",
+	"site.system.recovery.backup_button": "Backup and download zip archive",
+	"site.system.recovery.restore_button": "Upload zip archive and restore",
+
 	"site.system.metrics.title": "Metrics",
 	"site.system.metrics.current_date_time": "{t('time.display_date_time', now)}",
 
@@ -1365,6 +1377,9 @@
 
 	"web.guard.permission.system.config.view": "View system config",
 	"web.guard.permission.system.config.edit": "Edit system config",
+
+	"web.guard.permission.system.recovery.backup": "Backup system",
+	"web.guard.permission.system.recovery.restore": "Restore system",
 
 	"web.guard.permission.system.metrics.view": "View system metrics"
 }

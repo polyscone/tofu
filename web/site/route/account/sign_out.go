@@ -22,8 +22,7 @@ func signOutPost(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		_, err := h.RenewSession(ctx)
-		if err != nil {
+		if _, err := h.RenewSession(ctx); err != nil {
 			h.HTML.ErrorView(w, r, "renew session", err, "error", nil)
 
 			return

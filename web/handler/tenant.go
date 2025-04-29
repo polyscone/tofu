@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"archive/zip"
 	"context"
 	"expvar"
+	"io"
 	"log/slog"
 	"time"
 
@@ -63,6 +65,19 @@ type Repo struct {
 	Web     WebReadWriter
 }
 
+type BackupOptions struct {
+	Database bool
+}
+
+type RestoreOptions struct {
+	Database bool
+}
+
+type Recovery interface {
+	Backup(ctx context.Context, w io.Writer, opts BackupOptions) error
+	Restore(ctx context.Context, zr *zip.Reader, opts RestoreOptions) error
+}
+
 type Tenant struct {
 	Key               string
 	Kind              string
@@ -82,5 +97,6 @@ type Tenant struct {
 
 	Svc       Svc
 	Repo      Repo
+	Recovery  Recovery
 	SuperRole *account.Role
 }

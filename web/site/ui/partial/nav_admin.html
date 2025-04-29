@@ -15,6 +15,10 @@
 				<li><a href="{{Path "system.config"}}">{{.T "site.admin.nav.system_config"}}</a></li>
 			{{end}}
 
+			{{if or .Passport.System.CanBackup .Passport.System.CanRestore}}
+				<li><a href="{{Path "system.recovery"}}">{{.T "site.admin.nav.system_recovery"}}</a></li>
+			{{end}}
+
 			{{if .Passport.System.CanViewMetrics}}
 				<li><a href="{{Path "system.metrics"}}">{{.T "site.admin.nav.system_metrics"}}</a></li>
 			{{end}}

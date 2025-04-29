@@ -19,6 +19,8 @@ const (
 
 	viewConfig   = "system.config.view"
 	updateConfig = "system.config.update"
+	backup       = "system.recovery.backup"
+	restore      = "system.recovery.restore"
 	viewMetrics  = "system.metrics.view"
 )
 
@@ -50,6 +52,8 @@ var PermissionGroups = []PermissionGroup{
 		Permissions: []Permission{
 			{DisplayName: i18n.M("web.guard.permission.system.config.view"), Name: viewConfig},
 			{DisplayName: i18n.M("web.guard.permission.system.config.edit"), Name: updateConfig},
+			{DisplayName: i18n.M("web.guard.permission.system.recovery.backup"), Name: backup},
+			{DisplayName: i18n.M("web.guard.permission.system.recovery.restore"), Name: restore},
 			{DisplayName: i18n.M("web.guard.permission.system.metrics.view"), Name: viewMetrics},
 		},
 	},

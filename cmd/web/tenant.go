@@ -87,6 +87,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 	defer cache.mu.Unlock()
 
 	dataDir := filepath.Join(opts.dataDir, data.Name)
+	recovery := NewRecoveryService(dataDir)
 
 	metrics, ok := cache.metrics[data.Name]
 	if !ok {
@@ -155,6 +156,8 @@ func newTenant(host string) (*handler.Tenant, error) {
 		if err != nil {
 			return nil, fmt.Errorf("new web repo: %w", err)
 		}
+
+		recovery.sqliteDBs[filename] = sqliteDB
 
 		cache.repos[data.Name] = repos
 	}
@@ -239,6 +242,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 			System:  repos.system,
 			Web:     repos.web,
 		},
+		Recovery:  recovery,
 		SuperRole: superRole,
 	}
 
