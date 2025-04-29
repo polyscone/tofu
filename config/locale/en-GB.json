@@ -936,7 +936,7 @@
 		"Restoring the system from a zip archive will replace all data in the system and automatically sign you out.",
 		"This could result in you not being able to sign back in again if you don't have an account in the restored system data.",
 		"",
-		"If you're planning on restoring system data we recommend {link('taking a precautionary backup', 'system.recovery.backup')} of the system first."
+		"If you're planning on restoring system data we recommend {link('taking a precautionary backup', 'system.recovery.backup', '_blank')} of the system first."
 	],
 	"site.system.recovery.restore_archive_label": "Zip archive to restore from",
 	"site.system.recovery.backup_button": "Backup and download zip archive",
