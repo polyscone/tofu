@@ -10,7 +10,7 @@ import (
 
 func TestManager(t *testing.T, newRepo func() ReadWriter) {
 	t.Run("initial session setup", func(t *testing.T) {
-		sm := NewManager(newRepo())
+		sm := errsx.Must(NewManager(newRepo()))
 		ctx := context.Background()
 
 		initID := "qux"
@@ -41,7 +41,7 @@ func TestManager(t *testing.T, newRepo func() ReadWriter) {
 	})
 
 	t.Run("get, set, and pop", func(t *testing.T) {
-		sm := NewManager(newRepo())
+		sm := errsx.Must(NewManager(newRepo()))
 		ctx := context.Background()
 
 		ctx = errsx.Must(sm.Load(ctx, ""))
@@ -212,7 +212,7 @@ func TestManager(t *testing.T, newRepo func() ReadWriter) {
 	})
 
 	t.Run("membership tests", func(t *testing.T) {
-		sm := NewManager(newRepo())
+		sm := errsx.Must(NewManager(newRepo()))
 		ctx := context.Background()
 
 		ctx, err := sm.Load(ctx, "")
@@ -237,7 +237,7 @@ func TestManager(t *testing.T, newRepo func() ReadWriter) {
 	})
 
 	t.Run("loading an existing session", func(t *testing.T) {
-		sm := NewManager(newRepo())
+		sm := errsx.Must(NewManager(newRepo()))
 		ctx := context.Background()
 
 		ctx, err := sm.Load(ctx, "")
@@ -270,7 +270,7 @@ func TestManager(t *testing.T, newRepo func() ReadWriter) {
 	})
 
 	t.Run("clear session data", func(t *testing.T) {
-		sm := NewManager(newRepo())
+		sm := errsx.Must(NewManager(newRepo()))
 		ctx := context.Background()
 
 		ctx = errsx.Must(sm.Load(ctx, ""))
@@ -307,7 +307,7 @@ func TestManager(t *testing.T, newRepo func() ReadWriter) {
 	})
 
 	t.Run("renew a session id", func(t *testing.T) {
-		sm := NewManager(newRepo())
+		sm := errsx.Must(NewManager(newRepo()))
 		ctx := context.Background()
 
 		ctx, err := sm.Load(ctx, "")
@@ -334,7 +334,7 @@ func TestManager(t *testing.T, newRepo func() ReadWriter) {
 	})
 
 	t.Run("destroying an existing session", func(t *testing.T) {
-		sm := NewManager(newRepo())
+		sm := errsx.Must(NewManager(newRepo()))
 		ctx := context.Background()
 
 		ctx, err := sm.Load(ctx, "")
@@ -353,6 +353,49 @@ func TestManager(t *testing.T, newRepo func() ReadWriter) {
 		}
 
 		sm.Destroy(ctx)
+
+		id, err := sm.Commit(ctx)
+		if err != nil {
+			t.Errorf("want <nil>; got %q", err)
+		}
+		if want, got := originalID, id; want != got {
+			t.Errorf("want %q; got %q", want, got)
+		}
+
+		ctx, err = sm.Load(ctx, id)
+		if err != nil {
+			t.Errorf("want <nil>; got %q", err)
+		}
+
+		id, err = sm.Commit(ctx)
+		if err != nil {
+			t.Errorf("want <nil>; got %q", err)
+		}
+		if got, cmp := originalID, id; got == cmp {
+			t.Errorf("want different strings; got equal (%q)", got)
+		}
+	})
+
+	t.Run("renew all existing session", func(t *testing.T) {
+		sm := errsx.Must(NewManager(newRepo()))
+		ctx := context.Background()
+
+		ctx, err := sm.Load(ctx, "")
+		if err != nil {
+			t.Errorf("want <nil>; got %q", err)
+		}
+
+		originalID, err := sm.Commit(ctx)
+		if err != nil {
+			t.Errorf("want <nil>; got %q", err)
+		}
+
+		ctx, err = sm.Load(ctx, originalID)
+		if err != nil {
+			t.Errorf("want <nil>; got %q", err)
+		}
+
+		sm.RenewKey()
 
 		id, err := sm.Commit(ctx)
 		if err != nil {

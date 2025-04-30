@@ -39,17 +39,20 @@ func RelDirFS(dir string) fs.FS {
 	return os.DirFS(dir)
 }
 
-type RestrictedFSAllowedFunc func(name string) bool
-
-type Restricted struct {
-	fsys    fs.FS
-	allowed RestrictedFSAllowedFunc
+type RestrictedConfig struct {
+	AllowOpen     func(name string) (bool, error)
+	AllowDirEntry func(dir string, entry fs.DirEntry) (bool, error)
 }
 
-func NewRestricted(fsys fs.FS, allowed RestrictedFSAllowedFunc) *Restricted {
+type Restricted struct {
+	fsys   fs.FS
+	config RestrictedConfig
+}
+
+func NewRestricted(fsys fs.FS, config RestrictedConfig) *Restricted {
 	return &Restricted{
-		fsys:    fsys,
-		allowed: allowed,
+		fsys:   fsys,
+		config: config,
 	}
 }
 
@@ -58,9 +61,39 @@ func (r *Restricted) Open(name string) (fs.File, error) {
 		return nil, &fs.PathError{Op: "open", Path: name, Err: fs.ErrInvalid}
 	}
 
-	if !r.allowed(name) {
-		return nil, &fs.PathError{Op: "open", Path: name, Err: ErrBlacklisted}
+	if r.config.AllowOpen != nil {
+		allowed, err := r.config.AllowOpen(name)
+		if err != nil {
+			return nil, err
+		}
+		if !allowed {
+			return nil, &fs.PathError{Op: "open", Path: name, Err: ErrBlacklisted}
+		}
 	}
 
 	return r.fsys.Open(name)
+}
+
+func (r *Restricted) ReadDir(name string) ([]fs.DirEntry, error) {
+	entries, err := fs.ReadDir(r.fsys, name)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.config.AllowDirEntry == nil {
+		return entries, nil
+	}
+
+	var filtered []fs.DirEntry
+	for _, entry := range entries {
+		allowed, err := r.config.AllowDirEntry(name, entry)
+		if err != nil {
+			return nil, err
+		}
+		if allowed {
+			filtered = append(filtered, entry)
+		}
+	}
+
+	return filtered, nil
 }

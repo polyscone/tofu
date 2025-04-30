@@ -61,9 +61,12 @@ func (mh *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 		tenant.Host = r.Host
 
 		key := tenant.Key + "." + tenant.Kind
-		router := muxes.LoadOrStore(key, func() *http.ServeMux {
+		return muxes.LoadOrMaybeStore(key, func() (*http.ServeMux, error) {
 			mux := http.NewServeMux()
-			h := handler.New(tenant)
+			h, err := handler.New(tenant)
+			if err != nil {
+				return nil, fmt.Errorf("new tenant: %w", err)
+			}
 
 			var router http.Handler
 			switch tenant.Kind {
@@ -88,10 +91,8 @@ func (mh *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 				})
 			}
 
-			return mux
+			return mux, nil
 		})
-
-		return router, nil
 	})
 }
 

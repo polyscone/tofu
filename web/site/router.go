@@ -111,6 +111,10 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration, config handl
 	mux.Use(middleware.MaxBytes(func(r *http.Request) int {
 		switch r.Method {
 		case http.MethodPost, http.MethodPut, http.MethodPatch:
+			if r.URL.Path == mux.Path("system.recovery.restore.post") {
+				return 100 * size.Megabyte
+			}
+
 			return 100 * size.Kilobyte
 		}
 
@@ -197,6 +201,14 @@ func NewRouter(base *handler.Handler, handlerTimeout time.Duration, config handl
 				h.AddFlashf(ctx, i18n.M("flash.totp_required"))
 
 				http.Redirect(w, r, mux.Path("account.totp.setup"), http.StatusSeeOther)
+
+				return
+			}
+
+			if r.URL.Query().Get("recovery") == "restored" {
+				h.AddFlashf(ctx, i18n.M("site.system.recovery.flash.system_restored"))
+
+				http.Redirect(w, r, r.URL.Path, http.StatusSeeOther)
 
 				return
 			}

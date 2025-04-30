@@ -2,15 +2,21 @@ package session
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base32"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"sync"
 	"time"
 )
 
 type ctxKey int
 
 const ctxSession ctxKey = iota
+
+const managerKey = "__key"
 
 var ErrNotFound = errors.New("not found")
 
@@ -33,13 +39,36 @@ type ReadWriter interface {
 
 // Manager loads, creates, and commits session data via contexts.
 type Manager struct {
+	mu   sync.RWMutex
+	key  string
 	repo ReadWriter
 }
 
 // NewManager creates a new session manager that will use the provided
 // repository to interact with session data.
-func NewManager(repo ReadWriter) *Manager {
-	return &Manager{repo: repo}
+func NewManager(repo ReadWriter) (*Manager, error) {
+	m := Manager{repo: repo}
+	if err := m.RenewKey(); err != nil {
+		return nil, fmt.Errorf("renew key: %w", err)
+	}
+
+	return &m, nil
+}
+
+// RenewKey replaces the session manager key with a new random one.
+// Any sessions that have the incorrect key are automatically marked as being destroyed.
+func (m *Manager) RenewKey() error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	key := make([]byte, 8)
+	if _, err := io.ReadFull(rand.Reader, key); err != nil {
+		return fmt.Errorf("read random bytes: %w", err)
+	}
+
+	m.key = base32.StdEncoding.WithPadding(base32.NoPadding).EncodeToString(key)
+
+	return nil
 }
 
 // Load attempts to load a session using the given id into the given context.
@@ -65,8 +94,13 @@ func (m *Manager) Load(ctx context.Context, id string) (context.Context, error) 
 		return ctx, fmt.Errorf("find session data by id: %w", err)
 	}
 
+	m.mu.RLock()
+
 	s.setData(data)
+	s.set(managerKey, m.key)
 	s.setStatus(Unchanged)
+
+	m.mu.RUnlock()
 
 	ctx = context.WithValue(ctx, ctxSession, s)
 
@@ -77,6 +111,12 @@ func (m *Manager) Load(ctx context.Context, id string) (context.Context, error) 
 // Until Commit is called all session data only exists on a context.
 func (m *Manager) Commit(ctx context.Context) (string, error) {
 	s := getSession(ctx)
+
+	m.mu.RLock()
+	if key, _ := s.get(managerKey).(string); key != m.key {
+		m.destroy(s)
+	}
+	m.mu.RUnlock()
 
 	if s.originalID != "" {
 		if err := m.repo.DestroySession(ctx, s.originalID); err != nil {
@@ -132,12 +172,7 @@ func (m *Manager) Renew(ctx context.Context) error {
 	return nil
 }
 
-// Destroy sets the status of the session on the given context to destroyed.
-// Any persisted session data is not actually destroyed until any changes
-// have been committed.
-func (m *Manager) Destroy(ctx context.Context) {
-	s := getSession(ctx)
-
+func (m *Manager) destroy(s *Session) {
 	// If the session was renewed then original id will be populated
 	// In this case we restore the original id to ensure it's destroyed
 	// correctly in any session repository, since a renewal of a destroyed
@@ -148,6 +183,15 @@ func (m *Manager) Destroy(ctx context.Context) {
 	}
 
 	s.setStatus(Destroyed)
+}
+
+// Destroy sets the status of the session on the given context to destroyed.
+// Any persisted session data is not actually destroyed until any changes
+// have been committed.
+func (m *Manager) Destroy(ctx context.Context) {
+	s := getSession(ctx)
+
+	m.destroy(s)
 }
 
 // Status returns the status of the session on the given context.

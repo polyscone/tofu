@@ -931,9 +931,12 @@
 
 	"site.system.config.update_button": "Update configuration",
 
+	"site.system.recovery.flash.system_restored": "System restored successfully.",
+
 	"site.system.recovery.title": "Recovery",
 	"site.system.recovery.restore_warning": [
-		"Restoring the system from a zip archive will replace all data in the system and automatically sign you out.",
+		"Restoring the system from a zip archive will replace all data in the system, automatically destroy all existing sessions, and sign you out.",
+		"",
 		"This could result in you not being able to sign back in again if you don't have an account in the restored system data.",
 		"",
 		"If you're planning on restoring system data we recommend {link('taking a precautionary backup', 'system.recovery.backup', '_blank')} of the system first."

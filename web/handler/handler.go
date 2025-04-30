@@ -80,12 +80,19 @@ type Handler struct {
 	Session   Session
 }
 
-func New(tenant *Tenant) *Handler {
-	return &Handler{
+func New(tenant *Tenant) (*Handler, error) {
+	manager, err := session.NewManager(tenant.Repo.Web)
+	if err != nil {
+		return nil, fmt.Errorf("new session manager: %w", err)
+	}
+
+	h := Handler{
 		Tenant:    tenant,
 		templates: cache.New[string, *template.Template](),
-		Session:   Session{Manager: session.NewManager(tenant.Repo.Web)},
+		Session:   Session{Manager: manager},
 	}
+
+	return &h, nil
 }
 
 func (h *Handler) AttachContextLogger(next http.HandlerFunc) http.HandlerFunc {

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/polyscone/tofu/internal/httpx/router"
-	"github.com/polyscone/tofu/internal/i18n"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 	"github.com/polyscone/tofu/web/site/ui"
@@ -41,6 +40,10 @@ func recoveryBackupGet(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
+		rc := http.NewResponseController(w)
+
+		rc.SetWriteDeadline(time.Now().Add(1 * time.Hour))
+
 		ctx := r.Context()
 
 		var buf bytes.Buffer
@@ -63,7 +66,7 @@ func recoveryBackupGet(h *ui.Handler) http.HandlerFunc {
 
 func recoveryRestoreGet(h *ui.Handler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, h.Path("recovery.dashboard"), http.StatusSeeOther)
+		http.Redirect(w, r, h.Path("system.recovery"), http.StatusSeeOther)
 	}
 }
 
@@ -73,6 +76,11 @@ func recoveryRestorePost(h *ui.Handler) http.HandlerFunc {
 		if h.RequireSignIn(w, r) || h.Forbidden(w, r, allowed) {
 			return
 		}
+
+		rc := http.NewResponseController(w)
+
+		rc.SetReadDeadline(time.Now().Add(1 * time.Hour))
+		rc.SetWriteDeadline(time.Now().Add(1 * time.Hour))
 
 		ctx := r.Context()
 
@@ -98,16 +106,12 @@ func recoveryRestorePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		h.AddFlashf(ctx, i18n.M("site.admin.recovery.flash.system_restored"))
-
-		if _, err := h.RenewSession(ctx); err != nil {
-			h.HTML.ErrorView(w, r, "renew session", err, "error", nil)
+		if err := h.Session.RenewKey(); err != nil {
+			h.HTML.ErrorView(w, r, "renew session manager key", err, "error", nil)
 
 			return
 		}
 
-		h.Session.Destroy(r.Context())
-
-		http.Redirect(w, r, h.Path("recovery.dashboard"), http.StatusSeeOther)
+		http.Redirect(w, r, h.Path("account.sign_in")+"?recovery=restored", http.StatusSeeOther)
 	}
 }

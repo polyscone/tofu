@@ -36,15 +36,17 @@ var componentFilesExtWhitelist = map[string]struct{}{
 	".webp": {},
 }
 
-var componentFiles = fsx.NewRestricted(templateFiles, func(name string) bool {
-	if !strings.HasPrefix(name, "component/") {
-		return false
-	}
+var componentFiles = fsx.NewRestricted(templateFiles, fsx.RestrictedConfig{
+	AllowOpen: func(name string) (bool, error) {
+		if !strings.HasPrefix(name, "component/") {
+			return false, nil
+		}
 
-	ext := path.Ext(name)
-	_, ok := componentFilesExtWhitelist[ext]
+		ext := path.Ext(name)
+		_, ok := componentFilesExtWhitelist[ext]
 
-	return ok
+		return ok, nil
+	},
 })
 
 //go:embed "all:public"

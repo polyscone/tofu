@@ -68,21 +68,27 @@ func sqliteOpen(ctx context.Context, data *Tenant, metrics *expvar.Map, recovery
 	sqliteDB := cache.sqlite[data.Name+"."+p]
 	if sqliteDB == nil {
 		name := filepath.Base(p)
-		metricsName := strings.TrimSuffix(name, ".sqlite")
-		metricsKey := fmt.Sprintf("database.SQLite %v", metricsName)
-		dbMetrics, ok := metrics.Get(metricsKey).(*expvar.Map)
-		if !ok {
-			dbMetrics = &expvar.Map{}
 
-			dbMetrics.Set("stats", expvar.Func(func() any {
-				if sqliteDB.DB == nil {
-					return sql.DBStats{}
-				}
+		var dbMetrics *expvar.Map
+		if metrics != nil {
+			metricsName := strings.TrimSuffix(name, ".sqlite")
+			metricsKey := fmt.Sprintf("database.SQLite %v", metricsName)
 
-				return sqliteDB.Stats()
-			}))
+			var ok bool
+			dbMetrics, ok = metrics.Get(metricsKey).(*expvar.Map)
+			if !ok {
+				dbMetrics = &expvar.Map{}
 
-			metrics.Set(metricsKey, dbMetrics)
+				dbMetrics.Set("stats", expvar.Func(func() any {
+					if sqliteDB.DB == nil {
+						return sql.DBStats{}
+					}
+
+					return sqliteDB.Stats()
+				}))
+
+				metrics.Set(metricsKey, dbMetrics)
+			}
 		}
 
 		var err error
@@ -91,7 +97,10 @@ func sqliteOpen(ctx context.Context, data *Tenant, metrics *expvar.Map, recovery
 			return nil, fmt.Errorf("open SQLite database: %w", err)
 		}
 
-		recovery.sqliteDBs[name] = sqliteDB
+		if recovery != nil {
+			recovery.sqliteDBs[name] = sqliteDB
+		}
+
 		cache.sqlite[data.Name+"."+p] = sqliteDB
 	}
 
@@ -121,9 +130,6 @@ func newTenant(host string) (*handler.Tenant, error) {
 	cache.mu.Lock()
 	defer cache.mu.Unlock()
 
-	dataDir := filepath.Join(opts.dataDir, data.Name)
-	recovery := NewRecoveryService(dataDir)
-
 	metrics, ok := cache.metrics[data.Name]
 	if !ok {
 		metrics = expvar.NewMap("tenant." + data.Name)
@@ -144,6 +150,9 @@ func newTenant(host string) (*handler.Tenant, error) {
 
 		cache.loggers[data.Name] = logger
 	}
+
+	dataDir := filepath.Join(opts.dataDir, data.Name)
+	recovery := NewRecoveryService(dataDir, logger)
 
 	repos, ok := cache.repos[data.Name]
 	if !ok {

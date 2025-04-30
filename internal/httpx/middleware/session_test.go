@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/httpx/middleware"
 	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/internal/session"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestSession(t *testing.T) {
-	sm := session.NewManager(session.NewJSONMemoryRepo(false))
+	sm := errsx.Must(session.NewManager(session.NewJSONMemoryRepo(false)))
 
 	mux := router.NewServeMux()
 
