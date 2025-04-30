@@ -137,8 +137,9 @@ func Open(ctx context.Context, kind Kind, filename string, metrics *expvar.Map, 
 		if err := db.PingContext(ctx); err == nil {
 			return db, nil
 		}
+	} else {
+		databases.mu.RUnlock()
 	}
-	databases.mu.RUnlock()
 
 	databases.mu.Lock()
 	defer databases.mu.Unlock()
