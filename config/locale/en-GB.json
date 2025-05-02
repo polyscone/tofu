@@ -518,7 +518,7 @@
 	"site.account.change_password.flash.password_changed": "Your password has been successfully changed.",
 	"site.account.change_password.title": "Change password",
 	"site.account.change_password.insecure_password_warning": [
-		"The password you're currently using appears {t('number', known_breach_count)} times in a {link('database of security breaches', 'https://haveibeenpwned.com')} and isn't considered to be secure.",
+		"The password you're currently using appears {t('number', known_breach_count)} times in a {link('database of security breaches', 'https://haveibeenpwned.com', '_blank')} and isn't considered to be secure.",
 		"",
 		"We recommend that you change it to a more secure one as soon as possible."
 	],
@@ -569,7 +569,7 @@
 		"",
 		"Please download, print, copy, or photograph your new recovery codes and store them in a safe place separate from your authentication device.",
 		"",
-		"If possible, we recommend storing them in a password manager, such as {link('1Password', 'https://1password.com/')}, {link('LastPass', 'https://www.lastpass.com/')}, or {link('Keeper', 'https://www.keepersecurity.com')}."
+		"If possible, we recommend storing them in a password manager, such as {link('1Password', 'https://1password.com/', '_blank')}, {link('LastPass', 'https://www.lastpass.com/', '_blank')}, or {link('Keeper', 'https://www.keepersecurity.com', '_blank')}."
 	],
 
 	"site.account.totp.recovery_codes.regenerate.you_have_n_remaining": "You have {remaining_codes} recovery {remaining_codes => (1 = 'code', _ = 'codes')} remaining.",
@@ -647,13 +647,13 @@
 		"We recommend using one of the following:"
 	],
 	"site.account.totp.setup.app.recommendations_list": [
-		"Authy ({link('Android, iOS, Windows, Mac, Linux', 'https://authy.com/download/')})",
+		"Authy ({link('Android, iOS, Windows, Mac, Linux', 'https://authy.com/download/', '_blank')})",
 		"",
-		"Google Authenticator ({link('Android', 'https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2')}, {link('iOS', 'https://apps.apple.com/us/app/google-authenticator/id388497605')})",
+		"Google Authenticator ({link('Android', 'https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2', '_blank')}, {link('iOS', 'https://apps.apple.com/us/app/google-authenticator/id388497605', '_blank')})",
 		"",
-		"LastPass Authenticator ({link('Android, iOS, Windows mobile', 'https://support.logmeininc.com/lastpass/help/lastpass-authenticator-lp030014')})",
+		"LastPass Authenticator ({link('Android, iOS, Windows mobile', 'https://support.logmeininc.com/lastpass/help/lastpass-authenticator-lp030014', '_blank')})",
 		"",
-		"1Password ({link('Android, iOS, Windows, Mac', 'https://support.1password.com/one-time-passwords/')})"
+		"1Password ({link('Android, iOS, Windows, Mac', 'https://support.1password.com/one-time-passwords/', '_blank')})"
 	],
 	"site.account.totp.setup.app.cannot_use_app_sms_suggestion": "{link(`Can't install an authenticator app? Click here to use SMS.`, 'account.totp.setup.sms')}",
 	"site.account.totp.setup.app.scan_qr_code_instructions": "Use your authenticator app to scan the QR code below. If you can't scan the QR code then you can manually enter the secret key below instead.",
@@ -696,7 +696,7 @@
 	"site.account.totp.setup.activate.save_recovery_codes_warning": [
 		"Before enabling two-factor authentication, please download, print, copy, or photograph your recovery codes and store them in a safe place separate from your authentication device.",
 		"",
-		"If possible, we recommend storing them in a password manager, such as {link('1Password', 'https://1password.com/')}, {link('LastPass', 'https://www.lastpass.com/')}, or {link('Keeper', 'https://www.keepersecurity.com')}."
+		"If possible, we recommend storing them in a password manager, such as {link('1Password', 'https://1password.com/', '_blank')}, {link('LastPass', 'https://www.lastpass.com/', '_blank')}, or {link('Keeper', 'https://www.keepersecurity.com', '_blank')}."
 	],
 	"site.account.totp.setup.activate.saved_recovery_codes_button": "I have saved my recovery codes",
 
