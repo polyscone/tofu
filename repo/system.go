@@ -211,7 +211,7 @@ func (r *System) upsertConfig(ctx context.Context, tx *sqlite.Tx, config *system
 		sql.Named("twilio_token", config.TwilioToken),
 		sql.Named("twilio_from_tel", config.TwilioFromTel),
 		sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
-		sql.Named("updated_at", sqlite.Time(tx.Now.UTC())),
+		sql.Named("updated_at", sqlite.NullTime(tx.Now.UTC())),
 	)
 
 	return err

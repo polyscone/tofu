@@ -573,7 +573,7 @@ func (r *Web) upsertSession(ctx context.Context, tx *sqlite.Tx, sess *session.Se
 		sql.Named("id", sess.ID),
 		sql.Named("data", b),
 		sql.Named("created_at", sqlite.Time(tx.Now.UTC())),
-		sql.Named("updated_at", sqlite.Time(tx.Now.UTC())),
+		sql.Named("updated_at", sqlite.NullTime(tx.Now.UTC())),
 	)
 
 	return err
