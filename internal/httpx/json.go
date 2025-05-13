@@ -18,6 +18,8 @@ var (
 func decodeJSON(dst any, r io.Reader, disallowUnknownFields bool) error {
 	d := json.NewDecoder(r)
 
+	d.UseNumber()
+
 	if disallowUnknownFields {
 		d.DisallowUnknownFields()
 	}
