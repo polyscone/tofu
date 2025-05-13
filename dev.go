@@ -93,6 +93,11 @@ func main() {
 				os.Exit(1)
 			}
 
+		case "vuln":
+			if err := vuln(); err != nil {
+				os.Exit(1)
+			}
+
 		default:
 			fmt.Printf("Unknown command %q, please see help for details\n", command)
 		}
@@ -251,6 +256,41 @@ func vet() error {
 		fmt.Printf("-> %v ... ", message)
 	} else {
 		fmt.Print("-> go vet ... ")
+	}
+
+	if out, err := exec.Command(program, args...).CombinedOutput(); err != nil {
+		fmt.Println("error")
+
+		if len(out) > 0 {
+			fmt.Println(string(out))
+		}
+
+		return err
+	} else {
+		fmt.Println("ok")
+
+		if len(out) > 0 && opts.verbose {
+			fmt.Println(string(out))
+		}
+	}
+
+	return nil
+}
+
+func vuln() error {
+	var args []string
+
+	if len(tags.build) > 0 {
+		args = append(args, "-tags", tags.build)
+	}
+
+	args = append(args, "./...")
+
+	program, args, message := command("govulncheck", args...)
+	if opts.verbose {
+		fmt.Printf("-> %v ... ", message)
+	} else {
+		fmt.Print("-> govulncheck ... ")
 	}
 
 	if out, err := exec.Command(program, args...).CombinedOutput(); err != nil {
