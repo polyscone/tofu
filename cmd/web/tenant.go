@@ -35,18 +35,20 @@ type repos struct {
 }
 
 var cache = struct {
-	mu      sync.Mutex
-	repos   map[string]repos
-	sqlite  map[string]*sqlite.DB
-	mailers map[string]smtp.Mailer
-	loggers map[string]*slog.Logger
-	metrics map[string]*expvar.Map
+	mu         sync.Mutex
+	recoverers map[string]*RecoveryService
+	repos      map[string]repos
+	sqlite     map[string]*sqlite.DB
+	mailers    map[string]smtp.Mailer
+	loggers    map[string]*slog.Logger
+	metrics    map[string]*expvar.Map
 }{
-	repos:   make(map[string]repos),
-	sqlite:  make(map[string]*sqlite.DB),
-	mailers: make(map[string]smtp.Mailer),
-	loggers: make(map[string]*slog.Logger),
-	metrics: make(map[string]*expvar.Map),
+	recoverers: make(map[string]*RecoveryService),
+	repos:      make(map[string]repos),
+	sqlite:     make(map[string]*sqlite.DB),
+	mailers:    make(map[string]smtp.Mailer),
+	loggers:    make(map[string]*slog.Logger),
+	metrics:    make(map[string]*expvar.Map),
 }
 
 func closeCache() {
@@ -152,7 +154,13 @@ func newTenant(host string) (*handler.Tenant, error) {
 	}
 
 	dataDir := filepath.Join(opts.dataDir, data.Name)
-	recovery := NewRecoveryService(dataDir, logger)
+
+	recovery, ok := cache.recoverers[data.Name]
+	if !ok {
+		recovery = NewRecoveryService(dataDir, logger)
+
+		cache.recoverers[data.Name] = recovery
+	}
 
 	repos, ok := cache.repos[data.Name]
 	if !ok {
