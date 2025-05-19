@@ -9,7 +9,7 @@ type RouterConfig struct {
 	RateLimit RateLimitConfig
 }
 
-type Config struct {
+type Routers struct {
 	Site  RouterConfig
 	PWA   RouterConfig
 	APIv1 RouterConfig

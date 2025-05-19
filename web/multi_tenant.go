@@ -30,15 +30,15 @@ type NewTenantFunc func(hostname string) (*handler.Tenant, error)
 type MultiTenantHandler struct {
 	logger    *slog.Logger
 	newTenant NewTenantFunc
-	config    handler.Config
+	routers   handler.Routers
 	muxes     *cache.Cache[string, http.Handler]
 }
 
-func NewMultiTenantHandler(logger *slog.Logger, newTenant NewTenantFunc, config handler.Config) *MultiTenantHandler {
+func NewMultiTenantHandler(logger *slog.Logger, newTenant NewTenantFunc, routers handler.Routers) *MultiTenantHandler {
 	return &MultiTenantHandler{
 		logger:    logger,
 		newTenant: newTenant,
-		config:    config,
+		routers:   routers,
 		muxes:     cache.New[string, http.Handler](),
 	}
 }
@@ -71,14 +71,14 @@ func (mh *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 			var router http.Handler
 			switch tenant.Kind {
 			case "site":
-				router = site.NewRouter(h, HandlerTimeout, mh.config.Site)
+				router = site.NewRouter(h, HandlerTimeout, mh.routers.Site)
 
 			case "pwa":
-				router = pwa.NewRouter(h, HandlerTimeout, mh.config.PWA)
+				router = pwa.NewRouter(h, HandlerTimeout, mh.routers.PWA)
 			}
 
 			if router != nil {
-				apiV1 := api.NewRouterV1(h, HandlerTimeout, mh.config.APIv1)
+				apiV1 := api.NewRouterV1(h, HandlerTimeout, mh.routers.APIv1)
 
 				mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 					if strings.HasPrefix(r.URL.Path, app.BasePath+"/api/") {

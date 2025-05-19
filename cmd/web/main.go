@@ -84,7 +84,7 @@ func main() {
 }
 
 func run() int {
-	var config handler.Config
+	var routers handler.Routers
 	requiredFlags := []string{"addr"}
 
 	flag.Usage = func() {
@@ -115,14 +115,14 @@ func run() int {
 	flag.IntVar(&opts.password.memory, "password-hash-memory", 64*size.Kibibyte, "The amount of memory (KiB) to use when hashing a password")
 	flag.IntVar(&opts.password.parallelism, "password-hash-parallelism", max(1, runtime.NumCPU()/2), "The number of threads to use when hashing a password")
 
-	flag.Float64Var(&config.Site.RateLimit.Capacity, "site-ratelimit-cap", 50, "The token bucket capacity for the site rate limiter")
-	flag.Float64Var(&config.Site.RateLimit.Replenish, "site-ratelimit-rep", 1, "The number of tokens to replenish every second for the site rate limiter")
+	flag.Float64Var(&routers.Site.RateLimit.Capacity, "site-ratelimit-cap", 50, "The token bucket capacity for the site rate limiter")
+	flag.Float64Var(&routers.Site.RateLimit.Replenish, "site-ratelimit-rep", 1, "The number of tokens to replenish every second for the site rate limiter")
 
-	flag.Float64Var(&config.PWA.RateLimit.Capacity, "pwa-ratelimit-cap", 50, "The token bucket capacity for the PWA rate limiter")
-	flag.Float64Var(&config.PWA.RateLimit.Replenish, "pwa-ratelimit-rep", 1, "The number of tokens to replenish every second for the PWA rate limiter")
+	flag.Float64Var(&routers.PWA.RateLimit.Capacity, "pwa-ratelimit-cap", 50, "The token bucket capacity for the PWA rate limiter")
+	flag.Float64Var(&routers.PWA.RateLimit.Replenish, "pwa-ratelimit-rep", 1, "The number of tokens to replenish every second for the PWA rate limiter")
 
-	flag.Float64Var(&config.APIv1.RateLimit.Capacity, "api-v1-ratelimit-cap", 50, "The token bucket capacity for the v1 API rate limiter")
-	flag.Float64Var(&config.APIv1.RateLimit.Replenish, "api-v1-ratelimit-rep", 1, "The number of tokens to replenish every second for the v1 API rate limiter")
+	flag.Float64Var(&routers.APIv1.RateLimit.Capacity, "api-v1-ratelimit-cap", 50, "The token bucket capacity for the v1 API rate limiter")
+	flag.Float64Var(&routers.APIv1.RateLimit.Replenish, "api-v1-ratelimit-rep", 1, "The number of tokens to replenish every second for the v1 API rate limiter")
 
 	flag.Parse()
 
@@ -333,7 +333,7 @@ func run() int {
 		ReadHeaderTimeout: readHeaderTimeout,
 		ReadTimeout:       web.HandlerTimeout + readHeaderTimeout + spill,
 		WriteTimeout:      web.HandlerTimeout + spill,
-		Handler:           web.NewMultiTenantHandler(logger, newTenant, config),
+		Handler:           web.NewMultiTenantHandler(logger, newTenant, routers),
 		BaseContext: func(_ net.Listener) context.Context {
 			return baseCtx
 		},

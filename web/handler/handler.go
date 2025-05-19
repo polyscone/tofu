@@ -42,6 +42,48 @@ const (
 	ctxLocale
 )
 
+func Config(ctx context.Context) *system.Config {
+	value := ctx.Value(ctxConfig)
+	if value == nil {
+		return &system.Config{}
+	}
+
+	config, ok := value.(*system.Config)
+	if !ok {
+		panic(fmt.Sprintf("could not assert config as %T", config))
+	}
+
+	return config
+}
+
+func User(ctx context.Context) *account.User {
+	value := ctx.Value(ctxUser)
+	if value == nil {
+		return &account.User{}
+	}
+
+	user, ok := value.(*account.User)
+	if !ok {
+		panic(fmt.Sprintf("could not assert user as %T", user))
+	}
+
+	return user
+}
+
+func Locale(ctx context.Context) string {
+	value := ctx.Value(ctxLocale)
+	if value == nil {
+		return i18n.FallbackLocale
+	}
+
+	locale, ok := value.(string)
+	if !ok {
+		panic(fmt.Sprintf("could not assert locale as %T", locale))
+	}
+
+	return locale
+}
+
 type Mux interface {
 	TryPath(name string, paramArgPairs ...any) (string, error)
 }
@@ -230,31 +272,11 @@ func (h *Handler) Logger(ctx context.Context) *slog.Logger {
 }
 
 func (h *Handler) Config(ctx context.Context) *system.Config {
-	value := ctx.Value(ctxConfig)
-	if value == nil {
-		return &system.Config{}
-	}
-
-	config, ok := value.(*system.Config)
-	if !ok {
-		panic(fmt.Sprintf("could not assert config as %T", config))
-	}
-
-	return config
+	return Config(ctx)
 }
 
 func (h *Handler) User(ctx context.Context) *account.User {
-	value := ctx.Value(ctxUser)
-	if value == nil {
-		return &account.User{}
-	}
-
-	user, ok := value.(*account.User)
-	if !ok {
-		panic(fmt.Sprintf("could not assert user as %T", user))
-	}
-
-	return user
+	return User(ctx)
 }
 
 func (h *Handler) PassportByUser(ctx context.Context, user *account.User) guard.Passport {
@@ -287,17 +309,7 @@ func (h *Handler) PassportByEmail(ctx context.Context, email string) (guard.Pass
 }
 
 func (h *Handler) Locale(ctx context.Context) string {
-	value := ctx.Value(ctxLocale)
-	if value == nil {
-		return i18n.FallbackLocale
-	}
-
-	locale, ok := value.(string)
-	if !ok {
-		panic(fmt.Sprintf("could not assert locale as %T", locale))
-	}
-
-	return locale
+	return Locale(ctx)
 }
 
 func (h *Handler) RenewSession(ctx context.Context) ([]byte, error) {
