@@ -44,15 +44,15 @@ type Rule struct {
 }
 
 type Parser struct {
-	lexer *Lexer
-	curr  Token
-	next  Token
-	errs  Errors
-	rules map[TokenKind]Rule
+	scanner *Scanner
+	curr    Token
+	next    Token
+	errs    Errors
+	rules   map[TokenKind]Rule
 }
 
 func NewParser() *Parser {
-	p := &Parser{lexer: NewLexer()}
+	p := &Parser{scanner: NewScanner()}
 
 	p.rules = map[TokenKind]Rule{
 		KindInt:    {nud: p.parseLiteral},
@@ -93,7 +93,7 @@ func NewParser() *Parser {
 }
 
 func (p *Parser) load(src io.ByteScanner) {
-	p.lexer.Load(src)
+	p.scanner.Load(src)
 
 	p.curr = Token{}
 	p.next = Token{}
@@ -360,7 +360,7 @@ func (p *Parser) consume(expected ...TokenKind) Token {
 		p.expect(expected...)
 	}
 
-	tok, err := p.lexer.Consume()
+	tok, err := p.scanner.Consume()
 	if err != nil {
 		p.error(tok, err.Error())
 	}

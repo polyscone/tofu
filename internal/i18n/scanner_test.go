@@ -7,8 +7,8 @@ import (
 	"github.com/polyscone/tofu/internal/i18n"
 )
 
-func TestLexer(t *testing.T) {
-	l := i18n.NewLexer()
+func TestScanner(t *testing.T) {
+	s := i18n.NewScanner()
 
 	tt := []struct {
 		name  string
@@ -239,11 +239,11 @@ func TestLexer(t *testing.T) {
 				tc.want = append(tc.want, i18n.Token{Kind: i18n.KindEOF})
 			}
 
-			l.Load(strings.NewReader(tc.input))
+			s.Load(strings.NewReader(tc.input))
 
 			var i int
 			for {
-				tok, err := l.Consume()
+				tok, err := s.Consume()
 				if err != nil {
 					t.Fatal(err)
 				}

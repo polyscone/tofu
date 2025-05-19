@@ -11,7 +11,7 @@ type predicate func(byte) bool
 
 const eof = 0xFF
 
-var errorEOF = Token{Kind: KindEOF, Lexeme: "lexer error"}
+var errorEOF = Token{Kind: KindEOF, Lexeme: "scanner error"}
 
 type mode byte
 
@@ -20,177 +20,177 @@ const (
 	modeExpr
 )
 
-type Lexer struct {
+type Scanner struct {
 	scanner   io.ByteScanner
 	enterExpr Token
 	mode      mode
 }
 
-func NewLexer() *Lexer {
-	return &Lexer{}
+func NewScanner() *Scanner {
+	return &Scanner{}
 }
 
-func (l *Lexer) Load(scanner io.ByteScanner) {
-	l.scanner = scanner
-	l.enterExpr.Kind = KindUnknown
-	l.mode = modeText
+func (s *Scanner) Load(scanner io.ByteScanner) {
+	s.scanner = scanner
+	s.enterExpr.Kind = KindUnknown
+	s.mode = modeText
 }
 
-func (l *Lexer) Consume() (Token, error) {
-	next, err := l.peek()
+func (s *Scanner) Consume() (Token, error) {
+	next, err := s.peek()
 	if err != nil {
-		return l.newError("initial peek: %w", err)
+		return s.newError("initial peek: %w", err)
 	}
 
 	if isEOF(next) {
-		return l.newToken(KindEOF, "")
+		return s.newToken(KindEOF, "")
 	}
 
-	if l.mode == modeText {
-		tok, err := l.consumeText()
+	if s.mode == modeText {
+		tok, err := s.consumeText()
 		if tok.Kind == KindEnterExpr {
-			l.mode = modeExpr
+			s.mode = modeExpr
 		}
 
 		return tok, err
 	}
 
-	tok, err := l.consumeExpr()
+	tok, err := s.consumeExpr()
 	if tok.Kind == KindLeaveExpr {
-		l.mode = modeText
+		s.mode = modeText
 	}
 
 	return tok, err
 }
 
-func (l *Lexer) consumeText() (Token, error) {
-	next, err := l.peek()
+func (s *Scanner) consumeText() (Token, error) {
+	next, err := s.peek()
 	if err != nil {
-		return l.newError("initial peek: %w", err)
+		return s.newError("initial peek: %w", err)
 	}
 
 	switch {
 	case isEnterExpr(next):
 		lexeme := string(next)
 
-		return l.newTokenSkip(KindEnterExpr, lexeme, len(lexeme))
+		return s.newTokenSkip(KindEnterExpr, lexeme, len(lexeme))
 
 	default:
-		lexeme, err := l.readStringUntil('{')
+		lexeme, err := s.readStringUntil('{')
 		if err != nil {
-			return l.newError("read while not expr start: %w", err)
+			return s.newError("read while not expr start: %w", err)
 		}
 
-		return l.newToken(KindText, lexeme)
+		return s.newToken(KindText, lexeme)
 	}
 }
 
-func (l *Lexer) consumeExpr() (Token, error) {
-	if _, err := l.readWhile(isWhitespace); err != nil {
-		return l.newError("skip expr whitespace: %w", err)
+func (s *Scanner) consumeExpr() (Token, error) {
+	if _, err := s.readWhile(isWhitespace); err != nil {
+		return s.newError("skip expr whitespace: %w", err)
 	}
 
-	next, err := l.peek()
+	next, err := s.peek()
 	if err != nil {
-		return l.newError("initial peek: %w", err)
+		return s.newError("initial peek: %w", err)
 	}
 
 	switch {
 	case isLeaveExpr(next):
 		lexeme := string(next)
 
-		return l.newTokenSkip(KindLeaveExpr, lexeme, len(lexeme))
+		return s.newTokenSkip(KindLeaveExpr, lexeme, len(lexeme))
 
 	case isStringStart(next):
-		delim, err := l.read()
+		delim, err := s.read()
 		if err != nil {
-			return l.newError("read string delimiter: %w", err)
+			return s.newError("read string delimiter: %w", err)
 		}
 
-		lexeme, err := l.readStringUntil(delim)
+		lexeme, err := s.readStringUntil(delim)
 		if err != nil {
-			return l.newError("read string: %w", err)
+			return s.newError("read string: %w", err)
 		}
 
 		// Remove escape characters
 		lexeme = strings.ReplaceAll(lexeme, `\`+string(delim), string(delim))
 
 		// Skip is 1 for the ending string delimiter
-		return l.newTokenSkip(KindString, lexeme, 1)
+		return s.newTokenSkip(KindString, lexeme, 1)
 
 	case isIdentStart(next):
-		lexeme, err := l.readWhile(isIdent)
+		lexeme, err := s.readWhile(isIdent)
 		if err != nil {
-			return l.newError("read while ident: %w", err)
+			return s.newError("read while ident: %w", err)
 		}
 
 		if kind, ok := operators[lexeme]; ok {
-			return l.newToken(kind, lexeme)
+			return s.newToken(kind, lexeme)
 		}
 
-		return l.newToken(KindIdent, lexeme)
+		return s.newToken(KindIdent, lexeme)
 
 	case isDigit(next):
-		lexeme, err := l.readWhile(isInteger)
+		lexeme, err := s.readWhile(isInteger)
 		if err != nil {
 			return errorEOF, fmt.Errorf("read while integer: %w", err)
 		}
 
-		next, err := l.peek()
+		next, err := s.peek()
 		if err != nil {
 			return errorEOF, fmt.Errorf("peek digit: %w", err)
 		}
 		if next == '.' {
 			lexeme += string(next)
-			if err := l.skip(1); err != nil {
+			if err := s.skip(1); err != nil {
 				return errorEOF, fmt.Errorf("discard digit dot: %w", err)
 			}
 
-			fraction, err := l.readWhile(isInteger)
+			fraction, err := s.readWhile(isInteger)
 			if err != nil {
 				return errorEOF, fmt.Errorf("read while fraction integer: %w", err)
 			}
 			if fraction == "" {
-				unexpected, err := l.readWhile(notWhitespace)
+				unexpected, err := s.readWhile(notWhitespace)
 				if err != nil {
 					return errorEOF, fmt.Errorf("read while fraction unexpected: %w", err)
 				}
 
 				lexeme += unexpected
 
-				return l.newToken(KindUnexpected, lexeme)
+				return s.newToken(KindUnexpected, lexeme)
 			}
 
 			lexeme += fraction
 
-			return l.newToken(KindFloat, lexeme)
+			return s.newToken(KindFloat, lexeme)
 		}
 
-		return l.newToken(KindInt, lexeme)
+		return s.newToken(KindInt, lexeme)
 
 	default:
-		next1, next2, err := l.peek2()
+		next1, next2, err := s.peek2()
 		if err != nil {
-			return l.newError("default expr peek2: %w", err)
+			return s.newError("default expr peek2: %w", err)
 		}
 
 		if kind, ok := operators[next2]; ok {
-			return l.newTokenSkip(kind, next2, len(next2))
+			return s.newTokenSkip(kind, next2, len(next2))
 		}
 		if kind, ok := operators[next1]; ok {
-			return l.newTokenSkip(kind, next1, len(next1))
+			return s.newTokenSkip(kind, next1, len(next1))
 		}
 
-		lexeme, err := l.readWhile(notWhitespace)
+		lexeme, err := s.readWhile(notWhitespace)
 		if err != nil {
-			return l.newError("read unexpected expr: %w", err)
+			return s.newError("read unexpected expr: %w", err)
 		}
 
-		return l.newToken(KindUnexpected, lexeme)
+		return s.newToken(KindUnexpected, lexeme)
 	}
 }
 
-func (l *Lexer) newToken(kind TokenKind, lexeme string) (Token, error) {
+func (s *Scanner) newToken(kind TokenKind, lexeme string) (Token, error) {
 	tok := Token{
 		Kind:   kind,
 		Lexeme: lexeme,
@@ -199,20 +199,20 @@ func (l *Lexer) newToken(kind TokenKind, lexeme string) (Token, error) {
 	return tok, nil
 }
 
-func (l *Lexer) newTokenSkip(kind TokenKind, lexeme string, n int) (Token, error) {
-	if err := l.skip(n); err != nil {
-		return l.newError("skip: %w", err)
+func (s *Scanner) newTokenSkip(kind TokenKind, lexeme string, n int) (Token, error) {
+	if err := s.skip(n); err != nil {
+		return s.newError("skip: %w", err)
 	}
 
-	return l.newToken(kind, lexeme)
+	return s.newToken(kind, lexeme)
 }
 
-func (l *Lexer) newError(format string, a ...any) (Token, error) {
+func (s *Scanner) newError(format string, a ...any) (Token, error) {
 	return errorEOF, fmt.Errorf(format, a...)
 }
 
-func (l *Lexer) read() (byte, error) {
-	b, err := l.scanner.ReadByte()
+func (s *Scanner) read() (byte, error) {
+	b, err := s.scanner.ReadByte()
 	if errors.Is(err, io.EOF) {
 		return eof, nil
 	}
@@ -223,12 +223,12 @@ func (l *Lexer) read() (byte, error) {
 	return b, nil
 }
 
-func (l *Lexer) unread() error {
-	return l.scanner.UnreadByte()
+func (s *Scanner) unread() error {
+	return s.scanner.UnreadByte()
 }
 
-func (l *Lexer) peek() (byte, error) {
-	b, err := l.read()
+func (s *Scanner) peek() (byte, error) {
+	b, err := s.read()
 	if b == eof {
 		return b, nil
 	}
@@ -236,16 +236,16 @@ func (l *Lexer) peek() (byte, error) {
 		return b, fmt.Errorf("read: %w", err)
 	}
 
-	return b, l.unread()
+	return b, s.unread()
 }
 
-func (l *Lexer) peek2() (string, string, error) {
-	curr, err := l.read()
+func (s *Scanner) peek2() (string, string, error) {
+	curr, err := s.read()
 	if err != nil {
 		return "", "", fmt.Errorf("default expr initial read: %w", err)
 	}
 
-	next, err := l.peek()
+	next, err := s.peek()
 	if err != nil {
 		return "", "", fmt.Errorf("default expr next read: %w", err)
 	}
@@ -253,12 +253,12 @@ func (l *Lexer) peek2() (string, string, error) {
 	lexeme1 := string(curr)
 	lexeme2 := lexeme1 + string(next)
 
-	return lexeme1, lexeme2, l.unread()
+	return lexeme1, lexeme2, s.unread()
 }
 
-func (l *Lexer) skip(num int) error {
+func (s *Scanner) skip(num int) error {
 	for i := 0; i < num; i++ {
-		if _, err := l.read(); err != nil {
+		if _, err := s.read(); err != nil {
 			return err
 		}
 	}
@@ -266,11 +266,11 @@ func (l *Lexer) skip(num int) error {
 	return nil
 }
 
-func (l *Lexer) readWhile(valid predicate) (string, error) {
+func (s *Scanner) readWhile(valid predicate) (string, error) {
 	var sb strings.Builder
 
 	for {
-		b, err := l.peek()
+		b, err := s.peek()
 		if err != nil {
 			return "", fmt.Errorf("peek: %w", err)
 		}
@@ -278,7 +278,7 @@ func (l *Lexer) readWhile(valid predicate) (string, error) {
 			return sb.String(), nil
 		}
 
-		b, err = l.read()
+		b, err = s.read()
 		if err != nil {
 			return "", fmt.Errorf("read: %w", err)
 		}
@@ -287,15 +287,15 @@ func (l *Lexer) readWhile(valid predicate) (string, error) {
 	}
 }
 
-func (l *Lexer) readStringUntil(delim byte) (string, error) {
+func (s *Scanner) readStringUntil(delim byte) (string, error) {
 	var whileErr error
-	lexeme, err := l.readWhile(func(b byte) bool {
+	lexeme, err := s.readWhile(func(b byte) bool {
 		if b == '\\' {
-			if whileErr = l.skip(1); whileErr != nil {
+			if whileErr = s.skip(1); whileErr != nil {
 				return false
 			}
 
-			next, err := l.peek()
+			next, err := s.peek()
 			if err != nil {
 				whileErr = err
 
