@@ -268,19 +268,17 @@ func (s *Scanner) skip(num int) error {
 
 func (s *Scanner) readWhile(valid predicate) (string, error) {
 	var sb strings.Builder
-
 	for {
-		b, err := s.peek()
-		if err != nil {
-			return "", fmt.Errorf("peek: %w", err)
-		}
-		if b == eof || !valid(b) {
-			return sb.String(), nil
-		}
-
-		b, err = s.read()
-		if err != nil {
+		b, err := s.read()
+		switch {
+		case err != nil:
 			return "", fmt.Errorf("read: %w", err)
+
+		case b == eof:
+			return sb.String(), nil
+
+		case !valid(b):
+			return sb.String(), s.unread()
 		}
 
 		sb.WriteByte(b)
@@ -288,35 +286,30 @@ func (s *Scanner) readWhile(valid predicate) (string, error) {
 }
 
 func (s *Scanner) readStringUntil(delim byte) (string, error) {
-	var whileErr error
-	lexeme, err := s.readWhile(func(b byte) bool {
-		if b == '\\' {
-			if whileErr = s.skip(1); whileErr != nil {
-				return false
-			}
+	var sb strings.Builder
+	var escape bool
+	for {
+		b, err := s.read()
+		switch {
+		case err != nil:
+			return "", fmt.Errorf("read: %w", err)
 
-			next, err := s.peek()
-			if err != nil {
-				whileErr = err
+		case b == eof:
+			return sb.String(), nil
 
-				return false
-			}
-			if next != delim && next != '\\' {
-				whileErr = fmt.Errorf(`unknown escape sequence: \%v`, string(next))
+		case b == delim && !escape:
+			return sb.String(), s.unread()
 
-				return false
-			}
+		case b == '\\' && !escape:
+			escape = true
 
-			return true
+			continue
 		}
 
-		return b != delim
-	})
-	if err == nil {
-		err = whileErr
-	}
+		escape = false
 
-	return lexeme, err
+		sb.WriteByte(b)
+	}
 }
 
 func isEOF(b byte) bool {
