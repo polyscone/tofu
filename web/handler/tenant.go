@@ -13,6 +13,7 @@ import (
 	"github.com/polyscone/tofu/internal/event"
 	"github.com/polyscone/tofu/internal/session"
 	"github.com/polyscone/tofu/internal/smtp"
+	"github.com/polyscone/tofu/web/flag"
 )
 
 type AccountReader interface {
@@ -92,13 +93,13 @@ type Tenant struct {
 	IPWhitelist       []string
 	Proxies           []string
 	SMTPEnvelopeEmail string
+	Flag              *flag.Provider
 	Broker            event.Broker
 	Email             smtp.Mailer
 	Logger            *slog.Logger
 	Metrics           *expvar.Map
-
-	Svc       Svc
-	Repo      Repo
-	Recovery  Recovery
-	SuperRole *account.Role
+	Svc               Svc
+	Repo              Repo
+	Recovery          Recovery
+	SuperRole         *account.Role
 }

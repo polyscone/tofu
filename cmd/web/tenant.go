@@ -23,6 +23,7 @@ import (
 	"github.com/polyscone/tofu/repo"
 	"github.com/polyscone/tofu/repo/sqlite"
 	"github.com/polyscone/tofu/web"
+	"github.com/polyscone/tofu/web/flag"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
 )
@@ -231,6 +232,9 @@ func newTenant(host string) (*handler.Tenant, error) {
 		cache.mailers[data.Name] = mailer
 	}
 
+	env := cmp.Or(data.Env, "live")
+	flagProvider := flag.NewProvider(env)
+
 	var svc handler.Svc
 	var err error
 
@@ -284,10 +288,11 @@ func newTenant(host string) (*handler.Tenant, error) {
 		Hosts:             data.Hosts,
 		DataDir:           dataDir,
 		Dev:               opts.dev,
-		Env:               cmp.Or(data.Env, "live"),
+		Env:               env,
 		IPWhitelist:       opts.server.ipWhitelist,
 		Proxies:           opts.server.proxies,
 		SMTPEnvelopeEmail: data.SMTPEnvelopeEmail,
+		Flag:              flagProvider,
 		Broker:            broker,
 		Email:             mailer,
 		Logger:            logger,

@@ -33,8 +33,19 @@
 	--clr-visited-400: VisitedText;
 	--clr-active-400: ActiveText;
 
-	--clr-accent-100: hsl(170, 45%, 97%);
-	--clr-accent-400: hsl(170, 45%, 30%);
+	{{if .Flag.IsDevEnv}}
+		--clr-accent-100: hsl(163, 100%, 97%);
+		--clr-accent-400: hsl(163, 50%, 45%);
+		--clr-accent-800: hsl(163, 38%, 13%);
+	{{else if .Flag.IsTestEnv}}
+		--clr-accent-100: hsl(16, 100%, 97%);
+		--clr-accent-400: hsl(16, 80%, 55%);
+		--clr-accent-800: hsl(16, 38%, 13%);
+	{{else}}
+		--clr-accent-100: hsl(200, 100%, 97%);
+		--clr-accent-400: hsl(200, 100%, 47%);
+		--clr-accent-800: hsl(200, 38%, 13%);
+	{{end}}
 
 	--clr-hint-400: hsl(0, 0%, 30%);
 

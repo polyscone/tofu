@@ -23,6 +23,7 @@ import (
 	"github.com/polyscone/tofu/internal/errsx"
 	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/i18n"
+	"github.com/polyscone/tofu/web/flag"
 	"github.com/polyscone/tofu/web/guard"
 )
 
@@ -74,6 +75,7 @@ type ViewData struct {
 	Errors       errsx.Map
 	Now          time.Time
 	Env          string
+	Flag         *flag.Provider
 	Form         Form
 	URL          URL
 	App          AppData
@@ -85,18 +87,6 @@ type ViewData struct {
 	State        *State
 	Log          Logger
 	Vars         Vars
-}
-
-func (v ViewData) IsDevEnv() bool {
-	return strings.ToLower(v.Env) == "dev"
-}
-
-func (v ViewData) IsTestEnv() bool {
-	return strings.ToLower(v.Env) == "test"
-}
-
-func (v ViewData) IsLiveEnv() bool {
-	return !v.IsDevEnv() && !v.IsTestEnv()
 }
 
 func (v ViewData) T(msg any, args ...any) (any, error) {
@@ -317,6 +307,7 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 		I18nRuntime: i18nRuntime,
 		Now:         time.Now(),
 		Env:         rn.h.Tenant.Env,
+		Flag:        rn.h.Tenant.Flag,
 		Form:        Form{Values: r.PostForm},
 		URL: URL{
 			Scheme: rn.h.Tenant.Scheme,
