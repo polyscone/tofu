@@ -449,6 +449,13 @@ func TmplFormatSizeSI(bytes any) (string, error) {
 	case int:
 		i = int64(v)
 
+	case string:
+		var err error
+		i, err = strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return "", err
+		}
+
 	default:
 		return "", errors.New("expected an integer")
 	}
@@ -473,6 +480,13 @@ func TmplFormatSizeIEC(bytes any) (string, error) {
 
 	case int:
 		i = int64(v)
+
+	case string:
+		var err error
+		i, err = strconv.ParseInt(v, 10, 64)
+		if err != nil {
+			return "", err
+		}
 
 	default:
 		return "", errors.New("expected an integer")
