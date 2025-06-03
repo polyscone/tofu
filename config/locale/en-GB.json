@@ -934,6 +934,12 @@
 	"site.system.recovery.flash.system_restored": "System restored successfully.",
 
 	"site.system.recovery.title": "Recovery",
+
+	"site.system.recovery.backup_title": "Backup",
+	"site.system.recovery.backup_filename_label": "Backup filename",
+	"site.system.recovery.backup_button": "Backup and download zip archive",
+
+	"site.system.recovery.restore_title": "Restore",
 	"site.system.recovery.restore_warning": [
 		"Restoring the system from a zip archive will replace all data in the system, automatically destroy all existing sessions, and sign you out.",
 		"",
@@ -942,7 +948,6 @@
 		"If you're planning on restoring system data we recommend {link('taking a precautionary backup', 'system.recovery.backup', '_blank')} of the system first."
 	],
 	"site.system.recovery.restore_archive_label": "Zip archive to restore from",
-	"site.system.recovery.backup_button": "Backup and download zip archive",
 	"site.system.recovery.restore_button": "Upload zip archive and restore",
 
 	"site.system.metrics.title": "Metrics",

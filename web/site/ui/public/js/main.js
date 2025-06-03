@@ -75,6 +75,10 @@ onMount("form", node => {
 			return
 		}
 
+		if (event.target.method.toLowerCase() === "get") {
+			return
+		}
+
 		event.target.dataset.submitting = true
 
 		if (!event.submitter.classList.contains("btn--link")) {

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/polyscone/tofu/internal/httpx/router"
@@ -54,8 +55,13 @@ func recoveryBackupGet(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		datetime := time.Now().UTC().Format("2006-01-02_15-04-05")
-		filename := fmt.Sprintf("system_backup_%v_utc.zip", datetime)
+		filename := strings.TrimSpace(r.URL.Query().Get("filename"))
+		if filename == "" {
+			date := time.Now().UTC().Format("2006-01-02")
+
+			filename = fmt.Sprintf("System backup %v", date)
+		}
+		filename = strings.TrimSuffix(filename, ".zip") + ".zip"
 
 		w.Header().Set("content-type", "application/zip")
 		w.Header().Set("content-disposition", fmt.Sprintf("attachment; filename=%q", filename))
