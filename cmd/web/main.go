@@ -137,6 +137,7 @@ func run() int {
 	{
 		modified := false
 		revision := "-"
+		revtime := ""
 		tags := "-"
 		_go := strings.TrimPrefix(runtime.Version(), "go")
 		race := "disabled"
@@ -146,6 +147,12 @@ func run() int {
 			switch setting.Key {
 			case "vcs.revision":
 				revision = setting.Value
+
+			case "vcs.time":
+				t, err := time.Parse(time.RFC3339, setting.Value)
+				if err == nil {
+					revtime = t.Format("2006-01-02 15:04:05 MST")
+				}
 
 			case "vcs.modified":
 				modified = setting.Value == "true"
@@ -160,8 +167,15 @@ func run() int {
 			}
 		}
 
+		var meta []string
+		if revtime != "" {
+			meta = append(meta, revtime)
+		}
 		if modified {
-			revision += " (uncommitted changes)"
+			meta = append(meta, "uncommitted changes")
+		}
+		if len(meta) > 0 {
+			revision += " (" + strings.Join(meta, "; ") + ")"
 		}
 
 		if target == "" {
