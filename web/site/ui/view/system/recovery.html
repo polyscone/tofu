@@ -15,8 +15,9 @@
 		<h3>{{.T "site.system.recovery.backup_title"}}</h3>
 
 		<form action="{{Path "system.recovery.backup"}}" target="_blank">
+			{{$host := ReplaceAll .URL.Host ":" "-"}}
 			{{$date := (.Now.UTC).Format "2006-01-02"}}
-			{{$filename := printf "System backup %v" $date}}
+			{{$filename := printf "%v system backup %v" $host $date}}
 
 			{{template "com.form.text" .WithProps
 				"Label" (.T "site.system.recovery.backup_filename_label")

@@ -57,9 +57,10 @@ func recoveryBackupGet(h *ui.Handler) http.HandlerFunc {
 
 		filename := strings.TrimSpace(r.URL.Query().Get("filename"))
 		if filename == "" {
+			host := strings.ReplaceAll(h.Tenant.Host, ":", "-")
 			date := time.Now().UTC().Format("2006-01-02")
 
-			filename = fmt.Sprintf("System backup %v", date)
+			filename = fmt.Sprintf("%v system backup %v", host, date)
 		}
 		filename = strings.TrimSuffix(filename, ".zip") + ".zip"
 
