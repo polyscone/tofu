@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/polyscone/tofu/internal/httpx"
 	"github.com/polyscone/tofu/internal/httpx/router"
 	"github.com/polyscone/tofu/web/guard"
 	"github.com/polyscone/tofu/web/handler"
@@ -84,6 +85,15 @@ func recoveryRestorePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
+		var input struct {
+			PreserveSystemConfig bool `form:"preserve-system-config" compare:"on"`
+		}
+		if err := httpx.DecodeRequestForm(&input, r); err != nil {
+			h.HTML.ErrorView(w, r, "decode form", err, "error", nil)
+
+			return
+		}
+
 		rc := http.NewResponseController(w)
 
 		rc.SetReadDeadline(time.Now().Add(1 * time.Hour))
@@ -106,7 +116,10 @@ func recoveryRestorePost(h *ui.Handler) http.HandlerFunc {
 			return
 		}
 
-		opts := handler.RestoreOptions{Database: true}
+		opts := handler.RestoreOptions{
+			Database:             true,
+			PreserveSystemConfig: input.PreserveSystemConfig,
+		}
 		if err := h.Recovery.Restore(ctx, zr, opts); err != nil {
 			h.HTML.ErrorView(w, r, "restore", err, "error", nil)
 

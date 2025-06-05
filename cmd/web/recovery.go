@@ -15,25 +15,30 @@ import (
 	"time"
 
 	"github.com/mattn/go-sqlite3"
+	"github.com/polyscone/tofu/app/system"
 	"github.com/polyscone/tofu/internal/human"
 	"github.com/polyscone/tofu/internal/size"
 	"github.com/polyscone/tofu/internal/uuid"
+	"github.com/polyscone/tofu/repo"
 	"github.com/polyscone/tofu/repo/sqlite"
 	"github.com/polyscone/tofu/web/handler"
 )
 
 type RecoveryService struct {
-	mu        sync.Mutex
-	dataDir   string
-	logger    *slog.Logger
-	sqliteDBs map[string]*sqlite.DB
+	mu            sync.Mutex
+	dataDir       string
+	logger        *slog.Logger
+	sqliteDBs     map[string]*sqlite.DB
+	sqliteDBKinds map[string]string
+	system        system.ReadWriter
 }
 
 func NewRecoveryService(dataDir string, logger *slog.Logger) *RecoveryService {
 	return &RecoveryService{
-		dataDir:   dataDir,
-		logger:    logger,
-		sqliteDBs: make(map[string]*sqlite.DB),
+		dataDir:       dataDir,
+		logger:        logger,
+		sqliteDBs:     make(map[string]*sqlite.DB),
+		sqliteDBKinds: make(map[string]string),
 	}
 }
 
@@ -135,6 +140,22 @@ func (r *RecoveryService) Backup(ctx context.Context, w io.Writer, opts handler.
 
 				if err := r.sqliteOnlineBackup(ctx, dstDB, srcDB); err != nil {
 					return fmt.Errorf("SQLite online backup: %w", err)
+				}
+
+				switch r.sqliteDBKinds[name] {
+				case "web":
+					web, err := repo.NewWeb(ctx, dstDB, 0*time.Second)
+					if err != nil {
+						return fmt.Errorf("new web repo: %w", err)
+					}
+
+					if err := web.DeleteTokens(ctx); err != nil {
+						return fmt.Errorf("web: delete tokens: %w", err)
+					}
+
+					if err := web.DestroySessions(ctx); err != nil {
+						return fmt.Errorf("web: destroy sessions: %w", err)
+					}
 				}
 
 				// We explicitly close the destination connection pool here to give
@@ -261,6 +282,8 @@ func (r *RecoveryService) Restore(ctx context.Context, zr *zip.Reader, opts hand
 		}
 	}
 
+	// Setup temporary in-memory copies of the databases just in case we need
+	// to restore the old data in the event of an error
 	var tmpSQLiteDBs map[string]*sqlite.DB
 	if opts.Database {
 		tmpSQLiteDBs = make(map[string]*sqlite.DB)
@@ -315,6 +338,15 @@ func (r *RecoveryService) Restore(ctx context.Context, zr *zip.Reader, opts hand
 	// Attempt online backups of SQLite databases
 	if opts.Database {
 		for name, dstDB := range r.sqliteDBs {
+			var config *system.Config
+			isSystem := r.sqliteDBKinds[name] == "system"
+			if isSystem && opts.PreserveSystemConfig {
+				var err error
+				if config, err = r.system.FindConfig(ctx); err != nil {
+					return fmt.Errorf("find config: %w", err)
+				}
+			}
+
 			err := func() error {
 				p := filepath.Join(tmp, name)
 				srcDB, err := sqlite.Open(ctx, sqlite.KindFile, p, nil, nil)
@@ -325,6 +357,12 @@ func (r *RecoveryService) Restore(ctx context.Context, zr *zip.Reader, opts hand
 
 				if err := r.sqliteOnlineBackup(ctx, dstDB, srcDB); err != nil {
 					return fmt.Errorf("SQLite online backup: %w", err)
+				}
+
+				if isSystem && opts.PreserveSystemConfig {
+					if err := r.system.SaveConfig(ctx, config); err != nil {
+						return fmt.Errorf("save config: %w", err)
+					}
 				}
 
 				return nil

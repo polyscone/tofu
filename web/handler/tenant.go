@@ -70,7 +70,8 @@ type BackupOptions struct {
 }
 
 type RestoreOptions struct {
-	Database bool
+	Database             bool
+	PreserveSystemConfig bool
 }
 
 type Recovery interface {

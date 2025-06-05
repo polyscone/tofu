@@ -139,6 +139,24 @@ func (r *Web) DestroySession(ctx context.Context, id string) error {
 	return nil
 }
 
+func (r *Web) DestroySessions(ctx context.Context) error {
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := r.destroySessions(ctx, tx); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Web) CountExpiredSessions(ctx context.Context, validWindowStart time.Time) (int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -441,6 +459,24 @@ func (r *Web) ConsumeResetTOTPToken(ctx context.Context, token string) error {
 	return nil
 }
 
+func (r *Web) DeleteTokens(ctx context.Context) error {
+	tx, err := r.db.BeginExclusiveTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback()
+
+	if err := r.deleteTokens(ctx, tx); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("tx commit: %w", err)
+	}
+
+	return nil
+}
+
 func (r *Web) CountExpiredTokens(ctx context.Context, now time.Time) (int, error) {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -590,6 +626,12 @@ func (r *Web) destroySession(ctx context.Context, tx *sqlite.Tx, id string) erro
 	return err
 }
 
+func (r *Web) destroySessions(ctx context.Context, tx *sqlite.Tx) error {
+	_, err := tx.ExecContext(ctx, "delete from web__sessions")
+
+	return err
+}
+
 func (r *Web) countExpiredSessions(ctx context.Context, tx *sqlite.Tx, validWindowStart time.Time) (int, error) {
 	var count int
 	err := tx.QueryRowContext(ctx, `
@@ -711,6 +753,12 @@ func (r *Web) deleteTokensByKind(ctx context.Context, tx *sqlite.Tx, value, kind
 		sql.Named("value", value),
 		sql.Named("kind", kind),
 	)
+
+	return err
+}
+
+func (r *Web) deleteTokens(ctx context.Context, tx *sqlite.Tx) error {
+	_, err := tx.ExecContext(ctx, "delete from web__tokens")
 
 	return err
 }

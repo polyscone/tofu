@@ -12,7 +12,7 @@
 
 <div class="center">
 	{{if .Passport.System.CanBackup}}
-		<h3>{{.T "site.system.recovery.backup_title"}}</h3>
+		<h3>{{.T "site.system.recovery.backup.title"}}</h3>
 
 		<form action="{{Path "system.recovery.backup"}}" target="_blank">
 			{{$host := ReplaceAll .URL.Host ":" "-"}}
@@ -20,7 +20,7 @@
 			{{$filename := printf "%v system backup %v" $host $date}}
 
 			{{template "com.form.text" .WithProps
-				"Label" (.T "site.system.recovery.backup_filename_label")
+				"Label" (.T "site.system.recovery.backup.filename_label")
 				"Name" "filename"
 				"Value" $filename
 				"Required" true
@@ -29,30 +29,37 @@
 			}}
 
 			<div class="bag reverse">
-				<button>{{.T "site.system.recovery.backup_button"}}</button>
+				<button>{{.T "site.system.recovery.backup.button"}}</button>
 			</div>
 		</form>
 	{{end}}
 
 	{{if .Passport.System.CanRestore}}
-		<h3>{{.T "site.system.recovery.restore_title"}}</h3>
+		<h3>{{.T "site.system.recovery.restore.title"}}</h3>
 
 		<div class="warning-banner">
-			{{.T "p" "site.system.recovery.restore_warning"}}
+			{{.T "p" "site.system.recovery.restore.warning"}}
 		</div>
 
 		<form action="{{Path "system.recovery.restore.post"}}?_csrf={{.CSRF.Token}}" method="POST" enctype="multipart/form-data">
 			{{template "com.form.csrf" .}}
 
+			<label>{{.T "site.system.recovery.restore.options.label"}}</label>
+
+			<label>
+				<input type="checkbox" name="preserve-system-config" checked>
+				{{.T "site.system.recovery.restore.options.preserve_system_config_label"}}
+			</label>
+
 			{{template "com.form.file" .WithProps
-				"Label" (.T "site.system.recovery.restore_archive_label")
+				"Label" (.T "site.system.recovery.restore.archive_label")
 				"Name" "restore-archive"
 				"Required" true
 				"Accept" ".zip,application/zip,application/x-zip-compressed"
 			}}
 
 			<div class="bag reverse">
-				<button>{{.T "site.system.recovery.restore_button"}}</button>
+				<button>{{.T "site.system.recovery.restore.button"}}</button>
 			</div>
 		</form>
 	{{end}}

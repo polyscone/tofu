@@ -66,10 +66,11 @@ func closeCache() {
 	}
 }
 
-func sqliteOpen(ctx context.Context, data *Tenant, metrics *expvar.Map, recovery *RecoveryService, p string) (*sqlite.DB, error) {
-	sqliteDB := cache.sqlite[data.Name+"."+p]
+func sqliteOpen(ctx context.Context, data *Tenant, metrics *expvar.Map, recovery *RecoveryService, p string) (*sqlite.DB, string, error) {
+	key := data.Name + "." + p
+	name := filepath.Base(p)
+	sqliteDB := cache.sqlite[key]
 	if sqliteDB == nil {
-		name := filepath.Base(p)
 
 		var dbMetrics *expvar.Map
 		if metrics != nil {
@@ -96,17 +97,17 @@ func sqliteOpen(ctx context.Context, data *Tenant, metrics *expvar.Map, recovery
 		var err error
 		sqliteDB, err = sqlite.Open(ctx, sqlite.KindFile, p, dbMetrics, nil)
 		if err != nil {
-			return nil, fmt.Errorf("open SQLite database: %w", err)
+			return nil, "", fmt.Errorf("open SQLite database: %w", err)
 		}
 
 		if recovery != nil {
 			recovery.sqliteDBs[name] = sqliteDB
 		}
 
-		cache.sqlite[data.Name+"."+p] = sqliteDB
+		cache.sqlite[key] = sqliteDB
 	}
 
-	return sqliteDB, nil
+	return sqliteDB, name, nil
 }
 
 // newTenant returns a tenant where the host is mapped to a shared name.
@@ -167,7 +168,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 		// Account repo
 		{
 			p := filepath.Join(dataDir, "account.sqlite")
-			sqliteDB, err := sqliteOpen(ctx, &data, metrics, recovery, p)
+			sqliteDB, _, err := sqliteOpen(ctx, &data, metrics, recovery, p)
 			if err != nil {
 				return nil, fmt.Errorf("open SQLite database: %w", err)
 			}
@@ -181,7 +182,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 		// System repo
 		{
 			p := filepath.Join(dataDir, "system.sqlite")
-			sqliteDB, err := sqliteOpen(ctx, &data, metrics, recovery, p)
+			sqliteDB, name, err := sqliteOpen(ctx, &data, metrics, recovery, p)
 			if err != nil {
 				return nil, fmt.Errorf("open SQLite database: %w", err)
 			}
@@ -190,12 +191,16 @@ func newTenant(host string) (*handler.Tenant, error) {
 			if err != nil {
 				return nil, fmt.Errorf("new system repo: %w", err)
 			}
+
+			recovery.system = repos.system
+
+			recovery.sqliteDBKinds[name] = "system"
 		}
 
 		// Web repo
 		{
 			p := filepath.Join(dataDir, "web.sqlite")
-			sqliteDB, err := sqliteOpen(ctx, &data, metrics, recovery, p)
+			sqliteDB, name, err := sqliteOpen(ctx, &data, metrics, recovery, p)
 			if err != nil {
 				return nil, fmt.Errorf("open SQLite database: %w", err)
 			}
@@ -204,6 +209,8 @@ func newTenant(host string) (*handler.Tenant, error) {
 			if err != nil {
 				return nil, fmt.Errorf("new web repo: %w", err)
 			}
+
+			recovery.sqliteDBKinds[name] = "web"
 		}
 
 		cache.repos[data.Name] = repos
