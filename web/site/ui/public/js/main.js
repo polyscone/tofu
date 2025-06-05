@@ -75,7 +75,7 @@ onMount("form", node => {
 			return
 		}
 
-		if (event.target.method.toLowerCase() === "get") {
+		if (event.target.dataset.loadingButtons === "disable") {
 			return
 		}
 
