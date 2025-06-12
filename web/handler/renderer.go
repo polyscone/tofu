@@ -73,6 +73,7 @@ type ViewData struct {
 	ErrorMessage string
 	Errors       errsx.Map
 	Now          time.Time
+	Env          string
 	Form         Form
 	URL          URL
 	App          AppData
@@ -84,6 +85,18 @@ type ViewData struct {
 	State        *State
 	Log          Logger
 	Vars         Vars
+}
+
+func (v ViewData) IsDevEnv() bool {
+	return strings.ToLower(v.Env) == "dev"
+}
+
+func (v ViewData) IsTestEnv() bool {
+	return strings.ToLower(v.Env) == "test"
+}
+
+func (v ViewData) IsLiveEnv() bool {
+	return !v.IsDevEnv() && !v.IsTestEnv()
 }
 
 func (v ViewData) T(msg any, args ...any) (any, error) {
@@ -303,6 +316,7 @@ func (rn *Renderer) data(ctx context.Context, r *http.Request, status int, view 
 		Locale:      locale,
 		I18nRuntime: i18nRuntime,
 		Now:         time.Now(),
+		Env:         rn.h.Tenant.Env,
 		Form:        Form{Values: r.PostForm},
 		URL: URL{
 			Scheme: rn.h.Tenant.Scheme,

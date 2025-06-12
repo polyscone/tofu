@@ -953,9 +953,10 @@
 	"site.system.recovery.restore.button": "Upload zip archive and restore",
 
 	"site.system.metrics.title": "Metrics",
-	"site.system.metrics.current_date_time": "{t('time.display_date_time', now)}",
+	"site.system.metrics.current_date_time": "Metrics on this page were generated on {t('time.display_date_time', now)}",
 
-	"site.system.metrics.build_section_title": "Build",
+	"site.system.metrics.build_and_env_section_title": "Build and environment",
+	"site.system.metrics.env_label": "Environment",
 	"site.system.metrics.build_target_label": "Target",
 	"site.system.metrics.build_revision_label": "Revision",
 	"site.system.metrics.build_tags_label": "Tags",

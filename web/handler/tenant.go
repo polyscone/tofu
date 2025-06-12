@@ -87,6 +87,7 @@ type Tenant struct {
 	Hosts             map[string]string
 	DataDir           string
 	Dev               bool
+	Env               string
 	Insecure          bool
 	IPWhitelist       []string
 	Proxies           []string

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -283,6 +284,7 @@ func newTenant(host string) (*handler.Tenant, error) {
 		Hosts:             data.Hosts,
 		DataDir:           dataDir,
 		Dev:               opts.dev,
+		Env:               cmp.Or(data.Env, "live"),
 		IPWhitelist:       opts.server.ipWhitelist,
 		Proxies:           opts.server.proxies,
 		SMTPEnvelopeEmail: data.SMTPEnvelopeEmail,
@@ -309,6 +311,7 @@ type Tenant struct {
 	Hosts             map[string]string   `json:"hosts"`
 	Aliases           map[string][]string `json:"aliases"`
 	SMTPEnvelopeEmail string              `json:"smtpEnvelopeEmail"`
+	Env               string              `json:"env"`
 	IsDisabled        bool                `json:"isDisabled"`
 }
 

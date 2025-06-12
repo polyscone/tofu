@@ -8,12 +8,14 @@
 
 {{define "view.body"}}
 
-{{.T "p" "site.system.metrics.current_date_time" "now" .Vars.Now}}
-
-<h2>{{.T "site.system.metrics.build_section_title"}}</h2>
+<h2>{{.T "site.system.metrics.build_and_env_section_title"}}</h2>
 
 <table class="metrics">
 	<tbody>
+		<tr>
+			<td>{{.T "site.system.metrics.env_label"}}</td>
+			<td>{{TitleASCII .Env}}</td>
+		</tr>
 		<tr>
 			<td>{{.T "site.system.metrics.build_target_label"}}</td>
 			<td>{{.Vars.Target}}</td>

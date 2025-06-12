@@ -45,6 +45,9 @@ func NewTemplateFuncs(custom template.FuncMap) template.FuncMap {
 		"FormatDurationStat": TmplFormatDurationStat,
 		"FormatSizeSI":       TmplFormatSizeSI,
 		"FormatSizeIEC":      TmplFormatSizeIEC,
+		"ToLower":            TmplToLower,
+		"ToUpper":            TmplToUpper,
+		"TitleASCII":         TmplTitleASCII,
 		"TrimPrefix":         TmplTrimPrefix,
 		"TrimSuffix":         TmplTrimSuffix,
 		"HasPrefix":          TmplHasPrefix,
@@ -493,6 +496,24 @@ func TmplFormatSizeIEC(bytes any) (string, error) {
 	}
 
 	return human.SizeIEC(i), nil
+}
+
+func TmplToLower(value any) string {
+	v := fmt.Sprintf("%v", value)
+
+	return strings.ToLower(v)
+}
+
+func TmplToUpper(value any) string {
+	v := fmt.Sprintf("%v", value)
+
+	return strings.ToUpper(v)
+}
+
+func TmplTitleASCII(value any) string {
+	v := fmt.Sprintf("%v", value)
+
+	return strings.Title(v)
 }
 
 func TmplTrimPrefix(value, prefix any) string {
