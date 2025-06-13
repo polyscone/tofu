@@ -44,10 +44,10 @@ func NewMultiTenantHandler(logger *slog.Logger, newTenant NewTenantFunc, routers
 }
 
 func (mh *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
-	return mh.muxes.LoadOrMaybeStore(r.Host, func() (http.Handler, error) {
+	return mh.muxes.LoadOrMaybeStore(r.Host, func() (http.Handler, time.Duration, error) {
 		tenant, err := mh.newTenant(r.Host)
 		if err != nil {
-			return nil, fmt.Errorf("new tenant: %w", err)
+			return nil, 0, fmt.Errorf("new tenant: %w", err)
 		}
 		if tenant.Logger == nil {
 			panic("tenant logger must be set")
@@ -61,11 +61,11 @@ func (mh *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 		tenant.Host = r.Host
 
 		key := tenant.Key + "." + tenant.Kind
-		return muxes.LoadOrMaybeStore(key, func() (*http.ServeMux, error) {
+		mux, err := muxes.LoadOrMaybeStore(key, func() (*http.ServeMux, time.Duration, error) {
 			mux := http.NewServeMux()
 			h, err := handler.New(tenant)
 			if err != nil {
-				return nil, fmt.Errorf("new tenant: %w", err)
+				return nil, 0, fmt.Errorf("new tenant: %w", err)
 			}
 
 			var router http.Handler
@@ -91,8 +91,10 @@ func (mh *MultiTenantHandler) mux(r *http.Request) (http.Handler, error) {
 				})
 			}
 
-			return mux, nil
+			return mux, 0, nil
 		})
+
+		return mux, 0, err
 	})
 }
 

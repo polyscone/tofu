@@ -737,8 +737,8 @@ func (rn *Renderer) TagAsset(key, asset, tagged string) {
 		return
 	}
 
-	rn.assetTags.Store(tagged, asset)
-	rn.assetTags.Store("key:"+key, tagged)
+	rn.assetTags.Store(tagged, asset, 0)
+	rn.assetTags.Store("key:"+key, tagged, 0)
 }
 
 func (rn *Renderer) FindAssetByTagged(tagged string) (string, bool) {

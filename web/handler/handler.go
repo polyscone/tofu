@@ -351,8 +351,8 @@ func (h *Handler) Template(files fs.FS, patterns TemplatePatternsFunc, funcs tem
 		return h.template(files, patterns, funcs, name)
 	}
 
-	return h.templates.LoadOrStore(name, func() *template.Template {
-		return h.template(files, patterns, funcs, name)
+	return h.templates.LoadOrStore(name, func() (*template.Template, time.Duration) {
+		return h.template(files, patterns, funcs, name), 0
 	})
 }
 
