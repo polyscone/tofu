@@ -1,11 +1,11 @@
 package amount
 
 import (
+	"cmp"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"math"
 	"math/big"
 	"strings"
 )
@@ -16,27 +16,23 @@ var (
 	int10 = big.NewInt(10)
 )
 
-var Zero = NewFromInt64(0, 0, "")
+var (
+	Zero     = NewFromInt64(0, 0, "")
+	One      = NewFromInt64(1, 0, "")
+	Ten      = NewFromInt64(10, 0, "")
+	Hundred  = NewFromInt64(100, 0, "")
+	Thousand = NewFromInt64(1000, 0, "")
+)
 
-// RoundingMode indicates which rounding mode should be used when rounding an amount.
-type RoundingMode uint8
+type roundingMode uint8
 
 // Rounding modes to be used with any rounding methods.
 const (
-	// Truncate will just discard any numbers after the desired places.
-	Truncate RoundingMode = iota
-
-	// HalfAwayFromZero will round up when x is positive and down when x is negative.
-	HalfAwayFromZero
-
-	// HalfTowardsZero will round down x is positive and up when x is negative.
-	HalfTowardsZero
-
-	// HalfToEven (aka "Banker's Rounding") will always round to the closest even number.
-	HalfToEven
-
-	// HalfToOdd will always round to the closest odd number number.
-	HalfToOdd
+	truncate roundingMode = iota
+	halfAwayFromZero
+	halfTowardsZero
+	halfToEven
+	halfToOdd
 )
 
 type Amount struct {
@@ -54,6 +50,11 @@ func NewFromInt64(value int64, places int, unit string) Amount {
 }
 
 func New(str string) (Amount, error) {
+	str = strings.TrimSpace(str)
+	if str == "" {
+		return NewFromInt64(0, 0, ""), nil
+	}
+
 	amt := NewFromInt64(0, 0, "")
 
 	var negate bool
@@ -180,7 +181,7 @@ func (amt Amount) String() string {
 }
 
 func (amt Amount) IsZero() bool {
-	return amt.Equal(Zero)
+	return amt.value == nil || amt.value.Cmp(int0) == 0
 }
 
 func (amt Amount) Places() int {
@@ -243,7 +244,11 @@ func (amt Amount) grow(places int) Amount {
 	amt = amt.copy()
 	if places > amt.places {
 		n := places - amt.places
-		factor := big.NewInt(int64(math.Pow10(n)))
+
+		factor := big.NewInt(10)
+		exp := big.NewInt(int64(n))
+
+		factor.Exp(factor, exp, nil)
 
 		amt.value.Mul(amt.value, factor)
 
@@ -270,7 +275,7 @@ func (amt Amount) normalize() Amount {
 
 func (lhs Amount) Equal(rhs Amount) bool {
 	if lhs.unit != "" && rhs.unit != "" && lhs.unit != rhs.unit {
-		return false
+		panic(fmt.Sprintf("cannot compare two different units: %q and %q", lhs.unit, rhs.unit))
 	}
 
 	lhs = lhs.grow(rhs.places)
@@ -281,7 +286,7 @@ func (lhs Amount) Equal(rhs Amount) bool {
 
 func (lhs Amount) Less(rhs Amount) bool {
 	if lhs.unit != "" && rhs.unit != "" && lhs.unit != rhs.unit {
-		return false
+		panic(fmt.Sprintf("cannot compare two different units: %q and %q", lhs.unit, rhs.unit))
 	}
 
 	lhs = lhs.grow(rhs.places)
@@ -296,7 +301,7 @@ func (lhs Amount) LessEqual(rhs Amount) bool {
 
 func (lhs Amount) Greater(rhs Amount) bool {
 	if lhs.unit != "" && rhs.unit != "" && lhs.unit != rhs.unit {
-		return false
+		panic(fmt.Sprintf("cannot compare two different units: %q and %q", lhs.unit, rhs.unit))
 	}
 
 	lhs = lhs.grow(rhs.places)
@@ -350,15 +355,14 @@ func (lhs Amount) Mul(rhs Amount) Amount {
 		panic(fmt.Sprintf("cannot multiply two different units: %q and %q", lhs.unit, rhs.unit))
 	}
 
-	places := lhs.places + rhs.places
-	lhs = lhs.grow(places)
-	rhs = rhs.grow(places)
+	res := lhs.copy()
 
-	divisor := big.NewInt(int64(math.Pow10(places)))
-	lhs.value.Mul(lhs.value, rhs.value)
-	lhs.value.Quo(lhs.value, divisor)
+	res.value.Mul(lhs.value, rhs.value)
 
-	return lhs
+	res.places += rhs.places
+	res.unit = cmp.Or(lhs.unit, rhs.unit)
+
+	return res
 }
 
 // AllocateBetween will split the given amount into the number of portions provided.
@@ -379,11 +383,17 @@ func (amt Amount) AllocateBetween(portions int) ([]Amount, int) {
 
 	amt = amt.copy()
 
-	var i int
+	isNegative := amt.IsNegative()
+	if isNegative {
+		amt.value.Neg(amt.value)
+	}
+
 	amounts := make([]Amount, portions)
 	for i := range len(amounts) {
-		amounts[i] = NewFromInt64(0, amt.Places(), "")
+		amounts[i] = NewFromInt64(0, amt.Places(), amt.Unit())
 	}
+
+	var i int
 	for amt.value.Cmp(int0) != 0 {
 		amounts[i%portions].value.Add(amounts[i%portions].value, int1)
 
@@ -393,6 +403,12 @@ func (amt Amount) AllocateBetween(portions int) ([]Amount, int) {
 	}
 
 	split := i % portions
+
+	if isNegative {
+		for i := range amounts {
+			amounts[i].value.Neg(amounts[i].value)
+		}
+	}
 
 	return amounts, split
 }
@@ -413,22 +429,22 @@ func (amt Amount) Neg() Amount {
 	return amt
 }
 
-// Round will round the amount to the given places using the given rounding mode.
-// If the places given is larger than the current amount's places then it's ignored.
-// If the places is negative then it will be treated as 0.
-func (amt Amount) Round(places int, mode RoundingMode) Amount {
+func (amt Amount) IsNegative() bool {
+	return amt.value != nil && amt.value.Sign() < 0
+}
+
+func (amt Amount) round(places int, mode roundingMode) Amount {
 	amt = amt.copy()
 
+	places = max(0, places)
+
 	// If the places we want to round to is the same as the current places then we have nothing to do
-	if places < 0 {
-		places = 0
-	}
 	if places >= amt.places {
 		return amt
 	}
 
 	// If the mode is set to truncate we can just truncate without doing anything else
-	if mode == Truncate {
+	if mode == truncate {
 		return amt.truncate(places)
 	}
 
@@ -440,7 +456,7 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 	adjust := NewFromInt64(5, places+1, "")
 
 	switch mode {
-	case HalfAwayFromZero:
+	case halfAwayFromZero:
 		// If the last integer is +5 or more, then we need to add 5 before truncating
 		// The truncate will remove the final digit leaving us with the nearest result away from zero
 		// Otherwise we always subtract 5 before truncating
@@ -460,7 +476,7 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 
 		return amt.truncate(places)
 
-	case HalfTowardsZero:
+	case halfTowardsZero:
 		// If the number is positive then we subtract 5 before truncating if the last digits is less than or equal to 5,
 		// otherwise we add 5 before truncating
 		// If the number is negative then we add 5 before truncating if the last digits is greater than or equal to -5,
@@ -482,7 +498,7 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 
 		return amt.truncate(places)
 
-	case HalfToEven:
+	case halfToEven:
 		// If the last digit is +5 or -5 and the digit before the last one is even then we can just truncate, because
 		// in that case the number that comes before the last digit will always be the closest even number
 		// Otherwise, in the case of a positive number, we can add 5 and then truncate
@@ -508,7 +524,7 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 
 		return amt.Sub(adjust).truncate(places)
 
-	case HalfToOdd:
+	case halfToOdd:
 		// If the last digit is +5 or -5 and the digit before the last one is odd then we can just truncate, because
 		// in that case the number that comes before the last digit will always be the closest odd number
 		// Otherwise, in the case of a positive number, we can add 5 and then truncate
@@ -539,8 +555,49 @@ func (amt Amount) Round(places int, mode RoundingMode) Amount {
 	}
 }
 
+// Truncate will discard any numbers after the desired places.
+// If the places given is larger than the current amount's places then it's ignored.
+// If the places is negative then it will be treated as 0.
+func (amt Amount) Truncate(places int) Amount {
+	return amt.round(places, truncate)
+}
+
+// RoundHalfAwayFromZero will round up when x is positive and down when x is negative.
+// If the places given is larger than the current amount's places then it's ignored.
+// If the places is negative then it will be treated as 0.
+func (amt Amount) RoundHalfAwayFromZero(places int) Amount {
+	return amt.round(places, halfAwayFromZero)
+}
+
+// RoundHalfTowardsZero will round down x is positive and up when x is negative.
+// If the places given is larger than the current amount's places then it's ignored.
+// If the places is negative then it will be treated as 0.
+func (amt Amount) RoundHalfTowardsZero(places int) Amount {
+	return amt.round(places, halfTowardsZero)
+}
+
+// RoundHalfToEven (aka "Banker's Rounding") will always round to the closest even number.
+// If the places given is larger than the current amount's places then it's ignored.
+// If the places is negative then it will be treated as 0.
+func (amt Amount) RoundHalfToEven(places int) Amount {
+	return amt.round(places, halfToEven)
+}
+
+// RoundHalfToOdd will always round to the closest odd number number.
+// If the places given is larger than the current amount's places then it's ignored.
+// If the places is negative then it will be treated as 0.
+func (amt Amount) RoundHalfToOdd(places int) Amount {
+	return amt.round(places, halfToOdd)
+}
+
 // Scan implements the SQL Scanner interface for Amount.
 func (amt *Amount) Scan(src any) error {
+	if src == nil {
+		*amt = NewFromInt64(0, 0, "")
+
+		return nil
+	}
+
 	amt.places = 0
 	amt.unit = ""
 

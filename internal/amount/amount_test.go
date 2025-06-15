@@ -16,6 +16,7 @@ func TestNew(t *testing.T) {
 		name  string
 		value string
 	}{
+		{"empty", ""},
 		{"min int64", "-9223372036854775808"},
 		{"max int64", "9223372036854775807"},
 		{"min int64 overflow", "-109223372036854775808"},
@@ -24,11 +25,31 @@ func TestNew(t *testing.T) {
 		{"negative with unit", "-123 kg"},
 		{"positive", "+123"},
 		{"positive with unit", "+123 kg"},
+		{"prefix spaces", "   +123 kg"},
+		{"suffix spaces", "+123 kg   "},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
 			errsx.Must(amount.New(tc.value))
 		})
+	}
+}
+
+func TestZeroValue(t *testing.T) {
+	var amt amount.Amount
+
+	if amt.IsNegative() {
+		t.Error("zero value amount should not be negative")
+	}
+
+	if !amt.IsZero() {
+		t.Error("zero value amount should be zero")
+	}
+
+	// Shouldn't panic
+	amounts, split := amt.AllocateBetween(3)
+	if len(amounts) != 3 || split != 0 {
+		t.Error("zero value amount allocation failed")
 	}
 }
 
@@ -76,6 +97,10 @@ func TestArithmetic(t *testing.T) {
 		{"1.10", "abs", "", "1.10"},
 		{"-1.10", "abs", "", "1.10"},
 		{"-10000000000000000000.000000001", "abs", "", "10000000000000000000.000000001"},
+
+		// One test with a difference of 18 places and one with a difference of 19 places to test for potential overflows
+		{"100.1", "+", "100.0000000000000000001", "200.1000000000000000001"},
+		{"100.1", "+", "100.00000000000000000001", "200.10000000000000000001"},
 	}
 	for i, tc := range tt {
 		t.Run("test["+strconv.Itoa(i)+"]", func(t *testing.T) {
@@ -190,6 +215,16 @@ func TestComparison(t *testing.T) {
 	}
 }
 
+func TestIsZero(t *testing.T) {
+	if !errsx.Must(amount.New("0")).IsZero() {
+		t.Error("zero amount without unit should be zero")
+	}
+
+	if !errsx.Must(amount.New("0 kg")).IsZero() {
+		t.Error("zero amount with unit should be zero")
+	}
+}
+
 func TestAllocateBetween(t *testing.T) {
 	tt := []struct {
 		value    string
@@ -248,6 +283,21 @@ func TestAllocateBetween(t *testing.T) {
 		{"105.25", 8, []string{"13.16", "13.16", "13.16", "13.16", "13.16", "13.15", "13.15", "13.15"}, 5},
 		{"105.25", 9, []string{"11.70", "11.70", "11.70", "11.70", "11.69", "11.69", "11.69", "11.69", "11.69"}, 4},
 		{"105.25", 10, []string{"10.53", "10.53", "10.53", "10.53", "10.53", "10.52", "10.52", "10.52", "10.52", "10.52"}, 5},
+
+		{"-105.25", -1, []string{}, 0},
+		{"-105.25", 0, []string{}, 0},
+		{"-105.25", 1, []string{"-105.25"}, 0},
+		{"-105.25", 2, []string{"-52.63", "-52.62"}, 1},
+		{"-105.25", 3, []string{"-35.09", "-35.08", "-35.08"}, 1},
+		{"-105.25", 4, []string{"-26.32", "-26.31", "-26.31", "-26.31"}, 1},
+		{"-105.25", 5, []string{"-21.05", "-21.05", "-21.05", "-21.05", "-21.05"}, 0},
+		{"-105.25", 6, []string{"-17.55", "-17.54", "-17.54", "-17.54", "-17.54", "-17.54"}, 1},
+		{"-105.25", 7, []string{"-15.04", "-15.04", "-15.04", "-15.04", "-15.03", "-15.03", "-15.03"}, 4},
+		{"-105.25", 8, []string{"-13.16", "-13.16", "-13.16", "-13.16", "-13.16", "-13.15", "-13.15", "-13.15"}, 5},
+		{"-105.25", 9, []string{"-11.70", "-11.70", "-11.70", "-11.70", "-11.69", "-11.69", "-11.69", "-11.69", "-11.69"}, 4},
+		{"-105.25", 10, []string{"-10.53", "-10.53", "-10.53", "-10.53", "-10.53", "-10.52", "-10.52", "-10.52", "-10.52", "-10.52"}, 5},
+
+		{"0.00", 3, []string{"0.00", "0.00", "0.00"}, 0},
 	}
 	for _, tc := range tt {
 		name := fmt.Sprintf("%v portions of %v", tc.portions, tc.value)
@@ -322,105 +372,112 @@ func TestNeg(t *testing.T) {
 }
 
 func TestRounding(t *testing.T) {
+	truncate := amount.Amount.Truncate
+	halfAwayFromZero := amount.Amount.RoundHalfAwayFromZero
+	halfTowardsZero := amount.Amount.RoundHalfTowardsZero
+	halfToEven := amount.Amount.RoundHalfToEven
+	halfToOdd := amount.Amount.RoundHalfToOdd
+
 	tt := []struct {
 		name   string
 		value  string
 		places int
-		mode   amount.RoundingMode
+		fn     func(amount.Amount, int) amount.Amount
 		want   string
 	}{
-		{"negative places, treat as zero", "1.075 kg", -3, amount.Truncate, "1 kg"},
+		{"negative places, treat as zero", "1.075 kg", -3, truncate, "1 kg"},
 
-		{"truncate, same places, no change", "1.075 kg", 3, amount.Truncate, "1.075 kg"},
-		{"truncate, larger places, pad zeros", "1.075 kg", 5, amount.Truncate, "1.07500 kg"},
-		{"truncate, places 1", "1.075 kg", 1, amount.Truncate, "1.0 kg"},
-		{"truncate, places 1", "1.055 kg", 1, amount.Truncate, "1.0 kg"},
-		{"truncate, places 1", "1.0558 kg", 1, amount.Truncate, "1.0 kg"},
-		{"truncate, places 2", "294.934999999999995", 2, amount.Truncate, "294.93"},
-		{"truncate, places 1, negative", "-1.075 kg", 1, amount.Truncate, "-1.0 kg"},
-		{"truncate, places 1, negative", "-1.055 kg", 1, amount.Truncate, "-1.0 kg"},
-		{"truncate, places 1, negative", "-1.0558 kg", 1, amount.Truncate, "-1.0 kg"},
-		{"truncate, places 2, negative", "-294.934999999999995", 2, amount.Truncate, "-294.93"},
+		{"truncate, same places, no change", "1.075 kg", 3, truncate, "1.075 kg"},
+		{"truncate, larger places, pad zeros", "1.075 kg", 5, truncate, "1.07500 kg"},
+		{"truncate, places 1", "1.075 kg", 1, truncate, "1.0 kg"},
+		{"truncate, places 1", "1.055 kg", 1, truncate, "1.0 kg"},
+		{"truncate, places 1", "1.0558 kg", 1, truncate, "1.0 kg"},
+		{"truncate, places 2", "294.934999999999995", 2, truncate, "294.93"},
+		{"truncate, places 1, negative", "-1.075 kg", 1, truncate, "-1.0 kg"},
+		{"truncate, places 1, negative", "-1.055 kg", 1, truncate, "-1.0 kg"},
+		{"truncate, places 1, negative", "-1.0558 kg", 1, truncate, "-1.0 kg"},
+		{"truncate, places 2, negative", "-294.934999999999995", 2, truncate, "-294.93"},
 
-		{"half away from zero, larger places, pad zeros", "1.075 kg", 5, amount.HalfAwayFromZero, "1.07500 kg"},
-		{"half away from zero, places 2", "1.075 kg", 2, amount.HalfAwayFromZero, "1.08 kg"},
-		{"half away from zero, places 2", "1.078 kg", 2, amount.HalfAwayFromZero, "1.08 kg"},
-		{"half away from zero, places 2", "1.0788 kg", 2, amount.HalfAwayFromZero, "1.08 kg"},
-		{"half away from zero, places 2", "294.934999999999995", 2, amount.HalfAwayFromZero, "294.93"},
-		{"half away from zero, places 2", "294.935999999999995", 2, amount.HalfAwayFromZero, "294.94"},
-		{"half away from zero, places 2", "294.936999999999995", 2, amount.HalfAwayFromZero, "294.94"},
-		{"half away from zero, places 2, negative", "-1.075 kg", 2, amount.HalfAwayFromZero, "-1.08 kg"},
-		{"half away from zero, places 2, negative", "-1.078 kg", 2, amount.HalfAwayFromZero, "-1.08 kg"},
-		{"half away from zero, places 2, negative", "-1.0788 kg", 2, amount.HalfAwayFromZero, "-1.08 kg"},
-		{"half away from zero, places 2, negative", "-294.934999999999995", 2, amount.HalfAwayFromZero, "-294.93"},
-		{"half away from zero, places 2, negative", "-294.935999999999995", 2, amount.HalfAwayFromZero, "-294.94"},
-		{"half away from zero, places 2, negative", "-294.936999999999995", 2, amount.HalfAwayFromZero, "-294.94"},
+		{"half away from zero, larger places, pad zeros", "1.075 kg", 5, halfAwayFromZero, "1.07500 kg"},
+		{"half away from zero, places 2", "1.075 kg", 2, halfAwayFromZero, "1.08 kg"},
+		{"half away from zero, places 2", "1.078 kg", 2, halfAwayFromZero, "1.08 kg"},
+		{"half away from zero, places 2", "1.0788 kg", 2, halfAwayFromZero, "1.08 kg"},
+		{"half away from zero, places 2", "294.934999999999995", 2, halfAwayFromZero, "294.93"},
+		{"half away from zero, places 2", "294.935999999999995", 2, halfAwayFromZero, "294.94"},
+		{"half away from zero, places 2", "294.936999999999995", 2, halfAwayFromZero, "294.94"},
+		{"half away from zero, places 2, negative", "-1.075 kg", 2, halfAwayFromZero, "-1.08 kg"},
+		{"half away from zero, places 2, negative", "-1.078 kg", 2, halfAwayFromZero, "-1.08 kg"},
+		{"half away from zero, places 2, negative", "-1.0788 kg", 2, halfAwayFromZero, "-1.08 kg"},
+		{"half away from zero, places 2, negative", "-294.934999999999995", 2, halfAwayFromZero, "-294.93"},
+		{"half away from zero, places 2, negative", "-294.935999999999995", 2, halfAwayFromZero, "-294.94"},
+		{"half away from zero, places 2, negative", "-294.936999999999995", 2, halfAwayFromZero, "-294.94"},
 
-		{"half towards zero, larger places, pad zeros", "1.075 kg", 5, amount.HalfTowardsZero, "1.07500 kg"},
-		{"half towards zero, places 2", "1.070 kg", 2, amount.HalfTowardsZero, "1.07 kg"},
-		{"half towards zero, places 2", "1.075 kg", 2, amount.HalfTowardsZero, "1.07 kg"},
-		{"half towards zero, places 2", "1.078 kg", 2, amount.HalfTowardsZero, "1.08 kg"},
-		{"half towards zero, places 2", "1.0788 kg", 2, amount.HalfTowardsZero, "1.08 kg"},
-		{"half towards zero, places 2", "294.934999999999995", 2, amount.HalfTowardsZero, "294.93"},
-		{"half towards zero, places 2", "294.935999999999995", 2, amount.HalfTowardsZero, "294.93"},
-		{"half towards zero, places 2", "294.936999999999995", 2, amount.HalfTowardsZero, "294.94"},
-		{"half towards zero, places 2, negative", "-1.075 kg", 2, amount.HalfTowardsZero, "-1.07 kg"},
-		{"half towards zero, places 2, negative", "-0.06 kg", 1, amount.HalfTowardsZero, "-0.1 kg"},
-		{"half towards zero, places 2, negative", "-0.068 kg", 1, amount.HalfTowardsZero, "-0.1 kg"},
-		{"half towards zero, places 2, negative", "-294.934999999999995", 2, amount.HalfTowardsZero, "-294.93"},
-		{"half towards zero, places 2, negative", "-294.935999999999995", 2, amount.HalfTowardsZero, "-294.93"},
-		{"half towards zero, places 2, negative", "-294.936999999999995", 2, amount.HalfTowardsZero, "-294.94"},
+		{"half towards zero, larger places, pad zeros", "1.075 kg", 5, halfTowardsZero, "1.07500 kg"},
+		{"half towards zero, places 2", "1.070 kg", 2, halfTowardsZero, "1.07 kg"},
+		{"half towards zero, places 2", "1.075 kg", 2, halfTowardsZero, "1.07 kg"},
+		{"half towards zero, places 2", "1.078 kg", 2, halfTowardsZero, "1.08 kg"},
+		{"half towards zero, places 2", "1.0788 kg", 2, halfTowardsZero, "1.08 kg"},
+		{"half towards zero, places 2", "294.934999999999995", 2, halfTowardsZero, "294.93"},
+		{"half towards zero, places 2", "294.935999999999995", 2, halfTowardsZero, "294.93"},
+		{"half towards zero, places 2", "294.936999999999995", 2, halfTowardsZero, "294.94"},
+		{"half towards zero, places 2, negative", "-1.075 kg", 2, halfTowardsZero, "-1.07 kg"},
+		{"half towards zero, places 2, negative", "-0.06 kg", 1, halfTowardsZero, "-0.1 kg"},
+		{"half towards zero, places 2, negative", "-0.068 kg", 1, halfTowardsZero, "-0.1 kg"},
+		{"half towards zero, places 2, negative", "-294.934999999999995", 2, halfTowardsZero, "-294.93"},
+		{"half towards zero, places 2, negative", "-294.935999999999995", 2, halfTowardsZero, "-294.93"},
+		{"half towards zero, places 2, negative", "-294.936999999999995", 2, halfTowardsZero, "-294.94"},
 
-		{"half to even zero, larger places, pad zeros", "1.075 kg", 5, amount.HalfToEven, "1.07500 kg"},
-		{"half to even, places 2", "1.065 kg", 2, amount.HalfToEven, "1.06 kg"},
-		{"half to even, places 2", "1.085 kg", 2, amount.HalfToEven, "1.08 kg"},
-		{"half to even, places 2", "1.088 kg", 2, amount.HalfToEven, "1.09 kg"},
-		{"half to even, places 2", "1.0888 kg", 2, amount.HalfToEven, "1.09 kg"},
-		{"half to even, places 2", "294.934999999999995", 2, amount.HalfToEven, "294.93"},
-		{"half to even, places 2", "294.935999999999995", 2, amount.HalfToEven, "294.94"},
-		{"half to even, places 2", "294.936999999999995", 2, amount.HalfToEven, "294.94"},
-		{"half to even, places 2", "294.944999999999995", 2, amount.HalfToEven, "294.94"},
-		{"half to even, places 2", "294.945999999999995", 2, amount.HalfToEven, "294.94"},
-		{"half to even, places 2", "294.946999999999995", 2, amount.HalfToEven, "294.95"},
-		{"half to even, places 2, negative", "-1.065 kg", 2, amount.HalfToEven, "-1.06 kg"},
-		{"half to even, places 2, negative", "-1.085 kg", 2, amount.HalfToEven, "-1.08 kg"},
-		{"half to even, places 2, negative", "-1.088 kg", 2, amount.HalfToEven, "-1.09 kg"},
-		{"half to even, places 2, negative", "-1.0888 kg", 2, amount.HalfToEven, "-1.09 kg"},
-		{"half to even, places 2, negative", "-294.934999999999995", 2, amount.HalfToEven, "-294.93"},
-		{"half to even, places 2, negative", "-294.935999999999995", 2, amount.HalfToEven, "-294.94"},
-		{"half to even, places 2, negative", "-294.936999999999995", 2, amount.HalfToEven, "-294.94"},
-		{"half to even, places 2, negative", "-294.944999999999995", 2, amount.HalfToEven, "-294.94"},
-		{"half to even, places 2, negative", "-294.945999999999995", 2, amount.HalfToEven, "-294.94"},
-		{"half to even, places 2, negative", "-294.946999999999995", 2, amount.HalfToEven, "-294.95"},
+		{"half to even zero, larger places, pad zeros", "1.075 kg", 5, halfToEven, "1.07500 kg"},
+		{"half to even, places 2", "1.065 kg", 2, halfToEven, "1.06 kg"},
+		{"half to even, places 2", "1.085 kg", 2, halfToEven, "1.08 kg"},
+		{"half to even, places 2", "1.088 kg", 2, halfToEven, "1.09 kg"},
+		{"half to even, places 2", "1.0888 kg", 2, halfToEven, "1.09 kg"},
+		{"half to even, places 2", "294.934999999999995", 2, halfToEven, "294.93"},
+		{"half to even, places 2", "294.935999999999995", 2, halfToEven, "294.94"},
+		{"half to even, places 2", "294.936999999999995", 2, halfToEven, "294.94"},
+		{"half to even, places 2", "294.944999999999995", 2, halfToEven, "294.94"},
+		{"half to even, places 2", "294.945999999999995", 2, halfToEven, "294.94"},
+		{"half to even, places 2", "294.946999999999995", 2, halfToEven, "294.95"},
+		{"half to even, places 2, negative", "-1.065 kg", 2, halfToEven, "-1.06 kg"},
+		{"half to even, places 2, negative", "-1.085 kg", 2, halfToEven, "-1.08 kg"},
+		{"half to even, places 2, negative", "-1.088 kg", 2, halfToEven, "-1.09 kg"},
+		{"half to even, places 2, negative", "-1.0888 kg", 2, halfToEven, "-1.09 kg"},
+		{"half to even, places 2, negative", "-294.934999999999995", 2, halfToEven, "-294.93"},
+		{"half to even, places 2, negative", "-294.935999999999995", 2, halfToEven, "-294.94"},
+		{"half to even, places 2, negative", "-294.936999999999995", 2, halfToEven, "-294.94"},
+		{"half to even, places 2, negative", "-294.944999999999995", 2, halfToEven, "-294.94"},
+		{"half to even, places 2, negative", "-294.945999999999995", 2, halfToEven, "-294.94"},
+		{"half to even, places 2, negative", "-294.946999999999995", 2, halfToEven, "-294.95"},
 
-		{"half to odd zero, larger places, pad zeros", "1.075 kg", 5, amount.HalfToOdd, "1.07500 kg"},
-		{"half to odd, places 2", "1.065 kg", 2, amount.HalfToOdd, "1.07 kg"},
-		{"half to odd, places 2", "1.075 kg", 2, amount.HalfToOdd, "1.07 kg"},
-		{"half to odd, places 2", "1.078 kg", 2, amount.HalfToOdd, "1.08 kg"},
-		{"half to odd, places 2", "1.0788 kg", 2, amount.HalfToOdd, "1.08 kg"},
-		{"half to odd, places 2", "294.934999999999995", 2, amount.HalfToOdd, "294.93"},
-		{"half to odd, places 2", "294.935999999999995", 2, amount.HalfToOdd, "294.93"},
-		{"half to odd, places 2", "294.936999999999995", 2, amount.HalfToOdd, "294.94"},
-		{"half to odd, places 2", "294.944999999999995", 2, amount.HalfToOdd, "294.94"},
-		{"half to odd, places 2", "294.945999999999995", 2, amount.HalfToOdd, "294.95"},
-		{"half to odd, places 2", "294.946999999999995", 2, amount.HalfToOdd, "294.95"},
-		{"half to odd, places 2, negative", "-1.065 kg", 2, amount.HalfToOdd, "-1.07 kg"},
-		{"half to odd, places 2, negative", "-1.075 kg", 2, amount.HalfToOdd, "-1.07 kg"},
-		{"half to odd, places 2, negative", "-1.078 kg", 2, amount.HalfToOdd, "-1.08 kg"},
-		{"half to odd, places 2, negative", "-1.0788 kg", 2, amount.HalfToOdd, "-1.08 kg"},
-		{"half to odd, places 2, negative", "-294.934999999999995", 2, amount.HalfToOdd, "-294.93"},
-		{"half to odd, places 2, negative", "-294.935999999999995", 2, amount.HalfToOdd, "-294.93"},
-		{"half to odd, places 2, negative", "-294.936999999999995", 2, amount.HalfToOdd, "-294.94"},
-		{"half to odd, places 2, negative", "-294.944999999999995", 2, amount.HalfToOdd, "-294.94"},
-		{"half to odd, places 2, negative", "-294.945999999999995", 2, amount.HalfToOdd, "-294.95"},
-		{"half to odd, places 2, negative", "-294.946999999999995", 2, amount.HalfToOdd, "-294.95"},
+		{"half to odd zero, larger places, pad zeros", "1.075 kg", 5, halfToOdd, "1.07500 kg"},
+		{"half to odd, places 2", "1.065 kg", 2, halfToOdd, "1.07 kg"},
+		{"half to odd, places 2", "1.075 kg", 2, halfToOdd, "1.07 kg"},
+		{"half to odd, places 2", "1.078 kg", 2, halfToOdd, "1.08 kg"},
+		{"half to odd, places 2", "1.0788 kg", 2, halfToOdd, "1.08 kg"},
+		{"half to odd, places 2", "294.934999999999995", 2, halfToOdd, "294.93"},
+		{"half to odd, places 2", "294.935999999999995", 2, halfToOdd, "294.93"},
+		{"half to odd, places 2", "294.936999999999995", 2, halfToOdd, "294.94"},
+		{"half to odd, places 2", "294.944999999999995", 2, halfToOdd, "294.94"},
+		{"half to odd, places 2", "294.945999999999995", 2, halfToOdd, "294.95"},
+		{"half to odd, places 2", "294.946999999999995", 2, halfToOdd, "294.95"},
+		{"half to odd, places 2, negative", "-1.065 kg", 2, halfToOdd, "-1.07 kg"},
+		{"half to odd, places 2, negative", "-1.075 kg", 2, halfToOdd, "-1.07 kg"},
+		{"half to odd, places 2, negative", "-1.078 kg", 2, halfToOdd, "-1.08 kg"},
+		{"half to odd, places 2, negative", "-1.0788 kg", 2, halfToOdd, "-1.08 kg"},
+		{"half to odd, places 2, negative", "-294.934999999999995", 2, halfToOdd, "-294.93"},
+		{"half to odd, places 2, negative", "-294.935999999999995", 2, halfToOdd, "-294.93"},
+		{"half to odd, places 2, negative", "-294.936999999999995", 2, halfToOdd, "-294.94"},
+		{"half to odd, places 2, negative", "-294.944999999999995", 2, halfToOdd, "-294.94"},
+		{"half to odd, places 2, negative", "-294.945999999999995", 2, halfToOdd, "-294.95"},
+		{"half to odd, places 2, negative", "-294.946999999999995", 2, halfToOdd, "-294.95"},
 	}
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			got := errsx.Must(amount.New(tc.value)).Round(tc.places, tc.mode)
+			amt := errsx.Must(amount.New(tc.value))
+			got := tc.fn(amt, tc.places)
 			want := errsx.Must(amount.New(tc.want))
 			if !got.Equal(want) {
-				t.Errorf("want rounded value of %v, got %v (places: %v, mode: %v)", tc.want, got, tc.places, tc.mode)
+				t.Errorf("want rounded value of %v, got %v (places: %v)", tc.want, got, tc.places)
 			}
 		})
 	}
