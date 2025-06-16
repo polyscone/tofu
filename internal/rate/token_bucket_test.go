@@ -206,8 +206,9 @@ func TestBucket(t *testing.T) {
 
 		var wg sync.WaitGroup
 
-		wg.Add(int(double))
 		for range int(double) {
+			wg.Add(1)
+
 			now = now.Add(1 * time.Second)
 
 			go func(now time.Time) {
@@ -219,11 +220,10 @@ func TestBucket(t *testing.T) {
 
 		wg.Wait()
 
-		// Since we took half the tokens at the beginning to avoid
-		// inconsistencies in test results around the capacity limits, we
-		// expect half a bucket of tokens after consistently taking and
-		// replenishing one token
-		if want, got := int(half), errsx.Must(bucket.Take(0, now)); want != got {
+		// We should be at roughly half remaining tokens, so replenishing by half*seconds
+		// should bring us back up to capacity
+		fullReplenishAt := now.Add(time.Duration(half) * time.Second)
+		if want, got := int(capacity), errsx.Must(bucket.Take(0, fullReplenishAt)); want != got {
 			t.Errorf("want %v; got %v", want, got)
 		}
 	})

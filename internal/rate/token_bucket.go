@@ -72,5 +72,8 @@ func (tb *TokenBucket) Take(n float64, t time.Time) (int, error) {
 }
 
 func (tb *TokenBucket) ReplenishedAt() time.Time {
+	tb.mu.Lock()
+	defer tb.mu.Unlock()
+
 	return tb.replenishedAt
 }
