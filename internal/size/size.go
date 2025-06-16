@@ -2,6 +2,7 @@ package size
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -25,6 +26,10 @@ const (
 // ParseBytes converts the string to an int representing the number of bytes
 func ParseBytes(s string) (int, error) {
 	s = strings.TrimSpace(s)
+	if s == "" {
+		return 0, fmt.Errorf("empty input")
+	}
+
 	s = strings.ToLower(s)
 	s = strings.ReplaceAll(s, ",", "")
 
@@ -36,6 +41,10 @@ func ParseBytes(s string) (int, error) {
 	size, err := strconv.ParseFloat(parts[0], 64)
 	if err != nil {
 		return 0, err
+	}
+
+	if math.IsInf(size, 0) || math.IsNaN(size) {
+		return 0, fmt.Errorf("invalid number size %v", parts[0])
 	}
 
 	if len(parts) > 1 {
@@ -76,6 +85,14 @@ func ParseBytes(s string) (int, error) {
 		default:
 			return 0, fmt.Errorf("unknown suffix %q", suffix)
 		}
+	}
+
+	switch {
+	case size > math.MaxInt:
+		return 0, fmt.Errorf("value overflows %g", size)
+
+	case size < math.MinInt:
+		return 0, fmt.Errorf("value underflows %g", size)
 	}
 
 	return int(size), nil
