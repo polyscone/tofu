@@ -120,4 +120,88 @@ func TestFromRequest(t *testing.T) {
 			t.Errorf("want realip.ErrTooManyAddresses; got %q", got)
 		}
 	})
+
+	t.Run("last address is empty in x-forwarded-for", func(t *testing.T) {
+		req := errsx.Must(http.NewRequest(http.MethodGet, "/", nil))
+
+		req.RemoteAddr = "1.2.3.4"
+
+		req.Header.Add("x-forwarded-for", ",,1.1.1.1,,2.2.2.2,,")
+
+		proxies := []string{"1.2.3.4", "2.2.2.2"}
+
+		if want, got := "1.1.1.1", errsx.Must(realip.FromRequest(req, proxies)); want != got {
+			t.Errorf("want %q; got %q", want, got)
+		}
+	})
+
+	t.Run("middle address is empty in x-forwarded-for", func(t *testing.T) {
+		req := errsx.Must(http.NewRequest(http.MethodGet, "/", nil))
+
+		req.RemoteAddr = "1.2.3.4"
+
+		req.Header.Add("x-forwarded-for", "1.1.1.1,,2.2.2.2,,")
+
+		proxies := []string{"1.2.3.4", "2.2.2.2"}
+
+		if want, got := "1.1.1.1", errsx.Must(realip.FromRequest(req, proxies)); want != got {
+			t.Errorf("want %q; got %q", want, got)
+		}
+	})
+
+	t.Run("last IP address is invalid in x-forwarded-for", func(t *testing.T) {
+		req := errsx.Must(http.NewRequest(http.MethodGet, "/", nil))
+
+		req.RemoteAddr = "1.2.3.4"
+
+		req.Header.Add("x-forwarded-for", "not-an-ip,foo, 2.2.2.2")
+
+		proxies := []string{"1.2.3.4", "2.2.2.2"}
+
+		if want, got := "2.2.2.2", errsx.Must(realip.FromRequest(req, proxies)); want != got {
+			t.Errorf("want %q; got %q", want, got)
+		}
+	})
+
+	t.Run("middle IP address is invalid in x-forwarded-for", func(t *testing.T) {
+		req := errsx.Must(http.NewRequest(http.MethodGet, "/", nil))
+
+		req.RemoteAddr = "1.2.3.4"
+
+		req.Header.Add("x-forwarded-for", "1.1.1.1, not-an-ip, 2.2.2.2")
+
+		proxies := []string{"1.2.3.4", "2.2.2.2"}
+
+		if want, got := "1.1.1.1", errsx.Must(realip.FromRequest(req, proxies)); want != got {
+			t.Errorf("want %q; got %q", want, got)
+		}
+	})
+
+	t.Run("ports in x-forwarded-for", func(t *testing.T) {
+		req := errsx.Must(http.NewRequest(http.MethodGet, "/", nil))
+
+		req.RemoteAddr = "1.2.3.4:8080"
+
+		req.Header.Add("x-forwarded-for", "1.1.1.1:9090, 2.2.2.2:3030")
+
+		proxies := []string{"1.2.3.4", "2.2.2.2"}
+
+		if want, got := "1.1.1.1", errsx.Must(realip.FromRequest(req, proxies)); want != got {
+			t.Errorf("want %q; got %q", want, got)
+		}
+	})
+
+	t.Run("bracketed IPv6 for trusted proxy", func(t *testing.T) {
+		req := errsx.Must(http.NewRequest(http.MethodGet, "/", nil))
+
+		req.RemoteAddr = "1.2.3.4"
+
+		req.Header.Add("x-forwarded-for", "[::1]")
+
+		proxies := []string{"1.2.3.4", "::1"}
+
+		if want, got := "::1", errsx.Must(realip.FromRequest(req, proxies)); want != got {
+			t.Errorf("want %q; got %q", want, got)
+		}
+	})
 }

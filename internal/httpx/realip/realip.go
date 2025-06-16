@@ -9,7 +9,10 @@ import (
 	"strings"
 )
 
-var ErrTooManyAddresses = errors.New("too many addresses")
+var (
+	ErrTooManyAddresses = errors.New("too many addresses")
+	ErrNoValidIPs       = errors.New("no valid IP addresses found")
+)
 
 // FromRequest extracts the real ip address from the request parameters.
 //
@@ -51,12 +54,36 @@ func FromRequest(r *http.Request, proxies []string) (string, error) {
 		return "", ErrTooManyAddresses
 	}
 
+	var lastValid string
 	for i := len(addrs) - 1; i >= 0; i-- {
 		addr := strings.TrimSpace(addrs[i])
+		if n := len(addr); n >= 2 && addr[0] == '[' && addr[n-1] == ']' {
+			addr = addr[1 : n-1]
+			addrs[i] = addr
+		}
+		if host, _, err := net.SplitHostPort(addr); err == nil {
+			addr = host
+			addrs[i] = addr
+		}
+
+		// Skip invalid IPs
+		if addr == "" || net.ParseIP(addr) == nil {
+			if i == 0 {
+				if lastValid != "" {
+					return lastValid, nil
+				}
+
+				return "", ErrNoValidIPs
+			}
+
+			continue
+		}
 
 		if !slices.Contains(proxies, addr) {
 			return addr, nil
 		}
+
+		lastValid = addr
 	}
 
 	return addrs[0], nil
