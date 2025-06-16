@@ -45,8 +45,8 @@ func NewHMACBased(digits int, alg Algorithm) (HMACBased, error) {
 }
 
 func (otp HMACBased) Generate(key []byte, count uint64) (string, error) {
-	if len(key) < otp.minKeyLen {
-		return "", fmt.Errorf("key must be at least %d bytes; got %d", otp.minKeyLen, key)
+	if n := len(key); n < otp.minKeyLen {
+		return "", fmt.Errorf("key must be at least %v bytes; got %v", otp.minKeyLen, n)
 	}
 
 	mac := hmac.New(otp.newHash, key)
