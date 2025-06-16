@@ -208,6 +208,7 @@ func (c *Client) processResendAPIQueue() {
 	// Throttling is per client and not per API key because we assume a
 	// stable single API key for the majority of the time
 	throttle := time.NewTicker(time.Second / 2)
+	defer throttle.Stop()
 
 	for resendMsg := range c.resend {
 		<-throttle.C
