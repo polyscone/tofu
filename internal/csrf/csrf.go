@@ -108,6 +108,10 @@ func Check(ctx context.Context, maskedCmp []byte) error {
 		return ErrEmptyToken
 	}
 
+	if want, got := tokenLength*2, len(maskedCmp); want != got {
+		return fmt.Errorf("masked token must be %v bytes in length; got %v", want, got)
+	}
+
 	unmasked, err := unmask(MaskedToken(ctx))
 	if err != nil {
 		return fmt.Errorf("%w: unmask: %w", ErrInvalidToken, err)
@@ -128,12 +132,7 @@ func Check(ctx context.Context, maskedCmp []byte) error {
 func getCSRF(ctx context.Context) *csrf {
 	value := ctx.Value(tokenDataKey)
 	if value == nil {
-		ctx, err := SetToken(ctx, nil)
-		if err != nil {
-			panic(err)
-		}
-
-		return getCSRF(ctx)
+		panic("no CSRF token set")
 	}
 
 	data, ok := value.(*csrf)
