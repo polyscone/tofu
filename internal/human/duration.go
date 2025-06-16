@@ -8,6 +8,10 @@ import (
 )
 
 func Duration(d time.Duration) string {
+	if d <= -1*time.Second {
+		return "-" + Duration(-d)
+	}
+
 	var parts []string
 
 	// We assume a 365 day year
@@ -72,6 +76,10 @@ func Duration(d time.Duration) string {
 }
 
 func DurationStat(d time.Duration) string {
+	if d < 0 {
+		return "-" + DurationStat(-d)
+	}
+
 	var parts []string
 
 	hours := int(d.Hours())

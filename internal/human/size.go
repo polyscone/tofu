@@ -2,11 +2,10 @@ package human
 
 import (
 	"fmt"
-	"math"
 	"strings"
 )
 
-var unitsSI = []string{"B", "kB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"}
+var unitsSI = []string{"B", "kB", "MB", "GB", "TB", "PB"}
 
 func SizeSI(bytes int64) string {
 	var prefix string
@@ -19,15 +18,19 @@ func SizeSI(bytes int64) string {
 		return fmt.Sprintf("%v%v B", prefix, bytes)
 	}
 
-	const epsilon = 0.00000000000001
-
+	var i int
 	size := float64(bytes)
-	index := min(int(math.Log10(size)+epsilon)/3, len(unitsSI)-1)
-	unit := unitsSI[index]
+	for size >= 1000 && i < len(unitsSI)-1 {
+		size /= 1000
+		i++
+	}
+	unit := unitsSI[i]
 
-	size /= math.Pow(1000, float64(index))
-
-	str := fmt.Sprintf("%.2f", size)
+	// We use 10 decimal places here because we want to lose
+	// as little data as possible whilst also being human readable
+	// and avoiding floating point artifacts that might show up
+	// with a higher precision like 15 decimal places
+	str := fmt.Sprintf("%.10f", size)
 	if strings.Contains(str, ".") {
 		str = strings.TrimRight(str, "0")
 		str = strings.TrimSuffix(str, ".")
@@ -36,7 +39,7 @@ func SizeSI(bytes int64) string {
 	return fmt.Sprintf("%v%v %v", prefix, str, unit)
 }
 
-var unitsIEC = []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"}
+var unitsIEC = []string{"B", "KiB", "MiB", "GiB", "TiB", "PiB"}
 
 func SizeIEC(bytes int64) string {
 	var prefix string
@@ -49,13 +52,19 @@ func SizeIEC(bytes int64) string {
 		return fmt.Sprintf("%v%v B", prefix, bytes)
 	}
 
+	var i int
 	size := float64(bytes)
-	index := min(int(math.Log10(size))/3, len(unitsIEC)-1)
-	unit := unitsIEC[index]
+	for size >= 1024 && i < len(unitsIEC)-1 {
+		size /= 1024
+		i++
+	}
+	unit := unitsIEC[i]
 
-	size /= math.Pow(1024, float64(index))
-
-	str := fmt.Sprintf("%.2f", size)
+	// We use 10 decimal places here because we want to lose
+	// as little data as possible whilst also being human readable
+	// and avoiding floating point artifacts that might show up
+	// with a higher precision like 15 decimal places
+	str := fmt.Sprintf("%.10f", size)
 	if strings.Contains(str, ".") {
 		str = strings.TrimRight(str, "0")
 		str = strings.TrimSuffix(str, ".")

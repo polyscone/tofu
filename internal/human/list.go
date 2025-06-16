@@ -3,31 +3,35 @@ package human
 import "strings"
 
 func List(strs []string, sep, conjunction string) string {
+	out := make([]string, len(strs))
 	for i, str := range strs {
 		switch str {
 		case "\t":
-			strs[i] = "<Tab>"
+			out[i] = "<Tab>"
 
 		case "\r":
-			strs[i] = "<CR>"
+			out[i] = "<CR>"
 
 		case "\n":
-			strs[i] = "<LF>"
+			out[i] = "<LF>"
+
+		default:
+			out[i] = str
 		}
 	}
 
-	switch n := len(strs); n {
+	switch n := len(out); n {
 	case 0:
 		return ""
 
 	case 1:
-		return strs[0]
+		return out[0]
 
 	case 2:
-		return strs[0] + conjunction + strs[1]
+		return out[0] + conjunction + out[1]
 
 	default:
-		first, last := strs[:n-1], strs[n-1]
+		first, last := out[:n-1], out[n-1]
 
 		return strings.Join(first, sep) + "," + conjunction + last
 	}
